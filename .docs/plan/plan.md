@@ -26,16 +26,16 @@ size: S
 **Goal:** A clean checkout on Windows 11 builds and starts by following one document, with the toolchain versions actually used recorded.
 
 **Acceptance criteria:**
-- [ ] `.docs/development/build.md` lists Node >= 22, pnpm 11.9.0 via `corepack enable`, Rust stable (edition 2021), `@tauri-apps/cli` 2.12, optional Zig >= 0.16 (only to rebuild the committed Ghostty WASM), Python 3 (profilers only) and per-OS prerequisites (MSVC build tools + WebView2; Xcode CLT; webkit2gtk/gtk on Linux).
+- [ ] `.docs/development/build.md` lists Node >= 22, pnpm 11.9.0 via `corepack enable`, Rust stable (edition 2021), `@tauri-apps/cli` 2.12, optional Zig (0.16.0 for the adapted Ghostty WASM, 0.15.2 for the legacy one; only to rebuild the committed WASM), Python 3 (profilers only) and per-OS prerequisites (MSVC build tools + WebView2; Xcode CLT; webkit2gtk/gtk on Linux).
 - [ ] Commands for install (`pnpm install --frozen-lockfile`), dev (`pnpm tauri dev`), release (`pnpm tauri build`), tests, lint, Rust tests and clippy; the CLI sidecar prebuild (`scripts/build-cli.mjs`) is explained.
 - [ ] The OS and toolchain versions used for the Phase 0 baseline are recorded, and POSIX-only / macOS-only scripts are flagged.
 
-**Verification:** follow only `.docs/development/build.md` on a clean Windows 11 checkout: `pnpm install --frozen-lockfile` and `pnpm tauri dev` start the app.
+**Verification:** follow only `.docs/development/build.md` on a clean Windows 11 checkout: `pnpm install --frozen-lockfile`, `pnpm build:cli:dev`, `pnpm build` and `cargo build --manifest-path src-tauri/Cargo.toml --locked` succeed. The app is not launched here: it still auto-checks Terax's updater on start (F0:4), so the launch check is part of E01-02.
 
 ### E01-02 — Remove the Terax updater plugin
 ```yaml
 id: E01-02
-depends-on: []
+depends-on: [E01-01]
 refs: [F0:4, F7:auto-actualizacion-de-lut, .docs/plan/analysis/build-identity.md, .docs/plan/analysis/decisions.md]
 covers: [F0:4, build-identity/updater-logic, build-identity/updater-dialog, build-identity/capabilities, build-identity/node-package, build-identity/tauri-config]
 type: task
@@ -50,6 +50,7 @@ size: S
 - [ ] `src/modules/updater/` deleted; `UpdaterDialog` unmounted from `src/app/App.tsx:120,1668`; the manual check in `src/settings/sections/AboutSection.tsx:27,51` removed (no replacement UI).
 - [ ] `updater:default` removed from `src-tauri/capabilities/desktop.json`; `process:default` kept only if another caller of `@tauri-apps/plugin-process` remains (list it in the PR).
 - [ ] `git grep -n "crynta/terax-ai/releases\|plugin-updater\|terax:updater"` in `src/` and `src-tauri/` returns nothing.
+- [ ] Following only `.docs/development/build.md`, `pnpm tauri dev` starts the app (launch check deferred from E01-01).
 
 **Verification:** `pnpm install && pnpm check-types && pnpm test`; `cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace`; `pnpm tauri build` succeeds without signing keys; launch the app with a network monitor and confirm no request to github.com.
 

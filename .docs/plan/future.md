@@ -12,6 +12,9 @@ Also to review in a future round (no proposal item yet):
   cannot be listed in plan.md "Not planned".
 - Agent task worktrees/checkpoints as a lut feature. Terax's unwired backend is removed in Phase 0 and can be recovered from
   git history (commit 611f9e3, `src-tauri/src/modules/git/`; user decision 23).
+- Switching the package manager from pnpm to bun (user preference). Needs a new lockfile (dependency versions may move),
+  translating the pnpm workspace, `catalog:`, overrides, `minimumReleaseAge` and `allowBuilds`, and updating the Tauri
+  `before*Command`s, scripts and `.docs/development/build.md`.
 
 ## Multiwindow
 
