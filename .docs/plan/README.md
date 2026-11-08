@@ -8,14 +8,21 @@ accounted for. Everything in this folder is written in English.
 .docs/plan/
 ├── README.md                 this file
 ├── plan.md                   the plan: ## epics, ### issues (source of truth for GitHub)
+├── future.md                 postponed "Not planned" items, for a future planning round
 ├── inventory/
 │   ├── partition.json        every tracked file -> exactly one analysis area   (generated)
 │   └── proposal-items.json   every coverable item of proposal.md               (generated)
-├── analysis/<area>.json      per-area analysis: files -> items with a disposition
+├── analysis/
+│   ├── <area>.json / .md     per-area analysis: files -> items with a disposition; narrative + draft issues
+│   ├── proposal.md           implicit requirements, contradictions, suggested epics
+│   ├── _review.md            cross-area review
+│   ├── decisions.md          user decisions (override the analyses)
+│   └── skeleton.json         every item -> its owner epic (generated)
 └── tools/
     ├── areas.mjs             area definitions (path patterns)
     ├── partition.mjs         builds/validates inventory/partition.json
     ├── proposal-items.mjs    builds inventory/proposal-items.json
+    ├── skeleton.mjs          epic list + item -> epic assignment; builds analysis/skeleton.json
     ├── validate.mjs          validates analysis + plan + coverage
     └── lib.mjs               shared helpers (plan parser, mini YAML)
 ```
@@ -43,7 +50,8 @@ Two sources must be fully covered:
 
 An item is covered when at least one issue lists it in `covers`. An item may instead be listed in the
 `## Not planned` section of `plan.md` with a reason. Inventory items with disposition `keep` need no issue.
-Covering and "Not planned" are mutually exclusive.
+Covering and "Not planned" are mutually exclusive. Every "Not planned" item that is postponed (reason not starting with
+"Done") must also be listed in `future.md`, so nothing postponed is forgotten.
 
 ## Analysis file format (`analysis/<area>.json`)
 

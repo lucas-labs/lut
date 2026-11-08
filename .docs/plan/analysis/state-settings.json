@@ -1,0 +1,256 @@
+{
+  "area": "state-settings",
+  "items": [
+    {
+      "id": "state-settings/spaces-persistence",
+      "title": "Spaces model and persistence (terax-spaces.json, serialize/hydrate, boot, debounced save)",
+      "paths": [
+        "src/modules/spaces/lib/",
+        "src/modules/spaces/index.ts"
+      ],
+      "disposition": "adapt",
+      "rationale": "User decision 4 (analysis/decisions.md): evolve Spaces into projects (ADR-006); lut-internal schemaVersion only, no Terax data migration. (Analyst: Spaces are the seed of lut projects (PRJ-001, PRJ-002, PRJ-003, PRJ-009, PRJ-011) but the schema is unversioned (store.ts:5-27, no schemaVersion -> PRJ-014), stores no split ratios (serialize.ts:14-16 SerializedNode -> PRJ-006), no profile per pane (PRJ-005), no startup commands (PRJ-004), mixes IDE tabs editor/preview/markdown (serialize.ts:25-27), and conflates preset and live state (PRJ-013, 6.5:2). Replace with a versioned Project/Preset/RunningWorkspace model (F4:1, 6.4) with a one-shot migration from spaces; keep the cold-tab hydration idea and per-entry corruption tolerance (serialize.ts:220-236). Phase 0 renames only the store file (identity:1, F0:10).)",
+      "couplings": [
+        "app-shell (src/app/App.tsx:79-82,262-307 wires useSpacesBoot/useSpacePersistence)",
+        "terminal (src/modules/terminal/lib/panes PaneNode)",
+        "app-shell (src/modules/tabs/lib/useTabs Tab kinds, DEFAULT_SPACE_ID)",
+        "backend-core (native.workspaceAuthorize, useSpacesBoot.ts:106-107)",
+        "ai (src/modules/ai/lib/native imported by useSpacesBoot.ts:1)"
+      ],
+      "risks": "Boot errors are swallowed (useSpacesBoot.ts:118-120) so a corrupt store silently yields an empty session; migration must not lose user layouts."
+    },
+    {
+      "id": "state-settings/spaces-ui",
+      "title": "Space switcher UI (SpaceSwitcher, SpaceAvatar, InlineRename)",
+      "paths": [
+        "src/modules/spaces/SpaceSwitcher.tsx",
+        "src/modules/spaces/SpaceAvatar.tsx",
+        "src/modules/spaces/components/"
+      ],
+      "disposition": "replace",
+      "rationale": "Purely visual Terax component; lut needs a project list / switcher (PRJ-001, PRJ-017) designed by the user. The logic it uses (create/rename/reorder/remove in useSpaces.ts:34-40) moves to the projects store.",
+      "couplings": [
+        "app-shell (src/app/App.tsx:79 renders SpaceSwitcher)"
+      ],
+      "risks": ""
+    },
+    {
+      "id": "state-settings/settings-store",
+      "title": "Preferences store (terax-settings.json), cross-window sync, zustand mirror",
+      "paths": [
+        "src/modules/settings/store.ts",
+        "src/modules/settings/preferences.ts",
+        "src/modules/settings/*.test.ts"
+      ],
+      "disposition": "adapt",
+      "rationale": "Keep the single-store + writePref/emit cross-window mechanism (store.ts:394-406, 1029-1081; preferences.ts:48-72). Remove AI/editor/LSP/explorer keys (store.ts:233-266, 287-294; 5.10:9, 16:16), rename store file and localStorage shadow keys in Phase 0 (store.ts:225, preferences.ts:17-18; F0:10, identity:1), add schemaVersion + corruption recovery (13.5:9, 16:13) and later layered overrides globalDefaults -> profile -> project (7.1, 6.2:9). terminalShell stays a global preference until profiles (F2:gate, F3:1).",
+      "couplings": [
+        "~30 consumers of usePreferencesStore across app-shell, terminal, agents, ai, ide-tools (e.g. src/app/App.tsx, src/modules/agents/components/AgentLauncherPanel.tsx:33, src/modules/editor/EditorPane.tsx)",
+        "ai (AI key change event store.ts:1086-1096)"
+      ],
+      "risks": "Removing keys breaks compile in modules other areas remove; order key removals after ai/ide-tools deletions. No schema version today: unknown keys are ignored, wrong types only partially coerced."
+    },
+    {
+      "id": "state-settings/settings-window-shell",
+      "title": "Settings window entry (settings.html, main.tsx, SettingsApp tab router, openSettingsWindow)",
+      "paths": [
+        "settings.html",
+        "src/settings/main.tsx",
+        "src/settings/SettingsApp.tsx",
+        "src/modules/settings/openSettingsWindow.ts"
+      ],
+      "disposition": "adapt",
+      "rationale": "Keep the separate 'settings' webview + ?tab= deep link + terax:settings-tab event (SettingsApp.tsx:86-117, src-tauri/src/lib.rs:88-130) as plumbing; remove models/agents/editor tabs (openSettingsWindow.ts:3-10, SettingsApp.tsx:44,58-63); the layout is replaced after design. Title and prepaint key rebrand (settings.html:7,11).",
+      "couplings": [
+        "app-shell (src-tauri/src/lib.rs:88-130 open_settings_window, lib.rs:252 settings window handling on main exit)",
+        "build-identity (vite multi-page input for settings.html)"
+      ],
+      "risks": ""
+    },
+    {
+      "id": "state-settings/settings-ui-kit",
+      "title": "Settings generic UI (SectionHeader, SettingRow)",
+      "paths": [
+        "src/settings/components/SectionHeader.tsx",
+        "src/settings/components/SettingRow.tsx"
+      ],
+      "disposition": "replace",
+      "rationale": "Purely visual; replaced by the user's design (UX-004).",
+      "couplings": [],
+      "risks": ""
+    },
+    {
+      "id": "state-settings/settings-sections-terminal",
+      "title": "Settings sections lut keeps conceptually (General, Shortcuts, Themes, About)",
+      "paths": [
+        "src/settings/sections/GeneralSection.tsx",
+        "src/settings/sections/ShortcutsSection.tsx",
+        "src/settings/sections/ThemesSection.tsx",
+        "src/settings/sections/AboutSection.tsx"
+      ],
+      "disposition": "replace",
+      "rationale": "Visual Terax sections. The settings they edit (terminal renderer/font/cursor/shell/scrollback, agent notifications AGT-010, autostart, shortcuts TER-008, themes UX-004/UX-005/16:6) remain but the UI is redesigned. GeneralSection also hosts explorer settings (GeneralSection.tsx:245-254) that go away. About shows Terax repo/site/bundle id (AboutSection.tsx:11-12,93) -> rebrand (identity:2).",
+      "couplings": [
+        "agents (notification test, GeneralSection.tsx:566-662)",
+        "app-shell (shortcut registry src/modules/shortcuts)"
+      ],
+      "risks": ""
+    },
+    {
+      "id": "state-settings/settings-ai",
+      "title": "Settings for the removed BYOK AI (models/providers/keys, AI agent personas)",
+      "paths": [
+        "src/settings/sections/ModelsSection.tsx",
+        "src/settings/sections/ModelsSection.test.tsx",
+        "src/settings/sections/AgentsSection.tsx",
+        "src/settings/components/ProviderIcon.tsx",
+        "src/settings/components/ProviderKeyCard.tsx"
+      ],
+      "disposition": "remove",
+      "rationale": "lut drops in-app AI providers/BYOK keys (ADR-004, 16:16, 9.1). AgentsSection is AI chat personas (AgentsSection.tsx:398), not CLI coding agents.",
+      "couplings": [
+        "ai (keychain, emitKeysChanged store.ts:1088)"
+      ],
+      "risks": "Must land together with or after the ai module removal to keep the build green."
+    },
+    {
+      "id": "state-settings/settings-editor-lsp",
+      "title": "Editor and LSP settings sections",
+      "paths": [
+        "src/settings/sections/EditorSection.tsx",
+        "src/settings/components/LspInstallDialog.tsx",
+        "src/settings/components/LspServersGroup.tsx",
+        "src/settings/components/lspSwitchState.ts",
+        "src/settings/components/lspSwitchState.test.ts"
+      ],
+      "disposition": "replace",
+      "rationale": "User decision 2 (analysis/decisions.md): editor and LSP stay as secondary tools; their settings stay and are redesigned with the rest of the settings UI.",
+      "couplings": [
+        "ide-tools/editor-core",
+        "ide-tools/lsp"
+      ],
+      "risks": ""
+    },
+    {
+      "id": "state-settings/theme-core",
+      "title": "Theme model, provider, application, validation, custom themes store, terminal font",
+      "paths": [
+        "src/modules/theme/types.ts",
+        "src/modules/theme/applyTheme.ts",
+        "src/modules/theme/applyTheme.test.ts",
+        "src/modules/theme/validateTheme.ts",
+        "src/modules/theme/validateTheme.test.ts",
+        "src/modules/theme/customThemes.ts",
+        "src/modules/theme/customThemes.test.ts",
+        "src/modules/theme/ThemeProvider.tsx",
+        "src/modules/theme/prepaintSync.test.ts",
+        "src/modules/theme/index.ts",
+        "src/modules/theme/resolveTerminalFont.ts",
+        "src/modules/theme/resolveTerminalFont.test.ts"
+      ],
+      "disposition": "adapt",
+      "rationale": "Token-based theme (types.ts:3-66) applied as CSS vars on documentElement (applyTheme.ts:64-102) matches UX-004 and 5.10:9 (reuse tokens). Adapt: drop editorTheme (types.ts:62-65), rename store/localStorage keys in Phase 0 (customThemes.ts:5, ThemeProvider.tsx:47-48), and make the terminal palette resolvable per pane/profile (PRO-005, F3:5, 13.2:19) instead of only per window. UI token names follow the user's design.",
+      "couplings": [
+        "terminal (reads --terminal-* CSS vars and resolveTerminalFont)",
+        "app-shell (ThemeProvider mounted in src/app and src/settings/main.tsx)"
+      ],
+      "risks": "Per-pane palette needs the renderer to take an explicit palette instead of global CSS vars; must not remount sessions (3.4:invariant, 16:24)."
+    },
+    {
+      "id": "state-settings/theme-builtin-themes",
+      "title": "Built-in theme palettes",
+      "paths": [
+        "src/modules/theme/themes/"
+      ],
+      "disposition": "replace",
+      "rationale": "Visual palettes incl. terax-default (themes/terax-default.ts:9-11). The user curates lut's built-in themes and default (UX-004, F6:4, identity:2).",
+      "couplings": [
+        "state-settings/settings-store (DEFAULT_THEME_ID store.ts:37, persisted themeId)"
+      ],
+      "risks": "Persisted themeId 'terax-default' must keep resolving (fallback) when the default theme is renamed."
+    },
+    {
+      "id": "state-settings/theme-files",
+      "title": "Theme file import/edit via the editor (.terax-theme in appConfigDir/themes)",
+      "paths": [
+        "src/modules/theme/themeFiles.ts",
+        "src/modules/theme/themeFiles.test.ts",
+        "src/modules/theme/useThemeFileEditing.ts"
+      ],
+      "disposition": "adapt",
+      "rationale": "Theme editing writes a file under appConfigDir/themes and opens it in the built-in editor (themeFiles.ts:19-40,120-140; useThemeFileEditing.ts); lut removes the editor. Keep JSON import/export (F6:4, UX-004) and open the file in the OS default editor / watch it instead.",
+      "couplings": [
+        "ide-tools (editor tabs open theme files)",
+        "backend-core (fs_stat/fs_create_dir/fs_write_file themeFiles.ts:29-40)"
+      ],
+      "risks": ""
+    },
+    {
+      "id": "state-settings/theme-editor-resolve",
+      "title": "Editor (CodeMirror) theme resolution",
+      "paths": [
+        "src/modules/theme/resolveEditorTheme.ts",
+        "src/modules/theme/resolveEditorTheme.test.ts"
+      ],
+      "disposition": "keep",
+      "rationale": "User decision 2 (analysis/decisions.md): the editor stays as a secondary tool, so its theme resolution stays. (Analyst: Only serves the code editor removed by lut (5.10:9).)",
+      "couplings": [
+        "ide-tools (src/modules/editor/lib/useEditorThemeExt.ts)"
+      ],
+      "risks": ""
+    },
+    {
+      "id": "state-settings/theme-surface",
+      "title": "Background image surface (SurfaceLayer, surfaceFrame, IndexedDB bg images)",
+      "paths": [
+        "src/modules/theme/SurfaceLayer.tsx",
+        "src/modules/theme/surfaceFrame.ts",
+        "src/modules/theme/surfaceFrame.test.ts",
+        "src/modules/theme/bgImageStore.ts"
+      ],
+      "disposition": "keep",
+      "rationale": "User decision 16 (analysis/decisions.md): background image is a kept personalisation feature; restyling comes with the redesign. (Analyst: Visual feature (background image layer); whether lut keeps it is a design decision (F6:5). IndexedDB name terax-bg-images (bgImageStore.ts:1) is renamed in Phase 0 while the code exists.)",
+      "couplings": [
+        "state-settings/settings-store (backgroundKind/Opacity/Blur keys store.ts:228-231)"
+      ],
+      "risks": ""
+    },
+    {
+      "id": "state-settings/theme-window-platform",
+      "title": "Window vibrancy, window activity and live page resize bridges",
+      "paths": [
+        "src/modules/theme/vibrancy.ts",
+        "src/modules/theme/vibrancy.test.ts",
+        "src/modules/theme/vibrancyQueue.test.ts",
+        "src/modules/theme/WindowVibrancyBridge.tsx",
+        "src/modules/theme/windowActivity.ts",
+        "src/modules/theme/windowActivity.test.ts",
+        "src/modules/theme/WindowActivityBridge.tsx",
+        "src/modules/theme/livePageResize.ts",
+        "src/modules/theme/livePageResize.test.ts",
+        "src/modules/theme/LivePageResizeBridge.tsx"
+      ],
+      "disposition": "keep",
+      "rationale": "Platform behaviour (OS backdrop, focus/inactive state, resize smoothing) independent of Terax's look; no terax identifiers. Styling consequences are revisited with the design but the logic stays.",
+      "couplings": [
+        "app-shell (bridges mounted in App)"
+      ],
+      "risks": ""
+    },
+    {
+      "id": "state-settings/workspace-registry",
+      "title": "Workspace authorization registry, launch cwd, WSL helpers, AppImage env (workspace.rs)",
+      "paths": [
+        "src-tauri/src/modules/workspace.rs"
+      ],
+      "disposition": "keep",
+      "rationale": "Path authorization (workspace.rs:22-270), launch dir (287-340), WSL distro/home/shell (459-750) are needed for pane cwd (PRJ-003), WSL profiles (7.3) and opening projects (PRJ-017). terax strings are only test temp names and an invalid-distro sentinel (workspace.rs:527) -> rename on touch.",
+      "couplings": [
+        "backend-core (pty spawn uses authorize_spawn_cwd/user_spawn_cwd_or_home)",
+        "ide-tools (fs commands check is_authorized)"
+      ],
+      "risks": "Project restore must authorize every pane cwd before spawn (as useSpacesBoot.ts:106-107 does)."
+    }
+  ],
+  "notes": "All plugin-store files are relative to the Tauri app data dir derived from bundle identifier app.crynta.terax (src-tauri/tauri.conf.json:5); localStorage/IndexedDB live in the WebView data dir keyed by the same identifier. Changing the identifier (build-identity) is what actually isolates lut; renaming store files is the explicit F0:10 requirement. No persisted state auto-runs commands today: spaces only store layout+cwd; agentLaunchCommands (settings/store.ts:284) run only on user click (agents/AgentLauncherPanel.tsx:93); editorCustomFormatCommand (settings/store.ts:292) runs a shell template on save (ide-tools, removed). Other stores outside this area: src/modules/ai/lib/{agents,sessions,snippets,todos}.ts use LazyStore too (ai area)."
+}

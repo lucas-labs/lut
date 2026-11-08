@@ -1,0 +1,604 @@
+{
+  "area": "ide-tools",
+  "items": [
+    {
+      "id": "ide-tools/fs-core",
+      "title": "Rust fs core: blocking helper, path canonicalisation, read/write/stat, directory listing",
+      "paths": [
+        "src-tauri/src/modules/fs/mod.rs",
+        "src-tauri/src/modules/fs/file.rs",
+        "src-tauri/src/modules/fs/tree.rs",
+        "src-tauri/src/modules/fs/local_file.rs"
+      ],
+      "disposition": "keep",
+      "rationale": "Used by code lut keeps regardless of the explorer: fs::blocking/to_canon by workspace.rs:260-278, shell/session.rs:8, control.rs:119, agent.rs:592, secrets.rs:132, lib.rs:53; fs_stat/fs_canonicalize by terminal link opening (terminalLinks.ts:179,187; TER-006 adjacent); fs_read_dir by path completion (terminal/block/lib/pathComplete.ts:53); list_subdirs by CwdBreadcrumb.tsx:183; fs_read_file/fs_write_file/fs_stat by theme files (theme/themeFiles.ts:30-37, useThemeFileEditing.ts:39). No Terax identity is stored here.",
+      "couplings": [
+        "backend-core (workspace.rs, shell, control.rs, agent.rs use fs::blocking / fs::to_canon)",
+        "terminal (terminalLinks.ts:179, pathComplete.ts:53)",
+        "statusbar (CwdBreadcrumb.tsx:183)",
+        "theme (themeFiles.ts:30)"
+      ],
+      "risks": "fs_read_file / fs_write_file are also the editor's IO path; removing the editor must not remove them."
+    },
+    {
+      "id": "ide-tools/fs-read-policy",
+      "title": "Sensitive-path read policy (deny runtime cache dir and secret files)",
+      "paths": [
+        "src-tauri/src/modules/fs/read_policy.rs"
+      ],
+      "disposition": "adapt",
+      "rationale": "read_policy.rs:15 denies reads under <cache>/terax, which is where control.rs:757-758 writes the control-server runtime file (token). When the control server moves to lut's own runtime dir (F0:10, identity:1) the policy must deny lut's dir too (keep denying Terax's). It also include_str!s src/modules/ai/lib/pathPolicy.json (read_policy.rs:20-22), so the AI removal must move that file first (14.1).",
+      "couplings": [
+        "agents/control (control.rs:757 runtime dir)",
+        "ai/path-policy (src/modules/ai/lib/pathPolicy.json)",
+        "fs/assets.rs:51,178,193",
+        "fs/ai.rs:26"
+      ],
+      "risks": "If the control runtime dir is renamed without updating this policy, the asset protocol / any remaining read command could expose lut's control token."
+    },
+    {
+      "id": "ide-tools/fs-assets",
+      "title": "asset:// URI scheme with per-webview grants",
+      "paths": [
+        "src-tauri/src/modules/fs/assets.rs"
+      ],
+      "disposition": "keep",
+      "rationale": "Generic, policy-checked file serving (lib.rs:219 register_asynchronous_uri_scheme_protocol(\"asset\"), asset_grant/asset_revoke at lib.rs:306-307, used via src/lib/useAssetGrant.ts). Today only editor media preview and markdown use it, but PRO-012 (profile icon from an image file) needs exactly this to show user images safely.",
+      "couplings": [
+        "src/lib/useAssetGrant.ts:21-22",
+        "profiles (PRO-012 image icons)"
+      ],
+      "risks": "None identified."
+    },
+    {
+      "id": "ide-tools/fs-mutate",
+      "title": "fs create/rename/move/delete commands",
+      "paths": [
+        "src-tauri/src/modules/fs/mutate.rs"
+      ],
+      "disposition": "keep",
+      "rationale": "Used outside the explorer: theme files create_dir/delete (theme/themeFiles.ts:34,49). Profiles/projects export-import (8.x) can reuse it. Explorer and AI are the other consumers.",
+      "couplings": [
+        "theme (themeFiles.ts:34,49)",
+        "ai (native.ts:71-73)",
+        "explorer (useFileTree.ts)"
+      ],
+      "risks": "None."
+    },
+    {
+      "id": "ide-tools/fs-watch",
+      "title": "Shared file watcher (notify / FSEvents) and fs:changed events",
+      "paths": [
+        "src-tauri/src/modules/fs/watch.rs",
+        "src-tauri/src/modules/fs/watch/"
+      ],
+      "disposition": "keep",
+      "rationale": "Infrastructure, not UI: git/watch.rs registers repositories with it (used by the header branch indicator via app/components/useGitBranch.ts:1) and it feeds the file index (watch.rs:70). Projects/presets file watching can reuse it. macOS queue label app.crynta.terax.fsevents (watch/macos.rs:202) is internal: rename on touch.",
+      "couplings": [
+        "ide-tools/git-backend-core (git/watch.rs)",
+        "ide-tools/fs-search-index (index.note_change)"
+      ],
+      "risks": "If every consumer is removed it becomes dead weight; re-evaluate after ide-tools-D01."
+    },
+    {
+      "id": "ide-tools/fs-ai-tools",
+      "title": "AI-only fs commands (ai_read_file/ai_read_dir/ai_grep/ai_glob, TERAX.md project memory)",
+      "paths": [
+        "src-tauri/src/modules/fs/ai.rs",
+        "src-tauri/src/modules/fs/project_memory.rs"
+      ],
+      "disposition": "remove",
+      "rationale": "Only consumer is the BYOK AI module (ai/lib/native.ts:49-98). lut removes BYOK AI (F2:4, 9.9:1, 9.9:5). project_memory reads TERAX.md, an AI concept. The read_policy tests that live in ai.rs:440-452 must move to read_policy.rs.",
+      "couplings": [
+        "ai/native-wrappers (src/modules/ai/lib/native.ts:49-98)",
+        "lib.rs:302-305,308 command registration"
+      ],
+      "risks": "Deleting ai.rs drops the only tests of readable(); move them first."
+    },
+    {
+      "id": "ide-tools/fs-explorer-ops",
+      "title": "Explorer-only fs commands: recursive copy, OS clipboard file paths",
+      "paths": [
+        "src-tauri/src/modules/fs/copy.rs",
+        "src-tauri/src/modules/fs/clipboard.rs"
+      ],
+      "disposition": "keep",
+      "rationale": "User decision 2 (analysis/decisions.md): explorer stays as a secondary tool. (Analyst: Only consumers are explorer paste/drop (explorer/lib/clipboardPaste.ts, useExplorerFileDrop.ts, batchMove.ts). Fate follows the explorer decision (UX-009, F2:6, F6:3).)",
+      "couplings": [
+        "ide-tools/explorer-logic"
+      ],
+      "risks": "copy.rs:132 temp prefix .terax-copy- is internal (rename on touch)."
+    },
+    {
+      "id": "ide-tools/fs-search-index",
+      "title": "File index, fuzzy file search and ripgrep-style content search",
+      "paths": [
+        "src-tauri/src/modules/fs/search.rs",
+        "src-tauri/src/modules/fs/grep.rs",
+        "src-tauri/src/modules/fs/index.rs",
+        "src-tauri/src/modules/fs/supersede.rs",
+        "src-tauri/tests/fs_search.rs"
+      ],
+      "disposition": "keep",
+      "rationale": "User decision 2 (analysis/decisions.md): palette file/content search and the index stay. (Analyst: Consumers: command palette file/content search (command-palette/hooks/useFileSearch.ts:47-106, useContentSearch.ts:31) and AI (useWorkspaceFiles.ts:30). UX-008 wants a palette oriented to terminal/project actions, not files; whether file search survives is undecided (ide-tools-D01). Brings cargo deps ignore, grep-regex, grep-searcher, globset, nucleo-matcher.)",
+      "couplings": [
+        "command-palette (useFileSearch.ts, useContentSearch.ts)",
+        "ai (useWorkspaceFiles.ts:30)"
+      ],
+      "risks": "If removed, check fs/tree.rs still compiles: tree.rs uses ignore (Cargo dep stays)."
+    },
+    {
+      "id": "ide-tools/git-backend-core",
+      "title": "Git CLI backend: status/diff/stage/commit/fetch/push/log/branches + change watcher",
+      "paths": [
+        "src-tauri/src/modules/git/mod.rs",
+        "src-tauri/src/modules/git/commands.rs",
+        "src-tauri/src/modules/git/operations.rs",
+        "src-tauri/src/modules/git/parser.rs",
+        "src-tauri/src/modules/git/process.rs",
+        "src-tauri/src/modules/git/plumbing.rs",
+        "src-tauri/src/modules/git/errors.rs",
+        "src-tauri/src/modules/git/types.rs",
+        "src-tauri/src/modules/git/utils.rs",
+        "src-tauri/src/modules/git/untracked.rs",
+        "src-tauri/src/modules/git/refs.rs",
+        "src-tauri/src/modules/git/watch.rs",
+        "src-tauri/src/modules/git/testutil.rs",
+        "src-tauri/tests/git_operations.rs"
+      ],
+      "disposition": "keep",
+      "rationale": "UI-free backend (shells out to git, no git2) behind the optional Git panel (UX-009 P1, F6:3) and the header branch indicator (useGitBranch.ts:1). F1:6 says hide UI but do not delete backend. User-visible error text 'Terax needs git' (errors.rs:53) is visual rebranding; event name terax:git-changed (watch.rs:26) is internal. Small touch-ups happen inside ide-tools-D04 (mod.rs, git_watch move, refs.rs checkpoint prefix).",
+      "couplings": [
+        "app (useGitBranch.ts:1)",
+        "ide-tools/fs-watch",
+        "ide-tools/git-frontend-api"
+      ],
+      "risks": "tests/git_operations.rs:717-727 exercises worktree::list/prune/remove, which ide-tools-D04 deletes."
+    },
+    {
+      "id": "ide-tools/git-agent-tasks",
+      "title": "Unwired agent-task backend: task worktrees, checkpoints, review hunks, branch create/rename",
+      "paths": [
+        "src-tauri/src/modules/git/checkpoint.rs",
+        "src-tauri/src/modules/git/worktree.rs",
+        "src-tauri/src/modules/git/task_worktree.rs",
+        "src-tauri/src/modules/git/task_state.rs",
+        "src-tauri/src/modules/git/project_config.rs",
+        "src-tauri/src/modules/git/commands_tasks.rs",
+        "src-tauri/src/modules/git/commands_review.rs",
+        "src-tauri/src/modules/git/review.rs",
+        "src-tauri/src/modules/git/diff.rs",
+        "src-tauri/src/modules/git/patch.rs",
+        "src-tauri/src/modules/git/branch.rs",
+        "src-tauri/src/modules/git/edge_tests.rs",
+        "src-tauri/src/modules/git/feedback_tests.rs",
+        "src-tauri/src/modules/git/followup_tests.rs",
+        "src-tauri/src/modules/git/hardening_tests.rs",
+        "src-tauri/src/modules/git/review_tests.rs",
+        "src-tauri/src/modules/git/tasks_tests.rs",
+        "src-tauri/src/modules/git/task_worktree_tests.rs"
+      ],
+      "disposition": "remove",
+      "rationale": "~14k lines registered at lib.rs:353-374 with zero frontend callers (no use of git.checkpoint*/worktree*/applyHunks/branchCreate/upstreamInfo outside src/modules/git/api.ts). Not in the proposal (no worktree/checkpoint requirement). It also carries dormant Terax identity: refs/terax/* in user repos (refs.rs:6, checkpoint.rs:639), ~/.terax/worktrees (commands_review.rs:121, project_config.rs:35,355), ~/.terax state (task_state.rs:73), .terax/project.toml (project_config.rs:121), TERAX_TASK/TERAX_PORT env (task_worktree.rs:96-102), branch prefix terax/ (project_config.rs:38). Removing it resolves those F0:10 concerns instead of renaming. git_watch/git_unwatch (commands_review.rs) must move to commands.rs first. Open question: does the user want agent worktrees as a lut feature?",
+      "couplings": [
+        "lib.rs:353-376 registration",
+        "ide-tools/git-frontend-review-models",
+        "ide-tools/git-backend-core (git_watch in commands_review.rs)"
+      ],
+      "risks": "Large mechanical deletion; the test files cross-import review_tests/testutil, so they must go together."
+    },
+    {
+      "id": "ide-tools/git-frontend-api",
+      "title": "Frontend git invoke wrappers, types and git-changed subscription",
+      "paths": [
+        "src/modules/git/api.ts",
+        "src/modules/git/api.test.ts",
+        "src/modules/git/changes.ts",
+        "src/modules/git/changes.test.ts",
+        "src/modules/git/types.ts",
+        "src/modules/git/index.ts"
+      ],
+      "disposition": "adapt",
+      "rationale": "Keep the wrappers used by source control, git history, explorer status and the header branch (useGitBranch.ts:1); drop the dead review/worktree/checkpoint/branch wrappers and types (api.ts:~230-325) together with the backend removal.",
+      "couplings": [
+        "app (useGitBranch.ts:1)",
+        "ide-tools/source-control-logic",
+        "ide-tools/git-history-logic",
+        "ide-tools/explorer-logic"
+      ],
+      "risks": "None."
+    },
+    {
+      "id": "ide-tools/git-frontend-review-models",
+      "title": "Dead frontend review models (hunk selection, diff scopes incl. checkpoint scopes)",
+      "paths": [
+        "src/modules/git/hunks.ts",
+        "src/modules/git/hunks.test.ts",
+        "src/modules/git/scope.ts",
+        "src/modules/git/scope.test.ts"
+      ],
+      "disposition": "remove",
+      "rationale": "Only re-exported by src/modules/git/index.ts:4-5; no consumer outside src/modules/git. Belongs to the unwired review/checkpoint feature (ide-tools/git-agent-tasks).",
+      "couplings": [
+        "ide-tools/git-agent-tasks"
+      ],
+      "risks": "None."
+    },
+    {
+      "id": "ide-tools/source-control-ui",
+      "title": "Source Control panel view",
+      "paths": [
+        "src/modules/source-control/SourceControlPanel.tsx",
+        "src/modules/source-control/SourceControlPanelLazy.tsx"
+      ],
+      "disposition": "replace",
+      "rationale": "Terax visual component (1490 lines) mounted from the sidebar (App.tsx:74, SidebarRail.tsx:25). lut keeps Git only as an optional secondary panel (UX-009, F6:3, 10.2:6) whose look the user designs; Terax's UI is not a baseline.",
+      "couplings": [
+        "app (App.tsx:74-77)",
+        "sidebar (SidebarRail.tsx:25, types.ts:1)"
+      ],
+      "risks": "Panel embeds behaviour (keyboard handling, dialogs); extract into source-control-logic before deleting."
+    },
+    {
+      "id": "ide-tools/source-control-logic",
+      "title": "Source control state hooks, repository targeting, watch wiring",
+      "paths": [
+        "src/modules/source-control/index.ts",
+        "src/modules/source-control/repositoryTarget.ts",
+        "src/modules/source-control/repositoryTarget.test.ts",
+        "src/modules/source-control/statusConsumers.ts",
+        "src/modules/source-control/statusConsumers.test.ts",
+        "src/modules/source-control/useRepositoryTargeting.ts",
+        "src/modules/source-control/useSourceControl.ts",
+        "src/modules/source-control/useSourceControl.test.ts",
+        "src/modules/source-control/useSourceControl.watch.test.tsx",
+        "src/modules/source-control/useSourceControlContext.ts",
+        "src/modules/source-control/useSourceControlPanel.ts",
+        "src/modules/source-control/watchSourceControl.ts",
+        "src/modules/source-control/watchSourceControl.test.ts"
+      ],
+      "disposition": "adapt",
+      "rationale": "User decision 2 (analysis/decisions.md): Git panel stays as an on-demand, lazy-loaded secondary tool (F2:6, UX-009). (Analyst: Non-visual logic of the Git panel (UX-009 P1, F6:3); kept only if the Git panel survives ide-tools-D01. Must lose the AI commit-message generation regardless (useSourceControlPanel.ts:8 useChatStore, :13 ai/config, :874 dynamic import of ai/lib/agent) because BYOK AI goes (F2:4).)",
+      "couplings": [
+        "ai (chatStore, config, agent)",
+        "sidebar (4 imports)",
+        "tabs (3 imports)",
+        "ide-tools/explorer-logic (useFileTree, contextActions)",
+        "ide-tools/editor-git-diff (diffCache)"
+      ],
+      "risks": "useSourceControlPanel.ts (1038 lines) mixes UI state and IPC; split carefully."
+    },
+    {
+      "id": "ide-tools/git-history-ui",
+      "title": "Git history / graph view",
+      "paths": [
+        "src/modules/git-history/GitHistoryPane.tsx",
+        "src/modules/git-history/GitHistoryStack.tsx",
+        "src/modules/git-history/GitHistoryStackLazy.tsx",
+        "src/modules/git-history/GraphRail.tsx",
+        "src/modules/git-history/GraphRail.test.ts",
+        "src/modules/git-history/index.ts"
+      ],
+      "disposition": "replace",
+      "rationale": "Visual tab content (git-history tab kind in useTabs, WorkspaceSurface.tsx:4). Proposal keeps Git only as an optional secondary tool (F6:3, UX-009); look is user-designed. lazygit in a pane already covers history (TER-007).",
+      "couplings": [
+        "app (App.tsx:48, WorkspaceSurface.tsx:4)",
+        "tabs (git-history / git-commit-file-diff tab kinds)"
+      ],
+      "risks": "Removing the tab kind touches useTabs (tabs area)."
+    },
+    {
+      "id": "ide-tools/git-history-logic",
+      "title": "Commit graph layout and remote web URL helpers",
+      "paths": [
+        "src/modules/git-history/lib/"
+      ],
+      "disposition": "adapt",
+      "rationale": "User decision 2 (analysis/decisions.md): Git history stays as an on-demand, lazy-loaded secondary tool (F2:6, UX-009). (Analyst: Pure logic with tests (graph.ts lane layout, remoteWebUrl.ts). Kept only if a history view survives ide-tools-D01.)",
+      "couplings": [
+        "ide-tools/git-history-ui"
+      ],
+      "risks": "None."
+    },
+    {
+      "id": "ide-tools/explorer-ui",
+      "title": "File explorer views (tree, rows, inline rename, search box)",
+      "paths": [
+        "src/modules/explorer/FileExplorer.tsx",
+        "src/modules/explorer/TreeRow.tsx",
+        "src/modules/explorer/InlineInput.tsx",
+        "src/modules/explorer/ExplorerSearch.tsx",
+        "src/modules/explorer/index.ts",
+        "src/modules/explorer/lib/constants.ts",
+        "src/modules/explorer/lib/menuItemClass.ts",
+        "src/modules/explorer/lib/gitStatusColor.ts",
+        "src/modules/explorer/lib/gitStatusColor.test.ts"
+      ],
+      "disposition": "replace",
+      "rationale": "Visual Terax sidebar content; 10.2:6 says the sidebar becomes project navigation without a permanent explorer; explorer survives at most as an optional secondary panel (UX-009, F6:3) with the user's design.",
+      "couplings": [
+        "app (App.tsx:47, :1506-1521)",
+        "sidebar (useSidebarPanel.ts:68 explorerRef)",
+        "shortcuts (FileExplorer.tsx:60)",
+        "terminal (FileExplorer.tsx:63 TerminalPathDropTarget)"
+      ],
+      "risks": "FileExplorer.tsx (1088 lines) contains drag-to-terminal path insertion and keyboard behaviour that is logic, not look."
+    },
+    {
+      "id": "ide-tools/explorer-logic",
+      "title": "Explorer tree model, fs ops, DnD, clipboard paste, git status decoration, watch registry",
+      "paths": [
+        "src/modules/explorer/lib/batchMove.ts",
+        "src/modules/explorer/lib/batchMove.test.ts",
+        "src/modules/explorer/lib/clipboardPaste.ts",
+        "src/modules/explorer/lib/clipboardPaste.test.ts",
+        "src/modules/explorer/lib/contextActions.ts",
+        "src/modules/explorer/lib/contextActions.test.ts",
+        "src/modules/explorer/lib/gitStatusUtils.ts",
+        "src/modules/explorer/lib/gitStatusUtils.test.ts",
+        "src/modules/explorer/lib/useExplorerDnd.ts",
+        "src/modules/explorer/lib/useExplorerDnd.test.ts",
+        "src/modules/explorer/lib/useExplorerFileDrop.ts",
+        "src/modules/explorer/lib/useFileTree.ts",
+        "src/modules/explorer/lib/useGitStatus.ts",
+        "src/modules/explorer/lib/watch.ts",
+        "src/modules/explorer/lib/watchRegistry.ts",
+        "src/modules/explorer/lib/watchRegistry.test.ts"
+      ],
+      "disposition": "adapt",
+      "rationale": "User decision 2 (analysis/decisions.md): explorer stays as an on-demand, lazy-loaded secondary tool (F2:6, UX-009). (Analyst: Behaviour of the optional explorer (UX-009, F2:6). lib/watch.ts is also used by the editor (useEditorFileSync.ts:6) and markdown (useMarkdownDocument.ts:6), so it moves to a neutral module if the explorer goes but editor/markdown stay. useGitStatus.ts:1 imports ai/lib/native (coupling to AI removal).)",
+      "couplings": [
+        "ai/native-wrappers (useGitStatus.ts:1)",
+        "ide-tools/editor-core (useEditorFileSync.ts:6)",
+        "ide-tools/markdown-logic (useMarkdownDocument.ts:6)",
+        "ide-tools/source-control-logic (useFileTree, contextActions)"
+      ],
+      "risks": "None beyond the shared watch helper."
+    },
+    {
+      "id": "ide-tools/file-icons",
+      "title": "File/folder icon theme (Catppuccin icon mapping) and FileIcon component",
+      "paths": [
+        "src/modules/explorer/FileIcon.tsx",
+        "src/modules/explorer/lib/fileIcons.ts",
+        "src/modules/explorer/lib/folderIcons.ts",
+        "src/modules/explorer/lib/iconEngine.ts",
+        "src/modules/explorer/lib/iconEngine.test.ts",
+        "src/modules/explorer/lib/iconResolver.ts",
+        "src/modules/explorer/lib/iconResolver.test.ts"
+      ],
+      "disposition": "replace",
+      "rationale": "Purely visual (3.3k lines of icon mapping + @iconify-json/catppuccin). Used by TabBar.tsx:24, CommandPalette.tsx:12, ai FilePicker.tsx:4, git-history, source-control. lut tabs show profile icons (PRO-012), not file icons; any file iconography is the user's design.",
+      "couplings": [
+        "tabs (TabBar.tsx:24)",
+        "command-palette (CommandPalette.tsx:12)",
+        "ai (FilePicker.tsx:4)"
+      ],
+      "risks": "Removing it before the tab bar is redesigned breaks TabBar imports."
+    },
+    {
+      "id": "ide-tools/editor-ai",
+      "title": "Editor AI features: inline AI autocomplete and AI diff review panes",
+      "paths": [
+        "src/modules/editor/AiDiffPane.tsx",
+        "src/modules/editor/AiDiffStack.tsx",
+        "src/modules/editor/AiDiffStackLazy.tsx",
+        "src/modules/editor/lib/autocomplete/"
+      ],
+      "disposition": "remove",
+      "rationale": "BYOK AI features (autocomplete/provider.ts:7-9 imports ai/config, ai/lib/agent, ai/lib/keyring; EditorPane.tsx:1-2 reads provider keys). lut drops BYOK AI (F2:4, 9.9:1). AiDiffStack is mounted by WorkspaceSurface.tsx:3 for the ai-diff tab kind.",
+      "couplings": [
+        "ai (config, agent, keyring)",
+        "app (WorkspaceSurface.tsx:3, feature-loading.test.tsx:5)",
+        "tabs (ai-diff tab kind)"
+      ],
+      "risks": "inlineExtension.ts is detected as binary (NUL byte) by the partition tool; it is TS source."
+    },
+    {
+      "id": "ide-tools/editor-themes",
+      "title": "Editor visual themes (CodeMirror themes, chrome theme)",
+      "paths": [
+        "src/modules/editor/lib/chromeTheme.ts",
+        "src/modules/editor/lib/cmThemes.ts",
+        "src/modules/editor/lib/themes.ts",
+        "src/modules/editor/lib/useEditorThemeExt.ts"
+      ],
+      "disposition": "replace",
+      "rationale": "Purely visual; Terax look is not a baseline. Pulls the @uiw/codemirror-theme-* packages. Any editor theming follows the user's design and lut theme tokens (F3:5 per-pane themes are for terminals).",
+      "couplings": [
+        "theme (resolveEditorTheme.ts, settings editorTheme pref store.ts:139)",
+        "styles (compositingBudget.test.ts:50 references chromeTheme.ts)"
+      ],
+      "risks": "compositingBudget.test.ts hard-codes the chromeTheme.ts path."
+    },
+    {
+      "id": "ide-tools/editor-git-diff",
+      "title": "Git diff panes and diff cache",
+      "paths": [
+        "src/modules/editor/GitDiffPane.tsx",
+        "src/modules/editor/GitDiffStack.tsx",
+        "src/modules/editor/GitDiffStackLazy.tsx",
+        "src/modules/editor/lib/diffCache.ts",
+        "src/modules/editor/lib/diffCache.test.ts"
+      ],
+      "disposition": "adapt",
+      "rationale": "User decision 2 (analysis/decisions.md): diff stays as an on-demand, lazy-loaded secondary tool (F2:6, UX-009). (Analyst: Diff is explicitly an optional secondary tool (UX-009, F6:3, 6.2:8); whether lut keeps an in-app diff (vs. lazygit/delta in a pane) is decided in ide-tools-D01. Uses @codemirror/merge.)",
+      "couplings": [
+        "app (WorkspaceSurface.tsx:3)",
+        "ide-tools/source-control-logic (diffCache)",
+        "tabs (git-diff tab kind)"
+      ],
+      "risks": "None."
+    },
+    {
+      "id": "ide-tools/editor-core",
+      "title": "CodeMirror editor: panes, document model, languages, formatting, vim, media preview",
+      "paths": [
+        "src/modules/editor/EditorPane.tsx",
+        "src/modules/editor/EditorStack.tsx",
+        "src/modules/editor/EditorStack.window-inactive.test.tsx",
+        "src/modules/editor/EditorStackLazy.tsx",
+        "src/modules/editor/MediaPreview.tsx",
+        "src/modules/editor/MediaPreview.test.tsx",
+        "src/modules/editor/NewEditorDialog.tsx",
+        "src/modules/editor/index.ts",
+        "src/modules/editor/useEditorFileSync.ts",
+        "src/modules/editor/lib/colorSwatches.ts",
+        "src/modules/editor/lib/eol.ts",
+        "src/modules/editor/lib/eol.test.ts",
+        "src/modules/editor/lib/extensions.ts",
+        "src/modules/editor/lib/extensions.test.ts",
+        "src/modules/editor/lib/externalFormat.ts",
+        "src/modules/editor/lib/externalFormat.test.ts",
+        "src/modules/editor/lib/indent.ts",
+        "src/modules/editor/lib/indent.test.ts",
+        "src/modules/editor/lib/languageDefinitions.ts",
+        "src/modules/editor/lib/languageResolver.ts",
+        "src/modules/editor/lib/languageResolver.test.ts",
+        "src/modules/editor/lib/markdownExtras.ts",
+        "src/modules/editor/lib/mediaPreview.ts",
+        "src/modules/editor/lib/mediaPreview.test.ts",
+        "src/modules/editor/lib/useApplyEditorFontSize.ts",
+        "src/modules/editor/lib/useDocument.ts",
+        "src/modules/editor/lib/vim.ts"
+      ],
+      "disposition": "adapt",
+      "rationale": "User decision 2 (analysis/decisions.md): editor stays as an on-demand, lazy-loaded secondary tool (F2:6, F6:3, UX-009). (Analyst: Proposal: not an IDE (goal 2/§2 line 93), editing is a secondary on-demand utility (goal 7, line 53; 5.10:12 'optional and lazy, do not remove without analysis'; F2:6 decide what to keep; F6:3 editor in optional secondary window/panel). Also used to edit theme files (useThemeFileEditing.ts) and by TabBar (languageDefinitions/languageResolver at TabBar.tsx:22-23), settings EditorSection.tsx:13-14 and header SearchInline.tsx:4. Visual parts (EditorPane chrome, NewEditorDialog) will be redone with the user's design if kept.)",
+      "couplings": [
+        "app (App.tsx:41-46, WorkspaceSurface.tsx:3)",
+        "tabs (TabBar.tsx:22-23, editor tab kind)",
+        "settings (EditorSection.tsx:13-14, store.ts:139-197 editor prefs)",
+        "header (SearchInline.tsx:4)",
+        "spaces (serialize.ts:25,81 editor tabs)",
+        "theme (useThemeFileEditing.ts)"
+      ],
+      "risks": "CodeMirror core packages (@codemirror/state/view/language/commands/autocomplete, @lezer/highlight) must stay even if the editor goes: the terminal block input uses them (terminal/block/lib/shellEditor.ts, ShellInput.tsx)."
+    },
+    {
+      "id": "ide-tools/file-navigator",
+      "title": "Open-file navigator registry used by terminal link activation",
+      "paths": [
+        "src/modules/lsp/lib/navigator.ts"
+      ],
+      "disposition": "adapt",
+      "rationale": "Not LSP-specific: App.tsx:1395 registers openFile and terminal/lib/terminalLinks.ts:17,175 uses it to open clicked file paths. Move to a neutral module (e.g. app/ or workspace) so terminal link opening survives an LSP removal and can target whatever lut opens files with (editor, external editor).",
+      "couplings": [
+        "terminal (terminalLinks.ts:17,175, terminalLinks.test.ts:11)",
+        "app (App.tsx:54,1395)"
+      ],
+      "risks": "None."
+    },
+    {
+      "id": "ide-tools/lsp",
+      "title": "Language Server support (frontend client/session manager + Rust process host) and editor diagnostics",
+      "paths": [
+        "src/modules/lsp/components/",
+        "src/modules/lsp/index.ts",
+        "src/modules/lsp/lib/client.ts",
+        "src/modules/lsp/lib/detect.ts",
+        "src/modules/lsp/lib/detect.test.ts",
+        "src/modules/lsp/lib/locationsPanel.ts",
+        "src/modules/lsp/lib/presets.ts",
+        "src/modules/lsp/lib/presets.test.ts",
+        "src/modules/lsp/lib/protocolShim.ts",
+        "src/modules/lsp/lib/protocolShim.test.ts",
+        "src/modules/lsp/lib/runtimeStore.ts",
+        "src/modules/lsp/lib/sessionManager.ts",
+        "src/modules/lsp/lib/sessionManager.test.ts",
+        "src/modules/lsp/lib/transport.ts",
+        "src/modules/lsp/lib/transport.test.ts",
+        "src/modules/lsp/lib/uri.ts",
+        "src/modules/lsp/lib/uri.test.ts",
+        "src/modules/lsp/lib/useLspExtension.ts",
+        "src/modules/lsp/lib/useLspHint.ts",
+        "src/modules/editor/lib/diagnosticsReporter.ts",
+        "src/modules/editor/lib/diagnosticsStore.ts",
+        "src/modules/editor/lib/diagnosticsStore.test.ts",
+        "src-tauri/src/modules/lsp/"
+      ],
+      "disposition": "adapt",
+      "rationale": "User decision 2 (analysis/decisions.md): LSP stays with the editor; loaded on demand. (Analyst: The proposal never mentions LSP; it only exists to serve the editor, which is secondary (goal 7, 5.10:12). Recommendation: remove (F2:6, F6:gate keeps tools lightweight) unless the user wants a code-intelligent editor; decided in ide-tools-D01. Spawns language servers (lsp/mod.rs:62-90) and depends on codemirror-languageserver.)",
+      "couplings": [
+        "statusbar (StatusBar.tsx:12 LspStatusPill, DiagnosticsBadge.tsx:1)",
+        "settings (LspInstallDialog.tsx:10, LspServersGroup.tsx:19, store.ts:197 lspActivation)",
+        "lib.rs:271,322-327,451 state + commands + kill on exit",
+        "ide-tools/editor-core (useLspExtension)"
+      ],
+      "risks": "LspStatusPill.tsx:180 shows 'Terax found no ...' (visual rebranding if kept)."
+    },
+    {
+      "id": "ide-tools/markdown-ui",
+      "title": "Markdown preview tab view",
+      "paths": [
+        "src/modules/markdown/MarkdownPreviewPane.tsx",
+        "src/modules/markdown/MarkdownPreviewPane.test.ts",
+        "src/modules/markdown/MarkdownStack.tsx",
+        "src/modules/markdown/MarkdownStackLazy.tsx",
+        "src/modules/markdown/MarkdownViewToggle.tsx",
+        "src/modules/markdown/MarkdownLink.tsx",
+        "src/modules/markdown/MarkdownLink.test.tsx",
+        "src/modules/markdown/index.ts"
+      ],
+      "disposition": "replace",
+      "rationale": "Visual tab content (WorkspaceSurface.tsx:5). Proposal does not list markdown preview among kept tools; if kept it is a secondary tool with the user's design. MarkdownLink is also used by the AI chat (AiChat.tsx:17) which goes away. Uses streamdown via components/ai-elements/markdown-code and checkReadable from ai/lib/security (MarkdownPreviewPane.tsx:2).",
+      "couplings": [
+        "app (WorkspaceSurface.tsx:5)",
+        "ai/path-policy (MarkdownPreviewPane.tsx:2)",
+        "ai (AiChat.tsx:17, components/ai-elements/markdown-code)",
+        "spaces (serialize.ts:27 markdown tabs)"
+      ],
+      "risks": "streamdown is shared with the AI chat; removing it is the AI area's call."
+    },
+    {
+      "id": "ide-tools/markdown-logic",
+      "title": "Markdown document loading, relative asset paths, live reload",
+      "paths": [
+        "src/modules/markdown/useMarkdownDocument.ts",
+        "src/modules/markdown/lib/"
+      ],
+      "disposition": "adapt",
+      "rationale": "User decision 2 (analysis/decisions.md): markdown preview stays as an on-demand secondary tool. (Analyst: Logic behind the markdown preview; kept only if markdown preview survives ide-tools-D01.)",
+      "couplings": [
+        "ide-tools/explorer-logic (lib/watch.ts)",
+        "ide-tools/fs-assets"
+      ],
+      "risks": "None."
+    },
+    {
+      "id": "ide-tools/preview-ui",
+      "title": "In-app web preview tab (iframe + address bar)",
+      "paths": [
+        "src/modules/preview/PreviewAddressBar.tsx",
+        "src/modules/preview/PreviewPane.tsx",
+        "src/modules/preview/PreviewPane.test.ts",
+        "src/modules/preview/PreviewStack.tsx",
+        "src/modules/preview/index.ts"
+      ],
+      "disposition": "replace",
+      "rationale": "Visual tab content (WorkspaceSurface.tsx:6, tab.newPreview shortcut App.tsx:916). Not mentioned by the proposal; recommendation is to drop it (not terminal-first, §2 goal 2) unless the user wants it; decided in ide-tools-D01.",
+      "couplings": [
+        "app (App.tsx:55,840,916,1286, WorkspaceSurface.tsx:6)",
+        "tabs (preview tab kind)",
+        "spaces (serialize.ts:26,83 preview tabs)"
+      ],
+      "risks": "Persisted Spaces may contain preview tabs; deserialization must tolerate them after removal."
+    },
+    {
+      "id": "ide-tools/preview-logic",
+      "title": "Preview URL policy and dev-server frame-ancestors test",
+      "paths": [
+        "src/modules/preview/lib/",
+        "src/modules/preview/devFramePolicy.test.ts"
+      ],
+      "disposition": "adapt",
+      "rationale": "User decision 2 (analysis/decisions.md): web preview stays as an on-demand secondary tool. (Analyst: previewUrl.ts blocks app-internal hosts (incl. terax-pty.localhost, previewUrl.ts:5) and is also imported by ai/tools/terminal.ts:1. devFramePolicy.test.ts actually tests vite.config.ts frame-ancestors (app hardening), so it should move to app tests if preview goes.)",
+      "couplings": [
+        "ai (tools/terminal.ts:1)",
+        "terminal (terax-pty scheme name in pty-bridge.ts:39)",
+        "build (vite.config.ts)"
+      ],
+      "risks": "If the PTY URI scheme is renamed, RESERVED_HOSTS must follow."
+    }
+  ],
+  "notes": "Cross-area: (1) fs core/assets/mutate/watch are used by terminal (links, path completion), statusbar, theme, backend-core, agents/control; never remove them with the explorer. (2) read_policy.rs denies <cache>/terax (control runtime dir, control.rs:757) and include_str!s src/modules/ai/lib/pathPolicy.json: control-server rename and AI removal must update it. (3) git agent-task backend (worktrees/checkpoints/review, ~14k lines) is registered but has no frontend caller; it holds dormant Terax identity (refs/terax/*, ~/.terax/worktrees, .terax/project.toml, TERAX_* env). (4) CodeMirror core packages are used by the terminal block input, so only editor-specific packages (@uiw/*, @replit/codemirror-vim, codemirror-languageserver, lang-*, @codemirror/merge/lint/search/legacy-modes?) can go with the editor; legacy-modes/shell is used by the terminal. (5) LSP navigator is actually the terminal link 'open file' hook. (6) The Rust crate is named terax_lib (tests/*.rs import it) - build-identity area."
+}

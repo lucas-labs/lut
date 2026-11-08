@@ -173,7 +173,14 @@ for (const np of plan.notPlanned) {
   if (covered.has(np.id)) err(`Not planned: "${np.id}" is also covered by ${covered.get(np.id).join(", ")}`);
   notPlanned.set(np.id, np.reason);
 }
-const uncoveredProposal = proposal.items.filter((i) => !covered.has(i.id) && !notPlanned.has(i.id));
+// Postponed "Not planned" items must be recorded in future.md (items whose reason starts with "Done" are exempt).
+const futurePath = join(PLAN_DIR, "future.md");
+const futureText = existsSync(futurePath) ? readFileSync(futurePath, "utf8") : "";
+for (const np of plan.notPlanned) {
+  if (/^done\b/i.test(np.reason)) continue;
+  if (!futureText.includes(`\`${np.id}\``)) err(`Not planned "${np.id}" is not listed in future.md`);
+}
+const uncoveredProposal =proposal.items.filter((i) => !covered.has(i.id) && !notPlanned.has(i.id));
 const uncoveredInventory = [...analysisItems.values()].filter((i) => i.disposition !== "keep" && !covered.has(i.id) && !notPlanned.has(i.id));
 for (const i of uncoveredProposal) err(`uncovered proposal item ${i.id}: ${i.text.slice(0, 90)}`);
 for (const i of uncoveredInventory) err(`uncovered inventory item ${i.id} (${i.disposition}): ${i.title}`);

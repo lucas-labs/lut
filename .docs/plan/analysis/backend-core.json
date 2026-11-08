@@ -1,0 +1,244 @@
+{
+  "area": "backend-core",
+  "items": [
+    {
+      "id": "backend-core/app-entry",
+      "title": "Tauri app entry: builder, plugins, managed state, command registry, launch args",
+      "paths": [
+        "src-tauri/src/lib.rs",
+        "src-tauri/src/main.rs",
+        "src-tauri/src/modules/mod.rs"
+      ],
+      "disposition": "adapt",
+      "rationale": "Composition root for every area (lib.rs:190-430). Keep the structure; prune registrations/state of removed modules (AI BYOK per ADR-004, IDE tools per ADR-002/10.2) as those areas delete them, drop the unused pty_has_foreground_job command, rename the `__terax_notify` argv subcommand (lib.rs:170, hook marker, F0:10) and the control-server log text (lib.rs:244). Settings-window event `terax:settings-tab` (lib.rs:103) is internal IPC.",
+      "couplings": [
+        "ai (net, secrets, ai_sessions registrations lib.rs:261-266,402-411)",
+        "ide-tools (fs/lsp/git registrations lib.rs:299-376)",
+        "agents (control::start lib.rs:243, __terax_notify lib.rs:170)",
+        "build-identity (bench feature lib.rs:240,422-427; tauri.conf.json)",
+        "state-settings (workspace::init_launch_cwd lib.rs:186)",
+        "app-shell (app_menu lib.rs:194, open_settings_window lib.rs:89)"
+      ],
+      "risks": "Merge hotspot: every removal PR edits the generate_handler! list; each removal PR should touch only its own lines."
+    },
+    {
+      "id": "backend-core/pty-transport",
+      "title": "PTY output transport v2: hub thread, terax-pty URI scheme, admission gate, wire framing, flow control",
+      "paths": [
+        "src-tauri/src/modules/pty/hub.rs",
+        "src-tauri/src/modules/pty/protocol.rs",
+        "src-tauri/src/modules/pty/gate.rs",
+        "src-tauri/src/modules/pty/wire.rs",
+        "src-tauri/src/modules/pty/queue.rs",
+        "src-tauri/src/modules/pty/output.rs",
+        "src-tauri/src/modules/pty/presentation.rs",
+        "src-tauri/src/modules/pty/wake.rs",
+        "src-tauri/src/modules/pty/unix_reader.rs"
+      ],
+      "disposition": "keep",
+      "rationale": "High-value, well-tested core (ADR-003, 5.10:1, 10.1:7: do not rewrite the PTY transport). The `terax-pty` scheme name is a per-webview registration (lib.rs:218) and cannot collide with an installed Terax; rename only on touch.",
+      "couplings": [
+        "terminal (src/modules/terminal/lib/pty-bridge.ts consumes terax-pty://localhost/poll and pty_stream_open)",
+        "build-identity (CSP/capabilities must allow the terax-pty origin)"
+      ],
+      "risks": "A scheme rename would need coordinated CSP + frontend + smoke harness changes; not worth it."
+    },
+    {
+      "id": "backend-core/pty-session",
+      "title": "PTY session lifecycle and Tauri commands (pty_open/write/resize/close, colors, foreground, diagnostics)",
+      "paths": [
+        "src-tauri/src/modules/pty/mod.rs",
+        "src-tauri/src/modules/pty/session.rs",
+        "src-tauri/src/modules/pty/foreground.rs",
+        "src-tauri/src/modules/pty/da_filter.rs",
+        "src-tauri/src/modules/pty/terminal_colors.rs"
+      ],
+      "disposition": "adapt",
+      "rationale": "Keep lifecycle (TER-001, TER-005, 6.5:1). pty_open (mod.rs:172-185) only takes cols/rows/cwd/workspace/blocks/shell/pane_id/presentation/colors: extend it with a launch spec (program+args, env overrides, WSL distro, cwd fallback) for profiles (PRO-002, PRO-003, PRO-006, F3:3) and typed errors for missing executable/cwd/distro (PRO-010, 13.2:12, 13.5:7). Emit a shell-ready signal (8.4:6). Remove unused pty_has_foreground_job (mod.rs:384, no frontend caller). Event names `terax:agent-signal`/`terax:terminal-notification` (session.rs:22-23) are internal.",
+      "couplings": [
+        "terminal (useGhosttyTerminalSession.ts, pty-bridge.ts call pty_open)",
+        "state-settings (workspace::user_spawn_cwd_or_home workspace.rs:231, WorkspaceEnv)",
+        "agents (ControlState::shell_env mod.rs:197, agent_events::TauriAgentHost mod.rs:231)",
+        "state-settings (TerminalProfile model, F3:1)"
+      ],
+      "risks": "Accepting arbitrary executables/env over IPC widens the attack surface vs today's allowlist (shell_init.rs:115-129); needs a policy decision."
+    },
+    {
+      "id": "backend-core/shell-integration-launch",
+      "title": "Shell command builder: detection, enumeration, env injection, integration script install (incl. WSL)",
+      "paths": [
+        "src-tauri/src/modules/pty/shell_init.rs"
+      ],
+      "disposition": "adapt",
+      "rationale": "Phase 0: writes integration scripts to ~/.cache/terax/shell-integration (shell_init.rs:449,912) and WSL $HOME/.cache/terax (shell_init.rs:857,900), shared with and overwritten by an installed Terax; injects TERAX_* env vars (shell_init.rs:195-219,394,772,778) read by Terax tooling (F0:10, identity:1, 13.2:21). Then: launch spec for profiles (PRO-002, F3:3), replace the enumerated-shell allowlist (115-129), add WSL distros and more shells to discovery (F3:6, PRO-006), PowerShell -NoProfile option (7.3).",
+      "couplings": [
+        "agents (terax-cli reads TERAX_CONTROL_ADDR/TOKEN/PANE_ID crates/terax-cli/src/lib.rs:107,285-286)",
+        "state-settings (workspace::wsl_* helpers, appimage_env_overrides, launch_cwd_snapshot)",
+        "state-settings (settings GeneralSection.tsx calls pty_list_shells)"
+      ],
+      "risks": "Changing the cache dir/env names must be atomic with the scripts and the CLI or integration silently breaks."
+    },
+    {
+      "id": "backend-core/shell-integration-scripts",
+      "title": "Shell integration scripts (bash/zsh/fish/PowerShell) and their tests",
+      "paths": [
+        "src-tauri/src/modules/pty/scripts/"
+      ],
+      "disposition": "adapt",
+      "rationale": "Keep OSC 7/133 behaviour (7.3, 5.10:1). Phase 0: guard variable __TERAX_HOOKS_LOADED (bashrc.bash:10, profile.ps1:6, init.fish) and TERAX_CLI/TERAX_BLOCKS/TERAX_TERMINAL/TERAX_USER_ZDOTDIR plus the `terax` shell function (profile.ps1:10) must use lut names (F0:10). Internal _terax_* function names rename on touch only.",
+      "couplings": [
+        "backend-core/shell-integration-launch (env names)",
+        "terminal (frontend OSC 7/133 parsing, ghostty/core/GhosttySemanticEventRouter.ts)",
+        "agents (`terax` CLI wrapper function)"
+      ],
+      "risks": "Script tests (bashrc.test.bash, zshrc.test.py, init.test.fish) are not wired into any package script/CI; run manually."
+    },
+    {
+      "id": "backend-core/agent-detect",
+      "title": "In-stream agent detection: OSC 133/9/99/777 parsing, Terax hook marker, agent status signals",
+      "paths": [
+        "src-tauri/src/modules/pty/agent_detect.rs"
+      ],
+      "disposition": "adapt",
+      "rationale": "Keep (AGT-001, AGT-004). Phase 0: TERAX_MARKER `notify;Terax;` (agent_detect.rs:35,421) is the hook marker emitted by `<exe> __terax_notify` (lib.rs:170); it must become lut-specific so Terax hooks running inside lut panes (and vice versa) are not misattributed (F0:10, 13.2:21).",
+      "couplings": [
+        "agents (agent::emit_conout_marker, terax_control_protocol::hook::clean_text agent_detect.rs:6)"
+      ],
+      "risks": "Marker must change together with the emitter in agent.rs (agents area)."
+    },
+    {
+      "id": "backend-core/proc",
+      "title": "Process helpers: captured child processes, Windows Job Object, RSS, hide_console",
+      "paths": [
+        "src-tauri/src/modules/proc/"
+      ],
+      "disposition": "keep",
+      "rationale": "Shared plumbing used by pty (session.rs, pty_diagnostics mod.rs:513), git/process.rs, lsp/session.rs, workspace.rs, shell/. Job Object kill-on-close is the Windows orphan guard (13.3:1). Thread names terax-cap-* are internal.",
+      "couplings": [
+        "ide-tools (git/process.rs, lsp/session.rs)",
+        "state-settings (workspace.rs)"
+      ],
+      "risks": "Callers shrink as ide-tools/ai are removed; re-check for dead code afterwards."
+    },
+    {
+      "id": "backend-core/shell-exec",
+      "title": "Non-PTY shell execution (one-shot commands, persistent shell sessions, background processes) for AI tools",
+      "paths": [
+        "src-tauri/src/modules/shell/",
+        "src-tauri/tests/shell_background.rs"
+      ],
+      "disposition": "remove",
+      "rationale": "Only callers are the BYOK AI agent tools (src/modules/ai/lib/native.ts) and editor external formatting (src/modules/editor/lib/externalFormat.ts); lut retires integrated AI (ADR-004) and the IDE editor (ADR-002, 10.2). Remove once those consumers are gone.",
+      "couplings": [
+        "ai (src/modules/ai/lib/native.ts)",
+        "ide-tools (src/modules/editor/lib/externalFormat.ts)"
+      ],
+      "risks": "~1000 deleted lines (mechanical)."
+    },
+    {
+      "id": "backend-core/ipc-body",
+      "title": "Raw IPC request body helper",
+      "paths": [
+        "src-tauri/src/modules/ipc_body.rs"
+      ],
+      "disposition": "remove",
+      "rationale": "Only used by net.rs and ai_sessions.rs (AI BYOK, ADR-004). Remove with the AI modules.",
+      "couplings": [
+        "ai (net.rs, ai_sessions.rs)"
+      ],
+      "risks": "Trivial to restore if a future command needs raw bodies."
+    },
+    {
+      "id": "backend-core/history",
+      "title": "Shell history index (zsh/bash/fish histfiles + PATH) for command suggestions",
+      "paths": [
+        "src-tauri/src/modules/history/"
+      ],
+      "disposition": "remove",
+      "rationale": "User decision 3 (analysis/decisions.md): only serves block-mode suggestions and the palette history mode, both removed with blocks mode. (Analyst: Used only by terminal block-mode suggestions (src/modules/terminal/block/lib/history.ts). Not required by the proposal; keep/drop depends on whether lut keeps block mode/autosuggest (terminal area decision). Reads user histfiles only; no identity impact.)",
+      "couplings": [
+        "terminal (block/lib/history.ts)"
+      ],
+      "risks": "No PowerShell history support, so limited value on lut's first target (Windows 11)."
+    },
+    {
+      "id": "backend-core/runtime",
+      "title": "Tokio runtime sizing for commands",
+      "paths": [
+        "src-tauri/src/modules/runtime.rs"
+      ],
+      "disposition": "keep",
+      "rationale": "Generic and small; keeps idle footprint low (13.4:5).",
+      "couplings": [],
+      "risks": ""
+    },
+    {
+      "id": "backend-core/window-presentation",
+      "title": "Window presentation state (live resize, occlusion/sleep) for renderers",
+      "paths": [
+        "src-tauri/src/modules/window_presentation.rs"
+      ],
+      "disposition": "keep",
+      "rationale": "Renderer behaviour, not visual design; feeds terminal/ghostty/windowPresentation.ts (ADR-003, 5.4:4). Revisit for multi-window (F7:1).",
+      "couplings": [
+        "terminal (ghostty/windowPresentation.ts)"
+      ],
+      "risks": ""
+    },
+    {
+      "id": "backend-core/vibrancy",
+      "title": "Window backdrop (Mica / NSVisualEffectView) commands",
+      "paths": [
+        "src-tauri/src/modules/vibrancy.rs"
+      ],
+      "disposition": "keep",
+      "rationale": "User decision 16 (analysis/decisions.md): window vibrancy is a kept personalisation feature. (Analyst: Pure visual capability; whether lut uses a translucent backdrop is part of the user's UI design (ADR-002). Leave untouched until the design decides; then keep or remove.)",
+      "couplings": [
+        "app-shell (src/modules/theme/vibrancy.ts)"
+      ],
+      "risks": ""
+    },
+    {
+      "id": "backend-core/pty-smoke",
+      "title": "Real-webview PTY transport smoke/perf harness (macOS only)",
+      "paths": [
+        "scripts/pty-smoke/"
+      ],
+      "disposition": "adapt",
+      "rationale": "Valuable baseline for 13.4:2/13.4:3 and F0:11, but run.py refuses non-Darwin hosts and builds a temp app with bundle id app.crynta.terax.pty-smoke-*. Port to Windows 11, use lut identifiers, drop driver-old.ts (benchmarks the removed per-terminal channel transport).",
+      "couplings": [
+        "build-identity (reads src-tauri/tauri.conf.json)",
+        "terminal (driver-new.ts reimplements the pty-bridge wire)"
+      ],
+      "risks": "Uses tauri build --debug; slow; needs WebView2 automation on Windows."
+    },
+    {
+      "id": "backend-core/ipc-profile",
+      "title": "IPC profiling harness for fs/lsp/AI-session commands (macOS only)",
+      "paths": [
+        "scripts/ipc-profile/"
+      ],
+      "disposition": "adapt",
+      "rationale": "User decision 2 (analysis/decisions.md): fs/lsp stay; drop only the AI-session parts of the harness when AI is removed. (Analyst: Exercises fs_grep/fs_search/lsp_host_pid/AI sessions (smoke.ts:1-90), all owned by removed areas (ADR-004, ADR-002); macOS only (run.py:18).)",
+      "couplings": [
+        "ai (modules/ai/lib/sessions)",
+        "ide-tools (fs_*, lsp_*)"
+      ],
+      "risks": ""
+    },
+    {
+      "id": "backend-core/test-common",
+      "title": "Shared integration-test helpers",
+      "paths": [
+        "src-tauri/tests/common/"
+      ],
+      "disposition": "keep",
+      "rationale": "Used by tests/fs_search.rs and tests/git_operations.rs (other areas); remove only when its last user goes.",
+      "couplings": [
+        "ide-tools (tests/fs_search.rs, tests/git_operations.rs)"
+      ],
+      "risks": ""
+    }
+  ],
+  "notes": "Phase 0 identity collisions found here: ~/.cache/terax/shell-integration (and WSL $HOME/.cache/terax) shared and overwritten by both apps; TERAX_* env vars injected into children and read by terax-cli; __TERAX_HOOKS_LOADED guard; OSC 777 marker notify;Terax; plus the `__terax_notify` argv subcommand. The terax-pty URI scheme and thread names do NOT collide. pty_has_foreground_job has no frontend caller."
+}

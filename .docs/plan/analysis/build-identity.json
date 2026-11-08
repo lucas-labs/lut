@@ -1,0 +1,250 @@
+{
+  "area": "build-identity",
+  "items": [
+    {
+      "id": "build-identity/tauri-config",
+      "title": "Tauri app/bundle configuration (base + Windows + Linux overrides)",
+      "paths": [
+        "src-tauri/tauri.conf.json",
+        "src-tauri/tauri.windows.conf.json",
+        "src-tauri/tauri.linux.conf.json"
+      ],
+      "disposition": "adapt",
+      "rationale": "Carries the shared identity: identifier app.crynta.terax (tauri.conf.json:5, derives app data/config/local-data dirs and the WebView profile, hence localStorage), updater pubkey+endpoint (:118-123), createUpdaterArtifacts (:48), sidecar name binaries/terax-cli (:38-40). Phase 0 must change identifier and updater (F0:4, F0:10, identity:1, ADR-008, 13.2:21-22, 16:26). productName/title/descriptions/copyright/publisher/'Terax Document' are visual rebranding (identity:2). fileAssociations (:98-113) register lut as editor for ~60 code extensions, which contradicts 2.3 (not an editor); CSP connect-src https: (:29) exists for BYOK AI (ADR-004) and can be tightened once AI is removed.",
+      "couplings": [
+        "backend-core (terax-pty: custom protocol in CSP)",
+        "agents/terax-cli sidecar (externalBin, scripts/build-cli.mjs)",
+        "terminal/ghostty-core licenses (bundle.resources)",
+        "ai (CSP https: connect-src, net.rs)",
+        "ide-tools (fileAssociations open files in editor, preview frame-src)"
+      ],
+      "risks": "Changing productName changes the main binary/installer names and the NSIS install dir; the identifier change resets window-state, stores and localStorage (acceptable: no lut users yet)."
+    },
+    {
+      "id": "build-identity/updater-logic",
+      "title": "Updater check/install hook (frontend)",
+      "paths": [
+        "src/modules/updater/useUpdater.ts",
+        "src/modules/updater/index.ts"
+      ],
+      "disposition": "remove",
+      "rationale": "User decision 5 (analysis/decisions.md): tauri-plugin-updater is removed in Phase 0; lut's own updater is re-added in F7. (Analyst: Calls plugin-updater check() (useUpdater.ts:104) on mount and on Linux fetches https://api.github.com/repos/crynta/terax-ai/releases/latest (:9-10, :52). F0:4 requires it never reaches Terax infrastructure; F7:auto-actualizacion-de-lut rebuilds it with lut endpoint, own key, channel and opt-out. Logic (status machine, throttle) is reusable; endpoints are not.)",
+      "couplings": [
+        "app-shell (src/app/App.tsx:120,1668 mounts UpdaterDialog)",
+        "state-settings (src/settings/sections/AboutSection.tsx:2,27 manual check)",
+        "backend-core (src-tauri/src/lib.rs:198 updater plugin)"
+      ],
+      "risks": "Removing the plugin without removing the import in AboutSection/App breaks the build; keep F0 change minimal (disable) and leave removal/rebuild to F7."
+    },
+    {
+      "id": "build-identity/updater-dialog",
+      "title": "Updater dialog UI",
+      "paths": [
+        "src/modules/updater/UpdaterDialog.tsx"
+      ],
+      "disposition": "remove",
+      "rationale": "User decision 5 (analysis/decisions.md): removed with the updater plugin; F7 re-adds an update UI per the user's design. (Analyst: Purely visual Terax component; lut's update UX is designed by the user (F7:auto-actualizacion-de-lut, F7:6). Until then it is inert once the check is disabled.)",
+      "couplings": [
+        "app-shell (src/app/App.tsx:1668)"
+      ],
+      "risks": "None while the check is disabled."
+    },
+    {
+      "id": "build-identity/capabilities",
+      "title": "Tauri capabilities (permissions per window)",
+      "paths": [
+        "src-tauri/capabilities/"
+      ],
+      "disposition": "adapt",
+      "rationale": "desktop.json grants updater:default and process:default (used by updater relaunch); default.json grants notification, autostart, store, os, opener, log, window ops for windows main+settings; clipboard.json clipboard read/write. updater:default must go with F0:4/F7; settings window entry follows app-shell/state-settings decisions; autostart relates to 8.5 risk. Least privilege after removals (AI, editor).",
+      "couplings": [
+        "backend-core (src-tauri/src/lib.rs:196-215 plugin registration)",
+        "state-settings (settings window label)"
+      ],
+      "risks": "Removing a permission still used by frontend code fails at runtime, not at build; verify by exercising each feature."
+    },
+    {
+      "id": "build-identity/windows-installer-hooks",
+      "title": "NSIS installer hooks: 'Open in Terax' Explorer verbs",
+      "paths": [
+        "src-tauri/installer-hooks.nsh"
+      ],
+      "disposition": "adapt",
+      "rationale": "Writes HKCU\\Software\\Classes\\{Directory,Directory\\Background,Drive}\\shell\\OpenInTerax (installer-hooks.nsh:6-19) and deletes them on uninstall (:23-25). These registry keys are SHARED with an installed Terax: installing lut would hijack Terax's verb and uninstalling lut would delete Terax's. Phase 0 isolation (F0:10, identity:1, 13.2:21, 16:26); verb label is visual (identity:2).",
+      "couplings": [
+        "build-identity/cargo-manifest (exe name terax.exe)",
+        "backend-core (src-tauri/src/lib.rs:67-80 parse_launch_target reads the %V argument)"
+      ],
+      "risks": "Exe name must match the Cargo binary/productName after renaming."
+    },
+    {
+      "id": "build-identity/macos-plists",
+      "title": "macOS Info.plist and entitlements",
+      "paths": [
+        "src-tauri/Info.plist",
+        "src-tauri/entitlements.plist"
+      ],
+      "disposition": "adapt",
+      "rationale": "Camera/microphone usage strings mention Terax (Info.plist:6,8, visual identity:2); entitlements grant camera and audio-input for programs run in the terminal and Terax voice input (STT, removed with AI per ADR-004). Keep only if CLI programs in the terminal need them (open question).",
+      "couplings": [
+        "ai (voice input src/modules/ai/lib/stt.ts)"
+      ],
+      "risks": "Dropping audio-input breaks CLI tools that use the mic inside the terminal on macOS."
+    },
+    {
+      "id": "build-identity/icons-logos",
+      "title": "App icons and logos",
+      "paths": [
+        "src-tauri/icons/",
+        "terax-icon.png",
+        "public/logo.png"
+      ],
+      "disposition": "replace",
+      "rationale": "Terax artwork (binary assets; android/ios sets are unused for a desktop app). Visual rebranding (identity:2, ADR-008) owned by the user's design; mobile icon sets can be dropped.",
+      "couplings": [
+        "ai (src/modules/ai/components/AiMiniWindow.tsx:543 uses /logo.png)",
+        "build-identity/tauri-config (bundle.icon, nsis installerIcon)"
+      ],
+      "risks": "None functionally; tauri build fails if referenced icon files disappear."
+    },
+    {
+      "id": "build-identity/cargo-manifest",
+      "title": "Cargo workspace manifest, lockfile and build script",
+      "paths": [
+        "src-tauri/Cargo.toml",
+        "src-tauri/Cargo.lock",
+        "src-tauri/build.rs"
+      ],
+      "disposition": "adapt",
+      "rationale": "Package name terax / default-run terax (Cargo.toml:2,8) determines the executable name (terax.exe, ADR-008 wants `lut`); lib terax_lib; workspace members crates/terax-cli and crates/terax-control-protocol; tauri-plugin-updater dependency (:154); bench feature. build.rs resolves the binaries/terax-cli-<target> sidecar (build.rs:15). Exe rename is required for installer/launcher isolation; crate/lib renames are rename-on-touch only. Dependencies are pruned per area removal (9.9:6).",
+      "couplings": [
+        "agents (crates/terax-cli, crates/terax-control-protocol)",
+        "agents/backend-core (control.rs:927,946 launcher terax/terax.exe)",
+        "build-identity/node-package (scripts/build-cli.mjs)"
+      ],
+      "risks": "Renaming the bin changes paths that control.rs and hook commands embed; must be done together with agents area isolation."
+    },
+    {
+      "id": "build-identity/node-package",
+      "title": "package.json, pnpm workspace and lockfile",
+      "paths": [
+        "package.json",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml"
+      ],
+      "disposition": "adapt",
+      "rationale": "Package name terax (internal), pnpm 11.9.0 pinned, node >=22, scripts (several macOS-only python profilers), deps for areas being removed (ai-sdk, codemirror, updater plugin). Prune deps only after the import graph confirms impact (9.9:6); toolchain docs (F0:6, F0:7).",
+      "couplings": [
+        "ai (@ai-sdk/*, ai, streamdown)",
+        "ide-tools (@codemirror/*, codemirror-languageserver)",
+        "terminal (@terax/ghostty-core workspace package)"
+      ],
+      "risks": "minimumReleaseAge 4320 (pnpm-workspace.yaml:4) blocks freshly published versions during dependency bumps."
+    },
+    {
+      "id": "build-identity/frontend-build-config",
+      "title": "Vite, TypeScript, Biome, knip and size-limit configuration",
+      "paths": [
+        "vite.config.ts",
+        "tsconfig.json",
+        "tsconfig.node.json",
+        "src/vite-env.d.ts",
+        "biome.json",
+        "knip.json",
+        ".size-limit.json"
+      ],
+      "disposition": "adapt",
+      "rationale": "Builds two windows (index.html, settings.html), manualChunks for AI/codemirror, __TERAX_BENCH__ define (vite.config.ts:214-218), bench identifier guard (:12-30), size budgets naming chunks of removed areas. Needs updates as areas are removed (F2:8) and when the shell is replaced; TERAX_BENCH env names are internal (rename-on-touch).",
+      "couplings": [
+        "app-shell (settings.html window)",
+        "ai/ide-tools (manualChunks, size budgets)",
+        "src/app/dist-budget.test.ts, src/app/eager-budget.test.ts"
+      ],
+      "risks": "Size budgets fail CI when chunk names disappear; update together with removals."
+    },
+    {
+      "id": "build-identity/bench-app-lab",
+      "title": "Real-application benchmark (app lab): frontend driver, bench feature, scripts",
+      "paths": [
+        "src/bench/",
+        "src-tauri/src/modules/bench.rs",
+        "scripts/app-lab/"
+      ],
+      "disposition": "adapt",
+      "rationale": "Useful for F0:11 measurements but macOS-only (bench.rs:722 window control). Its safety guard hardcodes the product identifier app.crynta.terax (bench.rs:17, run.py:58,216): after the Phase 0 identifier change it would no longer stop a bench build running under lut's product identifier. Must follow the identifier change (F0:10). Windows support is an open question.",
+      "couplings": [
+        "app-shell (src/main.tsx:24, src/app/App.tsx:154-157)",
+        "terminal (__TERAX_BENCH__ branches in ghostty gpu modules)",
+        "backend-core (src-tauri/src/lib.rs:239,422-427)"
+      ],
+      "risks": "Stale PRODUCT_IDENTIFIER silently disables the guard; bench builds could share the real lut profile."
+    },
+    {
+      "id": "build-identity/bundle-graph-scripts",
+      "title": "Startup/dist import-graph analyzers",
+      "paths": [
+        "scripts/dist-graph.*",
+        "scripts/eager-graph.*"
+      ],
+      "disposition": "keep",
+      "rationale": "Generic analyzers used by dist/eager budget tests; directly useful for F0:12 (import graph) and F2:8. No identity content.",
+      "couplings": [
+        "app-shell (src/app/dist-budget.test.ts, src/app/eager-budget.test.ts)"
+      ],
+      "risks": ""
+    },
+    {
+      "id": "build-identity/nix-package",
+      "title": "Nix flake packaging Terax release binaries",
+      "paths": [
+        "flake.nix",
+        "flake.lock",
+        "nix/"
+      ],
+      "disposition": "remove",
+      "rationale": "nix/package.nix:13-26 downloads Terax release .deb/.app from github.com/crynta/terax-ai; it packages Terax, not lut, and is a Terax distribution channel (F0:5, 16:26). lut packaging is F7:6; a lut flake could be re-added then.",
+      "couplings": [],
+      "risks": "None; nothing in the build references it."
+    },
+    {
+      "id": "build-identity/licenses",
+      "title": "Apache-2.0 license and Terax provenance notice",
+      "paths": [
+        "LICENSE",
+        "public/licenses/terax.txt"
+      ],
+      "disposition": "keep",
+      "rationale": "LICENSE is Terax's Apache-2.0 text; public/licenses/terax.txt is the provenance + modification notice (14.3:2, 14.3:3) copied into dist by Vite. Required by F0:2/14.3; bundling of third-party licenses is verified by a draft issue.",
+      "couplings": [
+        "terminal (packages/ghostty-core LICENSE files via bundle.resources)",
+        "public/licenses/terminal-symbols.txt (other area)"
+      ],
+      "risks": "Must not be removed during rebranding."
+    },
+    {
+      "id": "build-identity/repo-tooling",
+      "title": "Repo hygiene: gitignores and VS Code settings",
+      "paths": [
+        ".gitignore",
+        "src-tauri/.gitignore",
+        ".vscode/"
+      ],
+      "disposition": "keep",
+      "rationale": "Generic tooling, no Terax identity.",
+      "couplings": [],
+      "risks": ""
+    },
+    {
+      "id": "build-identity/coderabbit",
+      "title": "CodeRabbit review configuration",
+      "paths": [
+        ".coderabbit.yaml"
+      ],
+      "disposition": "remove",
+      "rationale": "Terax's external review-bot config; Terax GitHub automation was already removed (commit 154a6cf). Not part of lut's workflow unless the user opts in.",
+      "couplings": [],
+      "risks": "None."
+    }
+  ],
+  "notes": "Repo-wide 'terax' inventory: 1964 occurrences / 553 distinct tokens (excluding .docs/): terminal 633, backend-core 513, agents 224, build-identity 171, ide-tools 170, app-shell 119, ai 71, state-settings 63. Class (a) items outside this area: dirs cache 'terax' (control.rs:758, terax-cli lib.rs:300, fs/read_policy.rs:15), ~/.cache/terax/shell-integration (pty/shell_init.rs:449), TERAX_* env vars injected into PTYs (TERAX_PANE_ID, TERAX_CLI, TERAX_CONTROL_ADDR/TOKEN, TERAX_TERMINAL, TERAX_BLOCKS, TERAX_USER_ZDOTDIR, TERAX_WSL_LOGIN_SHELL), hook marker name 'terax' (agent.rs:318) and __terax_notify (lib.rs:169), terax-pi-notifications, keyring service 'terax-ai' (src/modules/ai/config.ts:1), git refs refs/terax/* and .git/terax-* files (ide-tools), terax/ project dir (.terax/project.toml), store files terax-*.json (state-settings/ai), event names terax://... are internal. The identifier change alone isolates app data dir, stores, window-state and WebView localStorage; the dirs::cache_dir()/terax paths and env vars do not depend on it."
+}

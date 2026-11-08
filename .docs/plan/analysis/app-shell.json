@@ -1,0 +1,493 @@
+{
+  "area": "app-shell",
+  "items": [
+    {
+      "id": "app-shell/app-root",
+      "title": "App.tsx monolithic coordinator",
+      "paths": [
+        "src/app/App.tsx"
+      ],
+      "disposition": "replace",
+      "rationale": "1695-line component that owns tab/space state wiring, the shortcut handler map, agent launch flow, AI/editor/explorer/source-control/LSP/updater mounting and the layout. Proposal 5.10:7 and 10.2:1 require rewriting it as a small AppShell + services/hooks (F1:1, F2:2); 9.9:5 requires dropping the root AiComposerProvider (App.tsx:1694). Logic is extracted first (refactor issues), then the shell is rebuilt on the user's design.",
+      "couplings": [
+        "ai (App.tsx:22-33,369,1625-1634,1694)",
+        "ide-tools editor/explorer/git/source-control/lsp/preview (App.tsx:41-55,73-77,1395,1506-1527)",
+        "state-settings spaces/settings (App.tsx:56-58,78-83,262-293)",
+        "terminal (App.tsx:94-112)",
+        "agents/control (App.tsx:15-21,40,637,1386)",
+        "build-identity updater (App.tsx:120,1668)"
+      ],
+      "risks": "Highest-risk file: session lifecycle invariants (5.4:1, 3.4:invariant) are enforced implicitly by mount structure; a rewrite can unmount TerminalStack. Needs F1:7 tests before restructuring."
+    },
+    {
+      "id": "app-shell/close-guards",
+      "title": "Tab and app close guards, workspace switcher (logic)",
+      "paths": [
+        "src/app/hooks/"
+      ],
+      "disposition": "adapt",
+      "rationale": "Pure close planning (tabCloseGuards.ts) and the onCloseRequested guard implement TER-011 / 13.2:9 and are UI-independent. Adapt: drop AI chat flush (useAppCloseGuard.ts:2-6,79-97) and editor-dirty checks once editor is optional; move useWorkspaceSwitcher off modules/ai/lib/native (useWorkspaceSwitcher.ts:3) per F2:3/9.9:4.",
+      "couplings": [
+        "ai/chat-store (useAppCloseGuard.ts:2)",
+        "ai/native (useWorkspaceSwitcher.ts:3)",
+        "terminal leafHasForegroundProcess (useAppCloseGuard.ts:17)",
+        "state-settings preferences.confirmCloseRunningTerminal (useAppCloseGuard.ts:110)"
+      ],
+      "risks": "closeAfterFlush semantics exist only for AI history; removing them must keep 'window always closable'."
+    },
+    {
+      "id": "app-shell/close-dialogs",
+      "title": "Close confirmation dialogs (visual)",
+      "paths": [
+        "src/app/components/CloseDialogs.tsx"
+      ],
+      "disposition": "replace",
+      "rationale": "Purely presentational alert dialogs ('Quit Terax?' at CloseDialogs.tsx:291). Rebuild on the user's design; behaviour stays in close-guards (TER-011).",
+      "couplings": [
+        "app-shell/close-guards"
+      ]
+    },
+    {
+      "id": "app-shell/workspace-surface",
+      "title": "WorkspaceSurface (tab content switcher)",
+      "paths": [
+        "src/app/components/WorkspaceSurface.tsx"
+      ],
+      "disposition": "replace",
+      "rationale": "Mounts Editor/AiDiff/GitDiff/GitHistory/Markdown/Preview stacks next to terminals (WorkspaceSurface.tsx:3-6). 10.2:5 and 10.3:4 require terminal as default surface with optional ContentTab/ToolWindow capabilities (F1:6, 6.2:8).",
+      "couplings": [
+        "ide-tools editor/git-history/markdown/preview (WorkspaceSurface.tsx:3-6)",
+        "terminal TerminalStack"
+      ]
+    },
+    {
+      "id": "app-shell/workspace-input-bar",
+      "title": "WorkspaceInputBar (AI composer + block input)",
+      "paths": [
+        "src/app/components/WorkspaceInputBar.tsx"
+      ],
+      "disposition": "remove",
+      "rationale": "Hosts the built-in AI composer (WorkspaceInputBar.tsx:3-6,24). F2:4 and 5.10:11 remove the integrated AI from the main flow. The block-input toggle event (TOGGLE_BLOCK_INPUT_EVENT, :29) must be re-homed in the terminal area if blocks survive.",
+      "couplings": [
+        "ai composer (WorkspaceInputBar.tsx:3-6,24)",
+        "terminal blocks (terminal.toggleInput shortcut)"
+      ]
+    },
+    {
+      "id": "app-shell/system-info",
+      "title": "OS/shell info hook",
+      "paths": [
+        "src/app/components/useSystemInfo.ts"
+      ],
+      "disposition": "keep",
+      "rationale": "Small IPC wrapper (pty_shell_name, useSystemInfo.ts:16) useful for context indicators (8.5:3)."
+    },
+    {
+      "id": "app-shell/os-icon",
+      "title": "OsIcon visual",
+      "paths": [
+        "src/app/components/OsIcon.tsx"
+      ],
+      "disposition": "replace",
+      "rationale": "Purely visual icon; iconography is part of the user's design (UX-006)."
+    },
+    {
+      "id": "app-shell/git-branch-hook",
+      "title": "useGitBranch hook",
+      "paths": [
+        "src/app/components/useGitBranch.ts"
+      ],
+      "disposition": "keep",
+      "rationale": "User decision 2 (analysis/decisions.md): Git stays as a secondary tool. (Analyst: Thin wrapper over modules/git (useGitBranch.ts:1). Its fate follows the ide-tools decision on optional Git (F2:6, UX-009).)",
+      "couplings": [
+        "ide-tools git"
+      ]
+    },
+    {
+      "id": "app-shell/budget-tests",
+      "title": "Bundle/startup budget tests",
+      "paths": [
+        "src/app/dist-budget.test.ts",
+        "src/app/eager-budget.test.ts",
+        "src/app/feature-loading.test.tsx"
+      ],
+      "disposition": "adapt",
+      "rationale": "Guards that heavy stacks (AI SDK, CodeMirror, Streamdown) stay lazy and that the bench build never uses the product identifier (dist-budget.test.ts:281-321, 'app.crynta.terax' at :316). Valuable for F2:8 and 13.4:1; must be updated as AI/editor stacks are removed and when the bundle id changes.",
+      "couplings": [
+        "build-identity bundle id / TERAX_BENCH_IDENTIFIER",
+        "ai, ide-tools lazy stacks (feature-loading.test.tsx:4-8)"
+      ]
+    },
+    {
+      "id": "app-shell/main-entry",
+      "title": "Entry point (main.tsx, index.html)",
+      "paths": [
+        "src/main.tsx",
+        "index.html"
+      ],
+      "disposition": "adapt",
+      "rationale": "Boot order is load-bearing: pty_close_all before any tab (main.tsx:30), initLaunchDir before first paint (:33), hidden-window show (:42-50). Keep logic; adapt index.html title 'Terax' (:7, visual rebranding identity:2) and the pre-paint theme key 'terax-ui-theme-shadow' (:11) shared with the theme module.",
+      "couplings": [
+        "state-settings theme (terax-ui-theme-shadow key)",
+        "terminal diagnostics/bench (main.tsx:24,52)",
+        "backend-core pty_close_all"
+      ]
+    },
+    {
+      "id": "app-shell/app-menu",
+      "title": "macOS app menu with guarded Quit",
+      "paths": [
+        "src-tauri/src/modules/app_menu.rs"
+      ],
+      "disposition": "keep",
+      "rationale": "macOS-only default menu whose Quit is replaced by a guarded item that routes through window close (app_menu.rs:19-53,55-71), feeding TER-011. Menu id 'terax.quit' is internal (rename on touch). 6.2:10 native menu work can extend it later."
+    },
+    {
+      "id": "app-shell/window-controls",
+      "title": "Custom window controls (Windows/Linux)",
+      "paths": [
+        "src/components/WindowControls.tsx"
+      ],
+      "disposition": "replace",
+      "rationale": "Visual min/max/close buttons for borderless chrome on non-macOS (USE_CUSTOM_WINDOW_CONTROLS, platform.ts:19). Behaviour is a few getCurrentWindow() calls; rebuild with the new header design (10.2:2).",
+      "couplings": [
+        "app-shell/header"
+      ]
+    },
+    {
+      "id": "app-shell/ui-primitives",
+      "title": "shadcn/Radix UI primitives in use",
+      "paths": [
+        "components.json",
+        "src/components/ui/alert-dialog.tsx",
+        "src/components/ui/badge.tsx",
+        "src/components/ui/breadcrumb.tsx",
+        "src/components/ui/button-group.tsx",
+        "src/components/ui/button.tsx",
+        "src/components/ui/checkbox.tsx",
+        "src/components/ui/collapsible.tsx",
+        "src/components/ui/command.tsx",
+        "src/components/ui/context-menu.tsx",
+        "src/components/ui/dialog.tsx",
+        "src/components/ui/dropdown-menu.tsx",
+        "src/components/ui/hover-card.tsx",
+        "src/components/ui/input-group.tsx",
+        "src/components/ui/input.tsx",
+        "src/components/ui/kbd.tsx",
+        "src/components/ui/label.tsx",
+        "src/components/ui/popover.tsx",
+        "src/components/ui/progress.tsx",
+        "src/components/ui/resizable.tsx",
+        "src/components/ui/scroll-area.tsx",
+        "src/components/ui/select.tsx",
+        "src/components/ui/separator.tsx",
+        "src/components/ui/slider.tsx",
+        "src/components/ui/sonner.tsx",
+        "src/components/ui/spinner.tsx",
+        "src/components/ui/switch.tsx",
+        "src/components/ui/tabs.tsx",
+        "src/components/ui/textarea.tsx",
+        "src/components/ui/toggle.tsx",
+        "src/components/ui/tooltip.tsx"
+      ],
+      "disposition": "keep",
+      "rationale": "User decision 6 (analysis/decisions.md): shadcn/Radix primitives are kept as the UI base; restyling comes with the redesign. (Analyst: shadcn-generated styled primitives (components.json). Radix behaviour is fine, but the styling is Terax's look; per the UI rule they are not a baseline and are restyled/rebuilt from the user's design system (UX-004, UX-006). Wide fan-in (button: 35 files, dropdown-menu: 11, spinner: 11).)",
+      "couplings": [
+        "every UI module in ai, agents, ide-tools, state-settings, terminal"
+      ],
+      "risks": "Swapping primitives touches many files; do it per primitive behind the same props API."
+    },
+    {
+      "id": "app-shell/ui-unused",
+      "title": "Unused shadcn primitives",
+      "paths": [
+        "src/components/ui/alert.tsx",
+        "src/components/ui/card.tsx",
+        "src/components/ui/empty.tsx",
+        "src/components/ui/item.tsx",
+        "src/components/ui/menubar.tsx",
+        "src/components/ui/radio-group.tsx",
+        "src/components/ui/sheet.tsx",
+        "src/components/ui/skeleton.tsx",
+        "src/components/ui/toggle-group.tsx"
+      ],
+      "disposition": "keep",
+      "rationale": "User decision 6 (analysis/decisions.md): primitives are kept as the UI base; unused ones may be used by the redesign. (Analyst: No importer anywhere in src (grep 'components/ui/<name>' returns 0): alert, card, empty, item, menubar, radio-group, sheet, skeleton, toggle-group. Dead code.)"
+    },
+    {
+      "id": "app-shell/lib-generic",
+      "title": "Generic helpers in src/lib",
+      "paths": [
+        "src/lib/utils.ts",
+        "src/lib/utils.test.ts",
+        "src/lib/platform.ts",
+        "src/lib/shellQuote.ts",
+        "src/lib/shellQuote.test.ts",
+        "src/lib/homeRelativePath.ts",
+        "src/lib/homeRelativePath.test.ts",
+        "src/lib/launchDir.ts",
+        "src/lib/external-link.ts",
+        "src/lib/external-link.test.ts",
+        "src/lib/fonts.ts",
+        "src/lib/fonts.test.ts",
+        "src/lib/usePresence.ts",
+        "src/lib/useZoom.ts"
+      ],
+      "disposition": "keep",
+      "rationale": "Widely used, UI-agnostic helpers: cn (92 importers), platform flags (21), shellQuote (7, needed for 14.1:2 startup commands), fonts (7, UX-005), launchDir (CLI cwd / open-with), usePresence, useZoom. 'Terax Terminal Symbols' font family (fonts.ts:29-30) is internal; rename on touch."
+    },
+    {
+      "id": "app-shell/lib-asset-grant",
+      "title": "useAssetGrant",
+      "paths": [
+        "src/lib/useAssetGrant.ts",
+        "src/lib/useAssetGrant.test.ts"
+      ],
+      "disposition": "keep",
+      "rationale": "User decision 2 (analysis/decisions.md): editor/markdown stay as secondary tools. (Analyst: Only used by editor and markdown (asset_grant/asset_revoke IPC, useAssetGrant.ts:21-22). Goes with the ide-tools decision (F2:6).)",
+      "couplings": [
+        "ide-tools editor, markdown"
+      ]
+    },
+    {
+      "id": "app-shell/command-palette-logic",
+      "title": "Command palette registry, search and ranking",
+      "paths": [
+        "src/modules/command-palette/commands.ts",
+        "src/modules/command-palette/commands.test.ts",
+        "src/modules/command-palette/types.ts",
+        "src/modules/command-palette/index.ts",
+        "src/modules/command-palette/lib/",
+        "src/modules/command-palette/hooks/"
+      ],
+      "disposition": "adapt",
+      "rationale": "UI-independent: static createCommandItems (commands.ts:69-306), fuzzy/mode/MRU/quickOpen libs, async query hooks. UX-008/F6:1 want a palette oriented to terminal/project actions: drop editor/preview/git/explorer/AI commands (commands.ts:166-297), make file/content search (fs_search, fs_grep_interactive) optional, add project/profile actions.",
+      "couplings": [
+        "ide-tools fs_search/fs_warm_index/fs_grep_interactive (useFileSearch.ts:47-106, useContentSearch.ts:31)",
+        "terminal history (useCommandHistory.ts:1)",
+        "app-shell/header SearchTarget (commands.ts:1)"
+      ]
+    },
+    {
+      "id": "app-shell/command-palette-ui",
+      "title": "CommandPalette component (visual)",
+      "paths": [
+        "src/modules/command-palette/CommandPalette.tsx"
+      ],
+      "disposition": "replace",
+      "rationale": "772-line presentational component (imports explorer FileIcon at CommandPalette.tsx:12, theme picker at :20). Rebuild on design (F6:1).",
+      "couplings": [
+        "ide-tools explorer FileIcon",
+        "state-settings theme"
+      ]
+    },
+    {
+      "id": "app-shell/header",
+      "title": "Header and inline search",
+      "paths": [
+        "src/modules/header/"
+      ],
+      "disposition": "replace",
+      "rationale": "10.2:2: new title bar. Header embeds tab strip props, agent notification bell, settings/AI buttons (Header.tsx:4-5,27-57); SearchInline routes search to terminal or editor (SearchInline.tsx:4). The search-target routing logic is small and is re-implemented over the terminal search controller (TER-006).",
+      "couplings": [
+        "agents NotificationBell (Header.tsx:4)",
+        "ide-tools editor handle (SearchInline.tsx:4)",
+        "terminal search"
+      ]
+    },
+    {
+      "id": "app-shell/shortcuts",
+      "title": "Shortcut registry, resolver and global listener",
+      "paths": [
+        "src/modules/shortcuts/"
+      ],
+      "disposition": "adapt",
+      "rationale": "UI-independent core: ShortcutId registry (shortcuts.ts:8-49), per-OS defaults (shortcutDefaults.ts:26,94), resolver with user overrides (resolveShortcut.ts:21-37), capture-phase listener reading preferences.shortcuts (useGlobalShortcuts.ts:21). Already user-configurable (TER-008). Adapt: remove ids of removed features (ai.*, editor.*, explorer.*, tab.newEditor/newPreview), add orientation/project shortcuts (F1:5, F6:6).",
+      "couplings": [
+        "state-settings preferences.shortcuts + shortcut recorder UI",
+        "app-shell/app-root handler map (App.tsx:1066)"
+      ]
+    },
+    {
+      "id": "app-shell/sidebar-logic",
+      "title": "Sidebar panel state",
+      "paths": [
+        "src/modules/sidebar/useSidebarPanel.ts",
+        "src/modules/sidebar/useSidebarPanel.test.ts",
+        "src/modules/sidebar/types.ts",
+        "src/modules/sidebar/index.ts"
+      ],
+      "disposition": "adapt",
+      "rationale": "Width/collapsed persistence (useSidebarPanel.ts:14-60) matches UX-003, but views are 'explorer' | 'source-control' (types.ts:1). Re-target to a projects sidebar (10.2:6, F1:4).",
+      "couplings": [
+        "ide-tools explorer/source-control panels",
+        "state-settings projects (future)"
+      ]
+    },
+    {
+      "id": "app-shell/sidebar-ui",
+      "title": "SidebarRail (visual)",
+      "paths": [
+        "src/modules/sidebar/SidebarRail.tsx"
+      ],
+      "disposition": "replace",
+      "rationale": "Visual rail of explorer/source-control buttons; replaced by the projects sidebar design (10.2:6)."
+    },
+    {
+      "id": "app-shell/statusbar-ui",
+      "title": "Status bar (visual)",
+      "paths": [
+        "src/modules/statusbar/StatusBar.tsx",
+        "src/modules/statusbar/CwdBreadcrumb.tsx",
+        "src/modules/statusbar/WorkspaceEnvSelector.tsx",
+        "src/modules/statusbar/index.ts"
+      ],
+      "disposition": "replace",
+      "rationale": "Mixes cwd breadcrumb, WSL env selector, LSP pill and AI controls (StatusBar.tsx:6-12,50-77). Context indicators (8.5:3) are re-designed by the user; AI/LSP parts go away (F2:4).",
+      "couplings": [
+        "ai (StatusBar.tsx:6-11)",
+        "ide-tools lsp (StatusBar.tsx:12)",
+        "app-shell/workspace-env"
+      ]
+    },
+    {
+      "id": "app-shell/diagnostics-badge",
+      "title": "Editor diagnostics badge",
+      "paths": [
+        "src/modules/statusbar/DiagnosticsBadge.tsx"
+      ],
+      "disposition": "replace",
+      "rationale": "User decision 2 (analysis/decisions.md): LSP diagnostics stay (secondary tool); the badge is redesigned with the status bar. (Analyst: Shows editor/LSP diagnostics only (DiagnosticsBadge.tsx:1); not part of a terminal-first status bar (16:23).)",
+      "couplings": [
+        "ide-tools editor diagnostics store"
+      ]
+    },
+    {
+      "id": "app-shell/statusbar-pathutils",
+      "title": "Breadcrumb path utils",
+      "paths": [
+        "src/modules/statusbar/lib/"
+      ],
+      "disposition": "keep",
+      "rationale": "Pure path-shaping helpers with tests; reusable for cwd indicators (8.5:3)."
+    },
+    {
+      "id": "app-shell/tabs-ui",
+      "title": "TabBar, NewTabMenu, TabSwitcherHud (visual)",
+      "paths": [
+        "src/modules/tabs/TabBar.tsx",
+        "src/modules/tabs/NewTabMenu.tsx",
+        "src/modules/tabs/TabSwitcherHud.tsx"
+      ],
+      "disposition": "replace",
+      "rationale": "10.2:3 (orientable navigator), 10.2:4 (NewTabMenu as profile catalog), 10.3:1 TabNavigator contract; TER-003/UX-002. TabBar imports editor language and explorer file icons (TabBar.tsx:17-24); NewTabMenu embeds the agent launcher (NewTabMenu.tsx:13-14).",
+      "couplings": [
+        "agents AgentIcon/launcher (TabBar.tsx:17-18, NewTabMenu.tsx:13-14)",
+        "ide-tools editor/explorer (TabBar.tsx:22-24)"
+      ]
+    },
+    {
+      "id": "app-shell/tabs-model",
+      "title": "useTabs tab/pane model and pure planners",
+      "paths": [
+        "src/modules/tabs/lib/useTabs.ts",
+        "src/modules/tabs/lib/useTabs.batching.test.ts",
+        "src/modules/tabs/lib/applyCloseTabsPlan.test.ts",
+        "src/modules/tabs/lib/nextActiveInSpace.test.ts",
+        "src/modules/tabs/lib/pickTabBySpaceIndex.test.ts",
+        "src/modules/tabs/lib/planCloseOtherTabs.test.ts",
+        "src/modules/tabs/lib/planCloseTabsToRight.test.ts",
+        "src/modules/tabs/lib/planCommitHistoryOpen.test.ts",
+        "src/modules/tabs/lib/planFileTabOpen.test.ts",
+        "src/modules/tabs/lib/planGitDiffOpen.test.ts",
+        "src/modules/tabs/lib/planSpaceRemoval.test.ts",
+        "src/modules/tabs/lib/reorderTabsByGap.test.ts",
+        "src/modules/tabs/index.ts"
+      ],
+      "disposition": "adapt",
+      "rationale": "React-state hook (useState+refs, useTabs.ts:586-623) with 8 tab kinds (useTabs.ts:128-136) and pure planners. 5.10:6/F2:1/10.3:2-5 require a NavigationStore with a terminal-tab contract; editor/preview/markdown/ai-diff/git kinds move to optional ContentTab and are removed once consumers migrate.",
+      "couplings": [
+        "terminal panes.ts/disposeSession (useTabs.ts:6-21)",
+        "agents launcher createAgentPanePlan (useTabs.ts:2-5)",
+        "state-settings spaces serialization (useSpacePersistence consumes Tab[])",
+        "ide-tools tab kinds"
+      ],
+      "risks": "Global window.__teraxNewBlockTab hook (useTabs.ts:804-805). Spaces persistence serializes Tab[]; changing kinds needs a migration (PRJ-014)."
+    },
+    {
+      "id": "app-shell/tabs-helpers",
+      "title": "Tab helpers (label, agent status, switcher, cwd)",
+      "paths": [
+        "src/modules/tabs/lib/tabAgentStatus.ts",
+        "src/modules/tabs/lib/tabAgentStatus.test.ts",
+        "src/modules/tabs/lib/tabLabel.ts",
+        "src/modules/tabs/lib/tabLabel.test.ts",
+        "src/modules/tabs/lib/useTabSwitcher.ts",
+        "src/modules/tabs/lib/useWorkspaceCwd.ts"
+      ],
+      "disposition": "keep",
+      "rationale": "Small pure helpers usable by any navigator: label derivation, per-tab agent status rollup (TER-012, 9.6:1), MRU switcher, active cwd."
+    },
+    {
+      "id": "app-shell/window-title",
+      "title": "Window title hook",
+      "paths": [
+        "src/modules/tabs/lib/useWindowTitle.ts"
+      ],
+      "disposition": "adapt",
+      "rationale": "APP_NAME = 'Terax' (useWindowTitle.ts:6) is user-visible: visual rebranding (identity:2).",
+      "couplings": [
+        "build-identity rebranding"
+      ]
+    },
+    {
+      "id": "app-shell/workspace-env",
+      "title": "Workspace env store (local/WSL)",
+      "paths": [
+        "src/modules/workspace/"
+      ],
+      "disposition": "keep",
+      "rationale": "Zustand store for local vs WSL distro (env.ts:26-47) with wsl_list_distros/wsl_home IPC; base for PRO-006 / F3:6. Will later be superseded per pane by profiles, but logic is reusable.",
+      "couplings": [
+        "state-settings setLastWslDistro (env.ts:3)",
+        "state-settings profiles (PRO-006)"
+      ]
+    },
+    {
+      "id": "app-shell/styles",
+      "title": "Global CSS, fonts.css and style budget tests",
+      "paths": [
+        "src/styles/globals.css",
+        "src/styles/fonts.css",
+        "src/styles/compositingBudget.test.ts",
+        "src/styles/motionBudget.test.ts"
+      ],
+      "disposition": "replace",
+      "rationale": "Terax's visual language (terax-* animations, chrome styles). Rebuilt on the user's design (UX-004, UX-006). The budget tests encode performance invariants (no infinite animations, compositing limits) worth porting to the new CSS.",
+      "risks": "fonts.css registers the bundled terminal symbol fonts the renderer relies on (fonts.css:53-66); keep those @font-face rules."
+    },
+    {
+      "id": "app-shell/code-highlight-css",
+      "title": "Code highlight CSS",
+      "paths": [
+        "src/styles/code-highlight.css"
+      ],
+      "disposition": "keep",
+      "rationale": "User decision 2 (analysis/decisions.md): editor/markdown stay as secondary tools. (Analyst: Used by editor/markdown/AI rendering; follows the ide-tools/ai decision (F2:6).)",
+      "couplings": [
+        "ide-tools markdown/editor",
+        "ai message rendering"
+      ]
+    },
+    {
+      "id": "app-shell/tokens",
+      "title": "Terminal theme tokens",
+      "paths": [
+        "src/styles/tokens.ts"
+      ],
+      "disposition": "keep",
+      "rationale": "5.10:9: reuse tokens. Maps CSS vars to the terminal palette (tokens.ts:1-76); UI-independent."
+    }
+  ],
+  "notes": "App.tsx is the hub that imports every removable area (ai, editor, explorer, git, source-control, lsp, preview, updater); removal of those areas is blocked by app-shell refactors. Webview localStorage keys (terax.sidebar.*, terax-palette-*, terax-ui-theme-shadow) are isolated from an installed Terax only through the bundle identifier / webview data dir (build-identity); verify in Phase 0. useWorkspaceSwitcher.ts:3 imports native from modules/ai (same issue as spaces/useSpacesBoot, 9.9:4)."
+}

@@ -1,0 +1,141 @@
+{
+  "area": "agents",
+  "items": [
+    {
+      "id": "agents/hook-installer",
+      "title": "Hook installer for Claude/Codex/Gemini configs and Pi extension (plan/apply/status)",
+      "paths": ["src-tauri/src/modules/agent.rs", "src-tauri/src/modules/agent_json.rs"],
+      "disposition": "adapt",
+      "rationale": "Solid core (format-preserving JSON edit, preview plan, atomic write, symlink-safe, refuses invalid JSON, only removes groups whose every command is ours). Must change ownership markers for identity isolation (F0:10, 13.2:21, 16:26): hook commands key on TERAX_CLI (agent.rs:278-285, 333), Gemini name \"terax\" (agent.rs:318), Pi file terax-notifications.ts (agent.rs:135-136) and LEGACY_MARKERS (agent.rs:255) would make lut adopt/remove Terax's hooks. Selective uninstall per agent exists (AGT-007, F5:2, 13.2:15, 16:20); the Windows __terax_notify CONOUT$ path (agent.rs:638-665) is Terax-legacy and should go.",
+      "couplings": ["backend-core: src-tauri/src/lib.rs:169-180 (__terax_notify argv handler), lib.rs:397-401 (command registration)", "app-shell: src/app/App.tsx:636-645 (silent agent_enable_hooks on launch)", "ai: src/modules/ai/lib/useAiLiveBridge.ts:131 (silent agent_enable_hooks)", "agents/ui-components (NotificationBell.tsx:201-229 one-click install)"],
+      "risks": "Dropping LEGACY_MARKERS and renaming the marker must be paired with tests proving Terax-owned groups survive lut install/uninstall. A lut dev build that already installed TERAX_CLI hooks would leave them behind (acceptable: no users yet, F0:10)."
+    },
+    {
+      "id": "agents/control-server",
+      "title": "Loopback TCP control server, descriptor file, per-pane credentials, CLI launcher dir",
+      "paths": ["src-tauri/src/modules/control.rs"],
+      "disposition": "adapt",
+      "rationale": "Keep the design (127.0.0.1:0, 256-bit tokens, per-pane token bound to pty id, constant-time compare, replay ids), which satisfies 9.2. Identity isolation (F0:10): descriptor path dirs::cache_dir()/terax/control.json (control.rs:755-768) is shared with an installed Terax and overwritten by whichever app starts last; launcher dir terax/run/<pid>/bin/terax(.exe) (control.rs:910-943) and bundled binary name terax-cli (control.rs:805-829) must become lut-specific.",
+      "couplings": ["backend-core: src-tauri/src/modules/pty/shell_init.rs:214-226 (injects TERAX_CONTROL_ADDR/TOKEN/PANE_ID/CLI and PATH)", "backend-core: src-tauri/src/modules/pty/mod.rs:242, session.rs:249", "backend-core: src-tauri/src/lib.rs:187-243,390-391,454", "agents/control-frontend-bridge (terax:control-request event)"],
+      "risks": "The descriptor collision is silent: a CLI outside a pane talks to whichever app started last."
+    },
+    {
+      "id": "agents/hook-broker",
+      "title": "Hook request handling, normalization dispatch, rate limiter, decision broker",
+      "paths": ["src-tauri/src/modules/agent_events.rs"],
+      "disposition": "keep",
+      "rationale": "Validates pane/pty ownership (agent_events.rs:425-437), rate-limits droppable kinds (100 burst, 50/s, agent_events.rs:29-31), emits terax:agent-event to the owning window only and the legacy terax:agent-signal; the decision broker only waits when a window announced readiness and falls back to the agent's own prompt on ui-gone/pane-closed/timeout (9.8:4, 13.5:1, 14.1:8). Event names are app-internal Tauri events (rename on touch only).",
+      "couplings": ["backend-core: src-tauri/src/modules/pty/agent_detect.rs (AgentSignal, HookIntent, link.apply_hook)", "backend-core: pty::PaneTarget / PtyState::pane_target"],
+      "risks": ""
+    },
+    {
+      "id": "agents/control-protocol",
+      "title": "terax-control-protocol crate: wire types, hook normalization per agent, payload trimming, decision rendering",
+      "paths": ["src-tauri/crates/terax-control-protocol/"],
+      "disposition": "adapt",
+      "rationale": "This is the AgentAdapter of 9.5/AGT-012 in Rust: normalize(agent,event,payload) -> HookFacts (adapt.rs:86) with size limits (mod.rs:15-28, trim.rs:42). Keep logic; only user-visible strings (\"Denied in Terax\", render.rs:46) need visual rebranding. Crate name is internal (rename on touch).",
+      "couplings": ["agents/cli-sidecar", "agents/hook-broker"],
+      "risks": "Event schemas per CLI version must be re-verified against official docs before enabling more events (9.4, 9.5)."
+    },
+    {
+      "id": "agents/cli-sidecar",
+      "title": "terax-cli sidecar (open/ping/capabilities/identify/hook) and its build script",
+      "paths": ["src-tauri/crates/terax-cli/", "scripts/build-cli.mjs"],
+      "disposition": "adapt",
+      "rationale": "Identity isolation (F0:10): reads TERAX_PANE_ID/TERAX_CONTROL_ADDR/TERAX_CONTROL_TOKEN/TERAX_HOOK_* (hook.rs:55-69, lib.rs:107,285-286) and falls back to cache/terax/control.json (lib.rs:300); binary name terax-cli (Cargo.toml:13, build-cli.mjs:59-81, TERAX_CLI_TARGET env at build-cli.mjs:50). Rename env vars, descriptor dir and output binary to lut equivalents; help text is visual rebranding.",
+      "couplings": ["build-identity: src-tauri/tauri.conf.json:38-39 (externalBin binaries/terax-cli)", "build-identity: package.json:12-13 (build:cli scripts), src-tauri/Cargo.toml:11-12,82 (workspace members)", "backend-core: src-tauri/src/modules/pty/scripts/profile.ps1:9-11, zshrc.zsh:26, init.fish:17 (`terax` shell function wrapping $TERAX_CLI)"],
+      "risks": "externalBin name, build script output and find_bundled_cli must change in the same PR."
+    },
+    {
+      "id": "agents/model",
+      "title": "Normalized agent model: types, reducer, attention ordering",
+      "paths": ["src/modules/agents/model/"],
+      "disposition": "keep",
+      "rationale": "Pure, well-tested reducer over hook/signal events with states starting/working/needs-input/needs-approval/... and provenance process|osc|hook (types.ts:1-23), matching 9.3/9.5/AGT-005/AGT-012. Not wired to any UI today (reduceAgents only referenced from tests). Wiring is new work (F5:1) tracked under agents/notifications-bridge.",
+      "couplings": ["agents/control-hook-adapter (hookEventToModelEvent, signalToModelEvent)"],
+      "risks": ""
+    },
+    {
+      "id": "agents/legacy-session-store",
+      "title": "agentStore: simplified CLI sessions + localAgent + notification list",
+      "paths": ["src/modules/agents/store/agentStore.ts", "src/modules/agents/store/agentStore.test.ts"],
+      "disposition": "adapt",
+      "rationale": "Mixes localAgent (AI agent) with CLI sessions and notifications (agentStore.ts:13-26); F2:5 and 9.9:3 require splitting before removing AI. Long term superseded by the reducer-backed store (F5:1).",
+      "couplings": ["ai: src/modules/ai/components/LocalAgentNotificationsBridge.tsx:3 (setLocalAgent)", "app-shell: NotificationBell via Header.tsx:4"],
+      "risks": ""
+    },
+    {
+      "id": "agents/managed-agents",
+      "title": "Managed (AI-supervised) Claude agents and auto-review rounds",
+      "paths": ["src/modules/agents/store/managedAgentsStore.ts", "src/modules/agents/lib/review.ts", "src/modules/agents/lib/review.test.ts"],
+      "disposition": "remove",
+      "rationale": "Only exists for Terax's built-in AI agent supervising Claude (review.ts:1,30-38 import ai chatStore/chatRuntime). lut drops the own AI agent; CLI agents must work without API keys (AGT-003, 13.2:17, F2:gate).",
+      "couplings": ["ai: src/modules/ai/tools/agent.ts:3, src/modules/ai/lib/useAiLiveBridge.ts:3, src/modules/ai/hooks/useAiBootstrap.ts:3", "agents/notifications-bridge (AgentNotificationsBridge.tsx:8,85,90)"],
+      "risks": "Must be removed together with or after the ai code that imports it."
+    },
+    {
+      "id": "agents/notification-routing",
+      "title": "Notification routing logic: delivery decision, dedupe gate, OS notification, sound, focus tracking, display names",
+      "paths": ["src/modules/agents/lib/route.ts", "src/modules/agents/lib/route.test.ts", "src/modules/agents/lib/delivery.ts", "src/modules/agents/lib/delivery.test.ts", "src/modules/agents/lib/notificationGate.ts", "src/modules/agents/lib/notificationGate.test.ts", "src/modules/agents/lib/notify.ts", "src/modules/agents/lib/notify.test.ts", "src/modules/agents/lib/sound.ts", "src/modules/agents/lib/sound.test.ts", "src/modules/agents/lib/useWindowFocus.ts", "src/modules/agents/lib/format.ts", "src/modules/agents/lib/format.test.ts", "src/modules/agents/lib/types.ts", "public/notification.mp3"],
+      "disposition": "adapt",
+      "rationale": "Logic is reusable for AGT-006 (focus action via onActivate, route.ts:24) but preferences are only two booleans (agentNotifications/agentNotificationSound, route.ts:43,58); AGT-010 requires per-kind types, sound choice and privacy (14.2). route.ts:3 imports showAgentToast (visual). Strings \"Terax notifications are working\" (notify.ts:40) and display name terax (format.ts:8) are visual rebranding.",
+      "couplings": ["state-settings: src/modules/settings/store.ts:184-186,282-284,379-381; settings/preferences", "ai: LocalAgentNotificationsBridge.tsx:1-2 uses routeAgentNotification/useWindowFocus", "agents/ui-components (AgentToast)"],
+      "risks": "notification.mp3 provenance/licence should be checked if kept."
+    },
+    {
+      "id": "agents/launcher-logic",
+      "title": "Agent launcher catalogue and command validation",
+      "paths": ["src/modules/agents/lib/launcher.ts", "src/modules/agents/lib/launcher.test.ts"],
+      "disposition": "keep",
+      "rationale": "Pure data/validation (launcher.ts:3-40 catalogue, control-char/length checks). The silent hook install lives in the caller (App.tsx:636) and is handled by agents-D04.",
+      "couplings": ["app-shell: src/app/App.tsx:620-650", "app-shell: src/modules/tabs/NewTabMenu.tsx:14, TabBar.tsx:18, Header.tsx:5", "state-settings: agentLaunchCommands"],
+      "risks": ""
+    },
+    {
+      "id": "agents/ui-components",
+      "title": "Agent UI components: launcher panel, notification bell, toast, agent icons, module barrel",
+      "paths": ["src/modules/agents/components/AgentLauncherPanel.tsx", "src/modules/agents/components/NotificationBell.tsx", "src/modules/agents/components/AgentToast.tsx", "src/modules/agents/lib/agentIcon.tsx", "src/modules/agents/index.ts"],
+      "disposition": "replace",
+      "rationale": "Purely visual Terax components; lut UI is designed by the user. Logic to salvage: hook status refresh and one-click install (NotificationBell.tsx:200-229, replaced by a consented preview flow, AGT-007), badge counting (NotificationBell.tsx:190-197), launch command persistence (AgentLauncherPanel.tsx:55-61). agentIcon has a terax -> /logo.png special case (agentIcon.tsx:54).",
+      "couplings": ["app-shell: Header.tsx:4, TabBar.tsx:17, NewTabMenu.tsx:13"],
+      "risks": ""
+    },
+    {
+      "id": "agents/notifications-bridge",
+      "title": "AgentNotificationsBridge: simplified signal -> agentStore -> notification path",
+      "paths": ["src/modules/agents/components/AgentNotificationsBridge.tsx"],
+      "disposition": "replace",
+      "rationale": "Renders nothing; consumes only terax:agent-signal (started/working/attention/finished/exited) and maps finished to 'waiting' (AgentNotificationsBridge.tsx:65-93), ignoring the detailed hook model. F5:1/AGT-012/9.5 require a non-visual service driven by reduceAgents + connectAgentEvents, with Stop treated as response-done, not exit (9.3).",
+      "couplings": ["terminal: subscribeAgentSignals, leafIdForPty (AgentNotificationsBridge.tsx:2-6)", "app-shell: App.tsx:1616", "agents/managed-agents (maybeTriggerManagedReview)"],
+      "risks": "Pane correlation via leafIdForPty must stay correct for panes sharing cwd (16:17)."
+    },
+    {
+      "id": "agents/control-hook-adapter",
+      "title": "Frontend control-module adapters: hook event parsing, terminal notifications, hooks config IPC",
+      "paths": ["src/modules/control/agents.ts", "src/modules/control/lib/agentEvents.ts", "src/modules/control/lib/agentEvents.test.ts", "src/modules/control/lib/hooksConfig.ts", "src/modules/control/lib/hooksConfig.test.ts"],
+      "disposition": "keep",
+      "rationale": "Validates native payloads (parseAgentHookEvent, agentEvents.ts:88) and maps them to model events; hooksConfig.ts already exposes plan/apply for a preview UI (AGT-007). Not yet consumed (control/agents.ts is not imported by app code). Event-name constants are internal.",
+      "couplings": ["agents/model", "agents/hook-installer (agent_hooks_* commands)"],
+      "risks": ""
+    },
+    {
+      "id": "agents/decision-client",
+      "title": "Frontend permission-decision client (agent_decisions_ready / agent_decision_respond)",
+      "paths": ["src/modules/control/lib/agentDecisions.ts", "src/modules/control/lib/agentDecisions.test.ts"],
+      "disposition": "defer",
+      "rationale": "UI approvals are P2 and out of the initial MVP (AGT-011, 9.8). Code is unused and harmless (agents only wait if a window announces readiness). Decide when AGT-011 is scheduled.",
+      "couplings": ["agents/hook-broker"],
+      "risks": "If enabled without the 9.8 guarantees, agents could block up to MAX_DECISION_SECS (900s)."
+    },
+    {
+      "id": "agents/control-frontend-bridge",
+      "title": "useControlBridge: answers CLI open/identify requests forwarded by the control server",
+      "paths": ["src/modules/control/useControlBridge.ts", "src/modules/control/useControlBridge.test.ts", "src/modules/control/lib/context.ts", "src/modules/control/lib/context.test.ts", "src/modules/control/lib/readiness.ts", "src/modules/control/lib/readiness.test.ts", "src/modules/control/index.ts"],
+      "disposition": "adapt",
+      "rationale": "Logic (caller pane -> tab/space context, readiness queue, open-file in editor) is useful for the `lut <file>` CLI; it depends on Tabs/Spaces and the editor, so it must follow their refactors. User-visible string \"Terax could not create an editor tab\" (useControlBridge.ts:140) is rebranding.",
+      "couplings": ["app-shell: src/app/App.tsx:40,1386", "app-shell: tabs/lib/useTabs (DEFAULT_SPACE_ID, Tab)", "terminal: lib/panes hasLeaf", "ide-tools: editor tab creation"],
+      "risks": "If the editor is removed (ide-tools), the `open` method must degrade or be removed from METHODS."
+    }
+  ],
+  "notes": "Cross-area: (1) backend-core shell_init.rs:195-226 injects TERAX_TERMINAL/TERAX_CONTROL_ADDR/TERAX_CONTROL_TOKEN/TERAX_PANE_ID/TERAX_CLI and prepends the launcher bin dir to PATH; the env rename must land in the same PR as the CLI rename (agents-D01). (2) backend-core lib.rs:169-180 handles argv `__terax_notify` (legacy Windows hook path); remove with agents-D02. (3) build-identity tauri.conf.json:38-39 externalBin binaries/terax-cli + package.json build:cli. (4) ai: managed agents/review and LocalAgentNotificationsBridge depend on this area; useAiLiveBridge.ts:131 installs Claude hooks silently. (5) app-shell App.tsx:636-645 installs hooks silently when launching an agent; NotificationBell installs with one click without preview. (6) state-settings owns agentNotifications/agentNotificationSound/agentLaunchCommands keys."
+}

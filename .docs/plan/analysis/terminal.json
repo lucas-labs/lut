@@ -1,0 +1,433 @@
+{
+  "area": "terminal",
+  "items": [
+    {
+      "id": "terminal/ghostty-core-package",
+      "title": "@terax/ghostty-core package: libghostty-vt WASM builds, Zig bridge, TS loaders, patches, licenses",
+      "paths": [
+        "packages/ghostty-core/"
+      ],
+      "disposition": "keep",
+      "rationale": "ADR-003 and 5.10:2 keep the Ghostty/WASM engine; 5.4:7 forbids indiscriminate changes to the adapted WASM. Licenses (LICENSE.ghostty, LICENSE.restty) satisfy F0:2/14.3. Package name @terax/ghostty-core and TeraxGhostty* identifiers are internal (rename on touch only).",
+      "couplings": [
+        "src-tauri/tests/ghostty_artifacts.rs (include_bytes of adapted/*.wasm)",
+        "build-identity (tauri bundle resources / licenses list)"
+      ],
+      "risks": "Rebuilding the WASM needs pinned Zig 0.15.2 (FORK.md); any rename of exported symbols in terax.zig breaks the TS loader."
+    },
+    {
+      "id": "terminal/renderer-dev-tooling",
+      "title": "Renderer profiling, soak and WebKit memory scripts",
+      "paths": [
+        "scripts/ghostty-profile.config.ts",
+        "scripts/ghostty-profile.mjs",
+        "scripts/ghostty-profile.ts",
+        "scripts/ghostty-soak.config.ts",
+        "scripts/ghostty-soak.ts",
+        "scripts/ghostty-webkit-memory.mjs",
+        "scripts/ghostty-webkit-memory/",
+        "scripts/renderer-profile/"
+      ],
+      "disposition": "keep",
+      "rationale": "Dev-only measurement tooling useful for 13.4 performance checks and F0:11 baseline. TERAX_* env vars and app.crynta.terax.renderer-lab are dev-script internals (macOS-only lab), not shared with an installed Terax at runtime.",
+      "couplings": [
+        "testing/ci (package.json scripts)"
+      ],
+      "risks": "renderer-profile and webkit-memory are macOS-only (Swift/WKWebView); they will not run on the Windows dev machine."
+    },
+    {
+      "id": "terminal/visual-tests",
+      "title": "Terminal visual/glyph regression harness",
+      "paths": [
+        "scripts/terminal-visual/"
+      ],
+      "disposition": "keep",
+      "rationale": "Glyph/sprite/scaling regression checks protect UX-005 (Nerd Fonts/powerline) and 5.4:6 (DPI). Not product UI.",
+      "couplings": [
+        "testing/ci"
+      ],
+      "risks": "Uses TERAX_VISUAL_* env vars (internal)."
+    },
+    {
+      "id": "terminal/wasm-artifact-test",
+      "title": "Rust test validating the shipped Ghostty WASM artifacts",
+      "paths": [
+        "src-tauri/tests/ghostty_artifacts.rs"
+      ],
+      "disposition": "keep",
+      "rationale": "Guards the SIMD/scalar WASM split (5.4:7).",
+      "couplings": [
+        "terminal/ghostty-core-package"
+      ]
+    },
+    {
+      "id": "terminal/symbol-fonts",
+      "title": "Bundled terminal symbol fonts (Nerd Fonts subset) and licenses",
+      "paths": [
+        "src/assets/fonts/",
+        "public/licenses/terminal-symbols.txt",
+        "src/lib/terminalSymbols.test.ts"
+      ],
+      "disposition": "keep",
+      "rationale": "Provides powerline/Nerd glyph fallback for UX-005; OFL/Nerd Fonts licenses must ship (F0:2, 14.3:2). File names terax-terminal-symbols*.woff2 are internal asset names (rename on touch).",
+      "couplings": [
+        "src/lib/fonts.ts (theme/settings area)"
+      ]
+    },
+    {
+      "id": "terminal/webgl-renderer",
+      "title": "WebGL fallback renderer (xterm.js addon-webgl derived) and its renderer pool",
+      "paths": [
+        "src/modules/terminal/ghostty/webgl/"
+      ],
+      "disposition": "keep",
+      "rationale": "ADR-003 / 5.10:2 / 13.5:11 require the WebGPU->WebGL fallback. MIT notice LICENSE.xterm-js + UPSTREAM.md must be preserved (14.3, F0:2).",
+      "couplings": [
+        "build-identity (bundled licenses)"
+      ],
+      "risks": "Window-scoped pool of 12 WebGL contexts (WebGlTerminalRuntime.ts:22); more visible panes than slots throws WebGlPoolExhaustedError."
+    },
+    {
+      "id": "terminal/webgpu-renderer",
+      "title": "WebGPU renderer: shared window canvas, glyph atlases, builtin sprites, geometry, scrollbar",
+      "paths": [
+        "src/modules/terminal/ghostty/gpu/"
+      ],
+      "disposition": "keep",
+      "rationale": "5.4:2 (one canvas per window), 5.4:7 and 5.10:2: keep without large changes. Per-pane theme is already supported by surface.setTheme; opacity/background image is a separate spike (terminal-D09).",
+      "couplings": [
+        "theme (src/styles/tokens.ts via terminalVisuals.ts:1)",
+        "src/lib/fonts.ts"
+      ],
+      "risks": "Canvas alphaMode 'opaque' (WebGpuWindowCanvas.ts:195,314) blocks transparency; MAX_ATLAS_COUNT=8 (WebGpuTerminalRuntime.ts:34) caps distinct font specs per window."
+    },
+    {
+      "id": "terminal/ghostty-model",
+      "title": "Ghostty model runtime: adapted model, core runtime, frame pacer, WASM probes, accessibility output",
+      "paths": [
+        "src/modules/terminal/ghostty/Adapted*",
+        "src/modules/terminal/ghostty/GhosttyCoreRuntime*",
+        "src/modules/terminal/ghostty/GhosttyTerminalModel.ts",
+        "src/modules/terminal/ghostty/GhosttyWasmStack.test.ts",
+        "src/modules/terminal/ghostty/OfficialGhostty.test.ts",
+        "src/modules/terminal/ghostty/coreCompatibility.test.ts",
+        "src/modules/terminal/ghostty/SurfaceFramePacer*",
+        "src/modules/terminal/ghostty/wasmStackProbe.ts",
+        "src/modules/terminal/ghostty/TerminalAccessibleOutput.tsx"
+      ],
+      "disposition": "keep",
+      "rationale": "Persistent per-leaf model and scrollback budget (5.4, ADR-003, TER-005). TerminalAccessibleOutput is screen-reader logic (UX-010/F6:8), not a visual design element.",
+      "couplings": [
+        "terminal/ghostty-core-package"
+      ]
+    },
+    {
+      "id": "terminal/ghostty-core-helpers",
+      "title": "Semantic event router (OSC 7/133/52), presentation gates, query fallback, scrollback budget",
+      "paths": [
+        "src/modules/terminal/ghostty/core/GhosttySemanticEventRouter*",
+        "src/modules/terminal/ghostty/core/PromptPresentationGate*",
+        "src/modules/terminal/ghostty/core/ResizePromptHold*",
+        "src/modules/terminal/ghostty/core/SynchronizedOutputPresentationGate*",
+        "src/modules/terminal/ghostty/core/TerminalQueryFallback*",
+        "src/modules/terminal/ghostty/core/accessibleTerminalText*",
+        "src/modules/terminal/ghostty/core/packedCells*",
+        "src/modules/terminal/ghostty/core/scrollbackBudget*",
+        "src/modules/terminal/ghostty/core/terminalActions.ts"
+      ],
+      "disposition": "keep",
+      "rationale": "Shell-integration consumers (7.3, 8.4:6 relies on prompt events) and 5.4:4/5.4:6 invariants. onTitle/onBell/onNotification exist but are not wired (see terminal-D10 for PRO-013 allowShellTitle).",
+      "couplings": [
+        "backend-core/pty shell integration scripts emit the OSC sequences"
+      ]
+    },
+    {
+      "id": "terminal/links",
+      "title": "Terminal link detection and activation (URLs, file paths, open in editor/reveal)",
+      "paths": [
+        "src/modules/terminal/ghostty/core/*Link*",
+        "src/modules/terminal/ghostty/core/linkCells.ts",
+        "src/modules/terminal/lib/terminalLinks*"
+      ],
+      "disposition": "adapt",
+      "rationale": "Detection logic stays (14.1:9 protections already present). Activation calls the editor through getLspNavigator().openFile (terminalLinks.ts:17,202) and the fs module (fs_stat/fs_canonicalize, terminalLinks.ts:179,187); 5.10:12/F2:6 make the editor optional, so file links need a fallback (OS default app / reveal) through an optional capability.",
+      "couplings": [
+        "editor/lsp (src/modules/lsp/lib/navigator.ts)",
+        "backend fs commands fs_stat/fs_canonicalize",
+        "workspace (getWslHome)"
+      ],
+      "risks": "Removing the fs backend module together with the explorer would silently break path links (errors are swallowed with .catch(() => null))."
+    },
+    {
+      "id": "terminal/input",
+      "title": "Keyboard/IME/mouse/wheel input, key encoding, clipboard and paste helpers",
+      "paths": [
+        "src/modules/terminal/ghostty/input/",
+        "src/modules/terminal/lib/keymap*",
+        "src/modules/terminal/lib/terminalPaste*",
+        "src/modules/terminal/lib/terminalClipboard*",
+        "src/modules/terminal/lib/LatestClipboardWrite*",
+        "src/modules/terminal/lib/cursorBlink*"
+      ],
+      "disposition": "keep",
+      "rationale": "TER-006/TER-007 and 13.2:3/13.2:4 depend on this conformance-tested input path. Configurable app shortcuts (TER-008) live in the shortcuts area, not here.",
+      "couplings": [
+        "settings/store.ts imports macOptionAsAlt and terminalWheel"
+      ]
+    },
+    {
+      "id": "terminal/search-selection",
+      "title": "Terminal search and selection controllers",
+      "paths": [
+        "src/modules/terminal/ghostty/search/",
+        "src/modules/terminal/ghostty/selection/",
+        "src/modules/terminal/search/"
+      ],
+      "disposition": "keep",
+      "rationale": "TER-006 (selection, search). The search UI lives in header/SearchInline.tsx (other area) and will be redesigned there.",
+      "couplings": [
+        "header/SearchInline.tsx",
+        "app/App.tsx:110"
+      ]
+    },
+    {
+      "id": "terminal/session-lifecycle",
+      "title": "useGhosttyTerminalSession and session lifecycle helpers (init, renderer load/fallback, presentation)",
+      "paths": [
+        "src/modules/terminal/ghostty/useGhosttyTerminalSession.ts",
+        "src/modules/terminal/ghostty/sessionInitialization*",
+        "src/modules/terminal/ghostty/loadSessionRenderer*",
+        "src/modules/terminal/ghostty/replaceSessionSurface*",
+        "src/modules/terminal/ghostty/sessionDiagnostics.ts",
+        "src/modules/terminal/ghostty/renderScheduling*",
+        "src/modules/terminal/ghostty/windowPresentation*",
+        "src/modules/terminal/ghostty/WindowPresentationPolicy*",
+        "src/modules/terminal/ghostty/resizePromptRedraw.test.ts",
+        "src/modules/terminal/ghostty/shellReports.test.ts",
+        "src/modules/terminal/ghostty/bashPromptHooks.test.ts",
+        "src/modules/terminal/ghostty/promptStartScanner.test.ts",
+        "src/modules/terminal/ghostty/shellBlockCompatibility.test.ts"
+      ],
+      "disposition": "adapt",
+      "rationale": "Core of TER-001/TER-005; must gain a launch spec (shell/args/env/cwd) instead of reading preferences.terminalShell (useGhosttyTerminalSession.ts:832-858) for PRO-011/F3:3, per-session appearance overrides for PRO-005/F3:5, a prompt-ready signal for 8.4:6, and lose its imports of spaces/workspace used only for link 'isCurrent' (useGhosttyTerminalSession.ts:2-3,730-751).",
+      "couplings": [
+        "spaces/useSpaces",
+        "workspace",
+        "settings/preferences (terminalShell)",
+        "terminal/pty-bridge"
+      ],
+      "risks": "1.3k-line module with generation/disposal races; changes must be small and test-backed (5.4:4)."
+    },
+    {
+      "id": "terminal/session-api",
+      "title": "Public terminal API (index.ts, terminalSessionApi, prompt injection, surface target)",
+      "paths": [
+        "src/modules/terminal/index.ts",
+        "src/modules/terminal/lib/terminalSessionApi*",
+        "src/modules/terminal/lib/terminalSurfaceTarget*",
+        "src/modules/terminal/lib/promptInjection*"
+      ],
+      "disposition": "adapt",
+      "rationale": "6.2:2 sessions contract (leafId<->ptyId). whenSessionReady polls with a 4 s timeout and resolves on PTY/model readiness, not on a recognized prompt (terminalSessionApi.ts:25-37, useGhosttyTerminalSession.ts:412-424); 8.4:6 needs a prompt-ready contract.",
+      "couplings": [
+        "tabs/useTabs.ts:21",
+        "agents/lib/launcher.ts",
+        "ai/lib/useAiLiveBridge.ts",
+        "app/hooks/useTabCloseGuards.ts"
+      ]
+    },
+    {
+      "id": "terminal/pty-bridge",
+      "title": "openPty frontend bridge (pty_open/write/resize/close, terax-pty stream scheme)",
+      "paths": [
+        "src/modules/terminal/lib/pty-bridge*"
+      ],
+      "disposition": "adapt",
+      "rationale": "openPty takes positional cwd/blocks/shell/paneId/colors (pty-bridge.ts:110-119) and has no args/env; F3:3, PRO-002, PRO-004 need a launch object. Scheme name 'terax-pty' (pty-bridge.ts:34-47) must follow whatever backend-core decides.",
+      "couplings": [
+        "backend-core/pty (pty_open contract, terax-pty URI scheme)",
+        "workspace (currentWorkspaceEnv)"
+      ]
+    },
+    {
+      "id": "terminal/pty-output-transport",
+      "title": "PTY output hub/receiver, wire format, parse scheduling, presentation classes, resize sync",
+      "paths": [
+        "src/modules/terminal/lib/PtyOutput*",
+        "src/modules/terminal/lib/ptyWire*",
+        "src/modules/terminal/lib/ptyParseScheduler*",
+        "src/modules/terminal/lib/ptyPresentation*",
+        "src/modules/terminal/lib/ptyResizeDelivery*",
+        "src/modules/terminal/lib/terminalResize*",
+        "src/modules/terminal/lib/BoundedResourceTrace*",
+        "src/modules/terminal/lib/terminalResourceTrace.test.ts"
+      ],
+      "disposition": "keep",
+      "rationale": "5.4:4 and 5.4:7 (do not modify output transport); TER-005 hidden sessions keep receiving output.",
+      "couplings": [
+        "backend-core/pty stream protocol"
+      ]
+    },
+    {
+      "id": "terminal/agent-activity",
+      "title": "Agent activity store (terax:agent-signal listener) used by tab badges",
+      "paths": [
+        "src/modules/terminal/lib/agentActivity*",
+        "src/modules/terminal/lib/agentSignals.test.ts"
+      ],
+      "disposition": "adapt",
+      "rationale": "6.2:7 puts agent state in an 'agents' module and AGT-013/9.3 need provenance; this zustand store belongs to agents, not terminal. Move it (refactor) and keep the event contract.",
+      "couplings": [
+        "agents area (AgentNotificationsBridge, launcher)",
+        "tabs/lib/tabAgentStatus.ts",
+        "backend agent detector event 'terax:agent-signal'"
+      ]
+    },
+    {
+      "id": "terminal/osc-handlers",
+      "title": "OSC 7 cwd and OSC 52 clipboard parsers",
+      "paths": [
+        "src/modules/terminal/lib/osc-handlers*"
+      ],
+      "disposition": "keep",
+      "rationale": "7.3 (OSC 7 on Windows paths incl. cmd/MSYS), PRJ-003 cwd tracking.",
+      "couplings": []
+    },
+    {
+      "id": "terminal/diagnostics",
+      "title": "Terminal and canvas diagnostics",
+      "paths": [
+        "src/modules/terminal/lib/terminalDiagnostics*",
+        "src/modules/terminal/lib/canvasDiagnostics*"
+      ],
+      "disposition": "keep",
+      "rationale": "Supports F0:11/13.4 measurement; debug-only. window.__TERAX_* globals are internal.",
+      "couplings": [
+        "src/bench/",
+        "src/main.tsx:9"
+      ]
+    },
+    {
+      "id": "terminal/file-drop",
+      "title": "Drop file paths into a terminal with shell quoting",
+      "paths": [
+        "src/modules/terminal/lib/useTerminalFileDrop*",
+        "src/modules/terminal/lib/quoteShellPath*"
+      ],
+      "disposition": "keep",
+      "rationale": "Terminal-first convenience; quoting complies with 14.1:2. Explorer is only an optional consumer (FileExplorer.tsx:63).",
+      "couplings": [
+        "explorer/FileExplorer.tsx:63 (consumer)",
+        "app (OS drag-drop)"
+      ]
+    },
+    {
+      "id": "terminal/backend-selection",
+      "title": "Renderer backend selection (WebGPU preferred, WebGL fallback)",
+      "paths": [
+        "src/modules/terminal/backend/"
+      ],
+      "disposition": "keep",
+      "rationale": "ADR-003 and 13.5:11. localStorage key 'terax.experimental.terminal-backend' (selection.ts:4) lives in the webview origin store, which is isolated once the bundle id/data dir changes (F0:10).",
+      "couplings": [
+        "settings/store (TerminalRendererSetting)"
+      ]
+    },
+    {
+      "id": "terminal/pane-host",
+      "title": "TerminalStack + TerminalPane (mount-forever host, visibility hiding, error/retry card)",
+      "paths": [
+        "src/modules/terminal/TerminalStack.tsx",
+        "src/modules/terminal/TerminalPane.tsx",
+        "src/modules/terminal/lib/liveTerminals*"
+      ],
+      "disposition": "adapt",
+      "rationale": "5.10:3/10.1:1-2/F1:2: keep the never-unmount lifecycle (5.4:1-3, 3.4:invariant) but depend on a minimal stack contract instead of tabs' Tab/TerminalTab (TerminalStack.tsx:1, liveTerminals.ts:1); pass a per-leaf launch/appearance spec (PRO-011, PRO-009); the error card markup (TerminalPane.tsx:166-194) is visual and gets replaced per design.",
+      "couplings": [
+        "tabs/useTabs (Tab type, cold tabs)",
+        "settings/preferences (terminalRenderer, terminalScreenReader)",
+        "theme (useTheme)"
+      ]
+    },
+    {
+      "id": "terminal/pane-tree-view",
+      "title": "PaneTreeView (react-resizable-panels split rendering, resize handle, drop overlay)",
+      "paths": [
+        "src/modules/terminal/PaneTreeView.tsx",
+        "src/modules/terminal/lib/dropStore.ts"
+      ],
+      "disposition": "adapt",
+      "rationale": "Layout logic and resize-interaction gating stay (5.4:4, 13.2:7); split ratios are not modelled (no defaultSize/onLayout) so PRJ-006 needs wiring; handle and 'Drop file path here' overlay styling (PaneTreeView.tsx:126,138-145) are visual and replaced per design.",
+      "couplings": [
+        "components/ui/resizable (ui-shell area)"
+      ]
+    },
+    {
+      "id": "terminal/pane-tree-model",
+      "title": "Pure split-tree helpers (panes.ts)",
+      "paths": [
+        "src/modules/terminal/lib/panes*"
+      ],
+      "disposition": "adapt",
+      "rationale": "5.10:4/6.2:4: reuse. Needs per-split ratios (PRJ-006) and per-leaf profile reference (PRO-009, PRJ-005); the leaf already carries cwd (PRJ-003).",
+      "couplings": [
+        "spaces/lib/serialize.ts",
+        "tabs/lib/useTabs.ts:20",
+        "control/lib/context.ts:2",
+        "tabs/lib/useWindowTitle.ts:3"
+      ]
+    },
+    {
+      "id": "terminal/theme-font",
+      "title": "Terminal theme builder and terminal font hook",
+      "paths": [
+        "src/styles/terminalTheme.ts",
+        "src/modules/terminal/lib/useTerminalFont.ts"
+      ],
+      "disposition": "adapt",
+      "rationale": "Today both resolve from global preferences/CSS tokens only. PRO-005/F3:5/13.2:19 need layered resolution (global -> profile -> pane, 7.1) feeding the per-session theme/font paths that already exist.",
+      "couplings": [
+        "theme (readTerminalTokens, resolveTerminalFont)",
+        "settings/preferences",
+        "profiles (new)"
+      ]
+    },
+    {
+      "id": "terminal/blocks-logic",
+      "title": "Command-blocks mode logic (OSC 133 block model, shell line editor, completions, history)",
+      "paths": [
+        "src/modules/terminal/block/lib/",
+        "src/modules/terminal/ghostty/GhosttyBlocks*",
+        "src/modules/terminal/ghostty/ghosttyBlockSessions*",
+        "src/modules/terminal/lib/blockController.ts"
+      ],
+      "disposition": "remove",
+      "rationale": "User decision 3 (analysis/decisions.md): command-blocks mode is removed. (Analyst: Warp-like 'blocks' tabs are a Terax feature not required by the proposal (no TER/UX item). Keep-or-remove is a user decision (terminal-D13); until then it stays isolated (blocks tabs cannot be split, useTabs.ts:1364).)",
+      "couplings": [
+        "tabs/useTabs (blocks tab kind)",
+        "app/components/WorkspaceInputBar.tsx",
+        "command-palette/useCommandHistory",
+        "backend TERAX_BLOCKS env var"
+      ]
+    },
+    {
+      "id": "terminal/blocks-ui",
+      "title": "Command-blocks visual components (BlockOverlay, BlockWatermark, ShellInput, block.css)",
+      "paths": [
+        "src/modules/terminal/block/BlockOverlay.tsx",
+        "src/modules/terminal/block/BlockWatermark.tsx",
+        "src/modules/terminal/block/ShellInput.tsx",
+        "src/modules/terminal/block/block.css",
+        "src/modules/terminal/ghostty/GhosttyBlockOverlay.tsx"
+      ],
+      "disposition": "remove",
+      "rationale": "User decision 3 (analysis/decisions.md): command-blocks mode is removed. (Analyst: Purely visual Terax design (not a baseline) and imports the AI chat store for 'attach to chat' (BlockOverlay.tsx:12,265). Cut the AI dependency now (terminal-D12); remove or redesign depending on terminal-D13.)",
+      "couplings": [
+        "ai/store/chatStore",
+        "shortcuts",
+        "theme"
+      ]
+    }
+  ],
+  "notes": "MAX_PANES_PER_TAB=4 lives in tabs (useTabs.ts:31,1365; command-palette/commands.ts:81), not here. SplitDir 'row' = side by side (split right), 'col' = stacked (split down). Sessions are module-level maps keyed by leafId (useGhosttyTerminalSession.ts), which makes moving panes between tabs (TER-009) cheap. OSC title/bell/notification events are parsed but unwired (GhosttySemanticEventRouter.ts:5-13). Inbound users of terminal APIs: tabs, spaces, control, agents, ai, explorer, command-palette, header, settings, app."
+}
