@@ -49,3 +49,4 @@ These override any analysis recommendation. Decisions that change the spec must 
 | 21g | Third-party notices | Generate a third-party notices file for Rust/npm dependencies in F7 (release pipeline). |
 | 23 | Unwired git agent-task backend | **Remove** (`ide-tools/git-agent-tasks`, `ide-tools/git-frontend-review-models`) in Phase 0, which also removes its Terax-named refs/dirs/env vars. Recoverable from git history if ever wanted. |
 | 24 | Not planned items | Approved. Everything not planned for this milestone is listed in `.docs/plan/future.md` (kept in sync by the validator) so a future planning round can pick it up. |
+| 25 | Visible AI texts before going public | The repo can go public before the BYOK AI is removed: E04 simple replaces also cover the AI user-visible texts ("Ask Terax anything", etc.); the `HTTP-Referer: terax.ai` header sent to providers is removed in E02 (network audit / identity). |

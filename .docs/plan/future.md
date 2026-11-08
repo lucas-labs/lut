@@ -7,6 +7,9 @@ future planning round can pick it up with the same process (analysis -> plan.md 
 Also to review in a future round (no proposal item yet):
 
 - A lut Nix package. Terax's flake is removed in Phase 0 (user decision 21e).
+- An in-app licenses screen (proposal §14.3 calls it "futura"; IR-97). `public/licenses/terax.txt` and the terminal licenses
+  are already bundled (E03-02); third-party notices come with the release pipeline (E25). Not a harvested proposal item, so it
+  cannot be listed in plan.md "Not planned".
 - Agent task worktrees/checkpoints as a lut feature. Terax's unwired backend is removed in Phase 0 and can be recovered from
   git history (commit 611f9e3, `src-tauri/src/modules/git/`; user decision 23).
 

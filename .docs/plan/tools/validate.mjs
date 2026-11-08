@@ -4,7 +4,9 @@
 //   - analysis/<area>.json           (every file of the area in exactly one item; every item that is
 //                                     not "keep" covered or "Not planned")
 //
-// usage: node .docs/plan/tools/validate.mjs [plan.md] [--analysis-only] [--allow-missing-analysis]
+// usage: node .docs/plan/tools/validate.mjs [plan.md] [--analysis-only] [--allow-missing-analysis] [--partial]
+//   --partial: validate a file holding only some epics (e.g. drafts/E05.md): dependencies on ids of other epics are
+//              not reported, and coverage is checked only for the items analysis/skeleton.json assigns to its epics.
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { AREAS, toMatcher } from "./areas.mjs";
@@ -14,6 +16,7 @@ const args = process.argv.slice(2);
 const planPath = args.find((a) => !a.startsWith("--")) ?? join(PLAN_DIR, "plan.md");
 const analysisOnly = args.includes("--analysis-only");
 const allowMissingAnalysis = args.includes("--allow-missing-analysis");
+const partial = args.includes("--partial");
 
 const errors = [];
 const warnings = [];
@@ -83,6 +86,13 @@ if (!existsSync(planPath)) {
 }
 const plan = parsePlan(readFileSync(planPath, "utf8"), planPath.split(/[\\/]/).pop());
 errors.push(...plan.errors);
+const fileEpics = new Set(plan.epics.map((e) => e.meta?.id));
+const owner = new Map(); // item id -> owner epic (partial mode)
+if (partial) {
+  const sk = readJson(join(ANALYSIS_DIR, "skeleton.json"));
+  for (const e of sk.epics) for (const id of [...e.proposal, ...e.inventory]) owner.set(id, e.id);
+}
+const otherEpic = (id) => partial && /^E\d{2}/.test(id) && !fileEpics.has(id.slice(0, 3));
 
 const nodes = new Map(); // id -> node
 const listField = (n, k, where) => {
@@ -112,6 +122,11 @@ for (const e of plan.epics) {
   const closeouts = e.issues.filter((i) => i.meta?.type === "closeout");
   if (closeouts.length !== 1) err(`${where}: must have exactly one closeout issue (has ${closeouts.length})`);
   else if (e.issues.at(-1) !== closeouts[0]) err(`${where}: the closeout issue must be the last one`);
+  else {
+    const cdeps = new Set(closeouts[0].meta?.["depends-on"] ?? []);
+    const missing = e.issues.slice(0, -1).map((i) => i.meta?.id).filter((x) => !cdeps.has(x));
+    if (missing.length) err(`${where}: closeout must depend on every other issue of the epic (missing ${missing.join(", ")})`);
+  }
 
   for (const i of e.issues) {
     const w = `issue ${i.headingId} (line ${i.line})`;
@@ -140,8 +155,11 @@ const isProposalRef = (r) => proposalIds.has(r) || proposalSections.has(r);
 for (const [id, n] of nodes) {
   for (const d of n.deps ?? []) {
     const t = nodes.get(d);
-    if (!t) err(`${id}: depends-on unknown id ${d}`);
-    else if (t.kind !== n.kind) err(`${id}: ${n.kind} can only depend on ${n.kind}s (got ${d})`);
+    if (!t) {
+      if (!otherEpic(d)) err(`${id}: depends-on unknown id ${d}`);
+      continue;
+    }
+    if (t.kind !== n.kind) err(`${id}: ${n.kind} can only depend on ${n.kind}s (got ${d})`);
     if (d === id) err(`${id}: depends on itself`);
   }
   for (const r of n.refs ?? []) if (!isProposalRef(r) && !/^\.docs\//.test(r)) err(`${id}: ref "${r}" is not a proposal item/section or a .docs/ path`);
@@ -164,6 +182,30 @@ for (const kind of ["epic", "issue"]) {
   for (const [id, n] of nodes) if (n.kind === kind) visit(id, []);
 }
 
+// cross-epic issue dependencies must follow the epic graph: if an issue of epic X depends on an issue of epic Y,
+// X must (transitively) depend on Y. Otherwise issue- and epic-level orders contradict each other (hidden cycles).
+const epicReach = new Map(); // epic id -> set of epics it transitively depends on
+const reach = (id, seen = new Set()) => {
+  if (epicReach.has(id)) return epicReach.get(id);
+  const out = new Set();
+  for (const d of nodes.get(id)?.deps ?? []) {
+    if (seen.has(d) || nodes.get(d)?.kind !== "epic") continue;
+    out.add(d);
+    for (const x of reach(d, new Set([...seen, id]))) out.add(x);
+  }
+  epicReach.set(id, out);
+  return out;
+};
+for (const [id, n] of nodes) {
+  if (n.kind !== "issue") continue;
+  for (const d of n.deps ?? []) {
+    const from = id.slice(0, 3);
+    const to = d.slice(0, 3);
+    if (from === to || !nodes.has(d) || !nodes.has(from)) continue;
+    if (!reach(from).has(to)) err(`${id} depends on ${d}, but epic ${from} does not depend (transitively) on epic ${to}`);
+  }
+}
+
 // coverage
 const covered = new Map(); // item id -> [issue ids]
 for (const [id, n] of nodes) for (const c of n.covers ?? []) covered.set(c, [...(covered.get(c) ?? []), id]);
@@ -180,8 +222,9 @@ for (const np of plan.notPlanned) {
   if (/^done\b/i.test(np.reason)) continue;
   if (!futureText.includes(`\`${np.id}\``)) err(`Not planned "${np.id}" is not listed in future.md`);
 }
-const uncoveredProposal =proposal.items.filter((i) => !covered.has(i.id) && !notPlanned.has(i.id));
-const uncoveredInventory = [...analysisItems.values()].filter((i) => i.disposition !== "keep" && !covered.has(i.id) && !notPlanned.has(i.id));
+const inScope = (id) => !partial || fileEpics.has(owner.get(id));
+const uncoveredProposal = proposal.items.filter((i) => inScope(i.id) && !covered.has(i.id) && !notPlanned.has(i.id));
+const uncoveredInventory = [...analysisItems.values()].filter((i) => inScope(i.id) && i.disposition !== "keep" && !covered.has(i.id) && !notPlanned.has(i.id));
 for (const i of uncoveredProposal) err(`uncovered proposal item ${i.id}: ${i.text.slice(0, 90)}`);
 for (const i of uncoveredInventory) err(`uncovered inventory item ${i.id} (${i.disposition}): ${i.title}`);
 
