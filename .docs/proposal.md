@@ -1010,7 +1010,7 @@ En modo horizontal, tabs debajo o dentro de la barra superior; la superficie ter
 
 1. Importar a este repositorio el código fuente de Terax del commit de origen, como snapshot (sin historial ni remote de upstream). Registrar el SHA en el README y en `.docs/`.
 2. Verificar licencia Apache 2.0 de Terax y licencias de componentes/artefactos incluidos; conservar `LICENSE`, `NOTICE` (si existe), atribuciones y licencias de Ghostty/restty/xterm derivado si aplica (ver §14.3).
-3. Unificar documentación en `.docs/`: reubicar el `docs/` importado de Terax en `.docs/origin-terax/` (referencia de origen, puede quedar desactualizada), tras verificar que ningún script, build o configuración Tauri depende de esa ruta. Ajustar enlaces internos de `TERAX.md` si se mueven.
+3. Unificar documentación en `.docs/`: reubicar toda la documentación importada de Terax (`TERAX.md`, `README.md`, `CONTRIBUTING.md`, `ROADMAP.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md` y `docs/`) en `.docs/origin-terax/`, como referencia de origen y no como instrucciones para lut. Descartar `AGENTS.md`/`CLAUDE.md` de Terax. **Hecho** (ver `.docs/origin-terax/ORIGIN.md`).
 4. **Neutralizar el updater de Terax antes del primer build ejecutable:** quitar el endpoint de releases de Terax y su clave pública de `tauri.conf.json` (o desactivar el plugin) para que lut **nunca** descargue ni instale binarios de Terax. lut sí tendrá auto-actualización, pero con infraestructura propia (endpoint de releases de lut y clave de firma propia), que se configura cuando exista el pipeline de releases (Fase 7).
 5. Auditar las llamadas de red salientes (módulo `net`, IA BYOK, updater, telemetría si la hubiera) y desactivar las que apunten a servicios de Terax o de terceros no necesarios para la terminal.
 6. Instalar `pnpm` exacto y dependencias Rust/Zig/WASM requeridas por el proyecto (seguir las instrucciones del código importado).
@@ -1135,7 +1135,7 @@ El rebranding visual (títulos, About, iconos, textos) no es parte de la Fase 0.
 
 ## 12.1. Normas obligatorias para Codex/Claude
 
-1. **Leer antes de modificar:** `TERAX.md`, la arquitectura del módulo afectado y archivos completos relevantes.
+1. **Leer antes de modificar:** la arquitectura del módulo afectado y archivos completos relevantes. `.docs/origin-terax/TERAX.md` y `.docs/origin-terax/docs/` sirven como referencia técnica del código heredado, **no** como reglas de lut.
 2. **No desarrollar desde intuición:** encontrar el punto de extensión real y los tests del módulo.
 3. **No reescribir core funcional** (PTY, WASM/renderer, protocolo) sólo por simplificación estética.
 4. **Una fase, una familia de cambios:** evitar refactorización grande simultánea de TS y Rust sin gates.
@@ -1312,7 +1312,7 @@ lut **no** mantiene dependencia con upstream: no hay remote, no hay merges ni si
 
 # 15. Entregables que debe producir el agente implementador
 
-Al terminar la Fase 0, exigir estos artefactos dentro del repo. **Toda la documentación de lut vive en `.docs/`**; el `docs/` heredado de Terax se reubica en `.docs/origin-terax/` (Fase 0, tarea 3).
+Al terminar la Fase 0, exigir estos artefactos dentro del repo. **Toda la documentación de lut vive en `.docs/`**; la documentación heredada de Terax está en `.docs/origin-terax/` sólo como referencia (Fase 0, tarea 3).
 
 1. `.docs/architecture/current-state.md`: mapa real de módulos React/Rust, stores, side effects e IPC, con rutas verificadas.
 2. `.docs/architecture/module-dependencies.md`: relaciones entre `app`, `terminal`, `tabs`, `spaces`, `agents`, `control`, `ai`, `editor`, `git`.
