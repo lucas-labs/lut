@@ -1,0 +1,4665 @@
+{
+  "commit": "154a6cf159323ccf4933ddf9814de12ad43ea7f0",
+  "areas": {
+    "terminal": {
+      "title": "Terminal core (frontend renderer, Ghostty WASM, fonts)",
+      "files": [
+        {
+          "path": "packages/ghostty-core/FORK.md",
+          "lines": 58
+        },
+        {
+          "path": "packages/ghostty-core/LICENSE",
+          "lines": 21
+        },
+        {
+          "path": "packages/ghostty-core/adapted/LICENSE.ghostty",
+          "lines": 21
+        },
+        {
+          "path": "packages/ghostty-core/adapted/LICENSE.restty",
+          "lines": 21
+        },
+        {
+          "path": "packages/ghostty-core/adapted/UPSTREAM.md",
+          "lines": 210
+        },
+        {
+          "path": "packages/ghostty-core/adapted/ghostty-vt-scalar.wasm",
+          "lines": null
+        },
+        {
+          "path": "packages/ghostty-core/adapted/ghostty-vt.wasm",
+          "lines": null
+        },
+        {
+          "path": "packages/ghostty-core/adapted/wasm/.gitignore",
+          "lines": 3
+        },
+        {
+          "path": "packages/ghostty-core/adapted/wasm/build.zig",
+          "lines": 97
+        },
+        {
+          "path": "packages/ghostty-core/adapted/wasm/build.zig.zon",
+          "lines": 13
+        },
+        {
+          "path": "packages/ghostty-core/adapted/wasm/src/terax.zig",
+          "lines": 3364
+        },
+        {
+          "path": "packages/ghostty-core/adapted/wasm/src/terminfo_gen.zig",
+          "lines": 23
+        },
+        {
+          "path": "packages/ghostty-core/ghostty-vt.wasm",
+          "lines": null
+        },
+        {
+          "path": "packages/ghostty-core/lib/adapted/TeraxGhostty.ts",
+          "lines": 1854
+        },
+        {
+          "path": "packages/ghostty-core/lib/adapted/gpuCells.ts",
+          "lines": 78
+        },
+        {
+          "path": "packages/ghostty-core/lib/adapted/gpuGlyphs.ts",
+          "lines": 49
+        },
+        {
+          "path": "packages/ghostty-core/lib/adapted/index.ts",
+          "lines": 45
+        },
+        {
+          "path": "packages/ghostty-core/lib/adapted/types.ts",
+          "lines": 383
+        },
+        {
+          "path": "packages/ghostty-core/lib/adapted/viewCache.ts",
+          "lines": 47
+        },
+        {
+          "path": "packages/ghostty-core/lib/core.ts",
+          "lines": 18
+        },
+        {
+          "path": "packages/ghostty-core/lib/ghostty.ts",
+          "lines": 1271
+        },
+        {
+          "path": "packages/ghostty-core/lib/official/OfficialGhostty.ts",
+          "lines": 826
+        },
+        {
+          "path": "packages/ghostty-core/lib/official/abi.ts",
+          "lines": 92
+        },
+        {
+          "path": "packages/ghostty-core/lib/official/callbackBridge.ts",
+          "lines": 90
+        },
+        {
+          "path": "packages/ghostty-core/lib/official/index.ts",
+          "lines": 17
+        },
+        {
+          "path": "packages/ghostty-core/lib/official/types.ts",
+          "lines": 191
+        },
+        {
+          "path": "packages/ghostty-core/lib/protocol.ts",
+          "lines": 6
+        },
+        {
+          "path": "packages/ghostty-core/lib/types.ts",
+          "lines": 558
+        },
+        {
+          "path": "packages/ghostty-core/official/UPSTREAM.md",
+          "lines": 23
+        },
+        {
+          "path": "packages/ghostty-core/official/ghostty-vt.wasm",
+          "lines": null
+        },
+        {
+          "path": "packages/ghostty-core/package.json",
+          "lines": 33
+        },
+        {
+          "path": "packages/ghostty-core/patches/ghostty-wasm-api.patch",
+          "lines": 1933
+        },
+        {
+          "path": "public/licenses/terminal-symbols.txt",
+          "lines": 313
+        },
+        {
+          "path": "scripts/ghostty-profile.config.ts",
+          "lines": 9
+        },
+        {
+          "path": "scripts/ghostty-profile.mjs",
+          "lines": 58
+        },
+        {
+          "path": "scripts/ghostty-profile.ts",
+          "lines": 233
+        },
+        {
+          "path": "scripts/ghostty-soak.config.ts",
+          "lines": 9
+        },
+        {
+          "path": "scripts/ghostty-soak.ts",
+          "lines": 119
+        },
+        {
+          "path": "scripts/ghostty-webkit-memory.mjs",
+          "lines": 104
+        },
+        {
+          "path": "scripts/ghostty-webkit-memory/entry.ts",
+          "lines": 61
+        },
+        {
+          "path": "scripts/ghostty-webkit-memory/host.swift",
+          "lines": 46
+        },
+        {
+          "path": "scripts/renderer-profile/Lab.swift",
+          "lines": 413
+        },
+        {
+          "path": "scripts/renderer-profile/index.html",
+          "lines": 1
+        },
+        {
+          "path": "scripts/renderer-profile/lab.ts",
+          "lines": 210
+        },
+        {
+          "path": "scripts/renderer-profile/lab_report.py",
+          "lines": 727
+        },
+        {
+          "path": "scripts/renderer-profile/procstats.py",
+          "lines": 270
+        },
+        {
+          "path": "scripts/renderer-profile/run.py",
+          "lines": 529
+        },
+        {
+          "path": "scripts/renderer-profile/suite.sh",
+          "lines": 67
+        },
+        {
+          "path": "scripts/renderer-profile/vite.config.ts",
+          "lines": 31
+        },
+        {
+          "path": "scripts/renderer-profile/workloads.ts",
+          "lines": 1059
+        },
+        {
+          "path": "scripts/terminal-visual/README.md",
+          "lines": 192
+        },
+        {
+          "path": "scripts/terminal-visual/compare.mjs",
+          "lines": 257
+        },
+        {
+          "path": "scripts/terminal-visual/glyphCheck.ts",
+          "lines": 268
+        },
+        {
+          "path": "scripts/terminal-visual/glyphPattern.ts",
+          "lines": 222
+        },
+        {
+          "path": "scripts/terminal-visual/grid.html",
+          "lines": 21
+        },
+        {
+          "path": "scripts/terminal-visual/grid.ts",
+          "lines": 332
+        },
+        {
+          "path": "scripts/terminal-visual/index.html",
+          "lines": 19
+        },
+        {
+          "path": "scripts/terminal-visual/main.ts",
+          "lines": 733
+        },
+        {
+          "path": "scripts/terminal-visual/scaling.mjs",
+          "lines": 127
+        },
+        {
+          "path": "scripts/terminal-visual/spriteCheck.ts",
+          "lines": 218
+        },
+        {
+          "path": "scripts/terminal-visual/spritePattern.ts",
+          "lines": 357
+        },
+        {
+          "path": "scripts/terminal-visual/vite.config.ts",
+          "lines": 63
+        },
+        {
+          "path": "src-tauri/tests/ghostty_artifacts.rs",
+          "lines": 24
+        },
+        {
+          "path": "src/assets/fonts/LICENSE.nerd-fonts",
+          "lines": 126
+        },
+        {
+          "path": "src/assets/fonts/OFL.txt",
+          "lines": 91
+        },
+        {
+          "path": "src/assets/fonts/README.md",
+          "lines": 37
+        },
+        {
+          "path": "src/assets/fonts/terax-terminal-symbols-mdi.woff2",
+          "lines": null
+        },
+        {
+          "path": "src/assets/fonts/terax-terminal-symbols.woff2",
+          "lines": null
+        },
+        {
+          "path": "src/lib/terminalSymbols.test.ts",
+          "lines": 71
+        },
+        {
+          "path": "src/modules/terminal/PaneTreeView.tsx",
+          "lines": 146
+        },
+        {
+          "path": "src/modules/terminal/TerminalPane.tsx",
+          "lines": 221
+        },
+        {
+          "path": "src/modules/terminal/TerminalStack.tsx",
+          "lines": 117
+        },
+        {
+          "path": "src/modules/terminal/backend/contracts.ts",
+          "lines": 85
+        },
+        {
+          "path": "src/modules/terminal/backend/selection.test.ts",
+          "lines": 155
+        },
+        {
+          "path": "src/modules/terminal/backend/selection.ts",
+          "lines": 122
+        },
+        {
+          "path": "src/modules/terminal/block/BlockOverlay.tsx",
+          "lines": 461
+        },
+        {
+          "path": "src/modules/terminal/block/BlockWatermark.tsx",
+          "lines": 102
+        },
+        {
+          "path": "src/modules/terminal/block/ShellInput.tsx",
+          "lines": 206
+        },
+        {
+          "path": "src/modules/terminal/block/block.css",
+          "lines": 280
+        },
+        {
+          "path": "src/modules/terminal/block/lib/blockTypes.ts",
+          "lines": 30
+        },
+        {
+          "path": "src/modules/terminal/block/lib/completionIcons.ts",
+          "lines": 44
+        },
+        {
+          "path": "src/modules/terminal/block/lib/history.ts",
+          "lines": 17
+        },
+        {
+          "path": "src/modules/terminal/block/lib/historyPopover.ts",
+          "lines": 200
+        },
+        {
+          "path": "src/modules/terminal/block/lib/inlineSuggest.ts",
+          "lines": 124
+        },
+        {
+          "path": "src/modules/terminal/block/lib/modeMachine.test.ts",
+          "lines": 54
+        },
+        {
+          "path": "src/modules/terminal/block/lib/modeMachine.ts",
+          "lines": 36
+        },
+        {
+          "path": "src/modules/terminal/block/lib/outputCap.test.ts",
+          "lines": 36
+        },
+        {
+          "path": "src/modules/terminal/block/lib/outputCap.ts",
+          "lines": 26
+        },
+        {
+          "path": "src/modules/terminal/block/lib/pathComplete.shell.test.ts",
+          "lines": 62
+        },
+        {
+          "path": "src/modules/terminal/block/lib/pathComplete.test.ts",
+          "lines": 228
+        },
+        {
+          "path": "src/modules/terminal/block/lib/pathComplete.ts",
+          "lines": 142
+        },
+        {
+          "path": "src/modules/terminal/block/lib/pointerIntent.test.ts",
+          "lines": 85
+        },
+        {
+          "path": "src/modules/terminal/block/lib/pointerIntent.ts",
+          "lines": 40
+        },
+        {
+          "path": "src/modules/terminal/block/lib/shellEditor.test.ts",
+          "lines": 123
+        },
+        {
+          "path": "src/modules/terminal/block/lib/shellEditor.ts",
+          "lines": 496
+        },
+        {
+          "path": "src/modules/terminal/block/lib/shellSyntax.ts",
+          "lines": 11
+        },
+        {
+          "path": "src/modules/terminal/block/lib/shellWord.test.ts",
+          "lines": 66
+        },
+        {
+          "path": "src/modules/terminal/block/lib/shellWord.ts",
+          "lines": 30
+        },
+        {
+          "path": "src/modules/terminal/block/lib/viewportSignature.test.ts",
+          "lines": 35
+        },
+        {
+          "path": "src/modules/terminal/block/lib/viewportSignature.ts",
+          "lines": 45
+        },
+        {
+          "path": "src/modules/terminal/ghostty/AdaptedGhostty.bench.ts",
+          "lines": 229
+        },
+        {
+          "path": "src/modules/terminal/ghostty/AdaptedGhostty.test.ts",
+          "lines": 940
+        },
+        {
+          "path": "src/modules/terminal/ghostty/AdaptedGhosttyGpu.test.ts",
+          "lines": 1438
+        },
+        {
+          "path": "src/modules/terminal/ghostty/AdaptedGhosttyGpuModel.test.ts",
+          "lines": 426
+        },
+        {
+          "path": "src/modules/terminal/ghostty/AdaptedGhosttyTerminalModel.ts",
+          "lines": 1273
+        },
+        {
+          "path": "src/modules/terminal/ghostty/AdaptedLoader.test.ts",
+          "lines": 153
+        },
+        {
+          "path": "src/modules/terminal/ghostty/GhosttyBlockOverlay.tsx",
+          "lines": 44
+        },
+        {
+          "path": "src/modules/terminal/ghostty/GhosttyBlocks.test.ts",
+          "lines": 457
+        },
+        {
+          "path": "src/modules/terminal/ghostty/GhosttyBlocks.ts",
+          "lines": 453
+        },
+        {
+          "path": "src/modules/terminal/ghostty/GhosttyCoreRuntime.test.ts",
+          "lines": 1175
+        },
+        {
+          "path": "src/modules/terminal/ghostty/GhosttyCoreRuntime.ts",
+          "lines": 322
+        },
+        {
+          "path": "src/modules/terminal/ghostty/GhosttyTerminalModel.ts",
+          "lines": 197
+        },
+        {
+          "path": "src/modules/terminal/ghostty/GhosttyWasmStack.test.ts",
+          "lines": 71
+        },
+        {
+          "path": "src/modules/terminal/ghostty/OfficialGhostty.test.ts",
+          "lines": 320
+        },
+        {
+          "path": "src/modules/terminal/ghostty/SurfaceFramePacer.test.ts",
+          "lines": 321
+        },
+        {
+          "path": "src/modules/terminal/ghostty/SurfaceFramePacer.ts",
+          "lines": 171
+        },
+        {
+          "path": "src/modules/terminal/ghostty/TerminalAccessibleOutput.tsx",
+          "lines": 97
+        },
+        {
+          "path": "src/modules/terminal/ghostty/WindowPresentationPolicy.test.ts",
+          "lines": 75
+        },
+        {
+          "path": "src/modules/terminal/ghostty/WindowPresentationPolicy.ts",
+          "lines": 74
+        },
+        {
+          "path": "src/modules/terminal/ghostty/bashPromptHooks.test.ts",
+          "lines": 110
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/GhosttySemanticEventRouter.test.ts",
+          "lines": 82
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/GhosttySemanticEventRouter.ts",
+          "lines": 76
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/LazyTerminalLinks.test.ts",
+          "lines": 322
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/LazyTerminalLinks.ts",
+          "lines": 190
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/LinkUnderlineOverlay.ts",
+          "lines": 76
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/PromptPresentationGate.test.ts",
+          "lines": 123
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/PromptPresentationGate.ts",
+          "lines": 79
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/ResizePromptHold.test.ts",
+          "lines": 104
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/ResizePromptHold.ts",
+          "lines": 113
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/SynchronizedOutputPresentationGate.test.ts",
+          "lines": 73
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/SynchronizedOutputPresentationGate.ts",
+          "lines": 62
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/TerminalLinkInteraction.test.ts",
+          "lines": 260
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/TerminalLinkInteraction.ts",
+          "lines": 287
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/TerminalQueryFallback.test.ts",
+          "lines": 56
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/TerminalQueryFallback.ts",
+          "lines": 252
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/ViewportLinkResolver.ts",
+          "lines": 216
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/accessibleTerminalText.test.ts",
+          "lines": 19
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/accessibleTerminalText.ts",
+          "lines": 26
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/linkCells.ts",
+          "lines": 12
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/packedCells.test.ts",
+          "lines": 38
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/packedCells.ts",
+          "lines": 113
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/scrollbackBudget.test.ts",
+          "lines": 153
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/scrollbackBudget.ts",
+          "lines": 85
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/terminalActions.ts",
+          "lines": 14
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/terminalLinkTargets.test.ts",
+          "lines": 260
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/terminalLinkTargets.ts",
+          "lines": 203
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/terminalLinks.test.ts",
+          "lines": 98
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/terminalLinks.ts",
+          "lines": 314
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/terminalLinksLoader.test.ts",
+          "lines": 90
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/terminalLinksLoader.ts",
+          "lines": 99
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/terminalLinksRuntime.test.ts",
+          "lines": 116
+        },
+        {
+          "path": "src/modules/terminal/ghostty/core/terminalLinksRuntime.ts",
+          "lines": 50
+        },
+        {
+          "path": "src/modules/terminal/ghostty/coreCompatibility.test.ts",
+          "lines": 332
+        },
+        {
+          "path": "src/modules/terminal/ghostty/ghosttyBlockSessions.test.ts",
+          "lines": 203
+        },
+        {
+          "path": "src/modules/terminal/ghostty/ghosttyBlockSessions.ts",
+          "lines": 206
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/BuiltinGlyphs.test.ts",
+          "lines": 880
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/BuiltinGlyphs.ts",
+          "lines": 99
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/CanvasBackingStore.test.ts",
+          "lines": 207
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/CanvasBackingStore.ts",
+          "lines": 142
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/DevicePixelRatioMonitor.ts",
+          "lines": 24
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/GcPressure.test.ts",
+          "lines": 230
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/GcPressure.ts",
+          "lines": 169
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/GestureBacking.test.ts",
+          "lines": 83
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/GestureBacking.ts",
+          "lines": 101
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/GlyphAtlas.test.ts",
+          "lines": 486
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/GlyphAtlas.ts",
+          "lines": 490
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/GlyphMap.test.ts",
+          "lines": 308
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/GlyphMap.ts",
+          "lines": 330
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/GlyphMapModel.test.ts",
+          "lines": 224
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/GlyphPlacement.test.ts",
+          "lines": 359
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/GlyphPlacement.ts",
+          "lines": 281
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/GlyphRasterizer.symbols.test.ts",
+          "lines": 135
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/GlyphRasterizer.test.ts",
+          "lines": 171
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/GlyphRasterizer.ts",
+          "lines": 217
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/PaneRects.test.ts",
+          "lines": 152
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/PaneRects.ts",
+          "lines": 122
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/ScreenUniform.test.ts",
+          "lines": 345
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/ScreenUniform.ts",
+          "lines": 153
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/SkylineAtlasAllocator.test.ts",
+          "lines": 83
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/SkylineAtlasAllocator.ts",
+          "lines": 134
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/TerminalFit.test.ts",
+          "lines": 204
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/TerminalFit.ts",
+          "lines": 121
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/TerminalFitQueue.test.ts",
+          "lines": 43
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/TerminalFitQueue.ts",
+          "lines": 60
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/WebGpuCellBuffer.test.ts",
+          "lines": 40
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/WebGpuCellBuffer.ts",
+          "lines": 64
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/WebGpuTerminalRuntime.test.ts",
+          "lines": 1281
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/WebGpuTerminalRuntime.ts",
+          "lines": 1260
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/WebGpuTerminalSurface.test.ts",
+          "lines": 1626
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/WebGpuTerminalSurface.ts",
+          "lines": 1505
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/WebGpuWindowCanvas.test.ts",
+          "lines": 578
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/WebGpuWindowCanvas.ts",
+          "lines": 626
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/builtin/SpriteMask.test.ts",
+          "lines": 151
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/builtin/SpriteMask.ts",
+          "lines": 336
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/builtin/blockElements.ts",
+          "lines": 233
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/builtin/boxDrawing.ts",
+          "lines": 373
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/builtin/lazyGlyphs.test.ts",
+          "lines": 74
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/builtin/lazyGlyphs.ts",
+          "lines": 128
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/builtin/legacyComputing.test.ts",
+          "lines": 41
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/builtin/legacyComputing.ts",
+          "lines": 647
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/builtin/powerline.ts",
+          "lines": 167
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/builtin/spriteSpec.ts",
+          "lines": 23
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/cursorText.test.ts",
+          "lines": 81
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/cursorText.ts",
+          "lines": 62
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/glyphColor.ts",
+          "lines": 17
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/shaders.ts",
+          "lines": 419
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/terminalGeometry.test.ts",
+          "lines": 166
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/terminalGeometry.ts",
+          "lines": 156
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/terminalScrollbar.test.ts",
+          "lines": 326
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/terminalScrollbar.ts",
+          "lines": 262
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/terminalVisuals.test.ts",
+          "lines": 121
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/terminalVisuals.ts",
+          "lines": 240
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/textContrast.test.ts",
+          "lines": 102
+        },
+        {
+          "path": "src/modules/terminal/ghostty/gpu/textContrast.ts",
+          "lines": 95
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/GhosttyInputController.coldModules.test.ts",
+          "lines": 156
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/GhosttyInputController.pasteKey.test.ts",
+          "lines": 141
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/GhosttyInputController.test.ts",
+          "lines": 1159
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/GhosttyInputController.ts",
+          "lines": 534
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/ImeAnchor.ts",
+          "lines": 59
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/TerminalInputProxy.test.ts",
+          "lines": 339
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/TerminalInputProxy.ts",
+          "lines": 118
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/TerminalMouse.test.ts",
+          "lines": 129
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/TerminalMouse.ts",
+          "lines": 235
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/TerminalNativeSelection.test.ts",
+          "lines": 110
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/TerminalNativeSelection.ts",
+          "lines": 92
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/fakeTextArea.ts",
+          "lines": 62
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/focusRetry.test.ts",
+          "lines": 114
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/focusRetry.ts",
+          "lines": 35
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/keyEncoding.conformance.test.ts",
+          "lines": 1109
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/keyRouting.test.ts",
+          "lines": 593
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/keyRouting.ts",
+          "lines": 355
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/keyTable.test.ts",
+          "lines": 120
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/keyTable.ts",
+          "lines": 105
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/macOptionAsAlt.test.ts",
+          "lines": 38
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/macOptionAsAlt.ts",
+          "lines": 33
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/terminalInputEncoding.test.ts",
+          "lines": 70
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/terminalInputEncoding.ts",
+          "lines": 45
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/terminalInteraction.ts",
+          "lines": 19
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/terminalWheel.test.ts",
+          "lines": 168
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/terminalWheel.ts",
+          "lines": 121
+        },
+        {
+          "path": "src/modules/terminal/ghostty/input/textInputTraces.test.ts",
+          "lines": 285
+        },
+        {
+          "path": "src/modules/terminal/ghostty/loadSessionRenderer.test.ts",
+          "lines": 69
+        },
+        {
+          "path": "src/modules/terminal/ghostty/loadSessionRenderer.ts",
+          "lines": 29
+        },
+        {
+          "path": "src/modules/terminal/ghostty/promptStartScanner.test.ts",
+          "lines": 80
+        },
+        {
+          "path": "src/modules/terminal/ghostty/renderScheduling.test.ts",
+          "lines": 27
+        },
+        {
+          "path": "src/modules/terminal/ghostty/renderScheduling.ts",
+          "lines": 54
+        },
+        {
+          "path": "src/modules/terminal/ghostty/replaceSessionSurface.test.ts",
+          "lines": 128
+        },
+        {
+          "path": "src/modules/terminal/ghostty/replaceSessionSurface.ts",
+          "lines": 49
+        },
+        {
+          "path": "src/modules/terminal/ghostty/resizePromptRedraw.test.ts",
+          "lines": 267
+        },
+        {
+          "path": "src/modules/terminal/ghostty/search/GhosttySearchController.test.ts",
+          "lines": 229
+        },
+        {
+          "path": "src/modules/terminal/ghostty/search/GhosttySearchController.ts",
+          "lines": 135
+        },
+        {
+          "path": "src/modules/terminal/ghostty/search/GhosttySearchEngine.test.ts",
+          "lines": 229
+        },
+        {
+          "path": "src/modules/terminal/ghostty/search/GhosttySearchEngine.ts",
+          "lines": 241
+        },
+        {
+          "path": "src/modules/terminal/ghostty/selection/TerminalSelectionController.test.ts",
+          "lines": 398
+        },
+        {
+          "path": "src/modules/terminal/ghostty/selection/TerminalSelectionController.ts",
+          "lines": 446
+        },
+        {
+          "path": "src/modules/terminal/ghostty/sessionDiagnostics.ts",
+          "lines": 82
+        },
+        {
+          "path": "src/modules/terminal/ghostty/sessionInitialization.test.ts",
+          "lines": 50
+        },
+        {
+          "path": "src/modules/terminal/ghostty/sessionInitialization.ts",
+          "lines": 18
+        },
+        {
+          "path": "src/modules/terminal/ghostty/shellBlockCompatibility.test.ts",
+          "lines": 47
+        },
+        {
+          "path": "src/modules/terminal/ghostty/shellReports.test.ts",
+          "lines": 91
+        },
+        {
+          "path": "src/modules/terminal/ghostty/useGhosttyTerminalSession.ts",
+          "lines": 1313
+        },
+        {
+          "path": "src/modules/terminal/ghostty/wasmStackProbe.ts",
+          "lines": 377
+        },
+        {
+          "path": "src/modules/terminal/ghostty/webgl/LICENSE.xterm-js",
+          "lines": 21
+        },
+        {
+          "path": "src/modules/terminal/ghostty/webgl/UPSTREAM.md",
+          "lines": 21
+        },
+        {
+          "path": "src/modules/terminal/ghostty/webgl/WebGlCellRenderer.test.ts",
+          "lines": 200
+        },
+        {
+          "path": "src/modules/terminal/ghostty/webgl/WebGlCellRenderer.ts",
+          "lines": 1629
+        },
+        {
+          "path": "src/modules/terminal/ghostty/webgl/WebGlGlyphAtlas.test.ts",
+          "lines": 265
+        },
+        {
+          "path": "src/modules/terminal/ghostty/webgl/WebGlGlyphAtlas.ts",
+          "lines": 572
+        },
+        {
+          "path": "src/modules/terminal/ghostty/webgl/WebGlPoolExhaustedError.test.ts",
+          "lines": 17
+        },
+        {
+          "path": "src/modules/terminal/ghostty/webgl/WebGlPoolExhaustedError.ts",
+          "lines": 9
+        },
+        {
+          "path": "src/modules/terminal/ghostty/webgl/WebGlPresentation.test.ts",
+          "lines": 170
+        },
+        {
+          "path": "src/modules/terminal/ghostty/webgl/WebGlTerminalRuntime.test.ts",
+          "lines": 413
+        },
+        {
+          "path": "src/modules/terminal/ghostty/webgl/WebGlTerminalRuntime.ts",
+          "lines": 436
+        },
+        {
+          "path": "src/modules/terminal/ghostty/webgl/WebGlTerminalSurface.test.ts",
+          "lines": 330
+        },
+        {
+          "path": "src/modules/terminal/ghostty/webgl/WebGlTerminalSurface.ts",
+          "lines": 837
+        },
+        {
+          "path": "src/modules/terminal/ghostty/windowPresentation.test.ts",
+          "lines": 198
+        },
+        {
+          "path": "src/modules/terminal/ghostty/windowPresentation.ts",
+          "lines": 116
+        },
+        {
+          "path": "src/modules/terminal/index.ts",
+          "lines": 28
+        },
+        {
+          "path": "src/modules/terminal/lib/BoundedResourceTrace.test.ts",
+          "lines": 13
+        },
+        {
+          "path": "src/modules/terminal/lib/BoundedResourceTrace.ts",
+          "lines": 18
+        },
+        {
+          "path": "src/modules/terminal/lib/LatestClipboardWrite.test.ts",
+          "lines": 37
+        },
+        {
+          "path": "src/modules/terminal/lib/LatestClipboardWrite.ts",
+          "lines": 29
+        },
+        {
+          "path": "src/modules/terminal/lib/PtyOutputHub.test.ts",
+          "lines": 627
+        },
+        {
+          "path": "src/modules/terminal/lib/PtyOutputHub.ts",
+          "lines": 492
+        },
+        {
+          "path": "src/modules/terminal/lib/PtyOutputReceiver.test.ts",
+          "lines": 283
+        },
+        {
+          "path": "src/modules/terminal/lib/PtyOutputReceiver.ts",
+          "lines": 231
+        },
+        {
+          "path": "src/modules/terminal/lib/agentActivity.test.ts",
+          "lines": 119
+        },
+        {
+          "path": "src/modules/terminal/lib/agentActivity.ts",
+          "lines": 204
+        },
+        {
+          "path": "src/modules/terminal/lib/agentSignals.test.ts",
+          "lines": 77
+        },
+        {
+          "path": "src/modules/terminal/lib/blockController.ts",
+          "lines": 40
+        },
+        {
+          "path": "src/modules/terminal/lib/canvasDiagnostics.test.ts",
+          "lines": 78
+        },
+        {
+          "path": "src/modules/terminal/lib/canvasDiagnostics.ts",
+          "lines": 68
+        },
+        {
+          "path": "src/modules/terminal/lib/cursorBlink.test.ts",
+          "lines": 21
+        },
+        {
+          "path": "src/modules/terminal/lib/cursorBlink.ts",
+          "lines": 7
+        },
+        {
+          "path": "src/modules/terminal/lib/dropStore.ts",
+          "lines": 12
+        },
+        {
+          "path": "src/modules/terminal/lib/keymap.test.ts",
+          "lines": 223
+        },
+        {
+          "path": "src/modules/terminal/lib/keymap.ts",
+          "lines": 71
+        },
+        {
+          "path": "src/modules/terminal/lib/liveTerminals.test.ts",
+          "lines": 45
+        },
+        {
+          "path": "src/modules/terminal/lib/liveTerminals.ts",
+          "lines": 9
+        },
+        {
+          "path": "src/modules/terminal/lib/osc-handlers.test.ts",
+          "lines": 52
+        },
+        {
+          "path": "src/modules/terminal/lib/osc-handlers.ts",
+          "lines": 48
+        },
+        {
+          "path": "src/modules/terminal/lib/panes.test.ts",
+          "lines": 145
+        },
+        {
+          "path": "src/modules/terminal/lib/panes.ts",
+          "lines": 289
+        },
+        {
+          "path": "src/modules/terminal/lib/promptInjection.test.ts",
+          "lines": 146
+        },
+        {
+          "path": "src/modules/terminal/lib/promptInjection.ts",
+          "lines": 62
+        },
+        {
+          "path": "src/modules/terminal/lib/pty-bridge.test.ts",
+          "lines": 306
+        },
+        {
+          "path": "src/modules/terminal/lib/pty-bridge.ts",
+          "lines": 224
+        },
+        {
+          "path": "src/modules/terminal/lib/ptyParseScheduler.test.ts",
+          "lines": 62
+        },
+        {
+          "path": "src/modules/terminal/lib/ptyParseScheduler.ts",
+          "lines": 51
+        },
+        {
+          "path": "src/modules/terminal/lib/ptyPresentation.test.ts",
+          "lines": 196
+        },
+        {
+          "path": "src/modules/terminal/lib/ptyPresentation.ts",
+          "lines": 198
+        },
+        {
+          "path": "src/modules/terminal/lib/ptyResizeDelivery.test.ts",
+          "lines": 51
+        },
+        {
+          "path": "src/modules/terminal/lib/ptyResizeDelivery.ts",
+          "lines": 60
+        },
+        {
+          "path": "src/modules/terminal/lib/ptyWire.test.ts",
+          "lines": 123
+        },
+        {
+          "path": "src/modules/terminal/lib/ptyWire.ts",
+          "lines": 141
+        },
+        {
+          "path": "src/modules/terminal/lib/ptyWireFixtures.ts",
+          "lines": 78
+        },
+        {
+          "path": "src/modules/terminal/lib/quoteShellPath.test.ts",
+          "lines": 98
+        },
+        {
+          "path": "src/modules/terminal/lib/quoteShellPath.ts",
+          "lines": 19
+        },
+        {
+          "path": "src/modules/terminal/lib/terminalClipboard.test.ts",
+          "lines": 60
+        },
+        {
+          "path": "src/modules/terminal/lib/terminalClipboard.ts",
+          "lines": 23
+        },
+        {
+          "path": "src/modules/terminal/lib/terminalDiagnostics.test.ts",
+          "lines": 37
+        },
+        {
+          "path": "src/modules/terminal/lib/terminalDiagnostics.ts",
+          "lines": 109
+        },
+        {
+          "path": "src/modules/terminal/lib/terminalDiagnosticsEnabled.ts",
+          "lines": 9
+        },
+        {
+          "path": "src/modules/terminal/lib/terminalLinks.test.ts",
+          "lines": 274
+        },
+        {
+          "path": "src/modules/terminal/lib/terminalLinks.ts",
+          "lines": 217
+        },
+        {
+          "path": "src/modules/terminal/lib/terminalPaste.test.ts",
+          "lines": 16
+        },
+        {
+          "path": "src/modules/terminal/lib/terminalPaste.ts",
+          "lines": 14
+        },
+        {
+          "path": "src/modules/terminal/lib/terminalResizeGesture.test.ts",
+          "lines": 181
+        },
+        {
+          "path": "src/modules/terminal/lib/terminalResizeGesture.ts",
+          "lines": 112
+        },
+        {
+          "path": "src/modules/terminal/lib/terminalResizeInteraction.test.ts",
+          "lines": 44
+        },
+        {
+          "path": "src/modules/terminal/lib/terminalResizeInteraction.ts",
+          "lines": 72
+        },
+        {
+          "path": "src/modules/terminal/lib/terminalResizeSync.test.ts",
+          "lines": 53
+        },
+        {
+          "path": "src/modules/terminal/lib/terminalResizeSync.ts",
+          "lines": 44
+        },
+        {
+          "path": "src/modules/terminal/lib/terminalResourceTrace.test.ts",
+          "lines": 50
+        },
+        {
+          "path": "src/modules/terminal/lib/terminalSessionApi.test.ts",
+          "lines": 101
+        },
+        {
+          "path": "src/modules/terminal/lib/terminalSessionApi.ts",
+          "lines": 185
+        },
+        {
+          "path": "src/modules/terminal/lib/terminalSurfaceTarget.test.ts",
+          "lines": 17
+        },
+        {
+          "path": "src/modules/terminal/lib/terminalSurfaceTarget.ts",
+          "lines": 16
+        },
+        {
+          "path": "src/modules/terminal/lib/useTerminalFileDrop.test.ts",
+          "lines": 111
+        },
+        {
+          "path": "src/modules/terminal/lib/useTerminalFileDrop.ts",
+          "lines": 138
+        },
+        {
+          "path": "src/modules/terminal/lib/useTerminalFont.ts",
+          "lines": 20
+        },
+        {
+          "path": "src/modules/terminal/search/TerminalSearchController.ts",
+          "lines": 15
+        },
+        {
+          "path": "src/styles/terminalTheme.ts",
+          "lines": 28
+        }
+      ],
+      "lines": 76252
+    },
+    "backend-core": {
+      "title": "PTY, shell & platform backend (Rust)",
+      "files": [
+        {
+          "path": "scripts/ipc-profile/index.html",
+          "lines": 1
+        },
+        {
+          "path": "scripts/ipc-profile/run.py",
+          "lines": 112
+        },
+        {
+          "path": "scripts/ipc-profile/smoke.ts",
+          "lines": 217
+        },
+        {
+          "path": "scripts/ipc-profile/vite.config.ts",
+          "lines": 17
+        },
+        {
+          "path": "scripts/pty-smoke/driver-new.ts",
+          "lines": 140
+        },
+        {
+          "path": "scripts/pty-smoke/driver-old.ts",
+          "lines": 35
+        },
+        {
+          "path": "scripts/pty-smoke/frame.html",
+          "lines": 1
+        },
+        {
+          "path": "scripts/pty-smoke/frame.js",
+          "lines": 24
+        },
+        {
+          "path": "scripts/pty-smoke/index.html",
+          "lines": 1
+        },
+        {
+          "path": "scripts/pty-smoke/main.ts",
+          "lines": 10
+        },
+        {
+          "path": "scripts/pty-smoke/run.py",
+          "lines": 177
+        },
+        {
+          "path": "scripts/pty-smoke/scenarios.ts",
+          "lines": 326
+        },
+        {
+          "path": "scripts/pty-smoke/vite.config.ts",
+          "lines": 27
+        },
+        {
+          "path": "src-tauri/src/lib.rs",
+          "lines": 547
+        },
+        {
+          "path": "src-tauri/src/main.rs",
+          "lines": 18
+        },
+        {
+          "path": "src-tauri/src/modules/history/index.rs",
+          "lines": 386
+        },
+        {
+          "path": "src-tauri/src/modules/history/mod.rs",
+          "lines": 228
+        },
+        {
+          "path": "src-tauri/src/modules/history/parse.rs",
+          "lines": 184
+        },
+        {
+          "path": "src-tauri/src/modules/ipc_body.rs",
+          "lines": 104
+        },
+        {
+          "path": "src-tauri/src/modules/mod.rs",
+          "lines": 23
+        },
+        {
+          "path": "src-tauri/src/modules/proc/capture.rs",
+          "lines": 330
+        },
+        {
+          "path": "src-tauri/src/modules/proc/job.rs",
+          "lines": 109
+        },
+        {
+          "path": "src-tauri/src/modules/proc/mod.rs",
+          "lines": 18
+        },
+        {
+          "path": "src-tauri/src/modules/proc/rss.rs",
+          "lines": 70
+        },
+        {
+          "path": "src-tauri/src/modules/pty/agent_detect.rs",
+          "lines": 1280
+        },
+        {
+          "path": "src-tauri/src/modules/pty/da_filter.rs",
+          "lines": 1156
+        },
+        {
+          "path": "src-tauri/src/modules/pty/foreground.rs",
+          "lines": 161
+        },
+        {
+          "path": "src-tauri/src/modules/pty/gate.rs",
+          "lines": 505
+        },
+        {
+          "path": "src-tauri/src/modules/pty/hub.rs",
+          "lines": 2112
+        },
+        {
+          "path": "src-tauri/src/modules/pty/mod.rs",
+          "lines": 674
+        },
+        {
+          "path": "src-tauri/src/modules/pty/output.rs",
+          "lines": 168
+        },
+        {
+          "path": "src-tauri/src/modules/pty/presentation.rs",
+          "lines": 157
+        },
+        {
+          "path": "src-tauri/src/modules/pty/protocol.rs",
+          "lines": 367
+        },
+        {
+          "path": "src-tauri/src/modules/pty/queue.rs",
+          "lines": 772
+        },
+        {
+          "path": "src-tauri/src/modules/pty/scripts/bashrc.bash",
+          "lines": 195
+        },
+        {
+          "path": "src-tauri/src/modules/pty/scripts/bashrc.test.bash",
+          "lines": 241
+        },
+        {
+          "path": "src-tauri/src/modules/pty/scripts/init.fish",
+          "lines": 109
+        },
+        {
+          "path": "src-tauri/src/modules/pty/scripts/init.test.fish",
+          "lines": 39
+        },
+        {
+          "path": "src-tauri/src/modules/pty/scripts/profile.ps1",
+          "lines": 113
+        },
+        {
+          "path": "src-tauri/src/modules/pty/scripts/zlogin.zsh",
+          "lines": 20
+        },
+        {
+          "path": "src-tauri/src/modules/pty/scripts/zprofile.zsh",
+          "lines": 15
+        },
+        {
+          "path": "src-tauri/src/modules/pty/scripts/zshenv.zsh",
+          "lines": 31
+        },
+        {
+          "path": "src-tauri/src/modules/pty/scripts/zshrc.test.py",
+          "lines": 492
+        },
+        {
+          "path": "src-tauri/src/modules/pty/scripts/zshrc.zsh",
+          "lines": 299
+        },
+        {
+          "path": "src-tauri/src/modules/pty/session.rs",
+          "lines": 1014
+        },
+        {
+          "path": "src-tauri/src/modules/pty/shell_init.rs",
+          "lines": 1311
+        },
+        {
+          "path": "src-tauri/src/modules/pty/terminal_colors.rs",
+          "lines": 253
+        },
+        {
+          "path": "src-tauri/src/modules/pty/unix_reader.rs",
+          "lines": 267
+        },
+        {
+          "path": "src-tauri/src/modules/pty/wake.rs",
+          "lines": 105
+        },
+        {
+          "path": "src-tauri/src/modules/pty/wire.rs",
+          "lines": 465
+        },
+        {
+          "path": "src-tauri/src/modules/runtime.rs",
+          "lines": 124
+        },
+        {
+          "path": "src-tauri/src/modules/shell/background.rs",
+          "lines": 200
+        },
+        {
+          "path": "src-tauri/src/modules/shell/mod.rs",
+          "lines": 393
+        },
+        {
+          "path": "src-tauri/src/modules/shell/ringbuffer.rs",
+          "lines": 124
+        },
+        {
+          "path": "src-tauri/src/modules/shell/session.rs",
+          "lines": 187
+        },
+        {
+          "path": "src-tauri/src/modules/vibrancy.rs",
+          "lines": 320
+        },
+        {
+          "path": "src-tauri/src/modules/window_presentation.rs",
+          "lines": 287
+        },
+        {
+          "path": "src-tauri/tests/common/mod.rs",
+          "lines": 104
+        },
+        {
+          "path": "src-tauri/tests/shell_background.rs",
+          "lines": 110
+        }
+      ],
+      "lines": 17275
+    },
+    "app-shell": {
+      "title": "App shell, navigation & shared UI infrastructure",
+      "files": [
+        {
+          "path": "components.json",
+          "lines": 27
+        },
+        {
+          "path": "index.html",
+          "lines": 32
+        },
+        {
+          "path": "src-tauri/src/modules/app_menu.rs",
+          "lines": 83
+        },
+        {
+          "path": "src/app/App.tsx",
+          "lines": 1695
+        },
+        {
+          "path": "src/app/components/CloseDialogs.tsx",
+          "lines": 314
+        },
+        {
+          "path": "src/app/components/OsIcon.tsx",
+          "lines": 30
+        },
+        {
+          "path": "src/app/components/WorkspaceInputBar.tsx",
+          "lines": 263
+        },
+        {
+          "path": "src/app/components/WorkspaceSurface.tsx",
+          "lines": 163
+        },
+        {
+          "path": "src/app/components/useGitBranch.ts",
+          "lines": 29
+        },
+        {
+          "path": "src/app/components/useSystemInfo.ts",
+          "lines": 37
+        },
+        {
+          "path": "src/app/dist-budget.test.ts",
+          "lines": 361
+        },
+        {
+          "path": "src/app/eager-budget.test.ts",
+          "lines": 106
+        },
+        {
+          "path": "src/app/feature-loading.test.tsx",
+          "lines": 83
+        },
+        {
+          "path": "src/app/hooks/tabCloseGuards.test.ts",
+          "lines": 195
+        },
+        {
+          "path": "src/app/hooks/tabCloseGuards.ts",
+          "lines": 131
+        },
+        {
+          "path": "src/app/hooks/useAppCloseGuard.test.ts",
+          "lines": 42
+        },
+        {
+          "path": "src/app/hooks/useAppCloseGuard.ts",
+          "lines": 142
+        },
+        {
+          "path": "src/app/hooks/useTabCloseGuards.ts",
+          "lines": 243
+        },
+        {
+          "path": "src/app/hooks/useWorkspaceSwitcher.ts",
+          "lines": 137
+        },
+        {
+          "path": "src/components/WindowControls.tsx",
+          "lines": 93
+        },
+        {
+          "path": "src/components/ui/alert-dialog.tsx",
+          "lines": 197
+        },
+        {
+          "path": "src/components/ui/alert.tsx",
+          "lines": 76
+        },
+        {
+          "path": "src/components/ui/badge.tsx",
+          "lines": 49
+        },
+        {
+          "path": "src/components/ui/breadcrumb.tsx",
+          "lines": 122
+        },
+        {
+          "path": "src/components/ui/button-group.tsx",
+          "lines": 83
+        },
+        {
+          "path": "src/components/ui/button.tsx",
+          "lines": 65
+        },
+        {
+          "path": "src/components/ui/card.tsx",
+          "lines": 100
+        },
+        {
+          "path": "src/components/ui/checkbox.tsx",
+          "lines": 40
+        },
+        {
+          "path": "src/components/ui/collapsible.tsx",
+          "lines": 31
+        },
+        {
+          "path": "src/components/ui/command.tsx",
+          "lines": 194
+        },
+        {
+          "path": "src/components/ui/context-menu.tsx",
+          "lines": 260
+        },
+        {
+          "path": "src/components/ui/dialog.tsx",
+          "lines": 166
+        },
+        {
+          "path": "src/components/ui/dropdown-menu.tsx",
+          "lines": 266
+        },
+        {
+          "path": "src/components/ui/empty.tsx",
+          "lines": 104
+        },
+        {
+          "path": "src/components/ui/hover-card.tsx",
+          "lines": 42
+        },
+        {
+          "path": "src/components/ui/input-group.tsx",
+          "lines": 151
+        },
+        {
+          "path": "src/components/ui/input.tsx",
+          "lines": 19
+        },
+        {
+          "path": "src/components/ui/item.tsx",
+          "lines": 196
+        },
+        {
+          "path": "src/components/ui/kbd.tsx",
+          "lines": 26
+        },
+        {
+          "path": "src/components/ui/label.tsx",
+          "lines": 22
+        },
+        {
+          "path": "src/components/ui/menubar.tsx",
+          "lines": 274
+        },
+        {
+          "path": "src/components/ui/popover.tsx",
+          "lines": 89
+        },
+        {
+          "path": "src/components/ui/progress.tsx",
+          "lines": 29
+        },
+        {
+          "path": "src/components/ui/radio-group.tsx",
+          "lines": 42
+        },
+        {
+          "path": "src/components/ui/resizable.tsx",
+          "lines": 55
+        },
+        {
+          "path": "src/components/ui/scroll-area.tsx",
+          "lines": 53
+        },
+        {
+          "path": "src/components/ui/select.tsx",
+          "lines": 192
+        },
+        {
+          "path": "src/components/ui/separator.tsx",
+          "lines": 26
+        },
+        {
+          "path": "src/components/ui/sheet.tsx",
+          "lines": 145
+        },
+        {
+          "path": "src/components/ui/skeleton.tsx",
+          "lines": 13
+        },
+        {
+          "path": "src/components/ui/slider.tsx",
+          "lines": 57
+        },
+        {
+          "path": "src/components/ui/sonner.tsx",
+          "lines": 24
+        },
+        {
+          "path": "src/components/ui/spinner.tsx",
+          "lines": 19
+        },
+        {
+          "path": "src/components/ui/switch.tsx",
+          "lines": 31
+        },
+        {
+          "path": "src/components/ui/tabs.tsx",
+          "lines": 88
+        },
+        {
+          "path": "src/components/ui/textarea.tsx",
+          "lines": 18
+        },
+        {
+          "path": "src/components/ui/toggle-group.tsx",
+          "lines": 89
+        },
+        {
+          "path": "src/components/ui/toggle.tsx",
+          "lines": 45
+        },
+        {
+          "path": "src/components/ui/tooltip.tsx",
+          "lines": 56
+        },
+        {
+          "path": "src/lib/external-link.test.ts",
+          "lines": 61
+        },
+        {
+          "path": "src/lib/external-link.ts",
+          "lines": 21
+        },
+        {
+          "path": "src/lib/fonts.test.ts",
+          "lines": 247
+        },
+        {
+          "path": "src/lib/fonts.ts",
+          "lines": 176
+        },
+        {
+          "path": "src/lib/homeRelativePath.test.ts",
+          "lines": 21
+        },
+        {
+          "path": "src/lib/homeRelativePath.ts",
+          "lines": 17
+        },
+        {
+          "path": "src/lib/launchDir.ts",
+          "lines": 24
+        },
+        {
+          "path": "src/lib/platform.ts",
+          "lines": 34
+        },
+        {
+          "path": "src/lib/shellQuote.test.ts",
+          "lines": 242
+        },
+        {
+          "path": "src/lib/shellQuote.ts",
+          "lines": 113
+        },
+        {
+          "path": "src/lib/useAssetGrant.test.ts",
+          "lines": 120
+        },
+        {
+          "path": "src/lib/useAssetGrant.ts",
+          "lines": 46
+        },
+        {
+          "path": "src/lib/usePresence.ts",
+          "lines": 31
+        },
+        {
+          "path": "src/lib/useZoom.ts",
+          "lines": 50
+        },
+        {
+          "path": "src/lib/utils.test.ts",
+          "lines": 22
+        },
+        {
+          "path": "src/lib/utils.ts",
+          "lines": 10
+        },
+        {
+          "path": "src/main.tsx",
+          "lines": 55
+        },
+        {
+          "path": "src/modules/command-palette/CommandPalette.tsx",
+          "lines": 772
+        },
+        {
+          "path": "src/modules/command-palette/commands.test.ts",
+          "lines": 104
+        },
+        {
+          "path": "src/modules/command-palette/commands.ts",
+          "lines": 306
+        },
+        {
+          "path": "src/modules/command-palette/hooks/useAsyncQuery.ts",
+          "lines": 72
+        },
+        {
+          "path": "src/modules/command-palette/hooks/useCommandHistory.ts",
+          "lines": 24
+        },
+        {
+          "path": "src/modules/command-palette/hooks/useContentSearch.ts",
+          "lines": 49
+        },
+        {
+          "path": "src/modules/command-palette/hooks/useFileSearch.test.ts",
+          "lines": 69
+        },
+        {
+          "path": "src/modules/command-palette/hooks/useFileSearch.ts",
+          "lines": 115
+        },
+        {
+          "path": "src/modules/command-palette/index.ts",
+          "lines": 3
+        },
+        {
+          "path": "src/modules/command-palette/lib/fuzzy.test.ts",
+          "lines": 44
+        },
+        {
+          "path": "src/modules/command-palette/lib/fuzzy.ts",
+          "lines": 57
+        },
+        {
+          "path": "src/modules/command-palette/lib/mode.test.ts",
+          "lines": 65
+        },
+        {
+          "path": "src/modules/command-palette/lib/mode.ts",
+          "lines": 44
+        },
+        {
+          "path": "src/modules/command-palette/lib/mru.test.ts",
+          "lines": 28
+        },
+        {
+          "path": "src/modules/command-palette/lib/mru.ts",
+          "lines": 42
+        },
+        {
+          "path": "src/modules/command-palette/lib/quickOpen.test.ts",
+          "lines": 138
+        },
+        {
+          "path": "src/modules/command-palette/lib/quickOpen.ts",
+          "lines": 134
+        },
+        {
+          "path": "src/modules/command-palette/lib/recentFiles.test.ts",
+          "lines": 53
+        },
+        {
+          "path": "src/modules/command-palette/lib/recentFiles.ts",
+          "lines": 69
+        },
+        {
+          "path": "src/modules/command-palette/types.ts",
+          "lines": 30
+        },
+        {
+          "path": "src/modules/header/Header.tsx",
+          "lines": 216
+        },
+        {
+          "path": "src/modules/header/SearchInline.tsx",
+          "lines": 207
+        },
+        {
+          "path": "src/modules/header/index.ts",
+          "lines": 5
+        },
+        {
+          "path": "src/modules/shortcuts/index.ts",
+          "lines": 17
+        },
+        {
+          "path": "src/modules/shortcuts/lib/resolveShortcut.test.ts",
+          "lines": 175
+        },
+        {
+          "path": "src/modules/shortcuts/lib/resolveShortcut.ts",
+          "lines": 37
+        },
+        {
+          "path": "src/modules/shortcuts/lib/shortcutLabel.test.ts",
+          "lines": 51
+        },
+        {
+          "path": "src/modules/shortcuts/lib/shortcutLabel.ts",
+          "lines": 18
+        },
+        {
+          "path": "src/modules/shortcuts/lib/shortcutScope.test.ts",
+          "lines": 70
+        },
+        {
+          "path": "src/modules/shortcuts/lib/shortcutScope.ts",
+          "lines": 35
+        },
+        {
+          "path": "src/modules/shortcuts/lib/useGlobalShortcuts.ts",
+          "lines": 41
+        },
+        {
+          "path": "src/modules/shortcuts/lib/useShortcutLabel.ts",
+          "lines": 17
+        },
+        {
+          "path": "src/modules/shortcuts/shortcutDefaults.test.ts",
+          "lines": 551
+        },
+        {
+          "path": "src/modules/shortcuts/shortcutDefaults.ts",
+          "lines": 150
+        },
+        {
+          "path": "src/modules/shortcuts/shortcuts.test.ts",
+          "lines": 257
+        },
+        {
+          "path": "src/modules/shortcuts/shortcuts.ts",
+          "lines": 483
+        },
+        {
+          "path": "src/modules/sidebar/SidebarRail.tsx",
+          "lines": 72
+        },
+        {
+          "path": "src/modules/sidebar/index.ts",
+          "lines": 7
+        },
+        {
+          "path": "src/modules/sidebar/types.ts",
+          "lines": 1
+        },
+        {
+          "path": "src/modules/sidebar/useSidebarPanel.test.ts",
+          "lines": 10
+        },
+        {
+          "path": "src/modules/sidebar/useSidebarPanel.ts",
+          "lines": 216
+        },
+        {
+          "path": "src/modules/statusbar/CwdBreadcrumb.tsx",
+          "lines": 297
+        },
+        {
+          "path": "src/modules/statusbar/DiagnosticsBadge.tsx",
+          "lines": 31
+        },
+        {
+          "path": "src/modules/statusbar/StatusBar.tsx",
+          "lines": 82
+        },
+        {
+          "path": "src/modules/statusbar/WorkspaceEnvSelector.tsx",
+          "lines": 89
+        },
+        {
+          "path": "src/modules/statusbar/index.ts",
+          "lines": 1
+        },
+        {
+          "path": "src/modules/statusbar/lib/pathUtils.test.ts",
+          "lines": 68
+        },
+        {
+          "path": "src/modules/statusbar/lib/pathUtils.ts",
+          "lines": 48
+        },
+        {
+          "path": "src/modules/tabs/NewTabMenu.tsx",
+          "lines": 204
+        },
+        {
+          "path": "src/modules/tabs/TabBar.tsx",
+          "lines": 795
+        },
+        {
+          "path": "src/modules/tabs/TabSwitcherHud.tsx",
+          "lines": 62
+        },
+        {
+          "path": "src/modules/tabs/index.ts",
+          "lines": 23
+        },
+        {
+          "path": "src/modules/tabs/lib/applyCloseTabsPlan.test.ts",
+          "lines": 126
+        },
+        {
+          "path": "src/modules/tabs/lib/nextActiveInSpace.test.ts",
+          "lines": 42
+        },
+        {
+          "path": "src/modules/tabs/lib/pickTabBySpaceIndex.test.ts",
+          "lines": 37
+        },
+        {
+          "path": "src/modules/tabs/lib/planCloseOtherTabs.test.ts",
+          "lines": 64
+        },
+        {
+          "path": "src/modules/tabs/lib/planCloseTabsToRight.test.ts",
+          "lines": 64
+        },
+        {
+          "path": "src/modules/tabs/lib/planCommitHistoryOpen.test.ts",
+          "lines": 86
+        },
+        {
+          "path": "src/modules/tabs/lib/planFileTabOpen.test.ts",
+          "lines": 182
+        },
+        {
+          "path": "src/modules/tabs/lib/planGitDiffOpen.test.ts",
+          "lines": 141
+        },
+        {
+          "path": "src/modules/tabs/lib/planSpaceRemoval.test.ts",
+          "lines": 59
+        },
+        {
+          "path": "src/modules/tabs/lib/reorderTabsByGap.test.ts",
+          "lines": 48
+        },
+        {
+          "path": "src/modules/tabs/lib/tabAgentStatus.test.ts",
+          "lines": 47
+        },
+        {
+          "path": "src/modules/tabs/lib/tabAgentStatus.ts",
+          "lines": 33
+        },
+        {
+          "path": "src/modules/tabs/lib/tabLabel.test.ts",
+          "lines": 43
+        },
+        {
+          "path": "src/modules/tabs/lib/tabLabel.ts",
+          "lines": 21
+        },
+        {
+          "path": "src/modules/tabs/lib/useTabSwitcher.ts",
+          "lines": 64
+        },
+        {
+          "path": "src/modules/tabs/lib/useTabs.batching.test.ts",
+          "lines": 122
+        },
+        {
+          "path": "src/modules/tabs/lib/useTabs.ts",
+          "lines": 1532
+        },
+        {
+          "path": "src/modules/tabs/lib/useWindowTitle.ts",
+          "lines": 49
+        },
+        {
+          "path": "src/modules/tabs/lib/useWorkspaceCwd.ts",
+          "lines": 39
+        },
+        {
+          "path": "src/modules/workspace/env.ts",
+          "lines": 68
+        },
+        {
+          "path": "src/modules/workspace/index.ts",
+          "lines": 10
+        },
+        {
+          "path": "src/styles/code-highlight.css",
+          "lines": 179
+        },
+        {
+          "path": "src/styles/compositingBudget.test.ts",
+          "lines": 123
+        },
+        {
+          "path": "src/styles/fonts.css",
+          "lines": 68
+        },
+        {
+          "path": "src/styles/globals.css",
+          "lines": 611
+        },
+        {
+          "path": "src/styles/motionBudget.test.ts",
+          "lines": 56
+        },
+        {
+          "path": "src/styles/tokens.ts",
+          "lines": 76
+        }
+      ],
+      "lines": 19594
+    },
+    "state-settings": {
+      "title": "Persistence (Spaces), settings & theme",
+      "files": [
+        {
+          "path": "settings.html",
+          "lines": 30
+        },
+        {
+          "path": "src-tauri/src/modules/workspace.rs",
+          "lines": 1332
+        },
+        {
+          "path": "src/modules/settings/coerceFontWeight.test.ts",
+          "lines": 20
+        },
+        {
+          "path": "src/modules/settings/editorFontSize.test.ts",
+          "lines": 26
+        },
+        {
+          "path": "src/modules/settings/editorWordWrapColumn.test.ts",
+          "lines": 28
+        },
+        {
+          "path": "src/modules/settings/openSettingsWindow.ts",
+          "lines": 14
+        },
+        {
+          "path": "src/modules/settings/preferences.ts",
+          "lines": 72
+        },
+        {
+          "path": "src/modules/settings/store.ts",
+          "lines": 1096
+        },
+        {
+          "path": "src/modules/settings/terminalCursorStyle.test.ts",
+          "lines": 16
+        },
+        {
+          "path": "src/modules/settings/terminalRenderer.test.ts",
+          "lines": 16
+        },
+        {
+          "path": "src/modules/settings/windowVibrancyDefault.test.ts",
+          "lines": 47
+        },
+        {
+          "path": "src/modules/spaces/SpaceAvatar.tsx",
+          "lines": 43
+        },
+        {
+          "path": "src/modules/spaces/SpaceSwitcher.tsx",
+          "lines": 649
+        },
+        {
+          "path": "src/modules/spaces/components/InlineRename.tsx",
+          "lines": 54
+        },
+        {
+          "path": "src/modules/spaces/index.ts",
+          "lines": 4
+        },
+        {
+          "path": "src/modules/spaces/lib/activeSpace.test.ts",
+          "lines": 79
+        },
+        {
+          "path": "src/modules/spaces/lib/activeSpace.ts",
+          "lines": 31
+        },
+        {
+          "path": "src/modules/spaces/lib/serialize.test.ts",
+          "lines": 160
+        },
+        {
+          "path": "src/modules/spaces/lib/serialize.ts",
+          "lines": 236
+        },
+        {
+          "path": "src/modules/spaces/lib/spaceColor.test.ts",
+          "lines": 29
+        },
+        {
+          "path": "src/modules/spaces/lib/spaceColor.ts",
+          "lines": 25
+        },
+        {
+          "path": "src/modules/spaces/lib/store.ts",
+          "lines": 68
+        },
+        {
+          "path": "src/modules/spaces/lib/useSpacePersistence.ts",
+          "lines": 102
+        },
+        {
+          "path": "src/modules/spaces/lib/useSpaces.ts",
+          "lines": 129
+        },
+        {
+          "path": "src/modules/spaces/lib/useSpacesBoot.ts",
+          "lines": 134
+        },
+        {
+          "path": "src/modules/theme/LivePageResizeBridge.tsx",
+          "lines": 12
+        },
+        {
+          "path": "src/modules/theme/SurfaceLayer.tsx",
+          "lines": 206
+        },
+        {
+          "path": "src/modules/theme/ThemeProvider.tsx",
+          "lines": 201
+        },
+        {
+          "path": "src/modules/theme/WindowActivityBridge.tsx",
+          "lines": 41
+        },
+        {
+          "path": "src/modules/theme/WindowVibrancyBridge.tsx",
+          "lines": 18
+        },
+        {
+          "path": "src/modules/theme/applyTheme.test.ts",
+          "lines": 132
+        },
+        {
+          "path": "src/modules/theme/applyTheme.ts",
+          "lines": 104
+        },
+        {
+          "path": "src/modules/theme/bgImageStore.ts",
+          "lines": 172
+        },
+        {
+          "path": "src/modules/theme/customThemes.test.ts",
+          "lines": 129
+        },
+        {
+          "path": "src/modules/theme/customThemes.ts",
+          "lines": 42
+        },
+        {
+          "path": "src/modules/theme/index.ts",
+          "lines": 8
+        },
+        {
+          "path": "src/modules/theme/livePageResize.test.ts",
+          "lines": 95
+        },
+        {
+          "path": "src/modules/theme/livePageResize.ts",
+          "lines": 74
+        },
+        {
+          "path": "src/modules/theme/prepaintSync.test.ts",
+          "lines": 37
+        },
+        {
+          "path": "src/modules/theme/resolveEditorTheme.test.ts",
+          "lines": 59
+        },
+        {
+          "path": "src/modules/theme/resolveEditorTheme.ts",
+          "lines": 36
+        },
+        {
+          "path": "src/modules/theme/resolveTerminalFont.test.ts",
+          "lines": 58
+        },
+        {
+          "path": "src/modules/theme/resolveTerminalFont.ts",
+          "lines": 22
+        },
+        {
+          "path": "src/modules/theme/surfaceFrame.test.ts",
+          "lines": 85
+        },
+        {
+          "path": "src/modules/theme/surfaceFrame.ts",
+          "lines": 77
+        },
+        {
+          "path": "src/modules/theme/themeFiles.test.ts",
+          "lines": 56
+        },
+        {
+          "path": "src/modules/theme/themeFiles.ts",
+          "lines": 148
+        },
+        {
+          "path": "src/modules/theme/themes/caffeine.ts",
+          "lines": 94
+        },
+        {
+          "path": "src/modules/theme/themes/catppuccin.ts",
+          "lines": 92
+        },
+        {
+          "path": "src/modules/theme/themes/claude.ts",
+          "lines": 94
+        },
+        {
+          "path": "src/modules/theme/themes/dracula.ts",
+          "lines": 51
+        },
+        {
+          "path": "src/modules/theme/themes/everforest.ts",
+          "lines": 92
+        },
+        {
+          "path": "src/modules/theme/themes/gruvbox.ts",
+          "lines": 92
+        },
+        {
+          "path": "src/modules/theme/themes/index.test.ts",
+          "lines": 39
+        },
+        {
+          "path": "src/modules/theme/themes/index.ts",
+          "lines": 50
+        },
+        {
+          "path": "src/modules/theme/themes/kanagawa-dragon.ts",
+          "lines": 51
+        },
+        {
+          "path": "src/modules/theme/themes/kanagawa.ts",
+          "lines": 92
+        },
+        {
+          "path": "src/modules/theme/themes/nord.ts",
+          "lines": 89
+        },
+        {
+          "path": "src/modules/theme/themes/rose-pine.ts",
+          "lines": 92
+        },
+        {
+          "path": "src/modules/theme/themes/sage.ts",
+          "lines": 94
+        },
+        {
+          "path": "src/modules/theme/themes/solarized.ts",
+          "lines": 92
+        },
+        {
+          "path": "src/modules/theme/themes/terax-default.ts",
+          "lines": 18
+        },
+        {
+          "path": "src/modules/theme/themes/tide.ts",
+          "lines": 94
+        },
+        {
+          "path": "src/modules/theme/themes/tokyo-night.ts",
+          "lines": 51
+        },
+        {
+          "path": "src/modules/theme/themes/xcode.ts",
+          "lines": 94
+        },
+        {
+          "path": "src/modules/theme/types.ts",
+          "lines": 68
+        },
+        {
+          "path": "src/modules/theme/useThemeFileEditing.ts",
+          "lines": 88
+        },
+        {
+          "path": "src/modules/theme/validateTheme.test.ts",
+          "lines": 151
+        },
+        {
+          "path": "src/modules/theme/validateTheme.ts",
+          "lines": 169
+        },
+        {
+          "path": "src/modules/theme/vibrancy.test.ts",
+          "lines": 129
+        },
+        {
+          "path": "src/modules/theme/vibrancy.ts",
+          "lines": 185
+        },
+        {
+          "path": "src/modules/theme/vibrancyQueue.test.ts",
+          "lines": 205
+        },
+        {
+          "path": "src/modules/theme/windowActivity.test.ts",
+          "lines": 169
+        },
+        {
+          "path": "src/modules/theme/windowActivity.ts",
+          "lines": 130
+        },
+        {
+          "path": "src/settings/SettingsApp.tsx",
+          "lines": 161
+        },
+        {
+          "path": "src/settings/components/LspInstallDialog.tsx",
+          "lines": 139
+        },
+        {
+          "path": "src/settings/components/LspServersGroup.tsx",
+          "lines": 248
+        },
+        {
+          "path": "src/settings/components/ProviderIcon.tsx",
+          "lines": 50
+        },
+        {
+          "path": "src/settings/components/ProviderKeyCard.tsx",
+          "lines": 209
+        },
+        {
+          "path": "src/settings/components/SectionHeader.tsx",
+          "lines": 15
+        },
+        {
+          "path": "src/settings/components/SettingRow.tsx",
+          "lines": 30
+        },
+        {
+          "path": "src/settings/components/lspSwitchState.test.ts",
+          "lines": 28
+        },
+        {
+          "path": "src/settings/components/lspSwitchState.ts",
+          "lines": 17
+        },
+        {
+          "path": "src/settings/main.tsx",
+          "lines": 27
+        },
+        {
+          "path": "src/settings/sections/AboutSection.tsx",
+          "lines": 165
+        },
+        {
+          "path": "src/settings/sections/AgentsSection.tsx",
+          "lines": 567
+        },
+        {
+          "path": "src/settings/sections/EditorSection.tsx",
+          "lines": 413
+        },
+        {
+          "path": "src/settings/sections/GeneralSection.tsx",
+          "lines": 707
+        },
+        {
+          "path": "src/settings/sections/ModelsSection.test.tsx",
+          "lines": 168
+        },
+        {
+          "path": "src/settings/sections/ModelsSection.tsx",
+          "lines": 1457
+        },
+        {
+          "path": "src/settings/sections/ShortcutsSection.tsx",
+          "lines": 328
+        },
+        {
+          "path": "src/settings/sections/ThemesSection.tsx",
+          "lines": 454
+        }
+      ],
+      "lines": 14100
+    },
+    "agents": {
+      "title": "CLI agents, hooks & control server",
+      "files": [
+        {
+          "path": "public/notification.mp3",
+          "lines": null
+        },
+        {
+          "path": "scripts/build-cli.mjs",
+          "lines": 89
+        },
+        {
+          "path": "src-tauri/crates/terax-cli/Cargo.toml",
+          "lines": 31
+        },
+        {
+          "path": "src-tauri/crates/terax-cli/src/hook.rs",
+          "lines": 541
+        },
+        {
+          "path": "src-tauri/crates/terax-cli/src/lib.rs",
+          "lines": 762
+        },
+        {
+          "path": "src-tauri/crates/terax-cli/src/main.rs",
+          "lines": 3
+        },
+        {
+          "path": "src-tauri/crates/terax-control-protocol/Cargo.toml",
+          "lines": 10
+        },
+        {
+          "path": "src-tauri/crates/terax-control-protocol/src/hook/adapt.rs",
+          "lines": 860
+        },
+        {
+          "path": "src-tauri/crates/terax-control-protocol/src/hook/mod.rs",
+          "lines": 363
+        },
+        {
+          "path": "src-tauri/crates/terax-control-protocol/src/hook/render.rs",
+          "lines": 210
+        },
+        {
+          "path": "src-tauri/crates/terax-control-protocol/src/hook/text.rs",
+          "lines": 56
+        },
+        {
+          "path": "src-tauri/crates/terax-control-protocol/src/hook/trim.rs",
+          "lines": 178
+        },
+        {
+          "path": "src-tauri/crates/terax-control-protocol/src/lib.rs",
+          "lines": 283
+        },
+        {
+          "path": "src-tauri/src/modules/agent.rs",
+          "lines": 1358
+        },
+        {
+          "path": "src-tauri/src/modules/agent_events.rs",
+          "lines": 1388
+        },
+        {
+          "path": "src-tauri/src/modules/agent_json.rs",
+          "lines": 910
+        },
+        {
+          "path": "src-tauri/src/modules/control.rs",
+          "lines": 1533
+        },
+        {
+          "path": "src/modules/agents/components/AgentLauncherPanel.tsx",
+          "lines": 287
+        },
+        {
+          "path": "src/modules/agents/components/AgentNotificationsBridge.tsx",
+          "lines": 120
+        },
+        {
+          "path": "src/modules/agents/components/AgentToast.tsx",
+          "lines": 29
+        },
+        {
+          "path": "src/modules/agents/components/NotificationBell.tsx",
+          "lines": 366
+        },
+        {
+          "path": "src/modules/agents/index.ts",
+          "lines": 8
+        },
+        {
+          "path": "src/modules/agents/lib/agentIcon.tsx",
+          "lines": 74
+        },
+        {
+          "path": "src/modules/agents/lib/delivery.test.ts",
+          "lines": 44
+        },
+        {
+          "path": "src/modules/agents/lib/delivery.ts",
+          "lines": 15
+        },
+        {
+          "path": "src/modules/agents/lib/format.test.ts",
+          "lines": 23
+        },
+        {
+          "path": "src/modules/agents/lib/format.ts",
+          "lines": 17
+        },
+        {
+          "path": "src/modules/agents/lib/launcher.test.ts",
+          "lines": 107
+        },
+        {
+          "path": "src/modules/agents/lib/launcher.ts",
+          "lines": 157
+        },
+        {
+          "path": "src/modules/agents/lib/notificationGate.test.ts",
+          "lines": 44
+        },
+        {
+          "path": "src/modules/agents/lib/notificationGate.ts",
+          "lines": 41
+        },
+        {
+          "path": "src/modules/agents/lib/notify.test.ts",
+          "lines": 69
+        },
+        {
+          "path": "src/modules/agents/lib/notify.ts",
+          "lines": 45
+        },
+        {
+          "path": "src/modules/agents/lib/review.test.ts",
+          "lines": 163
+        },
+        {
+          "path": "src/modules/agents/lib/review.ts",
+          "lines": 61
+        },
+        {
+          "path": "src/modules/agents/lib/route.test.ts",
+          "lines": 99
+        },
+        {
+          "path": "src/modules/agents/lib/route.ts",
+          "lines": 68
+        },
+        {
+          "path": "src/modules/agents/lib/sound.test.ts",
+          "lines": 116
+        },
+        {
+          "path": "src/modules/agents/lib/sound.ts",
+          "lines": 43
+        },
+        {
+          "path": "src/modules/agents/lib/types.ts",
+          "lines": 44
+        },
+        {
+          "path": "src/modules/agents/lib/useWindowFocus.ts",
+          "lines": 26
+        },
+        {
+          "path": "src/modules/agents/model/attention.test.ts",
+          "lines": 156
+        },
+        {
+          "path": "src/modules/agents/model/attention.ts",
+          "lines": 57
+        },
+        {
+          "path": "src/modules/agents/model/index.ts",
+          "lines": 33
+        },
+        {
+          "path": "src/modules/agents/model/reducer.test.ts",
+          "lines": 853
+        },
+        {
+          "path": "src/modules/agents/model/reducer.ts",
+          "lines": 546
+        },
+        {
+          "path": "src/modules/agents/model/types.ts",
+          "lines": 155
+        },
+        {
+          "path": "src/modules/agents/store/agentStore.test.ts",
+          "lines": 122
+        },
+        {
+          "path": "src/modules/agents/store/agentStore.ts",
+          "lines": 113
+        },
+        {
+          "path": "src/modules/agents/store/managedAgentsStore.ts",
+          "lines": 113
+        },
+        {
+          "path": "src/modules/control/agents.ts",
+          "lines": 23
+        },
+        {
+          "path": "src/modules/control/index.ts",
+          "lines": 1
+        },
+        {
+          "path": "src/modules/control/lib/agentDecisions.test.ts",
+          "lines": 175
+        },
+        {
+          "path": "src/modules/control/lib/agentDecisions.ts",
+          "lines": 81
+        },
+        {
+          "path": "src/modules/control/lib/agentEvents.test.ts",
+          "lines": 217
+        },
+        {
+          "path": "src/modules/control/lib/agentEvents.ts",
+          "lines": 234
+        },
+        {
+          "path": "src/modules/control/lib/context.test.ts",
+          "lines": 59
+        },
+        {
+          "path": "src/modules/control/lib/context.ts",
+          "lines": 41
+        },
+        {
+          "path": "src/modules/control/lib/hooksConfig.test.ts",
+          "lines": 58
+        },
+        {
+          "path": "src/modules/control/lib/hooksConfig.ts",
+          "lines": 43
+        },
+        {
+          "path": "src/modules/control/lib/readiness.test.ts",
+          "lines": 41
+        },
+        {
+          "path": "src/modules/control/lib/readiness.ts",
+          "lines": 11
+        },
+        {
+          "path": "src/modules/control/useControlBridge.test.ts",
+          "lines": 20
+        },
+        {
+          "path": "src/modules/control/useControlBridge.ts",
+          "lines": 199
+        }
+      ],
+      "lines": 13992
+    },
+    "ai": {
+      "title": "Built-in AI (BYOK) subsystem",
+      "files": [
+        {
+          "path": "src-tauri/src/modules/ai_sessions.rs",
+          "lines": 1243
+        },
+        {
+          "path": "src-tauri/src/modules/net.rs",
+          "lines": 772
+        },
+        {
+          "path": "src-tauri/src/modules/net/clients.rs",
+          "lines": 504
+        },
+        {
+          "path": "src-tauri/src/modules/net/ip.rs",
+          "lines": 263
+        },
+        {
+          "path": "src-tauri/src/modules/net/stream.rs",
+          "lines": 439
+        },
+        {
+          "path": "src-tauri/src/modules/secrets.rs",
+          "lines": 511
+        },
+        {
+          "path": "src/components/ai-elements/chat-code-lezer.ts",
+          "lines": 320
+        },
+        {
+          "path": "src/components/ai-elements/chat-code.tsx",
+          "lines": 278
+        },
+        {
+          "path": "src/components/ai-elements/context.tsx",
+          "lines": 303
+        },
+        {
+          "path": "src/components/ai-elements/conversation.tsx",
+          "lines": 169
+        },
+        {
+          "path": "src/components/ai-elements/markdown-code.test.tsx",
+          "lines": 21
+        },
+        {
+          "path": "src/components/ai-elements/markdown-code.tsx",
+          "lines": 48
+        },
+        {
+          "path": "src/components/ai-elements/message.tsx",
+          "lines": 363
+        },
+        {
+          "path": "src/components/ai-elements/reasoning.tsx",
+          "lines": 221
+        },
+        {
+          "path": "src/components/ai-elements/shimmer.tsx",
+          "lines": 43
+        },
+        {
+          "path": "src/components/ai-elements/snippet.tsx",
+          "lines": 146
+        },
+        {
+          "path": "src/components/ai-elements/tool.tsx",
+          "lines": 761
+        },
+        {
+          "path": "src/modules/ai/agents/registry.ts",
+          "lines": 51
+        },
+        {
+          "path": "src/modules/ai/agents/runSubagent.ts",
+          "lines": 75
+        },
+        {
+          "path": "src/modules/ai/components/AgentRunBridge.tsx",
+          "lines": 373
+        },
+        {
+          "path": "src/modules/ai/components/AgentStatusPill.tsx",
+          "lines": 60
+        },
+        {
+          "path": "src/modules/ai/components/AgentSwitcher.tsx",
+          "lines": 172
+        },
+        {
+          "path": "src/modules/ai/components/AiChat.tsx",
+          "lines": 708
+        },
+        {
+          "path": "src/modules/ai/components/AiComposerInput.tsx",
+          "lines": 312
+        },
+        {
+          "path": "src/modules/ai/components/AiInputBar.tsx",
+          "lines": 20
+        },
+        {
+          "path": "src/modules/ai/components/AiMiniWindow.tsx",
+          "lines": 579
+        },
+        {
+          "path": "src/modules/ai/components/AiStatusBarControls.tsx",
+          "lines": 722
+        },
+        {
+          "path": "src/modules/ai/components/AiToolApproval.tsx",
+          "lines": 183
+        },
+        {
+          "path": "src/modules/ai/components/Chip.tsx",
+          "lines": 90
+        },
+        {
+          "path": "src/modules/ai/components/ChipsRow.tsx",
+          "lines": 106
+        },
+        {
+          "path": "src/modules/ai/components/FilePicker.tsx",
+          "lines": 104
+        },
+        {
+          "path": "src/modules/ai/components/LocalAgentNotificationsBridge.tsx",
+          "lines": 75
+        },
+        {
+          "path": "src/modules/ai/components/PlanDiffReview.tsx",
+          "lines": 256
+        },
+        {
+          "path": "src/modules/ai/components/SelectionAskAi.tsx",
+          "lines": 68
+        },
+        {
+          "path": "src/modules/ai/components/SnippetPicker.tsx",
+          "lines": 139
+        },
+        {
+          "path": "src/modules/ai/components/TodoStrip.tsx",
+          "lines": 103
+        },
+        {
+          "path": "src/modules/ai/components/lazy.tsx",
+          "lines": 52
+        },
+        {
+          "path": "src/modules/ai/components/messageHeightEstimate.test.ts",
+          "lines": 66
+        },
+        {
+          "path": "src/modules/ai/components/messageHeightEstimate.ts",
+          "lines": 44
+        },
+        {
+          "path": "src/modules/ai/config.test.ts",
+          "lines": 228
+        },
+        {
+          "path": "src/modules/ai/config.ts",
+          "lines": 987
+        },
+        {
+          "path": "src/modules/ai/hooks/useAiBootstrap.test.ts",
+          "lines": 188
+        },
+        {
+          "path": "src/modules/ai/hooks/useAiBootstrap.ts",
+          "lines": 126
+        },
+        {
+          "path": "src/modules/ai/hooks/useSelectionAskAi.ts",
+          "lines": 67
+        },
+        {
+          "path": "src/modules/ai/hooks/useWhisperRecording.ts",
+          "lines": 136
+        },
+        {
+          "path": "src/modules/ai/hooks/useWorkspaceFiles.ts",
+          "lines": 104
+        },
+        {
+          "path": "src/modules/ai/index.ts",
+          "lines": 14
+        },
+        {
+          "path": "src/modules/ai/lib/agent.ts",
+          "lines": 463
+        },
+        {
+          "path": "src/modules/ai/lib/agents.test.ts",
+          "lines": 37
+        },
+        {
+          "path": "src/modules/ai/lib/agents.ts",
+          "lines": 125
+        },
+        {
+          "path": "src/modules/ai/lib/codeHighlight.test.ts",
+          "lines": 26
+        },
+        {
+          "path": "src/modules/ai/lib/compact.test.ts",
+          "lines": 117
+        },
+        {
+          "path": "src/modules/ai/lib/compact.ts",
+          "lines": 201
+        },
+        {
+          "path": "src/modules/ai/lib/composer.tsx",
+          "lines": 393
+        },
+        {
+          "path": "src/modules/ai/lib/errors.test.ts",
+          "lines": 100
+        },
+        {
+          "path": "src/modules/ai/lib/errors.ts",
+          "lines": 91
+        },
+        {
+          "path": "src/modules/ai/lib/keyring.test.ts",
+          "lines": 20
+        },
+        {
+          "path": "src/modules/ai/lib/keyring.ts",
+          "lines": 149
+        },
+        {
+          "path": "src/modules/ai/lib/miniWindowGeometry.test.ts",
+          "lines": 109
+        },
+        {
+          "path": "src/modules/ai/lib/miniWindowGeometry.ts",
+          "lines": 76
+        },
+        {
+          "path": "src/modules/ai/lib/modelPrefs.test.ts",
+          "lines": 99
+        },
+        {
+          "path": "src/modules/ai/lib/modelPrefs.ts",
+          "lines": 27
+        },
+        {
+          "path": "src/modules/ai/lib/native.ts",
+          "lines": 169
+        },
+        {
+          "path": "src/modules/ai/lib/pathPolicy.json",
+          "lines": 57
+        },
+        {
+          "path": "src/modules/ai/lib/persistSchedule.test.ts",
+          "lines": 59
+        },
+        {
+          "path": "src/modules/ai/lib/persistSchedule.ts",
+          "lines": 33
+        },
+        {
+          "path": "src/modules/ai/lib/prompt.test.ts",
+          "lines": 86
+        },
+        {
+          "path": "src/modules/ai/lib/prompt.ts",
+          "lines": 40
+        },
+        {
+          "path": "src/modules/ai/lib/proxyFetch.test.ts",
+          "lines": 214
+        },
+        {
+          "path": "src/modules/ai/lib/proxyFetch.ts",
+          "lines": 248
+        },
+        {
+          "path": "src/modules/ai/lib/redact.test.ts",
+          "lines": 59
+        },
+        {
+          "path": "src/modules/ai/lib/redact.ts",
+          "lines": 28
+        },
+        {
+          "path": "src/modules/ai/lib/security.test.ts",
+          "lines": 382
+        },
+        {
+          "path": "src/modules/ai/lib/security.ts",
+          "lines": 348
+        },
+        {
+          "path": "src/modules/ai/lib/sessions.persistence.test.ts",
+          "lines": 379
+        },
+        {
+          "path": "src/modules/ai/lib/sessions.test.ts",
+          "lines": 96
+        },
+        {
+          "path": "src/modules/ai/lib/sessions.ts",
+          "lines": 356
+        },
+        {
+          "path": "src/modules/ai/lib/slashCommands.ts",
+          "lines": 117
+        },
+        {
+          "path": "src/modules/ai/lib/snippets.test.ts",
+          "lines": 84
+        },
+        {
+          "path": "src/modules/ai/lib/snippets.ts",
+          "lines": 73
+        },
+        {
+          "path": "src/modules/ai/lib/stt.ts",
+          "lines": 173
+        },
+        {
+          "path": "src/modules/ai/lib/todos.test.ts",
+          "lines": 35
+        },
+        {
+          "path": "src/modules/ai/lib/todos.ts",
+          "lines": 51
+        },
+        {
+          "path": "src/modules/ai/lib/transport.test.ts",
+          "lines": 96
+        },
+        {
+          "path": "src/modules/ai/lib/transport.ts",
+          "lines": 152
+        },
+        {
+          "path": "src/modules/ai/lib/useAiLiveBridge.ts",
+          "lines": 169
+        },
+        {
+          "path": "src/modules/ai/lib/useMiniWindowGeometry.ts",
+          "lines": 166
+        },
+        {
+          "path": "src/modules/ai/lib/zodV3Shim.test.ts",
+          "lines": 10
+        },
+        {
+          "path": "src/modules/ai/lib/zodV3Shim.ts",
+          "lines": 43
+        },
+        {
+          "path": "src/modules/ai/store/agentsStore.ts",
+          "lines": 74
+        },
+        {
+          "path": "src/modules/ai/store/chatRuntime.ts",
+          "lines": 143
+        },
+        {
+          "path": "src/modules/ai/store/chatStore.hydration.test.ts",
+          "lines": 30
+        },
+        {
+          "path": "src/modules/ai/store/chatStore.persist.test.ts",
+          "lines": 81
+        },
+        {
+          "path": "src/modules/ai/store/chatStore.ts",
+          "lines": 459
+        },
+        {
+          "path": "src/modules/ai/store/planStore.ts",
+          "lines": 66
+        },
+        {
+          "path": "src/modules/ai/store/snippetsStore.ts",
+          "lines": 48
+        },
+        {
+          "path": "src/modules/ai/store/todoStore.ts",
+          "lines": 53
+        },
+        {
+          "path": "src/modules/ai/tools/agent.ts",
+          "lines": 125
+        },
+        {
+          "path": "src/modules/ai/tools/context.ts",
+          "lines": 34
+        },
+        {
+          "path": "src/modules/ai/tools/edit.test.ts",
+          "lines": 232
+        },
+        {
+          "path": "src/modules/ai/tools/edit.ts",
+          "lines": 187
+        },
+        {
+          "path": "src/modules/ai/tools/fs.test.ts",
+          "lines": 90
+        },
+        {
+          "path": "src/modules/ai/tools/fs.ts",
+          "lines": 225
+        },
+        {
+          "path": "src/modules/ai/tools/search.test.ts",
+          "lines": 135
+        },
+        {
+          "path": "src/modules/ai/tools/search.ts",
+          "lines": 151
+        },
+        {
+          "path": "src/modules/ai/tools/shell.test.ts",
+          "lines": 158
+        },
+        {
+          "path": "src/modules/ai/tools/shell.ts",
+          "lines": 135
+        },
+        {
+          "path": "src/modules/ai/tools/subagent.test.ts",
+          "lines": 78
+        },
+        {
+          "path": "src/modules/ai/tools/subagent.ts",
+          "lines": 56
+        },
+        {
+          "path": "src/modules/ai/tools/terminal.test.ts",
+          "lines": 175
+        },
+        {
+          "path": "src/modules/ai/tools/terminal.ts",
+          "lines": 99
+        },
+        {
+          "path": "src/modules/ai/tools/todo.test.ts",
+          "lines": 88
+        },
+        {
+          "path": "src/modules/ai/tools/todo.ts",
+          "lines": 57
+        },
+        {
+          "path": "src/modules/ai/tools/tools.ts",
+          "lines": 42
+        }
+      ],
+      "lines": 21390
+    },
+    "ide-tools": {
+      "title": "IDE-like tools (editor, explorer, git, LSP, markdown, preview)",
+      "files": [
+        {
+          "path": "src-tauri/src/modules/fs/ai.rs",
+          "lines": 492
+        },
+        {
+          "path": "src-tauri/src/modules/fs/assets.rs",
+          "lines": 460
+        },
+        {
+          "path": "src-tauri/src/modules/fs/clipboard.rs",
+          "lines": 207
+        },
+        {
+          "path": "src-tauri/src/modules/fs/copy.rs",
+          "lines": 538
+        },
+        {
+          "path": "src-tauri/src/modules/fs/file.rs",
+          "lines": 560
+        },
+        {
+          "path": "src-tauri/src/modules/fs/grep.rs",
+          "lines": 457
+        },
+        {
+          "path": "src-tauri/src/modules/fs/index.rs",
+          "lines": 995
+        },
+        {
+          "path": "src-tauri/src/modules/fs/local_file.rs",
+          "lines": 117
+        },
+        {
+          "path": "src-tauri/src/modules/fs/mod.rs",
+          "lines": 159
+        },
+        {
+          "path": "src-tauri/src/modules/fs/mutate.rs",
+          "lines": 745
+        },
+        {
+          "path": "src-tauri/src/modules/fs/project_memory.rs",
+          "lines": 204
+        },
+        {
+          "path": "src-tauri/src/modules/fs/read_policy.rs",
+          "lines": 184
+        },
+        {
+          "path": "src-tauri/src/modules/fs/search.rs",
+          "lines": 528
+        },
+        {
+          "path": "src-tauri/src/modules/fs/supersede.rs",
+          "lines": 193
+        },
+        {
+          "path": "src-tauri/src/modules/fs/tree.rs",
+          "lines": 343
+        },
+        {
+          "path": "src-tauri/src/modules/fs/watch.rs",
+          "lines": 867
+        },
+        {
+          "path": "src-tauri/src/modules/fs/watch/macos.rs",
+          "lines": 508
+        },
+        {
+          "path": "src-tauri/src/modules/fs/watch/plan.rs",
+          "lines": 1168
+        },
+        {
+          "path": "src-tauri/src/modules/fs/watch/portable.rs",
+          "lines": 116
+        },
+        {
+          "path": "src-tauri/src/modules/git/branch.rs",
+          "lines": 381
+        },
+        {
+          "path": "src-tauri/src/modules/git/checkpoint.rs",
+          "lines": 1561
+        },
+        {
+          "path": "src-tauri/src/modules/git/commands.rs",
+          "lines": 312
+        },
+        {
+          "path": "src-tauri/src/modules/git/commands_review.rs",
+          "lines": 283
+        },
+        {
+          "path": "src-tauri/src/modules/git/commands_tasks.rs",
+          "lines": 146
+        },
+        {
+          "path": "src-tauri/src/modules/git/diff.rs",
+          "lines": 1064
+        },
+        {
+          "path": "src-tauri/src/modules/git/edge_tests.rs",
+          "lines": 354
+        },
+        {
+          "path": "src-tauri/src/modules/git/errors.rs",
+          "lines": 183
+        },
+        {
+          "path": "src-tauri/src/modules/git/feedback_tests.rs",
+          "lines": 477
+        },
+        {
+          "path": "src-tauri/src/modules/git/followup_tests.rs",
+          "lines": 589
+        },
+        {
+          "path": "src-tauri/src/modules/git/hardening_tests.rs",
+          "lines": 776
+        },
+        {
+          "path": "src-tauri/src/modules/git/mod.rs",
+          "lines": 39
+        },
+        {
+          "path": "src-tauri/src/modules/git/operations.rs",
+          "lines": 1332
+        },
+        {
+          "path": "src-tauri/src/modules/git/parser.rs",
+          "lines": 292
+        },
+        {
+          "path": "src-tauri/src/modules/git/patch.rs",
+          "lines": 446
+        },
+        {
+          "path": "src-tauri/src/modules/git/plumbing.rs",
+          "lines": 248
+        },
+        {
+          "path": "src-tauri/src/modules/git/process.rs",
+          "lines": 807
+        },
+        {
+          "path": "src-tauri/src/modules/git/project_config.rs",
+          "lines": 387
+        },
+        {
+          "path": "src-tauri/src/modules/git/refs.rs",
+          "lines": 272
+        },
+        {
+          "path": "src-tauri/src/modules/git/review.rs",
+          "lines": 1279
+        },
+        {
+          "path": "src-tauri/src/modules/git/review_tests.rs",
+          "lines": 1002
+        },
+        {
+          "path": "src-tauri/src/modules/git/task_state.rs",
+          "lines": 167
+        },
+        {
+          "path": "src-tauri/src/modules/git/task_worktree.rs",
+          "lines": 853
+        },
+        {
+          "path": "src-tauri/src/modules/git/task_worktree_tests.rs",
+          "lines": 1419
+        },
+        {
+          "path": "src-tauri/src/modules/git/tasks_tests.rs",
+          "lines": 1087
+        },
+        {
+          "path": "src-tauri/src/modules/git/testutil.rs",
+          "lines": 168
+        },
+        {
+          "path": "src-tauri/src/modules/git/types.rs",
+          "lines": 373
+        },
+        {
+          "path": "src-tauri/src/modules/git/untracked.rs",
+          "lines": 219
+        },
+        {
+          "path": "src-tauri/src/modules/git/utils.rs",
+          "lines": 341
+        },
+        {
+          "path": "src-tauri/src/modules/git/watch.rs",
+          "lines": 1514
+        },
+        {
+          "path": "src-tauri/src/modules/git/worktree.rs",
+          "lines": 1660
+        },
+        {
+          "path": "src-tauri/src/modules/lsp/env.rs",
+          "lines": 120
+        },
+        {
+          "path": "src-tauri/src/modules/lsp/framing.rs",
+          "lines": 287
+        },
+        {
+          "path": "src-tauri/src/modules/lsp/mod.rs",
+          "lines": 214
+        },
+        {
+          "path": "src-tauri/src/modules/lsp/session.rs",
+          "lines": 432
+        },
+        {
+          "path": "src-tauri/tests/fs_search.rs",
+          "lines": 388
+        },
+        {
+          "path": "src-tauri/tests/git_operations.rs",
+          "lines": 765
+        },
+        {
+          "path": "src/modules/editor/AiDiffPane.tsx",
+          "lines": 241
+        },
+        {
+          "path": "src/modules/editor/AiDiffStack.tsx",
+          "lines": 30
+        },
+        {
+          "path": "src/modules/editor/AiDiffStackLazy.tsx",
+          "lines": 25
+        },
+        {
+          "path": "src/modules/editor/EditorPane.tsx",
+          "lines": 672
+        },
+        {
+          "path": "src/modules/editor/EditorStack.tsx",
+          "lines": 131
+        },
+        {
+          "path": "src/modules/editor/EditorStack.window-inactive.test.tsx",
+          "lines": 83
+        },
+        {
+          "path": "src/modules/editor/EditorStackLazy.tsx",
+          "lines": 21
+        },
+        {
+          "path": "src/modules/editor/GitDiffPane.tsx",
+          "lines": 332
+        },
+        {
+          "path": "src/modules/editor/GitDiffStack.tsx",
+          "lines": 49
+        },
+        {
+          "path": "src/modules/editor/GitDiffStackLazy.tsx",
+          "lines": 27
+        },
+        {
+          "path": "src/modules/editor/MediaPreview.test.tsx",
+          "lines": 22
+        },
+        {
+          "path": "src/modules/editor/MediaPreview.tsx",
+          "lines": 31
+        },
+        {
+          "path": "src/modules/editor/NewEditorDialog.tsx",
+          "lines": 127
+        },
+        {
+          "path": "src/modules/editor/index.ts",
+          "lines": 8
+        },
+        {
+          "path": "src/modules/editor/lib/autocomplete/inlineExtension.ts",
+          "lines": null
+        },
+        {
+          "path": "src/modules/editor/lib/autocomplete/normalizeIndent.test.ts",
+          "lines": 38
+        },
+        {
+          "path": "src/modules/editor/lib/autocomplete/normalizeIndent.ts",
+          "lines": 40
+        },
+        {
+          "path": "src/modules/editor/lib/autocomplete/prompt.test.ts",
+          "lines": 85
+        },
+        {
+          "path": "src/modules/editor/lib/autocomplete/prompt.ts",
+          "lines": 86
+        },
+        {
+          "path": "src/modules/editor/lib/autocomplete/provider.ts",
+          "lines": 86
+        },
+        {
+          "path": "src/modules/editor/lib/autocomplete/trimSuggestion.test.ts",
+          "lines": 79
+        },
+        {
+          "path": "src/modules/editor/lib/chromeTheme.ts",
+          "lines": 427
+        },
+        {
+          "path": "src/modules/editor/lib/cmThemes.ts",
+          "lines": 417
+        },
+        {
+          "path": "src/modules/editor/lib/colorSwatches.ts",
+          "lines": 121
+        },
+        {
+          "path": "src/modules/editor/lib/diagnosticsReporter.ts",
+          "lines": 25
+        },
+        {
+          "path": "src/modules/editor/lib/diagnosticsStore.test.ts",
+          "lines": 58
+        },
+        {
+          "path": "src/modules/editor/lib/diagnosticsStore.ts",
+          "lines": 29
+        },
+        {
+          "path": "src/modules/editor/lib/diffCache.test.ts",
+          "lines": 165
+        },
+        {
+          "path": "src/modules/editor/lib/diffCache.ts",
+          "lines": 100
+        },
+        {
+          "path": "src/modules/editor/lib/eol.test.ts",
+          "lines": 49
+        },
+        {
+          "path": "src/modules/editor/lib/eol.ts",
+          "lines": 20
+        },
+        {
+          "path": "src/modules/editor/lib/extensions.test.ts",
+          "lines": 34
+        },
+        {
+          "path": "src/modules/editor/lib/extensions.ts",
+          "lines": 133
+        },
+        {
+          "path": "src/modules/editor/lib/externalFormat.test.ts",
+          "lines": 29
+        },
+        {
+          "path": "src/modules/editor/lib/externalFormat.ts",
+          "lines": 177
+        },
+        {
+          "path": "src/modules/editor/lib/indent.test.ts",
+          "lines": 34
+        },
+        {
+          "path": "src/modules/editor/lib/indent.ts",
+          "lines": 49
+        },
+        {
+          "path": "src/modules/editor/lib/languageDefinitions.ts",
+          "lines": 505
+        },
+        {
+          "path": "src/modules/editor/lib/languageResolver.test.ts",
+          "lines": 157
+        },
+        {
+          "path": "src/modules/editor/lib/languageResolver.ts",
+          "lines": 87
+        },
+        {
+          "path": "src/modules/editor/lib/markdownExtras.ts",
+          "lines": 120
+        },
+        {
+          "path": "src/modules/editor/lib/mediaPreview.test.ts",
+          "lines": 85
+        },
+        {
+          "path": "src/modules/editor/lib/mediaPreview.ts",
+          "lines": 31
+        },
+        {
+          "path": "src/modules/editor/lib/themes.ts",
+          "lines": 49
+        },
+        {
+          "path": "src/modules/editor/lib/useApplyEditorFontSize.ts",
+          "lines": 12
+        },
+        {
+          "path": "src/modules/editor/lib/useDocument.ts",
+          "lines": 227
+        },
+        {
+          "path": "src/modules/editor/lib/useEditorThemeExt.ts",
+          "lines": 15
+        },
+        {
+          "path": "src/modules/editor/lib/vim.ts",
+          "lines": 73
+        },
+        {
+          "path": "src/modules/editor/useEditorFileSync.ts",
+          "lines": 109
+        },
+        {
+          "path": "src/modules/explorer/ExplorerSearch.tsx",
+          "lines": 347
+        },
+        {
+          "path": "src/modules/explorer/FileExplorer.tsx",
+          "lines": 1088
+        },
+        {
+          "path": "src/modules/explorer/FileIcon.tsx",
+          "lines": 91
+        },
+        {
+          "path": "src/modules/explorer/InlineInput.tsx",
+          "lines": 95
+        },
+        {
+          "path": "src/modules/explorer/TreeRow.tsx",
+          "lines": 209
+        },
+        {
+          "path": "src/modules/explorer/index.ts",
+          "lines": 1
+        },
+        {
+          "path": "src/modules/explorer/lib/batchMove.test.ts",
+          "lines": 177
+        },
+        {
+          "path": "src/modules/explorer/lib/batchMove.ts",
+          "lines": 106
+        },
+        {
+          "path": "src/modules/explorer/lib/clipboardPaste.test.ts",
+          "lines": 192
+        },
+        {
+          "path": "src/modules/explorer/lib/clipboardPaste.ts",
+          "lines": 81
+        },
+        {
+          "path": "src/modules/explorer/lib/constants.ts",
+          "lines": 71
+        },
+        {
+          "path": "src/modules/explorer/lib/contextActions.test.ts",
+          "lines": 31
+        },
+        {
+          "path": "src/modules/explorer/lib/contextActions.ts",
+          "lines": 23
+        },
+        {
+          "path": "src/modules/explorer/lib/fileIcons.ts",
+          "lines": 2681
+        },
+        {
+          "path": "src/modules/explorer/lib/folderIcons.ts",
+          "lines": 581
+        },
+        {
+          "path": "src/modules/explorer/lib/gitStatusColor.test.ts",
+          "lines": 16
+        },
+        {
+          "path": "src/modules/explorer/lib/gitStatusColor.ts",
+          "lines": 16
+        },
+        {
+          "path": "src/modules/explorer/lib/gitStatusUtils.test.ts",
+          "lines": 114
+        },
+        {
+          "path": "src/modules/explorer/lib/gitStatusUtils.ts",
+          "lines": 106
+        },
+        {
+          "path": "src/modules/explorer/lib/iconEngine.test.ts",
+          "lines": 60
+        },
+        {
+          "path": "src/modules/explorer/lib/iconEngine.ts",
+          "lines": 138
+        },
+        {
+          "path": "src/modules/explorer/lib/iconResolver.test.ts",
+          "lines": 93
+        },
+        {
+          "path": "src/modules/explorer/lib/iconResolver.ts",
+          "lines": 53
+        },
+        {
+          "path": "src/modules/explorer/lib/menuItemClass.ts",
+          "lines": 5
+        },
+        {
+          "path": "src/modules/explorer/lib/useExplorerDnd.test.ts",
+          "lines": 170
+        },
+        {
+          "path": "src/modules/explorer/lib/useExplorerDnd.ts",
+          "lines": 239
+        },
+        {
+          "path": "src/modules/explorer/lib/useExplorerFileDrop.ts",
+          "lines": 115
+        },
+        {
+          "path": "src/modules/explorer/lib/useFileTree.ts",
+          "lines": 624
+        },
+        {
+          "path": "src/modules/explorer/lib/useGitStatus.ts",
+          "lines": 85
+        },
+        {
+          "path": "src/modules/explorer/lib/watch.ts",
+          "lines": 53
+        },
+        {
+          "path": "src/modules/explorer/lib/watchRegistry.test.ts",
+          "lines": 112
+        },
+        {
+          "path": "src/modules/explorer/lib/watchRegistry.ts",
+          "lines": 108
+        },
+        {
+          "path": "src/modules/git-history/GitHistoryPane.tsx",
+          "lines": 1031
+        },
+        {
+          "path": "src/modules/git-history/GitHistoryStack.tsx",
+          "lines": 38
+        },
+        {
+          "path": "src/modules/git-history/GitHistoryStackLazy.tsx",
+          "lines": 25
+        },
+        {
+          "path": "src/modules/git-history/GraphRail.test.ts",
+          "lines": 19
+        },
+        {
+          "path": "src/modules/git-history/GraphRail.tsx",
+          "lines": 155
+        },
+        {
+          "path": "src/modules/git-history/index.ts",
+          "lines": 2
+        },
+        {
+          "path": "src/modules/git-history/lib/graph.test.ts",
+          "lines": 110
+        },
+        {
+          "path": "src/modules/git-history/lib/graph.ts",
+          "lines": 201
+        },
+        {
+          "path": "src/modules/git-history/lib/remoteWebUrl.test.ts",
+          "lines": 106
+        },
+        {
+          "path": "src/modules/git-history/lib/remoteWebUrl.ts",
+          "lines": 82
+        },
+        {
+          "path": "src/modules/git/api.test.ts",
+          "lines": 202
+        },
+        {
+          "path": "src/modules/git/api.ts",
+          "lines": 340
+        },
+        {
+          "path": "src/modules/git/changes.test.ts",
+          "lines": 204
+        },
+        {
+          "path": "src/modules/git/changes.ts",
+          "lines": 122
+        },
+        {
+          "path": "src/modules/git/hunks.test.ts",
+          "lines": 220
+        },
+        {
+          "path": "src/modules/git/hunks.ts",
+          "lines": 192
+        },
+        {
+          "path": "src/modules/git/index.ts",
+          "lines": 5
+        },
+        {
+          "path": "src/modules/git/scope.test.ts",
+          "lines": 197
+        },
+        {
+          "path": "src/modules/git/scope.ts",
+          "lines": 147
+        },
+        {
+          "path": "src/modules/git/types.ts",
+          "lines": 494
+        },
+        {
+          "path": "src/modules/lsp/components/LspStatusPill.test.tsx",
+          "lines": 69
+        },
+        {
+          "path": "src/modules/lsp/components/LspStatusPill.tsx",
+          "lines": 293
+        },
+        {
+          "path": "src/modules/lsp/index.ts",
+          "lines": 10
+        },
+        {
+          "path": "src/modules/lsp/lib/client.ts",
+          "lines": 447
+        },
+        {
+          "path": "src/modules/lsp/lib/detect.test.ts",
+          "lines": 114
+        },
+        {
+          "path": "src/modules/lsp/lib/detect.ts",
+          "lines": 27
+        },
+        {
+          "path": "src/modules/lsp/lib/locationsPanel.ts",
+          "lines": 105
+        },
+        {
+          "path": "src/modules/lsp/lib/navigator.ts",
+          "lines": 13
+        },
+        {
+          "path": "src/modules/lsp/lib/presets.test.ts",
+          "lines": 85
+        },
+        {
+          "path": "src/modules/lsp/lib/presets.ts",
+          "lines": 316
+        },
+        {
+          "path": "src/modules/lsp/lib/protocolShim.test.ts",
+          "lines": 56
+        },
+        {
+          "path": "src/modules/lsp/lib/protocolShim.ts",
+          "lines": 49
+        },
+        {
+          "path": "src/modules/lsp/lib/runtimeStore.ts",
+          "lines": 79
+        },
+        {
+          "path": "src/modules/lsp/lib/sessionManager.test.ts",
+          "lines": 213
+        },
+        {
+          "path": "src/modules/lsp/lib/sessionManager.ts",
+          "lines": 470
+        },
+        {
+          "path": "src/modules/lsp/lib/transport.test.ts",
+          "lines": 50
+        },
+        {
+          "path": "src/modules/lsp/lib/transport.ts",
+          "lines": 157
+        },
+        {
+          "path": "src/modules/lsp/lib/uri.test.ts",
+          "lines": 43
+        },
+        {
+          "path": "src/modules/lsp/lib/uri.ts",
+          "lines": 18
+        },
+        {
+          "path": "src/modules/lsp/lib/useLspExtension.ts",
+          "lines": 51
+        },
+        {
+          "path": "src/modules/lsp/lib/useLspHint.ts",
+          "lines": 66
+        },
+        {
+          "path": "src/modules/markdown/MarkdownLink.test.tsx",
+          "lines": 44
+        },
+        {
+          "path": "src/modules/markdown/MarkdownLink.tsx",
+          "lines": 36
+        },
+        {
+          "path": "src/modules/markdown/MarkdownPreviewPane.test.ts",
+          "lines": 19
+        },
+        {
+          "path": "src/modules/markdown/MarkdownPreviewPane.tsx",
+          "lines": 137
+        },
+        {
+          "path": "src/modules/markdown/MarkdownStack.tsx",
+          "lines": 49
+        },
+        {
+          "path": "src/modules/markdown/MarkdownStackLazy.tsx",
+          "lines": 21
+        },
+        {
+          "path": "src/modules/markdown/MarkdownViewToggle.tsx",
+          "lines": 50
+        },
+        {
+          "path": "src/modules/markdown/index.ts",
+          "lines": 2
+        },
+        {
+          "path": "src/modules/markdown/lib/assetPath.test.ts",
+          "lines": 158
+        },
+        {
+          "path": "src/modules/markdown/lib/assetPath.ts",
+          "lines": 148
+        },
+        {
+          "path": "src/modules/markdown/lib/liveReload.test.ts",
+          "lines": 81
+        },
+        {
+          "path": "src/modules/markdown/lib/liveReload.ts",
+          "lines": 64
+        },
+        {
+          "path": "src/modules/markdown/useMarkdownDocument.ts",
+          "lines": 139
+        },
+        {
+          "path": "src/modules/preview/PreviewAddressBar.tsx",
+          "lines": 244
+        },
+        {
+          "path": "src/modules/preview/PreviewPane.test.ts",
+          "lines": 59
+        },
+        {
+          "path": "src/modules/preview/PreviewPane.tsx",
+          "lines": 237
+        },
+        {
+          "path": "src/modules/preview/PreviewStack.tsx",
+          "lines": 89
+        },
+        {
+          "path": "src/modules/preview/devFramePolicy.test.ts",
+          "lines": 28
+        },
+        {
+          "path": "src/modules/preview/index.ts",
+          "lines": 2
+        },
+        {
+          "path": "src/modules/preview/lib/previewUrl.test.ts",
+          "lines": 37
+        },
+        {
+          "path": "src/modules/preview/lib/previewUrl.ts",
+          "lines": 48
+        },
+        {
+          "path": "src/modules/source-control/SourceControlPanel.tsx",
+          "lines": 1490
+        },
+        {
+          "path": "src/modules/source-control/SourceControlPanelLazy.tsx",
+          "lines": 19
+        },
+        {
+          "path": "src/modules/source-control/index.ts",
+          "lines": 3
+        },
+        {
+          "path": "src/modules/source-control/repositoryTarget.test.ts",
+          "lines": 261
+        },
+        {
+          "path": "src/modules/source-control/repositoryTarget.ts",
+          "lines": 136
+        },
+        {
+          "path": "src/modules/source-control/statusConsumers.test.ts",
+          "lines": 58
+        },
+        {
+          "path": "src/modules/source-control/statusConsumers.ts",
+          "lines": 57
+        },
+        {
+          "path": "src/modules/source-control/useRepositoryTargeting.ts",
+          "lines": 117
+        },
+        {
+          "path": "src/modules/source-control/useSourceControl.test.ts",
+          "lines": 189
+        },
+        {
+          "path": "src/modules/source-control/useSourceControl.ts",
+          "lines": 665
+        },
+        {
+          "path": "src/modules/source-control/useSourceControl.watch.test.tsx",
+          "lines": 292
+        },
+        {
+          "path": "src/modules/source-control/useSourceControlContext.ts",
+          "lines": 141
+        },
+        {
+          "path": "src/modules/source-control/useSourceControlPanel.ts",
+          "lines": 1038
+        },
+        {
+          "path": "src/modules/source-control/watchSourceControl.test.ts",
+          "lines": 144
+        },
+        {
+          "path": "src/modules/source-control/watchSourceControl.ts",
+          "lines": 63
+        }
+      ],
+      "lines": 57497
+    },
+    "build-identity": {
+      "title": "Build, packaging, updater, tooling & product identity",
+      "files": [
+        {
+          "path": ".coderabbit.yaml",
+          "lines": 159
+        },
+        {
+          "path": ".gitignore",
+          "lines": 39
+        },
+        {
+          "path": ".size-limit.json",
+          "lines": 57
+        },
+        {
+          "path": ".vscode/extensions.json",
+          "lines": 7
+        },
+        {
+          "path": ".vscode/settings.json",
+          "lines": 16
+        },
+        {
+          "path": "LICENSE",
+          "lines": 201
+        },
+        {
+          "path": "biome.json",
+          "lines": 92
+        },
+        {
+          "path": "flake.lock",
+          "lines": 27
+        },
+        {
+          "path": "flake.nix",
+          "lines": 25
+        },
+        {
+          "path": "knip.json",
+          "lines": 42
+        },
+        {
+          "path": "nix/package.nix",
+          "lines": 80
+        },
+        {
+          "path": "nix/sources.json",
+          "lines": 8
+        },
+        {
+          "path": "package.json",
+          "lines": 147
+        },
+        {
+          "path": "pnpm-lock.yaml",
+          "lines": 10606
+        },
+        {
+          "path": "pnpm-workspace.yaml",
+          "lines": 35
+        },
+        {
+          "path": "public/licenses/terax.txt",
+          "lines": 206
+        },
+        {
+          "path": "public/logo.png",
+          "lines": null
+        },
+        {
+          "path": "scripts/app-lab/agent-sim.mjs",
+          "lines": 167
+        },
+        {
+          "path": "scripts/app-lab/app_report.py",
+          "lines": 929
+        },
+        {
+          "path": "scripts/app-lab/experiments/tab-switch-toggles.patch",
+          "lines": 145
+        },
+        {
+          "path": "scripts/app-lab/export-tree.sh",
+          "lines": 32
+        },
+        {
+          "path": "scripts/app-lab/fs-churn.mjs",
+          "lines": 180
+        },
+        {
+          "path": "scripts/app-lab/run.py",
+          "lines": 678
+        },
+        {
+          "path": "scripts/dist-graph.d.mts",
+          "lines": 49
+        },
+        {
+          "path": "scripts/dist-graph.mjs",
+          "lines": 335
+        },
+        {
+          "path": "scripts/eager-graph.d.mts",
+          "lines": 9
+        },
+        {
+          "path": "scripts/eager-graph.mjs",
+          "lines": 112
+        },
+        {
+          "path": "src-tauri/.gitignore",
+          "lines": 7
+        },
+        {
+          "path": "src-tauri/Cargo.lock",
+          "lines": 6634
+        },
+        {
+          "path": "src-tauri/Cargo.toml",
+          "lines": 157
+        },
+        {
+          "path": "src-tauri/Info.plist",
+          "lines": 10
+        },
+        {
+          "path": "src-tauri/build.rs",
+          "lines": 36
+        },
+        {
+          "path": "src-tauri/capabilities/clipboard.json",
+          "lines": 13
+        },
+        {
+          "path": "src-tauri/capabilities/default.json",
+          "lines": 32
+        },
+        {
+          "path": "src-tauri/capabilities/desktop.json",
+          "lines": 18
+        },
+        {
+          "path": "src-tauri/entitlements.plist",
+          "lines": 10
+        },
+        {
+          "path": "src-tauri/icons/128x128.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/128x128@2x.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/32x32.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/64x64.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/Square107x107Logo.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/Square142x142Logo.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/Square150x150Logo.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/Square284x284Logo.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/Square30x30Logo.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/Square310x310Logo.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/Square44x44Logo.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/Square71x71Logo.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/Square89x89Logo.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/StoreLogo.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/android/mipmap-anydpi-v26/ic_launcher.xml",
+          "lines": 5
+        },
+        {
+          "path": "src-tauri/icons/android/mipmap-hdpi/ic_launcher.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/android/mipmap-hdpi/ic_launcher_foreground.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/android/mipmap-hdpi/ic_launcher_round.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/android/mipmap-mdpi/ic_launcher.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/android/mipmap-mdpi/ic_launcher_foreground.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/android/mipmap-mdpi/ic_launcher_round.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/android/mipmap-xhdpi/ic_launcher.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/android/mipmap-xhdpi/ic_launcher_foreground.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/android/mipmap-xhdpi/ic_launcher_round.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/android/mipmap-xxhdpi/ic_launcher.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/android/mipmap-xxhdpi/ic_launcher_foreground.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/android/mipmap-xxhdpi/ic_launcher_round.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/android/mipmap-xxxhdpi/ic_launcher.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/android/mipmap-xxxhdpi/ic_launcher_foreground.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/android/mipmap-xxxhdpi/ic_launcher_round.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/android/values/ic_launcher_background.xml",
+          "lines": 4
+        },
+        {
+          "path": "src-tauri/icons/icon.icns",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/icon.ico",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/icon.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/ios/AppIcon-20x20@1x.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/ios/AppIcon-20x20@2x-1.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/ios/AppIcon-20x20@2x.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/ios/AppIcon-20x20@3x.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/ios/AppIcon-29x29@1x.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/ios/AppIcon-29x29@2x-1.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/ios/AppIcon-29x29@2x.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/ios/AppIcon-29x29@3x.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/ios/AppIcon-40x40@1x.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/ios/AppIcon-40x40@2x-1.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/ios/AppIcon-40x40@2x.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/ios/AppIcon-40x40@3x.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/ios/AppIcon-512@2x.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/ios/AppIcon-60x60@2x.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/ios/AppIcon-60x60@3x.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/ios/AppIcon-76x76@1x.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/ios/AppIcon-76x76@2x.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/icons/ios/AppIcon-83.5x83.5@2x.png",
+          "lines": null
+        },
+        {
+          "path": "src-tauri/installer-hooks.nsh",
+          "lines": 26
+        },
+        {
+          "path": "src-tauri/src/modules/bench.rs",
+          "lines": 779
+        },
+        {
+          "path": "src-tauri/tauri.conf.json",
+          "lines": 125
+        },
+        {
+          "path": "src-tauri/tauri.linux.conf.json",
+          "lines": 12
+        },
+        {
+          "path": "src-tauri/tauri.windows.conf.json",
+          "lines": 22
+        },
+        {
+          "path": "src/bench/BenchBridge.tsx",
+          "lines": 16
+        },
+        {
+          "path": "src/bench/diagnostics.ts",
+          "lines": 80
+        },
+        {
+          "path": "src/bench/driver.ts",
+          "lines": 1052
+        },
+        {
+          "path": "src/bench/early.ts",
+          "lines": 86
+        },
+        {
+          "path": "src/bench/eventLog.ts",
+          "lines": 208
+        },
+        {
+          "path": "src/bench/flags.ts",
+          "lines": 21
+        },
+        {
+          "path": "src/bench/gpuCounters.ts",
+          "lines": 201
+        },
+        {
+          "path": "src/bench/report.ts",
+          "lines": 53
+        },
+        {
+          "path": "src/bench/smoothHooks.ts",
+          "lines": 57
+        },
+        {
+          "path": "src/bench/smoothProbe.ts",
+          "lines": 473
+        },
+        {
+          "path": "src/bench/types.ts",
+          "lines": 84
+        },
+        {
+          "path": "src/modules/updater/UpdaterDialog.tsx",
+          "lines": 178
+        },
+        {
+          "path": "src/modules/updater/index.ts",
+          "lines": 2
+        },
+        {
+          "path": "src/modules/updater/useUpdater.ts",
+          "lines": 154
+        },
+        {
+          "path": "src/vite-env.d.ts",
+          "lines": 4
+        },
+        {
+          "path": "terax-icon.png",
+          "lines": null
+        },
+        {
+          "path": "tsconfig.json",
+          "lines": 29
+        },
+        {
+          "path": "tsconfig.node.json",
+          "lines": 10
+        },
+        {
+          "path": "vite.config.ts",
+          "lines": 237
+        }
+      ],
+      "lines": 25218
+    }
+  }
+}

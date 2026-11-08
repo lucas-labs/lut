@@ -1,0 +1,2219 @@
+{
+  "source": ".docs/proposal.md",
+  "items": [
+    {
+      "id": "identity:1",
+      "section": "identity",
+      "kind": "list-item",
+      "text": "Aislamiento de identidad (Fase 0, inmediatamente después de validar el primer build del código importado): bundle identifier, directorio de datos de la app, nombres de archivos persistidos (p. ej. `terax-spaces.json`), …"
+    },
+    {
+      "id": "identity:2",
+      "section": "identity",
+      "kind": "list-item",
+      "text": "Rebranding visual (fases posteriores): títulos, About, iconos, textos de UI y documentación."
+    },
+    {
+      "id": "TER-001",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Crear sesión interactiva PTY"
+    },
+    {
+      "id": "TER-002",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Tabs múltiples"
+    },
+    {
+      "id": "TER-003",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Orientación horizontal/vertical de tabs"
+    },
+    {
+      "id": "TER-004",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Splits horizontales/verticales"
+    },
+    {
+      "id": "TER-005",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Sesiones ocultas activas"
+    },
+    {
+      "id": "TER-006",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Copiar, pegar, selección, búsqueda"
+    },
+    {
+      "id": "TER-007",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Teclado y TUI fiables"
+    },
+    {
+      "id": "TER-008",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Atajos configurables"
+    },
+    {
+      "id": "TER-009",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Mover sesiones entre tabs"
+    },
+    {
+      "id": "TER-010",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P2 Mover sesiones entre ventanas"
+    },
+    {
+      "id": "TER-011",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Cierre seguro"
+    },
+    {
+      "id": "TER-012",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Tabs con indicadores"
+    },
+    {
+      "id": "TER-013",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Tabs compactos, expandibles o con grupos"
+    },
+    {
+      "id": "PRO-001",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Perfiles nombrados"
+    },
+    {
+      "id": "PRO-011",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Abrir pestaña con un perfil"
+    },
+    {
+      "id": "PRO-012",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Ícono por perfil"
+    },
+    {
+      "id": "PRO-013",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Título y color de pestaña por perfil"
+    },
+    {
+      "id": "PRO-002",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Shell/comando ejecutable por perfil"
+    },
+    {
+      "id": "PRO-003",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Directorio de inicio"
+    },
+    {
+      "id": "PRO-004",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Variables de entorno"
+    },
+    {
+      "id": "PRO-005",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Apariencia por perfil"
+    },
+    {
+      "id": "PRO-006",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Entorno Windows/WSL/macOS/Linux"
+    },
+    {
+      "id": "PRO-007",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Exportar/importar perfiles"
+    },
+    {
+      "id": "PRO-009",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Perfil en cada pane"
+    },
+    {
+      "id": "PRO-010",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Validación de perfiles"
+    },
+    {
+      "id": "PRJ-001",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Lista de proyectos"
+    },
+    {
+      "id": "PRJ-002",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Guardar tabs y splits"
+    },
+    {
+      "id": "PRJ-003",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Directorio por pane"
+    },
+    {
+      "id": "PRJ-004",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Comandos de inicio"
+    },
+    {
+      "id": "PRJ-005",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Distintos perfiles en un proyecto"
+    },
+    {
+      "id": "PRJ-006",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Ratios de splits"
+    },
+    {
+      "id": "PRJ-007",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Estrategia de restauración"
+    },
+    {
+      "id": "PRJ-008",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Estados de inicio por pane"
+    },
+    {
+      "id": "PRJ-009",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Reabrir proyecto existente"
+    },
+    {
+      "id": "PRJ-010",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Reanudar agentes"
+    },
+    {
+      "id": "PRJ-011",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Varios proyectos activos"
+    },
+    {
+      "id": "PRJ-012",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P2 Ventanas múltiples por proyecto"
+    },
+    {
+      "id": "PRJ-013",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Presets vs estado vivo"
+    },
+    {
+      "id": "PRJ-014",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Migraciones de esquema"
+    },
+    {
+      "id": "PRJ-015",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Exportar/importar proyectos"
+    },
+    {
+      "id": "PRJ-016",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Restaurar la última sesión al iniciar lut"
+    },
+    {
+      "id": "PRJ-017",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Abrir otros proyectos desde la app"
+    },
+    {
+      "id": "UX-001",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Terminal ocupa el área central y predominante"
+    },
+    {
+      "id": "UX-002",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Navegación de tabs vertical, horizontal, o auto si se agrega más adelante"
+    },
+    {
+      "id": "UX-003",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Sidebar de proyectos opcional, colapsable y con ancho persistido"
+    },
+    {
+      "id": "UX-004",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Temas claros/oscuros y temas personalizados mediante tokens"
+    },
+    {
+      "id": "UX-005",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Fuentes configurables y soporte de Nerd Fonts/powerline cuando el renderer lo permita"
+    },
+    {
+      "id": "UX-006",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 UI minimalista, densidad compacta/normal, iconografía coherente"
+    },
+    {
+      "id": "UX-007",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Menús contextuales para tabs/panes/proyectos"
+    },
+    {
+      "id": "UX-008",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Command palette orientado a acciones de terminal/proyectos"
+    },
+    {
+      "id": "UX-009",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Paneles secundarios opcionales: explorer, Git, diff, logs de agentes"
+    },
+    {
+      "id": "UX-010",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Estados de carga/error/falta de permisos accesibles y no intrusivos"
+    },
+    {
+      "id": "UX-011",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Layout compatible con DPI, tamaño mínimo, pantallas de alta densidad y teclado"
+    },
+    {
+      "id": "UX-012",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P2 Interfaz visual de edición de layout y gestión de ventanas"
+    },
+    {
+      "id": "3.4:invariant",
+      "section": "3.4",
+      "kind": "section",
+      "text": "cambiar orientación de tabs o colapsar sidebar no debe desmontar componentes de sesión y provocar el cierre o respawn de un PTY."
+    },
+    {
+      "id": "AGT-001",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Detectar Claude Code oficial que corre dentro de PTY propia"
+    },
+    {
+      "id": "AGT-002",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Detectar Codex CLI oficial y sus eventos cuando la versión soporta hooks correspondientes"
+    },
+    {
+      "id": "AGT-003",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 No solicitar API key de Anthropic/OpenAI para monitorizar estos procesos"
+    },
+    {
+      "id": "AGT-004",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Asociar agente con pane, PTY, tab, proyecto y sesión de agente"
+    },
+    {
+      "id": "AGT-005",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Estado visible: iniciando, trabajando, atención, finalizado/error/salido"
+    },
+    {
+      "id": "AGT-006",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Notificar finalización y requerimientos de atención con acción de enfoque"
+    },
+    {
+      "id": "AGT-007",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Gestionar instalación de hooks con previsualización y desinstalación selectiva"
+    },
+    {
+      "id": "AGT-008",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Vista opcional de actividad: herramientas, subagentes, errores y eventos"
+    },
+    {
+      "id": "AGT-009",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Contexto de sesión y modelo/consumo donde exista fuente documentada de datos"
+    },
+    {
+      "id": "AGT-010",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Configurar tipos de notificación, sonidos y privacidad"
+    },
+    {
+      "id": "AGT-011",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P2 Aprobar/rechazar permisos desde UI, sólo con protocolo seguro y fallback"
+    },
+    {
+      "id": "AGT-012",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Normalizar eventos de múltiples CLI sin acoplar UI al JSON específico de cada una"
+    },
+    {
+      "id": "AGT-013",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Funcionar con CLI sin hooks usando señales no invasivas, sin inventar estados"
+    },
+    {
+      "id": "AGT-014",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P2 Plugins/adaptadores de agentes adicionales"
+    },
+    {
+      "id": "ADR-001",
+      "section": "4",
+      "kind": "adr",
+      "text": "ADR-001: base técnica"
+    },
+    {
+      "id": "ADR-002",
+      "section": "4",
+      "kind": "adr",
+      "text": "ADR-002: UI"
+    },
+    {
+      "id": "ADR-003",
+      "section": "4",
+      "kind": "adr",
+      "text": "ADR-003: motor de terminal"
+    },
+    {
+      "id": "ADR-004",
+      "section": "4",
+      "kind": "adr",
+      "text": "ADR-004: IA"
+    },
+    {
+      "id": "ADR-005",
+      "section": "4",
+      "kind": "adr",
+      "text": "ADR-005: frontend"
+    },
+    {
+      "id": "ADR-006",
+      "section": "4",
+      "kind": "adr",
+      "text": "ADR-006: proyectos"
+    },
+    {
+      "id": "ADR-007",
+      "section": "4",
+      "kind": "adr",
+      "text": "ADR-007: control de cambios"
+    },
+    {
+      "id": "ADR-008",
+      "section": "4",
+      "kind": "adr",
+      "text": "ADR-008: identidad del producto"
+    },
+    {
+      "id": "5.4:1",
+      "section": "5.4",
+      "kind": "list-item",
+      "text": "No volver a montar un pane por cambiar la posición de la barra de tabs, expandir sidebar o cambiar de proyecto."
+    },
+    {
+      "id": "5.4:2",
+      "section": "5.4",
+      "kind": "list-item",
+      "text": "No crear un canvas nuevo por cada cambio visual de tab."
+    },
+    {
+      "id": "5.4:3",
+      "section": "5.4",
+      "kind": "list-item",
+      "text": "No acoplar layout de tabs a lifecycle de sesión."
+    },
+    {
+      "id": "5.4:4",
+      "section": "5.4",
+      "kind": "list-item",
+      "text": "Conservar el mecanismo de notificación/resize y sincronización entre modelo y PTY."
+    },
+    {
+      "id": "5.4:5",
+      "section": "5.4",
+      "kind": "list-item",
+      "text": "Evitar que los paneles ocultos sigan realizando trabajo visual innecesario."
+    },
+    {
+      "id": "5.4:6",
+      "section": "5.4",
+      "kind": "list-item",
+      "text": "Verificar cambios de DPI, resize continuo y compatibilidad TUI."
+    },
+    {
+      "id": "5.4:7",
+      "section": "5.4",
+      "kind": "list-item",
+      "text": "No modificar indiscriminadamente el WASM adaptado, atlas de fuentes o transporte de output."
+    },
+    {
+      "id": "5.10:1",
+      "section": "5.10",
+      "kind": "table-row",
+      "text": "PTY Rust y shell integration | Bajo/medio | Conservar | Mantener comandos/protocolo"
+    },
+    {
+      "id": "5.10:2",
+      "section": "5.10",
+      "kind": "table-row",
+      "text": "Ghostty/WASM y GPU | Medio/alto riesgo de modificación | Conservar sin grandes cambios | Mucha optimización e invariantes"
+    },
+    {
+      "id": "5.10:3",
+      "section": "5.10",
+      "kind": "table-row",
+      "text": "`TerminalStack`/`TerminalPane` | Medio | Conservar y adaptar contratos mínimos | No desmontar tabs ocultas"
+    },
+    {
+      "id": "5.10:4",
+      "section": "5.10",
+      "kind": "table-row",
+      "text": "Helpers `panes.ts` | Bajo | Reutilizar | Árbol y operaciones puras"
+    },
+    {
+      "id": "5.10:5",
+      "section": "5.10",
+      "kind": "table-row",
+      "text": "`Spaces` + serialización | Medio | Extender con migraciones | Base útil para proyectos"
+    },
+    {
+      "id": "5.10:6",
+      "section": "5.10",
+      "kind": "table-row",
+      "text": "`useTabs.ts` | Alto | Dividir en modelo de sesión y navegación | Unión de tabs de IDE"
+    },
+    {
+      "id": "5.10:7",
+      "section": "5.10",
+      "kind": "table-row",
+      "text": "`App.tsx` | Alto | Reescribir como coordinador pequeño | Altas interdependencias"
+    },
+    {
+      "id": "5.10:8",
+      "section": "5.10",
+      "kind": "table-row",
+      "text": "Header/TabBar/Sidebar | Alto como UX; bajo valor de conservación | Recrear | Producto exige otra navegación"
+    },
+    {
+      "id": "5.10:9",
+      "section": "5.10",
+      "kind": "table-row",
+      "text": "Tema/preferencias | Medio | Reutilizar tokens, separar preferencias | Mezcla ajustes de IDE/AI"
+    },
+    {
+      "id": "5.10:10",
+      "section": "5.10",
+      "kind": "table-row",
+      "text": "CLI/hooks agentes | Medio | Conservar, adaptar marca/protocolo | Dependencias con `control` y PTY"
+    },
+    {
+      "id": "5.10:11",
+      "section": "5.10",
+      "kind": "table-row",
+      "text": "IA integrada (BYOK) | Alto en raíz/UI | Desacoplar/retirar | No eliminar dependencias necesarias para CLI"
+    },
+    {
+      "id": "5.10:12",
+      "section": "5.10",
+      "kind": "table-row",
+      "text": "Editor/Git/explorer | Medio | Opcional y lazy | Quitar del inicio, no del código sin análisis"
+    },
+    {
+      "id": "5.10:13",
+      "section": "5.10",
+      "kind": "table-row",
+      "text": "Multiwindow | Alto | Fase posterior | PTY/webview/renderer por ventana"
+    },
+    {
+      "id": "6.2:1",
+      "section": "6.2",
+      "kind": "list-item",
+      "text": "`terminal-core`: motor y renderizado, adaptadores PTY/VT."
+    },
+    {
+      "id": "6.2:2",
+      "section": "6.2",
+      "kind": "list-item",
+      "text": "`sessions`: lifecycle de PTY, mapeo `leafId ↔ ptyId`, operaciones sobre sesiones y resize."
+    },
+    {
+      "id": "6.2:3",
+      "section": "6.2",
+      "kind": "list-item",
+      "text": "`navigation`: tabs, orientación, selección, orden y grupos. No crea el PTY por sí mismo."
+    },
+    {
+      "id": "6.2:4",
+      "section": "6.2",
+      "kind": "list-item",
+      "text": "`layouts`: árboles de split y ratios; operaciones puras con identificadores estables."
+    },
+    {
+      "id": "6.2:5",
+      "section": "6.2",
+      "kind": "list-item",
+      "text": "`profiles`: configuración y validación de procesos/estilo de sesión."
+    },
+    {
+      "id": "6.2:6",
+      "section": "6.2",
+      "kind": "list-item",
+      "text": "`projects`: metadatos, presets, snapshots, lifecycle de restauración y comandos."
+    },
+    {
+      "id": "6.2:7",
+      "section": "6.2",
+      "kind": "list-item",
+      "text": "`agents`: eventos normalizados, estados, plugins/adaptadores, notificaciones."
+    },
+    {
+      "id": "6.2:8",
+      "section": "6.2",
+      "kind": "list-item",
+      "text": "`optional-tools`: editor, Git, explorer, diff como capabilities con carga bajo demanda."
+    },
+    {
+      "id": "6.2:9",
+      "section": "6.2",
+      "kind": "list-item",
+      "text": "`settings`: preferencias globales y overrides por perfil/proyecto."
+    },
+    {
+      "id": "6.2:10",
+      "section": "6.2",
+      "kind": "list-item",
+      "text": "`platform`: Windows/WSL/macOS/Linux, rutas, ventanas, permisos y menú nativo."
+    },
+    {
+      "id": "6.4",
+      "section": "6.4",
+      "kind": "section",
+      "text": "Cada entidad debe tener identificadores estables, separados: - `projectId`: proyecto lógico persistido. - `presetId`: configuración de arranque versionada. - `windowId`: ventana desktop. - `tabId`: agrupación visual de …"
+    },
+    {
+      "id": "6.5:1",
+      "section": "6.5",
+      "kind": "list-item",
+      "text": "El PTY es recurso vivo y no debe almacenarse en JSON."
+    },
+    {
+      "id": "6.5:2",
+      "section": "6.5",
+      "kind": "list-item",
+      "text": "El preset es declarativo, no una instantánea del proceso."
+    },
+    {
+      "id": "6.5:3",
+      "section": "6.5",
+      "kind": "list-item",
+      "text": "Un snapshot captura estructura visual y configuración de reinicio."
+    },
+    {
+      "id": "6.5:4",
+      "section": "6.5",
+      "kind": "list-item",
+      "text": "El último estado de aplicación no debe sobrescribir una plantilla guardada sin acción explícita."
+    },
+    {
+      "id": "6.5:5",
+      "section": "6.5",
+      "kind": "list-item",
+      "text": "Las migraciones de esquema requieren `schemaVersion` y transformaciones probadas."
+    },
+    {
+      "id": "6.5:6",
+      "section": "6.5",
+      "kind": "list-item",
+      "text": "Los IDs de recursos de runtime deben regenerarse y reconciliarse durante hidratación."
+    },
+    {
+      "id": "6.5:7",
+      "section": "6.5",
+      "kind": "list-item",
+      "text": "El cierre de proyecto activo debe definir política: cerrar PTY, suspender presentación o mantener recursos en memoria."
+    },
+    {
+      "id": "6.5:8",
+      "section": "6.5",
+      "kind": "list-item",
+      "text": "Un reinicio de aplicación recrea shells, pero no preserva memoria de procesos ni estado interactivo salvo soporte del programa en cuestión."
+    },
+    {
+      "id": "7.1",
+      "section": "7.1",
+      "kind": "section",
+      "text": "Esquema ilustrativo (la sintaxis final debe ser validada por Zod en TS y Serde en Rust cuando cruce IPC): Los overrides deben resolverse mediante capas: `globalDefaults` → `terminalProfile` → `projectPaneOverrides` → `r…"
+    },
+    {
+      "id": "7.3",
+      "section": "7.3",
+      "kind": "section",
+      "text": "En Windows conservar cuidadosamente scripts de PowerShell y el sourcing de perfil de usuario. La función personalizada `prompt`, OSC 7/133, el procesamiento de rutas con backslashes, política `-NoProfile` cuando se conf…"
+    },
+    {
+      "id": "8.4:1",
+      "section": "8.4",
+      "kind": "list-item",
+      "text": "Cargar metadatos del proyecto y preset, validar `schemaVersion` y existencia de perfiles."
+    },
+    {
+      "id": "8.4:2",
+      "section": "8.4",
+      "kind": "list-item",
+      "text": "Resolver disponibilidad de entornos (WSL distro, cwd, ejecutables) y mostrar correcciones si faltan."
+    },
+    {
+      "id": "8.4:3",
+      "section": "8.4",
+      "kind": "list-item",
+      "text": "Resolver si hay una instancia viva: enfocar, crear otra o cancelar."
+    },
+    {
+      "id": "8.4:4",
+      "section": "8.4",
+      "kind": "list-item",
+      "text": "Crear estructura visual con IDs de preset y runtime separados, sin ejecutar todavía comandos automáticos."
+    },
+    {
+      "id": "8.4:5",
+      "section": "8.4",
+      "kind": "list-item",
+      "text": "Crear sesiones PTY, respetando límites del renderer y carga progresiva. Conservar sesión oculta si está activa."
+    },
+    {
+      "id": "8.4:6",
+      "section": "8.4",
+      "kind": "list-item",
+      "text": "Esperar evento de sesión lista / prompt reconocido; no usar un simple `sleep(500)` como contrato de shell-ready."
+    },
+    {
+      "id": "8.4:7",
+      "section": "8.4",
+      "kind": "list-item",
+      "text": "Aplicar overrides del perfil y cwd de pane antes de ejecutar startup."
+    },
+    {
+      "id": "8.4:8",
+      "section": "8.4",
+      "kind": "list-item",
+      "text": "Evaluar política `manual / auto / confirm`; pedir permiso donde corresponda y evitar doble ejecución."
+    },
+    {
+      "id": "8.4:9",
+      "section": "8.4",
+      "kind": "list-item",
+      "text": "Registrar resultado por pane, errores y acciones “Reintentar”, “Abrir shell sin ejecutar comando”, “Editar preset”."
+    },
+    {
+      "id": "8.4:10",
+      "section": "8.4",
+      "kind": "list-item",
+      "text": "Sólo después de hidratar correctamente, habilitar la persistencia automática para evitar sobreescribir datos guardados con un estado parcial."
+    },
+    {
+      "id": "8.5:1",
+      "section": "8.5",
+      "kind": "list-item",
+      "text": "Permiso por proyecto/preset."
+    },
+    {
+      "id": "8.5:2",
+      "section": "8.5",
+      "kind": "list-item",
+      "text": "Modal de previsualización de comandos de autoarranque."
+    },
+    {
+      "id": "8.5:3",
+      "section": "8.5",
+      "kind": "list-item",
+      "text": "Indicadores de contexto: directorio, shell/WSL y variables relevantes."
+    },
+    {
+      "id": "8.5:4",
+      "section": "8.5",
+      "kind": "list-item",
+      "text": "Detección de perfil inaccesible y comandos fallidos."
+    },
+    {
+      "id": "8.5:5",
+      "section": "8.5",
+      "kind": "list-item",
+      "text": "Posibilidad de desactivar autoarranque globalmente."
+    },
+    {
+      "id": "8.5:6",
+      "section": "8.5",
+      "kind": "list-item",
+      "text": "Prohibición de ejecutar comandos automáticamente al simplemente previsualizar un proyecto."
+    },
+    {
+      "id": "8.6",
+      "section": "8.6",
+      "kind": "section",
+      "text": "No confundir “abrir `claude` en una nueva PTY” con “restaurar el proceso anterior”. Para Claude se pueden evaluar opciones oficiales como `--continue`, `--resume` o sesión específica según versión. Para Codex, validar e…"
+    },
+    {
+      "id": "9.1",
+      "section": "9.1",
+      "kind": "section",
+      "text": "La app lanza el binario oficial y el proceso usa su propio login, token, configuración corporativa o suscripción según políticas del proveedor. La aplicación no lee, exporta ni simula las credenciales de Claude Code/Cod…"
+    },
+    {
+      "id": "9.2",
+      "section": "9.2",
+      "kind": "section",
+      "text": "Usar el bridge de Terax como base, adaptando nombres/identificadores a la nueva aplicación cuando corresponda. No abrir sin autenticación un endpoint HTTP accesible desde la red para recibir hooks. Si se usa loopback, i…"
+    },
+    {
+      "id": "9.3",
+      "section": "9.3",
+      "kind": "section",
+      "text": "Estados no deben basarse exclusivamente en intervalos de silencio del terminal. Preferir hooks estructurados; usar señales de proceso/OSC como fallback con indicador de confianza/fuente. No interpretar ANSI crudo median…"
+    },
+    {
+      "id": "9.4:1",
+      "section": "9.4",
+      "kind": "table-row",
+      "text": "`SessionStart` | Registrar sesión y mostrar agente activo | Correlacionar con pane/PTY"
+    },
+    {
+      "id": "9.4:2",
+      "section": "9.4",
+      "kind": "table-row",
+      "text": "`UserPromptSubmit` | Cambiar a `working`, registrar inicio de turno | No guardar prompt íntegro por defecto"
+    },
+    {
+      "id": "9.4:3",
+      "section": "9.4",
+      "kind": "table-row",
+      "text": "`PermissionRequest` | Badge `needs-approval`, notificación con foco | No autoaprobar"
+    },
+    {
+      "id": "9.4:4",
+      "section": "9.4",
+      "kind": "table-row",
+      "text": "`Notification` | Notificación de atención o información | Deduplicación/filtros"
+    },
+    {
+      "id": "9.4:5",
+      "section": "9.4",
+      "kind": "table-row",
+      "text": "`Stop` | Marcar respuesta terminada | No confundir con cierre proceso"
+    },
+    {
+      "id": "9.4:6",
+      "section": "9.4",
+      "kind": "table-row",
+      "text": "`SessionEnd` | Finalizar sesión de agente | Diferenciar de cierre PTY"
+    },
+    {
+      "id": "9.4:7",
+      "section": "9.4",
+      "kind": "table-row",
+      "text": "`PreToolUse` / `PostToolUse` | Timeline y herramienta actual | Activar sólo cuando haya consumidor; impacto/privacidad"
+    },
+    {
+      "id": "9.4:8",
+      "section": "9.4",
+      "kind": "table-row",
+      "text": "`PostToolUseFailure` | Error de herramienta | Puede depender de versión"
+    },
+    {
+      "id": "9.4:9",
+      "section": "9.4",
+      "kind": "table-row",
+      "text": "`SubagentStart` / `SubagentStop` | Subagentes activos y terminados | Puede depender de versión"
+    },
+    {
+      "id": "9.4:10",
+      "section": "9.4",
+      "kind": "table-row",
+      "text": "`PreCompact` / eventos de modelo | Métricas/indicadores si disponibles | Confirmar esquema oficial actual"
+    },
+    {
+      "id": "9.5",
+      "section": "9.5",
+      "kind": "section",
+      "text": "Diseñar `AgentAdapter` independiente de la UI: La implementación real puede reutilizar `AgentHookEvent` y el reducer existentes, minimizando transformaciones. La clave es que la UI no importe tipos de eventos nativos es…"
+    },
+    {
+      "id": "9.6:1",
+      "section": "9.6",
+      "kind": "list-item",
+      "text": "Tab muestra icono de CLI conocido y badge discreto de estado."
+    },
+    {
+      "id": "9.6:2",
+      "section": "9.6",
+      "kind": "list-item",
+      "text": "Si `needs-approval`: cambiar badge, destacar tab y permitir atajo “Ir al próximo agente que requiere atención”."
+    },
+    {
+      "id": "9.6:3",
+      "section": "9.6",
+      "kind": "list-item",
+      "text": "Si `response-done`: badge y notificación configurable; no sustituir output del CLI."
+    },
+    {
+      "id": "9.6:4",
+      "section": "9.6",
+      "kind": "list-item",
+      "text": "Vista `Agent Activity` colapsada por defecto, accesible mediante atajo o menú de tab."
+    },
+    {
+      "id": "9.6:5",
+      "section": "9.6",
+      "kind": "list-item",
+      "text": "Panel de proyecto opcional con todas las sesiones activas, estado y conteo de subagentes."
+    },
+    {
+      "id": "9.6:6",
+      "section": "9.6",
+      "kind": "list-item",
+      "text": "Historial corto de eventos locales, con política explícita de retención."
+    },
+    {
+      "id": "9.6:7",
+      "section": "9.6",
+      "kind": "list-item",
+      "text": "Notificaciones nativas sólo en casos relevantes; evitar spam por cada herramienta o token."
+    },
+    {
+      "id": "9.7",
+      "section": "9.7",
+      "kind": "section",
+      "text": "Claude Code ofrece mecanismos como `statusLine`, distintos de los hooks. Se puede explorar un bridge opcional para obtener contexto, modelo, duración y ciertos datos de uso si la versión activa los ofrece. No asumir que…"
+    },
+    {
+      "id": "9.8:1",
+      "section": "9.8",
+      "kind": "list-item",
+      "text": "Se muestra acción concreta, comando y contexto completo (cuando sea seguro), nunca un botón ambiguo."
+    },
+    {
+      "id": "9.8:2",
+      "section": "9.8",
+      "kind": "list-item",
+      "text": "Se verifica relación exacta con sesión, pane, PTY y ventana."
+    },
+    {
+      "id": "9.8:3",
+      "section": "9.8",
+      "kind": "list-item",
+      "text": "La respuesta sólo afecta la solicitud vigente; nonce/ID y timeout impiden aprobar una solicitud distinta."
+    },
+    {
+      "id": "9.8:4",
+      "section": "9.8",
+      "kind": "list-item",
+      "text": "Si UI no está disponible o vence el plazo, fallback al flujo normal del agente, sin aprobación silenciosa."
+    },
+    {
+      "id": "9.8:5",
+      "section": "9.8",
+      "kind": "list-item",
+      "text": "Nunca almacenar un estado “always allow” sin una política explícita y segura."
+    },
+    {
+      "id": "9.8:6",
+      "section": "9.8",
+      "kind": "list-item",
+      "text": "Registrar auditoría local de aprobación/rechazo de forma acotada."
+    },
+    {
+      "id": "9.8:7",
+      "section": "9.8",
+      "kind": "list-item",
+      "text": "Confirmar las garantías de autorización ofrecidas por cada CLI; no falsificar respuestas."
+    },
+    {
+      "id": "9.9:1",
+      "section": "9.9",
+      "kind": "list-item",
+      "text": "Localizar `AiComposerProvider`, `useAiBootstrap`, `useChatStore`, `AiMiniWindow`, `AgentRunBridge`, herramientas AI, modelos y llaves de proveedor."
+    },
+    {
+      "id": "9.9:2",
+      "section": "9.9",
+      "kind": "list-item",
+      "text": "No eliminar indiscriminadamente `src/modules/agents`, `src/modules/control`, `src-tauri/src/modules/agent.rs`, `agent_events.rs`, ni crates de protocolo."
+    },
+    {
+      "id": "9.9:3",
+      "section": "9.9",
+      "kind": "list-item",
+      "text": "`agentStore.ts` tiene estado para agente local y agentes CLI: refactorizarlo antes de eliminar su dependencia."
+    },
+    {
+      "id": "9.9:4",
+      "section": "9.9",
+      "kind": "list-item",
+      "text": "`spaces/useSpacesBoot.ts` importa `native` desde un módulo `ai`; mover wrappers compartidos Tauri a capa `platform` o `native` neutral."
+    },
+    {
+      "id": "9.9:5",
+      "section": "9.9",
+      "kind": "list-item",
+      "text": "`App.tsx` monta `AiComposerProvider` en la raíz; debe reemplazarse por providers verdaderamente necesarios."
+    },
+    {
+      "id": "9.9:6",
+      "section": "9.9",
+      "kind": "list-item",
+      "text": "Actualizar `package.json` y `Cargo.toml` sólo después de construir grafo de imports y comprobar impacto."
+    },
+    {
+      "id": "10.1:1",
+      "section": "10.1",
+      "kind": "list-item",
+      "text": "`src/modules/terminal/TerminalStack.tsx`."
+    },
+    {
+      "id": "10.1:2",
+      "section": "10.1",
+      "kind": "list-item",
+      "text": "`src/modules/terminal/TerminalPane.tsx`."
+    },
+    {
+      "id": "10.1:3",
+      "section": "10.1",
+      "kind": "list-item",
+      "text": "`src/modules/terminal/PaneTreeView.tsx`."
+    },
+    {
+      "id": "10.1:4",
+      "section": "10.1",
+      "kind": "list-item",
+      "text": "`src/modules/terminal/ghostty/` y backend GPU."
+    },
+    {
+      "id": "10.1:5",
+      "section": "10.1",
+      "kind": "list-item",
+      "text": "`src/modules/terminal/lib/panes.ts`."
+    },
+    {
+      "id": "10.1:6",
+      "section": "10.1",
+      "kind": "list-item",
+      "text": "`src/modules/terminal/lib/terminalSessionApi.ts`."
+    },
+    {
+      "id": "10.1:7",
+      "section": "10.1",
+      "kind": "list-item",
+      "text": "`src-tauri/src/modules/pty/` y transporte PTY."
+    },
+    {
+      "id": "10.2:1",
+      "section": "10.2",
+      "kind": "list-item",
+      "text": "`src/app/App.tsx`: sustituir responsabilidades monolíticas por `AppShell` + servicios + hooks especializados."
+    },
+    {
+      "id": "10.2:2",
+      "section": "10.2",
+      "kind": "list-item",
+      "text": "`src/modules/header/Header.tsx`: nueva barra de título, herramientas y contexto."
+    },
+    {
+      "id": "10.2:3",
+      "section": "10.2",
+      "kind": "list-item",
+      "text": "`src/modules/tabs/TabBar.tsx`: navegador orientable vertical/horizontal."
+    },
+    {
+      "id": "10.2:4",
+      "section": "10.2",
+      "kind": "list-item",
+      "text": "`src/modules/tabs/NewTabMenu.tsx`: catálogo de perfiles, no lista central de herramientas IDE."
+    },
+    {
+      "id": "10.2:5",
+      "section": "10.2",
+      "kind": "list-item",
+      "text": "`src/app/components/WorkspaceSurface.tsx`: adaptar para que terminal sea superficie por defecto y tools secundarias sean lazy; no es obligatorio borrar inmediatamente el componente."
+    },
+    {
+      "id": "10.2:6",
+      "section": "10.2",
+      "kind": "list-item",
+      "text": "Sidebar actual: nueva navegación de proyectos, sin explorer/source control permanente."
+    },
+    {
+      "id": "10.3:1",
+      "section": "10.3",
+      "kind": "list-item",
+      "text": "Crear interfaz visual `TabNavigator` que reciba un contrato mínimo: id, title, icon, state, active, close, reorder, focus, orientation."
+    },
+    {
+      "id": "10.3:2",
+      "section": "10.3",
+      "kind": "list-item",
+      "text": "Adaptar `useTabs` al contrato con selector `terminalTabs`; mantener el resto oculto."
+    },
+    {
+      "id": "10.3:3",
+      "section": "10.3",
+      "kind": "list-item",
+      "text": "Extraer operaciones puras de navegación y lifecycle de terminal."
+    },
+    {
+      "id": "10.3:4",
+      "section": "10.3",
+      "kind": "list-item",
+      "text": "Introducir capacidades opcionales `ContentTab` o `ToolWindow` para editor/diff/preview."
+    },
+    {
+      "id": "10.3:5",
+      "section": "10.3",
+      "kind": "list-item",
+      "text": "Migrar serialización y consumidores; recién entonces eliminar variantes innecesarias."
+    },
+    {
+      "id": "10.3:6",
+      "section": "10.3",
+      "kind": "list-item",
+      "text": "Tests de cierre, focus, reordenado, cold tabs y sesiones vivas."
+    },
+    {
+      "id": "10.4",
+      "section": "10.4",
+      "kind": "section",
+      "text": "Diseñar un único estado de navegación y dos presentaciones. No mantener dos stores paralelos. Cambio de orientación debe conservar: - Orden. - Estado activo. - Cierre/reapertura. - Identidad de tab/pane. - Indicadores d…"
+    },
+    {
+      "id": "F0:1",
+      "section": "F0",
+      "kind": "phase-task",
+      "text": "Importar a este repositorio el código fuente de Terax del commit de origen, como snapshot (sin historial ni remote de upstream). Registrar el SHA en el README y en `.docs/`."
+    },
+    {
+      "id": "F0:2",
+      "section": "F0",
+      "kind": "phase-task",
+      "text": "Verificar licencia Apache 2.0 de Terax y licencias de componentes/artefactos incluidos; conservar `LICENSE`, `NOTICE` (si existe), atribuciones y licencias de Ghostty/restty/xterm derivado si aplica (ver §14.3)."
+    },
+    {
+      "id": "F0:3",
+      "section": "F0",
+      "kind": "phase-task",
+      "text": "Unificar documentación en `.docs/`: reubicar toda la documentación importada de Terax (`TERAX.md`, `README.md`, `CONTRIBUTING.md`, `ROADMAP.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md` y `docs/`) en `.docs/origin-terax/`, c…"
+    },
+    {
+      "id": "F0:4",
+      "section": "F0",
+      "kind": "phase-task",
+      "text": "Neutralizar el updater de Terax antes del primer build ejecutable: quitar el endpoint de releases de Terax y su clave pública de `tauri.conf.json` (o desactivar el plugin) para que lut nunca descargue ni instale binario…"
+    },
+    {
+      "id": "F0:5",
+      "section": "F0",
+      "kind": "phase-task",
+      "text": "Auditar las llamadas de red salientes (módulo `net`, IA BYOK, updater, telemetría si la hubiera) y desactivar las que apunten a servicios de Terax o de terceros no necesarios para la terminal."
+    },
+    {
+      "id": "F0:6",
+      "section": "F0",
+      "kind": "phase-task",
+      "text": "Instalar `pnpm` exacto y dependencias Rust/Zig/WASM requeridas por el proyecto (seguir las instrucciones del código importado)."
+    },
+    {
+      "id": "F0:7",
+      "section": "F0",
+      "kind": "phase-task",
+      "text": "Registrar OS, toolchains y prerequisitos; documentar comandos efectivos de build."
+    },
+    {
+      "id": "F0:8",
+      "section": "F0",
+      "kind": "phase-task",
+      "text": "Ejecutar test/lint/check existentes; guardar baseline de fallos previos."
+    },
+    {
+      "id": "F0:9",
+      "section": "F0",
+      "kind": "phase-task",
+      "text": "Compilar y abrir la app en Windows 11. Probar pwsh, WSL, splits, tabs, Ghostty/WebGPU/WebGL, agentes con hooks desactivados y activados con consentimiento."
+    },
+    {
+      "id": "F0:10",
+      "section": "F0",
+      "kind": "phase-task",
+      "text": "Aislamiento de identidad, inmediatamente después del primer build válido y antes de cualquier uso real: bundle identifier, directorio de datos, nombres de stores persistidos, CLI auxiliar de hooks, marcadores de hooks e…"
+    },
+    {
+      "id": "F0:11",
+      "section": "F0",
+      "kind": "phase-task",
+      "text": "Medir de forma inicial: cold start, memoria sin tabs, memoria con 4 panes, latencia de input, resize, switching, output de alto volumen. No optimizar todavía."
+    },
+    {
+      "id": "F0:12",
+      "section": "F0",
+      "kind": "phase-task",
+      "text": "Crear lista de contratos de módulos y dependencias reales (import graph, Tauri commands)."
+    },
+    {
+      "id": "F0:entregable",
+      "section": "F0",
+      "kind": "phase-note",
+      "text": "Entregable: build reproducible, reporte baseline, registro de tests, matriz de dependencias, estrategia de licencias, identidad aislada de Terax y updater de Terax neutralizado."
+    },
+    {
+      "id": "F0:gate",
+      "section": "F0",
+      "kind": "phase-gate",
+      "text": "no avanzar con borrado de módulos si baseline no es ejecutable o si existen fallos de origen sin documentar."
+    },
+    {
+      "id": "F1:1",
+      "section": "F1",
+      "kind": "phase-task",
+      "text": "Nuevo `AppShell` con área principal de terminal."
+    },
+    {
+      "id": "F1:2",
+      "section": "F1",
+      "kind": "phase-task",
+      "text": "Integrar `TerminalStack` intacto con callbacks y lifecycle actuales."
+    },
+    {
+      "id": "F1:3",
+      "section": "F1",
+      "kind": "phase-task",
+      "text": "Nueva barra/navegación de tabs horizontal/vertical."
+    },
+    {
+      "id": "F1:4",
+      "section": "F1",
+      "kind": "phase-task",
+      "text": "Sidebar de proyectos placeholder ocultable, sin implementar persistencia nueva."
+    },
+    {
+      "id": "F1:5",
+      "section": "F1",
+      "kind": "phase-task",
+      "text": "Theming básico y shortcuts de tabs/splits."
+    },
+    {
+      "id": "F1:6",
+      "section": "F1",
+      "kind": "phase-task",
+      "text": "Hacer opcional/ocultar editor, explorer, Source Control, AI integrada y demás chrome; no eliminar backend todavía."
+    },
+    {
+      "id": "F1:7",
+      "section": "F1",
+      "kind": "phase-task",
+      "text": "Tests para switch tab/split, salida TUI, reordenamiento, orientación y ocultamiento."
+    },
+    {
+      "id": "F1:gate",
+      "section": "F1",
+      "kind": "phase-gate",
+      "text": "cambiar tabs, orientación, tema y sidebar no cierra ni reinicia procesos; TUI continúa funcional."
+    },
+    {
+      "id": "F2:1",
+      "section": "F2",
+      "kind": "phase-task",
+      "text": "Extraer `NavigationStore` y contratos mínimos desde `useTabs`."
+    },
+    {
+      "id": "F2:2",
+      "section": "F2",
+      "kind": "phase-task",
+      "text": "Reducir responsabilidades de `App.tsx` por hooks/servicios."
+    },
+    {
+      "id": "F2:3",
+      "section": "F2",
+      "kind": "phase-task",
+      "text": "Separar wrappers nativos compartidos de `modules/ai`."
+    },
+    {
+      "id": "F2:4",
+      "section": "F2",
+      "kind": "phase-task",
+      "text": "Quitar `AiComposerProvider` y chat propio de flujo principal."
+    },
+    {
+      "id": "F2:5",
+      "section": "F2",
+      "kind": "phase-task",
+      "text": "Separar estado `localAgent` de agentes CLI y notificaciones."
+    },
+    {
+      "id": "F2:6",
+      "section": "F2",
+      "kind": "phase-task",
+      "text": "Convertir editor, Git y explorer a capabilities opcionales, lazy; decidir qué código mantener."
+    },
+    {
+      "id": "F2:7",
+      "section": "F2",
+      "kind": "phase-task",
+      "text": "Remover dependencias sólo cuando no existan consumidores."
+    },
+    {
+      "id": "F2:8",
+      "section": "F2",
+      "kind": "phase-task",
+      "text": "Ejecutar tests y analizar bundle."
+    },
+    {
+      "id": "F2:gate",
+      "section": "F2",
+      "kind": "phase-gate",
+      "text": "sin configurar API key, arranca terminal y funcionan hooks/agentes CLI, la selección de shell actual (preferencia global `terminalShell`, previa a los perfiles de la Fase 3) y Spaces migrados."
+    },
+    {
+      "id": "F3:1",
+      "section": "F3",
+      "kind": "phase-task",
+      "text": "Modelo `TerminalProfile` y validación/migración."
+    },
+    {
+      "id": "F3:2",
+      "section": "F3",
+      "kind": "phase-task",
+      "text": "Manager con CRUD + default."
+    },
+    {
+      "id": "F3:3",
+      "section": "F3",
+      "kind": "phase-task",
+      "text": "Adaptador de perfil a `pty_open` para shell, args y env (ampliar contrato con compatibilidad si hace falta)."
+    },
+    {
+      "id": "F3:4",
+      "section": "F3",
+      "kind": "phase-task",
+      "text": "Picker de perfil en Nuevo Tab y split."
+    },
+    {
+      "id": "F3:5",
+      "section": "F3",
+      "kind": "phase-task",
+      "text": "Override de tema/fuente por perfil o pane sin reinstanciar un proceso innecesariamente."
+    },
+    {
+      "id": "F3:6",
+      "section": "F3",
+      "kind": "phase-task",
+      "text": "Soporte nativo Windows/WSL inicial y contratos de macOS/Linux."
+    },
+    {
+      "id": "F3:7",
+      "section": "F3",
+      "kind": "phase-task",
+      "text": "Test de perfil faltante y manejo de errores."
+    },
+    {
+      "id": "F3:gate",
+      "section": "F3",
+      "kind": "phase-gate",
+      "text": "abrir dos panes con shells y preferencias distintas, persistir y restaurar."
+    },
+    {
+      "id": "F4:1",
+      "section": "F4",
+      "kind": "phase-task",
+      "text": "Modelo versionado de `Project`, `Preset`, `RunningWorkspace`."
+    },
+    {
+      "id": "F4:2",
+      "section": "F4",
+      "kind": "phase-task",
+      "text": "Migrar `Spaces` actual conservando datos."
+    },
+    {
+      "id": "F4:3",
+      "section": "F4",
+      "kind": "phase-task",
+      "text": "Editor de presets y elección de perfiles por pane."
+    },
+    {
+      "id": "F4:4",
+      "section": "F4",
+      "kind": "phase-task",
+      "text": "Guardar árbol, orden, ratios, cwd, active tab y comandos."
+    },
+    {
+      "id": "F4:5",
+      "section": "F4",
+      "kind": "phase-task",
+      "text": "Ejecutar restauración con estado, confirmación y guardas contra duplicados."
+    },
+    {
+      "id": "F4:6",
+      "section": "F4",
+      "kind": "phase-task",
+      "text": "Soporte multi-proyecto activo y reglas de foco/instancia; abrir otros proyectos desde la app (PRJ-017)."
+    },
+    {
+      "id": "F4:7",
+      "section": "F4",
+      "kind": "phase-task",
+      "text": "Restauración de la última sesión al iniciar lut (PRJ-016): persistir qué proyectos estaban abiertos y cuál era el activo; al arrancar, reabrirlos con el algoritmo de §8.4."
+    },
+    {
+      "id": "F4:8",
+      "section": "F4",
+      "kind": "phase-task",
+      "text": "Export/import de esquema portable (sin secretos)."
+    },
+    {
+      "id": "F4:9",
+      "section": "F4",
+      "kind": "phase-task",
+      "text": "Tests unitarios de serialización e integración de arranque, incluida la restauración de la última sesión."
+    },
+    {
+      "id": "F4:gate",
+      "section": "F4",
+      "kind": "phase-gate",
+      "text": "reiniciar app, abrir proyecto de tres panes y recuperar su estructura; iniciar sólo comandos autorizados, informar errores y no duplicar procesos."
+    },
+    {
+      "id": "F5:1",
+      "section": "F5",
+      "kind": "phase-task",
+      "text": "Integrar reducer detallado de agentes CLI con nuevo store/UI."
+    },
+    {
+      "id": "F5:2",
+      "section": "F5",
+      "kind": "phase-task",
+      "text": "Instalar hooks mediante preview/diff y consentimiento; soportar remover sólo hooks propios."
+    },
+    {
+      "id": "F5:3",
+      "section": "F5",
+      "kind": "phase-task",
+      "text": "Estado por tab/pane y notificaciones nativas."
+    },
+    {
+      "id": "F5:4",
+      "section": "F5",
+      "kind": "phase-task",
+      "text": "Shortcut de foco al agente que necesita atención."
+    },
+    {
+      "id": "F5:5",
+      "section": "F5",
+      "kind": "phase-task",
+      "text": "Timeline opcional y subagentes cuando la CLI/fuente ofrece datos."
+    },
+    {
+      "id": "F5:6",
+      "section": "F5",
+      "kind": "phase-task",
+      "text": "Gestión de frecuencia, retención y privacidad."
+    },
+    {
+      "id": "F5:7",
+      "section": "F5",
+      "kind": "phase-task",
+      "text": "Integración opcional de métricas por statusLine sin pisar config del usuario."
+    },
+    {
+      "id": "F5:8",
+      "section": "F5",
+      "kind": "phase-task",
+      "text": "Tests de eventos fuera de orden, errores, cierre, timeout y fallback sin hooks."
+    },
+    {
+      "id": "F5:gate",
+      "section": "F5",
+      "kind": "phase-gate",
+      "text": "dos sesiones simultáneas en el mismo directorio muestran estados correctos y la aprobación se resuelve en la terminal correcta."
+    },
+    {
+      "id": "F6:1",
+      "section": "F6",
+      "kind": "phase-task",
+      "text": "command palette"
+    },
+    {
+      "id": "F6:2",
+      "section": "F6",
+      "kind": "phase-task",
+      "text": "menús contextuales"
+    },
+    {
+      "id": "F6:3",
+      "section": "F6",
+      "kind": "phase-task",
+      "text": "editor/diff/Git en ventana/panel secundario opcional"
+    },
+    {
+      "id": "F6:4",
+      "section": "F6",
+      "kind": "phase-task",
+      "text": "temas personalizados"
+    },
+    {
+      "id": "F6:5",
+      "section": "F6",
+      "kind": "phase-task",
+      "text": "presets visuales"
+    },
+    {
+      "id": "F6:6",
+      "section": "F6",
+      "kind": "phase-task",
+      "text": "atajos avanzados"
+    },
+    {
+      "id": "F6:7",
+      "section": "F6",
+      "kind": "phase-task",
+      "text": "pulido de densidad"
+    },
+    {
+      "id": "F6:8",
+      "section": "F6",
+      "kind": "phase-task",
+      "text": "ergonomía y accesibilidad"
+    },
+    {
+      "id": "F6:gate",
+      "section": "F6",
+      "kind": "phase-gate",
+      "text": "ningún tool opcional es necesario para abrir una terminal; rendimiento sin herramientas abiertas permanece comparable al baseline."
+    },
+    {
+      "id": "F7:1",
+      "section": "F7",
+      "kind": "phase-task",
+      "text": "definir ownership de PTY/renderer por ventana"
+    },
+    {
+      "id": "F7:2",
+      "section": "F7",
+      "kind": "phase-task",
+      "text": "creación/cierre de ventanas"
+    },
+    {
+      "id": "F7:3",
+      "section": "F7",
+      "kind": "phase-task",
+      "text": "transferencia de tab/pane si se decide"
+    },
+    {
+      "id": "F7:4",
+      "section": "F7",
+      "kind": "phase-task",
+      "text": "restauración de geometría por monitor"
+    },
+    {
+      "id": "F7:5",
+      "section": "F7",
+      "kind": "phase-task",
+      "text": "pruebas OS específicas de clipboard, IME, WSL, fonts, WebKit y DPI"
+    },
+    {
+      "id": "F7:6",
+      "section": "F7",
+      "kind": "phase-task",
+      "text": "empaquetado y actualizaciones"
+    },
+    {
+      "id": "F7:auto-actualizacion-de-lut",
+      "section": "F7",
+      "kind": "phase-note",
+      "text": "Auto-actualización de lut: pipeline de releases propio, clave de firma propia (nunca la de Terax), endpoint de lut, verificación de firma obligatoria, canal configurable (estable/beta) y opción de desactivarla. Este tra…"
+    },
+    {
+      "id": "F7:gate",
+      "section": "F7",
+      "kind": "phase-gate",
+      "text": "ventanas se recuperan sin crear sesiones huérfanas, sin leaks visibles y sin errores de foco/propiedad de PTY."
+    },
+    {
+      "id": "13.2:1",
+      "section": "13.2",
+      "kind": "table-row",
+      "text": "Abrir pwsh | Shell interactiva y prompt correcto"
+    },
+    {
+      "id": "13.2:2",
+      "section": "13.2",
+      "kind": "table-row",
+      "text": "Abrir WSL Ubuntu | Shell con cwd correcto y teclado operativo"
+    },
+    {
+      "id": "13.2:3",
+      "section": "13.2",
+      "kind": "table-row",
+      "text": "Ejecutar Neovim | Pantalla alterna y combinaciones de teclas funcionan"
+    },
+    {
+      "id": "13.2:4",
+      "section": "13.2",
+      "kind": "table-row",
+      "text": "Ejecutar lazygit | Mouse/resize/Unicode correctos"
+    },
+    {
+      "id": "13.2:5",
+      "section": "13.2",
+      "kind": "table-row",
+      "text": "Switch horizontal → vertical | PTY y output siguen vivos, sin reiniciar procesos"
+    },
+    {
+      "id": "13.2:6",
+      "section": "13.2",
+      "kind": "table-row",
+      "text": "Colapsar proyectos sidebar | Ningún proceso se detiene"
+    },
+    {
+      "id": "13.2:7",
+      "section": "13.2",
+      "kind": "table-row",
+      "text": "Split y resize continuo | Una sesión por pane, geometry/TTY consistentes"
+    },
+    {
+      "id": "13.2:8",
+      "section": "13.2",
+      "kind": "table-row",
+      "text": "Tabs ocultas con `pnpm dev` | Proceso continúa, output no corrompido al volver"
+    },
+    {
+      "id": "13.2:9",
+      "section": "13.2",
+      "kind": "table-row",
+      "text": "Cerrar tab con proceso activo | Política de confirmación y cleanup"
+    },
+    {
+      "id": "13.2:10",
+      "section": "13.2",
+      "kind": "table-row",
+      "text": "Guardar y restaurar proyecto | Topología, perfiles, cwd, ratios y comandos correctos"
+    },
+    {
+      "id": "13.2:11",
+      "section": "13.2",
+      "kind": "table-row",
+      "text": "Abrir proyecto dos veces | No duplica accidentalmente procesos"
+    },
+    {
+      "id": "13.2:12",
+      "section": "13.2",
+      "kind": "table-row",
+      "text": "Abrir perfil inexistente | Error reparable, sin crash general"
+    },
+    {
+      "id": "13.2:13",
+      "section": "13.2",
+      "kind": "table-row",
+      "text": "Claude + Codex en tabs distintos | Estados y notificaciones correlacionados"
+    },
+    {
+      "id": "13.2:14",
+      "section": "13.2",
+      "kind": "table-row",
+      "text": "Dos Claude en mismo cwd | Cada evento pertenece a su PTY"
+    },
+    {
+      "id": "13.2:15",
+      "section": "13.2",
+      "kind": "table-row",
+      "text": "Desinstalar hooks | Preserva hooks ajenos"
+    },
+    {
+      "id": "13.2:16",
+      "section": "13.2",
+      "kind": "table-row",
+      "text": "Hooks ausentes | Terminal funciona; degradación de badges explícita"
+    },
+    {
+      "id": "13.2:17",
+      "section": "13.2",
+      "kind": "table-row",
+      "text": "Proveedor BYOK sin key | Terminal y agentes CLI funcionan igual"
+    },
+    {
+      "id": "13.2:18",
+      "section": "13.2",
+      "kind": "table-row",
+      "text": "Reiniciar con preset peligroso | Exige confirmación antes de ejecutar"
+    },
+    {
+      "id": "13.2:19",
+      "section": "13.2",
+      "kind": "table-row",
+      "text": "Cambiar tema/fuente | Presentación se actualiza sin reiniciar proceso"
+    },
+    {
+      "id": "13.2:20",
+      "section": "13.2",
+      "kind": "table-row",
+      "text": "Cerrar y reabrir lut con dos proyectos abiertos | Se restauran ambos proyectos, el activo y sus layouts; comandos según política"
+    },
+    {
+      "id": "13.2:21",
+      "section": "13.2",
+      "kind": "table-row",
+      "text": "Terax instalado en la misma máquina | lut no lee ni escribe datos, stores, hooks ni variables de Terax; desinstalar hooks de lut preserva los de Terax"
+    },
+    {
+      "id": "13.2:22",
+      "section": "13.2",
+      "kind": "table-row",
+      "text": "Comprobación de actualizaciones | Sólo consulta el endpoint de lut; rechaza binarios sin firma válida de lut"
+    },
+    {
+      "id": "13.3:1",
+      "section": "13.3",
+      "kind": "list-item",
+      "text": "Windows 11: ConPTY, PowerShell 7, CMD, WSL Ubuntu, rutas `C:\\` y `D:\\`, Job Object, clipboard, IME y WebView2."
+    },
+    {
+      "id": "13.3:2",
+      "section": "13.3",
+      "kind": "list-item",
+      "text": "Linux: PTY Unix, Bash/Zsh/fish, permisos, WebKitGTK, xdg, portapapeles X11/Wayland, procesado de paths y fonts."
+    },
+    {
+      "id": "13.3:3",
+      "section": "13.3",
+      "kind": "list-item",
+      "text": "macOS: PTY Unix, zsh/fish, WebKit/WKWebView, composición, native menu, teclado Cmd/Option y DPI."
+    },
+    {
+      "id": "13.3:4",
+      "section": "13.3",
+      "kind": "list-item",
+      "text": "Todos: Unicode, Nerd Fonts, UI responsiveness, variaciones de GPU y fallback, sesiones ocultas, notificaciones, apps TUI."
+    },
+    {
+      "id": "13.4:1",
+      "section": "13.4",
+      "kind": "list-item",
+      "text": "Cold-start, primera terminal visible y tiempo hasta prompt."
+    },
+    {
+      "id": "13.4:2",
+      "section": "13.4",
+      "kind": "list-item",
+      "text": "Latencia de entrada a eco de texto; stalls P95/P99."
+    },
+    {
+      "id": "13.4:3",
+      "section": "13.4",
+      "kind": "list-item",
+      "text": "FPS y estabilidad visual durante output abundante."
+    },
+    {
+      "id": "13.4:4",
+      "section": "13.4",
+      "kind": "list-item",
+      "text": "RAM y GPU al inicio, con 1/4 panes y después de cerrar todos."
+    },
+    {
+      "id": "13.4:5",
+      "section": "13.4",
+      "kind": "list-item",
+      "text": "Consumo de CPU en reposo y con tabs ocultas."
+    },
+    {
+      "id": "13.4:6",
+      "section": "13.4",
+      "kind": "list-item",
+      "text": "Memoria de scrollback a largo plazo y liberación tras cierre."
+    },
+    {
+      "id": "13.4:7",
+      "section": "13.4",
+      "kind": "list-item",
+      "text": "Reflow y errores durante resize/zoom/DPI."
+    },
+    {
+      "id": "13.4:8",
+      "section": "13.4",
+      "kind": "list-item",
+      "text": "Tiempo de restaurar proyecto con múltiples herramientas."
+    },
+    {
+      "id": "13.5:1",
+      "section": "13.5",
+      "kind": "list-item",
+      "text": "Cerrar aplicación mientras un hook espera decisión."
+    },
+    {
+      "id": "13.5:2",
+      "section": "13.5",
+      "kind": "list-item",
+      "text": "Matar inesperadamente el proceso de shell o el agente."
+    },
+    {
+      "id": "13.5:3",
+      "section": "13.5",
+      "kind": "list-item",
+      "text": "Reiniciar frontend/HMR durante desarrollo."
+    },
+    {
+      "id": "13.5:4",
+      "section": "13.5",
+      "kind": "list-item",
+      "text": "Hook duplicado, JSON malformado, fuera de orden y tardío."
+    },
+    {
+      "id": "13.5:5",
+      "section": "13.5",
+      "kind": "list-item",
+      "text": "Cerrar proyecto mientras se restauran panes."
+    },
+    {
+      "id": "13.5:6",
+      "section": "13.5",
+      "kind": "list-item",
+      "text": "Desconexión de webview durante stream PTY."
+    },
+    {
+      "id": "13.5:7",
+      "section": "13.5",
+      "kind": "list-item",
+      "text": "`cwd` no accesible, disco/montaje ausente, distro WSL desinstalada."
+    },
+    {
+      "id": "13.5:8",
+      "section": "13.5",
+      "kind": "list-item",
+      "text": "Comando de startup que jamás devuelve prompt."
+    },
+    {
+      "id": "13.5:9",
+      "section": "13.5",
+      "kind": "list-item",
+      "text": "Corrupción/parcialidad de archivo de settings; migración con rollback."
+    },
+    {
+      "id": "13.5:10",
+      "section": "13.5",
+      "kind": "list-item",
+      "text": "Cambiar tabs con editor secundario cerrado."
+    },
+    {
+      "id": "13.5:11",
+      "section": "13.5",
+      "kind": "list-item",
+      "text": "Fallback WebGPU → WebGL."
+    },
+    {
+      "id": "14.1:1",
+      "section": "14.1",
+      "kind": "list-item",
+      "text": "Ejecutar programas mediante argv cuando sea posible; separar argumentos en arrays y no interpolar rutas en strings de shell."
+    },
+    {
+      "id": "14.1:2",
+      "section": "14.1",
+      "kind": "list-item",
+      "text": "Si los comandos de proyecto se ejecutan dentro de shell, usar un mecanismo de entrada/quoting de la shell activa, no construir una línea no escapada."
+    },
+    {
+      "id": "14.1:3",
+      "section": "14.1",
+      "kind": "list-item",
+      "text": "Mostrar claramente qué ejecuta el preset y con qué cwd/entorno."
+    },
+    {
+      "id": "14.1:4",
+      "section": "14.1",
+      "kind": "list-item",
+      "text": "Nunca registrar tokens de auth ni variables de entorno secretas."
+    },
+    {
+      "id": "14.1:5",
+      "section": "14.1",
+      "kind": "list-item",
+      "text": "Mantener restricciones de workspace authorization existentes hasta que se evalúe su modelo de amenaza."
+    },
+    {
+      "id": "14.1:6",
+      "section": "14.1",
+      "kind": "list-item",
+      "text": "Evitar puertos de control abiertos a otras máquinas; autenticar solicitudes locales."
+    },
+    {
+      "id": "14.1:7",
+      "section": "14.1",
+      "kind": "list-item",
+      "text": "Correlacionar cada respuesta de permiso con solicitud/PTY exacta."
+    },
+    {
+      "id": "14.1:8",
+      "section": "14.1",
+      "kind": "list-item",
+      "text": "Sanitizar payloads de hooks; límites de longitud, frecuencia y persistencia."
+    },
+    {
+      "id": "14.1:9",
+      "section": "14.1",
+      "kind": "list-item",
+      "text": "Proteger rutas de archivos y la funcionalidad de “abrir archivo” desde output o hooks."
+    },
+    {
+      "id": "14.2:1",
+      "section": "14.2",
+      "kind": "list-item",
+      "text": "Permitido por defecto: IDs, agente, estado, tiempo, PTY, tab, proyecto, metadatos mínimos."
+    },
+    {
+      "id": "14.2:2",
+      "section": "14.2",
+      "kind": "list-item",
+      "text": "Opt-in explícito: comandos, nombres de herramientas, previews, mensajes, errores detallados, timeline persistente."
+    },
+    {
+      "id": "14.2:3",
+      "section": "14.2",
+      "kind": "list-item",
+      "text": "No guardar por defecto: prompts completos, contenido leído/escrito, transcripciones, variables de entorno, tokens."
+    },
+    {
+      "id": "14.3:1",
+      "section": "14.3",
+      "kind": "list-item",
+      "text": "Créditos: nota (`NOTE`) en el README indicando que lut parte de Terax (enlace al repositorio y SHA de origen)."
+    },
+    {
+      "id": "14.3:2",
+      "section": "14.3",
+      "kind": "list-item",
+      "text": "Licencia: conservar una copia de la licencia Apache-2.0 de Terax y su `NOTICE` si existe; si lut agrega su propio `NOTICE`, incluir allí los avisos de Terax."
+    },
+    {
+      "id": "14.3:3",
+      "section": "14.3",
+      "kind": "list-item",
+      "text": "Aviso de modificación (Apache-2.0 §4b): dejar constancia de que los archivos derivados fueron modificados respecto al original (p. ej. una declaración en `NOTICE`/README más el historial git del repo; en archivos con ca…"
+    },
+    {
+      "id": "14.3:4",
+      "section": "14.3",
+      "kind": "list-item",
+      "text": "Terceros: preservar las licencias de Ghostty/restty, del código derivado de xterm.js y de cualquier otro componente empaquetado."
+    },
+    {
+      "id": "14.4:1",
+      "section": "14.4",
+      "kind": "list-item",
+      "text": "El SHA de origen se conserva sólo como dato de procedencia y atribución."
+    },
+    {
+      "id": "14.4:2",
+      "section": "14.4",
+      "kind": "list-item",
+      "text": "Si en Terax aparece un fix concreto que interese (p. ej. seguridad de PTY o ConPTY), se porta manualmente como un cambio propio de lut, con su propio test. Esto es una decisión puntual, no un proceso."
+    },
+    {
+      "id": "14.4:3",
+      "section": "14.4",
+      "kind": "list-item",
+      "text": "Libertad total para renombrar, mover o reescribir código; las restricciones vienen de los invariantes técnicos (§5.4, §6) y de las pruebas, no de la compatibilidad con Terax."
+    },
+    {
+      "id": "14.4:4",
+      "section": "14.4",
+      "kind": "list-item",
+      "text": "Mantener separadas en commits las personalizaciones visuales y las modificaciones al motor (PTY/renderer/control protocol), para facilitar diagnóstico y reversión."
+    },
+    {
+      "id": "15:1",
+      "section": "15",
+      "kind": "list-item",
+      "text": "`.docs/architecture/current-state.md`: mapa real de módulos React/Rust, stores, side effects e IPC, con rutas verificadas."
+    },
+    {
+      "id": "15:2",
+      "section": "15",
+      "kind": "list-item",
+      "text": "`.docs/architecture/module-dependencies.md`: relaciones entre `app`, `terminal`, `tabs`, `spaces`, `agents`, `control`, `ai`, `editor`, `git`."
+    },
+    {
+      "id": "15:3",
+      "section": "15",
+      "kind": "list-item",
+      "text": "`.docs/architecture/target-architecture.md`: contratos propuestos, invariantes, flujo de procesos y renderer."
+    },
+    {
+      "id": "15:4",
+      "section": "15",
+      "kind": "list-item",
+      "text": "`.docs/architecture/migration-plan.md`: secuencia de refactor por PRs y tests."
+    },
+    {
+      "id": "15:5",
+      "section": "15",
+      "kind": "list-item",
+      "text": "`.docs/decisions/`: ADRs para cambios de contratos/persistencia."
+    },
+    {
+      "id": "15:6",
+      "section": "15",
+      "kind": "list-item",
+      "text": "`.docs/testing/baseline.md`: build, versiones, tests ejecutados, fallos conocidos y baseline de rendimiento."
+    },
+    {
+      "id": "15:7",
+      "section": "15",
+      "kind": "list-item",
+      "text": "`.docs/product/requirements.md`: rastreo de IDs TER/PRO/PRJ/UX/AGT a implementación y pruebas."
+    },
+    {
+      "id": "15:8",
+      "section": "15",
+      "kind": "list-item",
+      "text": "README de lut con primera ejecución, contribución, SHA de origen y la nota (`NOTE`) de créditos a Terax."
+    },
+    {
+      "id": "16:1",
+      "section": "16",
+      "kind": "list-item",
+      "text": "PowerShell/WSL funcionan correctamente."
+    },
+    {
+      "id": "16:2",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Neovim y lazygit funcionan con teclado, selección y resize."
+    },
+    {
+      "id": "16:3",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Cambiar orientación de tabs no reinicia PTYs."
+    },
+    {
+      "id": "16:4",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Cambiar tabs/proyectos mantiene procesos y output vivos."
+    },
+    {
+      "id": "16:5",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Splits no provocan leaks evidentes del renderer."
+    },
+    {
+      "id": "16:6",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Tema/fuente/cursor son personalizables."
+    },
+    {
+      "id": "16:7",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Puedo guardar un entorno de trabajo completo como preset."
+    },
+    {
+      "id": "16:8",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Puedo restaurarlo después de reiniciar la aplicación."
+    },
+    {
+      "id": "16:9",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Al abrir lut se restaura la última sesión (proyectos abiertos, proyecto activo y layouts)."
+    },
+    {
+      "id": "16:10",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Puedo abrir otros proyectos guardados sin cerrar los que ya están abiertos."
+    },
+    {
+      "id": "16:11",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Cada pane puede tener shell/cwd/perfil propios."
+    },
+    {
+      "id": "16:12",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Los comandos configurados arrancan una sola vez y con políticas explícitas."
+    },
+    {
+      "id": "16:13",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Los errores de configuración no bloquean toda la aplicación."
+    },
+    {
+      "id": "16:14",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Un preset importado no ejecuta comandos sin consentimiento."
+    },
+    {
+      "id": "16:15",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Puedo ejecutar `claude` y `codex` oficiales con su propia autenticación."
+    },
+    {
+      "id": "16:16",
+      "section": "16",
+      "kind": "list-item",
+      "text": "No necesito API keys configuradas en la aplicación."
+    },
+    {
+      "id": "16:17",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Estados de agentes corresponden al pane correcto incluso si comparten cwd."
+    },
+    {
+      "id": "16:18",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Finalizaciones y solicitudes de atención aparecen en tabs y notificaciones."
+    },
+    {
+      "id": "16:19",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Puedo ir al pane que necesita atención mediante acción/atajo."
+    },
+    {
+      "id": "16:20",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Instalar/desinstalar hooks no rompe configuraciones existentes."
+    },
+    {
+      "id": "16:21",
+      "section": "16",
+      "kind": "list-item",
+      "text": "La terminal funciona aunque el bridge de agentes falle o no esté instalado."
+    },
+    {
+      "id": "16:22",
+      "section": "16",
+      "kind": "list-item",
+      "text": "La terminal es visualmente predominante."
+    },
+    {
+      "id": "16:23",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Editor/Git/IA propia no se imponen en la UI."
+    },
+    {
+      "id": "16:24",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Personalización visual es estable sin desmontar sesiones."
+    },
+    {
+      "id": "16:25",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Se conservaron avisos de licencia obligatorios y la nota de créditos a Terax en el README."
+    },
+    {
+      "id": "16:26",
+      "section": "16",
+      "kind": "list-item",
+      "text": "lut no comparte datos, hooks ni updater con una instalación de Terax."
+    },
+    {
+      "id": "16:27",
+      "section": "16",
+      "kind": "list-item",
+      "text": "La auto-actualización sólo usa infraestructura y firma propias de lut."
+    },
+    {
+      "id": "16:28",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Tests de frontend y Rust ejecutados con resultados documentados."
+    },
+    {
+      "id": "16:29",
+      "section": "16",
+      "kind": "list-item",
+      "text": "Riesgos y pendientes multiplataforma explícitos."
+    }
+  ]
+}
