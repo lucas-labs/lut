@@ -1290,6 +1290,8 @@ El proyecto debe funcionar totalmente local para terminal/sesiones/proyectos y n
 
 La revisión inspeccionada declara licencia **Apache-2.0** en `LICENSE`, `package.json` y `Cargo.toml`. No asumir que todos los assets y componentes incluidos tienen idéntica licencia. La configuración Tauri ya incluye licencias empaquetadas de componentes de terminal, incluido Ghostty/restty y una parte derivada de xterm.js. La auditoría de lanzamiento debe verificar y preservar cada `LICENSE`, `NOTICE`, marca de terceros y obligaciones aplicables.
 
+**Licencia de lut:** Apache-2.0 (misma que Terax). El `LICENSE` de la raíz es la licencia de lut. La licencia de Terax, con su aviso de copyright y una nota de procedencia y modificación, se distribuye en `public/licenses/terax.txt` (Vite la incluye en la app; disponible para una futura pantalla de licencias).
+
 Importar y modificar el código está permitido, pero **no** autoriza eliminar avisos requeridos ni presentar componentes de terceros como código original. Obligaciones mínimas al redistribuir lut:
 
 - **Créditos:** nota (`NOTE`) en el README indicando que lut parte de Terax (enlace al repositorio y SHA de origen).
