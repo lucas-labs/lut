@@ -12,8 +12,8 @@ use std::sync::OnceLock;
 use tokio::runtime::{Builder, Runtime};
 
 const WORKER_THREADS: usize = 2;
-/// Blocking tasks are file walks, git and shell children, keychain calls. A
-/// burst beyond this queues instead of spawning hundreds of threads.
+/// Blocking tasks are file walks and git and shell children. A burst beyond
+/// this queues instead of spawning hundreds of threads.
 const MAX_BLOCKING_THREADS: usize = 48;
 const THREAD_STACK: usize = 1024 * 1024;
 
