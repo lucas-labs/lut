@@ -1,4 +1,4 @@
-import { highlight } from '@/components/ai-elements/chat-code-lezer';
+import { highlight } from '@/modules/markdown/code/chat-code-lezer';
 import { describe, expect, it } from 'vitest';
 
 describe('chat code highlighting', () => {

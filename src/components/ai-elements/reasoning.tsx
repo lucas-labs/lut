@@ -20,7 +20,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Shimmer } from "./shimmer";
+import { Shimmer } from "@/modules/markdown/code/shimmer";
 
 interface ReasoningContextValue {
   isStreaming: boolean;
