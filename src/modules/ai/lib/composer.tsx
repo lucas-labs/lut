@@ -116,7 +116,6 @@ export function AiComposerProvider({ children }: ProviderProps) {
     window.addEventListener("terax:ai-attach-file", onAttach);
     return () => window.removeEventListener("terax:ai-attach-file", onAttach);
     // attachFileByPath is stable for our purposes (closes over setFiles only)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

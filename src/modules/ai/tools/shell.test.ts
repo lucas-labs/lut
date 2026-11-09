@@ -46,7 +46,7 @@ function makeContext(sessionId: string | null = "session"): ToolContext {
   } as unknown as ToolContext;
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: tool results are heterogeneous.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- tool results are heterogeneous.
 type Result = Record<string, any>;
 
 async function run(

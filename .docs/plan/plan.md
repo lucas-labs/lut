@@ -2162,10 +2162,32 @@ size-exception: mechanical move of the remaining inline handlers and providers o
 
 **Verification:** `pnpm test`; `pnpm check-types`; `pnpm lint`; manual 13.2:5 and 13.2:6 checks.
 
+### E09-10 — Resolve the React Compiler lint warnings in the remaining code
+```yaml
+id: E09-10
+depends-on: [E05-20, E06-07, E09-08]
+refs: [ADR-007, .docs/testing/baseline.md]
+covers: [ADR-007]
+type: task
+scope: ui
+size: M
+```
+**Goal:** The code that survives the cleanups (BYOK AI, blocks, App split) compiles fully with the React Compiler: no `react-hooks` compiler warnings, so no component is silently skipped or relies on render-time ref access or cascading effects.
+
+**Acceptance criteria:**
+- [ ] `react-hooks/refs`, `react-hooks/set-state-in-effect`, `react-hooks/immutability`, `react-hooks/globals`, `react-hooks/preserve-manual-memoization` and `react-hooks/incompatible-library` report nothing in `src/` (fixed, or an `eslint-disable-next-line` with a reason where the pattern is intentional, such as a third-party library).
+- [ ] Those rules become errors in `eslint.config.js`, and the `--max-warnings` budget of `pnpm lint` is lowered to the new count.
+- [ ] Each fix keeps the visible behaviour; when a change is not a pure refactor, the PR says so and a test covers it.
+- [ ] The lint section of `.docs/testing/baseline.md` is updated.
+
+**Verification:** `pnpm lint` exits 0 with the lowered budget; `pnpm check-types && pnpm test`; manual: tabs, splits, settings and the explorer behave as before.
+
+**Notes:** At E01-16 there were 105 such warnings (ai 20, settings 17, terminal 13, tabs 10, app 7, spaces 6, source-control 6, others ≤5). Many disappear with E05 (AI), E06 (blocks) and the E08/E09 refactors. If the remaining count is large, split this issue by module before starting.
+
 ### E09-09 — Close-out: App coordinator split
 ```yaml
 id: E09-09
-depends-on: [E09-01, E09-02, E09-03, E09-04, E09-05, E09-06, E09-07, E09-08]
+depends-on: [E09-01, E09-02, E09-03, E09-04, E09-05, E09-06, E09-07, E09-08, E09-10]
 refs: []
 covers: []
 type: closeout

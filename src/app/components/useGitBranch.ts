@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 export function useGitBranch(cwd: string | null, nonce = 0): string | null {
   const [branch, setBranch] = useState<string | null>(null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: nonce is a manual re-resolve trigger
+  // nonce is a manual re-resolve trigger
   useEffect(() => {
     if (!cwd) {
       setBranch(null);

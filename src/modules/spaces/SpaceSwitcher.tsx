@@ -390,7 +390,7 @@ function SpaceRow({
   return (
     <div className={cn("relative", isDragging && "opacity-50")}>
       {reorderEdge && <DropLine edge={reorderEdge} />}
-      {/* biome-ignore lint/a11y/useSemanticElements: drag row hosts nested buttons, cannot be a <button> */}
+      {/* eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- drag row hosts nested buttons, cannot be a <button> */}
       <div
         data-drop="space"
         data-space-id={space.id}
@@ -530,7 +530,7 @@ function TabRow({
   return (
     <div className="relative">
       {reorderEdge && <DropLine edge={reorderEdge} />}
-      {/* biome-ignore lint/a11y/useSemanticElements: drag row hosts a nested close button, cannot be a <button> */}
+      {/* eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- drag row hosts a nested close button, cannot be a <button> */}
       <div
         data-drop="tab"
         data-tab-id={tab.id}

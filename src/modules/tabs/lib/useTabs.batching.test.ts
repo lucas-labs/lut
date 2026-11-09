@@ -44,7 +44,7 @@ vi.mock("react", async (original) => ({
 function render() {
   for (const commit of scheduler.pending.splice(0)) commit();
   scheduler.cursor = 0;
-  // biome-ignore lint/correctness/useHookAtTopLevel: hooks use the deferred scheduler above, not React's dispatcher.
+  // eslint-disable-next-line react-hooks/rules-of-hooks -- hooks use the deferred scheduler above, not React's dispatcher.
   return useTabs();
 }
 

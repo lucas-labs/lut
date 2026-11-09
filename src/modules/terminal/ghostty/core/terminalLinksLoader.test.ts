@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const instance = { ingest: vi.fn(), invalidate: vi.fn(), dispose: vi.fn() };
-// biome-ignore lint/complexity/useArrowFunction: it is called with `new`
+// it is called with `new`
 const LazyTerminalLinks = vi.fn(function () {
   return instance;
 });
@@ -74,7 +74,7 @@ describe("deferTerminalLinks", () => {
 
   it("reports a trigger that fails to start instead of throwing", async () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => {});
-    // biome-ignore lint/complexity/useArrowFunction: it is called with `new`
+    // it is called with `new`
     LazyTerminalLinks.mockImplementationOnce(function () {
       throw new Error("boom");
     });

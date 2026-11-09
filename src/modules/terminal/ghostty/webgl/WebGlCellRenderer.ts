@@ -947,7 +947,7 @@ export class WebGlCellRenderer {
 
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    // biome-ignore lint/correctness/useHookAtTopLevel: WebGL method, not a React hook.
+    // WebGL method, not a React hook.
     gl.useProgram(resources.glyphProgram.value);
     gl.bindVertexArray(resources.glyphVao);
     gl.uniformMatrix4fv(
@@ -1013,7 +1013,7 @@ export class WebGlCellRenderer {
   ): void {
     if (count === 0) return;
     const gl = this.gl;
-    // biome-ignore lint/correctness/useHookAtTopLevel: WebGL method, not a React hook.
+    // WebGL method, not a React hook.
     gl.useProgram(program.value);
     gl.bindVertexArray(vao);
     gl.uniformMatrix4fv(program.projection, false, PROJECTION_MATRIX);

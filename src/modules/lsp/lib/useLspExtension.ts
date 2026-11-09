@@ -20,8 +20,8 @@ export function useLspExtension(
   );
 
   const presetId = preset?.id;
-  // biome-ignore lint/correctness/useExhaustiveDependencies(generation): re-acquire after a server crash tears the session down
-  // biome-ignore lint/correctness/useExhaustiveDependencies(presetId): swapping the enabled server for a language must rebind the doc
+  // generation: re-acquire after a server crash tears the session down
+  // presetId: swapping the enabled server for a language must rebind the doc
   useEffect(() => {
     if (!ready || !langId || activation !== "enabled") {
       setExt(null);

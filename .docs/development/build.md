@@ -52,7 +52,7 @@ Rust workspace. Later runs are incremental.
 | Frontend only (browser, no Tauri backend) | `pnpm dev` (Vite on port 1420, strict) |
 | Frontend production build | `pnpm build` (`tsc && vite build` into `dist/`) |
 | Type check | `pnpm check-types` |
-| Lint / format check | `pnpm lint` · `pnpm format:check` (Biome, `src/` only) |
+| Lint / format check | `pnpm lint` (ESLint) · `pnpm format:check` (Biome); both `src/` only |
 | Frontend tests | `pnpm test` (Vitest) |
 | Rust tests | `cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace` |
 | Clippy | `cargo clippy --manifest-path src-tauri/Cargo.toml --locked --workspace --all-targets -- -D warnings` |

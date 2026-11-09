@@ -118,6 +118,24 @@ Most of the hunks (28 of 55) are in `src/modules/pty/agent_detect.rs`. The rest:
 | `useOptionalChain` | 7 |
 | `noTemplateCurlyInString`, `noConfusingVoidType` | 5 each |
 
+**Since E01-16 (#319), `pnpm lint` runs ESLint** (`eslint.config.js`). It exits 0 with 170 warnings in 73 files, which is also its budget (`--max-warnings 170`: a PR may not add warnings). Every
+rule with pre-existing violations is a warning; the other rules are errors. Counts:
+
+| Rule | Count | Origin |
+|---|---|---|
+| `react-hooks/refs` | 50 | new (React Compiler rules) |
+| `react-hooks/set-state-in-effect` | 46 | new (React Compiler rules) |
+| `prefer-template` | 11 | Biome `useTemplate` |
+| `@typescript-eslint/no-non-null-assertion` | 11 | Biome `noNonNullAssertion` |
+| `jsx-a11y/prefer-tag-over-role` | 10 | Biome `useSemanticElements` |
+| `react-hooks/exhaustive-deps` | 6 | Biome `useExhaustiveDependencies` |
+| `jsx-a11y/click-events-have-key-events`, `jsx-a11y/interactive-supports-focus` | 4 each | Biome a11y warnings |
+| `react-hooks/rules-of-hooks`, `react/no-array-index-key`, `react-hooks/immutability` | 3 each | Biome warnings / new |
+| `react-hooks/preserve-manual-memoization`, `react-hooks/incompatible-library`, `prefer-const`, `radix`, `jsx-a11y/no-static-element-interactions`, `jsx-a11y/no-noninteractive-tabindex` | 2 each | mixed |
+| `react-hooks/globals`, `no-empty`, `@typescript-eslint/no-unused-vars`, `@typescript-eslint/no-empty-object-type`, `jsx-a11y/no-autofocus`, `jsx-a11y/label-has-associated-control`, `jsx-a11y/no-noninteractive-element-interactions` | 1 each | mixed |
+
+The React Compiler warnings (`react-hooks/*`, 105 in total) left after the BYOK AI, blocks and App-split cleanups are resolved by E09-10 (#326).
+
 ## Test registry
 
 ### Frontend: Vitest (`pnpm test`)
