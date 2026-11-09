@@ -12,7 +12,6 @@ type Json = Record<string, unknown>;
 
 async function checkMainThread(output: Record<string, unknown>) {
   const heavy = Promise.all([
-    invoke("fs_list_files", { root: tree, limit: 10000 }),
     invoke("fs_search", { root: tree, query: "f099", limit: 50 }),
   ]);
   let pending = true;
