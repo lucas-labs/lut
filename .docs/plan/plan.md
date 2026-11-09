@@ -515,11 +515,36 @@ size: XS
 
 **Verification:** the CI run of the PR is green.
 
+### E01-24 — Run the frontend CI job on Ubuntu
+
+```yaml
+id: E01-24
+depends-on: [E01-23]
+refs: [ADR-007]
+covers: [ADR-007]
+type: task
+scope: none
+size: XS
+```
+
+**Goal:** The frontend job runs on `ubuntu-latest`, which is faster and costs half the Windows minutes. Lint, format,
+types, Vitest, the Vite build and knip do not depend on the OS. The backend stays on Windows, the primary platform
+(decision 20); Linux and macOS backend jobs are E24-01.
+
+**Acceptance criteria:**
+
+- [ ] The `frontend` job in `.github/workflows/ci.yml` runs on `ubuntu-latest` with the same steps.
+- [ ] The tests with a Windows-only path still run on Windows in CI: `terminal/lib/quoteShellPath.test.ts` (the
+      PowerShell round trip) and `terminal/ghostty/bashPromptHooks.test.ts` (Git Bash), in a Windows job.
+- [ ] Tests that fail on Linux are fixed or recorded in `.docs/testing/baseline.md` with an issue; none is skipped silently.
+
+**Verification:** the CI run of the PR is green; the job log shows both Windows tests ran (not skipped).
+
 ### E01-15 — Close-out: Phase 0 baseline
 
 ```yaml
 id: E01-15
-depends-on: [E01-01, E01-02, E01-03, E01-04, E01-05, E01-06, E01-07, E01-08, E01-09, E01-10, E01-11, E01-12, E01-13, E01-14, E01-16, E01-17, E01-18, E01-19, E01-20, E01-21, E01-22, E01-23]
+depends-on: [E01-01, E01-02, E01-03, E01-04, E01-05, E01-06, E01-07, E01-08, E01-09, E01-10, E01-11, E01-12, E01-13, E01-14, E01-16, E01-17, E01-18, E01-19, E01-20, E01-21, E01-22, E01-23, E01-24]
 refs: [F0]
 covers: []
 type: closeout

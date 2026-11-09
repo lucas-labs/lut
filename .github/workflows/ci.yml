@@ -1,5 +1,6 @@
 # Quality gate (E01-05): every PR to master and every push to master runs lint, format, type checks, tests and the
-# build. Windows is the primary platform; macOS and Linux jobs are added by E24-01.
+# build. The frontend checks don't depend on the OS and run on Ubuntu (E01-24); the backend runs on Windows, the primary
+# platform. macOS and Linux backend jobs are added by E24-01.
 name: ci
 
 on:
@@ -19,8 +20,8 @@ permissions:
 
 jobs:
   frontend:
-    name: frontend (windows)
-    runs-on: windows-latest
+    name: frontend (ubuntu)
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -37,6 +38,24 @@ jobs:
       - run: pnpm test
       - run: pnpm build
       - run: pnpm knip
+
+  frontend-windows:
+    name: frontend shell tests (windows)
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The tests whose Windows path differs from the Linux one: PowerShell quoting and the Bash hooks under Git Bash.
+      - run: >-
+          pnpm vitest run --reporter=verbose
+          src/modules/terminal/lib/quoteShellPath.test.ts
+          src/modules/terminal/ghostty/bashPromptHooks.test.ts
 
   backend:
     name: backend (windows)
