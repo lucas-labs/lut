@@ -112,6 +112,9 @@ Also macOS-only and not wired to `package.json`: `scripts/ghostty-webkit-memory.
 shell scripts. Everything else (`test:terminal-scaling`, `bench:ghostty`, `profile:ghostty`, `soak:ghostty`)
 runs on any OS.
 
+The other way round, `scripts/baseline/measure.ps1` (the performance baseline, see `.docs/testing/baseline.md`) is
+Windows-only: it drives the release app through Win32 APIs from PowerShell 7.
+
 ## Baseline environment
 
 Toolchain used for the Phase 0 baseline (E01), recorded on 2026-11-08:
