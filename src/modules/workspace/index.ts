@@ -7,4 +7,4 @@ export {
   useWorkspaceEnvStore,
   type WorkspaceEnv,
   workspaceScopeKey,
-} from "./env";
+} from './env';

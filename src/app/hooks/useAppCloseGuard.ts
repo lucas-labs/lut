@@ -1,25 +1,14 @@
-import {
-  type FlushResult,
-  flushSessionWrites,
-} from "@/modules/ai/lib/sessions";
-import { flushPersist } from "@/modules/ai/store/chatStore";
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import type { Tab } from "@/modules/tabs";
-import { leafHasForegroundProcess, leafIds } from "@/modules/terminal";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import {
-  type RefObject,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { toast } from "sonner";
+import { type FlushResult, flushSessionWrites } from '@/modules/ai/lib/sessions';
+import { flushPersist } from '@/modules/ai/store/chatStore';
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import type { Tab } from '@/modules/tabs';
+import { leafHasForegroundProcess, leafIds } from '@/modules/terminal';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 async function anyTerminalBusy(tabs: Tab[]): Promise<boolean> {
-  const leaves = tabs.flatMap((t) =>
-    t.kind === "terminal" ? leafIds(t.paneTree) : [],
-  );
+  const leaves = tabs.flatMap((t) => (t.kind === 'terminal' ? leafIds(t.paneTree) : []));
   if (leaves.length === 0) return false;
   const checks = await Promise.all(leaves.map(leafHasForegroundProcess));
   return checks.some(Boolean);
@@ -34,10 +23,10 @@ export const CLOSE_FLUSH_TIMEOUT_MS = 4_000;
  * "Close anyway" action; any further close request closes immediately.
  */
 export function closeAfterFlush(
-  flush: Pick<FlushResult, "ok">,
+  flush: Pick<FlushResult, 'ok'>,
   alreadyWarned: boolean,
-): "close" | "warn" {
-  return flush.ok || alreadyWarned ? "close" : "warn";
+): 'close' | 'warn' {
+  return flush.ok || alreadyWarned ? 'close' : 'warn';
 }
 
 export type AppCloseBlocker = {
@@ -54,8 +43,7 @@ export function canOptOutOfAppClosePrompt(blocker: AppCloseBlocker): boolean {
 }
 
 export function useAppCloseGuard(tabsRef: RefObject<Tab[]>) {
-  const [pendingAppClose, setPendingAppClose] =
-    useState<AppCloseBlocker | null>(null);
+  const [pendingAppClose, setPendingAppClose] = useState<AppCloseBlocker | null>(null);
   const forceClose = useRef(false);
   const closing = useRef(false);
   const warned = useRef(false);
@@ -65,7 +53,7 @@ export function useAppCloseGuard(tabsRef: RefObject<Tab[]>) {
       await getCurrentWindow().close();
     } catch (error) {
       forceClose.current = false;
-      toast.error("Could not close the window", {
+      toast.error('Could not close the window', {
         description: String(error),
       });
     }
@@ -78,16 +66,16 @@ export function useAppCloseGuard(tabsRef: RefObject<Tab[]>) {
       const flush = await flushSessionWrites({
         timeoutMs: CLOSE_FLUSH_TIMEOUT_MS,
       });
-      if (closeAfterFlush(flush, warned.current) === "warn") {
+      if (closeAfterFlush(flush, warned.current) === 'warn') {
         warned.current = true;
-        toast.error("Could not save chat history", {
-          id: "close-save-failed",
+        toast.error('Could not save chat history', {
+          id: 'close-save-failed',
           duration: Number.POSITIVE_INFINITY,
           description: flush.timedOut
-            ? "Saving is taking too long. The latest messages may be lost."
-            : "The latest messages may be lost.",
+            ? 'Saving is taking too long. The latest messages may be lost.'
+            : 'The latest messages may be lost.',
           action: {
-            label: "Close anyway",
+            label: 'Close anyway',
             onClick: () => void closeWindow(),
           },
         });
@@ -112,9 +100,7 @@ export function useAppCloseGuard(tabsRef: RefObject<Tab[]>) {
           usePreferencesStore.getState().confirmCloseRunningTerminal &&
           (await anyTerminalBusy(tabsRef.current));
         // Count after the await so edits made during the IPC check are seen.
-        const dirtyEditors = tabsRef.current.filter(
-          (t) => t.kind === "editor" && t.dirty,
-        ).length;
+        const dirtyEditors = tabsRef.current.filter((t) => t.kind === 'editor' && t.dirty).length;
         if (dirtyEditors > 0 || busyTerminal) {
           setPendingAppClose({ dirtyEditors, busyTerminal });
         } else {

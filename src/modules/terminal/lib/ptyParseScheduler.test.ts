@@ -1,5 +1,5 @@
-import { schedulePtyParse } from "@/modules/terminal/lib/ptyParseScheduler";
-import { afterEach, expect, it, vi } from "vitest";
+import { schedulePtyParse } from '@/modules/terminal/lib/ptyParseScheduler';
+import { afterEach, expect, it, vi } from 'vitest';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -7,7 +7,7 @@ function harness() {
   const events: (() => void)[] = [];
   const ports: { close: ReturnType<typeof vi.fn> }[] = [];
   vi.stubGlobal(
-    "MessageChannel",
+    'MessageChannel',
     class {
       port1 = { onmessage: null as (() => void) | null, close: vi.fn() };
       port2 = {
@@ -25,29 +25,25 @@ function harness() {
   return { ports, run: () => events.shift()?.(), events };
 }
 
-it("yields between terminals in FIFO order and closes both ports when idle", () => {
+it('yields between terminals in FIFO order and closes both ports when idle', () => {
   const h = harness();
   const parsed: string[] = [];
   schedulePtyParse(() => {
-    parsed.push("first slice");
-    schedulePtyParse(() => parsed.push("first continuation"));
+    parsed.push('first slice');
+    schedulePtyParse(() => parsed.push('first continuation'));
   });
-  schedulePtyParse(() => parsed.push("second terminal"));
+  schedulePtyParse(() => parsed.push('second terminal'));
   expect(h.events).toHaveLength(1);
   h.run();
   h.run();
   h.run();
-  expect(parsed).toEqual([
-    "first slice",
-    "second terminal",
-    "first continuation",
-  ]);
+  expect(parsed).toEqual(['first slice', 'second terminal', 'first continuation']);
   expect(h.events).toHaveLength(0);
   expect(h.ports).toHaveLength(2);
   for (const port of h.ports) expect(port.close).toHaveBeenCalledOnce();
 });
 
-it("cancels queued work and ignores a late event from a closed channel", () => {
+it('cancels queued work and ignores a late event from a closed channel', () => {
   const h = harness();
   const cancelled = vi.fn();
   const current = vi.fn();

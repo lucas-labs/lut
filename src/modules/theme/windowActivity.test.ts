@@ -1,13 +1,13 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   getWindowInactive,
   installWindowActivity,
   isWindowInactive,
   subscribeWindowInactive,
   WINDOW_INACTIVE_ATTR,
-} from "./windowActivity";
+} from './windowActivity';
 
-function fakeEnv(visibility: "visible" | "hidden" = "visible") {
+function fakeEnv(visibility: 'visible' | 'hidden' = 'visible') {
   const attrs = new Map<string, string>();
   const docListeners = new Map<string, Set<() => void>>();
   const doc = {
@@ -53,9 +53,9 @@ function fakeEnv(visibility: "visible" | "hidden" = "visible") {
     setPresentation: (visible: boolean) => presentation?.({ visible }),
     setVisibility: (v: DocumentVisibilityState) => {
       doc.visibilityState = v;
-      for (const fn of docListeners.get("visibilitychange") ?? []) fn();
+      for (const fn of docListeners.get('visibilitychange') ?? []) fn();
     },
-    docListenerCount: () => docListeners.get("visibilitychange")?.size ?? 0,
+    docListenerCount: () => docListeners.get('visibilitychange')?.size ?? 0,
   };
 }
 
@@ -65,8 +65,8 @@ afterEach(() => {
   dispose = null;
 });
 
-describe("isWindowInactive", () => {
-  it("is active only when focused, visible and presented", () => {
+describe('isWindowInactive', () => {
+  it('is active only when focused, visible and presented', () => {
     const on = {
       focused: true,
       documentVisible: true,
@@ -79,15 +79,15 @@ describe("isWindowInactive", () => {
   });
 });
 
-describe("installWindowActivity", () => {
-  it("starts active without an inactive marker", () => {
+describe('installWindowActivity', () => {
+  it('starts active without an inactive marker', () => {
     const env = fakeEnv();
     dispose = installWindowActivity(env.sources);
     expect(getWindowInactive()).toBe(false);
     expect(env.attrs.has(WINDOW_INACTIVE_ATTR)).toBe(false);
   });
 
-  it("marks <html> inactive on blur and clears it on focus", () => {
+  it('marks <html> inactive on blur and clears it on focus', () => {
     const env = fakeEnv();
     dispose = installWindowActivity(env.sources);
     env.setFocus(false);
@@ -98,29 +98,29 @@ describe("installWindowActivity", () => {
     expect(getWindowInactive()).toBe(false);
   });
 
-  it("stays inactive until every reason has cleared", () => {
+  it('stays inactive until every reason has cleared', () => {
     const env = fakeEnv();
     dispose = installWindowActivity(env.sources);
     env.setFocus(false);
     env.setPresentation(false);
-    env.setVisibility("hidden");
+    env.setVisibility('hidden');
     env.setFocus(true);
     expect(getWindowInactive()).toBe(true);
     env.setPresentation(true);
     expect(getWindowInactive()).toBe(true);
-    env.setVisibility("visible");
+    env.setVisibility('visible');
     expect(getWindowInactive()).toBe(false);
   });
 
-  it("treats a window that starts hidden as inactive", () => {
-    const env = fakeEnv("hidden");
+  it('treats a window that starts hidden as inactive', () => {
+    const env = fakeEnv('hidden');
     dispose = installWindowActivity(env.sources);
     expect(getWindowInactive()).toBe(true);
-    env.setVisibility("visible");
+    env.setVisibility('visible');
     expect(getWindowInactive()).toBe(false);
   });
 
-  it("follows native occlusion from the shared presentation feed", () => {
+  it('follows native occlusion from the shared presentation feed', () => {
     const env = fakeEnv();
     dispose = installWindowActivity(env.sources);
     env.setPresentation(false);
@@ -129,7 +129,7 @@ describe("installWindowActivity", () => {
     expect(env.attrs.has(WINDOW_INACTIVE_ATTR)).toBe(false);
   });
 
-  it("notifies subscribers only on real transitions", () => {
+  it('notifies subscribers only on real transitions', () => {
     const env = fakeEnv();
     dispose = installWindowActivity(env.sources);
     const listener = vi.fn();
@@ -146,7 +146,7 @@ describe("installWindowActivity", () => {
     expect(listener).toHaveBeenCalledTimes(2);
   });
 
-  it("works without a native presentation feed", () => {
+  it('works without a native presentation feed', () => {
     const env = fakeEnv();
     const { subscribePresentation: _unused, ...rest } = env.sources;
     dispose = installWindowActivity(rest);
@@ -154,7 +154,7 @@ describe("installWindowActivity", () => {
     expect(getWindowInactive()).toBe(true);
   });
 
-  it("releases every source and clears the marker on dispose", () => {
+  it('releases every source and clears the marker on dispose', () => {
     const env = fakeEnv();
     const stop = installWindowActivity(env.sources);
     env.setFocus(false);

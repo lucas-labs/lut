@@ -1,51 +1,21 @@
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-import { AGENT_ICONS } from "@/modules/ai/components/AgentSwitcher";
-import {
-  type Agent,
-  type AgentIconId,
-  BUILTIN_AGENTS,
-} from "@/modules/ai/lib/agents";
-import {
-  isValidHandle,
-  normalizeHandle,
-  type Snippet,
-} from "@/modules/ai/lib/snippets";
-import { newAgentId, useAgentsStore } from "@/modules/ai/store/agentsStore";
-import {
-  newSnippetId,
-  useSnippetsStore,
-} from "@/modules/ai/store/snippetsStore";
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import { setCustomInstructions } from "@/modules/settings/store";
-import {
-  Add01Icon,
-  CheckmarkCircle02Icon,
-  Delete02Icon,
-  Edit02Icon,
-  SparklesIcon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { useEffect, useRef, useState } from "react";
-import { SectionHeader } from "../components/SectionHeader";
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
+import { AGENT_ICONS } from '@/modules/ai/components/AgentSwitcher';
+import { type Agent, type AgentIconId, BUILTIN_AGENTS } from '@/modules/ai/lib/agents';
+import { isValidHandle, normalizeHandle, type Snippet } from '@/modules/ai/lib/snippets';
+import { newAgentId, useAgentsStore } from '@/modules/ai/store/agentsStore';
+import { newSnippetId, useSnippetsStore } from '@/modules/ai/store/snippetsStore';
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import { setCustomInstructions } from '@/modules/settings/store';
+import { Add01Icon, CheckmarkCircle02Icon, Delete02Icon, Edit02Icon, SparklesIcon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { useEffect, useRef, useState } from 'react';
+import { SectionHeader } from '../components/SectionHeader';
 
-const ICON_OPTIONS: AgentIconId[] = [
-  "coder",
-  "architect",
-  "reviewer",
-  "security",
-  "designer",
-  "spark",
-];
+const ICON_OPTIONS: AgentIconId[] = ['coder', 'architect', 'reviewer', 'security', 'designer', 'spark'];
 
 export function AgentsSection() {
   const customInstructions = usePreferencesStore((s) => s.customInstructions);
@@ -88,10 +58,10 @@ export function AgentsSection() {
             onClick={() =>
               setEditingAgent({
                 id: newAgentId(),
-                name: "New agent",
-                description: "",
-                instructions: "",
-                icon: "spark",
+                name: 'New agent',
+                description: '',
+                instructions: '',
+                icon: 'spark',
                 builtIn: false,
               })
             }
@@ -119,11 +89,8 @@ export function AgentsSection() {
           <div className="flex flex-col">
             <Label>Snippets</Label>
             <span className="text-[10.5px] text-muted-foreground">
-              Reusable instructions you can drop into any prompt with{" "}
-              <code className="rounded bg-muted/50 px-1 font-mono">
-                #handle
-              </code>
-              .
+              Reusable instructions you can drop into any prompt with{' '}
+              <code className="rounded bg-muted/50 px-1 font-mono">#handle</code>.
             </span>
           </div>
           <Button
@@ -133,10 +100,10 @@ export function AgentsSection() {
             onClick={() =>
               setEditingSnippet({
                 id: newSnippetId(),
-                handle: "",
-                name: "",
-                description: "",
-                content: "",
+                handle: '',
+                name: '',
+                description: '',
+                content: '',
               })
             }
           >
@@ -147,8 +114,7 @@ export function AgentsSection() {
 
         {snippets.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border/60 bg-card/30 px-4 py-6 text-center text-[11px] text-muted-foreground">
-            No snippets yet. Create one and insert it with{" "}
-            <code className="font-mono">#handle</code> in the AI input.
+            No snippets yet. Create one and insert it with <code className="font-mono">#handle</code> in the AI input.
           </div>
         ) : (
           <ul className="flex flex-col gap-1.5">
@@ -161,13 +127,9 @@ export function AgentsSection() {
                   #{s.handle}
                 </code>
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-[12px] font-medium">
-                    {s.name}
-                  </span>
+                  <span className="truncate text-[12px] font-medium">{s.name}</span>
                   {s.description ? (
-                    <span className="truncate text-[10.5px] text-muted-foreground">
-                      {s.description}
-                    </span>
+                    <span className="truncate text-[10.5px] text-muted-foreground">{s.description}</span>
                   ) : null}
                 </div>
                 <Button
@@ -177,11 +139,7 @@ export function AgentsSection() {
                   onClick={() => setEditingSnippet(s)}
                   title="Edit"
                 >
-                  <HugeiconsIcon
-                    icon={Edit02Icon}
-                    size={12}
-                    strokeWidth={1.75}
-                  />
+                  <HugeiconsIcon icon={Edit02Icon} size={12} strokeWidth={1.75} />
                 </Button>
                 <Button
                   size="icon"
@@ -190,11 +148,7 @@ export function AgentsSection() {
                   onClick={() => removeSnippet(s.id)}
                   title="Delete"
                 >
-                  <HugeiconsIcon
-                    icon={Delete02Icon}
-                    size={12}
-                    strokeWidth={1.75}
-                  />
+                  <HugeiconsIcon icon={Delete02Icon} size={12} strokeWidth={1.75} />
                 </Button>
               </li>
             ))}
@@ -241,10 +195,8 @@ function AgentCard({
   return (
     <div
       className={cn(
-        "group relative flex flex-col gap-1.5 rounded-lg border bg-card/60 px-3 py-2.5 transition-colors",
-        active
-          ? "border-foreground/30 ring-1 ring-foreground/10"
-          : "border-border/60 hover:border-border",
+        'group relative flex flex-col gap-1.5 rounded-lg border bg-card/60 px-3 py-2.5 transition-colors',
+        active ? 'border-foreground/30 ring-1 ring-foreground/10' : 'border-border/60 hover:border-border',
       )}
     >
       <div className="flex items-start gap-2">
@@ -260,40 +212,28 @@ function AgentCard({
               </span>
             ) : null}
           </span>
-          <span className="line-clamp-2 text-[10.5px] leading-relaxed text-muted-foreground">
-            {agent.description}
-          </span>
+          <span className="line-clamp-2 text-[10.5px] leading-relaxed text-muted-foreground">{agent.description}</span>
         </div>
       </div>
       <div className="mt-0.5 flex items-center justify-between gap-1">
         <Button
           size="sm"
-          variant={active ? "default" : "outline"}
+          variant={active ? 'default' : 'outline'}
           onClick={onActivate}
           className="h-6 gap-1 px-2 text-[10.5px]"
         >
           {active ? (
             <>
-              <HugeiconsIcon
-                icon={CheckmarkCircle02Icon}
-                size={10}
-                strokeWidth={2}
-              />
+              <HugeiconsIcon icon={CheckmarkCircle02Icon} size={10} strokeWidth={2} />
               Active
             </>
           ) : (
-            "Use agent"
+            'Use agent'
           )}
         </Button>
         <div className="flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
           {onEdit ? (
-            <Button
-              size="icon"
-              variant="ghost"
-              className="size-6"
-              onClick={onEdit}
-              title="Edit"
-            >
+            <Button size="icon" variant="ghost" className="size-6" onClick={onEdit} title="Edit">
               <HugeiconsIcon icon={Edit02Icon} size={11} strokeWidth={1.75} />
             </Button>
           ) : null}
@@ -330,16 +270,13 @@ function AgentEditorDialog({
   if (!draft) return null;
 
   const isNew = !existing.some((a) => a.id === draft.id);
-  const canSave =
-    draft.name.trim().length > 0 && draft.instructions.trim().length > 0;
+  const canSave = draft.name.trim().length > 0 && draft.instructions.trim().length > 0;
 
   return (
     <Dialog open={!!agent} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-[14px]">
-            {isNew ? "New agent" : "Edit agent"}
-          </DialogTitle>
+          <DialogTitle className="text-[14px]">{isNew ? 'New agent' : 'Edit agent'}</DialogTitle>
         </DialogHeader>
         <div className="-mx-2 max-h-[calc(100vh-14rem)] overflow-y-auto px-2 flex flex-col gap-3">
           <div className="flex gap-2">
@@ -355,10 +292,8 @@ function AgentEditorDialog({
                       type="button"
                       onClick={() => setDraft({ ...draft, icon: id })}
                       className={cn(
-                        "flex size-7 items-center justify-center rounded-md border transition-colors",
-                        active
-                          ? "border-foreground/40 bg-accent"
-                          : "border-border/60 hover:bg-accent/40",
+                        'flex size-7 items-center justify-center rounded-md border transition-colors',
+                        active ? 'border-foreground/40 bg-accent' : 'border-border/60 hover:bg-accent/40',
                       )}
                     >
                       <HugeiconsIcon icon={Icon} size={13} strokeWidth={1.75} />
@@ -381,9 +316,7 @@ function AgentEditorDialog({
             <Label>Description</Label>
             <Input
               value={draft.description}
-              onChange={(e) =>
-                setDraft({ ...draft, description: e.target.value })
-              }
+              onChange={(e) => setDraft({ ...draft, description: e.target.value })}
               placeholder="One line — shown in the agent picker"
               className="h-8 text-[12px]"
             />
@@ -392,9 +325,7 @@ function AgentEditorDialog({
             <Label>Instructions</Label>
             <Textarea
               value={draft.instructions}
-              onChange={(e) =>
-                setDraft({ ...draft, instructions: e.target.value })
-              }
+              onChange={(e) => setDraft({ ...draft, instructions: e.target.value })}
               placeholder="Persona & rules. Appended to Terax's core system prompt."
               className="min-h-40 resize-y text-[12px] leading-relaxed"
             />
@@ -404,11 +335,7 @@ function AgentEditorDialog({
           <Button variant="ghost" size="sm" onClick={onClose}>
             Cancel
           </Button>
-          <Button
-            size="sm"
-            disabled={!canSave}
-            onClick={() => onSave({ ...draft, builtIn: false })}
-          >
+          <Button size="sm" disabled={!canSave} onClick={() => onSave({ ...draft, builtIn: false })}>
             Save
           </Button>
         </DialogFooter>
@@ -433,25 +360,20 @@ function SnippetEditorDialog({
   if (!draft) return null;
 
   const handleErr = !draft.handle
-    ? "Required."
+    ? 'Required.'
     : !isValidHandle(draft.handle)
-      ? "Lowercase letters, digits, and dashes only."
+      ? 'Lowercase letters, digits, and dashes only.'
       : existing.some((s) => s.id !== draft.id && s.handle === draft.handle)
-        ? "Already in use."
+        ? 'Already in use.'
         : null;
-  const canSave =
-    !handleErr &&
-    draft.name.trim().length > 0 &&
-    draft.content.trim().length > 0;
+  const canSave = !handleErr && draft.name.trim().length > 0 && draft.content.trim().length > 0;
 
   return (
     <Dialog open={!!snippet} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-[14px]">
-            {existing.some((s) => s.id === draft.id)
-              ? "Edit snippet"
-              : "New snippet"}
+            {existing.some((s) => s.id === draft.id) ? 'Edit snippet' : 'New snippet'}
           </DialogTitle>
         </DialogHeader>
         <div className="-mx-2 max-h-[calc(100vh-14rem)] overflow-y-auto px-2 flex flex-col gap-3">
@@ -474,11 +396,7 @@ function SnippetEditorDialog({
                   className="h-8 pl-5 font-mono text-[11.5px]"
                 />
               </div>
-              {handleErr ? (
-                <span className="text-[10px] text-destructive">
-                  {handleErr}
-                </span>
-              ) : null}
+              {handleErr ? <span className="text-[10px] text-destructive">{handleErr}</span> : null}
             </div>
             <div className="flex flex-1 flex-col gap-1">
               <Label>Name</Label>
@@ -494,9 +412,7 @@ function SnippetEditorDialog({
             <Label>Description</Label>
             <Input
               value={draft.description}
-              onChange={(e) =>
-                setDraft({ ...draft, description: e.target.value })
-              }
+              onChange={(e) => setDraft({ ...draft, description: e.target.value })}
               placeholder="One line — shown in the # picker"
               className="h-8 text-[12px]"
             />
@@ -559,9 +475,5 @@ function CustomInstructionsBlock({ value }: { value: string }) {
 }
 
 function Label({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="text-[11px] font-medium tracking-tight text-muted-foreground">
-      {children}
-    </span>
-  );
+  return <span className="text-[11px] font-medium tracking-tight text-muted-foreground">{children}</span>;
 }

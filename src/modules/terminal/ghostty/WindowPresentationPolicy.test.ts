@@ -1,13 +1,13 @@
 import {
   PRESENTATION_RECLAIM_DELAY_MS,
   WindowPresentationPolicy,
-} from "@/modules/terminal/ghostty/WindowPresentationPolicy";
-import { afterEach, describe, expect, it, vi } from "vitest";
+} from '@/modules/terminal/ghostty/WindowPresentationPolicy';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-describe("window presentation resource policy", () => {
+describe('window presentation resource policy', () => {
   afterEach(() => vi.useRealTimers());
 
-  it("pauses immediately but avoids resource churn during repeated desktop switches", () => {
+  it('pauses immediately but avoids resource churn during repeated desktop switches', () => {
     vi.useFakeTimers();
     const publish = vi.fn();
     const policy = new WindowPresentationPolicy(publish);
@@ -22,7 +22,7 @@ describe("window presentation resource policy", () => {
     policy.dispose();
   });
 
-  it("reclaims once after sustained occlusion; duplicate events do not extend retention", () => {
+  it('reclaims once after sustained occlusion; duplicate events do not extend retention', () => {
     vi.useFakeTimers();
     const policy = new WindowPresentationPolicy(vi.fn());
     policy.update(false);
@@ -36,7 +36,7 @@ describe("window presentation resource policy", () => {
     policy.dispose();
   });
 
-  it("reclaims immediately for sleep and cancels outstanding timers on dispose", () => {
+  it('reclaims immediately for sleep and cancels outstanding timers on dispose', () => {
     vi.useFakeTimers();
     const policy = new WindowPresentationPolicy(vi.fn());
     policy.update(false);
@@ -49,12 +49,10 @@ describe("window presentation resource policy", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("publishes the pause synchronously and the reclaim offer later, so a renderer that only pauses never waits", () => {
+  it('publishes the pause synchronously and the reclaim offer later, so a renderer that only pauses never waits', () => {
     vi.useFakeTimers();
     const published: Array<{ visible: boolean; reclaim: boolean }> = [];
-    const policy = new WindowPresentationPolicy((state) =>
-      published.push(state),
-    );
+    const policy = new WindowPresentationPolicy((state) => published.push(state));
     policy.update(false);
     // The pause is visible to every consumer before any timer runs.
     expect(published).toEqual([{ visible: false, reclaim: false }]);

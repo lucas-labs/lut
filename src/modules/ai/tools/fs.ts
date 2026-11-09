@@ -1,12 +1,9 @@
-import { tool } from "ai";
-import { z } from "zod";
-import { native } from "../lib/native";
-import {
-  checkReadableCanonical,
-  checkWritableCanonical,
-} from "../lib/security";
-import { newQueuedEditId, usePlanStore } from "../store/planStore";
-import { resolvePath, type ToolContext } from "./context";
+import { tool } from 'ai';
+import { z } from 'zod';
+import { native } from '../lib/native';
+import { checkReadableCanonical, checkWritableCanonical } from '../lib/security';
+import { newQueuedEditId, usePlanStore } from '../store/planStore';
+import { resolvePath, type ToolContext } from './context';
 
 const READ_BYTE_CAP = 25 * 1024;
 const READ_LINE_CAP = 2000;
@@ -21,24 +18,17 @@ export function buildFsTools(ctx: ToolContext) {
   return {
     read_file: tool({
       description:
-        "Read a UTF-8 text file. Defaults to the first 2000 lines (capped at 25KB). Pass `offset`/`limit` for line-based windowing of large files. Refuses binary, oversized, or sensitive files (.env, keys, credentials). If you call this on the same path twice in a session without edits in between, the second call returns `unchanged: true` instead of re-emitting the content — re-read the prior tool result.",
+        'Read a UTF-8 text file. Defaults to the first 2000 lines (capped at 25KB). Pass `offset`/`limit` for line-based windowing of large files. Refuses binary, oversized, or sensitive files (.env, keys, credentials). If you call this on the same path twice in a session without edits in between, the second call returns `unchanged: true` instead of re-emitting the content — re-read the prior tool result.',
       inputSchema: z.object({
-        path: z
-          .string()
-          .describe("Absolute path, or relative to the active terminal cwd."),
-        offset: z
-          .number()
-          .int()
-          .min(0)
-          .optional()
-          .describe("0-based start line. Default 0."),
+        path: z.string().describe('Absolute path, or relative to the active terminal cwd.'),
+        offset: z.number().int().min(0).optional().describe('0-based start line. Default 0.'),
         limit: z
           .number()
           .int()
           .min(1)
           .max(10000)
           .optional()
-          .describe("Max lines to return. Default 2000."),
+          .describe('Max lines to return. Default 2000.'),
       }),
       execute: async ({ path, offset, limit }) => {
         const reqPath = resolvePath(path, ctx.getCwd());
@@ -47,9 +37,8 @@ export function buildFsTools(ctx: ToolContext) {
         const abs = safety.canonical;
         try {
           const r = await native.readFile(abs);
-          if (r.kind === "binary")
-            return { error: "binary file refused", path: abs, size: r.size };
-          if (r.kind === "toolarge")
+          if (r.kind === 'binary') return { error: 'binary file refused', path: abs, size: r.size };
+          if (r.kind === 'toolarge')
             return {
               error: `file too large (${r.size} bytes, limit ${r.limit})`,
               path: abs,
@@ -64,9 +53,9 @@ export function buildFsTools(ctx: ToolContext) {
           ctx.readCache.set(abs, { size: r.size, hash });
 
           if (isFullRead) {
-            const lines = r.content.split("\n");
+            const lines = r.content.split('\n');
             const sliceEnd = Math.min(lines.length, READ_LINE_CAP);
-            let content = lines.slice(0, sliceEnd).join("\n");
+            let content = lines.slice(0, sliceEnd).join('\n');
             let truncated = sliceEnd < lines.length;
             if (content.length > READ_BYTE_CAP) {
               content = content.slice(0, READ_BYTE_CAP);
@@ -78,16 +67,16 @@ export function buildFsTools(ctx: ToolContext) {
               size: r.size,
               total_lines: lines.length,
               ...(truncated
-                ? { truncated: true, hint: "call read_file with offset to continue" }
+                ? { truncated: true, hint: 'call read_file with offset to continue' }
                 : {}),
             };
           }
 
-          const lines = r.content.split("\n");
+          const lines = r.content.split('\n');
           const start = offset ?? 0;
           const requested = limit ?? READ_LINE_CAP;
           const end = Math.min(lines.length, start + requested);
-          let content = lines.slice(start, end).join("\n");
+          let content = lines.slice(start, end).join('\n');
           let truncated = end < lines.length;
           if (content.length > READ_BYTE_CAP) {
             content = content.slice(0, READ_BYTE_CAP);
@@ -110,11 +99,9 @@ export function buildFsTools(ctx: ToolContext) {
 
     list_directory: tool({
       description:
-        "List immediate entries (files + directories) in a directory. Hidden entries are omitted.",
+        'List immediate entries (files + directories) in a directory. Hidden entries are omitted.',
       inputSchema: z.object({
-        path: z
-          .string()
-          .describe("Absolute path, or relative to the active terminal cwd."),
+        path: z.string().describe('Absolute path, or relative to the active terminal cwd.'),
       }),
       execute: async ({ path }) => {
         const reqPath = resolvePath(path, ctx.getCwd());
@@ -135,7 +122,7 @@ export function buildFsTools(ctx: ToolContext) {
 
     write_file: tool({
       description:
-        "Create or overwrite a file with the given content. Always asks the user before running. Prefer `edit` / `multi_edit` for in-place changes — only use `write_file` for creating a brand-new file or fully replacing a tiny one.",
+        'Create or overwrite a file with the given content. Always asks the user before running. Prefer `edit` / `multi_edit` for in-place changes — only use `write_file` for creating a brand-new file or fully replacing a tiny one.',
       inputSchema: z.object({
         path: z.string(),
         content: z.string(),
@@ -148,25 +135,23 @@ export function buildFsTools(ctx: ToolContext) {
         const abs = safety.canonical;
 
         if (usePlanStore.getState().active) {
-          let original = "";
+          let original = '';
           let isNewFile = false;
           try {
             const r = await native.readFile(abs);
-            if (r.kind !== "text")
+            if (r.kind !== 'text')
               return {
-                error:
-                  "Cannot snapshot a binary or oversized file for plan review",
+                error: 'Cannot snapshot a binary or oversized file for plan review',
                 path: abs,
               };
             original = r.content;
           } catch (error) {
-            if (error !== "AI file not found")
-              return { error: String(error), path: abs };
+            if (error !== 'AI file not found') return { error: String(error), path: abs };
             isNewFile = true;
           }
           usePlanStore.getState().enqueue({
             id: newQueuedEditId(),
-            kind: "write_file",
+            kind: 'write_file',
             path: abs,
             originalContent: original,
             proposedContent: content,
@@ -191,7 +176,7 @@ export function buildFsTools(ctx: ToolContext) {
 
     create_directory: tool({
       description:
-        "Create a directory (and any missing parents). Always asks the user before running.",
+        'Create a directory (and any missing parents). Always asks the user before running.',
       inputSchema: z.object({
         path: z.string(),
       }),
@@ -204,12 +189,12 @@ export function buildFsTools(ctx: ToolContext) {
         if (usePlanStore.getState().active) {
           usePlanStore.getState().enqueue({
             id: newQueuedEditId(),
-            kind: "create_directory",
+            kind: 'create_directory',
             path: abs,
-            originalContent: "",
-            proposedContent: "",
+            originalContent: '',
+            proposedContent: '',
             isNewFile: true,
-            description: "Create directory",
+            description: 'Create directory',
           });
           return { path: abs, queued_for_plan_review: true, ok: true };
         }

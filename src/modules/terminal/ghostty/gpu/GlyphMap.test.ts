@@ -1,12 +1,12 @@
-import { describe, expect, it } from "vitest";
-import { ATLAS_FULL } from "./GlyphAtlas";
+import { describe, expect, it } from 'vitest';
+import { ATLAS_FULL } from './GlyphAtlas';
 import {
   BACKLOG_THRESHOLD,
   GLYPH_EVICTED,
   GLYPH_PENDING,
   type GlyphResolver,
   TerminalGlyphMap,
-} from "./GlyphMap";
+} from './GlyphMap';
 
 class FakeAtlas implements GlyphResolver {
   epoch = 1;
@@ -47,14 +47,14 @@ function cells(ids: number[]): Uint8Array {
   return new Uint8Array(words.buffer);
 }
 
-describe("TerminalGlyphMap", () => {
-  it("queues announced glyphs and maps them through the atlas", () => {
+describe('TerminalGlyphMap', () => {
+  it('queues announced glyphs and maps them through the atlas', () => {
     const map = new TerminalGlyphMap();
     const atlas = new FakeAtlas();
     map.ensureCapacity(3);
     map.resetForEpoch(1);
     map.adoptAtlasEpoch(atlas.epoch);
-    map.add(glyphs("a", "b", "c"));
+    map.add(glyphs('a', 'b', 'c'));
     expect(map.pending).toBe(3);
     expect(map.entries[1]).toBe(GLYPH_PENDING);
     expect(map.takeDirty()).toEqual({ start: 0, end: 1_023 });
@@ -66,12 +66,12 @@ describe("TerminalGlyphMap", () => {
     expect(map.takeDirty()).toBeNull();
   });
 
-  it("stops at the budget after at least one glyph and resumes where it left off", () => {
+  it('stops at the budget after at least one glyph and resumes where it left off', () => {
     const map = new TerminalGlyphMap();
     const atlas = new FakeAtlas();
     map.ensureCapacity(5);
     map.resetForEpoch(1);
-    map.add(glyphs("a", "b", "c", "d", "e"));
+    map.add(glyphs('a', 'b', 'c', 'd', 'e'));
     expect(map.process(atlas, oneAtATime).resolved).toBe(1);
     expect(map.pending).toBe(4);
     let rounds = 1;
@@ -80,15 +80,15 @@ describe("TerminalGlyphMap", () => {
       rounds += 1;
     }
     expect(rounds).toBe(5);
-    expect(atlas.resolved).toEqual(["0:a", "0:b", "0:c", "0:d", "0:e"]);
+    expect(atlas.resolved).toEqual(['0:a', '0:b', '0:c', '0:d', '0:e']);
   });
 
-  it("uses the larger allowance the caller passes for first frames", () => {
+  it('uses the larger allowance the caller passes for first frames', () => {
     const map = new TerminalGlyphMap();
     const seen: Array<number | undefined> = [];
     map.ensureCapacity(3);
     map.resetForEpoch(1);
-    map.add(glyphs("a", "b", "c"));
+    map.add(glyphs('a', 'b', 'c'));
     map.process(
       new FakeAtlas(),
       {
@@ -102,38 +102,38 @@ describe("TerminalGlyphMap", () => {
     expect(seen).toEqual([8, 8]);
   });
 
-  it("deduplicates repeated announcements and keeps resolved indices on resync", () => {
+  it('deduplicates repeated announcements and keeps resolved indices on resync', () => {
     const map = new TerminalGlyphMap();
     const atlas = new FakeAtlas();
     map.ensureCapacity(2);
     map.resetForEpoch(1);
-    map.add(glyphs("a", "b"));
+    map.add(glyphs('a', 'b'));
     map.process(atlas, unlimited);
-    map.add(glyphs("a", "b"));
+    map.add(glyphs('a', 'b'));
     expect(map.pending).toBe(0);
     expect(map.entries[1]).toBe(0);
-    map.add(glyphs("a", "b"));
+    map.add(glyphs('a', 'b'));
     map.process(atlas, unlimited);
     expect(atlas.resolved).toHaveLength(2);
   });
 
-  it("drops everything for a new Ghostty epoch", () => {
+  it('drops everything for a new Ghostty epoch', () => {
     const map = new TerminalGlyphMap();
     const atlas = new FakeAtlas();
     map.ensureCapacity(2);
     map.resetForEpoch(1);
-    map.add(glyphs("a", "b"));
+    map.add(glyphs('a', 'b'));
     map.process(atlas, unlimited);
     map.resetForEpoch(2);
     expect(map.zigEpoch).toBe(2);
     expect(map.entries[1]).toBe(GLYPH_PENDING);
     expect(map.pending).toBe(0);
-    map.add([{ id: 1, style: 0, text: "z" }]);
+    map.add([{ id: 1, style: 0, text: 'z' }]);
     map.process(atlas, unlimited);
-    expect(map.entries[1]).toBe(atlas.resolved.indexOf("0:z"));
+    expect(map.entries[1]).toBe(atlas.resolved.indexOf('0:z'));
   });
 
-  it("grows its storage with the glyph count and reports the replacement", () => {
+  it('grows its storage with the glyph count and reports the replacement', () => {
     const map = new TerminalGlyphMap();
     map.resetForEpoch(1);
     expect(map.capacity).toBe(1_024);
@@ -142,18 +142,16 @@ describe("TerminalGlyphMap", () => {
     expect(map.capacity).toBe(2_048);
     expect(map.entries[2_047]).toBe(GLYPH_PENDING);
     expect(() => map.ensureCapacity(70_000)).toThrow(RangeError);
-    expect(() => map.add([{ id: 9_999, style: 0, text: "x" }])).toThrow(
-      RangeError,
-    );
+    expect(() => map.add([{ id: 9_999, style: 0, text: 'x' }])).toThrow(RangeError);
   });
 
-  it("evicts on an atlas flush and re-queues only glyphs that are shown", () => {
+  it('evicts on an atlas flush and re-queues only glyphs that are shown', () => {
     const map = new TerminalGlyphMap();
     const atlas = new FakeAtlas();
     map.ensureCapacity(4);
     map.resetForEpoch(1);
     map.adoptAtlasEpoch(atlas.epoch);
-    map.add(glyphs("a", "b", "c", "d"));
+    map.add(glyphs('a', 'b', 'c', 'd'));
     map.process(atlas, unlimited);
     map.takeDirty();
 
@@ -173,25 +171,23 @@ describe("TerminalGlyphMap", () => {
     expect(found).toBe(2);
     expect(map.pending).toBe(2);
     map.process(atlas, unlimited);
-    expect(atlas.resolved.slice(-2)).toEqual(["0:b", "0:d"]);
+    expect(atlas.resolved.slice(-2)).toEqual(['0:b', '0:d']);
     expect(map.entries[1]).toBe(GLYPH_EVICTED);
     expect(map.entries[3]).toBe(GLYPH_EVICTED);
     expect(map.recovering).toBe(true);
 
     // Later output shows glyph 1: it is found in the dirty rows and restored.
     map.scanCells(cells([1, 0, 0, 0, 0, 0, 0, 0]), 4, [{ start: 1, end: 1 }]);
-    expect(
-      map.scanCells(cells([0, 0, 0, 0, 1, 0, 0, 0]), 4, [{ start: 1, end: 1 }]),
-    ).toBe(1);
+    expect(map.scanCells(cells([0, 0, 0, 0, 1, 0, 0, 0]), 4, [{ start: 1, end: 1 }])).toBe(1);
     map.process(atlas, unlimited);
     expect(map.entries[1]).toBeLessThan(GLYPH_EVICTED);
   });
 
-  it("scans only the requested rows and nothing at all when no glyph is evicted", () => {
+  it('scans only the requested rows and nothing at all when no glyph is evicted', () => {
     const map = new TerminalGlyphMap();
     map.ensureCapacity(2);
     map.resetForEpoch(1);
-    map.add(glyphs("a", "b"));
+    map.add(glyphs('a', 'b'));
     expect(map.scanCells(cells([1, 2]), 1, [{ start: 0, end: 1 }])).toBe(0);
     map.process(new FakeAtlas(), unlimited);
     map.invalidateAtlas(5);
@@ -200,13 +196,13 @@ describe("TerminalGlyphMap", () => {
     expect(map.pending).toBe(1);
   });
 
-  it("reports a full atlas without losing the queue", () => {
+  it('reports a full atlas without losing the queue', () => {
     const map = new TerminalGlyphMap();
     const atlas = new FakeAtlas();
     atlas.capacity = 2;
     map.ensureCapacity(4);
     map.resetForEpoch(1);
-    map.add(glyphs("a", "b", "c", "d"));
+    map.add(glyphs('a', 'b', 'c', 'd'));
     const result = map.process(atlas, unlimited);
     expect(result).toEqual({ resolved: 2, full: true });
     expect(map.pending).toBe(2);
@@ -218,7 +214,7 @@ describe("TerminalGlyphMap", () => {
     expect(map.pending).toBe(0);
   });
 
-  it("sheds a backlog down to the glyphs on screen and restores the rest on demand", () => {
+  it('sheds a backlog down to the glyphs on screen and restores the rest on demand', () => {
     const map = new TerminalGlyphMap();
     const atlas = new FakeAtlas();
     const count = BACKLOG_THRESHOLD + 200;
@@ -235,7 +231,7 @@ describe("TerminalGlyphMap", () => {
     const small = new TerminalGlyphMap();
     small.ensureCapacity(10);
     small.resetForEpoch(1);
-    small.add(glyphs("a", "b"));
+    small.add(glyphs('a', 'b'));
     expect(small.shedBacklog(cells([1, 2]), 2, 1)).toBe(0);
     expect(small.pending).toBe(2);
 
@@ -251,14 +247,12 @@ describe("TerminalGlyphMap", () => {
     expect(map.entries[6]).toBe(GLYPH_EVICTED);
 
     // A glyph that was shed comes back through a changed row.
-    expect(map.scanCells(cells([6, 0, 0, 0]), 4, [{ start: 0, end: 0 }])).toBe(
-      1,
-    );
+    expect(map.scanCells(cells([6, 0, 0, 0]), 4, [{ start: 0, end: 0 }])).toBe(1);
     map.process(atlas, unlimited);
     expect(map.entries[6]).toBeLessThan(GLYPH_EVICTED);
   });
 
-  it("does not rasterize a glyph twice when it sits in both queues", () => {
+  it('does not rasterize a glyph twice when it sits in both queues', () => {
     const map = new TerminalGlyphMap();
     const atlas = new FakeAtlas();
     const count = BACKLOG_THRESHOLD + 10;
@@ -277,7 +271,7 @@ describe("TerminalGlyphMap", () => {
     expect(map.pending).toBe(0);
   });
 
-  it("drops stale urgent entries when newer output replaces the screen", () => {
+  it('drops stale urgent entries when newer output replaces the screen', () => {
     const map = new TerminalGlyphMap();
     const atlas = new FakeAtlas();
     const count = BACKLOG_THRESHOLD * 3;

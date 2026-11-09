@@ -1,10 +1,6 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-  GLYPH_STYLE_BOLD,
-  GLYPH_STYLE_ITALIC,
-  GlyphRasterizer,
-} from "./GlyphRasterizer";
-import { deriveFontMetrics } from "./terminalVisuals";
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { GLYPH_STYLE_BOLD, GLYPH_STYLE_ITALIC, GlyphRasterizer } from './GlyphRasterizer';
+import { deriveFontMetrics } from './terminalVisuals';
 
 const METRICS = deriveFontMetrics(
   {
@@ -12,7 +8,7 @@ const METRICS = deriveFontMetrics(
     size: 14,
     lineHeight: 1.2,
     letterSpacing: 0,
-    weight: "400",
+    weight: '400',
   },
   1.5,
   { advance: 12.6, ascent: 16, descent: 5 },
@@ -21,12 +17,12 @@ const METRICS = deriveFontMetrics(
 function stub(color = false) {
   const fonts: string[] = [];
   const clears: number[][] = [];
-  let font = "";
+  let font = '';
   const texts: string[] = [];
   const context = {
-    textAlign: "",
-    textBaseline: "",
-    fillStyle: "",
+    textAlign: '',
+    textBaseline: '',
+    fillStyle: '',
     get font() {
       return font;
     },
@@ -54,7 +50,7 @@ function stub(color = false) {
     },
   };
   let created = 0;
-  vi.stubGlobal("document", {
+  vi.stubGlobal('document', {
     createElement: () => {
       created += 1;
       return { width: 0, height: 0, getContext: () => context };
@@ -63,12 +59,12 @@ function stub(color = false) {
   return { fonts, clears, created: () => created, texts };
 }
 
-describe("GlyphRasterizer", () => {
+describe('GlyphRasterizer', () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it("measures and positions glyphs in device pixels at the cell baseline", () => {
+  it('measures and positions glyphs in device pixels at the cell baseline', () => {
     stub();
-    const glyph = new GlyphRasterizer(METRICS).rasterize("a", 0);
+    const glyph = new GlyphRasterizer(METRICS).rasterize('a', 0);
     expect(glyph.width).toBe(1 + 9 + 4);
     expect(glyph.height).toBe(12 + 4 + 4);
     expect(glyph.bearingX).toBe(-1 - 2);
@@ -78,65 +74,57 @@ describe("GlyphRasterizer", () => {
     expect(glyph.pixels[5]).toBe(5);
   });
 
-  it("returns RGBA for intrinsic-colour glyphs", () => {
+  it('returns RGBA for intrinsic-colour glyphs', () => {
     stub(true);
-    const glyph = new GlyphRasterizer(METRICS).rasterize("x", 0);
+    const glyph = new GlyphRasterizer(METRICS).rasterize('x', 0);
     expect(glyph.intrinsicColor).toBe(true);
     expect(glyph.pixels).toHaveLength(glyph.width * glyph.height * 4);
   });
 
-  it("assigns context.font only when the style changes, at size times ratio", () => {
+  it('assigns context.font only when the style changes, at size times ratio', () => {
     const s = stub();
     const rasterizer = new GlyphRasterizer(METRICS);
-    rasterizer.rasterize("a", 0);
-    rasterizer.rasterize("b", 0);
-    rasterizer.rasterize("c", 0);
+    rasterizer.rasterize('a', 0);
+    rasterizer.rasterize('b', 0);
+    rasterizer.rasterize('c', 0);
     expect(s.fonts).toHaveLength(1);
-    expect(s.fonts[0]).toContain("21px");
-    rasterizer.rasterize("d", GLYPH_STYLE_BOLD);
-    rasterizer.rasterize("e", GLYPH_STYLE_BOLD | GLYPH_STYLE_ITALIC);
-    rasterizer.rasterize("f", 0);
+    expect(s.fonts[0]).toContain('21px');
+    rasterizer.rasterize('d', GLYPH_STYLE_BOLD);
+    rasterizer.rasterize('e', GLYPH_STYLE_BOLD | GLYPH_STYLE_ITALIC);
+    rasterizer.rasterize('f', 0);
     expect(s.fonts).toHaveLength(4);
     expect(s.fonts[1]).toMatch(/^700 /);
     expect(s.fonts[2]).toMatch(/^italic 700 /);
   });
 
-  it("clears only the area the previous glyph touched", () => {
+  it('clears only the area the previous glyph touched', () => {
     const s = stub();
     const rasterizer = new GlyphRasterizer(METRICS);
-    rasterizer.rasterize("a", 0);
-    rasterizer.rasterize("b", 0);
+    rasterizer.rasterize('a', 0);
+    rasterizer.rasterize('b', 0);
     expect(s.clears[0]).toEqual([0, 0, 256, 256]);
     expect(s.clears[1][2]).toBeLessThan(40);
     expect(s.clears[1][3]).toBeLessThan(40);
   });
 
-  it("draws box and block glyphs at exactly the cell size without the canvas", () => {
+  it('draws box and block glyphs at exactly the cell size without the canvas', () => {
     const s = stub();
     const rasterizer = new GlyphRasterizer(METRICS);
-    const regular = rasterizer.rasterize("┼", 0);
+    const regular = rasterizer.rasterize('┼', 0);
     expect(regular.width).toBe(METRICS.deviceCellWidth);
     expect(regular.height).toBe(METRICS.deviceCellHeight);
     expect(regular.bearingX).toBe(0);
     expect(regular.bearingY).toBe(0);
     expect(regular.intrinsicColor).toBe(false);
     expect(regular.exact).toBe(true);
-    expect(regular.pixels).toHaveLength(
-      METRICS.deviceCellWidth * METRICS.deviceCellHeight,
-    );
+    expect(regular.pixels).toHaveLength(METRICS.deviceCellWidth * METRICS.deviceCellHeight);
     // The light line weight is whole pixels: 14px * 1.5 = 21 device pixels.
-    const middle =
-      regular.pixels[Math.floor(METRICS.deviceCellHeight / 2) * regular.width];
+    const middle = regular.pixels[Math.floor(METRICS.deviceCellHeight / 2) * regular.width];
     expect(middle).toBe(255);
     const regularPixels = regular.pixels.slice();
-    const styled = rasterizer.rasterize(
-      "┼",
-      GLYPH_STYLE_BOLD | GLYPH_STYLE_ITALIC,
-    );
+    const styled = rasterizer.rasterize('┼', GLYPH_STYLE_BOLD | GLYPH_STYLE_ITALIC);
     expect(styled.pixels).toEqual(regularPixels);
-    expect(
-      rasterizer.rasterize("█", 0).pixels.every((value) => value === 255),
-    ).toBe(true);
+    expect(rasterizer.rasterize('█', 0).pixels.every((value) => value === 255)).toBe(true);
     expect(s.created()).toBe(0);
     expect(s.texts).toEqual([]);
     expect(s.fonts).toEqual([]);
@@ -145,27 +133,27 @@ describe("GlyphRasterizer", () => {
     expect(rasterizer.cpuBytes).toBe(0);
   });
 
-  it("leaves text and sequences that merely start with a box character to the font", () => {
+  it('leaves text and sequences that merely start with a box character to the font', () => {
     const s = stub();
     const rasterizer = new GlyphRasterizer(METRICS);
-    const sequence = rasterizer.rasterize("┼\u0301", 0);
+    const sequence = rasterizer.rasterize('┼\u0301', 0);
     expect(sequence.exact).toBe(false);
-    expect(rasterizer.rasterize("a", 0).exact).toBe(false);
-    expect(rasterizer.rasterize("■", 0).exact).toBe(false);
-    expect(s.texts).toEqual(["┼\u0301", "a", "■"]);
+    expect(rasterizer.rasterize('a', 0).exact).toBe(false);
+    expect(rasterizer.rasterize('■', 0).exact).toBe(false);
+    expect(s.texts).toEqual(['┼\u0301', 'a', '■']);
   });
 
-  it("allocates its canvas lazily and releases it on dispose", () => {
+  it('allocates its canvas lazily and releases it on dispose', () => {
     const s = stub();
     const rasterizer = new GlyphRasterizer(METRICS);
     expect(s.created()).toBe(0);
     expect(rasterizer.cpuBytes).toBe(0);
-    rasterizer.rasterize("a", 0);
+    rasterizer.rasterize('a', 0);
     expect(s.created()).toBe(1);
     expect(rasterizer.cpuBytes).toBeGreaterThan(0);
     rasterizer.dispose();
     expect(rasterizer.cpuBytes).toBe(0);
-    rasterizer.rasterize("a", 0);
+    rasterizer.rasterize('a', 0);
     expect(s.created()).toBe(2);
   });
 });

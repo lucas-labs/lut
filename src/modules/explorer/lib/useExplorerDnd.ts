@@ -1,12 +1,6 @@
-import type { PointerEvent as ReactPointerEvent } from "react";
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
-import { excludeNestedSources } from "./batchMove";
+import type { PointerEvent as ReactPointerEvent } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { excludeNestedSources } from './batchMove';
 
 export type ExplorerPathDropTarget = {
   updateTarget: (clientX: number, clientY: number) => boolean;
@@ -26,7 +20,7 @@ type Options = {
 const THRESHOLD = 5;
 
 function parentDir(path: string): string {
-  const i = path.lastIndexOf("/");
+  const i = path.lastIndexOf('/');
   return i > 0 ? path.slice(0, i) : path;
 }
 
@@ -43,9 +37,7 @@ export function resolveExplorerMoveTarget(
       ? hoveredPath
       : parentDir(hoveredPath)
     : rootPath;
-  const allAlreadyInTarget = sources.every(
-    (source) => parentDir(source) === target,
-  );
+  const allAlreadyInTarget = sources.every((source) => parentDir(source) === target);
   if (allAlreadyInTarget) return null;
   for (const source of sources) {
     if (target === source || target.startsWith(`${source}/`)) return null;
@@ -110,14 +102,7 @@ export function useExplorerDnd({
       collapseSelectionTo,
       pathDropTarget,
     };
-  }, [
-    rootPath,
-    isDir,
-    onMove,
-    getSelectedPaths,
-    collapseSelectionTo,
-    pathDropTarget,
-  ]);
+  }, [rootPath, isDir, onMove, getSelectedPaths, collapseSelectionTo, pathDropTarget]);
 
   const placeGhost = (x: number, y: number) => {
     lastPosRef.current = { x, y };
@@ -135,8 +120,8 @@ export function useExplorerDnd({
 
   const onPointerDown = useCallback((e: ReactPointerEvent) => {
     if (e.button !== 0) return;
-    const el = (e.target as HTMLElement).closest<HTMLElement>("[data-fs-path]");
-    const source = el?.getAttribute("data-fs-path");
+    const el = (e.target as HTMLElement).closest<HTMLElement>('[data-fs-path]');
+    const source = el?.getAttribute('data-fs-path');
     if (!source) return;
     const sx = e.clientX;
     const sy = e.clientY;
@@ -160,23 +145,22 @@ export function useExplorerDnd({
         setDragLabel(
           sources.length > 1
             ? `${sources.length} items`
-            : source.slice(source.lastIndexOf("/") + 1),
+            : source.slice(source.lastIndexOf('/') + 1),
         );
       }
       placeGhost(ev.clientX, ev.clientY);
       const { rootPath, isDir, pathDropTarget } = optsRef.current;
       const element = document.elementFromPoint(ev.clientX, ev.clientY);
-      const terminalTargeted =
-        pathDropTarget?.updateTarget(ev.clientX, ev.clientY) ?? false;
-      const hit = element?.closest<HTMLElement>("[data-fs-path]");
-      const p = hit?.getAttribute("data-fs-path");
+      const terminalTargeted = pathDropTarget?.updateTarget(ev.clientX, ev.clientY) ?? false;
+      const hit = element?.closest<HTMLElement>('[data-fs-path]');
+      const p = hit?.getAttribute('data-fs-path');
       const valid = terminalTargeted
         ? null
         : resolveExplorerMoveTarget(
             sources,
             rootPath,
             p ?? null,
-            element?.closest("[data-explorer-drop]") != null,
+            element?.closest('[data-explorer-drop]') != null,
             isDir,
           );
       if (dropTargetRef.current !== valid) {
@@ -185,9 +169,9 @@ export function useExplorerDnd({
       }
     };
     const detach = () => {
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", up);
-      window.removeEventListener("pointercancel", cancel);
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', cancel);
       cleanupRef.current = null;
     };
     const end = (commit: boolean) => {
@@ -213,9 +197,9 @@ export function useExplorerDnd({
     };
     const up = () => end(true);
     const cancel = () => end(false);
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up);
-    window.addEventListener("pointercancel", cancel);
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', cancel);
     cleanupRef.current = detach;
   }, []);
 

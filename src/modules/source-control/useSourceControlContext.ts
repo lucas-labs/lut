@@ -1,15 +1,15 @@
-import { git } from "@/modules/git";
-import type { SidebarViewId } from "@/modules/sidebar";
-import type { Tab } from "@/modules/tabs";
-import { useCallback, useMemo } from "react";
+import { git } from '@/modules/git';
+import type { SidebarViewId } from '@/modules/sidebar';
+import type { Tab } from '@/modules/tabs';
+import { useCallback, useMemo } from 'react';
 import {
   activeRepositoryContextPath,
   gitGraphRepositoryPath,
   sourceControlRepositoryPath,
   type SourceControlRepositoryTarget,
-} from "./repositoryTarget";
-import { isStatusLive, statusConsumers } from "./statusConsumers";
-import { useSourceControl } from "./useSourceControl";
+} from './repositoryTarget';
+import { isStatusLive, statusConsumers } from './statusConsumers';
+import { useSourceControl } from './useSourceControl';
 
 type Params = {
   activeTab: Tab | undefined;
@@ -26,10 +26,7 @@ type Params = {
   explorerGitDecorations: boolean;
   repositoryTarget: SourceControlRepositoryTarget;
   cycleSidebarView: (view: SidebarViewId) => void;
-  openCommitHistoryTab: (args: {
-    repoRoot: string;
-    branch: string | null;
-  }) => void;
+  openCommitHistoryTab: (args: { repoRoot: string; branch: string | null }) => void;
 };
 
 /**
@@ -52,9 +49,7 @@ export function useSourceControlContext({
   cycleSidebarView,
   openCommitHistoryTab,
 }: Params) {
-  const workspaceFallbackPath = launchCwdResolved
-    ? (launchCwd ?? home ?? null)
-    : null;
+  const workspaceFallbackPath = launchCwdResolved ? (launchCwd ?? home ?? null) : null;
   const sourceControlContextPath = activeRepositoryContextPath({
     activeTab,
     activeTerminalLeafCwd,
@@ -64,10 +59,7 @@ export function useSourceControlContext({
   const hasOpenGitTab = useMemo(
     () =>
       tabs.some(
-        (t) =>
-          t.kind === "git-diff" ||
-          t.kind === "git-history" ||
-          t.kind === "git-commit-file",
+        (t) => t.kind === 'git-diff' || t.kind === 'git-history' || t.kind === 'git-commit-file',
       ),
     [tabs],
   );
@@ -100,7 +92,7 @@ export function useSourceControlContext({
   const sourceControl = useSourceControl(sourceControlPath, true, { live });
 
   const toggleSourceControl = useCallback(() => {
-    cycleSidebarView("source-control");
+    cycleSidebarView('source-control');
   }, [cycleSidebarView]);
 
   const openGitGraphFromContext = useCallback(async () => {
@@ -108,8 +100,8 @@ export function useSourceControlContext({
     // only a live one is trusted; otherwise resolve the repo afresh below.
     const known = live && sourceControl.hasRepo ? sourceControl.repo : null;
     const fixedTargetIsLoaded =
-      sidebarView !== "source-control" ||
-      repositoryTarget.mode !== "fixed" ||
+      sidebarView !== 'source-control' ||
+      repositoryTarget.mode !== 'fixed' ||
       known?.repoRoot === repositoryTarget.repoRoot;
     if (known && fixedTargetIsLoaded) {
       openCommitHistoryTab({

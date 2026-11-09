@@ -1,4 +1,4 @@
-import { subscribeGitChanges } from "@/modules/git";
+import { subscribeGitChanges } from '@/modules/git';
 
 const REFRESH_DELAY_MS = 200;
 

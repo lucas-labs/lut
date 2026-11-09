@@ -1,10 +1,10 @@
-import { emit, listen, type UnlistenFn } from "@tauri-apps/api/event";
-import { LazyStore } from "@tauri-apps/plugin-store";
-import type { Theme } from "./types";
+import { emit, listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { LazyStore } from '@tauri-apps/plugin-store';
+import type { Theme } from './types';
 
-const STORE_PATH = "terax-custom-themes.json";
-const KEY = "themes";
-const CHANGED_EVENT = "terax://custom-themes-changed";
+const STORE_PATH = 'terax-custom-themes.json';
+const KEY = 'themes';
+const CHANGED_EVENT = 'terax://custom-themes-changed';
 
 const store = new LazyStore(STORE_PATH, { defaults: {}, autoSave: 200 });
 

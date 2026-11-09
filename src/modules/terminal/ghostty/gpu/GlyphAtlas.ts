@@ -1,8 +1,8 @@
-import { isBuiltinGlyph } from "./BuiltinGlyphs";
-import { isNeighbourAware, isNonGraphicsSymbol } from "./GlyphPlacement";
-import { GlyphRasterizer, type RasterizedGlyph } from "./GlyphRasterizer";
-import { SkylineAtlasAllocator } from "./SkylineAtlasAllocator";
-import type { TerminalFontMetrics } from "./terminalVisuals";
+import { isBuiltinGlyph } from './BuiltinGlyphs';
+import { isNeighbourAware, isNonGraphicsSymbol } from './GlyphPlacement';
+import { GlyphRasterizer, type RasterizedGlyph } from './GlyphRasterizer';
+import { SkylineAtlasAllocator } from './SkylineAtlasAllocator';
+import type { TerminalFontMetrics } from './terminalVisuals';
 
 /** Words per `glyph_table` entry: rect xy, size wh, bearing xy, flags. */
 export const GLYPH_ENTRY_WORDS = 4;
@@ -32,7 +32,7 @@ type Retired = {
 };
 
 type Plane = {
-  readonly format: "r8unorm" | "rgba8unorm";
+  readonly format: 'r8unorm' | 'rgba8unorm';
   readonly sizes: readonly number[];
   step: number;
   texture: GPUTexture;
@@ -108,7 +108,7 @@ export class GlyphAtlas {
   }
 
   get tableBuffer(): GPUBuffer {
-    if (!this.table) throw new Error("Glyph atlas is not active");
+    if (!this.table) throw new Error('Glyph atlas is not active');
     return this.table;
   }
 
@@ -164,10 +164,8 @@ export class GlyphAtlas {
     // Procedural glyphs ignore bold and italic, so all four styles share one.
     const keyStyle = single && isBuiltinGlyph(codepoint) ? 0 : style & 3;
     const simpleKey = codepoint * 4 + keyStyle;
-    const complexKey = single ? "" : `${keyStyle}\u0000${text}`;
-    const cached = single
-      ? this.simple.get(simpleKey)
-      : this.complex.get(complexKey);
+    const complexKey = single ? '' : `${keyStyle}\u0000${text}`;
+    const cached = single ? this.simple.get(simpleKey) : this.complex.get(complexKey);
     if (cached !== undefined) return cached;
     // A glyph that may take two cells gets two consecutive entries: constrained, then roomy.
     const aware = single && isNeighbourAware(codepoint);
@@ -180,9 +178,7 @@ export class GlyphAtlas {
     const index = this.count;
     this.ensureTableCapacity(index + variants);
     const symbol = single && isNonGraphicsSymbol(codepoint);
-    const extra =
-      (aware ? GLYPH_ENTRY_FLAG_NEIGHBOUR : 0) |
-      (symbol ? GLYPH_ENTRY_FLAG_SYMBOL : 0);
+    const extra = (aware ? GLYPH_ENTRY_FLAG_NEIGHBOUR : 0) | (symbol ? GLYPH_ENTRY_FLAG_SYMBOL : 0);
     for (let variant = 0; variant < variants; variant += 1) {
       const glyph = this.rasterizer.rasterize(text, style, variant === 1 || !aware);
       if (!this.place(index + variant, glyph, extra)) return ATLAS_FULL;
@@ -220,8 +216,7 @@ export class GlyphAtlas {
     const base = index * GLYPH_ENTRY_WORDS;
     this.tableData[base] = region.x | (region.y << 16);
     this.tableData[base + 1] = glyph.width | (glyph.height << 16);
-    this.tableData[base + 2] =
-      (glyph.bearingX & 0xffff) | ((glyph.bearingY & 0xffff) << 16);
+    this.tableData[base + 2] = (glyph.bearingX & 0xffff) | ((glyph.bearingY & 0xffff) << 16);
     this.tableData[base + 3] =
       (glyph.intrinsicColor ? GLYPH_ENTRY_FLAG_COLOR : 0) |
       (glyph.exact ? GLYPH_ENTRY_FLAG_EXACT : 0) |
@@ -236,13 +231,7 @@ export class GlyphAtlas {
     if (this.tableDirtyEnd < 0 || !this.table) return;
     const start = this.tableDirtyStart * GLYPH_ENTRY_WORDS;
     const end = (this.tableDirtyEnd + 1) * GLYPH_ENTRY_WORDS;
-    this.device.queue.writeBuffer(
-      this.table,
-      start * 4,
-      this.tableData,
-      start,
-      end - start,
-    );
+    this.device.queue.writeBuffer(this.table, start * 4, this.tableData, start, end - start);
     this.uploadCountValue += 1;
     this.uploadedBytesValue += (end - start) * 4;
     this.tableDirtyStart = Number.POSITIVE_INFINITY;
@@ -320,13 +309,13 @@ export class GlyphAtlas {
   }
 
   private activate(): void {
-    const coverage = this.createPlane("r8unorm", COVERAGE_SIZES, "coverage");
+    const coverage = this.createPlane('r8unorm', COVERAGE_SIZES, 'coverage');
     this.coverage = coverage;
     try {
       this.placeholder = this.device.createTexture({
-        label: "Terax terminal color glyph placeholder",
+        label: 'Terax terminal color glyph placeholder',
         size: [1, 1],
-        format: "rgba8unorm",
+        format: 'rgba8unorm',
         usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
       });
       this.placeholderView = this.placeholder.createView();
@@ -357,11 +346,7 @@ export class GlyphAtlas {
     this.table = null;
   }
 
-  private createPlane(
-    format: Plane["format"],
-    allSizes: readonly number[],
-    label: string,
-  ): Plane {
+  private createPlane(format: Plane['format'], allSizes: readonly number[], label: string): Plane {
     const limit = this.device.limits?.maxTextureDimension2D ?? 8_192;
     const sizes = allSizes.filter((size) => size <= limit);
     const size = sizes[0] ?? allSizes[0];
@@ -369,10 +354,7 @@ export class GlyphAtlas {
       label: `Terax terminal glyph ${label} atlas`,
       size: [size, size],
       format,
-      usage:
-        GPUTextureUsage.COPY_DST |
-        GPUTextureUsage.COPY_SRC |
-        GPUTextureUsage.TEXTURE_BINDING,
+      usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING,
     });
     try {
       return {
@@ -390,7 +372,7 @@ export class GlyphAtlas {
   }
 
   private createColorPlane(): Plane {
-    const plane = this.createPlane("rgba8unorm", COLOR_SIZES, "color");
+    const plane = this.createPlane('rgba8unorm', COLOR_SIZES, 'color');
     this.color = plane;
     this.generationValue += 1;
     return plane;
@@ -401,13 +383,10 @@ export class GlyphAtlas {
     const previousSize = plane.allocator.width;
     const size = plane.sizes[plane.step + 1];
     const texture = this.device.createTexture({
-      label: `Terax terminal glyph ${plane.format === "r8unorm" ? "coverage" : "color"} atlas`,
+      label: `Terax terminal glyph ${plane.format === 'r8unorm' ? 'coverage' : 'color'} atlas`,
       size: [size, size],
       format: plane.format,
-      usage:
-        GPUTextureUsage.COPY_DST |
-        GPUTextureUsage.COPY_SRC |
-        GPUTextureUsage.TEXTURE_BINDING,
+      usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC | GPUTextureUsage.TEXTURE_BINDING,
     });
     let view: GPUTextureView;
     try {
@@ -415,7 +394,7 @@ export class GlyphAtlas {
       // Submitted on its own so it runs after every earlier writeTexture and
       // before any glyph written into the larger texture afterwards.
       const encoder = this.device.createCommandEncoder({
-        label: "Terax terminal glyph atlas growth",
+        label: 'Terax terminal glyph atlas growth',
       });
       encoder.copyTextureToTexture({ texture: plane.texture }, { texture }, [
         previousSize,
@@ -427,10 +406,7 @@ export class GlyphAtlas {
       texture.destroy();
       throw error;
     }
-    this.retire(
-      plane.texture,
-      previousSize * previousSize * bytesPerTexel(plane),
-    );
+    this.retire(plane.texture, previousSize * previousSize * bytesPerTexel(plane));
     plane.texture = texture;
     plane.view = view;
     plane.step += 1;
@@ -442,7 +418,7 @@ export class GlyphAtlas {
 
   private createTable(entries: number): GPUBuffer {
     return this.device.createBuffer({
-      label: "Terax terminal glyph table",
+      label: 'Terax terminal glyph table',
       size: entries * GLYPH_ENTRY_BYTES,
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     });
@@ -471,20 +447,20 @@ export class GlyphAtlas {
   }
 
   private requirePlane(plane: Plane | null): Plane {
-    if (!plane) throw new Error("Glyph atlas is not active");
+    if (!plane) throw new Error('Glyph atlas is not active');
     return plane;
   }
 
   private assertActive(): void {
     this.assertLive();
-    if (!this.gpuActive) throw new Error("Glyph atlas is suspended");
+    if (!this.gpuActive) throw new Error('Glyph atlas is suspended');
   }
 
   private assertLive(): void {
-    if (this.disposed) throw new Error("Glyph atlas is disposed");
+    if (this.disposed) throw new Error('Glyph atlas is disposed');
   }
 }
 
 function bytesPerTexel(plane: Plane): number {
-  return plane.format === "r8unorm" ? 1 : 4;
+  return plane.format === 'r8unorm' ? 1 : 4;
 }

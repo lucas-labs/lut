@@ -87,21 +87,21 @@ also exist (`lib/panes`, `lib/terminalSessionApi`, `lib/agentActivity`, `ghostty
 
 Outbound (terminal → other areas):
 
-| From | To | Why |
-|---|---|---|
-| `TerminalStack.tsx:1`, `lib/liveTerminals.ts:1` | tabs (`Tab`, `TerminalTab`) | stack input type, cold tabs |
-| `TerminalPane.tsx:1`, `useGhosttyTerminalSession.ts:17`, `lib/useTerminalFont.ts:1`, `lib/terminalDiagnostics.ts:4` | settings/preferences | shell, renderer, fonts, screen reader |
-| `backend/selection.ts:1` | settings/store | `TerminalRendererSetting` |
-| `TerminalPane.tsx:3`, `lib/useTerminalFont.ts:2`, `block/ShellInput.tsx:4` | theme | resolved mode, font resolution |
-| `ghostty/gpu/terminalVisuals.ts:1`, `src/styles/terminalTheme.ts:1` | styles/tokens | terminal colors from CSS tokens |
-| `useGhosttyTerminalSession.ts:2-3,730-751` | workspace, spaces | link activation "is current" guard |
-| `lib/pty-bridge.ts:21`, `block/lib/pathComplete.ts:2`, `block/lib/shellSyntax.ts:2`, `lib/terminalLinks.ts:18` | workspace | WSL/local env |
-| `lib/terminalLinks.ts:17,202` | lsp/editor (`getLspNavigator().openFile`) | open file:line links in editor |
-| `lib/terminalLinks.ts:179,187` | backend fs commands | link path stat/canonicalize |
-| `block/BlockOverlay.tsx:12,265` | ai (`useChatStore.attachSelection`) | "attach block to chat" |
-| `block/BlockWatermark.tsx:2`, `block/ShellInput.tsx:3` | shortcuts | shortcut labels |
-| `PaneTreeView.tsx:5`, `block/BlockOverlay.tsx:10` | components/ui | resizable, dropdown |
-| `lib/agentActivity.ts:142` | backend agent detector | `terax:agent-signal` |
+| From                                                                                                                | To                                        | Why                                   |
+| ------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ------------------------------------- |
+| `TerminalStack.tsx:1`, `lib/liveTerminals.ts:1`                                                                     | tabs (`Tab`, `TerminalTab`)               | stack input type, cold tabs           |
+| `TerminalPane.tsx:1`, `useGhosttyTerminalSession.ts:17`, `lib/useTerminalFont.ts:1`, `lib/terminalDiagnostics.ts:4` | settings/preferences                      | shell, renderer, fonts, screen reader |
+| `backend/selection.ts:1`                                                                                            | settings/store                            | `TerminalRendererSetting`             |
+| `TerminalPane.tsx:3`, `lib/useTerminalFont.ts:2`, `block/ShellInput.tsx:4`                                          | theme                                     | resolved mode, font resolution        |
+| `ghostty/gpu/terminalVisuals.ts:1`, `src/styles/terminalTheme.ts:1`                                                 | styles/tokens                             | terminal colors from CSS tokens       |
+| `useGhosttyTerminalSession.ts:2-3,730-751`                                                                          | workspace, spaces                         | link activation "is current" guard    |
+| `lib/pty-bridge.ts:21`, `block/lib/pathComplete.ts:2`, `block/lib/shellSyntax.ts:2`, `lib/terminalLinks.ts:18`      | workspace                                 | WSL/local env                         |
+| `lib/terminalLinks.ts:17,202`                                                                                       | lsp/editor (`getLspNavigator().openFile`) | open file:line links in editor        |
+| `lib/terminalLinks.ts:179,187`                                                                                      | backend fs commands                       | link path stat/canonicalize           |
+| `block/BlockOverlay.tsx:12,265`                                                                                     | ai (`useChatStore.attachSelection`)       | "attach block to chat"                |
+| `block/BlockWatermark.tsx:2`, `block/ShellInput.tsx:3`                                                              | shortcuts                                 | shortcut labels                       |
+| `PaneTreeView.tsx:5`, `block/BlockOverlay.tsx:10`                                                                   | components/ui                             | resizable, dropdown                   |
+| `lib/agentActivity.ts:142`                                                                                          | backend agent detector                    | `terax:agent-signal`                  |
 
 Inbound (other areas → terminal): `app/App.tsx:109-112`, `app/components/WorkspaceSurface.tsx:8`,
 `app/components/WorkspaceInputBar.tsx:7-8`, `app/hooks/useAppCloseGuard.ts:17`, `app/hooks/useTabCloseGuards.ts:18`,
@@ -114,7 +114,8 @@ Inbound (other areas → terminal): `app/App.tsx:109-112`, `app/components/Works
 
 ## "terax" mentions
 
-**(a) Phase 0 identity isolation** — none is *owned* by this area, but these depend on Phase 0 work elsewhere:
+**(a) Phase 0 identity isolation** — none is _owned_ by this area, but these depend on Phase 0 work elsewhere:
+
 - `terax-pty` URI scheme (`lib/pty-bridge.ts:28-47`): registered by the backend per app; not shared with an
   installed Terax at runtime, but renamed together with backend-core if that area renames it.
 - `TERAX_BLOCKS` env var exported to shells (backend-owned; asserted by `ghostty/shellBlockCompatibility.test.ts:22-30`)
@@ -176,7 +177,7 @@ used to disable the palette command (`src/modules/command-palette/commands.ts:81
 limits panes. Cost of raising/removing: WebGPU draws every pane into one window canvas with per-pane viewport,
 so extra panes cost a draw pass + per-surface buffers, not a context; atlases are per font spec, not per pane
 (max 8). WebGL fallback is capped at 12 leased contexts per window (`WebGlTerminalRuntime.ts:22`), so the real
-hard ceiling under WebGL is ~12 *visible* panes per window. Scrollback uses a global 192 MiB budget shared
+hard ceiling under WebGL is ~12 _visible_ panes per window. Scrollback uses a global 192 MiB budget shared
 fairly with a 2 MiB floor (`scrollbackBudget.ts:17,24`): more panes means less scrollback each, not unbounded
 memory. Each pane also has its own WASM model instance (memory) and PTY. Raising to ~8 looks safe; removal
 needs a cap tied to the WebGL pool.
@@ -188,9 +189,9 @@ needs a cap tied to the WebGL pool.
 parent instead of nesting (`panes.ts:84-103`). Note the palette keyword mismatch: "split down" lists keyword `row`
 (`command-palette/commands.ts:208`).
 
-**3. Theme scope.** The *source* is global: `readTerminalGpuTheme()` reads CSS tokens (`gpu/terminalVisuals.ts:1`,
+**3. Theme scope.** The _source_ is global: `readTerminalGpuTheme()` reads CSS tokens (`gpu/terminalVisuals.ts:1`,
 `src/styles/terminalTheme.ts:3-27`) and every `TerminalPane` re-applies it when the app theme changes
-(`TerminalPane.tsx:84-90`). The *application* is per pane: `applyThemeToSession` sets model colors, calls
+(`TerminalPane.tsx:84-90`). The _application_ is per pane: `applyThemeToSession` sets model colors, calls
 `surface.setTheme(theme)` and `pty.setColors` (`useGhosttyTerminalSession.ts:326-338`), and each WebGPU surface
 draws its own background (`WebGpuTerminalSurface.ts:427,540-548`). Fonts are also per session
 (`useGhosttyTerminalSession.ts:161-216`, `updateSessionFont` `:1190-1205`). So per-pane/per-profile theme colors and
@@ -201,6 +202,7 @@ supporting them needs premultiplied alpha, a transparent Tauri window or DOM ima
 per pane rect, alpha in background shaders for both WebGPU and WebGL, and contrast handling — spike first.
 
 **4. Dependencies on editor/explorer/git/preview/AI.**
+
 - Editor: `lib/terminalLinks.ts:17,175,202` — `getLspNavigator()?.openFile(path,line)` for file links. When the editor
   is removed, `navigator` is null and the click silently does nothing. lut: inject an "open path" capability; fallback
   to OS default opener / reveal (terminal-D11).
@@ -237,6 +239,7 @@ third-party notices; Ghostty and Restty are also MIT (`packages/ghostty-core/ada
 `public/licenses/terminal-symbols.txt`). Modified files also fall under Terax's Apache-2.0 §4b notice (14.3:3).
 
 **7. Opening a tab with a profile.** Entry points, in order:
+
 - Tab/pane model: `PaneNode` leaf (`lib/panes.ts:15-16`) only has `id`, `slotId`, `cwd` → add `profileId`
   (and optional per-pane overrides) so restore keeps it (PRO-009, PRJ-005). Tab title/color/icon belong to the
   navigation model (tabs area) and are read from the resolved profile.
@@ -254,6 +257,7 @@ third-party notices; Ghostty and Restty are also MIT (`packages/ghostty-core/ada
 ## Draft issues
 
 ### terminal-D01 — Design: terminal pane chrome (error state, split divider, drop target)
+
 ```yaml
 id: terminal-D01
 depends-on: []
@@ -263,14 +267,17 @@ type: design
 scope: ui
 size: S
 ```
+
 **Goal:** The user designs how a pane looks in its non-content states: renderer/PTY error with retry, split
 divider and its hover/drag state, focused vs unfocused pane, file-drop target.
 
 **Acceptance criteria:**
+
 - [ ] Design for error/retry state (renderer vs startup failure).
 - [ ] Design for split divider, focused pane indication and drop target.
 
 ### terminal-D02 — Decouple TerminalStack from the tabs `Tab` type
+
 ```yaml
 id: terminal-D02
 depends-on: []
@@ -280,10 +287,12 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** `TerminalStack` takes a minimal `TerminalStackEntry { id, paneTree, activeLeafId, blocks }[]` instead of
 `Tab[]`, so the new navigation can feed it without importing tabs internals. Pure refactor.
 
 **Acceptance criteria:**
+
 - [ ] `TerminalStack.tsx` and `lib/liveTerminals.ts` no longer import from `@/modules/tabs`.
 - [ ] Cold-tab filtering moves to the caller (or a selector exported by tabs/navigation).
 - [ ] No pane remounts when switching tabs (existing behaviour unchanged).
@@ -291,6 +300,7 @@ size: S
 **Verification:** `pnpm vitest run src/modules/terminal` passes; manual: open 2 tabs with `top` running, switch back and forth, processes keep running.
 
 ### terminal-D03 — Implement pane chrome per design
+
 ```yaml
 id: terminal-D03
 depends-on: [terminal-D01, terminal-D02]
@@ -300,17 +310,20 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** Replace Terax's error card (`TerminalPane.tsx:166-194`), resize handle styling (`PaneTreeView.tsx:126`) and
 drop overlay (`PaneTreeView.tsx:138-145`) with the user's design. Logic (retry, resize interaction, drop target store)
 is unchanged.
 
 **Acceptance criteria:**
+
 - [ ] Visuals match terminal-D01.
 - [ ] Retry still re-creates the renderer without restarting the PTY for renderer errors.
 
 **Verification:** `pnpm vitest run src/modules/terminal`; manual: force WebGPU failure (`VITE_TERMINAL_BACKEND`), drag a divider, drop a file.
 
 ### terminal-D04 — Persistable split ratios in the pane tree
+
 ```yaml
 id: terminal-D04
 depends-on: []
@@ -320,10 +333,12 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** Split nodes carry optional `sizes: number[]`; `PaneTreeView` uses them as `defaultSize` and reports layout
 changes back so navigation/projects can persist them.
 
 **Acceptance criteria:**
+
 - [ ] `PaneNode` split gains optional `sizes`; `splitLeaf`/`removeLeaf`/`swapLeafInDirection` keep sizes consistent (unit tests).
 - [ ] `PaneTreeView` applies sizes and emits `onLayout(splitId, sizes)` after a drag ends (not per frame).
 - [ ] Trees without `sizes` render as today (equal split).
@@ -331,6 +346,7 @@ changes back so navigation/projects can persist them.
 **Verification:** `pnpm vitest run src/modules/terminal/lib/panes.test.ts`; manual: drag a divider, the callback fires once at the end.
 
 ### terminal-D05 — openPty launch object with args and env
+
 ```yaml
 id: terminal-D05
 depends-on: [backend-core-D??]
@@ -340,10 +356,12 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** Replace the positional `openPty(cols, rows, handlers, cwd, blocks, shell, paneId, colors)` with an options
 object `{ cwd, blocks, shell, args, env, environment, paneId, colors }` passed to the extended `pty_open`.
 
 **Acceptance criteria:**
+
 - [ ] `args` is an array (never a joined string); `env` is a record; both optional and omitted when absent.
 - [ ] `environment` (native/WSL) is per call, falling back to `currentWorkspaceEnv()`.
 - [ ] `pty-bridge.test.ts` covers the new payload.
@@ -351,6 +369,7 @@ object `{ cwd, blocks, shell, args, env, environment, paneId, colors }` passed t
 **Verification:** `pnpm vitest run src/modules/terminal/lib/pty-bridge.test.ts`; manual: new tab still opens the default shell.
 
 ### terminal-D06 — Launch a pane from a resolved profile
+
 ```yaml
 id: terminal-D06
 depends-on: [terminal-D05, terminal-D02, profiles-D??]
@@ -360,10 +379,12 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** Leaves carry `profileId`; `TerminalPane` receives a resolved launch spec and `useGhosttyTerminalSession`
 uses it instead of `preferences.terminalShell` (`useGhosttyTerminalSession.ts:855`).
 
 **Acceptance criteria:**
+
 - [ ] `PaneNode` leaf has optional `profileId`; `splitLeaf` accepts it.
 - [ ] Session init opens the PTY with the profile's executable, args, env, cwd and environment.
 - [ ] Missing profile → falls back to default profile and reports a repairable error (13.2:12).
@@ -372,6 +393,7 @@ uses it instead of `preferences.terminalShell` (`useGhosttyTerminalSession.ts:85
 **Verification:** `pnpm vitest run src/modules/terminal`; manual: open a pwsh and a WSL pane in the same tab.
 
 ### terminal-D07 — Per-session appearance overrides (theme colors, font)
+
 ```yaml
 id: terminal-D07
 depends-on: [terminal-D06]
@@ -381,10 +403,12 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** Resolve appearance as global → profile → pane and feed it to the existing per-session paths
 (`applyThemeToSession`, `updateSessionFont`) without restarting the PTY.
 
 **Acceptance criteria:**
+
 - [ ] `buildTerminalTheme`/`useTerminalFont` accept an override layer; global changes still apply to panes without overrides.
 - [ ] Changing a profile's font/colors updates open panes using it without respawn.
 - [ ] Exceeding the atlas budget (8 font specs) degrades gracefully (falls back to the default font spec with a warning).
@@ -392,6 +416,7 @@ size: M
 **Verification:** `pnpm vitest run src/modules/terminal`; manual: two panes with different font sizes and color schemes; `top` keeps running while changing them.
 
 ### terminal-D08 — Spike: per-pane opacity and background image
+
 ```yaml
 id: terminal-D08
 depends-on: []
@@ -401,15 +426,18 @@ type: spike
 scope: ui
 size: S
 ```
+
 **Goal:** Decide whether profile `opacity` / background image are feasible with the single opaque WebGPU canvas and the WebGL fallback, and estimate cost.
 
 **Acceptance criteria:**
+
 - [ ] Written findings: required changes to `WebGpuWindowCanvas` alpha mode, background shader, WebGL renderer and Tauri window transparency on Windows/macOS/Linux.
 - [ ] Recommendation (do/defer) with performance impact measured on a prototype branch (not merged).
 
 **Verification:** findings note added to `.docs/`; plan.md updated with the decision.
 
 ### terminal-D09 — Prompt-ready contract for session startup
+
 ```yaml
 id: terminal-D09
 depends-on: []
@@ -419,10 +447,12 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** Expose `whenPromptReady(leafId, timeout)` resolving on the first OSC 133 prompt (via the semantic router),
 with an explicit result `{ kind: "prompt" | "timeout" | "no-integration" | "exited" }` instead of a silent 4 s poll.
 
 **Acceptance criteria:**
+
 - [ ] Resolves on first `prompt-start`/`prompt-end` event.
 - [ ] Returns `timeout` when the shell never emits OSC 133; never throws.
 - [ ] `whenSessionReady` callers unchanged (new function, separate).
@@ -430,6 +460,7 @@ with an explicit result `{ kind: "prompt" | "timeout" | "no-integration" | "exit
 **Verification:** `pnpm vitest run src/modules/terminal` with new unit tests using fake events; manual with pwsh and a shell without integration (`cmd.exe`).
 
 ### terminal-D10 — Wire OSC title and bell events to the pane API
+
 ```yaml
 id: terminal-D10
 depends-on: []
@@ -439,10 +470,12 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** Forward `onTitle` and `onBell` from `GhosttySemanticEventRouter` through `TerminalStack` callbacks
 (`onTitle(leafId, title)`, `onBell(leafId)`) so navigation can honour `allowShellTitle` and show indicators.
 
 **Acceptance criteria:**
+
 - [ ] Titles are length-capped and control characters stripped.
 - [ ] Events from hidden tabs are delivered.
 - [ ] No consumer behaviour change until navigation subscribes.
@@ -450,6 +483,7 @@ size: S
 **Verification:** `pnpm vitest run src/modules/terminal`; manual: `printf '\e]0;hello\a'` triggers the callback.
 
 ### terminal-D11 — File links without the editor
+
 ```yaml
 id: terminal-D11
 depends-on: []
@@ -459,10 +493,12 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** Terminal file links no longer import `@/modules/lsp`; an optional "open path" capability is injected, with a
 fallback to the OS default app / reveal when no editor is registered. Remove the `spaces` import from the link guard.
 
 **Acceptance criteria:**
+
 - [ ] `lib/terminalLinks.ts` has no import from `@/modules/lsp`; `useGhosttyTerminalSession.ts` no import from `@/modules/spaces`.
 - [ ] With no editor capability, file:line links open via the OS opener (after the existing confirm rules).
 - [ ] Existing link safety tests still pass.
@@ -470,6 +506,7 @@ fallback to the OS default app / reveal when no editor is registered. Remove the
 **Verification:** `pnpm vitest run src/modules/terminal/lib/terminalLinks.test.ts src/modules/terminal/ghostty/core`; manual: ctrl-click a `src/foo.ts:10` path with the editor disabled.
 
 ### terminal-D12 — Remove "attach to AI chat" from command blocks
+
 ```yaml
 id: terminal-D12
 depends-on: []
@@ -479,15 +516,18 @@ type: task
 scope: ui
 size: XS
 ```
+
 **Goal:** Drop the AI chat attach action in `block/BlockOverlay.tsx:12,265` so the terminal area has no dependency on `modules/ai`.
 
 **Acceptance criteria:**
+
 - [ ] No import from `@/modules/ai` in `src/modules/terminal`.
 - [ ] Block menu keeps its other actions.
 
 **Verification:** `grep -r "modules/ai" src/modules/terminal` returns nothing; `pnpm vitest run src/modules/terminal/block`.
 
 ### terminal-D13 — Decide: keep or remove command-blocks mode
+
 ```yaml
 id: terminal-D13
 depends-on: []
@@ -497,17 +537,20 @@ type: spike
 scope: none
 size: XS
 ```
+
 **Goal:** The user decides whether lut keeps Terax's blocks mode (Warp-like command blocks with custom shell input).
 Outcome: either a removal issue (mechanical deletion of `block/`, `GhosttyBlocks*`, `ghosttyBlockSessions*`,
 `blockController.ts`, tab `blocks` flag, `TERAX_BLOCKS` env) or a design issue for its UI.
 
 **Acceptance criteria:**
+
 - [ ] Decision recorded in `proposal.md`/plan.md.
 - [ ] Follow-up issue(s) added to plan.md.
 
 **Verification:** plan.md contains the follow-up issue.
 
 ### terminal-D14 — Move agent activity store to the agents module
+
 ```yaml
 id: terminal-D14
 depends-on: []
@@ -517,16 +560,19 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** Relocate `lib/agentActivity.ts` (+tests) to `src/modules/agents`; `pty-bridge` keeps calling
 `ensureAgentActivityListener`/`clearAgentActivity` through the agents public API. Pure move.
 
 **Acceptance criteria:**
+
 - [ ] `src/modules/terminal/index.ts` no longer re-exports agent activity; consumers import from agents.
 - [ ] No behaviour change; tests moved and passing.
 
 **Verification:** `pnpm vitest run src/modules/agents src/modules/terminal src/modules/tabs`; `pnpm tsc --noEmit`.
 
 ### terminal-D15 — Renderer and TUI verification on Windows baseline
+
 ```yaml
 id: terminal-D15
 depends-on: []
@@ -536,10 +582,12 @@ type: task
 scope: none
 size: S
 ```
+
 **Goal:** Record that the imported renderer works on Windows 11: WebGPU default, forced WebGL fallback, DPI change,
 continuous resize, Neovim and lazygit.
 
 **Acceptance criteria:**
+
 - [ ] Checklist results recorded in the baseline report (WebGPU, WebGL via `VITE_TERMINAL_BACKEND=ghostty-webgl`, DPI switch, resize, nvim, lazygit).
 - [ ] Failures filed as issues.
 

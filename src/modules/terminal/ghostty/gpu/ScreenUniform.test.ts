@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { ScreenUniform, type ScreenUniformState } from "./ScreenUniform";
+import { describe, expect, it } from 'vitest';
+import { ScreenUniform, type ScreenUniformState } from './ScreenUniform';
 import {
   BACKGROUND_SHADER,
   GLYPH_SHADER,
@@ -10,9 +10,9 @@ import {
   SCREEN_FLAG_TEXT_BLINK_VISIBLE,
   SCREEN_OFFSET,
   SCREEN_UNIFORM_BYTES,
-} from "./shaders";
-import { NO_SELECTION } from "./terminalGeometry";
-import { DWRITE_GAMMA_RATIOS } from "./textContrast";
+} from './shaders';
+import { NO_SELECTION } from './terminalGeometry';
+import { DWRITE_GAMMA_RATIOS } from './textContrast';
 
 const STATE: ScreenUniformState = {
   cols: 120,
@@ -45,8 +45,8 @@ function view(uniform: ScreenUniform) {
   };
 }
 
-describe("ScreenUniform", () => {
-  it("packs the layout the shader declares", () => {
+describe('ScreenUniform', () => {
+  it('packs the layout the shader declares', () => {
     const uniform = new ScreenUniform();
     uniform.pack({
       ...STATE,
@@ -67,21 +67,12 @@ describe("ScreenUniform", () => {
     const at = (offset: number, word = 0) => offset / 4 + word;
     // The pane's rectangle in the shared window canvas: the viewport size maps the grid onto
     // it and the origin turns window-relative fragment coordinates into pane-relative ones.
-    expect([
-      f[at(SCREEN_OFFSET.viewportSize)],
-      f[at(SCREEN_OFFSET.viewportSize, 1)],
-    ]).toEqual([1400, 900]);
-    expect([
-      u[at(SCREEN_OFFSET.origin)],
-      u[at(SCREEN_OFFSET.origin, 1)],
-    ]).toEqual([1005, 33]);
-    expect([
-      u[at(SCREEN_OFFSET.cellSize)],
-      u[at(SCREEN_OFFSET.cellSize, 1)],
-    ]).toEqual([11, 21]);
-    expect([u[at(SCREEN_OFFSET.dims)], u[at(SCREEN_OFFSET.dims, 1)]]).toEqual([
-      120, 40,
+    expect([f[at(SCREEN_OFFSET.viewportSize)], f[at(SCREEN_OFFSET.viewportSize, 1)]]).toEqual([
+      1400, 900,
     ]);
+    expect([u[at(SCREEN_OFFSET.origin)], u[at(SCREEN_OFFSET.origin, 1)]]).toEqual([1005, 33]);
+    expect([u[at(SCREEN_OFFSET.cellSize)], u[at(SCREEN_OFFSET.cellSize, 1)]]).toEqual([11, 21]);
+    expect([u[at(SCREEN_OFFSET.dims)], u[at(SCREEN_OFFSET.dims, 1)]]).toEqual([120, 40]);
     expect(u[at(SCREEN_OFFSET.flags)]).toBe(
       SCREEN_FLAG_TEXT_BLINK_VISIBLE |
         SCREEN_FLAG_SEARCH_ACTIVE |
@@ -90,36 +81,27 @@ describe("ScreenUniform", () => {
         SCREEN_FLAG_CURSOR_BLOCK,
     );
     expect([
-      ...f.slice(
-        at(SCREEN_OFFSET.cursorOrigin),
-        at(SCREEN_OFFSET.cursorOrigin) + 4,
-      ),
+      ...f.slice(at(SCREEN_OFFSET.cursorOrigin), at(SCREEN_OFFSET.cursorOrigin) + 4),
     ]).toEqual([22, 42, 11, 21]);
     expect(f[at(SCREEN_OFFSET.cursorColor, 1)]).toBeCloseTo(128 / 255, 6);
     expect(f[at(SCREEN_OFFSET.cursorColor, 3)]).toBe(1);
     expect(f[at(SCREEN_OFFSET.themeBackground)]).toBeCloseTo(10 / 255, 6);
     expect(f[at(SCREEN_OFFSET.selectionColor, 3)]).toBe(0.5);
     expect([
-      ...i.slice(
-        at(SCREEN_OFFSET.selectionLines),
-        at(SCREEN_OFFSET.selectionLines) + 4,
-      ),
+      ...i.slice(at(SCREEN_OFFSET.selectionLines), at(SCREEN_OFFSET.selectionLines) + 4),
     ]).toEqual([-3, 4, 9, 12]);
     expect([
       i[at(SCREEN_OFFSET.selectionColumns)],
       i[at(SCREEN_OFFSET.selectionColumns, 1)],
     ]).toEqual([2, 30]);
-    expect([
-      ...u.slice(
-        at(SCREEN_OFFSET.decoration),
-        at(SCREEN_OFFSET.decoration) + 4,
-      ),
-    ]).toEqual([16, 1, 10, 1]);
+    expect([...u.slice(at(SCREEN_OFFSET.decoration), at(SCREEN_OFFSET.decoration) + 4)]).toEqual([
+      16, 1, 10, 1,
+    ]);
     expect(f[at(SCREEN_OFFSET.contrast)]).toBe(0.5);
     expect(f[at(SCREEN_OFFSET.contrast, 1)]).toBe(0.25);
-    expect([
-      ...f.slice(at(SCREEN_OFFSET.gamma), at(SCREEN_OFFSET.gamma) + 4),
-    ]).toEqual(DWRITE_GAMMA_RATIOS.map(Math.fround));
+    expect([...f.slice(at(SCREEN_OFFSET.gamma), at(SCREEN_OFFSET.gamma) + 4)]).toEqual(
+      DWRITE_GAMMA_RATIOS.map(Math.fround),
+    );
     expect(uniform.data.byteLength).toBe(SCREEN_UNIFORM_BYTES);
   });
 
@@ -140,7 +122,7 @@ describe("ScreenUniform", () => {
     }
   });
 
-  it("hides the cursor by zeroing its rectangle", () => {
+  it('hides the cursor by zeroing its rectangle', () => {
     const uniform = new ScreenUniform();
     uniform.pack({ ...STATE, cursor: null });
     const { f } = view(uniform);
@@ -148,7 +130,7 @@ describe("ScreenUniform", () => {
     expect([...f.slice(at, at + 4)]).toEqual([0, 0, 0, 0]);
   });
 
-  it("reports a change only when the packed state differs from the uploaded one", () => {
+  it('reports a change only when the packed state differs from the uploaded one', () => {
     const uniform = new ScreenUniform();
     uniform.pack(STATE);
     expect(uniform.changed()).toBe(true);
@@ -175,7 +157,7 @@ describe("ScreenUniform", () => {
   });
 });
 
-describe("shader uniform layout", () => {
+describe('shader uniform layout', () => {
   const SIZES: Record<string, [size: number, align: number]> = {
     f32: [4, 4],
     u32: [4, 4],
@@ -189,7 +171,7 @@ describe("shader uniform layout", () => {
   };
 
   function layout(shader: string) {
-    const body = /struct Screen \{([^}]*)\}/.exec(shader)?.[1] ?? "";
+    const body = /struct Screen \{([^}]*)\}/.exec(shader)?.[1] ?? '';
     const fields = [...body.matchAll(/(\w+):\s*(\w+),/g)];
     let offset = 0;
     let structAlign = 1;
@@ -205,36 +187,33 @@ describe("shader uniform layout", () => {
   }
 
   it.each([
-    ["background", BACKGROUND_SHADER],
-    ["glyph", GLYPH_SHADER],
-  ])(
-    "declares offsets that match the TypeScript packer in the %s shader",
-    (_name, shader) => {
-      const { offsets, size } = layout(shader);
-      expect(size).toBe(SCREEN_UNIFORM_BYTES);
-      expect(offsets).toMatchObject({
-        viewport_size: SCREEN_OFFSET.viewportSize,
-        origin: SCREEN_OFFSET.origin,
-        clip: SCREEN_OFFSET.clip,
-        cell_size: SCREEN_OFFSET.cellSize,
-        dims: SCREEN_OFFSET.dims,
-        flags: SCREEN_OFFSET.flags,
-        cursor_origin: SCREEN_OFFSET.cursorOrigin,
-        cursor_size: SCREEN_OFFSET.cursorSize,
-        cursor_color: SCREEN_OFFSET.cursorColor,
-        theme_background: SCREEN_OFFSET.themeBackground,
-        selection_color: SCREEN_OFFSET.selectionColor,
-        selection_lines: SCREEN_OFFSET.selectionLines,
-        selection_columns: SCREEN_OFFSET.selectionColumns,
-        decoration: SCREEN_OFFSET.decoration,
-        contrast: SCREEN_OFFSET.contrast,
-        gamma: SCREEN_OFFSET.gamma,
-        cursor_text: SCREEN_OFFSET.cursorText,
-      });
-    },
-  );
+    ['background', BACKGROUND_SHADER],
+    ['glyph', GLYPH_SHADER],
+  ])('declares offsets that match the TypeScript packer in the %s shader', (_name, shader) => {
+    const { offsets, size } = layout(shader);
+    expect(size).toBe(SCREEN_UNIFORM_BYTES);
+    expect(offsets).toMatchObject({
+      viewport_size: SCREEN_OFFSET.viewportSize,
+      origin: SCREEN_OFFSET.origin,
+      clip: SCREEN_OFFSET.clip,
+      cell_size: SCREEN_OFFSET.cellSize,
+      dims: SCREEN_OFFSET.dims,
+      flags: SCREEN_OFFSET.flags,
+      cursor_origin: SCREEN_OFFSET.cursorOrigin,
+      cursor_size: SCREEN_OFFSET.cursorSize,
+      cursor_color: SCREEN_OFFSET.cursorColor,
+      theme_background: SCREEN_OFFSET.themeBackground,
+      selection_color: SCREEN_OFFSET.selectionColor,
+      selection_lines: SCREEN_OFFSET.selectionLines,
+      selection_columns: SCREEN_OFFSET.selectionColumns,
+      decoration: SCREEN_OFFSET.decoration,
+      contrast: SCREEN_OFFSET.contrast,
+      gamma: SCREEN_OFFSET.gamma,
+      cursor_text: SCREEN_OFFSET.cursorText,
+    });
+  });
 
-  it("subtracts the viewport origin from window-relative fragment coordinates in both passes", () => {
+  it('subtracts the viewport origin from window-relative fragment coordinates in both passes', () => {
     // Fragment positions are relative to the whole canvas, but a pane's cells, cursor and
     // glyph quads are relative to its viewport.
     expect(BACKGROUND_SHADER).toMatch(
@@ -253,48 +232,38 @@ describe("shader uniform layout", () => {
     const { u, i } = view(uniform);
     const at = (offset: number, word = 0) => offset / 4 + word;
     // The pane starts three pixels left of and two above the viewport it is clipped to.
-    expect([
-      i[at(SCREEN_OFFSET.origin)],
-      i[at(SCREEN_OFFSET.origin, 1)],
-    ]).toEqual([-3, -2]);
-    expect([u[at(SCREEN_OFFSET.clip)], u[at(SCREEN_OFFSET.clip, 1)]]).toEqual([
-      3, 2,
-    ]);
+    expect([i[at(SCREEN_OFFSET.origin)], i[at(SCREEN_OFFSET.origin, 1)]]).toEqual([-3, -2]);
+    expect([u[at(SCREEN_OFFSET.clip)], u[at(SCREEN_OFFSET.clip, 1)]]).toEqual([3, 2]);
     uniform.pack({
       ...STATE,
       viewport: { x: 40, y: 8, width: 97, height: 98 },
     });
     const plain = view(uniform);
-    expect([
-      plain.i[at(SCREEN_OFFSET.origin)],
-      plain.i[at(SCREEN_OFFSET.origin, 1)],
-    ]).toEqual([40, 8]);
+    expect([plain.i[at(SCREEN_OFFSET.origin)], plain.i[at(SCREEN_OFFSET.origin, 1)]]).toEqual([
+      40, 8,
+    ]);
     expect(plain.u[at(SCREEN_OFFSET.clip)]).toBe(0);
     // Glyph quads leave the vertex stage relative to the viewport, which starts at the clip.
     expect(GLYPH_SHADER).toMatch(/-\s+vec2f\(screen\.clip\)/);
     expect(GLYPH_SHADER).toMatch(/origin: vec2i,\s+clip: vec2u,/);
   });
 
-  it("moves the grid up by the shift in the cell pass and in the glyph pass alike", () => {
+  it('moves the grid up by the shift in the cell pass and in the glyph pass alike', () => {
     expect(BACKGROUND_SHADER).toMatch(/f32\(screen\.shift_y\)/);
     // Glyph quads leave the vertex stage shifted, and the fragment stage undoes it to find the texel.
     expect(GLYPH_SHADER).toMatch(/- vec2f\(0\.0, f32\(screen\.shift_y\)\)/);
     expect(GLYPH_SHADER).toMatch(/vec2i\(0, i32\(screen\.shift_y\)\)/);
   });
 
-  it("packs the shift as whole device pixels and never negative", () => {
+  it('packs the shift as whole device pixels and never negative', () => {
     const uniform = new ScreenUniform();
     uniform.pack({ ...STATE, shiftY: 37.4 });
-    expect(new Uint32Array(uniform.data.buffer)[SCREEN_OFFSET.shiftY / 4]).toBe(
-      37,
-    );
+    expect(new Uint32Array(uniform.data.buffer)[SCREEN_OFFSET.shiftY / 4]).toBe(37);
     uniform.pack({ ...STATE, shiftY: -5 });
-    expect(new Uint32Array(uniform.data.buffer)[SCREEN_OFFSET.shiftY / 4]).toBe(
-      0,
-    );
+    expect(new Uint32Array(uniform.data.buffer)[SCREEN_OFFSET.shiftY / 4]).toBe(0);
   });
 
-  it("paints the character under a block cursor in the cursor text colour", () => {
+  it('paints the character under a block cursor in the cursor text colour', () => {
     const uniform = new ScreenUniform();
     uniform.pack({ ...STATE, cursorText: [51, 102, 204] });
     const { f, u } = view(uniform);
@@ -307,7 +276,9 @@ describe("shader uniform layout", () => {
     // fragment stage recolours only the ink inside it, so a roomy glyph that reaches past the
     // block keeps its own colour there; the background pass widens the block over a wide
     // character.
-    expect(GLYPH_SHADER).toMatch(/output\.cursor_box = vec4f\(\s*f32\(span\.x \* screen\.cell_size\.x\)/);
+    expect(GLYPH_SHADER).toMatch(
+      /output\.cursor_box = vec4f\(\s*f32\(span\.x \* screen\.cell_size\.x\)/,
+    );
     expect(GLYPH_SHADER).toMatch(
       /local_position\.x < cursor_box\.z && local_position\.y < cursor_box\.w\) \{\s*color = vec4f\(screen\.cursor_text\.rgb, 1\.0\);/,
     );
@@ -316,11 +287,10 @@ describe("shader uniform layout", () => {
     expect(BACKGROUND_SHADER).toMatch(/cursor_columns\(cursor_at\)/);
   });
 
-  it("keeps bar and underline cursors, and a hidden cursor, from recolouring text", () => {
+  it('keeps bar and underline cursors, and a hidden cursor, from recolouring text', () => {
     const uniform = new ScreenUniform();
     const flagged = () =>
-      new Uint32Array(uniform.data.buffer)[SCREEN_OFFSET.flags / 4] &
-      SCREEN_FLAG_CURSOR_BLOCK;
+      new Uint32Array(uniform.data.buffer)[SCREEN_OFFSET.flags / 4] & SCREEN_FLAG_CURSOR_BLOCK;
     uniform.pack({ ...STATE, cursorBlock: false });
     expect(flagged()).toBe(0);
     uniform.pack({ ...STATE, cursor: null });
@@ -329,7 +299,7 @@ describe("shader uniform layout", () => {
     expect(flagged()).not.toBe(0);
   });
 
-  it("binds the storage and texture slots the surface fills", () => {
+  it('binds the storage and texture slots the surface fills', () => {
     for (const shader of [BACKGROUND_SHADER, GLYPH_SHADER]) {
       expect(shader).toMatch(/@binding\(1\) var<storage, read> cells/);
       expect(shader).toMatch(/@binding\(2\) var<storage, read> glyph_map/);

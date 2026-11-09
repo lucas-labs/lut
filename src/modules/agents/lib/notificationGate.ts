@@ -17,13 +17,7 @@ export function createAgentNotificationGate(
   const recent = new Map<string, number>();
 
   return (key, now = Date.now()) => {
-    const id = JSON.stringify([
-      key.source,
-      key.agent,
-      key.kind,
-      key.tabId,
-      key.leafId,
-    ]);
+    const id = JSON.stringify([key.source, key.agent, key.kind, key.tabId, key.leafId]);
     const previous = recent.get(id);
     if (previous !== undefined && now >= previous && now - previous < cooldownMs) {
       return false;

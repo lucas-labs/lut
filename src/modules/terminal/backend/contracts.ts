@@ -1,4 +1,4 @@
-export type TerminalBackendKind = "ghostty-webgl" | "ghostty-webgpu";
+export type TerminalBackendKind = 'ghostty-webgl' | 'ghostty-webgpu';
 
 export type TerminalRowRange = {
   readonly start: number;
@@ -6,10 +6,10 @@ export type TerminalRowRange = {
 };
 
 export type TerminalDamage =
-  | { readonly kind: "none" }
-  | { readonly kind: "full" }
+  | { readonly kind: 'none' }
+  | { readonly kind: 'full' }
   | {
-      readonly kind: "rows";
+      readonly kind: 'rows';
       readonly ranges: readonly TerminalRowRange[];
     };
 
@@ -18,7 +18,7 @@ export type TerminalCursor = {
   readonly y: number;
   readonly visible: boolean;
   readonly blinking: boolean;
-  readonly style: "block" | "underline" | "bar";
+  readonly style: 'block' | 'underline' | 'bar';
 };
 
 export type TerminalModes = {

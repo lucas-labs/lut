@@ -1,43 +1,35 @@
-import { CellFlags } from "@terax/ghostty-core/protocol";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { hasIntrinsicColor, WebGlGlyphAtlas } from "./WebGlGlyphAtlas";
+import { CellFlags } from '@terax/ghostty-core/protocol';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { hasIntrinsicColor, WebGlGlyphAtlas } from './WebGlGlyphAtlas';
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe("hasIntrinsicColor", () => {
-  it("keeps monochrome antialiasing in the compact coverage atlas", () => {
+describe('hasIntrinsicColor', () => {
+  it('keeps monochrome antialiasing in the compact coverage atlas', () => {
     expect(
       hasIntrinsicColor(
-        new Uint8ClampedArray([
-          255, 255, 255, 255, 255, 255, 255, 128, 0, 0, 0, 0,
-        ]),
+        new Uint8ClampedArray([255, 255, 255, 255, 255, 255, 255, 128, 0, 0, 0, 0]),
       ),
     ).toBe(false);
   });
 
-  it("routes color glyphs to the RGBA atlas", () => {
-    expect(
-      hasIntrinsicColor(
-        new Uint8ClampedArray([255, 202, 40, 255, 255, 255, 255, 128]),
-      ),
-    ).toBe(true);
-  });
-
-  it("preserves intrinsically gray emoji pixels", () => {
-    expect(hasIntrinsicColor(new Uint8ClampedArray([96, 96, 96, 255]))).toBe(
+  it('routes color glyphs to the RGBA atlas', () => {
+    expect(hasIntrinsicColor(new Uint8ClampedArray([255, 202, 40, 255, 255, 255, 255, 128]))).toBe(
       true,
     );
   });
 
-  it("ignores transparent RGB residue", () => {
-    expect(hasIntrinsicColor(new Uint8ClampedArray([255, 0, 100, 0]))).toBe(
-      false,
-    );
+  it('preserves intrinsically gray emoji pixels', () => {
+    expect(hasIntrinsicColor(new Uint8ClampedArray([96, 96, 96, 255]))).toBe(true);
+  });
+
+  it('ignores transparent RGB residue', () => {
+    expect(hasIntrinsicColor(new Uint8ClampedArray([255, 0, 100, 0]))).toBe(false);
   });
 });
 
-describe("WebGlGlyphAtlas uploads", () => {
-  it("uploads dirty rows directly from the retained atlas without repacking", () => {
+describe('WebGlGlyphAtlas uploads', () => {
+  it('uploads dirty rows directly from the retained atlas without repacking', () => {
     const texSubImage2D = vi.fn();
     const pixelStorei = vi.fn();
     const gl = createWebGlHarness(texSubImage2D, pixelStorei);
@@ -49,9 +41,7 @@ describe("WebGlGlyphAtlas uploads", () => {
 
     expect(texSubImage2D).toHaveBeenCalledOnce();
     expect(texSubImage2D.mock.calls[0][8]).toBeInstanceOf(Uint8Array);
-    expect((texSubImage2D.mock.calls[0][8] as Uint8Array).byteLength).toBe(
-      1_048_576,
-    );
+    expect((texSubImage2D.mock.calls[0][8] as Uint8Array).byteLength).toBe(1_048_576);
     expect(pixelStorei).toHaveBeenCalledWith(gl.UNPACK_ROW_LENGTH, 1_024);
     expect(pixelStorei).toHaveBeenCalledWith(gl.UNPACK_ROW_LENGTH, 0);
     expect(atlas.uploadCount).toBe(1);
@@ -60,27 +50,22 @@ describe("WebGlGlyphAtlas uploads", () => {
   });
 });
 
-describe("WebGlGlyphAtlas procedural glyphs", () => {
-  it("keeps font fallback styles separate after lazy glyph loading fails", async () => {
+describe('WebGlGlyphAtlas procedural glyphs', () => {
+  it('keeps font fallback styles separate after lazy glyph loading fails', async () => {
     vi.resetModules();
-    vi.doMock("../gpu/builtin/legacyComputing", () => {
-      throw new Error("chunk missing");
+    vi.doMock('../gpu/builtin/legacyComputing', () => {
+      throw new Error('chunk missing');
     });
     try {
-      const { WebGlGlyphAtlas: FreshAtlas } = await import("./WebGlGlyphAtlas");
-      const { loadLazyBuiltin } = await import("../gpu/builtin/lazyGlyphs");
+      const { WebGlGlyphAtlas: FreshAtlas } = await import('./WebGlGlyphAtlas');
+      const { loadLazyBuiltin } = await import('../gpu/builtin/lazyGlyphs');
       const fillText = vi.fn();
       const gl = createWebGlHarness(vi.fn(), vi.fn(), fillText);
       const atlas = new FreshAtlas(gl, METRICS, 1);
       atlas.glyph(0x1fb00, null, 0);
       expect(fillText).not.toHaveBeenCalled();
       await loadLazyBuiltin();
-      const styles = [
-        0,
-        CellFlags.BOLD,
-        CellFlags.ITALIC,
-        CellFlags.BOLD | CellFlags.ITALIC,
-      ];
+      const styles = [0, CellFlags.BOLD, CellFlags.ITALIC, CellFlags.BOLD | CellFlags.ITALIC];
       const entries = styles.map((style) => atlas.glyph(0x1fb00, null, style));
       expect(new Set(entries).size).toBe(4);
       expect(fillText).toHaveBeenCalledTimes(4);
@@ -90,12 +75,12 @@ describe("WebGlGlyphAtlas procedural glyphs", () => {
       expect(fillText).toHaveBeenCalledTimes(4);
       atlas.dispose();
     } finally {
-      vi.doUnmock("../gpu/builtin/legacyComputing");
+      vi.doUnmock('../gpu/builtin/legacyComputing');
       vi.resetModules();
     }
   });
 
-  it("draws box characters at the cell size with no bearing and ignores styles", () => {
+  it('draws box characters at the cell size with no bearing and ignores styles', () => {
     const fillText = vi.fn();
     const gl = createWebGlHarness(vi.fn(), vi.fn(), fillText);
     const atlas = new WebGlGlyphAtlas(gl, METRICS, 1);
@@ -113,14 +98,14 @@ describe("WebGlGlyphAtlas procedural glyphs", () => {
     expect(atlas.glyphCount).toBe(1);
     // Text and combined sequences still come from the font.
     atlas.glyph(65, null, 0);
-    atlas.glyph(0x253c, "\u253c\u0301", 0);
+    atlas.glyph(0x253c, '\u253c\u0301', 0);
     expect(fillText).toHaveBeenCalledTimes(2);
     atlas.bindAndUpload();
     expect(atlas.uploadedBytes).toBeGreaterThan(0);
     atlas.dispose();
   });
 
-  it("stores the shared mask in the coverage atlas at its allocated rectangle", () => {
+  it('stores the shared mask in the coverage atlas at its allocated rectangle', () => {
     const texSubImage2D = vi.fn();
     const gl = createWebGlHarness(texSubImage2D, vi.fn());
     const atlas = new WebGlGlyphAtlas(gl, METRICS, 1);
@@ -142,8 +127,8 @@ describe("WebGlGlyphAtlas procedural glyphs", () => {
   });
 });
 
-describe("WebGlGlyphAtlas neighbour-aware glyphs", () => {
-  it("keeps a constrained and a roomy form of a glyph that may take two cells", () => {
+describe('WebGlGlyphAtlas neighbour-aware glyphs', () => {
+  it('keeps a constrained and a roomy form of a glyph that may take two cells', () => {
     const fillText = vi.fn();
     const gl = createWebGlHarness(vi.fn(), vi.fn(), fillText);
     const atlas = new WebGlGlyphAtlas(gl, METRICS, 1);
@@ -156,7 +141,7 @@ describe("WebGlGlyphAtlas neighbour-aware glyphs", () => {
     atlas.dispose();
   });
 
-  it("shares one entry for glyphs with a single form, whatever the room", () => {
+  it('shares one entry for glyphs with a single form, whatever the room', () => {
     const gl = createWebGlHarness(vi.fn(), vi.fn());
     const atlas = new WebGlGlyphAtlas(gl, METRICS, 1);
     for (const codepoint of [65, 0xe0a0, 0xe0d6, 0x4e2d]) {
@@ -167,7 +152,7 @@ describe("WebGlGlyphAtlas neighbour-aware glyphs", () => {
     atlas.dispose();
   });
 
-  it("does not mix a constrained glyph with a different style", () => {
+  it('does not mix a constrained glyph with a different style', () => {
     const gl = createWebGlHarness(vi.fn(), vi.fn());
     const atlas = new WebGlGlyphAtlas(gl, METRICS, 1);
     const regular = atlas.glyph(0xe718, null, 0, false);
@@ -190,7 +175,7 @@ function createWebGlHarness(
     pixels[offset + 2] = 255;
     pixels[offset + 3] = 255;
   }
-  vi.stubGlobal("document", {
+  vi.stubGlobal('document', {
     createElement: vi.fn(() => ({
       width: 0,
       height: 0,
@@ -211,10 +196,10 @@ function createWebGlHarness(
           actualBoundingBoxAscent: 10,
           actualBoundingBoxDescent: 2,
         })),
-        font: "",
-        textAlign: "left",
-        textBaseline: "alphabetic",
-        fillStyle: "white",
+        font: '',
+        textAlign: 'left',
+        textBaseline: 'alphabetic',
+        fillStyle: 'white',
       })),
     })),
   });
@@ -249,11 +234,11 @@ function createWebGlHarness(
 
 const METRICS = {
   font: {
-    family: "monospace",
+    family: 'monospace',
     size: 14,
     lineHeight: 1.2,
     letterSpacing: 0,
-    weight: "400",
+    weight: '400',
   },
   scale: 1,
   deviceCellWidth: 8,

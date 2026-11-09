@@ -1,11 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from 'vitest';
 import {
   SYNCHRONIZED_OUTPUT_PRESENTATION_WATCHDOG_MS,
   SynchronizedOutputPresentationGate,
-} from "./SynchronizedOutputPresentationGate";
+} from './SynchronizedOutputPresentationGate';
 
-describe("SynchronizedOutputPresentationGate", () => {
-  it("holds an active transaction and releases its complete state once", () => {
+describe('SynchronizedOutputPresentationGate', () => {
+  it('holds an active transaction and releases its complete state once', () => {
     const release = vi.fn();
     const gate = new SynchronizedOutputPresentationGate(release);
 
@@ -20,7 +20,7 @@ describe("SynchronizedOutputPresentationGate", () => {
     gate.dispose();
   });
 
-  it("uses a bounded watchdog for an unterminated transaction", () => {
+  it('uses a bounded watchdog for an unterminated transaction', () => {
     vi.useFakeTimers();
     try {
       const release = vi.fn();
@@ -40,7 +40,7 @@ describe("SynchronizedOutputPresentationGate", () => {
     }
   });
 
-  it("does not hold again for an application that died inside a transaction", () => {
+  it('does not hold again for an application that died inside a transaction', () => {
     vi.useFakeTimers();
     try {
       const release = vi.fn();

@@ -1,4 +1,4 @@
-import { Prec, StateEffect, StateField } from "@codemirror/state";
+import { Prec, StateEffect, StateField } from '@codemirror/state';
 import {
   Decoration,
   type DecorationSet,
@@ -7,20 +7,18 @@ import {
   ViewPlugin,
   type ViewUpdate,
   WidgetType,
-} from "@codemirror/view";
+} from '@codemirror/view';
 
 const setSuggestion = StateEffect.define<string>();
 
 const suggestionField = StateField.define<string>({
-  create: () => "",
+  create: () => '',
   update(value, tr) {
     for (const e of tr.effects) if (e.is(setSuggestion)) return e.value;
     if (tr.docChanged) {
       if (!value) return value;
       const doc = tr.state.doc.toString();
-      return doc.length > 0 && value.startsWith(doc) && value.length > doc.length
-        ? value
-        : "";
+      return doc.length > 0 && value.startsWith(doc) && value.length > doc.length ? value : '';
     }
     return value;
   },
@@ -34,8 +32,8 @@ class GhostWidget extends WidgetType {
     return other.text === this.text;
   }
   toDOM() {
-    const span = document.createElement("span");
-    span.className = "cm-ghost";
+    const span = document.createElement('span');
+    span.className = 'cm-ghost';
     span.textContent = this.text;
     return span;
   }
@@ -44,7 +42,7 @@ class GhostWidget extends WidgetType {
   }
 }
 
-function tail(state: EditorView["state"]): string | null {
+function tail(state: EditorView['state']): string | null {
   const sugg = state.field(suggestionField, false);
   if (!sugg) return null;
   const sel = state.selection.main;
@@ -56,7 +54,7 @@ function tail(state: EditorView["state"]): string | null {
 }
 
 const ghostDecorations = EditorView.decorations.compute(
-  [suggestionField, "doc", "selection"],
+  [suggestionField, 'doc', 'selection'],
   (state): DecorationSet => {
     const t = tail(state);
     if (t === null) return Decoration.none;
@@ -75,7 +73,7 @@ function acceptInlineSuggestion(view: EditorView): boolean {
   view.dispatch({
     changes: { from: view.state.doc.length, insert: t },
     selection: { anchor: view.state.doc.length + t.length },
-    effects: setSuggestion.of(""),
+    effects: setSuggestion.of(''),
   });
   return true;
 }
@@ -115,9 +113,9 @@ export function inlineSuggestion(fetch: (line: string) => Promise<string | null>
     fetcherPlugin(fetch),
     Prec.highest(
       keymap.of([
-        { key: "ArrowRight", run: acceptInlineSuggestion },
-        { key: "End", run: acceptInlineSuggestion },
-        { key: "Mod-f", run: acceptInlineSuggestion },
+        { key: 'ArrowRight', run: acceptInlineSuggestion },
+        { key: 'End', run: acceptInlineSuggestion },
+        { key: 'Mod-f', run: acceptInlineSuggestion },
       ]),
     ),
   ];

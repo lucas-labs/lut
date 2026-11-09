@@ -1,2 +1,2 @@
-export type { GitHistorySearchHandle } from "./GitHistoryPane";
-export { GitHistoryStack } from "./GitHistoryStackLazy";
+export type { GitHistorySearchHandle } from './GitHistoryPane';
+export { GitHistoryStack } from './GitHistoryStackLazy';

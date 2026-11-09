@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 
-export type PresenceState = "open" | "closed";
+export type PresenceState = 'open' | 'closed';
 
 /**
  * Keeps a node mounted for one exit-animation duration after `open` flips to
@@ -27,5 +27,5 @@ export function usePresence(open: boolean, exitMs = 150) {
     };
   }, [open, exitMs, mounted]);
 
-  return { mounted, state: (open ? "open" : "closed") as PresenceState };
+  return { mounted, state: (open ? 'open' : 'closed') as PresenceState };
 }

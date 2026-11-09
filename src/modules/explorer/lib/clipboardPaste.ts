@@ -1,10 +1,10 @@
-import type { WorkspaceEnv } from "@/modules/workspace";
-import { invoke } from "@tauri-apps/api/core";
-import { toast } from "sonner";
+import type { WorkspaceEnv } from '@/modules/workspace';
+import { invoke } from '@tauri-apps/api/core';
+import { toast } from 'sonner';
 
 export function parentDir(path: string, fallback: string): string {
-  const i = path.lastIndexOf("/");
-  if (i === 0) return "/";
+  const i = path.lastIndexOf('/');
+  if (i === 0) return '/';
   if (i === 2 && /^[a-z]:\//i.test(path)) return path.slice(0, 3);
   return i > 0 ? path.slice(0, i) : fallback;
 }
@@ -21,10 +21,10 @@ export function pasteTargetDir(
 }
 
 export function isPasteShortcut(
-  e: Pick<KeyboardEvent, "key" | "metaKey" | "ctrlKey" | "altKey" | "shiftKey">,
+  e: Pick<KeyboardEvent, 'key' | 'metaKey' | 'ctrlKey' | 'altKey' | 'shiftKey'>,
   isMac: boolean,
 ): boolean {
-  if (e.key.toLowerCase() !== "v" || e.altKey || e.shiftKey) return false;
+  if (e.key.toLowerCase() !== 'v' || e.altKey || e.shiftKey) return false;
   return isMac ? e.metaKey && !e.ctrlKey : e.ctrlKey && !e.metaKey;
 }
 
@@ -44,7 +44,7 @@ export function reportCopyFailures(result: CopyResult): void {
   if (result.failed.length === 0) return;
   const first = result.failed[0];
   const count = result.failed.length;
-  toast.error(`Could not copy ${count} ${count === 1 ? "item" : "items"}`, {
+  toast.error(`Could not copy ${count} ${count === 1 ? 'item' : 'items'}`, {
     description: `${first.source}: ${first.message}`,
   });
 }
@@ -55,14 +55,14 @@ export async function pasteClipboardFiles(
 ): Promise<string[]> {
   let copyStarted = false;
   try {
-    const sources = await invoke<string[]>("fs_clipboard_paths");
+    const sources = await invoke<string[]>('fs_clipboard_paths');
     if (!isCurrent()) return [];
     if (sources.length === 0) {
-      toast.message("No files on the clipboard");
+      toast.message('No files on the clipboard');
       return [];
     }
     copyStarted = true;
-    const result = await invoke<CopyResult>("fs_copy", {
+    const result = await invoke<CopyResult>('fs_copy', {
       sources,
       destDir,
       root,

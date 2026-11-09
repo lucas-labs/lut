@@ -1,13 +1,13 @@
-import type { BlockMode } from "@/modules/terminal/block/lib/modeMachine";
+import type { BlockMode } from '@/modules/terminal/block/lib/modeMachine';
 import {
   type BlockViewportSignature,
   sameBlockViewport,
-} from "@/modules/terminal/block/lib/viewportSignature";
-import type { GhosttyBlocks } from "@/modules/terminal/ghostty/GhosttyBlocks";
-import type { GhosttyTerminalModelApi } from "@/modules/terminal/ghostty/GhosttyTerminalModel";
-import { subscribeWindowPresentation } from "@/modules/terminal/ghostty/windowPresentation";
+} from '@/modules/terminal/block/lib/viewportSignature';
+import type { GhosttyBlocks } from '@/modules/terminal/ghostty/GhosttyBlocks';
+import type { GhosttyTerminalModelApi } from '@/modules/terminal/ghostty/GhosttyTerminalModel';
+import { subscribeWindowPresentation } from '@/modules/terminal/ghostty/windowPresentation';
 
-export type WatermarkState = "visible" | "hidden" | "dead";
+export type WatermarkState = 'visible' | 'hidden' | 'dead';
 
 export class GhosttyBlockSession {
   controller: GhosttyBlocks | null = null;
@@ -22,11 +22,11 @@ export class GhosttyBlockSession {
    * session uses it to switch the input element between shell and prompt mode.
    */
   modeEffect: (() => void) | null = null;
-  draft = "";
+  draft = '';
   inputActive = false;
   everSubmitted = false;
   private generation = 0;
-  private mode: BlockMode = "plain";
+  private mode: BlockMode = 'plain';
   private visible = false;
   private presented = false;
   private unsubscribePresentation: (() => void) | null = null;
@@ -38,15 +38,10 @@ export class GhosttyBlockSession {
   private readonly contentListeners = new Set<() => void>();
   private readonly modeListeners = new Set<() => void>();
 
-  async attach(
-    model: GhosttyTerminalModelApi,
-    requestFrame: () => void = () => {},
-  ): Promise<void> {
+  async attach(model: GhosttyTerminalModelApi, requestFrame: () => void = () => {}): Promise<void> {
     this.detach();
     const generation = this.generation;
-    const { GhosttyBlocks } = await import(
-      "@/modules/terminal/ghostty/GhosttyBlocks"
-    );
+    const { GhosttyBlocks } = await import('@/modules/terminal/ghostty/GhosttyBlocks');
     if (generation !== this.generation || model.isDisposed?.()) return;
     this.model = model;
     this.requestFrame = requestFrame;
@@ -80,7 +75,7 @@ export class GhosttyBlockSession {
   }
 
   changed(): void {
-    const mode = this.controller?.mode ?? "plain";
+    const mode = this.controller?.mode ?? 'plain';
     if (mode !== this.mode) {
       this.mode = mode;
       for (const listener of this.modeListeners) listener();
@@ -138,14 +133,11 @@ export class GhosttyBlockSession {
   };
 
   watermark(): WatermarkState {
-    if (this.everSubmitted || this.controller?.hasAnyBlock) return "dead";
-    if (!this.model || this.inputActive) return "hidden";
-    if (
-      this.model.scrollPosition().history > 0 ||
-      this.model.readText(this.model.rows).trim()
-    )
-      return "dead";
-    return "visible";
+    if (this.everSubmitted || this.controller?.hasAnyBlock) return 'dead';
+    if (!this.model || this.inputActive) return 'hidden';
+    if (this.model.scrollPosition().history > 0 || this.model.readText(this.model.rows).trim())
+      return 'dead';
+    return 'visible';
   }
 
   dispose(): void {
@@ -153,7 +145,7 @@ export class GhosttyBlockSession {
     this.focus = null;
     this.paste = null;
     this.keyDown = null;
-    this.draft = "";
+    this.draft = '';
     this.modeEffect = null;
     this.modeListeners.clear();
     this.viewportListeners.clear();
@@ -177,7 +169,7 @@ export class GhosttyBlockSession {
       rows: model.rows,
       cols: model.cols,
       cellHeight: this.cellHeight(),
-      cursorLine: mode === "running" ? (model.bufferCursorLine?.() ?? -1) : -1,
+      cursorLine: mode === 'running' ? (model.bufferCursorLine?.() ?? -1) : -1,
     };
   }
 }

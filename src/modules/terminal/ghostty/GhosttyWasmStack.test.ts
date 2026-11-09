@@ -1,28 +1,25 @@
-import { readFile } from "node:fs/promises";
-import { TeraxGhostty } from "@terax/ghostty-core/adapted";
-import { describe, expect, it } from "vitest";
+import { readFile } from 'node:fs/promises';
+import { TeraxGhostty } from '@terax/ghostty-core/adapted';
+import { describe, expect, it } from 'vitest';
 import {
   adversarialInputs,
   fillStackCanary,
   peakStackBytes,
   readWasmLayout,
   runStackWorkloads,
-} from "./wasmStackProbe";
+} from './wasmStackProbe';
 
 const WASM_PAGE = 64 * 1024;
 const MAX_STACK_BYTES = 128 * 1024;
 const MAX_BLANK_INSTANCE_BYTES = 6 * WASM_PAGE;
 
 describe.each([
-  ["SIMD", "ghostty-vt.wasm"],
-  ["scalar", "ghostty-vt-scalar.wasm"],
-])("%s Ghostty artifact stack and base size", (_kind, artifact) => {
+  ['SIMD', 'ghostty-vt.wasm'],
+  ['scalar', 'ghostty-vt-scalar.wasm'],
+])('%s Ghostty artifact stack and base size', (_kind, artifact) => {
   async function load() {
     const file = await readFile(
-      new URL(
-        `../../../../packages/ghostty-core/adapted/${artifact}`,
-        import.meta.url,
-      ),
+      new URL(`../../../../packages/ghostty-core/adapted/${artifact}`, import.meta.url),
     );
     const bytes = Uint8Array.from(file);
     return {
@@ -31,21 +28,19 @@ describe.each([
     };
   }
 
-  it("keeps a small stack below the data so an overflow traps instead of corrupting memory", async () => {
+  it('keeps a small stack below the data so an overflow traps instead of corrupting memory', async () => {
     const { layout, core } = await load();
     expect(layout.stackTop).toBeGreaterThanOrEqual(32 * 1024);
     expect(layout.stackTop).toBeLessThanOrEqual(MAX_STACK_BYTES);
     expect(layout.dataStart).toBeGreaterThanOrEqual(layout.stackTop);
-    expect(layout.initialPages * WASM_PAGE).toBeLessThanOrEqual(
-      MAX_BLANK_INSTANCE_BYTES,
-    );
+    expect(layout.initialPages * WASM_PAGE).toBeLessThanOrEqual(MAX_BLANK_INSTANCE_BYTES);
     const instance = core.instantiate();
     expect(instance.memoryBytes).toBe(layout.initialPages * WASM_PAGE);
     instance.dispose();
   });
 
-  it.each(["soa", "gpu"] as const)(
-    "survives adversarial input with the %s render format within half of the stack",
+  it.each(['soa', 'gpu'] as const)(
+    'survives adversarial input with the %s render format within half of the stack',
     async (format) => {
       const { layout, core } = await load();
       const instance = core.instantiate();

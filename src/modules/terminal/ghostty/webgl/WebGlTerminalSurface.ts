@@ -1,64 +1,44 @@
-import { isPrimaryModifierPressed } from "@/lib/platform";
-import type { TerminalSurface } from "@/modules/terminal/backend/contracts";
-import { TerminalScrollbarSync } from "@/modules/terminal/ghostty/gpu/terminalScrollbar";
-import { bindTerminalInteraction } from "@/modules/terminal/ghostty/input/terminalInteraction";
-import { terminalWindowFocused } from "@/modules/terminal/ghostty/renderScheduling";
+import { isPrimaryModifierPressed } from '@/lib/platform';
+import type { TerminalSurface } from '@/modules/terminal/backend/contracts';
+import { TerminalScrollbarSync } from '@/modules/terminal/ghostty/gpu/terminalScrollbar';
+import { bindTerminalInteraction } from '@/modules/terminal/ghostty/input/terminalInteraction';
+import { terminalWindowFocused } from '@/modules/terminal/ghostty/renderScheduling';
 import {
   subscribeWindowPresentation,
   terminalWindowPresentation,
-} from "@/modules/terminal/ghostty/windowPresentation";
-import type { WindowPresentation } from "@/modules/terminal/ghostty/WindowPresentationPolicy";
-import { noteTerminalHostResize } from "@/modules/terminal/lib/terminalResizeGesture";
+} from '@/modules/terminal/ghostty/windowPresentation';
+import type { WindowPresentation } from '@/modules/terminal/ghostty/WindowPresentationPolicy';
+import { noteTerminalHostResize } from '@/modules/terminal/lib/terminalResizeGesture';
 import {
   subscribeTerminalResizeInteraction,
   terminalResizeInteractionActive,
-} from "@/modules/terminal/lib/terminalResizeInteraction";
-import { TerminalResizeSync } from "@/modules/terminal/lib/terminalResizeSync";
-import type { TerminalLinkHit } from "../core/terminalLinks";
-import {
-  type DeferredTerminalLinks,
-  deferTerminalLinks,
-} from "../core/terminalLinksLoader";
-import type { GhosttyTerminalModelApi } from "../GhosttyTerminalModel";
-import type { GestureGrowth } from "../gpu/CanvasBackingStore";
-import { DevicePixelRatioMonitor } from "../gpu/DevicePixelRatioMonitor";
+} from '@/modules/terminal/lib/terminalResizeInteraction';
+import { TerminalResizeSync } from '@/modules/terminal/lib/terminalResizeSync';
+import type { TerminalLinkHit } from '../core/terminalLinks';
+import { type DeferredTerminalLinks, deferTerminalLinks } from '../core/terminalLinksLoader';
+import type { GhosttyTerminalModelApi } from '../GhosttyTerminalModel';
+import type { GestureGrowth } from '../gpu/CanvasBackingStore';
+import { DevicePixelRatioMonitor } from '../gpu/DevicePixelRatioMonitor';
 import {
   type CssSize,
   gestureBackingBound,
   measureGestureBackingEnvironment,
   windowInnerSize,
-} from "../gpu/GestureBacking";
-import {
-  fitTerminalViewport,
-  TERMINAL_RIGHT_GUTTER_CSS_PX,
-} from "../gpu/TerminalFit";
-import {
-  TerminalFitQueue,
-  type TerminalFitQueueDiagnostics,
-} from "../gpu/TerminalFitQueue";
-import type {
-  TerminalFontMetrics,
-  TerminalGpuTheme,
-} from "../gpu/terminalVisuals";
-import {
-  devicePixelScale,
-  metricsEqual,
-  metricsForScale,
-  rgbToCss,
-} from "../gpu/terminalVisuals";
-import { currentTextContrast } from "../gpu/textContrast";
-import { GhosttySearchController } from "../search/GhosttySearchController";
-import { TerminalSelectionController } from "../selection/TerminalSelectionController";
-import type {
-  WebGlCellRenderer,
-  WebGlCellRendererStats,
-} from "./WebGlCellRenderer";
-import { WebGlPoolExhaustedError } from "./WebGlPoolExhaustedError";
+} from '../gpu/GestureBacking';
+import { fitTerminalViewport, TERMINAL_RIGHT_GUTTER_CSS_PX } from '../gpu/TerminalFit';
+import { TerminalFitQueue, type TerminalFitQueueDiagnostics } from '../gpu/TerminalFitQueue';
+import type { TerminalFontMetrics, TerminalGpuTheme } from '../gpu/terminalVisuals';
+import { devicePixelScale, metricsEqual, metricsForScale, rgbToCss } from '../gpu/terminalVisuals';
+import { currentTextContrast } from '../gpu/textContrast';
+import { GhosttySearchController } from '../search/GhosttySearchController';
+import { TerminalSelectionController } from '../selection/TerminalSelectionController';
+import type { WebGlCellRenderer, WebGlCellRendererStats } from './WebGlCellRenderer';
+import { WebGlPoolExhaustedError } from './WebGlPoolExhaustedError';
 import {
   getWebGlTerminalRuntime,
   type WebGlRuntimeSurface,
   type WebGlTerminalRuntime,
-} from "./WebGlTerminalRuntime";
+} from './WebGlTerminalRuntime';
 
 const CURSOR_BLINK_MS = 600;
 const TEXT_BLINK_MS = 600;
@@ -71,7 +51,7 @@ export type WebGlTerminalSurfaceOptions = {
   readonly metrics: TerminalFontMetrics;
   readonly theme: TerminalGpuTheme;
   readonly cursorBlink: boolean;
-  readonly cursorStyle: "block" | "underline" | "bar";
+  readonly cursorStyle: 'block' | 'underline' | 'bar';
   readonly onResize: (cols: number, rows: number) => void;
   readonly onError: (error: Error) => void;
   readonly onFirstFrame?: () => void;
@@ -92,15 +72,13 @@ export type WebGlTerminalSurfaceStats = {
   readonly fit: TerminalFitQueueDiagnostics;
 };
 
-export class WebGlTerminalSurface
-  implements TerminalSurface, WebGlRuntimeSurface
-{
-  readonly backend = "ghostty-webgl" as const;
+export class WebGlTerminalSurface implements TerminalSurface, WebGlRuntimeSurface {
+  readonly backend = 'ghostty-webgl' as const;
 
-  private readonly input = document.createElement("textarea");
-  private readonly root = document.createElement("div");
-  private readonly scrollbar = document.createElement("div");
-  private readonly scrollbarContent = document.createElement("div");
+  private readonly input = document.createElement('textarea');
+  private readonly root = document.createElement('div');
+  private readonly scrollbar = document.createElement('div');
+  private readonly scrollbarContent = document.createElement('div');
   private readonly resizeObserver: ResizeObserver;
   private readonly unsubscribeDamage: () => void;
   private readonly unsubscribeResizeInteraction: () => void;
@@ -177,41 +155,37 @@ export class WebGlTerminalSurface
     this.cursorBlinking = options.cursorBlink;
     options.model.setCursorOptions(options.cursorStyle, options.cursorBlink);
     this.contentRevision = options.model.revision();
-    this.root.className = "absolute inset-0 overflow-hidden";
-    this.root.style.userSelect = "none";
+    this.root.className = 'absolute inset-0 overflow-hidden';
+    this.root.style.userSelect = 'none';
     this.updateRootBackground();
-    this.root.setAttribute("data-terax-ghostty-surface", "webgl");
-    this.root.setAttribute("data-terax-terminal-surface", "");
-    this.input.setAttribute("aria-label", "Terminal input");
-    this.input.setAttribute("autocapitalize", "off");
-    this.input.setAttribute("autocomplete", "off");
-    this.input.setAttribute("spellcheck", "false");
+    this.root.setAttribute('data-terax-ghostty-surface', 'webgl');
+    this.root.setAttribute('data-terax-terminal-surface', '');
+    this.input.setAttribute('aria-label', 'Terminal input');
+    this.input.setAttribute('autocapitalize', 'off');
+    this.input.setAttribute('autocomplete', 'off');
+    this.input.setAttribute('spellcheck', 'false');
     this.input.style.cssText =
-      "position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;resize:none;pointer-events:none;";
-    this.scrollbar.setAttribute("aria-label", "Terminal scrollback");
-    this.scrollbar.setAttribute("role", "scrollbar");
+      'position:absolute;left:0;top:0;width:1px;height:1px;opacity:0;resize:none;pointer-events:none;';
+    this.scrollbar.setAttribute('aria-label', 'Terminal scrollback');
+    this.scrollbar.setAttribute('role', 'scrollbar');
     this.scrollbar.style.cssText =
-      "position:absolute;inset:0 0 0 auto;z-index:10;width:11px;overflow-x:hidden;overflow-y:scroll;overscroll-behavior:contain;visibility:hidden;";
-    this.scrollbarContent.style.cssText = "width:1px;height:1px;";
+      'position:absolute;inset:0 0 0 auto;z-index:10;width:11px;overflow-x:hidden;overflow-y:scroll;overscroll-behavior:contain;visibility:hidden;';
+    this.scrollbarContent.style.cssText = 'width:1px;height:1px;';
     this.scrollbar.append(this.scrollbarContent);
     this.root.append(this.input, this.scrollbar);
 
-    this.unsubscribeInteraction = bindTerminalInteraction(
-      this.root,
-      this.handleInteraction,
-    );
+    this.unsubscribeInteraction = bindTerminalInteraction(this.root, this.handleInteraction);
     this.selection = new TerminalSelectionController({
       model: options.model,
       target: this.root,
       cellSize: () => this.cellSize(),
-      shouldIgnoreTarget: (target) =>
-        target instanceof Node && this.scrollbar.contains(target),
+      shouldIgnoreTarget: (target) => target instanceof Node && this.scrollbar.contains(target),
       onChange: () => {
         if (this.applyingFit) return;
         this.runtime.schedule(this);
       },
     });
-    this.root.style.cursor = "text";
+    this.root.style.cursor = 'text';
     this.links = deferTerminalLinks({
       target: this.root,
       keyTarget: window,
@@ -246,25 +220,21 @@ export class WebGlTerminalSurface
       if (!this.applyingFit) this.runtime.schedule(this);
       this.armCursorBlink();
     });
-    this.unsubscribeResizeInteraction = subscribeTerminalResizeInteraction(
-      (active) => {
-        this.resizeInteractionActive = active;
-        if (active) {
-          this.gestureStartInner = windowInnerSize();
-          return;
-        }
-        // The gesture is over: the grid follows the final size once and the backing shrinks
-        // to fit it.
-        this.compactAfterResize = true;
-        this.fitQueue.request();
-        this.runtime.schedule(this);
-      },
-    );
-    this.root.addEventListener("pointerdown", this.handlePointerDown);
-    this.scrollbar.addEventListener("scroll", this.handleScroll);
-    this.unsubscribePresentation = subscribeWindowPresentation(
-      this.handleVisibilityChange,
-    );
+    this.unsubscribeResizeInteraction = subscribeTerminalResizeInteraction((active) => {
+      this.resizeInteractionActive = active;
+      if (active) {
+        this.gestureStartInner = windowInnerSize();
+        return;
+      }
+      // The gesture is over: the grid follows the final size once and the backing shrinks
+      // to fit it.
+      this.compactAfterResize = true;
+      this.fitQueue.request();
+      this.runtime.schedule(this);
+    });
+    this.root.addEventListener('pointerdown', this.handlePointerDown);
+    this.scrollbar.addEventListener('scroll', this.handleScroll);
+    this.unsubscribePresentation = subscribeWindowPresentation(this.handleVisibilityChange);
   }
 
   attach(container: HTMLElement): void {
@@ -315,8 +285,7 @@ export class WebGlTerminalSurface
     this.cursorVisible = true;
     this.armCursorBlink();
     this.syncTextBlink();
-    if ((!wasVisible && this.nativeCursorVisible) || !textWasVisible)
-      this.runtime.schedule(this);
+    if ((!wasVisible && this.nativeCursorVisible) || !textWasVisible) this.runtime.schedule(this);
   }
 
   setFocused(focused: boolean): void {
@@ -332,7 +301,7 @@ export class WebGlTerminalSurface
     if (this.visible === visible) return;
     this.visible = visible;
     this.scrollbarSync.invalidate();
-    this.root.style.visibility = visible ? "visible" : "hidden";
+    this.root.style.visibility = visible ? 'visible' : 'hidden';
     if (visible) {
       if (!this.documentSuspended) this.search.resume();
       if (this.host && !this.renderer && !this.documentSuspended) {
@@ -360,7 +329,7 @@ export class WebGlTerminalSurface
     }
   }
 
-  setCursorOptions(blink: boolean, style: "block" | "underline" | "bar"): void {
+  setCursorOptions(blink: boolean, style: 'block' | 'underline' | 'bar'): void {
     this.options.model.setCursorOptions(style, blink);
     this.cursorBlinking = blink;
     this.cursorVisible = true;
@@ -440,12 +409,7 @@ export class WebGlTerminalSurface
   }
 
   renderFrame(renderer: WebGlCellRenderer): boolean {
-    if (
-      this.disposed ||
-      !this.visible ||
-      this.documentSuspended ||
-      !this.host
-    ) {
+    if (this.disposed || !this.visible || this.documentSuspended || !this.host) {
       return false;
     }
     this.applyQueuedFit();
@@ -553,9 +517,9 @@ export class WebGlTerminalSurface
     this.selection.dispose();
     this.scrollbarSync.dispose();
     this.unsubscribeInteraction();
-    this.root.removeEventListener("pointerdown", this.handlePointerDown);
+    this.root.removeEventListener('pointerdown', this.handlePointerDown);
     this.links.dispose();
-    this.scrollbar.removeEventListener("scroll", this.handleScroll);
+    this.scrollbar.removeEventListener('scroll', this.handleScroll);
     this.unsubscribePresentation();
   }
 
@@ -564,10 +528,7 @@ export class WebGlTerminalSurface
     else this.focus();
   };
 
-  private readonly handleVisibilityChange = ({
-    visible,
-    reclaim,
-  }: WindowPresentation): void => {
+  private readonly handleVisibilityChange = ({ visible, reclaim }: WindowPresentation): void => {
     const wasSuspended = this.documentSuspended;
     this.documentSuspended = !visible;
     if (!visible) {
@@ -638,7 +599,7 @@ export class WebGlTerminalSurface
     } as const;
   }
 
-  private queueFit(bounds?: Pick<DOMRectReadOnly, "width" | "height">): void {
+  private queueFit(bounds?: Pick<DOMRectReadOnly, 'width' | 'height'>): void {
     if (!this.host) return;
     this.fitQueue.request(bounds);
     this.runtime.schedule(this);
@@ -666,7 +627,7 @@ export class WebGlTerminalSurface
    * `TerminalResizeSync`). Every other caller applies at once.
    */
   private resizeToHost(
-    measuredBounds?: Pick<DOMRectReadOnly, "width" | "height">,
+    measuredBounds?: Pick<DOMRectReadOnly, 'width' | 'height'>,
     scheduleRender = true,
     observed = false,
   ): void {
@@ -697,9 +658,7 @@ export class WebGlTerminalSurface
     const { cols, rows, pixelWidth, pixelHeight } = fit;
     if (cols * rows > MAX_SURFACE_CELLS) {
       this.options.onError(
-        new Error(
-          `Terminal surface exceeds ${MAX_SURFACE_CELLS} visible cells`,
-        ),
+        new Error(`Terminal surface exceeds ${MAX_SURFACE_CELLS} visible cells`),
       );
       return;
     }
@@ -708,7 +667,7 @@ export class WebGlTerminalSurface
       return;
     }
     const outcome = this.resizeSync.request(cols, rows);
-    const changed = outcome === "applied";
+    const changed = outcome === 'applied';
     if (changed) this.selection.reconcile();
     const rendererChanged = this.renderer.resize(
       cols,
@@ -787,11 +746,7 @@ export class WebGlTerminalSurface
   }
 
   private syncTextBlink(): void {
-    if (
-      !this.hasBlinkingCells ||
-      !this.windowFocused ||
-      this.documentSuspended
-    ) {
+    if (!this.hasBlinkingCells || !this.windowFocused || this.documentSuspended) {
       this.clearTextBlinkTimer();
       this.textBlinkVisible = true;
       return;
@@ -828,7 +783,7 @@ export class WebGlTerminalSurface
   }
 
   private assertLive(): void {
-    if (this.disposed) throw new Error("WebGL terminal surface is disposed");
+    if (this.disposed) throw new Error('WebGL terminal surface is disposed');
   }
 }
 

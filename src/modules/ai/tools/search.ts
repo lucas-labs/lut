@@ -1,8 +1,8 @@
-import { tool } from "ai";
-import { z } from "zod";
-import { native } from "../lib/native";
-import { checkReadable, checkReadableCanonical } from "../lib/security";
-import { resolvePath, type ToolContext } from "./context";
+import { tool } from 'ai';
+import { z } from 'zod';
+import { native } from '../lib/native';
+import { checkReadable, checkReadableCanonical } from '../lib/security';
+import { resolvePath, type ToolContext } from './context';
 
 function resolveRoot(
   rawRoot: string | undefined,
@@ -21,7 +21,7 @@ function resolveRoot(
   if (cwd) return { ok: true, path: cwd };
   return {
     ok: false,
-    error: "no workspace root or active cwd; pass `root` explicitly.",
+    error: 'no workspace root or active cwd; pass `root` explicitly.',
   };
 }
 
@@ -35,8 +35,8 @@ function clipLine(s: string): string {
 }
 
 function pathForSafety(path: string, root: string): string {
-  if (path.startsWith("/") || /^[a-zA-Z]:[\\/]/.test(path)) return path;
-  const sep = root.includes("\\") && !root.includes("/") ? "\\" : "/";
+  if (path.startsWith('/') || /^[a-zA-Z]:[\\/]/.test(path)) return path;
+  const sep = root.includes('\\') && !root.includes('/') ? '\\' : '/';
   return root.endsWith(sep) ? `${root}${path}` : `${root}${sep}${path}`;
 }
 
@@ -53,14 +53,12 @@ export function buildSearchTools(ctx: ToolContext) {
         pattern: z
           .string()
           .describe(
-            "Regex pattern (Rust ripgrep dialect). Anchor and escape literal characters as needed.",
+            'Regex pattern (Rust ripgrep dialect). Anchor and escape literal characters as needed.',
           ),
         root: z
           .string()
           .optional()
-          .describe(
-            "Root to search under. Defaults to workspace root, then active cwd.",
-          ),
+          .describe('Root to search under. Defaults to workspace root, then active cwd.'),
         glob: z
           .array(z.string())
           .optional()
@@ -70,19 +68,10 @@ export function buildSearchTools(ctx: ToolContext) {
         case_insensitive: z.boolean().optional(),
         max_results: z.number().int().min(1).max(500).optional(),
       }),
-      execute: async ({
-        pattern,
-        root,
-        glob,
-        case_insensitive,
-        max_results,
-      }) => {
+      execute: async ({ pattern, root, glob, case_insensitive, max_results }) => {
         const r = resolveRoot(root, ctx);
         if (!r.ok) return { error: r.error };
-        const safety = await checkReadableCanonical(
-          r.path,
-          native.canonicalize,
-        );
+        const safety = await checkReadableCanonical(r.path, native.canonicalize);
         if (!safety.ok) return { error: safety.reason, root: r.path };
         r.path = safety.canonical;
         const cap = Math.min(max_results ?? 30, 500);
@@ -94,9 +83,7 @@ export function buildSearchTools(ctx: ToolContext) {
             caseInsensitive: case_insensitive,
             maxResults: cap,
           });
-          const hits = res.hits.filter((h) =>
-            isReadableSearchHit(h.path, r.path),
-          );
+          const hits = res.hits.filter((h) => isReadableSearchHit(h.path, r.path));
           return {
             root: r.path,
             hits: hits.map((h) => ({
@@ -116,19 +103,16 @@ export function buildSearchTools(ctx: ToolContext) {
 
     glob: tool({
       description:
-        "Find files by path pattern (gitignore-aware). Use over `list_directory` when you want all matches recursively. Patterns use globset syntax: `**/*.ts`, `src/**/test_*.py`. Returns up to `max_results` matches.",
+        'Find files by path pattern (gitignore-aware). Use over `list_directory` when you want all matches recursively. Patterns use globset syntax: `**/*.ts`, `src/**/test_*.py`. Returns up to `max_results` matches.',
       inputSchema: z.object({
-        pattern: z.string().describe("Glob pattern over relative paths."),
+        pattern: z.string().describe('Glob pattern over relative paths.'),
         root: z.string().optional(),
         max_results: z.number().int().min(1).max(2000).optional(),
       }),
       execute: async ({ pattern, root, max_results }) => {
         const r = resolveRoot(root, ctx);
         if (!r.ok) return { error: r.error };
-        const safety = await checkReadableCanonical(
-          r.path,
-          native.canonicalize,
-        );
+        const safety = await checkReadableCanonical(r.path, native.canonicalize);
         if (!safety.ok) return { error: safety.reason, root: r.path };
         r.path = safety.canonical;
         try {

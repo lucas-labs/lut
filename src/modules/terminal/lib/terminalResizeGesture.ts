@@ -3,7 +3,7 @@ import {
   endTerminalResizeInteraction,
   subscribeTerminalResizeInteraction,
   terminalResizeInteractionActive,
-} from "./terminalResizeInteraction";
+} from './terminalResizeInteraction';
 
 /**
  * Detects window and layout drags for renderers. Pane dividers announce themselves through
@@ -71,11 +71,7 @@ export function noteTerminalHostResize(surface: object): void {
   // A pointer drag or a native live resize already says when it ends; waiting for a quiet
   // period after it would only delay the final size.
   // The layout that lands in the frame after the release is the end of that drag, not a new one.
-  if (
-    terminalResizeInteractionActive() ||
-    clock() - lastInteractionEndAt < GESTURE_GAP_MS
-  )
-    return;
+  if (terminalResizeInteractionActive() || clock() - lastInteractionEndAt < GESTURE_GAP_MS) return;
   if (previous === undefined || now - previous > GESTURE_GAP_MS) return;
   burstActive = true;
   lastChangeAt = now;

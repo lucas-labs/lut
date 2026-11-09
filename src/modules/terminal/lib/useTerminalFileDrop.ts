@@ -1,11 +1,11 @@
-import { type ShellDialect,shellDialect } from "@/lib/shellQuote";
-import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { useEffect } from "react";
-import { toast } from "sonner";
-import { useTerminalDropStore } from "./dropStore";
-import { formatDroppedPaths } from "./quoteShellPath";
-import { pasteIntoSession, ptyIdForLeaf } from "./terminalSessionApi";
+import { type ShellDialect, shellDialect } from '@/lib/shellQuote';
+import { invoke } from '@tauri-apps/api/core';
+import { getCurrentWebview } from '@tauri-apps/api/webview';
+import { useEffect } from 'react';
+import { toast } from 'sonner';
+import { useTerminalDropStore } from './dropStore';
+import { formatDroppedPaths } from './quoteShellPath';
+import { pasteIntoSession, ptyIdForLeaf } from './terminalSessionApi';
 
 export type TerminalPathDropTarget = {
   updateTarget: (clientX: number, clientY: number) => boolean;
@@ -17,9 +17,7 @@ type TerminalPathDropDeps = {
   leafIdAtPoint: (clientX: number, clientY: number) => number | null;
   paste: (leafId: number, text: string) => boolean;
   setTarget: (leafId: number | null) => void;
-  dialect?: (
-    leafId: number,
-  ) => ShellDialect | null | Promise<ShellDialect | null>;
+  dialect?: (leafId: number) => ShellDialect | null | Promise<ShellDialect | null>;
 };
 
 // Tauri reports the drop point in physical pixels on some platforms and logical
@@ -33,22 +31,19 @@ function leafIdAt(x: number, y: number): number | null {
     ly = y / dpr;
   }
   const el = document.elementFromPoint(lx, ly);
-  const leafEl = el?.closest<HTMLElement>("[data-pane-leaf]");
+  const leafEl = el?.closest<HTMLElement>('[data-pane-leaf]');
   if (!leafEl) return null;
   const id = Number(leafEl.dataset.paneLeaf);
   return Number.isFinite(id) ? id : null;
 }
 
-function dialectForLeaf(
-  leafId: number,
-): ShellDialect | null | Promise<ShellDialect | null> {
+function dialectForLeaf(leafId: number): ShellDialect | null | Promise<ShellDialect | null> {
   const id = ptyIdForLeaf(leafId);
   if (id === null) return null;
-  return invoke<string>("pty_session_shell", { id }).then((program) => {
+  return invoke<string>('pty_session_shell', { id }).then((program) => {
     if (ptyIdForLeaf(leafId) !== id) return null;
     const dialect = shellDialect(program);
-    if (dialect === null)
-      throw new Error("File drops are unavailable for this shell.");
+    if (dialect === null) throw new Error('File drops are unavailable for this shell.');
     return dialect;
   });
 }
@@ -107,15 +102,15 @@ export function useTerminalFileDrop(): TerminalPathDropTarget {
     void getCurrentWebview()
       .onDragDropEvent((e) => {
         const p = e.payload;
-        if (p.type === "enter" || p.type === "over") {
+        if (p.type === 'enter' || p.type === 'over') {
           setTarget(leafIdAt(p.position.x, p.position.y));
           return;
         }
-        if (p.type === "leave") {
+        if (p.type === 'leave') {
           setTarget(null);
           return;
         }
-        if (p.type === "drop") {
+        if (p.type === 'drop') {
           setTarget(null);
           if (!p.paths.length) return;
           terminalPathDropTarget.dropPath(p.paths, p.position.x, p.position.y);
@@ -125,7 +120,7 @@ export function useTerminalFileDrop(): TerminalPathDropTarget {
         if (disposed) fn();
         else unlisten = fn;
       })
-      .catch((err) => console.error("[terax] drag-drop listen failed:", err));
+      .catch((err) => console.error('[terax] drag-drop listen failed:', err));
 
     return () => {
       disposed = true;

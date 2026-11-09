@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from '@tauri-apps/api/core';
 
 /**
  * How urgently a terminal's output is wanted. Native uses it to pick a
@@ -7,11 +7,7 @@ import { invoke } from "@tauri-apps/api/core";
  * of the one being typed into. macOS reports window occlusion and sleep
  * natively; the document's own visibility covers the other platforms.
  */
-export type PtyPresentationClass =
-  | "focused"
-  | "visible"
-  | "hidden"
-  | "occluded";
+export type PtyPresentationClass = 'focused' | 'visible' | 'hidden' | 'occluded';
 
 type Leaf = { visible: boolean; focused: boolean; pty: number | null };
 
@@ -20,11 +16,7 @@ type Leaf = { visible: boolean; focused: boolean; pty: number | null };
  * two reports can be applied out of order; a terminal keeps the class of the
  * highest `seq` that named it.
  */
-type Send = (
-  ids: number[],
-  presentation: PtyPresentationClass,
-  seq: number,
-) => Promise<unknown>;
+type Send = (ids: number[], presentation: PtyPresentationClass, seq: number) => Promise<unknown>;
 
 export class PtyPresentationReporter {
   private readonly leaves = new Map<number, Leaf>();
@@ -38,17 +30,15 @@ export class PtyPresentationReporter {
   constructor(
     private readonly send: Send,
     private readonly windowHidden: () => boolean = documentHidden,
-    private readonly watchWindow: (
-      listener: () => void,
-    ) => () => void = watchDocument,
+    private readonly watchWindow: (listener: () => void) => () => void = watchDocument,
   ) {}
 
   /** The class a terminal of this leaf is in right now. */
   classFor(leafId: number): PtyPresentationClass {
-    if (this.windowHidden()) return "occluded";
+    if (this.windowHidden()) return 'occluded';
     const leaf = this.leaves.get(leafId);
-    if (!leaf) return "focused";
-    return leaf.visible ? (leaf.focused ? "focused" : "visible") : "hidden";
+    if (!leaf) return 'focused';
+    return leaf.visible ? (leaf.focused ? 'focused' : 'visible') : 'hidden';
   }
 
   setLeaf(leafId: number, visible: boolean, focused: boolean): void {
@@ -135,41 +125,34 @@ export class PtyPresentationReporter {
       this.send(ids, presentation, ++this.seq).catch((error: unknown) => {
         // The cadence is an optimisation: forget the claim so the next change
         // re-sends, but never surface an error for it.
-        for (const id of ids)
-          if (this.reported.get(id) === presentation) this.reported.delete(id);
-        console.debug("[terax] pty_set_presentation failed:", error);
+        for (const id of ids) if (this.reported.get(id) === presentation) this.reported.delete(id);
+        console.debug('[terax] pty_set_presentation failed:', error);
       });
     }
   }
 }
 
 function documentHidden(): boolean {
-  return (
-    typeof document !== "undefined" && document.visibilityState === "hidden"
-  );
+  return typeof document !== 'undefined' && document.visibilityState === 'hidden';
 }
 
 function watchDocument(listener: () => void): () => void {
-  if (typeof document === "undefined") return () => {};
-  document.addEventListener("visibilitychange", listener);
-  return () => document.removeEventListener("visibilitychange", listener);
+  if (typeof document === 'undefined') return () => {};
+  document.addEventListener('visibilitychange', listener);
+  return () => document.removeEventListener('visibilitychange', listener);
 }
 
 let reporter: PtyPresentationReporter | null = null;
 
 function instance(): PtyPresentationReporter {
   reporter ??= new PtyPresentationReporter((ids, presentation, seq) =>
-    invoke("pty_set_presentation", { ids, class: presentation, seq }),
+    invoke('pty_set_presentation', { ids, class: presentation, seq }),
   );
   return reporter;
 }
 
 /** Pane visibility and focus, as known to the terminal session. */
-export function setLeafPresentation(
-  leafId: number,
-  visible: boolean,
-  focused: boolean,
-): void {
+export function setLeafPresentation(leafId: number, visible: boolean, focused: boolean): void {
   instance().setLeaf(leafId, visible, focused);
 }
 
@@ -177,11 +160,7 @@ export function leafPresentationClass(leafId: number): PtyPresentationClass {
   return instance().classFor(leafId);
 }
 
-export function bindLeafPty(
-  leafId: number,
-  ptyId: number,
-  openedAs: PtyPresentationClass,
-): void {
+export function bindLeafPty(leafId: number, ptyId: number, openedAs: PtyPresentationClass): void {
   instance().bind(leafId, ptyId, openedAs);
 }
 

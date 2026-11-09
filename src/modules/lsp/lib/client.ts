@@ -1,34 +1,16 @@
-import { highlightingFor, indentUnit, language } from "@codemirror/language";
-import {
-  type Extension,
-  StateEffect,
-  StateField,
-  type Text,
-} from "@codemirror/state";
-import {
-  Decoration,
-  type DecorationSet,
-  EditorView,
-  keymap,
-  ViewPlugin,
-} from "@codemirror/view";
-import { highlightCode } from "@lezer/highlight";
+import { highlightingFor, indentUnit, language } from '@codemirror/language';
+import { type Extension, StateEffect, StateField, type Text } from '@codemirror/state';
+import { Decoration, type DecorationSet, EditorView, keymap, ViewPlugin } from '@codemirror/view';
+import { highlightCode } from '@lezer/highlight';
 import {
   LanguageServerClient,
   languageServerPlugin,
   renameSymbol,
-} from "codemirror-languageserver";
-import {
-  type LocationItem,
-  locationsPanel,
-  openLocationsPanel,
-} from "./locationsPanel";
-import { fileUriToPath } from "./uri";
+} from 'codemirror-languageserver';
+import { type LocationItem, locationsPanel, openLocationsPanel } from './locationsPanel';
+import { fileUriToPath } from './uri';
 
-export {
-  languageServerWithTransport,
-  SynchronizationMethod,
-} from "codemirror-languageserver";
+export { languageServerWithTransport, SynchronizationMethod } from 'codemirror-languageserver';
 
 type LspPos = { line: number; character: number };
 type LspRange = { start: LspPos };
@@ -39,19 +21,14 @@ type LspLocationLink = {
   targetRange: LspRange;
   targetSelectionRange?: LspRange;
 };
-type DefinitionResult =
-  | LspLocation
-  | LspLocation[]
-  | LspLocationLink[]
-  | null
-  | undefined;
+type DefinitionResult = LspLocation | LspLocation[] | LspLocationLink[] | null | undefined;
 
 function normalizeLocations(result: DefinitionResult): LspLocation[] {
   if (!result) return [];
   const list = Array.isArray(result) ? result : [result];
   const out: LspLocation[] = [];
   for (const loc of list) {
-    if ("uri" in loc) {
+    if ('uri' in loc) {
       out.push(loc);
     } else if (loc.targetUri) {
       out.push({
@@ -69,33 +46,31 @@ function offsetOf(doc: Text, pos: LspPos): number {
   return Math.min(line.from + pos.character, line.to);
 }
 
-export type LspFormatResult = "done" | "unsupported";
+export type LspFormatResult = 'done' | 'unsupported';
 
 // The lib's formatDocument command fires and forgets; save needs to await
 // the edits before writing to disk. "unsupported" surfaces servers that
 // simply have no formatter (pyright) so the UI can say so instead of
 // silently doing nothing.
-export async function formatDocumentAndWait(
-  view: EditorView,
-): Promise<LspFormatResult> {
+export async function formatDocumentAndWait(view: EditorView): Promise<LspFormatResult> {
   const plugin = view.plugin(languageServerPlugin);
-  if (!plugin) return "unsupported";
+  if (!plugin) return 'unsupported';
   const { client } = plugin;
   if (!client.ready || !client.capabilities?.documentFormattingProvider) {
-    return "unsupported";
+    return 'unsupported';
   }
   const doc = view.state.doc;
   const edits = await client.textDocumentFormatting({
     textDocument: { uri: plugin.documentUri },
     options: {
       tabSize: view.state.tabSize,
-      insertSpaces: view.state.facet(indentUnit) !== "\t",
+      insertSpaces: view.state.facet(indentUnit) !== '\t',
     },
   });
-  if (!edits || edits.length === 0) return "done";
+  if (!edits || edits.length === 0) return 'done';
   // Edits are offsets into the requested snapshot; typing during the
   // round-trip would corrupt the document.
-  if (view.state.doc !== doc) return "done";
+  if (view.state.doc !== doc) return 'done';
   view.dispatch({
     changes: edits.map((e) => ({
       from: offsetOf(doc, e.range.start),
@@ -103,7 +78,7 @@ export async function formatDocumentAndWait(
       insert: e.newText,
     })),
   });
-  return "done";
+  return 'done';
 }
 
 function highlightBlock(el: HTMLElement, view: EditorView): void {
@@ -120,12 +95,12 @@ function highlightBlock(el: HTMLElement, view: EditorView): void {
         frag.appendChild(document.createTextNode(text));
         return;
       }
-      const span = document.createElement("span");
+      const span = document.createElement('span');
       span.className = classes;
       span.textContent = text;
       frag.appendChild(span);
     },
-    () => frag.appendChild(document.createTextNode("\n")),
+    () => frag.appendChild(document.createTextNode('\n')),
   );
   el.replaceChildren(frag);
 }
@@ -139,9 +114,7 @@ const hoverCodeHighlight = ViewPlugin.define((view) => {
   const inner = new Map<Element, MutationObserver>();
 
   const scan = (root: Element) => {
-    const blocks = root.querySelectorAll<HTMLElement>(
-      ".documentation pre code",
-    );
+    const blocks = root.querySelectorAll<HTMLElement>('.documentation pre code');
     for (const el of blocks) {
       if (seen.has(el)) continue;
       seen.add(el);
@@ -152,10 +125,7 @@ const hoverCodeHighlight = ViewPlugin.define((view) => {
   const outer = new MutationObserver((muts) => {
     for (const m of muts) {
       for (const node of m.addedNodes) {
-        if (
-          !(node instanceof Element) ||
-          !node.classList.contains("cm-tooltip")
-        ) {
+        if (!(node instanceof Element) || !node.classList.contains('cm-tooltip')) {
           continue;
         }
         scan(node);
@@ -182,7 +152,7 @@ const hoverCodeHighlight = ViewPlugin.define((view) => {
 });
 
 const setLinkRange = StateEffect.define<{ from: number; to: number } | null>();
-const linkMark = Decoration.mark({ class: "cm-lsp-link" });
+const linkMark = Decoration.mark({ class: 'cm-lsp-link' });
 
 const linkField = StateField.define<DecorationSet>({
   create: () => Decoration.none,
@@ -222,18 +192,18 @@ const linkHover: Extension = [
   EditorView.domEventHandlers({
     mousemove: (event, view) => updateLink(view, event),
     keyup: (event, view) => {
-      if (event.key === "Meta" || event.key === "Control") {
+      if (event.key === 'Meta' || event.key === 'Control') {
         updateLink(view, null);
       }
     },
     mouseleave: (_e, view) => updateLink(view, null),
   }),
   EditorView.theme({
-    ".cm-lsp-link": {
-      textDecoration: "underline",
-      textUnderlineOffset: "2.5px",
-      color: "var(--primary)",
-      cursor: "pointer",
+    '.cm-lsp-link': {
+      textDecoration: 'underline',
+      textUnderlineOffset: '2.5px',
+      color: 'var(--primary)',
+      cursor: 'pointer',
     },
   }),
 ];
@@ -246,18 +216,12 @@ export function lspInteractions(opts: {
 }): Extension {
   const navigate = (view: EditorView, loc: LspLocation): void => {
     if (loc.uri === opts.documentUri) {
-      const targetLine = Math.min(
-        loc.range.start.line + 1,
-        view.state.doc.lines,
-      );
+      const targetLine = Math.min(loc.range.start.line + 1, view.state.doc.lines);
       const lineObj = view.state.doc.line(targetLine);
-      const target = Math.min(
-        lineObj.from + loc.range.start.character,
-        lineObj.to,
-      );
+      const target = Math.min(lineObj.from + loc.range.start.character, lineObj.to);
       view.dispatch({
         selection: { anchor: target },
-        effects: EditorView.scrollIntoView(target, { y: "center" }),
+        effects: EditorView.scrollIntoView(target, { y: 'center' }),
       });
       view.focus();
     } else {
@@ -267,17 +231,11 @@ export function lspInteractions(opts: {
 
   const label = (loc: LspLocation): string => {
     const path = fileUriToPath(loc.uri) ?? loc.uri;
-    const rel = path.startsWith(`${opts.rootPath}/`)
-      ? path.slice(opts.rootPath.length + 1)
-      : path;
+    const rel = path.startsWith(`${opts.rootPath}/`) ? path.slice(opts.rootPath.length + 1) : path;
     return `${rel}:${loc.range.start.line + 1}`;
   };
 
-  const showResults = (
-    view: EditorView,
-    title: string,
-    locs: LspLocation[],
-  ): void => {
+  const showResults = (view: EditorView, title: string, locs: LspLocation[]): void => {
     if (locs.length === 0) return;
     if (locs.length === 1) {
       navigate(view, locs[0]);
@@ -309,10 +267,7 @@ export function lspInteractions(opts: {
     return { line: line.number - 1, character: pos - line.from };
   };
 
-  const gotoDefinition = async (
-    view: EditorView,
-    pos: number,
-  ): Promise<void> => {
+  const gotoDefinition = async (view: EditorView, pos: number): Promise<void> => {
     let result: DefinitionResult;
     try {
       result = await opts.client.textDocumentDefinition({
@@ -322,13 +277,10 @@ export function lspInteractions(opts: {
     } catch {
       return;
     }
-    showResults(view, "Definitions", normalizeLocations(result));
+    showResults(view, 'Definitions', normalizeLocations(result));
   };
 
-  const findReferences = async (
-    view: EditorView,
-    pos: number,
-  ): Promise<void> => {
+  const findReferences = async (view: EditorView, pos: number): Promise<void> => {
     let result: LspLocation[] | null;
     try {
       result = await opts.client.textDocumentReferences({
@@ -339,7 +291,7 @@ export function lspInteractions(opts: {
     } catch {
       return;
     }
-    showResults(view, "References", result ?? []);
+    showResults(view, 'References', result ?? []);
   };
 
   return [
@@ -348,7 +300,7 @@ export function lspInteractions(opts: {
     linkHover,
     keymap.of([
       {
-        key: "F12",
+        key: 'F12',
         preventDefault: true,
         run: (view) => {
           void gotoDefinition(view, view.state.selection.main.head);
@@ -356,7 +308,7 @@ export function lspInteractions(opts: {
         },
       },
       {
-        key: "Shift-F12",
+        key: 'Shift-F12',
         preventDefault: true,
         run: (view) => {
           void findReferences(view, view.state.selection.main.head);
@@ -364,12 +316,12 @@ export function lspInteractions(opts: {
         },
       },
       {
-        key: "F2",
+        key: 'F2',
         preventDefault: true,
         run: renameSymbol,
       },
       {
-        key: "Shift-Alt-f",
+        key: 'Shift-Alt-f',
         preventDefault: true,
         run: (view) => {
           void formatDocumentAndWait(view);
@@ -420,22 +372,23 @@ export class TeraxLspClient extends LanguageServerClient {
     position: LspPos;
     context: { includeDeclaration: boolean };
   }): Promise<LspLocation[] | null> {
-    return this.raw.request("textDocument/references", params, 10_000) as
-      Promise<LspLocation[] | null>;
+    return this.raw.request('textDocument/references', params, 10_000) as Promise<
+      LspLocation[] | null
+    >;
   }
 
   textDocumentDidClose(uri: string): void {
-    void this.raw.notify("textDocument/didClose", { textDocument: { uri } });
+    void this.raw.notify('textDocument/didClose', { textDocument: { uri } });
   }
 
   textDocumentDidSave(uri: string): void {
-    void this.raw.notify("textDocument/didSave", { textDocument: { uri } });
+    void this.raw.notify('textDocument/didSave', { textDocument: { uri } });
   }
 
   async shutdownGracefully(timeoutMs = 2000): Promise<void> {
     try {
-      await this.raw.request("shutdown", null, timeoutMs);
-      await this.raw.notify("exit", null);
+      await this.raw.request('shutdown', null, timeoutMs);
+      await this.raw.notify('exit', null);
     } catch {
       // Server already dead or unresponsive; the transport kill follows.
     }

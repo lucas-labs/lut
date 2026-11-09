@@ -1,28 +1,24 @@
-import {
-  modelSupportsTemperature,
-  providerNeedsKey,
-  resolveModel,
-} from "@/modules/ai/config";
-import { useChatStore } from "@/modules/ai/store/chatStore";
+import { modelSupportsTemperature, providerNeedsKey, resolveModel } from '@/modules/ai/config';
+import { useChatStore } from '@/modules/ai/store/chatStore';
 import {
   invalidateDiff,
   invalidateRepoDiffs,
   workingDiffKey,
-} from "@/modules/editor/lib/diffCache";
+} from '@/modules/editor/lib/diffCache';
 import {
   git,
   type GitChangedFile,
   type GitDiscardEntry,
   type GitRepoInfo,
   type GitStatusSnapshot,
-} from "@/modules/git";
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { SourceControlSummary } from "./useSourceControl";
+} from '@/modules/git';
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { SourceControlSummary } from './useSourceControl';
 
-type PanelState = "closed" | "loading" | "no-repo" | "ready" | "error";
-type DiffMode = "+" | "-";
-type SelectionTransition = "none" | "moved-group" | "reset";
+type PanelState = 'closed' | 'loading' | 'no-repo' | 'ready' | 'error';
+type DiffMode = '+' | '-';
+type SelectionTransition = 'none' | 'moved-group' | 'reset';
 
 const COMMIT_DIFF_CHAR_LIMIT = 60_000;
 const COMMIT_MESSAGE_MAX_OUTPUT_TOKENS = 1024;
@@ -30,7 +26,7 @@ const RECONCILE_DEBOUNCE_MS = 180;
 const CONVENTIONAL_PREFIX =
   /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([^)]+\))?: .+/;
 const COMMIT_MESSAGE_SYSTEM_PROMPT =
-  "You write concise Conventional Commit subject lines in English. Return exactly one complete line, with no markdown, no quotes, no body, and no explanation.";
+  'You write concise Conventional Commit subject lines in English. Return exactly one complete line, with no markdown, no quotes, no body, and no explanation.';
 
 type DiffSelection = {
   path: string;
@@ -49,7 +45,7 @@ type SourceControlEntry = {
   untracked: boolean;
 };
 
-export type CheckState = "checked" | "indeterminate" | "unchecked";
+export type CheckState = 'checked' | 'indeterminate' | 'unchecked';
 
 /** One row per changed file (flat list) — merges the staged/unstaged split. */
 export type SourceControlFileEntry = {
@@ -65,7 +61,7 @@ export type SourceControlFileEntry = {
 };
 
 type PendingDiscard = {
-  scope: "single" | "all";
+  scope: 'single' | 'all';
   count: number;
   label: string;
 };
@@ -115,47 +111,43 @@ type SourceControlPanelState = {
 };
 
 function normalizeError(error: unknown): string {
-  if (typeof error === "string") return error;
-  if (error && typeof error === "object" && "message" in error) {
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object' && 'message' in error) {
     const message = (error as { message?: unknown }).message;
-    if (typeof message === "string") return message;
+    if (typeof message === 'string') return message;
   }
-  return "Unknown source control error";
+  return 'Unknown source control error';
 }
 
 function normalizeStatusCode(status: string): string {
   const code = status.trim().toUpperCase();
   switch (code) {
-    case "?":
-      return "U";
-    case "A":
-      return "A";
-    case "M":
-      return "M";
-    case "D":
-      return "D";
-    case "R":
-    case "C":
-      return "R";
-    case "U":
-      return "U";
+    case '?':
+      return 'U';
+    case 'A':
+      return 'A';
+    case 'M':
+      return 'M';
+    case 'D':
+      return 'D';
+    case 'R':
+    case 'C':
+      return 'R';
+    case 'U':
+      return 'U';
     default:
-      return code || "M";
+      return code || 'M';
   }
 }
 
 function statusCodeForMode(mode: DiffMode, file: GitChangedFile): string {
-  if (mode === "-" && file.untracked) return "U";
-  const primary = mode === "+" ? file.indexStatus : file.worktreeStatus;
-  const fallback = mode === "+" ? file.worktreeStatus : file.indexStatus;
-  return normalizeStatusCode(primary !== " " ? primary : fallback);
+  if (mode === '-' && file.untracked) return 'U';
+  const primary = mode === '+' ? file.indexStatus : file.worktreeStatus;
+  const fallback = mode === '+' ? file.worktreeStatus : file.indexStatus;
+  return normalizeStatusCode(primary !== ' ' ? primary : fallback);
 }
 
-function makeEntry(
-  path: string,
-  mode: DiffMode,
-  file: GitChangedFile,
-): SourceControlEntry {
+function makeEntry(path: string, mode: DiffMode, file: GitChangedFile): SourceControlEntry {
   return {
     key: `${mode}:${path}`,
     path,
@@ -169,10 +161,7 @@ function makeEntry(
   };
 }
 
-function sameSelection(
-  a: DiffSelection | null,
-  b: DiffSelection | null,
-): boolean {
+function sameSelection(a: DiffSelection | null, b: DiffSelection | null): boolean {
   return !!a && !!b && a.path === b.path && a.mode === b.mode;
 }
 
@@ -184,7 +173,7 @@ function stagedFilesSummary(entries: SourceControlEntry[]): string {
         : `${entry.statusCode} ${entry.path}`;
       return `- ${status}`;
     })
-    .join("\n");
+    .join('\n');
 }
 
 function truncateDiff(diff: string): { text: string; truncated: boolean } {
@@ -202,8 +191,8 @@ function cleanCommitMessage(raw: string): string {
     .split(/\r?\n/)
     .map((line) => line.trim())
     .find(Boolean);
-  if (!firstLine) return "";
-  return firstLine.replace(/^["'`]+|["'`]+$/g, "").trim();
+  if (!firstLine) return '';
+  return firstLine.replace(/^["'`]+|["'`]+$/g, '').trim();
 }
 
 function isValidCommitMessage(message: string): boolean {
@@ -216,25 +205,25 @@ function buildCommitMessagePrompt(
   truncated: boolean,
 ): string {
   return [
-    "Generate one complete commit message for the staged changes only.",
-    "Format: type(scope): subject",
-    "Allowed types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert.",
-    "Examples:",
-    "- feat(source-control): generate commit messages",
-    "- fix(git): handle staged diff errors",
-    "- chore: update project metadata",
-    "Use a short lowercase subject in imperative mood. Omit the scope if it would be vague.",
+    'Generate one complete commit message for the staged changes only.',
+    'Format: type(scope): subject',
+    'Allowed types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert.',
+    'Examples:',
+    '- feat(source-control): generate commit messages',
+    '- fix(git): handle staged diff errors',
+    '- chore: update project metadata',
+    'Use a short lowercase subject in imperative mood. Omit the scope if it would be vague.',
     "Do not stop after the type or an opening parenthesis; the line must include a subject after ': '.",
     truncated
-      ? "The diff below was truncated; infer from the visible staged changes only."
-      : "The full staged diff is included below.",
-    "",
-    "Staged files:",
+      ? 'The diff below was truncated; infer from the visible staged changes only.'
+      : 'The full staged diff is included below.',
+    '',
+    'Staged files:',
     stagedFilesSummary(entries),
-    "",
-    "Staged diff:",
-    diffText || "(No textual diff available.)",
-  ].join("\n");
+    '',
+    'Staged diff:',
+    diffText || '(No textual diff available.)',
+  ].join('\n');
 }
 
 function buildRepairCommitMessagePrompt(
@@ -242,31 +231,28 @@ function buildRepairCommitMessagePrompt(
   entries: SourceControlEntry[],
 ): string {
   return [
-    "Repair this invalid Conventional Commit subject line.",
-    `Invalid line: ${invalidMessage || "(empty)"}`,
-    "Return exactly one complete valid line in this format: type(scope): subject",
-    "Allowed types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert.",
-    "If the scope is unclear, omit it and use: type: subject",
-    "",
-    "Staged files:",
+    'Repair this invalid Conventional Commit subject line.',
+    `Invalid line: ${invalidMessage || '(empty)'}`,
+    'Return exactly one complete valid line in this format: type(scope): subject',
+    'Allowed types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert.',
+    'If the scope is unclear, omit it and use: type: subject',
+    '',
+    'Staged files:',
     stagedFilesSummary(entries),
-  ].join("\n");
+  ].join('\n');
 }
 
-function optimisticStage(
-  status: GitStatusSnapshot,
-  paths: Set<string>,
-): GitStatusSnapshot {
+function optimisticStage(status: GitStatusSnapshot, paths: Set<string>): GitStatusSnapshot {
   let changed = false;
   const next = status.changedFiles.map((file) => {
     if (!paths.has(file.path)) return file;
     if (file.staged && !file.unstaged) return file;
     changed = true;
-    const wt = file.worktreeStatus !== " " ? file.worktreeStatus : file.indexStatus;
+    const wt = file.worktreeStatus !== ' ' ? file.worktreeStatus : file.indexStatus;
     return {
       ...file,
       indexStatus: wt,
-      worktreeStatus: " ",
+      worktreeStatus: ' ',
       staged: true,
       unstaged: false,
       untracked: false,
@@ -276,10 +262,7 @@ function optimisticStage(
   return { ...status, changedFiles: next };
 }
 
-function optimisticUnstage(
-  status: GitStatusSnapshot,
-  paths: Set<string>,
-): GitStatusSnapshot {
+function optimisticUnstage(status: GitStatusSnapshot, paths: Set<string>): GitStatusSnapshot {
   let changed = false;
   const next: GitChangedFile[] = [];
   for (const file of status.changedFiles) {
@@ -292,48 +275,45 @@ function optimisticUnstage(
       continue;
     }
     changed = true;
-    const idx = file.indexStatus !== " " ? file.indexStatus : file.worktreeStatus;
-    if (idx === "R" && file.originalPath) {
+    const idx = file.indexStatus !== ' ' ? file.indexStatus : file.worktreeStatus;
+    if (idx === 'R' && file.originalPath) {
       next.push({
         path: file.originalPath,
         originalPath: null,
-        indexStatus: " ",
-        worktreeStatus: "D",
+        indexStatus: ' ',
+        worktreeStatus: 'D',
         staged: false,
         unstaged: true,
         untracked: false,
-        statusLabel: "Deleted",
+        statusLabel: 'Deleted',
       });
       next.push({
         path: file.path,
         originalPath: null,
-        indexStatus: " ",
-        worktreeStatus: "?",
+        indexStatus: ' ',
+        worktreeStatus: '?',
         staged: false,
         unstaged: true,
         untracked: true,
-        statusLabel: "Untracked",
+        statusLabel: 'Untracked',
       });
       continue;
     }
     next.push({
       ...file,
       originalPath: null,
-      indexStatus: " ",
-      worktreeStatus: idx === "A" ? "?" : idx,
+      indexStatus: ' ',
+      worktreeStatus: idx === 'A' ? '?' : idx,
       staged: false,
       unstaged: true,
-      untracked: idx === "A",
+      untracked: idx === 'A',
     });
   }
   if (!changed) return status;
   return { ...status, changedFiles: next };
 }
 
-function optimisticDiscard(
-  status: GitStatusSnapshot,
-  paths: Set<string>,
-): GitStatusSnapshot {
+function optimisticDiscard(status: GitStatusSnapshot, paths: Set<string>): GitStatusSnapshot {
   let changed = false;
   const next: GitChangedFile[] = [];
   for (const file of status.changedFiles) {
@@ -345,7 +325,7 @@ function optimisticDiscard(
       changed = true;
       next.push({
         ...file,
-        worktreeStatus: " ",
+        worktreeStatus: ' ',
         unstaged: false,
         untracked: false,
       });
@@ -379,28 +359,21 @@ export function useSourceControlPanel(
   const lmstudioModelId = usePreferencesStore((state) => state.lmstudioModelId);
   const mlxModelId = usePreferencesStore((state) => state.mlxModelId);
   const ollamaModelId = usePreferencesStore((state) => state.ollamaModelId);
-  const openaiCompatibleBaseURL = usePreferencesStore(
-    (state) => state.openaiCompatibleBaseURL,
-  );
-  const openaiCompatibleModelId = usePreferencesStore(
-    (state) => state.openaiCompatibleModelId,
-  );
-  const openrouterModelId = usePreferencesStore(
-    (state) => state.openrouterModelId,
-  );
-  const [panelState, setPanelState] = useState<PanelState>("closed");
+  const openaiCompatibleBaseURL = usePreferencesStore((state) => state.openaiCompatibleBaseURL);
+  const openaiCompatibleModelId = usePreferencesStore((state) => state.openaiCompatibleModelId);
+  const openrouterModelId = usePreferencesStore((state) => state.openrouterModelId);
+  const [panelState, setPanelState] = useState<PanelState>('closed');
   const [repo, setRepo] = useState<GitRepoInfo | null>(null);
   const [status, setStatus] = useState<GitStatusSnapshot | null>(null);
   const [selected, setSelected] = useState<DiffSelection | null>(null);
-  const [commitMessage, setCommitMessage] = useState("");
+  const [commitMessage, setCommitMessage] = useState('');
   const [localActionBusy, setLocalActionBusy] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
-  const [selectionTransition, setSelectionTransition] =
-    useState<SelectionTransition>("none");
+  const [selectionTransition, setSelectionTransition] = useState<SelectionTransition>('none');
   const [pendingDiscard, setPendingDiscard] = useState<
-    | { scope: "single"; entry: SourceControlEntry }
-    | { scope: "all"; entries: SourceControlEntry[] }
+    | { scope: 'single'; entry: SourceControlEntry }
+    | { scope: 'all'; entries: SourceControlEntry[] }
     | null
   >(null);
   const selectedRef = useRef<DiffSelection | null>(null);
@@ -414,7 +387,7 @@ export function useSourceControlPanel(
     () =>
       (status?.changedFiles ?? [])
         .filter((file) => file.staged)
-        .map((file) => makeEntry(file.path, "+", file)),
+        .map((file) => makeEntry(file.path, '+', file)),
     [status],
   );
 
@@ -422,7 +395,7 @@ export function useSourceControlPanel(
     () =>
       (status?.changedFiles ?? [])
         .filter((file) => file.unstaged)
-        .map((file) => makeEntry(file.path, "-", file)),
+        .map((file) => makeEntry(file.path, '-', file)),
     [status],
   );
 
@@ -433,14 +406,10 @@ export function useSourceControlPanel(
       if (seen.has(file.path)) continue;
       seen.add(file.path);
       const checkState: CheckState =
-        file.staged && file.unstaged
-          ? "indeterminate"
-          : file.staged
-            ? "checked"
-            : "unchecked";
+        file.staged && file.unstaged ? 'indeterminate' : file.staged ? 'checked' : 'unchecked';
       const statusCode = file.unstaged
-        ? statusCodeForMode("-", file)
-        : statusCodeForMode("+", file);
+        ? statusCodeForMode('-', file)
+        : statusCodeForMode('+', file);
       out.push({
         key: file.path,
         path: file.path,
@@ -457,11 +426,11 @@ export function useSourceControlPanel(
   }, [status]);
 
   const headerCheckState = useMemo<CheckState>(() => {
-    if (fileEntries.length === 0) return "unchecked";
-    const allChecked = fileEntries.every((e) => e.checkState === "checked");
-    if (allChecked) return "checked";
+    if (fileEntries.length === 0) return 'unchecked';
+    const allChecked = fileEntries.every((e) => e.checkState === 'checked');
+    if (allChecked) return 'checked';
     const anyStaged = fileEntries.some((e) => e.staged);
-    return anyStaged ? "indeterminate" : "unchecked";
+    return anyStaged ? 'indeterminate' : 'unchecked';
   }, [fileEntries]);
 
   const allClean = stagedEntries.length === 0 && unstagedEntries.length === 0;
@@ -471,32 +440,32 @@ export function useSourceControlPanel(
     selectedModel.provider,
     selectedModel.id,
   );
-  const aiBusy = agentStatus !== "idle" && agentStatus !== "error";
+  const aiBusy = agentStatus !== 'idle' && agentStatus !== 'error';
   const anyActionBusy = localActionBusy !== null || summary.busyAction !== null;
   const aiUnavailableReason = useMemo(() => {
     if (stagedEntries.length === 0) {
-      return "Stage changes to generate a commit message";
+      return 'Stage changes to generate a commit message';
     }
     if (!hasApiKeyForSelected) {
-      return "Connect an AI provider to generate commit messages";
+      return 'Connect an AI provider to generate commit messages';
     }
-    if (selectedModel.id === "lmstudio-local" && !lmstudioModelId.trim()) {
-      return "Connect an AI provider to generate commit messages";
+    if (selectedModel.id === 'lmstudio-local' && !lmstudioModelId.trim()) {
+      return 'Connect an AI provider to generate commit messages';
     }
-    if (selectedModel.id === "mlx-local" && !mlxModelId.trim()) {
-      return "Connect an AI provider to generate commit messages";
+    if (selectedModel.id === 'mlx-local' && !mlxModelId.trim()) {
+      return 'Connect an AI provider to generate commit messages';
     }
-    if (selectedModel.id === "ollama-local" && !ollamaModelId.trim()) {
-      return "Connect an AI provider to generate commit messages";
+    if (selectedModel.id === 'ollama-local' && !ollamaModelId.trim()) {
+      return 'Connect an AI provider to generate commit messages';
     }
     if (
-      selectedModel.id === "openai-compatible-custom" &&
+      selectedModel.id === 'openai-compatible-custom' &&
       (!openaiCompatibleBaseURL.trim() || !openaiCompatibleModelId.trim())
     ) {
-      return "Connect an AI provider to generate commit messages";
+      return 'Connect an AI provider to generate commit messages';
     }
-    if (selectedModel.id === "openrouter-custom" && !openrouterModelId.trim()) {
-      return "Connect an AI provider to generate commit messages";
+    if (selectedModel.id === 'openrouter-custom' && !openrouterModelId.trim()) {
+      return 'Connect an AI provider to generate commit messages';
     }
     return null;
   }, [
@@ -510,28 +479,27 @@ export function useSourceControlPanel(
     selectedModel,
     stagedEntries.length,
   ]);
-  const canGenerateCommitMessage =
-    stagedEntries.length > 0 && !anyActionBusy && !aiBusy && !!repo;
+  const canGenerateCommitMessage = stagedEntries.length > 0 && !anyActionBusy && !aiBusy && !!repo;
   const generateCommitMessageHint = aiUnavailableReason
     ? aiUnavailableReason
     : aiBusy
-      ? "Wait for the current AI action to finish"
-      : "Generate commit message";
+      ? 'Wait for the current AI action to finish'
+      : 'Generate commit message';
   const pushHint = useMemo(() => {
     if (!status) return null;
     if (!status.upstream) {
-      return "Configure or publish this branch in the terminal to enable push in this iteration.";
+      return 'Configure or publish this branch in the terminal to enable push in this iteration.';
     }
     if (status.behind > 0) {
-      return "Pull remote changes before pushing local commits.";
+      return 'Pull remote changes before pushing local commits.';
     }
     if (status.ahead === 0) {
       return `No local commits to push to ${status.upstream}.`;
     }
     return `Pushes to ${status.upstream}.`;
   }, [status]);
-  const stagedEmptyText = "No staged changes";
-  const unstagedEmptyText = "No unstaged changes";
+  const stagedEmptyText = 'No staged changes';
+  const unstagedEmptyText = 'No unstaged changes';
 
   const cancelReconcile = useCallback(() => {
     if (reconcileTimerRef.current) {
@@ -544,7 +512,7 @@ export function useSourceControlPanel(
     cancelReconcile();
     reconcileTimerRef.current = window.setTimeout(() => {
       reconcileTimerRef.current = 0;
-      void summary.refresh({ remote: "never" });
+      void summary.refresh({ remote: 'never' });
     }, RECONCILE_DEBOUNCE_MS);
   }, [cancelReconcile, summary]);
 
@@ -564,78 +532,77 @@ export function useSourceControlPanel(
 
   const refresh = useCallback(async () => {
     if (!isOpen) {
-      setPanelState("closed");
-      setSelectionTransition("none");
+      setPanelState('closed');
+      setSelectionTransition('none');
       return;
     }
     if (summary.repo) invalidateRepoDiffs(summary.repo.repoRoot);
-    await summary.refresh({ remote: "never" });
+    await summary.refresh({ remote: 'never' });
   }, [isOpen, summary]);
 
   useEffect(() => {
     if (!isOpen) {
-      setPanelState("closed");
-      setSelectionTransition("none");
+      setPanelState('closed');
+      setSelectionTransition('none');
       return;
     }
     if (summary.isLoading && !summary.hasRepo && !summary.status) {
-      setPanelState("loading");
+      setPanelState('loading');
       return;
     }
     if (!summary.hasRepo) {
       setRepo(null);
       setStatus(null);
       setSelected(null);
-      setPanelState("no-repo");
-      setSelectionTransition("none");
+      setPanelState('no-repo');
+      setSelectionTransition('none');
       return;
     }
     if (summary.localError && !summary.status) {
       setRepo(summary.repo);
       setStatus(null);
       setSelected(null);
-      setPanelState("error");
-      setSelectionTransition("none");
+      setPanelState('error');
+      setSelectionTransition('none');
       return;
     }
     if (!summary.repo || !summary.status) {
       if (summary.isLoading) {
-        setPanelState("loading");
+        setPanelState('loading');
       }
       return;
     }
 
     setRepo(summary.repo);
     setStatus(summary.status);
-    setPanelState("ready");
+    setPanelState('ready');
 
     const current = selectedRef.current;
     const exists =
       !!current &&
       summary.status.changedFiles.some((file) => {
         if (file.path !== current.path) return false;
-        return current.mode === "+" ? file.staged : file.unstaged;
+        return current.mode === '+' ? file.staged : file.unstaged;
       });
 
     if (!exists && current) {
       const samePathOtherMode = summary.status.changedFiles.find(
         (file) =>
-          file.path === current.path &&
-          (current.mode === "+" ? file.unstaged : file.staged),
+          file.path === current.path && (current.mode === '+' ? file.unstaged : file.staged),
       );
       if (samePathOtherMode) {
         const moved: DiffSelection = {
           path: samePathOtherMode.path,
-          mode: current.mode === "+" ? "-" : "+",
+          mode: current.mode === '+' ? '-' : '+',
         };
         setSelected(moved);
-        setSelectionTransition("moved-group");
+        setSelectionTransition('moved-group');
       } else {
         setSelected(null);
-        setSelectionTransition("reset");
+        setSelectionTransition('reset');
       }
     } else {
-      setSelectionTransition("none");
+      setSelectionTransition('none');
     }
   }, [
     isOpen,
@@ -653,13 +620,13 @@ export function useSourceControlPanel(
       if (sameSelection(selected, nextSelection)) {
         setActionError(null);
         setActionMessage(null);
-        setSelectionTransition("none");
+        setSelectionTransition('none');
         return;
       }
       setSelected(nextSelection);
       setActionError(null);
       setActionMessage(null);
-      setSelectionTransition("none");
+      setSelectionTransition('none');
       const file = status?.changedFiles.find((c) => c.path === entry.path);
       openSelection(nextSelection, repo.repoRoot, file);
     },
@@ -679,8 +646,8 @@ export function useSourceControlPanel(
       setActionError(null);
       if (optimistic) summary.applyStatus(optimistic);
       for (const path of affected) {
-        invalidateDiff(workingDiffKey(repo.repoRoot, path, "+"));
-        invalidateDiff(workingDiffKey(repo.repoRoot, path, "-"));
+        invalidateDiff(workingDiffKey(repo.repoRoot, path, '+'));
+        invalidateDiff(workingDiffKey(repo.repoRoot, path, '-'));
       }
       try {
         await ipc();
@@ -688,7 +655,7 @@ export function useSourceControlPanel(
       } catch (error) {
         setActionError(normalizeError(error));
         cancelReconcile();
-        await summary.refresh({ remote: "never" }).catch(() => {});
+        await summary.refresh({ remote: 'never' }).catch(() => {});
       } finally {
         setLocalActionBusy(null);
       }
@@ -727,14 +694,14 @@ export function useSourceControlPanel(
   const requestDiscardEntry = useCallback(
     (entry: SourceControlEntry) => {
       if (!repo || summary.busyAction) return;
-      setPendingDiscard({ scope: "single", entry });
+      setPendingDiscard({ scope: 'single', entry });
     },
     [repo, summary.busyAction],
   );
 
   const requestDiscardAll = useCallback(() => {
     if (!repo || summary.busyAction || unstagedEntries.length === 0) return;
-    setPendingDiscard({ scope: "all", entries: unstagedEntries });
+    setPendingDiscard({ scope: 'all', entries: unstagedEntries });
   }, [repo, summary.busyAction, unstagedEntries]);
 
   const cancelPendingDiscard = useCallback(() => {
@@ -744,9 +711,7 @@ export function useSourceControlPanel(
   const confirmPendingDiscard = useCallback(async () => {
     if (!repo || !pendingDiscard) return;
     const list =
-      pendingDiscard.scope === "single"
-        ? [pendingDiscard.entry]
-        : pendingDiscard.entries;
+      pendingDiscard.scope === 'single' ? [pendingDiscard.entry] : pendingDiscard.entries;
     setPendingDiscard(null);
     const entries: GitDiscardEntry[] = list.map((entry) => ({
       path: entry.path,
@@ -754,9 +719,7 @@ export function useSourceControlPanel(
     }));
     const paths = new Set(list.map((entry) => entry.path));
     await runMutation(
-      pendingDiscard.scope === "single"
-        ? `discard:${list[0].path}`
-        : "discard:all",
+      pendingDiscard.scope === 'single' ? `discard:${list[0].path}` : 'discard:all',
       (s) => optimisticDiscard(s, paths),
       () => git.discard(repo.repoRoot, entries),
       [...paths],
@@ -767,7 +730,7 @@ export function useSourceControlPanel(
     if (!repo || unstagedEntries.length === 0) return;
     const paths = new Set(unstagedEntries.map((entry) => entry.path));
     await runMutation(
-      "stage:all",
+      'stage:all',
       (s) => optimisticStage(s, paths),
       () => git.stage(repo.repoRoot, [...paths]),
       [...paths],
@@ -778,7 +741,7 @@ export function useSourceControlPanel(
     if (!repo || stagedEntries.length === 0) return;
     const paths = new Set(stagedEntries.map((entry) => entry.path));
     await runMutation(
-      "unstage:all",
+      'unstage:all',
       (s) => optimisticUnstage(s, paths),
       () => git.unstage(repo.repoRoot, [...paths]),
       [...paths],
@@ -788,18 +751,18 @@ export function useSourceControlPanel(
   const selectFile = useCallback(
     async (entry: SourceControlFileEntry) => {
       if (!repo) return;
-      const mode: DiffMode = entry.unstaged ? "-" : "+";
+      const mode: DiffMode = entry.unstaged ? '-' : '+';
       const nextSelection: DiffSelection = { path: entry.path, mode };
       if (sameSelection(selected, nextSelection)) {
         setActionError(null);
         setActionMessage(null);
-        setSelectionTransition("none");
+        setSelectionTransition('none');
         return;
       }
       setSelected(nextSelection);
       setActionError(null);
       setActionMessage(null);
-      setSelectionTransition("none");
+      setSelectionTransition('none');
       const file = status?.changedFiles.find((c) => c.path === entry.path);
       openSelection(nextSelection, repo.repoRoot, file);
     },
@@ -810,7 +773,7 @@ export function useSourceControlPanel(
     async (entry: SourceControlFileEntry) => {
       if (!repo) return;
       const paths = new Set([entry.path]);
-      if (entry.checkState === "checked") {
+      if (entry.checkState === 'checked') {
         await runMutation(
           `unstage:${entry.path}`,
           (s) => optimisticUnstage(s, paths),
@@ -830,7 +793,7 @@ export function useSourceControlPanel(
   );
 
   const toggleAll = useCallback(async () => {
-    if (headerCheckState === "checked") await unstageAllEntries();
+    if (headerCheckState === 'checked') await unstageAllEntries();
     else await stageAllEntries();
   }, [headerCheckState, stageAllEntries, unstageAllEntries]);
 
@@ -838,12 +801,12 @@ export function useSourceControlPanel(
     (entry: SourceControlFileEntry) => {
       if (!repo || summary.busyAction) return;
       setPendingDiscard({
-        scope: "single",
+        scope: 'single',
         entry: {
           key: `-:${entry.path}`,
           path: entry.path,
-          mode: "-",
-          indexStatus: " ",
+          mode: '-',
+          indexStatus: ' ',
           worktreeStatus: entry.statusCode,
           statusLabel: entry.statusLabel,
           statusCode: entry.statusCode,
@@ -858,41 +821,36 @@ export function useSourceControlPanel(
   const generateCommitMessage = useCallback(async () => {
     if (!repo || stagedEntries.length === 0) return;
     if (aiBusy) {
-      setActionError("Wait for the current AI action to finish");
+      setActionError('Wait for the current AI action to finish');
       return;
     }
     if (aiUnavailableReason) {
       setActionError(aiUnavailableReason);
       return;
     }
-    setLocalActionBusy("generate-message");
+    setLocalActionBusy('generate-message');
     setActionMessage(null);
     setActionError(null);
     try {
-      const [{ buildConfiguredLanguageModel }, { generateText }, diff] =
-        await Promise.all([
-          import("@/modules/ai/lib/agent"),
-          import("ai"),
-          git.diff(repo.repoRoot, null, true),
-        ]);
+      const [{ buildConfiguredLanguageModel }, { generateText }, diff] = await Promise.all([
+        import('@/modules/ai/lib/agent'),
+        import('ai'),
+        git.diff(repo.repoRoot, null, true),
+      ]);
       const { text: diffText, truncated } = truncateDiff(diff.diffText);
       const chatState = useChatStore.getState();
       const prefs = usePreferencesStore.getState();
-      const model = await buildConfiguredLanguageModel(
-        selectedModelId,
-        chatState.apiKeys,
-        {
-          lmstudioBaseURL: prefs.lmstudioBaseURL,
-          lmstudioModelId,
-          mlxBaseURL: prefs.mlxBaseURL,
-          mlxModelId,
-          ollamaBaseURL: prefs.ollamaBaseURL,
-          ollamaModelId,
-          openaiCompatibleBaseURL,
-          openaiCompatibleModelId,
-          openrouterModelId,
-        },
-      );
+      const model = await buildConfiguredLanguageModel(selectedModelId, chatState.apiKeys, {
+        lmstudioBaseURL: prefs.lmstudioBaseURL,
+        lmstudioModelId,
+        mlxBaseURL: prefs.mlxBaseURL,
+        mlxModelId,
+        ollamaBaseURL: prefs.ollamaBaseURL,
+        ollamaModelId,
+        openaiCompatibleBaseURL,
+        openaiCompatibleModelId,
+        openrouterModelId,
+      });
       const result = await generateText({
         model,
         system: COMMIT_MESSAGE_SYSTEM_PROMPT,
@@ -912,9 +870,7 @@ export function useSourceControlPanel(
         message = cleanCommitMessage(repair.text);
       }
       if (!isValidCommitMessage(message)) {
-        throw new Error(
-          "AI returned an invalid commit message. Try again or switch models.",
-        );
+        throw new Error('AI returned an invalid commit message. Try again or switch models.');
       }
       setCommitMessage(message);
       setActionMessage(null);
@@ -940,17 +896,15 @@ export function useSourceControlPanel(
 
   const commit = useCallback(async () => {
     if (!repo || summary.busyAction) return;
-    setLocalActionBusy("commit");
+    setLocalActionBusy('commit');
     setActionMessage(null);
     setActionError(null);
     try {
       const result = await git.commit(repo.repoRoot, commitMessage);
-      setCommitMessage("");
-      setActionMessage(
-        `Committed ${result.commitSha.slice(0, 7)} ${result.summary}`,
-      );
+      setCommitMessage('');
+      setActionMessage(`Committed ${result.commitSha.slice(0, 7)} ${result.summary}`);
       invalidateRepoDiffs(repo.repoRoot);
-      await summary.refresh({ remote: "never" });
+      await summary.refresh({ remote: 'never' });
     } catch (error) {
       setActionError(normalizeError(error));
     } finally {
@@ -962,11 +916,9 @@ export function useSourceControlPanel(
     if (!repo) return;
     setActionMessage(null);
     setActionError(null);
-    const result = await summary.runRemoteAction("push");
+    const result = await summary.runRemoteAction('push');
     if (result.ok) {
-      setActionMessage(
-        status?.upstream ? `Pushed to ${status.upstream}` : "Push completed",
-      );
+      setActionMessage(status?.upstream ? `Pushed to ${status.upstream}` : 'Push completed');
       return;
     }
     if (result.error) {
@@ -976,18 +928,18 @@ export function useSourceControlPanel(
 
   const pendingDiscardView = useMemo<PendingDiscard | null>(() => {
     if (!pendingDiscard) return null;
-    if (pendingDiscard.scope === "single") {
+    if (pendingDiscard.scope === 'single') {
       return {
-        scope: "single",
+        scope: 'single',
         count: 1,
         label: pendingDiscard.entry.path,
       };
     }
     return {
-      scope: "all",
+      scope: 'all',
       count: pendingDiscard.entries.length,
       label: `${pendingDiscard.entries.length} unstaged ${
-        pendingDiscard.entries.length === 1 ? "file" : "files"
+        pendingDiscard.entries.length === 1 ? 'file' : 'files'
       }`,
     };
   }, [pendingDiscard]);

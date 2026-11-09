@@ -1,8 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
-import { PtyResizeDelivery } from "./ptyResizeDelivery";
+import { describe, expect, it, vi } from 'vitest';
+import { PtyResizeDelivery } from './ptyResizeDelivery';
 
-describe("PtyResizeDelivery", () => {
-  it("delivers immediately and skips repeats", () => {
+describe('PtyResizeDelivery', () => {
+  it('delivers immediately and skips repeats', () => {
     const deliver = vi.fn(() => true);
     const delivery = new PtyResizeDelivery(deliver);
 
@@ -21,7 +21,7 @@ describe("PtyResizeDelivery", () => {
     });
   });
 
-  it("does not remember a size the missing PTY never received", () => {
+  it('does not remember a size the missing PTY never received', () => {
     let pty = false;
     const deliver = vi.fn(() => pty);
     const delivery = new PtyResizeDelivery(deliver);
@@ -43,7 +43,7 @@ describe("PtyResizeDelivery", () => {
     expect(deliver).toHaveBeenCalledTimes(2);
   });
 
-  it("rejects dimensions a PTY cannot have", () => {
+  it('rejects dimensions a PTY cannot have', () => {
     const delivery = new PtyResizeDelivery(() => true);
     expect(() => delivery.send(0, 24)).toThrow(RangeError);
     expect(() => delivery.send(80, 2.5)).toThrow(RangeError);

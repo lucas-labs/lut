@@ -1,9 +1,9 @@
-import type { ComponentProps } from "react";
-import { lazy, Suspense } from "react";
-import type { SourceControlPanel as SourceControlPanelType } from "./SourceControlPanel";
+import type { ComponentProps } from 'react';
+import { lazy, Suspense } from 'react';
+import type { SourceControlPanel as SourceControlPanelType } from './SourceControlPanel';
 
 const SourceControlPanelInner = lazy(() =>
-  import("./SourceControlPanel").then((m) => ({
+  import('./SourceControlPanel').then((m) => ({
     default: m.SourceControlPanel,
   })),
 );

@@ -2,12 +2,12 @@ import {
   type CopyResult,
   parentDir,
   reportCopyFailures,
-} from "@/modules/explorer/lib/clipboardPaste";
-import { currentWorkspaceEnv } from "@/modules/workspace";
-import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+} from '@/modules/explorer/lib/clipboardPaste';
+import { currentWorkspaceEnv } from '@/modules/workspace';
+import { invoke } from '@tauri-apps/api/core';
+import { getCurrentWebview } from '@tauri-apps/api/webview';
+import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 type Options = {
   rootPath: string | null;
@@ -34,24 +34,19 @@ function dirAt(
   }
   const el = document.elementFromPoint(lx, ly) as HTMLElement | null;
   if (!el) return null;
-  const row = el.closest<HTMLElement>("[data-fs-path]");
+  const row = el.closest<HTMLElement>('[data-fs-path]');
   if (row) {
-    const p = row.getAttribute("data-fs-path") as string;
+    const p = row.getAttribute('data-fs-path') as string;
     return isDir(p) ? p : parentDir(p, rootPath ?? p);
   }
-  if (el.closest("[data-explorer-drop]")) return rootPath;
+  if (el.closest('[data-explorer-drop]')) return rootPath;
   return null;
 }
 
 // Accepts files dropped from the OS onto an explorer folder (copy, not move),
 // via Tauri's native drag-drop. One webview-level listener; ignores drops that
 // land outside the explorer (the terminal handles its own).
-export function useExplorerFileDrop({
-  rootPath,
-  enabled = true,
-  isDir,
-  onCopied,
-}: Options) {
+export function useExplorerFileDrop({ rootPath, enabled = true, isDir, onCopied }: Options) {
   const [targetDir, setTargetDir] = useState<string | null>(null);
   const optsRef = useRef({ rootPath, isDir, onCopied });
   optsRef.current = { rootPath, isDir, onCopied };
@@ -65,20 +60,20 @@ export function useExplorerFileDrop({
       .onDragDropEvent((e) => {
         const p = e.payload;
         const { rootPath, isDir, onCopied } = optsRef.current;
-        if (p.type === "enter" || p.type === "over") {
+        if (p.type === 'enter' || p.type === 'over') {
           setTargetDir(dirAt(p.position.x, p.position.y, rootPath, isDir));
           return;
         }
-        if (p.type === "leave") {
+        if (p.type === 'leave') {
           setTargetDir(null);
           return;
         }
-        if (p.type === "drop") {
+        if (p.type === 'drop') {
           const dir = dirAt(p.position.x, p.position.y, rootPath, isDir);
           setTargetDir(null);
           if (!rootPath || !dir || p.paths.length === 0) return;
           const workspace = currentWorkspaceEnv();
-          void invoke<CopyResult>("fs_copy", {
+          void invoke<CopyResult>('fs_copy', {
             sources: p.paths,
             destDir: dir,
             root: rootPath,
@@ -100,9 +95,7 @@ export function useExplorerFileDrop({
         if (disposed) fn();
         else unlisten = fn;
       })
-      .catch((err) =>
-        console.error("[terax] explorer drop listen failed:", err),
-      );
+      .catch((err) => console.error('[terax] explorer drop listen failed:', err));
 
     return () => {
       disposed = true;

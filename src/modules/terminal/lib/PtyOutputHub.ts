@@ -2,7 +2,7 @@ import {
   PARSE_BUDGET_MS,
   type PtyOutputReceiver,
   type PtyTransportStatus,
-} from "@/modules/terminal/lib/PtyOutputReceiver";
+} from '@/modules/terminal/lib/PtyOutputReceiver';
 import {
   decodeFrames,
   encodeRequest,
@@ -10,7 +10,7 @@ import {
   PTY_WINDOW_BYTES,
   type PtyAck,
   type PtyFrame,
-} from "@/modules/terminal/lib/ptyWire";
+} from '@/modules/terminal/lib/ptyWire';
 
 /** Unparsed-but-acknowledgeable bytes that justify an ack-only request. */
 export const ACK_ONLY_BYTES = PTY_WINDOW_BYTES / 2;
@@ -25,10 +25,7 @@ export interface PtyStreamTransport {
   /** Opens (or reopens) the stream and returns its secret token. */
   open(): Promise<Uint8Array>;
   /** Long poll: resolves when native has output due, or after a keepalive. */
-  poll(
-    body: Uint8Array<ArrayBuffer>,
-    signal: AbortSignal,
-  ): Promise<PtyStreamResponse>;
+  poll(body: Uint8Array<ArrayBuffer>, signal: AbortSignal): Promise<PtyStreamResponse>;
   ack(body: Uint8Array<ArrayBuffer>): Promise<PtyStreamResponse>;
 }
 
@@ -82,7 +79,7 @@ export class PtyOutputHub {
   private kickQueued = false;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
   private failures = 0;
-  private transportStatus: PtyTransportStatus = "ok";
+  private transportStatus: PtyTransportStatus = 'ok';
   private disposed = false;
   private stats = {
     polls: 0,
@@ -382,7 +379,7 @@ export class PtyOutputHub {
       const entry = this.entries.get(frame.id);
       if (!entry || entry.dead) continue;
       switch (frame.kind) {
-        case "data":
+        case 'data':
           if (frame.offset !== entry.received) {
             this.failEntry(
               entry,
@@ -396,18 +393,18 @@ export class PtyOutputHub {
           this.stats.dataBytes += frame.bytes.length;
           entry.receiver.receive(frame.bytes, parseDeadline);
           break;
-        case "exit":
+        case 'exit':
           entry.dead = true;
           try {
             entry.onExit(frame.code);
           } catch (error) {
-            console.error("[terax] PTY exit handler failed:", error);
+            console.error('[terax] PTY exit handler failed:', error);
           }
           break;
-        case "failed":
+        case 'failed':
           this.failEntry(entry, new Error(frame.reason));
           break;
-        case "sync":
+        case 'sync':
           // Only worth rushing if some received bytes were not yet sent.
           if (entry.sent < entry.received) entry.urgent = true;
           break;
@@ -428,16 +425,15 @@ export class PtyOutputHub {
   // -- failure handling ----------------------------------------------------
 
   private noteSuccess(): void {
-    if (this.failures === 0 && this.transportStatus === "ok") return;
+    if (this.failures === 0 && this.transportStatus === 'ok') return;
     this.failures = 0;
-    this.setTransport("ok");
+    this.setTransport('ok');
   }
 
   private setTransport(status: PtyTransportStatus): void {
     if (this.transportStatus === status) return;
     this.transportStatus = status;
-    for (const entry of this.entries.values())
-      entry.receiver.setTransportStatus(status);
+    for (const entry of this.entries.values()) entry.receiver.setTransportStatus(status);
   }
 
   /** The webview answered with a refusal rather than failing to answer. */
@@ -447,13 +443,10 @@ export class PtyOutputHub {
       this.revert(included);
       this.token = null;
       this.opening = null;
-      this.failAll(new Error("The PTY output stream was reset"));
+      this.failAll(new Error('The PTY output stream was reset'));
       return;
     }
-    this.requestFailed(
-      included,
-      new Error(`PTY stream request refused (${status})`),
-    );
+    this.requestFailed(included, new Error(`PTY stream request refused (${status})`));
   }
 
   private requestFailed(included: readonly Included[], error: unknown): void {
@@ -461,21 +454,15 @@ export class PtyOutputHub {
     if (this.disposed) return;
     this.failures += 1;
     this.stats.failures += 1;
-    if (this.failures === 1)
-      console.warn("[terax] PTY stream request failed:", error);
-    this.setTransport(
-      this.failures >= STALL_AFTER_FAILURES ? "stalled" : "retrying",
-    );
+    if (this.failures === 1) console.warn('[terax] PTY stream request failed:', error);
+    this.setTransport(this.failures >= STALL_AFTER_FAILURES ? 'stalled' : 'retrying');
     if (this.retryTimer !== null || this.entries.size === 0) return;
     this.retryTimer = setTimeout(
       () => {
         this.retryTimer = null;
         this.kick();
       },
-      Math.min(
-        RETRY_MAX_MS,
-        RETRY_BASE_MS * 2 ** Math.min(this.failures - 1, 5),
-      ),
+      Math.min(RETRY_MAX_MS, RETRY_BASE_MS * 2 ** Math.min(this.failures - 1, 5)),
     );
   }
 
@@ -487,6 +474,6 @@ export class PtyOutputHub {
     this.poll = null;
     poll?.controller.abort();
     this.failures = 0;
-    this.transportStatus = "ok";
+    this.transportStatus = 'ok';
   }
 }

@@ -6,8 +6,8 @@
  * that should join (the two halves of a split cell) overlap by one pixel when
  * the size is odd rather than leaving a seam.
  */
-import type { SpriteMask } from "./SpriteMask";
-import type { SpriteSpec } from "./spriteSpec";
+import type { SpriteMask } from './SpriteMask';
+import type { SpriteSpec } from './spriteSpec';
 
 const SHADE_LIGHT = 0x40;
 export const SHADE_MEDIUM = 0x80;
@@ -46,8 +46,8 @@ export function fillFractions(
   );
 }
 
-type HorizontalAlign = "left" | "center" | "right";
-type VerticalAlign = "top" | "middle" | "bottom";
+type HorizontalAlign = 'left' | 'center' | 'right';
+type VerticalAlign = 'top' | 'middle' | 'bottom';
 
 /** A `width x height` fraction of the cell, pinned to an edge or centred. */
 export function fillBlock(
@@ -62,17 +62,9 @@ export function fillBlock(
   const w = Math.round(spec.width * widthFraction);
   const h = Math.round(spec.height * heightFraction);
   const x =
-    horizontal === "left"
-      ? 0
-      : horizontal === "right"
-        ? spec.width - w
-        : (spec.width - w) >> 1;
+    horizontal === 'left' ? 0 : horizontal === 'right' ? spec.width - w : (spec.width - w) >> 1;
   const y =
-    vertical === "top"
-      ? 0
-      : vertical === "bottom"
-        ? spec.height - h
-        : (spec.height - h) >> 1;
+    vertical === 'top' ? 0 : vertical === 'bottom' ? spec.height - h : (spec.height - h) >> 1;
   mask.box(x, y, x + w, y + h, value);
 }
 
@@ -83,35 +75,27 @@ export function isBlockElement(codepoint: number): boolean {
 /** Quadrant masks: 1 top-left, 2 top-right, 4 bottom-left, 8 bottom-right. */
 const QUADRANTS = [4, 8, 1, 13, 9, 7, 11, 2, 6, 14] as const;
 
-function drawQuadrants(
-  mask: SpriteMask,
-  spec: SpriteSpec,
-  quadrants: number,
-): void {
+function drawQuadrants(mask: SpriteMask, spec: SpriteSpec, quadrants: number): void {
   if (quadrants & 1) fillFractions(mask, spec, 0, 0.5, 0, 0.5);
   if (quadrants & 2) fillFractions(mask, spec, 0.5, 1, 0, 0.5);
   if (quadrants & 4) fillFractions(mask, spec, 0, 0.5, 0.5, 1);
   if (quadrants & 8) fillFractions(mask, spec, 0.5, 1, 0.5, 1);
 }
 
-export function drawBlockElement(
-  mask: SpriteMask,
-  spec: SpriteSpec,
-  codepoint: number,
-): void {
+export function drawBlockElement(mask: SpriteMask, spec: SpriteSpec, codepoint: number): void {
   if (codepoint >= 0x2596) {
     drawQuadrants(mask, spec, QUADRANTS[codepoint - 0x2596]);
     return;
   }
   switch (codepoint) {
     case 0x2580:
-      fillBlock(mask, spec, "left", "top", 1, 1 / 2);
+      fillBlock(mask, spec, 'left', 'top', 1, 1 / 2);
       return;
     case 0x2588:
       mask.box(0, 0, spec.width, spec.height);
       return;
     case 0x2590:
-      fillBlock(mask, spec, "right", "top", 1 / 2, 1);
+      fillBlock(mask, spec, 'right', 'top', 1 / 2, 1);
       return;
     case 0x2591:
       mask.box(0, 0, spec.width, spec.height, SHADE_LIGHT);
@@ -123,19 +107,19 @@ export function drawBlockElement(
       mask.box(0, 0, spec.width, spec.height, SHADE_DARK);
       return;
     case 0x2594:
-      fillBlock(mask, spec, "left", "top", 1, 1 / 8);
+      fillBlock(mask, spec, 'left', 'top', 1, 1 / 8);
       return;
     case 0x2595:
-      fillBlock(mask, spec, "right", "top", 1 / 8, 1);
+      fillBlock(mask, spec, 'right', 'top', 1 / 8, 1);
       return;
   }
   if (codepoint < 0x2588) {
     // U+2581..U+2587: lower one eighth up to seven eighths.
-    fillBlock(mask, spec, "left", "bottom", 1, (codepoint - 0x2580) / 8);
+    fillBlock(mask, spec, 'left', 'bottom', 1, (codepoint - 0x2580) / 8);
     return;
   }
   // U+2589..U+258F: left seven eighths down to one eighth.
-  fillBlock(mask, spec, "left", "top", (0x2590 - codepoint) / 8, 1);
+  fillBlock(mask, spec, 'left', 'top', (0x2590 - codepoint) / 8, 1);
 }
 
 export function isBraille(codepoint: number): boolean {
@@ -147,11 +131,7 @@ export function isBraille(codepoint: number): boolean {
  * grid is symmetric and as large as the cell allows, with every dot a whole
  * square of pixels (no anti-aliasing, no dot cut by the cell edge).
  */
-export function drawBraille(
-  mask: SpriteMask,
-  spec: SpriteSpec,
-  codepoint: number,
-): void {
+export function drawBraille(mask: SpriteMask, spec: SpriteSpec, codepoint: number): void {
   const { width, height } = spec;
   let dot = Math.min(width >> 2, height >> 3);
   let xSpacing = width >> 2;
@@ -223,11 +203,6 @@ export function drawBraille(
   for (let bit = 0; bit < 8; bit += 1) {
     if ((pattern & (1 << bit)) === 0) continue;
     const [column, row] = dots[bit];
-    mask.box(
-      columns[column],
-      rows[row],
-      columns[column] + dot,
-      rows[row] + dot,
-    );
+    mask.box(columns[column], rows[row], columns[column] + dot, rows[row] + dot);
   }
 }

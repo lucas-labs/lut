@@ -44,9 +44,7 @@ export const GC_MIRROR_MAX_BYTES_PER_SECOND = 4 * 1024 * 1024;
  * allocation volume the collector reacts to is counted all the same.
  */
 export function allocateMirrorBuffer(bytes: number): void {
-  (
-    new ArrayBuffer(bytes) as { transfer?: (length: number) => unknown }
-  ).transfer?.(0);
+  (new ArrayBuffer(bytes) as { transfer?: (length: number) => unknown }).transfer?.(0);
 }
 
 export type GcPressureOptions = {
@@ -118,9 +116,7 @@ export class GcPressureMirror {
       this.pending + this.bytesPerFrame * frames,
       Math.max(this.burstBytes, this.batchBytes),
     );
-    const bytes = Math.floor(
-      Math.min(this.pending, this.allowance, this.batchBytes * 4),
-    );
+    const bytes = Math.floor(Math.min(this.pending, this.allowance, this.batchBytes * 4));
     // Whole batches only: wait for the cost, and for the cap, rather than allocating slivers.
     if (this.pending < this.batchBytes || bytes < this.batchBytes) return;
     this.pending -= bytes;
@@ -148,19 +144,18 @@ export class GcPressureMirror {
  * `<bytesPerFrame>[:<batchBytes>]`, for experiments;
  * unset means the defaults above.
  */
-const GC_MIRROR_STORAGE_KEY = "terax:terminal-gc-mirror";
+const GC_MIRROR_STORAGE_KEY = 'terax:terminal-gc-mirror';
 export function gcPressureOptionsFromStorage(): GcPressureOptions {
   try {
     const value =
-      typeof window === "undefined"
+      typeof window === 'undefined'
         ? null
         : (window.localStorage?.getItem(GC_MIRROR_STORAGE_KEY) ?? null);
     if (value === null) return {};
-    if (value === "off") return { bytesPerFrame: 0 };
-    const [perFrame, batch] = value.split(":").map(Number);
+    if (value === 'off') return { bytesPerFrame: 0 };
+    const [perFrame, batch] = value.split(':').map(Number);
     return {
-      bytesPerFrame:
-        Number.isFinite(perFrame) && perFrame >= 0 ? perFrame : undefined,
+      bytesPerFrame: Number.isFinite(perFrame) && perFrame >= 0 ? perFrame : undefined,
       batchBytes: Number.isFinite(batch) && batch > 0 ? batch : undefined,
     };
   } catch {

@@ -3,20 +3,13 @@
  * Callers write `if (__TERAX_BENCH__) smoothHooks()?.x(...)`: in a normal build the branch is the
  * literal `false` and this module is not part of the bundle.
  */
-export const SMOOTH_KEY = "__teraxSmooth";
+export const SMOOTH_KEY = '__teraxSmooth';
 
 export type SmoothHooks = {
   /** A pane's host was measured: the grid it should have for that size. */
   want(pane: number, t: number, cols: number, rows: number): void;
   /** The pane's model grid after a fit ran; `costMs` is the model resize + PTY notify when applied. */
-  have(
-    pane: number,
-    t: number,
-    cols: number,
-    rows: number,
-    applied: boolean,
-    costMs: number,
-  ): void;
+  have(pane: number, t: number, cols: number, rows: number, applied: boolean, costMs: number): void;
   /** The pane's rectangle in the window canvas changed (layout). */
   rect(pane: number, t: number): void;
   /** A layout change moved the pane by less than a device pixel: nothing to draw for it. */
@@ -51,7 +44,5 @@ export function smoothHooks(): SmoothHooks | undefined {
   // The literal `false` in a normal build: the key string and the lookup are not emitted even
   // when a call site forgot its own guard (src/app/dist-budget.test.ts locks `__teraxSmooth`).
   if (!__TERAX_BENCH__) return undefined;
-  return (globalThis as unknown as Record<string, SmoothHooks | undefined>)[
-    SMOOTH_KEY
-  ];
+  return (globalThis as unknown as Record<string, SmoothHooks | undefined>)[SMOOTH_KEY];
 }

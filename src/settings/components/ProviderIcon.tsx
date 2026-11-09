@@ -1,4 +1,4 @@
-import type { ProviderId } from "@/modules/ai/config";
+import type { ProviderId } from '@/modules/ai/config';
 import {
   AppleIcon,
   ChatGptIcon,
@@ -13,8 +13,8 @@ import {
   MistralIcon,
   PlugIcon,
   ServerStack01Icon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
+} from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
 
 const ICON_BY_PROVIDER = {
   openai: ChatGptIcon,
@@ -26,7 +26,7 @@ const ICON_BY_PROVIDER = {
   deepseek: DeepseekIcon,
   mistral: MistralIcon,
   openrouter: GlobeIcon,
-  "openai-compatible": PlugIcon,
+  'openai-compatible': PlugIcon,
   lmstudio: ComputerIcon,
   mlx: AppleIcon,
   ollama: ServerStack01Icon,
@@ -39,12 +39,5 @@ type Props = {
 };
 
 export function ProviderIcon({ provider, size = 14, className }: Props) {
-  return (
-    <HugeiconsIcon
-      icon={ICON_BY_PROVIDER[provider]}
-      size={size}
-      strokeWidth={1.75}
-      className={className}
-    />
-  );
+  return <HugeiconsIcon icon={ICON_BY_PROVIDER[provider]} size={size} strokeWidth={1.75} className={className} />;
 }

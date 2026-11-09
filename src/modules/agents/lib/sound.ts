@@ -4,16 +4,16 @@ let activeSource: AudioBufferSourceNode | undefined;
 let requestSequence = 0;
 
 async function loadSound(ctx: AudioContext): Promise<AudioBuffer> {
-  const response = await fetch("/notification.mp3");
+  const response = await fetch('/notification.mp3');
   if (!response.ok) throw new Error(`notification sound: ${response.status}`);
   return ctx.decodeAudioData(await response.arrayBuffer());
 }
 
 async function playLatest(sequence: number): Promise<void> {
   try {
-    if (typeof AudioContext === "undefined" || typeof fetch === "undefined") return;
+    if (typeof AudioContext === 'undefined' || typeof fetch === 'undefined') return;
     context ??= new AudioContext();
-    if (context.state === "suspended") await context.resume();
+    if (context.state === 'suspended') await context.resume();
 
     bufferPromise ??= loadSound(context).catch((error) => {
       bufferPromise = undefined;

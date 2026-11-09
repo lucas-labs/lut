@@ -1,13 +1,8 @@
-import {
-  listenFsChanged,
-  parentDir,
-  watchAdd,
-  watchRemove,
-} from "@/modules/explorer/lib/watch";
-import type { Tab } from "@/modules/tabs";
-import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
-import { type RefObject, useEffect, useRef } from "react";
-import type { EditorPaneHandle } from "./EditorPane";
+import { listenFsChanged, parentDir, watchAdd, watchRemove } from '@/modules/explorer/lib/watch';
+import type { Tab } from '@/modules/tabs';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { type RefObject, useEffect, useRef } from 'react';
+import type { EditorPaneHandle } from './EditorPane';
 
 type Params = {
   tabs: Tab[];
@@ -28,12 +23,12 @@ export function useEditorFileSync({ tabs, tabsRef, editorRefs }: Params) {
   const appliedDiffsRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     for (const t of tabs) {
-      if (t.kind !== "ai-diff") continue;
-      if (t.status !== "approved") continue;
+      if (t.kind !== 'ai-diff') continue;
+      if (t.status !== 'approved') continue;
       if (appliedDiffsRef.current.has(t.approvalId)) continue;
       appliedDiffsRef.current.add(t.approvalId);
       for (const e of tabs) {
-        if (e.kind !== "editor") continue;
+        if (e.kind !== 'editor') continue;
         if (e.path !== t.path) continue;
         editorRefs.current.get(e.id)?.reload();
       }
@@ -42,21 +37,20 @@ export function useEditorFileSync({ tabs, tabsRef, editorRefs }: Params) {
 
   useEffect(() => {
     type FileWrittenPayload = { path: string; source?: string };
-    const unlistenPromise =
-      getCurrentWebviewWindow().listen<FileWrittenPayload>(
-        "fs:file-written",
-        (event) => {
-          if (event.payload.source === "editor") return;
-          const normalizedPath = event.payload.path.replace(/\\/g, "/");
-          const currentTabs = tabsRef.current;
-          for (const t of currentTabs) {
-            if (t.kind !== "editor") continue;
-            if (t.path.replace(/\\/g, "/") === normalizedPath) {
-              editorRefs.current.get(t.id)?.reload();
-            }
+    const unlistenPromise = getCurrentWebviewWindow().listen<FileWrittenPayload>(
+      'fs:file-written',
+      (event) => {
+        if (event.payload.source === 'editor') return;
+        const normalizedPath = event.payload.path.replace(/\\/g, '/');
+        const currentTabs = tabsRef.current;
+        for (const t of currentTabs) {
+          if (t.kind !== 'editor') continue;
+          if (t.path.replace(/\\/g, '/') === normalizedPath) {
+            editorRefs.current.get(t.id)?.reload();
           }
-        },
-      );
+        }
+      },
+    );
     return () => {
       void unlistenPromise.then((un) => un());
     };
@@ -68,7 +62,7 @@ export function useEditorFileSync({ tabs, tabsRef, editorRefs }: Params) {
     const wantDirs = new Set<string>();
     const wantFiles = new Set<string>();
     for (const t of tabs) {
-      if (t.kind !== "editor") continue;
+      if (t.kind !== 'editor') continue;
       wantDirs.add(parentDir(t.path));
       wantFiles.add(t.path);
     }
@@ -90,10 +84,10 @@ export function useEditorFileSync({ tabs, tabsRef, editorRefs }: Params) {
     let alive = true;
     let unlisten: (() => void) | undefined;
     void listenFsChanged((paths) => {
-      const changed = new Set(paths.map((p) => p.replace(/\\/g, "/")));
+      const changed = new Set(paths.map((p) => p.replace(/\\/g, '/')));
       for (const t of tabsRef.current) {
-        if (t.kind !== "editor") continue;
-        if (changed.has(t.path.replace(/\\/g, "/"))) {
+        if (t.kind !== 'editor') continue;
+        if (changed.has(t.path.replace(/\\/g, '/'))) {
           editorRefs.current.get(t.id)?.reload();
         }
       }

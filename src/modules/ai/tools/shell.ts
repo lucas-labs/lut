@@ -1,9 +1,9 @@
-import { currentWorkspaceEnv, workspaceScopeKey } from "@/modules/workspace";
-import { tool } from "ai";
-import { z } from "zod";
-import { native } from "../lib/native";
-import { checkShellCommand } from "../lib/security";
-import type { ToolContext } from "./context";
+import { currentWorkspaceEnv, workspaceScopeKey } from '@/modules/workspace';
+import { tool } from 'ai';
+import { z } from 'zod';
+import { native } from '../lib/native';
+import { checkShellCommand } from '../lib/security';
+import type { ToolContext } from './context';
 
 /**
  * Per-session lazy shell-session id. The agent gets one persistent shell per
@@ -11,10 +11,7 @@ import type { ToolContext } from "./context";
  */
 const sessionShells = new Map<string, Promise<number>>();
 
-async function getSessionShell(
-  sessionId: string,
-  cwd: string | null,
-): Promise<number> {
+async function getSessionShell(sessionId: string, cwd: string | null): Promise<number> {
   let p = sessionShells.get(sessionId);
   if (!p) {
     p = native.shellSessionOpen(cwd);
@@ -41,16 +38,11 @@ export function buildShellTools(ctx: ToolContext) {
         const safety = checkShellCommand(command);
         if (!safety.ok) return { error: safety.reason };
         const sid = ctx.getSessionId();
-        if (!sid) return { error: "no active chat session" };
+        if (!sid) return { error: 'no active chat session' };
         try {
           const cwd = ctx.getCwd();
           const shellId = await getSessionShell(workspaceSessionKey(sid), cwd);
-          const r = await native.shellSessionRun(
-            shellId,
-            command,
-            cwd,
-            timeout_secs,
-          );
+          const r = await native.shellSessionRun(shellId, command, cwd, timeout_secs);
           return {
             command,
             stdout: r.stdout,
@@ -68,7 +60,7 @@ export function buildShellTools(ctx: ToolContext) {
 
     bash_background: tool({
       description:
-        "Spawn a long-running background process (e.g. `pnpm dev`, `cargo watch`, log tailers). Returns a handle; use `bash_logs` to read its output and `bash_kill` to stop it. Output is captured into a 4MB ring buffer. Asks for user approval.",
+        'Spawn a long-running background process (e.g. `pnpm dev`, `cargo watch`, log tailers). Returns a handle; use `bash_logs` to read its output and `bash_kill` to stop it. Output is captured into a 4MB ring buffer. Asks for user approval.',
       inputSchema: z.object({
         command: z.string(),
         cwd: z.string().nullable().optional(),
@@ -106,7 +98,7 @@ export function buildShellTools(ctx: ToolContext) {
 
     bash_list: tool({
       description:
-        "List all background processes spawned by `bash_background` in this app — running and exited. **Always call this BEFORE spawning a new long-running process** (especially dev servers like `pnpm dev`, `next dev`, `vite`) to avoid duplicates. If a matching process is already running, reuse it (call `open_preview` again instead of respawning). Auto-executes.",
+        'List all background processes spawned by `bash_background` in this app — running and exited. **Always call this BEFORE spawning a new long-running process** (especially dev servers like `pnpm dev`, `next dev`, `vite`) to avoid duplicates. If a matching process is already running, reuse it (call `open_preview` again instead of respawning). Auto-executes.',
       inputSchema: z.object({}),
       execute: async () => {
         try {
@@ -120,7 +112,7 @@ export function buildShellTools(ctx: ToolContext) {
 
     bash_kill: tool({
       description:
-        "Terminate a `bash_background` process by handle. Idempotent — kills nothing if the handle is unknown or already exited.",
+        'Terminate a `bash_background` process by handle. Idempotent — kills nothing if the handle is unknown or already exited.',
       inputSchema: z.object({ handle: z.number().int() }),
       execute: async ({ handle }) => {
         try {

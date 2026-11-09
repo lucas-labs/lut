@@ -1,31 +1,26 @@
-import {
-  listenFsChanged,
-  parentDir,
-  watchAdd,
-  watchRemove,
-} from "@/modules/explorer/lib/watch";
-import { currentWorkspaceEnv } from "@/modules/workspace";
-import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
-import { useEffect, useRef, useState } from "react";
-import { createCoalescer, touchesPath } from "./lib/liveReload";
+import { listenFsChanged, parentDir, watchAdd, watchRemove } from '@/modules/explorer/lib/watch';
+import { currentWorkspaceEnv } from '@/modules/workspace';
+import { invoke } from '@tauri-apps/api/core';
+import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { useEffect, useRef, useState } from 'react';
+import { createCoalescer, touchesPath } from './lib/liveReload';
 
 type ReadResult =
-  | { kind: "text"; content: string; size: number }
-  | { kind: "binary"; size: number }
-  | { kind: "toolarge"; size: number; limit: number };
+  | { kind: 'text'; content: string; size: number }
+  | { kind: 'binary'; size: number }
+  | { kind: 'toolarge'; size: number; limit: number };
 
 export type MarkdownStatus =
-  | { kind: "loading" }
-  | { kind: "ready"; content: string }
-  | { kind: "binary" }
-  | { kind: "toolarge"; size: number; limit: number }
-  | { kind: "error"; message: string };
+  | { kind: 'loading' }
+  | { kind: 'ready'; content: string }
+  | { kind: 'binary' }
+  | { kind: 'toolarge'; size: number; limit: number }
+  | { kind: 'error'; message: string };
 
 function toStatus(res: ReadResult): MarkdownStatus {
-  if (res.kind === "text") return { kind: "ready", content: res.content };
-  if (res.kind === "binary") return { kind: "binary" };
-  return { kind: "toolarge", size: res.size, limit: res.limit };
+  if (res.kind === 'text') return { kind: 'ready', content: res.content };
+  if (res.kind === 'binary') return { kind: 'binary' };
+  return { kind: 'toolarge', size: res.size, limit: res.limit };
 }
 
 /**
@@ -36,11 +31,8 @@ function toStatus(res: ReadResult): MarkdownStatus {
  * nothing changed so unchanged documents do not re-render. A hidden tab only
  * remembers that it is stale and catches up when shown.
  */
-export function useMarkdownDocument(
-  path: string,
-  visible: boolean,
-): MarkdownStatus {
-  const [status, setStatus] = useState<MarkdownStatus>({ kind: "loading" });
+export function useMarkdownDocument(path: string, visible: boolean): MarkdownStatus {
+  const [status, setStatus] = useState<MarkdownStatus>({ kind: 'loading' });
   const visibleRef = useRef(visible);
   const reloadRef = useRef<(() => void) | null>(null);
   const staleRef = useRef(false);
@@ -60,11 +52,11 @@ export function useMarkdownDocument(
     // The watcher reports canonical paths; the tab may hold an alias spelling.
     let canonical: string | null = null;
     staleRef.current = false;
-    setStatus({ kind: "loading" });
+    setStatus({ kind: 'loading' });
 
     const read = () => {
       const id = ++requestId;
-      invoke<ReadResult>("fs_read_file", {
+      invoke<ReadResult>('fs_read_file', {
         path,
         workspace,
       })
@@ -72,9 +64,7 @@ export function useMarkdownDocument(
           if (!alive || id !== requestId) return;
           const next = toStatus(res);
           setStatus((prev) =>
-            prev.kind === "ready" &&
-            next.kind === "ready" &&
-            prev.content === next.content
+            prev.kind === 'ready' && next.kind === 'ready' && prev.content === next.content
               ? prev
               : next,
           );
@@ -82,9 +72,7 @@ export function useMarkdownDocument(
         .catch((e) => {
           if (!alive || id !== requestId) return;
           setStatus((prev) =>
-            prev.kind === "loading"
-              ? { kind: "error", message: String(e) }
-              : prev,
+            prev.kind === 'loading' ? { kind: 'error', message: String(e) } : prev,
           );
         });
     };
@@ -97,8 +85,7 @@ export function useMarkdownDocument(
     reloadRef.current = read;
 
     const matches = (paths: readonly string[]) =>
-      touchesPath(paths, path) ||
-      (canonical !== null && touchesPath(paths, canonical));
+      touchesPath(paths, path) || (canonical !== null && touchesPath(paths, canonical));
 
     const dir = parentDir(path);
     watchAdd([dir], [path], workspace);
@@ -111,16 +98,13 @@ export function useMarkdownDocument(
       }),
     );
     track(
-      getCurrentWebviewWindow().listen<{ path: string }>(
-        "fs:file-written",
-        (e) => {
-          if (matches([e.payload.path])) onTouched();
-        },
-      ),
+      getCurrentWebviewWindow().listen<{ path: string }>('fs:file-written', (e) => {
+        if (matches([e.payload.path])) onTouched();
+      }),
     );
 
     read();
-    invoke<string>("fs_canonicalize", { path, workspace })
+    invoke<string>('fs_canonicalize', { path, workspace })
       .then((c) => {
         if (alive) canonical = c;
       })

@@ -1,22 +1,22 @@
-import type { GhosttyTerminalModelApi } from "@/modules/terminal/ghostty/GhosttyTerminalModel";
-import { KeyAction, type KeyEvent } from "@terax/ghostty-core/protocol";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { FakeElement, FakeTextArea } from "./fakeTextArea";
-import { GhosttyInputController } from "./GhosttyInputController";
+import type { GhosttyTerminalModelApi } from '@/modules/terminal/ghostty/GhosttyTerminalModel';
+import { KeyAction, type KeyEvent } from '@terax/ghostty-core/protocol';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { FakeElement, FakeTextArea } from './fakeTextArea';
+import { GhosttyInputController } from './GhosttyInputController';
 
 const clipboard = vi.hoisted(() => ({
   resolve: (_text: string) => {},
 }));
 
-vi.mock("@/modules/terminal/lib/terminalClipboard", () => ({
+vi.mock('@/modules/terminal/lib/terminalClipboard', () => ({
   readTerminalClipboard: () =>
     new Promise<string>((resolve) => {
       clipboard.resolve = resolve;
     }),
 }));
 
-const PRESS = "\x1b[118;5u";
-const RELEASE = "\x1b[118;5:3u";
+const PRESS = '\x1b[118;5u';
+const RELEASE = '\x1b[118;5:3u';
 
 function harness(flags: number) {
   const input = new FakeTextArea();
@@ -40,15 +40,11 @@ function harness(flags: number) {
       y: 0,
       visible: true,
       blinking: false,
-      style: "block",
+      style: 'block',
     }),
     encodeKey: (event: KeyEvent) =>
       new TextEncoder().encode(
-        flags === 0
-          ? "\x16"
-          : event.action === KeyAction.RELEASE
-            ? RELEASE
-            : PRESS,
+        flags === 0 ? '\x16' : event.action === KeyAction.RELEASE ? RELEASE : PRESS,
       ),
     kittyKeyboardFlags: () => flags,
   } as unknown as GhosttyTerminalModelApi;
@@ -62,11 +58,11 @@ function harness(flags: number) {
     isMac: false,
     isWindows: true,
   });
-  const key = (type: "keydown" | "keyup") =>
+  const key = (type: 'keydown' | 'keyup') =>
     input.dispatchEvent(
       Object.assign(new Event(type, { bubbles: true, cancelable: true }), {
-        key: "v",
-        code: "KeyV",
+        key: 'v',
+        code: 'KeyV',
         keyCode: 86,
         ctrlKey: true,
         shiftKey: false,
@@ -77,65 +73,64 @@ function harness(flags: number) {
         getModifierState: () => false,
       }),
     );
-  const sent = () =>
-    onData.mock.calls.map(([bytes]) => new TextDecoder().decode(bytes));
+  const sent = () => onData.mock.calls.map(([bytes]) => new TextDecoder().decode(bytes));
   return { controller, input, key, sent };
 }
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-describe("Ctrl+V forwarded as a key when the clipboard has no text", () => {
+describe('Ctrl+V forwarded as a key when the clipboard has no text', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it("sends the release with the press when the key is up before the read ends", async () => {
+  it('sends the release with the press when the key is up before the read ends', async () => {
     const { controller, key, sent } = harness(3);
-    key("keydown");
-    key("keyup");
+    key('keydown');
+    key('keyup');
     expect(sent()).toEqual([]);
-    clipboard.resolve("");
+    clipboard.resolve('');
     await settle();
     expect(sent()).toEqual([PRESS, RELEASE]);
     controller.dispose();
   });
 
-  it("releases on the key up when it comes after the read", async () => {
+  it('releases on the key up when it comes after the read', async () => {
     const { controller, key, sent } = harness(3);
-    key("keydown");
-    clipboard.resolve("");
+    key('keydown');
+    clipboard.resolve('');
     await settle();
     expect(sent()).toEqual([PRESS]);
-    key("keyup");
+    key('keyup');
     expect(sent()).toEqual([PRESS, RELEASE]);
     controller.dispose();
   });
 
-  it("releases when the window loses focus before the read ends", async () => {
+  it('releases when the window loses focus before the read ends', async () => {
     const { controller, input, key, sent } = harness(3);
-    key("keydown");
-    input.dispatchEvent(new Event("blur"));
-    clipboard.resolve("");
+    key('keydown');
+    input.dispatchEvent(new Event('blur'));
+    clipboard.resolve('');
     await settle();
     expect(sent()).toEqual([PRESS, RELEASE]);
     controller.dispose();
   });
 
-  it("sends nothing but the text when the clipboard has some", async () => {
+  it('sends nothing but the text when the clipboard has some', async () => {
     const { controller, key, sent } = harness(3);
-    key("keydown");
-    key("keyup");
-    clipboard.resolve("pasted");
+    key('keydown');
+    key('keyup');
+    clipboard.resolve('pasted');
     await settle();
-    expect(sent()).toEqual(["pasted"]);
+    expect(sent()).toEqual(['pasted']);
     controller.dispose();
   });
 
-  it("has no release to report outside the key event protocol", async () => {
+  it('has no release to report outside the key event protocol', async () => {
     const { controller, key, sent } = harness(0);
-    key("keydown");
-    clipboard.resolve("");
+    key('keydown');
+    clipboard.resolve('');
     await settle();
-    key("keyup");
-    expect(sent()).toEqual(["\x16"]);
+    key('keyup');
+    expect(sent()).toEqual(['\x16']);
     controller.dispose();
   });
 });

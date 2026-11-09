@@ -21,8 +21,7 @@ export const MIN_SCROLL_SPEED = 0.1;
 export const MAX_SCROLL_SPEED = 10;
 
 export function clampScrollSpeed(value: unknown): number {
-  if (typeof value !== "number" || !Number.isFinite(value))
-    return DEFAULT_SCROLL_SPEED;
+  if (typeof value !== 'number' || !Number.isFinite(value)) return DEFAULT_SCROLL_SPEED;
   const clamped = Math.min(MAX_SCROLL_SPEED, Math.max(MIN_SCROLL_SPEED, value));
   return Math.round(clamped * 100) / 100;
 }
@@ -51,16 +50,16 @@ export function wheelLines(
 
 /** What one line of motion is worth on the route: a fraction of a report. */
 export function wheelUnits(route: WheelRoute, lines: number): number {
-  return route === "report" ? lines / LINES_PER_WHEEL_REPORT : lines;
+  return route === 'report' ? lines / LINES_PER_WHEEL_REPORT : lines;
 }
 
 export type WheelRoute =
   /** Mouse wheel reports to an application that tracks the mouse. */
-  | "report"
+  | 'report'
   /** Cursor keys: xterm's alternate scroll mode (DEC 1007) on the alternate screen. */
-  | "arrows"
+  | 'arrows'
   /** The terminal's own scrollback. */
-  | "scrollback";
+  | 'scrollback';
 
 export type WheelState = {
   readonly mouseTracking: boolean;
@@ -78,9 +77,9 @@ export type WheelState = {
  * nothing to scroll.
  */
 export function wheelRoute(state: WheelState): WheelRoute {
-  if (state.mouseTracking && !state.shiftKey) return "report";
-  if (state.alternateScreen && state.alternateScroll) return "arrows";
-  return "scrollback";
+  if (state.mouseTracking && !state.shiftKey) return 'report';
+  if (state.alternateScreen && state.alternateScroll) return 'arrows';
+  return 'scrollback';
 }
 
 /**
@@ -113,9 +112,9 @@ export class WheelAccumulator {
 }
 
 export function cursorKeySequence(
-  direction: "up" | "down",
+  direction: 'up' | 'down',
   applicationCursorKeys: boolean,
 ): string {
-  const final = direction === "up" ? "A" : "B";
+  const final = direction === 'up' ? 'A' : 'B';
   return applicationCursorKeys ? `\x1bO${final}` : `\x1b[${final}`;
 }

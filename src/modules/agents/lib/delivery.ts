@@ -1,4 +1,4 @@
-export type AgentNotificationDelivery = "none" | "native" | "toast" | "bell";
+export type AgentNotificationDelivery = 'none' | 'native' | 'toast' | 'bell';
 
 export function resolveAgentNotificationDelivery({
   focused,
@@ -9,7 +9,7 @@ export function resolveAgentNotificationDelivery({
   visible: boolean;
   allowToast: boolean;
 }): AgentNotificationDelivery {
-  if (focused && visible) return "none";
-  if (!focused) return "native";
-  return allowToast ? "toast" : "bell";
+  if (focused && visible) return 'none';
+  if (!focused) return 'native';
+  return allowToast ? 'toast' : 'bell';
 }

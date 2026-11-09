@@ -1,22 +1,22 @@
-import { Popover, PopoverAnchor } from "@/components/ui/popover";
-import { Spinner } from "@/components/ui/spinner";
-import { usePresence } from "@/lib/usePresence";
-import { cn } from "@/lib/utils";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useWorkspaceFiles } from "../hooks/useWorkspaceFiles";
-import { useComposer } from "../lib/composer";
-import { SLASH_COMMANDS } from "../lib/slashCommands";
-import { useChatStore } from "../store/chatStore";
-import { useSnippetsStore } from "../store/snippetsStore";
-import { AgentSwitcher } from "./AgentSwitcher";
-import { FilePickerContent } from "./FilePicker";
-import { type PickerItem,SnippetPickerContent } from "./SnippetPicker";
+import { Popover, PopoverAnchor } from '@/components/ui/popover';
+import { Spinner } from '@/components/ui/spinner';
+import { usePresence } from '@/lib/usePresence';
+import { cn } from '@/lib/utils';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useWorkspaceFiles } from '../hooks/useWorkspaceFiles';
+import { useComposer } from '../lib/composer';
+import { SLASH_COMMANDS } from '../lib/slashCommands';
+import { useChatStore } from '../store/chatStore';
+import { useSnippetsStore } from '../store/snippetsStore';
+import { AgentSwitcher } from './AgentSwitcher';
+import { FilePickerContent } from './FilePicker';
+import { type PickerItem, SnippetPickerContent } from './SnippetPicker';
 
 type SnippetTrigger = {
   start: number;
   end: number;
   query: string;
-  char: "#" | "/";
+  char: '#' | '/';
 };
 
 type FileTrigger = {
@@ -25,14 +25,11 @@ type FileTrigger = {
   query: string;
 };
 
-function detectSnippetTrigger(
-  value: string,
-  caret: number,
-): SnippetTrigger | null {
+function detectSnippetTrigger(value: string, caret: number): SnippetTrigger | null {
   for (let i = caret - 1; i >= 0; i--) {
     const ch = value[i];
-    if (ch === "#" || ch === "/") {
-      const prev = i === 0 ? " " : value[i - 1];
+    if (ch === '#' || ch === '/') {
+      const prev = i === 0 ? ' ' : value[i - 1];
       if (!/\s/.test(prev)) return null;
       const slice = value.slice(i + 1, caret);
       if (!/^[a-z0-9-]*$/i.test(slice)) return null;
@@ -47,8 +44,8 @@ function detectSnippetTrigger(
 function detectFileTrigger(value: string, caret: number): FileTrigger | null {
   for (let i = caret - 1; i >= 0; i--) {
     const ch = value[i];
-    if (ch === "@") {
-      const prev = i === 0 ? " " : value[i - 1];
+    if (ch === '@') {
+      const prev = i === 0 ? ' ' : value[i - 1];
       if (!/\s/.test(prev)) return null;
       const slice = value.slice(i + 1, caret);
       return { start: i, end: caret, query: slice };
@@ -68,10 +65,10 @@ export function AiComposerInput() {
   const [activeIndex, setActiveIndex] = useState(0);
   const workspaceFiles = useWorkspaceFiles(workspaceRoot, fileTrigger !== null);
 
-  const [fileQuery, setFileQuery] = useState("");
+  const [fileQuery, setFileQuery] = useState('');
   useEffect(() => {
     if (!fileTrigger) {
-      setFileQuery("");
+      setFileQuery('');
       return;
     }
     const q = fileTrigger.query;
@@ -101,20 +98,15 @@ export function AiComposerInput() {
     if (!trigger) return [];
     const q = trigger.query;
     const cmdItems: PickerItem[] = Object.values(SLASH_COMMANDS)
-      .filter(
-        (c) => !q || c.name.includes(q) || c.label.toLowerCase().includes(q),
-      )
-      .map((command) => ({ kind: "command", command }));
-    if (trigger.char === "/") return cmdItems;
+      .filter((c) => !q || c.name.includes(q) || c.label.toLowerCase().includes(q))
+      .map((command) => ({ kind: 'command', command }));
+    if (trigger.char === '/') return cmdItems;
     const snipItems: PickerItem[] = snippets
       .filter(
         (s) =>
-          !q ||
-          s.handle.includes(q) ||
-          s.name.toLowerCase().includes(q) ||
-          s.description.toLowerCase().includes(q),
+          !q || s.handle.includes(q) || s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q),
       )
-      .map((snippet) => ({ kind: "snippet", snippet }));
+      .map((snippet) => ({ kind: 'snippet', snippet }));
     return [...cmdItems, ...snipItems];
   }, [trigger, snippets]);
 
@@ -145,16 +137,15 @@ export function AiComposerInput() {
     if (!trigger) return;
     const before = c.value.slice(0, trigger.start);
     const afterRaw = c.value.slice(trigger.end);
-    let insert = "";
-    if (item.kind === "snippet") {
+    let insert = '';
+    if (item.kind === 'snippet') {
       const needsSpace = afterRaw.length === 0 || !/^\s/.test(afterRaw);
-      insert = `#${item.snippet.handle}${needsSpace ? " " : ""}`;
+      insert = `#${item.snippet.handle}${needsSpace ? ' ' : ''}`;
       c.addSnippet(item.snippet);
     } else {
       c.addCommand(item.command);
     }
-    const after =
-      item.kind === "command" ? afterRaw.replace(/^\s+/, "") : afterRaw;
+    const after = item.kind === 'command' ? afterRaw.replace(/^\s+/, '') : afterRaw;
     c.setValue(`${before}${insert}${after}`);
     setTrigger(null);
     setActiveIndex(0);
@@ -174,9 +165,7 @@ export function AiComposerInput() {
     c.setValue(`${before}${after}`);
     setFileTrigger(null);
     setActiveIndex(0);
-    const fullPath = workspaceRoot.endsWith("/")
-      ? `${workspaceRoot}${filePath}`
-      : `${workspaceRoot}/${filePath}`;
+    const fullPath = workspaceRoot.endsWith('/') ? `${workspaceRoot}${filePath}` : `${workspaceRoot}/${filePath}`;
     await c.attachFileByPath(fullPath);
     requestAnimationFrame(() => {
       const el = c.textareaRef.current;
@@ -196,13 +185,9 @@ export function AiComposerInput() {
     if (it) onPickItem(it);
   };
 
-  const voiceLabel = c.voice.recording
-    ? "Listening…"
-    : c.voice.transcribing
-      ? "Transcribing…"
-      : null;
+  const voiceLabel = c.voice.recording ? 'Listening…' : c.voice.transcribing ? 'Transcribing…' : null;
   const voiceRow = usePresence(Boolean(voiceLabel), 180);
-  const lastVoiceLabel = useRef("");
+  const lastVoiceLabel = useRef('');
   if (voiceLabel) lastVoiceLabel.current = voiceLabel;
 
   return (
@@ -220,26 +205,24 @@ export function AiComposerInput() {
               onKeyDown={(e) => {
                 if (pickerOpen) {
                   const items = fileTrigger ? filteredFiles : filteredItems;
-                  if (e.key === "ArrowDown") {
+                  if (e.key === 'ArrowDown') {
                     e.preventDefault();
-                    setActiveIndex((i) =>
-                      Math.min(i + 1, Math.max(0, items.length - 1)),
-                    );
+                    setActiveIndex((i) => Math.min(i + 1, Math.max(0, items.length - 1)));
                     return;
                   }
-                  if (e.key === "ArrowUp") {
+                  if (e.key === 'ArrowUp') {
                     e.preventDefault();
                     setActiveIndex((i) => Math.max(0, i - 1));
                     return;
                   }
-                  if (e.key === "Tab" || e.key === "Enter") {
+                  if (e.key === 'Tab' || e.key === 'Enter') {
                     if (items.length > 0) {
                       e.preventDefault();
                       pickActive();
                       return;
                     }
                   }
-                  if (e.key === "Escape") {
+                  if (e.key === 'Escape') {
                     e.preventDefault();
                     if (fileTrigger) {
                       const before = c.value.slice(0, fileTrigger.start);
@@ -252,7 +235,7 @@ export function AiComposerInput() {
                     return;
                   }
                 }
-                if (e.key === "Enter" && !e.shiftKey) {
+                if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   c.submit();
                 }
@@ -260,8 +243,8 @@ export function AiComposerInput() {
               placeholder="Ask Terax anything   -   # for snippets and commands, @ for files"
               rows={1}
               className={cn(
-                "max-h-40 flex-1 resize-none bg-transparent text-[13px] leading-relaxed outline-none",
-                "placeholder:text-muted-foreground/60",
+                'max-h-40 flex-1 resize-none bg-transparent text-[13px] leading-relaxed outline-none',
+                'placeholder:text-muted-foreground/60',
               )}
             />
             <AgentSwitcher />
@@ -295,9 +278,7 @@ export function AiComposerInput() {
             ) : (
               <Spinner className="size-3" />
             )}
-            <span className="truncate">
-              {voiceLabel || lastVoiceLabel.current}
-            </span>
+            <span className="truncate">{voiceLabel || lastVoiceLabel.current}</span>
           </div>
         </div>
       )}
@@ -307,6 +288,6 @@ export function AiComposerInput() {
 
 function autoresize(el: HTMLTextAreaElement | null) {
   if (!el) return;
-  el.style.height = "auto";
+  el.style.height = 'auto';
   el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
 }

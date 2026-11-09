@@ -1,4 +1,4 @@
-import { readTerminalTokens } from "@/styles/tokens";
+import { readTerminalTokens } from '@/styles/tokens';
 
 export function buildTerminalTheme() {
   const t = readTerminalTokens();

@@ -1,18 +1,18 @@
-import { smoothHooks } from "@/bench/smoothHooks";
-import { noteTerminalHostResize } from "@/modules/terminal/lib/terminalResizeGesture";
+import { smoothHooks } from '@/bench/smoothHooks';
+import { noteTerminalHostResize } from '@/modules/terminal/lib/terminalResizeGesture';
 import {
   subscribeTerminalResizeInteraction,
   terminalResizeInteractionActive,
-} from "@/modules/terminal/lib/terminalResizeInteraction";
-import type { Rgb } from "../core/packedCells";
-import { CanvasBackingStore, type GestureGrowth } from "./CanvasBackingStore";
-import { DevicePixelRatioMonitor } from "./DevicePixelRatioMonitor";
+} from '@/modules/terminal/lib/terminalResizeInteraction';
+import type { Rgb } from '../core/packedCells';
+import { CanvasBackingStore, type GestureGrowth } from './CanvasBackingStore';
+import { DevicePixelRatioMonitor } from './DevicePixelRatioMonitor';
 import {
   type CssSize,
   gestureBackingBound,
   measureGestureBackingEnvironment,
   windowInnerSize,
-} from "./GestureBacking";
+} from './GestureBacking';
 import {
   clampToCanvas,
   type CssRect,
@@ -20,10 +20,10 @@ import {
   type DeviceRect,
   deviceRectsEqual,
   snapPaneRect,
-} from "./PaneRects";
-import { snapOffsetCss } from "./TerminalFit";
-import { devicePixelScale } from "./terminalVisuals";
-import type { WebGpuSharedResources } from "./WebGpuTerminalRuntime";
+} from './PaneRects';
+import { snapOffsetCss } from './TerminalFit';
+import { devicePixelScale } from './terminalVisuals';
+import type { WebGpuSharedResources } from './WebGpuTerminalRuntime';
 
 /**
  * One WebGPU canvas for a whole window's terminal area, shared by every visible pane.
@@ -117,11 +117,11 @@ export type WindowCanvasStats = {
  * (`TerminalStack` keeps it beside the tab layers, not above them), else the host's parent.
  */
 export function findTerminalArea(host: HTMLElement): HTMLElement {
-  const ancestor = host.closest?.("[data-terminal-area]") as HTMLElement | null;
+  const ancestor = host.closest?.('[data-terminal-area]') as HTMLElement | null;
   if (ancestor) return ancestor;
   const layer = host
-    .closest?.("[data-terminal-stack]")
-    ?.querySelector(":scope > [data-terminal-area]") as HTMLElement | null;
+    .closest?.('[data-terminal-stack]')
+    ?.querySelector(':scope > [data-terminal-area]') as HTMLElement | null;
   return layer ?? host.parentElement ?? host;
 }
 
@@ -144,9 +144,7 @@ export function windowFrameNeeded(state: {
   readonly drawable: number;
 }): boolean {
   if (state.drawable === 0) return false;
-  return (
-    state.paneChanged || state.dirty || state.reallocated || state.moved > 0
-  );
+  return state.paneChanged || state.dirty || state.reallocated || state.moved > 0;
 }
 
 export class WebGpuWindowCanvas {
@@ -181,18 +179,18 @@ export class WebGpuWindowCanvas {
     configuration: WindowCanvasConfiguration,
     private readonly hooks: { readonly requestFrame: () => void },
   ) {
-    const canvas = document.createElement("canvas");
-    canvas.setAttribute("aria-hidden", "true");
-    canvas.setAttribute("data-terax-terminal-canvas", "");
+    const canvas = document.createElement('canvas');
+    canvas.setAttribute('aria-hidden', 'true');
+    canvas.setAttribute('data-terax-terminal-canvas', '');
     canvas.style.cssText =
-      "position:absolute;left:0;top:0;display:block;pointer-events:none;visibility:hidden;";
-    const context = canvas.getContext("webgpu");
-    if (!context) throw new Error("WebGPU canvas context is unavailable");
+      'position:absolute;left:0;top:0;display:block;pointer-events:none;visibility:hidden;';
+    const context = canvas.getContext('webgpu');
+    if (!context) throw new Error('WebGPU canvas context is unavailable');
     try {
       context.configure({
         device: configuration.device,
         format: configuration.format,
-        alphaMode: "opaque",
+        alphaMode: 'opaque',
       });
     } catch (error) {
       // Never presented, so nothing is retained by dropping it.
@@ -211,9 +209,7 @@ export class WebGpuWindowCanvas {
       noteTerminalHostResize(this);
       this.measureArea();
     });
-    this.pixelRatioMonitor = new DevicePixelRatioMonitor(() =>
-      this.measureArea(),
-    );
+    this.pixelRatioMonitor = new DevicePixelRatioMonitor(() => this.measureArea());
     this.unsubscribeGesture = subscribeTerminalResizeInteraction((active) => {
       this.gestureActive = active;
       if (active) {
@@ -243,16 +239,16 @@ export class WebGpuWindowCanvas {
     if (this.area) {
       this.observer.disconnect();
       this.pixelRatioMonitor.stop();
-      window.removeEventListener?.("resize", this.handleWindowResize);
+      window.removeEventListener?.('resize', this.handleWindowResize);
     }
     this.area = area;
     area.insertBefore(this.canvas, area.firstChild);
     try {
-      this.observer.observe(area, { box: "device-pixel-content-box" });
+      this.observer.observe(area, { box: 'device-pixel-content-box' });
     } catch {
       this.observer.observe(area);
     }
-    window.addEventListener?.("resize", this.handleWindowResize);
+    window.addEventListener?.('resize', this.handleWindowResize);
     this.pixelRatioMonitor.start();
     this.measureArea();
     this.layoutStale = true;
@@ -311,7 +307,7 @@ export class WebGpuWindowCanvas {
     this.context.configure({
       device: configuration.device,
       format: configuration.format,
-      alphaMode: "opaque",
+      alphaMode: 'opaque',
     });
     this.generation = configuration.generation;
     this.device = configuration.device;
@@ -338,9 +334,7 @@ export class WebGpuWindowCanvas {
           this.canvas.width,
           this.canvas.height,
           this.gestureActive,
-          this.areaDevice
-            ? `${this.areaDevice.width}x${this.areaDevice.height}`
-            : "-",
+          this.areaDevice ? `${this.areaDevice.width}x${this.areaDevice.height}` : '-',
         );
       }
       this.reallocations += 1;
@@ -354,15 +348,10 @@ export class WebGpuWindowCanvas {
       for (const [pane, state] of this.panes) {
         const next =
           area && state.css
-            ? clampToCanvas(
-                snapPaneRect(state.css, area, this.scale),
-                size.width,
-                size.height,
-              )
+            ? clampToCanvas(snapPaneRect(state.css, area, this.scale), size.width, size.height)
             : null;
         if (deviceRectsEqual(next, state.rect)) {
-          if (__TERAX_BENCH__ && pane.benchId !== undefined)
-            smoothHooks()?.unchanged(pane.benchId);
+          if (__TERAX_BENCH__ && pane.benchId !== undefined) smoothHooks()?.unchanged(pane.benchId);
           continue;
         }
         state.rect = next;
@@ -391,10 +380,7 @@ export class WebGpuWindowCanvas {
    * Clears the canvas and draws every drawable pane into its rectangle. Call only after
    * `windowFrameNeeded`: it acquires the canvas texture.
    */
-  encode(
-    encoder: GPUCommandEncoder,
-    resources: WebGpuSharedResources,
-  ): WindowFrameResult {
+  encode(encoder: GPUCommandEncoder, resources: WebGpuSharedResources): WindowFrameResult {
     let clear: GPUColor | null = null;
     const drawable: Array<[WindowCanvasPane, PaneState]> = [];
     for (const entry of this.panes) {
@@ -404,13 +390,13 @@ export class WebGpuWindowCanvas {
     }
     if (!clear) return { drawn: 0, revealed: [] };
     const pass = encoder.beginRenderPass({
-      label: "Terax terminal window pass",
+      label: 'Terax terminal window pass',
       colorAttachments: [
         {
           view: this.context.getCurrentTexture().createView(),
           clearValue: clear,
-          loadOp: "clear",
-          storeOp: "store",
+          loadOp: 'clear',
+          storeOp: 'store',
         },
       ],
     });
@@ -442,8 +428,7 @@ export class WebGpuWindowCanvas {
    * frames are being produced, so an idle window never does it.
    */
   verifyGeometry(now: number): void {
-    if (!this.area || now - this.lastGeometryCheck < GEOMETRY_CHECK_INTERVAL_MS)
-      return;
+    if (!this.area || now - this.lastGeometryCheck < GEOMETRY_CHECK_INTERVAL_MS) return;
     this.lastGeometryCheck = now;
     this.geometryChecks += 1;
     if (this.readAreaRect()) this.geometryCorrections += 1;
@@ -493,7 +478,7 @@ export class WebGpuWindowCanvas {
     this.pixelRatioMonitor.stop();
     this.unsubscribeGesture();
     if (this.hideTimer !== null) clearTimeout(this.hideTimer);
-    window.removeEventListener?.("resize", this.handleWindowResize);
+    window.removeEventListener?.('resize', this.handleWindowResize);
     this.panes.clear();
     this.context.unconfigure();
     this.canvas.remove();
@@ -597,7 +582,7 @@ export class WebGpuWindowCanvas {
     this.hideTimer = null;
     if (this.shown) return;
     this.shown = true;
-    this.canvas.style.visibility = "visible";
+    this.canvas.style.visibility = 'visible';
   }
 
   /**
@@ -611,7 +596,7 @@ export class WebGpuWindowCanvas {
       this.hideTimer = null;
       if (this.panes.size > 0) return;
       this.shown = false;
-      this.canvas.style.visibility = "hidden";
+      this.canvas.style.visibility = 'hidden';
     }, HIDE_DELAY_MS);
   }
 }

@@ -1,26 +1,20 @@
-import type { TerminalGpuTheme } from "@/modules/terminal/ghostty/gpu/terminalVisuals";
+import type { TerminalGpuTheme } from '@/modules/terminal/ghostty/gpu/terminalVisuals';
 import {
   clearAgentActivity,
   ensureAgentActivityListener,
-} from "@/modules/terminal/lib/agentActivity";
-import {
-  PtyOutputHub,
-  type PtyStreamTransport,
-} from "@/modules/terminal/lib/PtyOutputHub";
-import {
-  PtyOutputReceiver,
-  type PtyOutputStatus,
-} from "@/modules/terminal/lib/PtyOutputReceiver";
+} from '@/modules/terminal/lib/agentActivity';
+import { PtyOutputHub, type PtyStreamTransport } from '@/modules/terminal/lib/PtyOutputHub';
+import { PtyOutputReceiver, type PtyOutputStatus } from '@/modules/terminal/lib/PtyOutputReceiver';
 import {
   bindLeafPty,
   leafPresentationClass,
   ptyPresentationDiagnostics,
   unbindLeafPty,
-} from "@/modules/terminal/lib/ptyPresentation";
-import { tokenBytes } from "@/modules/terminal/lib/ptyWire";
-import { currentWorkspaceEnv } from "@/modules/workspace";
-import { convertFileSrc, invoke } from "@tauri-apps/api/core";
-import { toast } from "sonner";
+} from '@/modules/terminal/lib/ptyPresentation';
+import { tokenBytes } from '@/modules/terminal/lib/ptyWire';
+import { currentWorkspaceEnv } from '@/modules/workspace';
+import { convertFileSrc, invoke } from '@tauri-apps/api/core';
+import { toast } from 'sonner';
 
 const textEncoder = new TextEncoder();
 const receivers = new Map<number, PtyOutputReceiver>();
@@ -31,30 +25,26 @@ const receivers = new Map<number, PtyOutputReceiver>();
  * channel eval or per-acknowledgement invoke is needed.
  */
 function tauriTransport(): PtyStreamTransport {
-  const request = (
-    path: string,
-    body: Uint8Array<ArrayBuffer>,
-    signal?: AbortSignal,
-  ) =>
-    fetch(convertFileSrc(path, "terax-pty"), {
-      method: "POST",
+  const request = (path: string, body: Uint8Array<ArrayBuffer>, signal?: AbortSignal) =>
+    fetch(convertFileSrc(path, 'terax-pty'), {
+      method: 'POST',
       body,
       signal,
-      cache: "no-store",
-      credentials: "omit",
-      referrerPolicy: "no-referrer",
+      cache: 'no-store',
+      credentials: 'omit',
+      referrerPolicy: 'no-referrer',
     });
   return {
-    open: async () => tokenBytes(await invoke<string>("pty_stream_open")),
+    open: async () => tokenBytes(await invoke<string>('pty_stream_open')),
     poll: async (body, signal) => {
-      const response = await request("poll", body, signal);
+      const response = await request('poll', body, signal);
       return {
         status: response.status,
         body: new Uint8Array(await response.arrayBuffer()),
       };
     },
     ack: async (body) => {
-      const response = await request("ack", body);
+      const response = await request('ack', body);
       await response.arrayBuffer();
       return { status: response.status, body: new Uint8Array(0) };
     },
@@ -93,10 +83,7 @@ export type PtyHandlers = {
 };
 
 /** What native answers `OSC 4/10/11/12` and `CSI ? 996 n` queries from. */
-export type PtyColors = Pick<
-  TerminalGpuTheme,
-  "foreground" | "background" | "cursor" | "palette"
->;
+export type PtyColors = Pick<TerminalGpuTheme, 'foreground' | 'background' | 'cursor' | 'palette'>;
 
 export type PtySession = {
   id: number;
@@ -126,21 +113,19 @@ export async function openPty(
     (processedBytes) => progress?.(processedBytes),
     (status) => {
       handlers.onOutputStatus?.(status);
-      if (status === "running") {
+      if (status === 'running') {
         if (notice !== undefined) toast.dismiss(notice);
         notice = undefined;
-      } else if (status === "stalled" || status === "failed") {
-        notice = toast.error("Terminal output paused", {
+      } else if (status === 'stalled' || status === 'failed') {
+        notice = toast.error('Terminal output paused', {
           id: notice,
           duration: Number.POSITIVE_INFINITY,
           description:
-            status === "failed"
-              ? "The terminal could not process output. Reopen this terminal to recover."
-              : "Waiting for the terminal connection. Delivery will resume automatically.",
+            status === 'failed'
+              ? 'The terminal could not process output. Reopen this terminal to recover.'
+              : 'Waiting for the terminal connection. Delivery will resume automatically.',
           action:
-            status === "failed"
-              ? undefined
-              : { label: "Retry", onClick: () => stream.retry() },
+            status === 'failed' ? undefined : { label: 'Retry', onClick: () => stream.retry() },
         });
       }
     },
@@ -158,12 +143,11 @@ export async function openPty(
     if (notice !== undefined) toast.dismiss(notice);
   };
 
-  const presentation =
-    paneId === undefined ? undefined : leafPresentationClass(paneId);
+  const presentation = paneId === undefined ? undefined : leafPresentationClass(paneId);
   try {
     await ensureAgentActivityListener();
     await stream.ensureStream();
-    id = await invoke<number>("pty_open", {
+    id = await invoke<number>('pty_open', {
       cols,
       rows,
       cwd: cwd ?? null,
@@ -198,27 +182,21 @@ export async function openPty(
   receiver.start();
 
   let closed = false;
-  const headers = { "x-pty-id": String(sessionId) };
+  const headers = { 'x-pty-id': String(sessionId) };
 
   return {
     id: sessionId,
     // Raw bytes + id header: no JSON round-trip on the per-keystroke path.
     write: (data) =>
-      invoke(
-        "pty_write",
-        typeof data === "string" ? textEncoder.encode(data) : data,
-        { headers },
-      ),
-    resize: (c, r) => invoke("pty_resize", { id: sessionId, cols: c, rows: r }),
+      invoke('pty_write', typeof data === 'string' ? textEncoder.encode(data) : data, { headers }),
+    resize: (c, r) => invoke('pty_resize', { id: sessionId, cols: c, rows: r }),
     setColors: (next) =>
-      closed
-        ? Promise.resolve()
-        : invoke("pty_set_colors", { id: sessionId, colors: next }),
+      closed ? Promise.resolve() : invoke('pty_set_colors', { id: sessionId, colors: next }),
     close: async () => {
       if (closed) return;
       closed = true;
       releaseHandlers();
-      await invoke("pty_close", { id: sessionId });
+      await invoke('pty_close', { id: sessionId });
     },
   };
 }

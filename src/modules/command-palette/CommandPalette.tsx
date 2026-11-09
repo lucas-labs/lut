@@ -6,52 +6,32 @@ import {
   CommandItem,
   CommandList,
   CommandShortcut,
-} from "@/components/ui/command";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
-import { FileIcon } from "@/modules/explorer/FileIcon";
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import {
-  getBindingTokens,
-  type KeyBinding,
-  type ShortcutId,
-  SHORTCUTS,
-} from "@/modules/shortcuts";
-import { listBuiltinThemes, useTheme } from "@/modules/theme";
+} from '@/components/ui/command';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
+import { FileIcon } from '@/modules/explorer/FileIcon';
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import { getBindingTokens, type KeyBinding, type ShortcutId, SHORTCUTS } from '@/modules/shortcuts';
+import { listBuiltinThemes, useTheme } from '@/modules/theme';
 import {
   AlertCircleIcon,
   ArrowTurnBackwardIcon,
   CommandIcon,
   TerminalIcon,
   Tick02Icon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { COMMAND_GROUPS } from "./commands";
-import { useCommandHistory } from "./hooks/useCommandHistory";
-import {
-  CONTENT_SEARCH_MIN_QUERY,
-  useContentSearch,
-} from "./hooks/useContentSearch";
-import { useFileSearch } from "./hooks/useFileSearch";
-import { fuzzyBest } from "./lib/fuzzy";
-import { MODE_HINTS, parseQuery } from "./lib/mode";
-import { mruRank, mruSnapshot, recordUse } from "./lib/mru";
-import {
-  boostRecent,
-  type FileHit,
-  parseFileTarget,
-  pathParts,
-  recentToHits,
-  type Segment,
-} from "./lib/quickOpen";
-import { recentFiles, recordRecentFile } from "./lib/recentFiles";
-import type {
-  OpenFileTarget,
-  PaletteBase,
-  PaletteInitialMode,
-  PaletteItem,
-} from "./types";
+} from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { COMMAND_GROUPS } from './commands';
+import { useCommandHistory } from './hooks/useCommandHistory';
+import { CONTENT_SEARCH_MIN_QUERY, useContentSearch } from './hooks/useContentSearch';
+import { useFileSearch } from './hooks/useFileSearch';
+import { fuzzyBest } from './lib/fuzzy';
+import { MODE_HINTS, parseQuery } from './lib/mode';
+import { mruRank, mruSnapshot, recordUse } from './lib/mru';
+import { boostRecent, type FileHit, parseFileTarget, pathParts, recentToHits, type Segment } from './lib/quickOpen';
+import { recentFiles, recordRecentFile } from './lib/recentFiles';
+import type { OpenFileTarget, PaletteBase, PaletteInitialMode, PaletteItem } from './types';
 
 type Props = {
   open: boolean;
@@ -79,45 +59,30 @@ export function CommandPalette({
   onOpenFile,
   insertCommand,
 }: Props) {
-  const [query, setQuery] = useState("");
-  const [value, setValue] = useState("");
-  const [page, setPage] = useState<"root" | "themes">("root");
-  const [base, setBase] = useState<PaletteBase>("commands");
+  const [query, setQuery] = useState('');
+  const [value, setValue] = useState('');
+  const [page, setPage] = useState<'root' | 'themes'>('root');
+  const [base, setBase] = useState<PaletteBase>('commands');
   const userShortcuts = usePreferencesStore((s) => s.shortcuts);
   const showHidden = usePreferencesStore((s) => s.showHidden);
   const { themeId, customThemes, setThemeId, previewThemeId } = useTheme();
 
   const parsed = parseQuery(query, base);
-  const inThemes = page === "themes";
-  const themeFilter = inThemes ? query.trim() : "";
+  const inThemes = page === 'themes';
+  const themeFilter = inThemes ? query.trim() : '';
 
-  const content = useContentSearch(
-    workspaceRoot,
-    parsed.term,
-    open && !inThemes && parsed.mode === "content",
-  );
-  const history = useCommandHistory(
-    parsed.term,
-    open && !inThemes && parsed.mode === "history",
-  );
+  const content = useContentSearch(workspaceRoot, parsed.term, open && !inThemes && parsed.mode === 'content');
+  const history = useCommandHistory(parsed.term, open && !inThemes && parsed.mode === 'history');
 
   const fileTarget = useMemo(
-    () => parseFileTarget(parsed.mode === "files" ? parsed.term : ""),
+    () => parseFileTarget(parsed.mode === 'files' ? parsed.term : ''),
     [parsed.mode, parsed.term],
   );
-  const filesActive = open && !inThemes && parsed.mode === "files";
-  const files = useFileSearch(
-    workspaceRoot,
-    fileTarget.query,
-    filesActive,
-    showHidden,
-  );
+  const filesActive = open && !inThemes && parsed.mode === 'files';
+  const files = useFileSearch(workspaceRoot, fileTarget.query, filesActive, showHidden);
 
   const mru = useMemo(() => (open ? mruSnapshot() : {}), [open]);
-  const recent = useMemo(
-    () => (open && workspaceRoot ? recentFiles(workspaceRoot) : []),
-    [open, workspaceRoot],
-  );
+  const recent = useMemo(() => (open && workspaceRoot ? recentFiles(workspaceRoot) : []), [open, workspaceRoot]);
 
   const fileRows = useMemo<FileHit[]>(() => {
     if (!filesActive || !workspaceRoot) return [];
@@ -132,11 +97,11 @@ export function CommandPalette({
   const firstFilePath = fileRows[0]?.path;
   // fileRows re-arms the selection when a new result set lands with the same first file.
   useEffect(() => {
-    if (filesActive) setValue(firstFilePath ? `file:${firstFilePath}` : "");
+    if (filesActive) setValue(firstFilePath ? `file:${firstFilePath}` : '');
   }, [filesActive, firstFilePath, fileRows]);
 
   const rankedCommands = useMemo(() => {
-    if (inThemes || parsed.mode !== "commands") return [];
+    if (inThemes || parsed.mode !== 'commands') return [];
     return rankCommands(commandItems, parsed.term, mru);
   }, [commandItems, parsed.term, parsed.mode, inThemes, mru]);
 
@@ -153,9 +118,9 @@ export function CommandPalette({
   }, [inThemes, themeFilter, customThemes]);
 
   const resetPalette = useCallback(() => {
-    setQuery("");
-    setValue("");
-    setPage("root");
+    setQuery('');
+    setValue('');
+    setPage('root');
     previewThemeId(null);
   }, [previewThemeId]);
 
@@ -171,23 +136,20 @@ export function CommandPalette({
 
   useEffect(() => {
     if (!open) return;
-    setQuery(initialMode === "content" ? "#" : "");
-    setBase(initialMode === "files" ? "files" : "commands");
-    setPage("root");
+    setQuery(initialMode === 'content' ? '#' : '');
+    setBase(initialMode === 'files' ? 'files' : 'commands');
+    setPage('root');
     const handle = window.setTimeout(() => {
-      document.getElementById("terax-command-palette-input")?.focus();
+      document.getElementById('terax-command-palette-input')?.focus();
     }, 0);
     return () => window.clearTimeout(handle);
   }, [open, initialMode]);
 
   useEffect(() => {
-    if (!inThemes || !value.startsWith("theme:")) return;
-    const id = value.slice("theme:".length);
-    if (id === "back") return;
-    const handle = window.setTimeout(
-      () => previewThemeId(id),
-      THEME_PREVIEW_DELAY_MS,
-    );
+    if (!inThemes || !value.startsWith('theme:')) return;
+    const id = value.slice('theme:'.length);
+    if (id === 'back') return;
+    const handle = window.setTimeout(() => previewThemeId(id), THEME_PREVIEW_DELAY_MS);
     return () => window.clearTimeout(handle);
   }, [value, inThemes, previewThemeId]);
 
@@ -200,24 +162,24 @@ export function CommandPalette({
   );
 
   const enterThemes = useCallback(() => {
-    setPage("themes");
-    setQuery("");
-    setValue("");
+    setPage('themes');
+    setQuery('');
+    setValue('');
   }, []);
 
   const exitThemes = useCallback(() => {
     previewThemeId(null);
-    setPage("root");
-    setQuery("");
-    setValue("");
+    setPage('root');
+    setQuery('');
+    setValue('');
   }, [previewThemeId]);
 
   const runCommand = useCallback(
     (item: PaletteItem) => {
       if (item.disabledReason) return;
-      if (item.id === "theme.pick") return enterThemes();
-      if (item.id === "search.content") return setQuery("#");
-      if (item.id === "history.open") return setQuery(">");
+      if (item.id === 'theme.pick') return enterThemes();
+      if (item.id === 'search.content') return setQuery('#');
+      if (item.id === 'history.open') return setQuery('>');
       recordUse(item.id);
       runAfterClose(item.run);
     },
@@ -264,9 +226,9 @@ export function CommandPalette({
 
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === "Enter") openSideRef.current = e.metaKey || e.ctrlKey;
+      if (e.key === 'Enter') openSideRef.current = e.metaKey || e.ctrlKey;
       if (!inThemes) return;
-      if (e.key === "Escape" || (e.key === "Backspace" && query.length === 0)) {
+      if (e.key === 'Escape' || (e.key === 'Backspace' && query.length === 0)) {
         e.preventDefault();
         e.stopPropagation();
         exitThemes();
@@ -276,16 +238,16 @@ export function CommandPalette({
   );
 
   const placeholder = inThemes
-    ? "Search themes..."
-    : parsed.mode === "files"
-      ? "Go to file... (add :line to jump)"
-      : parsed.mode === "content"
-        ? "Find text in files..."
-        : parsed.mode === "history"
-          ? "Search command history..."
-          : "Type a command, / for files, > for history, # to find in files";
+    ? 'Search themes...'
+    : parsed.mode === 'files'
+      ? 'Go to file... (add :line to jump)'
+      : parsed.mode === 'content'
+        ? 'Find text in files...'
+        : parsed.mode === 'history'
+          ? 'Search command history...'
+          : 'Type a command, / for files, > for history, # to find in files';
 
-  const showFiles = !inThemes && parsed.mode === "files";
+  const showFiles = !inThemes && parsed.mode === 'files';
 
   return (
     <CommandDialog
@@ -295,13 +257,7 @@ export function CommandPalette({
       description="Run a command, switch theme, or search your workspace."
       className="top-1/2 w-[min(680px,calc(100vw-32px))] -translate-y-1/2"
     >
-      <Command
-        shouldFilter={false}
-        loop
-        value={value}
-        onValueChange={setValue}
-        onKeyDown={onKeyDown}
-      >
+      <Command shouldFilter={false} loop value={value} onValueChange={setValue} onKeyDown={onKeyDown}>
         <CommandInput
           id="terax-command-palette-input"
           value={query}
@@ -309,9 +265,7 @@ export function CommandPalette({
           placeholder={placeholder}
           autoFocus
         />
-        <ScrollArea
-          className={showFiles ? "h-[372px]" : "max-h-[420px]"}
-        >
+        <ScrollArea className={showFiles ? 'h-[372px]' : 'max-h-[420px]'}>
           <CommandList
             className="max-h-none overflow-visible pr-3"
             onClickCapture={(e) => {
@@ -320,16 +274,8 @@ export function CommandPalette({
           >
             {inThemes ? (
               <CommandGroup heading="Themes">
-                <CommandItem
-                  value="theme:back"
-                  onSelect={exitThemes}
-                  className="text-[12.5px]"
-                >
-                  <HugeiconsIcon
-                    icon={ArrowTurnBackwardIcon}
-                    size={14}
-                    strokeWidth={1.75}
-                  />
+                <CommandItem value="theme:back" onSelect={exitThemes} className="text-[12.5px]">
+                  <HugeiconsIcon icon={ArrowTurnBackwardIcon} size={14} strokeWidth={1.75} />
                   <span>Back</span>
                 </CommandItem>
                 {themes.map((t) => (
@@ -352,7 +298,7 @@ export function CommandPalette({
                 ))}
                 {themes.length === 0 ? <StatusItem label="No themes" /> : null}
               </CommandGroup>
-            ) : parsed.mode === "commands" ? (
+            ) : parsed.mode === 'commands' ? (
               rankedCommands.length === 0 ? (
                 <EmptyHint />
               ) : (
@@ -365,10 +311,7 @@ export function CommandPalette({
                         <ActionItem
                           key={item.id}
                           item={item}
-                          shortcutLabel={formatShortcut(
-                            item.shortcutId,
-                            userShortcuts,
-                          )}
+                          shortcutLabel={formatShortcut(item.shortcutId, userShortcuts)}
                           onRun={() => runCommand(item)}
                         />
                       ))}
@@ -376,7 +319,7 @@ export function CommandPalette({
                   );
                 })
               )
-            ) : parsed.mode === "files" ? (
+            ) : parsed.mode === 'files' ? (
               <FilesBody
                 hasRoot={!!workspaceRoot}
                 query={fileTarget.query}
@@ -385,7 +328,7 @@ export function CommandPalette({
                 line={fileTarget.line}
                 onOpen={openFile}
               />
-            ) : parsed.mode === "content" ? (
+            ) : parsed.mode === 'content' ? (
               <CommandGroup heading="Contents">
                 {!workspaceRoot ? (
                   <StatusItem label="No workspace root" />
@@ -406,13 +349,8 @@ export function CommandPalette({
                         onSelect={() => openContent(hit.path, hit.line)}
                         className="text-[12.5px]"
                       >
-                        <FileIcon
-                          name={basename(hit.rel)}
-                          className="size-4 shrink-0"
-                        />
-                        <span className="min-w-0 flex-1 truncate font-mono text-[11.5px]">
-                          {hit.text.trim()}
-                        </span>
+                        <FileIcon name={basename(hit.rel)} className="size-4 shrink-0" />
+                        <span className="min-w-0 flex-1 truncate font-mono text-[11.5px]">{hit.text.trim()}</span>
                         <span className="ml-auto max-w-64 shrink-0 truncate text-[11px] font-normal text-muted-foreground">
                           {hit.rel}:{hit.line}
                         </span>
@@ -421,7 +359,7 @@ export function CommandPalette({
                   </AsyncBody>
                 )}
               </CommandGroup>
-            ) : parsed.mode === "history" ? (
+            ) : parsed.mode === 'history' ? (
               <CommandGroup heading="Command history">
                 {!insertCommand ? (
                   <StatusItem label="Open a terminal to run history" />
@@ -446,9 +384,7 @@ export function CommandPalette({
                           strokeWidth={1.75}
                           className="text-muted-foreground"
                         />
-                        <span className="min-w-0 flex-1 truncate font-mono text-[11.5px]">
-                          {cmd}
-                        </span>
+                        <span className="min-w-0 flex-1 truncate font-mono text-[11.5px]">{cmd}</span>
                       </CommandItem>
                     ))}
                   </AsyncBody>
@@ -456,21 +392,17 @@ export function CommandPalette({
               </CommandGroup>
             ) : (
               <CommandGroup heading="Search modes">
-                {MODE_HINTS.filter((hint) => hint.bases.includes(base)).map(
-                  (hint) => (
+                {MODE_HINTS.filter((hint) => hint.bases.includes(base)).map((hint) => (
                   <CommandItem
                     key={hint.sigil}
                     value={`hint:${hint.sigil}`}
                     onSelect={() => setQuery(hint.sigil)}
                     className="text-[12.5px]"
                   >
-                    <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px]">
-                      {hint.sigil}
-                    </kbd>
+                    <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px]">{hint.sigil}</kbd>
                     <span>{hint.label}</span>
                   </CommandItem>
-                  ),
-                )}
+                ))}
               </CommandGroup>
             )}
           </CommandList>
@@ -505,18 +437,11 @@ function FilesBody({
   }
   if (!query) {
     return (
-      <CommandGroup heading={rows.length > 0 ? "Recent files" : "Files"}>
+      <CommandGroup heading={rows.length > 0 ? 'Recent files' : 'Files'}>
         {rows.length === 0 ? (
           <StatusItem label="Type a file name" />
         ) : (
-          rows.map((hit) => (
-            <FileRow
-              key={hit.path}
-              hit={hit}
-              line={line}
-              onOpen={onOpen}
-            />
-          ))
+          rows.map((hit) => <FileRow key={hit.path} hit={hit} line={line} onOpen={onOpen} />)
         )}
       </CommandGroup>
     );
@@ -531,12 +456,7 @@ function FilesBody({
         onRetry={search.retry}
       >
         {rows.map((hit) => (
-          <FileRow
-            key={hit.path}
-            hit={hit}
-            line={line}
-            onOpen={onOpen}
-          />
+          <FileRow key={hit.path} hit={hit} line={line} onOpen={onOpen} />
         ))}
       </AsyncBody>
     </CommandGroup>
@@ -552,10 +472,7 @@ const FileRow = memo(function FileRow({
   line?: number;
   onOpen: (path: string) => void;
 }) {
-  const parts = useMemo(
-    () => pathParts(hit.rel, hit.indices),
-    [hit.rel, hit.indices],
-  );
+  const parts = useMemo(() => pathParts(hit.rel, hit.indices), [hit.rel, hit.indices]);
   return (
     <CommandItem
       value={`file:${hit.path}`}
@@ -564,39 +481,19 @@ const FileRow = memo(function FileRow({
     >
       <FileIcon name={hit.name} className="size-4 shrink-0" />
       <span className="max-w-[65%] shrink-0 truncate">
-        <Marked
-          segments={parts.name}
-          plain="text-foreground/85"
-          marked="font-semibold text-foreground"
-        />
+        <Marked segments={parts.name} plain="text-foreground/85" marked="font-semibold text-foreground" />
       </span>
       {parts.dir.length > 0 ? (
         <span className="min-w-0 flex-1 truncate text-[11px] font-normal text-muted-foreground">
-          <Marked
-            segments={parts.dir}
-            plain=""
-            marked="font-medium text-foreground/90"
-          />
+          <Marked segments={parts.dir} plain="" marked="font-medium text-foreground/90" />
         </span>
       ) : null}
-      {line !== undefined ? (
-        <CommandShortcut className="font-mono tracking-normal">
-          :{line}
-        </CommandShortcut>
-      ) : null}
+      {line !== undefined ? <CommandShortcut className="font-mono tracking-normal">:{line}</CommandShortcut> : null}
     </CommandItem>
   );
 });
 
-function Marked({
-  segments,
-  plain,
-  marked,
-}: {
-  segments: Segment[];
-  plain: string;
-  marked: string;
-}) {
+function Marked({ segments, plain, marked }: { segments: Segment[]; plain: string; marked: string }) {
   return (
     <>
       {segments.map((seg, i) => (
@@ -622,19 +519,13 @@ function FilesFooter() {
 function FooterHint({ keys, label }: { keys: string; label: string }) {
   return (
     <span className="inline-flex items-center gap-1.5">
-      <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10.5px]">
-        {keys}
-      </kbd>
+      <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10.5px]">{keys}</kbd>
       {label}
     </span>
   );
 }
 
-function rankCommands(
-  items: PaletteItem[],
-  term: string,
-  mru: Record<string, number>,
-): PaletteItem[] {
+function rankCommands(items: PaletteItem[], term: string, mru: Record<string, number>): PaletteItem[] {
   if (!term) {
     return [...items].sort((a, b) => mruRank(mru, b.id) - mruRank(mru, a.id));
   }
@@ -643,9 +534,7 @@ function rankCommands(
     const s = fuzzyBest(term, [item.title, item.group, ...(item.keywords ?? [])]);
     if (s !== null) scored.push({ item, s });
   }
-  scored.sort(
-    (a, b) => b.s - a.s || mruRank(mru, b.item.id) - mruRank(mru, a.item.id),
-  );
+  scored.sort((a, b) => b.s - a.s || mruRank(mru, b.item.id) - mruRank(mru, a.item.id));
   return scored.map((x) => x.item);
 }
 
@@ -660,25 +549,13 @@ function ActionItem({
 }) {
   const rightLabel = item.disabledReason ?? item.trailing ?? shortcutLabel;
   return (
-    <CommandItem
-      value={`cmd:${item.id}`}
-      disabled={!!item.disabledReason}
-      onSelect={onRun}
-      className="text-[12.5px]"
-    >
+    <CommandItem value={`cmd:${item.id}`} disabled={!!item.disabledReason} onSelect={onRun} className="text-[12.5px]">
       {item.icon ? (
-        <HugeiconsIcon
-          icon={item.icon}
-          size={14}
-          strokeWidth={1.75}
-          className="text-muted-foreground"
-        />
+        <HugeiconsIcon icon={item.icon} size={14} strokeWidth={1.75} className="text-muted-foreground" />
       ) : null}
       <span className="truncate">{item.title}</span>
       {rightLabel ? (
-        <CommandShortcut
-          className={item.disabledReason ? "normal-case tracking-normal" : ""}
-        >
+        <CommandShortcut className={item.disabledReason ? 'normal-case tracking-normal' : ''}>
           {rightLabel}
         </CommandShortcut>
       ) : null}
@@ -716,32 +593,13 @@ function AsyncBody({
   return <>{children}</>;
 }
 
-function StatusItem({
-  label,
-  tone = "muted",
-}: {
-  label: string;
-  tone?: "muted" | "error";
-}) {
+function StatusItem({ label, tone = 'muted' }: { label: string; tone?: 'muted' | 'error' }) {
   return (
-    <CommandItem
-      value={`status:${label}`}
-      disabled
-      className="text-[12.5px] font-normal"
-    >
-      {tone === "error" ? (
-        <HugeiconsIcon
-          icon={AlertCircleIcon}
-          size={14}
-          strokeWidth={1.75}
-          className="text-destructive"
-        />
+    <CommandItem value={`status:${label}`} disabled className="text-[12.5px] font-normal">
+      {tone === 'error' ? (
+        <HugeiconsIcon icon={AlertCircleIcon} size={14} strokeWidth={1.75} className="text-destructive" />
       ) : null}
-      <span
-        className={tone === "error" ? "text-destructive" : "text-muted-foreground"}
-      >
-        {label}
-      </span>
+      <span className={tone === 'error' ? 'text-destructive' : 'text-muted-foreground'}>{label}</span>
     </CommandItem>
   );
 }
@@ -768,5 +626,5 @@ function formatShortcut(
   const shortcut = SHORTCUTS_BY_ID.get(shortcutId);
   const bindings = userShortcuts[shortcutId] ?? shortcut?.defaultBindings;
   const tokens = getBindingTokens(bindings?.[0]);
-  return tokens.length ? tokens.join(" ") : null;
+  return tokens.length ? tokens.join(' ') : null;
 }

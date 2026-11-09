@@ -1,19 +1,16 @@
-import type { GhosttyTerminalModelApi } from "../GhosttyTerminalModel";
-import type { LinkUnderlineGeometry } from "./LinkUnderlineOverlay";
-import type { TerminalLinkHit } from "./terminalLinks";
-import { terminalLinkReplayStamp } from "./terminalLinksLoader";
+import type { GhosttyTerminalModelApi } from '../GhosttyTerminalModel';
+import type { LinkUnderlineGeometry } from './LinkUnderlineOverlay';
+import type { TerminalLinkHit } from './terminalLinks';
+import { terminalLinkReplayStamp } from './terminalLinksLoader';
 
 export type LazyTerminalLinksOptions = {
   readonly target: HTMLElement;
-  readonly keyTarget: Pick<Window, "addEventListener" | "removeEventListener">;
+  readonly keyTarget: Pick<Window, 'addEventListener' | 'removeEventListener'>;
   /** Whether the platform's link modifier (Cmd, or Ctrl elsewhere) is down. */
-  readonly isModifier: (event: {
-    readonly metaKey: boolean;
-    readonly ctrlKey: boolean;
-  }) => boolean;
+  readonly isModifier: (event: { readonly metaKey: boolean; readonly ctrlKey: boolean }) => boolean;
   readonly model: Pick<
     GhosttyTerminalModelApi,
-    "linkSource" | "cols" | "rows" | "modes" | "revision" | "viewportOriginLine"
+    'linkSource' | 'cols' | 'rows' | 'modes' | 'revision' | 'viewportOriginLine'
   >;
   /** The pane's scrollbar; the pointer over it belongs to the scrollbar. */
   readonly scrollbar: Node;
@@ -60,7 +57,7 @@ export class LazyTerminalLinks {
     let clickStamp: string | null = null;
 
     const push = (event: Event): void => {
-      if (event.type === "pointerdown" && clickStamp === null)
+      if (event.type === 'pointerdown' && clickStamp === null)
         clickStamp = terminalLinkReplayStamp(options);
       queue?.push(event);
       if (queue && queue.length > MAX_QUEUED_EVENTS) queue.shift();
@@ -69,8 +66,8 @@ export class LazyTerminalLinks {
     const bindKeys = (on: boolean): void => {
       if (on === keysBound) return;
       keysBound = on;
-      if (on) keyTarget.addEventListener("keydown", onKey);
-      else keyTarget.removeEventListener("keydown", onKey);
+      if (on) keyTarget.addEventListener('keydown', onKey);
+      else keyTarget.removeEventListener('keydown', onKey);
     };
 
     // Releases are only worth hearing while a press may wait for the code.
@@ -78,19 +75,19 @@ export class LazyTerminalLinks {
       if (on === hearing) return;
       hearing = on;
       if (on) {
-        target.addEventListener("pointerup", onRelease);
-        keyTarget.addEventListener("keyup", onKey);
-        keyTarget.addEventListener("blur", onLeave);
+        target.addEventListener('pointerup', onRelease);
+        keyTarget.addEventListener('keyup', onKey);
+        keyTarget.addEventListener('blur', onLeave);
       } else {
-        target.removeEventListener("pointerup", onRelease);
-        keyTarget.removeEventListener("keyup", onKey);
-        keyTarget.removeEventListener("blur", onLeave);
+        target.removeEventListener('pointerup', onRelease);
+        keyTarget.removeEventListener('keyup', onKey);
+        keyTarget.removeEventListener('blur', onLeave);
       }
     };
 
     const onPointer = (event: PointerEvent): void => {
-      if (event.pointerType === "touch") return;
-      if (event.type === "pointerdown" && event.button) return;
+      if (event.pointerType === 'touch') return;
+      if (event.type === 'pointerdown' && event.button) return;
       last = event;
       if (queue) {
         push(event);
@@ -120,10 +117,10 @@ export class LazyTerminalLinks {
     };
 
     const detach = (): void => {
-      target.removeEventListener("pointermove", onPointer);
-      target.removeEventListener("pointerdown", onPointer);
-      target.removeEventListener("pointerleave", onLeave);
-      target.removeEventListener("pointercancel", onLeave);
+      target.removeEventListener('pointermove', onPointer);
+      target.removeEventListener('pointerdown', onPointer);
+      target.removeEventListener('pointerleave', onLeave);
+      target.removeEventListener('pointercancel', onLeave);
       bindKeys(false);
       hear(false);
     };
@@ -131,30 +128,24 @@ export class LazyTerminalLinks {
     const load = async (seed: Event[]): Promise<void> => {
       if (active || queue || disposed) return;
       queue = seed;
-      if (seed.some((event) => event.type === "pointerdown"))
+      if (seed.some((event) => event.type === 'pointerdown'))
         clickStamp = terminalLinkReplayStamp(options);
       hear(true);
       try {
-        const { createTerminalLinks } = await import("./terminalLinksRuntime");
+        const { createTerminalLinks } = await import('./terminalLinksRuntime');
         if (disposed) return;
         const links = createTerminalLinks(options);
         active = links;
         const pending = queue ?? [];
         detach();
         last = null;
-        const stale =
-          clickStamp !== null &&
-          clickStamp !== terminalLinkReplayStamp(options);
+        const stale = clickStamp !== null && clickStamp !== terminalLinkReplayStamp(options);
         for (const event of pending) {
-          if (
-            stale &&
-            (event.type === "pointerdown" || event.type === "pointerup")
-          )
-            continue;
+          if (stale && (event.type === 'pointerdown' || event.type === 'pointerup')) continue;
           links.ingest(event);
         }
       } catch (error) {
-        console.error("[terax] terminal link support failed to load:", error);
+        console.error('[terax] terminal link support failed to load:', error);
       } finally {
         queue = null;
         clickStamp = null;
@@ -162,18 +153,17 @@ export class LazyTerminalLinks {
       }
     };
 
-    target.addEventListener("pointermove", onPointer);
-    target.addEventListener("pointerdown", onPointer);
-    target.addEventListener("pointerleave", onLeave);
-    target.addEventListener("pointercancel", onLeave);
+    target.addEventListener('pointermove', onPointer);
+    target.addEventListener('pointerdown', onPointer);
+    target.addEventListener('pointerleave', onLeave);
+    target.addEventListener('pointercancel', onLeave);
 
     this.ingest = (event) => {
       if (active) return active.ingest(event);
-      if (event.type === "pointermove" || event.type === "pointerdown")
+      if (event.type === 'pointermove' || event.type === 'pointerdown')
         onPointer(event as PointerEvent);
-      else if (event.type === "pointerup") onRelease(event as PointerEvent);
-      else if (event.type === "keydown" || event.type === "keyup")
-        onKey(event as KeyboardEvent);
+      else if (event.type === 'pointerup') onRelease(event as PointerEvent);
+      else if (event.type === 'keydown' || event.type === 'keyup') onKey(event as KeyboardEvent);
       else onLeave();
     };
     this.invalidate = () => active?.invalidate();

@@ -1,10 +1,8 @@
-import { setLastWslDistro } from "@/modules/settings/store";
-import { invoke } from "@tauri-apps/api/core";
-import { create } from "zustand";
+import { setLastWslDistro } from '@/modules/settings/store';
+import { invoke } from '@tauri-apps/api/core';
+import { create } from 'zustand';
 
-export type WorkspaceEnv =
-  | { kind: "local" }
-  | { kind: "wsl"; distro: string };
+export type WorkspaceEnv = { kind: 'local' } | { kind: 'wsl'; distro: string };
 
 export type WslDistro = {
   name: string;
@@ -21,7 +19,7 @@ type State = {
   refreshDistros: () => Promise<WslDistro[]>;
 };
 
-export const LOCAL_WORKSPACE: WorkspaceEnv = { kind: "local" };
+export const LOCAL_WORKSPACE: WorkspaceEnv = { kind: 'local' };
 
 export const useWorkspaceEnvStore = create<State>((set) => ({
   env: LOCAL_WORKSPACE,
@@ -30,12 +28,12 @@ export const useWorkspaceEnvStore = create<State>((set) => ({
   error: null,
   setEnv: (env) => {
     set({ env });
-    if (env.kind === "wsl") void setLastWslDistro(env.distro);
+    if (env.kind === 'wsl') void setLastWslDistro(env.distro);
   },
   refreshDistros: async () => {
     set({ loading: true, error: null });
     try {
-      const distros = await invoke<WslDistro[]>("wsl_list_distros");
+      const distros = await invoke<WslDistro[]>('wsl_list_distros');
       set({ distros, loading: false });
       return distros;
     } catch (e) {
@@ -50,12 +48,12 @@ export function currentWorkspaceEnv(): WorkspaceEnv {
 }
 
 export function workspaceScopeKey(env: WorkspaceEnv): string {
-  return env.kind === "wsl" ? `wsl:${env.distro}` : "local";
+  return env.kind === 'wsl' ? `wsl:${env.distro}` : 'local';
 }
 
 export function parseWorkspaceScopeKey(key: string): WorkspaceEnv {
-  return key.startsWith("wsl:")
-    ? { kind: "wsl", distro: key.slice("wsl:".length) }
+  return key.startsWith('wsl:')
+    ? { kind: 'wsl', distro: key.slice('wsl:'.length) }
     : LOCAL_WORKSPACE;
 }
 
@@ -64,5 +62,5 @@ export function currentWorkspaceScopeKey(): string {
 }
 
 export async function getWslHome(distro: string): Promise<string> {
-  return invoke<string>("wsl_home", { distro });
+  return invoke<string>('wsl_home', { distro });
 }

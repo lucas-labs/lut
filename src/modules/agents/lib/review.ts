@@ -1,15 +1,10 @@
-import { useChatStore } from "@/modules/ai/store/chatStore";
-import {
-  type ManagedAgent,
-  useManagedAgentsStore,
-} from "../store/managedAgentsStore";
+import { useChatStore } from '@/modules/ai/store/chatStore';
+import { type ManagedAgent, useManagedAgentsStore } from '../store/managedAgentsStore';
 
 function buildReviewDirective(m: ManagedAgent): string {
   const remaining = m.maxRounds - m.rounds;
   const lastRound =
-    remaining <= 1
-      ? " This is the last automatic review round, so make any follow-up count."
-      : "";
+    remaining <= 1 ? ' This is the last automatic review round, so make any follow-up count.' : '';
   return `The Claude Code agent you are supervising has finished its turn on:
 
 > ${m.task}
@@ -18,7 +13,7 @@ Call read_agent_output to see what it actually did and reported. Then decide: if
 }
 
 function canReview(m: ManagedAgent): boolean {
-  if (m.phase === "done") return false;
+  if (m.phase === 'done') return false;
   if (m.rounds >= m.maxRounds) return false;
   if (m.reviewedAtRound >= m.rounds) return false;
   return true;
@@ -27,13 +22,13 @@ function canReview(m: ManagedAgent): boolean {
 function fireReview(m: ManagedAgent): void {
   const store = useManagedAgentsStore.getState();
   store.markReviewed(m.leafId);
-  store.setPhase(m.leafId, "reviewing");
+  store.setPhase(m.leafId, 'reviewing');
   void (async () => {
-    const { getOrCreateChat } = await import("@/modules/ai/store/chatRuntime");
+    const { getOrCreateChat } = await import('@/modules/ai/store/chatRuntime');
     const chat = getOrCreateChat(m.sessionId);
     void chat.sendMessage({
-      role: "user",
-      parts: [{ type: "text", text: buildReviewDirective(m) }],
+      role: 'user',
+      parts: [{ type: 'text', text: buildReviewDirective(m) }],
     } as Parameters<typeof chat.sendMessage>[0]);
   })();
 }

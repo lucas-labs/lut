@@ -23,11 +23,11 @@ export class FakeElement extends EventTarget {
  * caret to the end (collapsed), `setSelectionRange`/`select` change the range.
  */
 export class FakeTextArea extends FakeElement {
-  style = { cssText: "" } as CSSStyleDeclaration;
+  style = { cssText: '' } as CSSStyleDeclaration;
   selectionStart = 0;
   selectionEnd = 0;
   focus = (): void => {};
-  private text = "";
+  private text = '';
 
   get value(): string {
     return this.text;

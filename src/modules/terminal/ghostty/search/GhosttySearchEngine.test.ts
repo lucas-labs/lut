@@ -1,9 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
-import type {
-  GhosttySearchStatus,
-  GhosttyTerminalModelApi,
-} from "../GhosttyTerminalModel";
-import { GhosttySearchEngine } from "./GhosttySearchEngine";
+import { describe, expect, it, vi } from 'vitest';
+import type { GhosttySearchStatus, GhosttyTerminalModelApi } from '../GhosttyTerminalModel';
+import { GhosttySearchEngine } from './GhosttySearchEngine';
 
 const pendingStatus: GhosttySearchStatus = {
   active: true,
@@ -23,16 +20,14 @@ const completeStatus: GhosttySearchStatus = {
   selectedIndex: -1,
 };
 
-describe("GhosttySearchEngine", () => {
-  it("renders block matches without starting a whole-terminal search", () => {
+describe('GhosttySearchEngine', () => {
+  it('renders block matches without starting a whole-terminal search', () => {
     let active = true;
     const model = {
       cols: 5,
       rows: 1,
       blockSearchActive: () => active,
-      searchViewportMatches: () => [
-        { row: 0, startColumn: 1, endColumn: 4, selected: true },
-      ],
+      searchViewportMatches: () => [{ row: 0, startColumn: 1, endColumn: 4, selected: true }],
       setSearchQuery: vi.fn(),
     } as unknown as GhosttyTerminalModelApi;
     const controller = new GhosttySearchEngine(model, vi.fn());
@@ -44,7 +39,7 @@ describe("GhosttySearchEngine", () => {
     expect(controller.matchAt(0, 2)).toBe(0);
     controller.dispose();
   });
-  it("exposes the highlight mask with a revision that moves only when cells change", () => {
+  it('exposes the highlight mask with a revision that moves only when cells change', () => {
     let spans = [{ row: 0, startColumn: 1, endColumn: 3, selected: false }];
     const model = {
       cols: 6,
@@ -65,9 +60,7 @@ describe("GhosttySearchEngine", () => {
     spans = [{ row: 1, startColumn: 0, endColumn: 2, selected: true }];
     controller.refreshOverlay();
     expect(controller.maskRevision).toBe(revision + 1);
-    expect([...(controller.viewportMaskBytes() ?? [])].slice(6)).toEqual([
-      2, 2, 0, 0, 0, 0,
-    ]);
+    expect([...(controller.viewportMaskBytes() ?? [])].slice(6)).toEqual([2, 2, 0, 0, 0, 0]);
 
     spans = [];
     controller.refreshOverlay();
@@ -78,7 +71,7 @@ describe("GhosttySearchEngine", () => {
   });
 
   it.each([false, true])(
-    "restores the native search without resetting or skipping a match (pending: %s)",
+    'restores the native search without resetting or skipping a match (pending: %s)',
     (pending) => {
       let complete = !pending;
       const model = {
@@ -97,7 +90,7 @@ describe("GhosttySearchEngine", () => {
       } as unknown as GhosttyTerminalModelApi;
       const scheduler = { request: vi.fn(() => 42), cancel: vi.fn() };
       const previous = new GhosttySearchEngine(model, vi.fn(), scheduler);
-      previous.findNext("x");
+      previous.findNext('x');
       const snapshot = previous.snapshot();
       previous.dispose();
       complete = true;
@@ -106,7 +99,7 @@ describe("GhosttySearchEngine", () => {
       expect(model.setSearchQuery).toHaveBeenCalledOnce();
       expect(model.selectSearchMatch).toHaveBeenCalledOnce();
       expect(replacement.matchAt(0, 0)).toBe(2);
-      replacement.findNext("x");
+      replacement.findNext('x');
       expect(model.setSearchQuery).toHaveBeenCalledOnce();
       expect(model.selectSearchMatch).toHaveBeenCalledTimes(2);
       replacement.dispose();
@@ -114,7 +107,7 @@ describe("GhosttySearchEngine", () => {
     },
   );
 
-  it("steps incrementally and retains only viewport match cells", () => {
+  it('steps incrementally and retains only viewport match cells', () => {
     const callbacks = new Map<number, () => void>();
     let nextHandle = 1;
     let selected = false;
@@ -130,9 +123,7 @@ describe("GhosttySearchEngine", () => {
         selected = true;
         return { ...completeStatus, selectedIndex: 0 };
       }),
-      searchViewportMatches: vi.fn(() => [
-        { row: 1, startColumn: 1, endColumn: 4, selected },
-      ]),
+      searchViewportMatches: vi.fn(() => [{ row: 1, startColumn: 1, endColumn: 4, selected }]),
       clearSearch: vi.fn(),
     } as unknown as GhosttyTerminalModelApi;
     const onChange = vi.fn();
@@ -145,22 +136,22 @@ describe("GhosttySearchEngine", () => {
       cancel: (handle) => callbacks.delete(handle),
     });
 
-    expect(controller.findNext("agent")).toBe(true);
+    expect(controller.findNext('agent')).toBe(true);
     expect(model.stepSearch).toHaveBeenCalledWith(256);
     expect(controller.matchAt(1, 2)).toBe(1);
     expect(callbacks.size).toBe(1);
 
     const callback = callbacks.values().next().value;
-    expect(callback).toBeTypeOf("function");
+    expect(callback).toBeTypeOf('function');
     callback?.();
 
-    expect(model.selectSearchMatch).toHaveBeenCalledWith("next");
+    expect(model.selectSearchMatch).toHaveBeenCalledWith('next');
     expect(controller.matchAt(1, 2)).toBe(2);
     expect(controller.matchAt(0, 2)).toBe(0);
     expect(onChange).toHaveBeenCalledTimes(2);
   });
 
-  it("coalesces streaming invalidations and cancels work when hidden or disposed", () => {
+  it('coalesces streaming invalidations and cancels work when hidden or disposed', () => {
     let callback: (() => void) | null = null;
     const scheduler = {
       request: vi.fn((next: () => void) => {
@@ -182,7 +173,7 @@ describe("GhosttySearchEngine", () => {
     const controller = new GhosttySearchEngine(model, vi.fn(), scheduler);
     controller.invalidate();
     expect(scheduler.request).not.toHaveBeenCalled();
-    controller.findNext("agent");
+    controller.findNext('agent');
     vi.mocked(model.stepSearch).mockClear();
     vi.mocked(model.searchViewportMatches).mockClear();
     for (let index = 0; index < 1_000; index++) controller.invalidate();
@@ -205,7 +196,7 @@ describe("GhosttySearchEngine", () => {
     expect(callback).toBeNull();
   });
 
-  it("cancels pending work and clears Ghostty search state", () => {
+  it('cancels pending work and clears Ghostty search state', () => {
     const cancel = vi.fn();
     const model = {
       cols: 1,
@@ -220,7 +211,7 @@ describe("GhosttySearchEngine", () => {
       cancel,
     });
 
-    controller.findPrevious("x");
+    controller.findPrevious('x');
     controller.clearDecorations();
 
     expect(cancel).toHaveBeenCalledWith(42);

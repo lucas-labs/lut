@@ -1,18 +1,13 @@
-import { extendedSymbolsPending } from "@/lib/fonts";
+import { extendedSymbolsPending } from '@/lib/fonts';
 import {
   builtinGlyphPending,
   BuiltinGlyphRenderer,
   builtinGlyphSpec,
   isBuiltinGlyph,
-} from "./BuiltinGlyphs";
-import { hasIntrinsicColor } from "./glyphColor";
-import {
-  drawGlyph,
-  isExtendedSymbol,
-  layoutGlyph,
-  placeGlyph,
-} from "./GlyphPlacement";
-import { fontCss, type TerminalFontMetrics } from "./terminalVisuals";
+} from './BuiltinGlyphs';
+import { hasIntrinsicColor } from './glyphColor';
+import { drawGlyph, isExtendedSymbol, layoutGlyph, placeGlyph } from './GlyphPlacement';
+import { fontCss, type TerminalFontMetrics } from './terminalVisuals';
 
 const RASTER_SIZE = 256;
 const GLYPH_PADDING = 2;
@@ -77,19 +72,12 @@ export class GlyphRasterizer {
       size: metrics.font.size * metrics.scale,
     };
     this.fonts = [0, 1, 2, 3].map((style) =>
-      fontCss(
-        font,
-        (style & GLYPH_STYLE_BOLD) !== 0,
-        (style & GLYPH_STYLE_ITALIC) !== 0,
-      ),
+      fontCss(font, (style & GLYPH_STYLE_BOLD) !== 0, (style & GLYPH_STYLE_ITALIC) !== 0),
     );
   }
 
   get cpuBytes(): number {
-    return (
-      (this.canvas ? RASTER_SIZE * RASTER_SIZE * 5 : 0) +
-      (this.builtin?.byteSize ?? 0)
-    );
+    return (this.canvas ? RASTER_SIZE * RASTER_SIZE * 5 : 0) + (this.builtin?.byteSize ?? 0);
   }
 
   /** `roomy`: a glyph that may take two cells has its second cell free (see `GlyphPlacement`). */
@@ -119,13 +107,7 @@ export class GlyphRasterizer {
       ascent: measurement.actualBoundingBoxAscent || 0,
       descent: measurement.actualBoundingBoxDescent || 0,
     };
-    const placement = placeGlyph(
-      text,
-      measure,
-      deviceCellWidth,
-      deviceCellHeight,
-      roomy,
-    );
+    const placement = placeGlyph(text, measure, deviceCellWidth, deviceCellHeight, roomy);
     const layout = layoutGlyph(
       measure,
       placement,
@@ -199,14 +181,14 @@ export class GlyphRasterizer {
 
   private ensureContext(): CanvasRenderingContext2D {
     if (this.context) return this.context;
-    const canvas = document.createElement("canvas");
+    const canvas = document.createElement('canvas');
     canvas.width = RASTER_SIZE;
     canvas.height = RASTER_SIZE;
-    const context = canvas.getContext("2d", { willReadFrequently: true });
-    if (!context) throw new Error("Glyph rasterization is unavailable");
-    context.textAlign = "left";
-    context.textBaseline = "alphabetic";
-    context.fillStyle = "white";
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    if (!context) throw new Error('Glyph rasterization is unavailable');
+    context.textAlign = 'left';
+    context.textBaseline = 'alphabetic';
+    context.fillStyle = 'white';
     this.canvas = canvas;
     this.context = context;
     this.activeStyle = -1;

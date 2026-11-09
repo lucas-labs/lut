@@ -1,4 +1,4 @@
-import type { Theme, ThemeMode } from "./types";
+import type { Theme, ThemeMode } from './types';
 
 export type TerminalFont = {
   fontFamily: string;
@@ -11,8 +11,7 @@ export function resolveTerminalFont(
   theme: Theme,
   mode: ThemeMode,
 ): TerminalFont {
-  const variant =
-    theme.variants[mode] ?? theme.variants.dark ?? theme.variants.light;
+  const variant = theme.variants[mode] ?? theme.variants.dark ?? theme.variants.light;
   const terminal = variant?.terminal;
   return {
     fontFamily: terminal?.fontFamily ?? preferences.fontFamily,

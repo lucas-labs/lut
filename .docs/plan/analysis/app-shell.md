@@ -13,6 +13,7 @@ and shows the initially hidden window with two timeouts (`main.tsx:42-50`). `ind
 class before first paint from `localStorage["terax-ui-theme-shadow"]`.
 
 **App.tsx (1695 lines) is the single coordinator.** It:
+
 - owns the tab model through `useTabs(...)` (`App.tsx:203`) — a React hook, not a global store — and wires it to
   spaces (`useSpaces`, `useSpacesBoot`, `useSpacePersistence`, `App.tsx:262-293`, area state-settings);
 - registers every keyboard shortcut in one handler map passed to `useGlobalShortcuts` (`App.tsx:1066`);
@@ -68,6 +69,7 @@ replaces the default Quit with a guarded item that calls `main.close()` so the s
 ## Couplings
 
 Outgoing (app-shell -> other areas):
+
 - ai: `App.tsx:22-33,369,1625-1634,1694`; `WorkspaceInputBar.tsx:3-6,24`; `useAppCloseGuard.ts:2-6`;
   `useWorkspaceSwitcher.ts:3`; `StatusBar.tsx:6-11`.
 - ide-tools: editor `App.tsx:41-46`, `WorkspaceSurface.tsx:3`, `SearchInline.tsx:4`, `DiagnosticsBadge.tsx:1`,
@@ -171,6 +173,7 @@ settings window. macOS keeps native traffic lights via the overlay title bar.
 ## Draft issues
 
 ### app-shell-D01 — Design: app shell layout and tab navigator
+
 ```yaml
 id: app-shell-D01
 depends-on: []
@@ -180,15 +183,18 @@ type: design
 scope: ui
 size: M
 ```
+
 **Goal:** The user designs lut's main frame: title bar, horizontal/vertical tab navigator, optional projects sidebar,
 status bar and terminal area.
 
 **Acceptance criteria:**
+
 - [ ] Frame layout for both tab orientations and collapsed/expanded sidebar.
 - [ ] Tab item states (active, agent badge, cold, close) and context menu entries.
 - [ ] Window controls decision for Windows/Linux (custom vs native).
 
 ### app-shell-D02 — Design: command palette, dialogs and UI primitives
+
 ```yaml
 id: app-shell-D02
 depends-on: []
@@ -198,14 +204,17 @@ type: design
 scope: ui
 size: M
 ```
+
 **Goal:** The user defines the design tokens, primitive components and the command palette / confirm dialog look.
 
 **Acceptance criteria:**
+
 - [ ] Token set (colors, spacing, density) for light/dark and custom themes.
 - [ ] Primitive list (button, menu, dialog, popover, input, tooltip…) with chosen library.
 - [ ] Command palette and close-confirmation dialog designs.
 
 ### app-shell-D03 — Remove unused UI primitives
+
 ```yaml
 id: app-shell-D03
 depends-on: []
@@ -215,15 +224,18 @@ type: task
 scope: ui
 size: XS
 ```
+
 **Goal:** Delete shadcn components nobody imports.
 
 **Acceptance criteria:**
+
 - [ ] alert, card, empty, item, menubar, radio-group, sheet, skeleton, toggle-group deleted.
 - [ ] No import references remain.
 
 **Verification:** `pnpm tsc --noEmit` and `pnpm test` pass.
 
 ### app-shell-D04 — Lifecycle tests for tab switch, split, orientation and sidebar
+
 ```yaml
 id: app-shell-D04
 depends-on: []
@@ -233,15 +245,18 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** Lock the invariant that navigation changes never unmount terminal sessions, before the shell is rewritten.
 
 **Acceptance criteria:**
+
 - [ ] Tests: switching tabs, splitting, closing, reordering and toggling the sidebar keep `TerminalStack` leaves mounted and PTYs alive (no `pty_close`).
 - [ ] Tests run against the current App and survive the later AppShell.
 
 **Verification:** `pnpm test` passes; new tests fail when TerminalStack is conditionally rendered.
 
 ### app-shell-D05 — Move shared native wrappers out of modules/ai for the shell
+
 ```yaml
 id: app-shell-D05
 depends-on: []
@@ -251,15 +266,18 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** `useWorkspaceSwitcher` (and other shell code) stop importing `@/modules/ai/lib/native`.
 
 **Acceptance criteria:**
+
 - [ ] `workspaceAuthorize` / `workspaceCurrentDir` wrappers live in a platform module (e.g. `src/lib/native` or `modules/platform`).
 - [ ] `useWorkspaceSwitcher.ts` and spaces boot import from it; behaviour unchanged.
 
 **Verification:** `pnpm tsc --noEmit`, `pnpm test`; `grep -r "modules/ai/lib/native" src/app src/modules/spaces` is empty.
 
 ### app-shell-D06 — Decouple close guards from AI chat persistence and editor state
+
 ```yaml
 id: app-shell-D06
 depends-on: [ai-D01?]
@@ -269,9 +287,11 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** App/tab close guards only depend on terminal state plus optional "dirty content" providers.
 
 **Acceptance criteria:**
+
 - [ ] `useAppCloseGuard` no longer imports `modules/ai`; extra flushes are registered through a hook/callback API.
 - [ ] Dirty-content check is a provider interface (editor registers when present).
 - [ ] Busy-terminal confirmation and "close anyway" behaviour preserved.
@@ -279,6 +299,7 @@ size: S
 **Verification:** `pnpm test` (`useAppCloseGuard.test.ts`, `tabCloseGuards.test.ts`); manual: quit with `pnpm dev` running asks for confirmation.
 
 ### app-shell-D07 — Extract shortcut handler map from App.tsx
+
 ```yaml
 id: app-shell-D07
 depends-on: [app-shell-D04]
@@ -288,15 +309,18 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** Refactor only: move the shortcut handler map and `isDisabled` logic into `useAppShortcuts`.
 
 **Acceptance criteria:**
+
 - [ ] `App.tsx` calls one hook; no behaviour change.
 - [ ] Unit tests cover the handler map for tab/pane shortcuts.
 
 **Verification:** `pnpm test`; shortcuts manually verified (new tab, split, next tab).
 
 ### app-shell-D08 — Extract launch/open-file and agent launch flows from App.tsx
+
 ```yaml
 id: app-shell-D08
 depends-on: [app-shell-D04]
@@ -306,15 +330,18 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** Refactor only: move `terax:open-file`/launch-files handling and the agent launch flow into dedicated hooks/services.
 
 **Acceptance criteria:**
+
 - [ ] `useLaunchFiles` and `useAgentLaunch` own the code formerly at `App.tsx:620-745`.
 - [ ] No behaviour change.
 
 **Verification:** `pnpm test`; opening a file via CLI arg and launching Claude from the new-tab menu still work.
 
 ### app-shell-D09 — Remove WorkspaceInputBar and root AiComposerProvider
+
 ```yaml
 id: app-shell-D09
 depends-on: [ai-D01?, app-shell-D07]
@@ -324,15 +351,18 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** The built-in AI composer is no longer mounted by the shell.
 
 **Acceptance criteria:**
+
 - [ ] `WorkspaceInputBar.tsx` deleted; `AiComposerProvider` no longer wraps the app (`App.tsx:1694`).
 - [ ] Block-input toggle re-homed in terminal (or removed if blocks are dropped).
 
 **Verification:** `pnpm tsc --noEmit`, `pnpm test`; app starts with no AI key and terminals work (13.2:17).
 
 ### app-shell-D10 — NavigationStore: extract tab model from useTabs
+
 ```yaml
 id: app-shell-D10
 depends-on: [app-shell-D04]
@@ -343,9 +373,11 @@ scope: ui
 size: L
 size-exception: useTabs.ts is 1532 lines; moving state into a store is mechanical but touches every consumer signature. Pure planners move first in the same PR without logic changes.
 ```
+
 **Goal:** One navigation store (tabs, active id, order, spaces membership) with a `terminalTabs` selector, replacing local React state.
 
 **Acceptance criteria:**
+
 - [ ] Store holds tabs/activeId; `useTabs` becomes a thin facade with the same API.
 - [ ] `terminalTabs` selector exposes the TabNavigator contract (id, title, icon, state, active).
 - [ ] `window.__teraxNewBlockTab` replaced by a store action.
@@ -354,6 +386,7 @@ size-exception: useTabs.ts is 1532 lines; moving state into a store is mechanica
 **Verification:** `pnpm test`; manual: tabs/splits/spaces behave as before, PTYs survive.
 
 ### app-shell-D11 — Move non-terminal tab kinds behind an optional ContentTab capability
+
 ```yaml
 id: app-shell-D11
 depends-on: [app-shell-D10, ide-tools-D01?]
@@ -363,9 +396,11 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** Editor/preview/markdown/git/ai-diff kinds are registered by their modules, not hard-coded in the tab union.
 
 **Acceptance criteria:**
+
 - [ ] `Tab` union = terminal + generic `ContentTab` with a kind registry.
 - [ ] Spaces serialization migrates old kinds (or drops removed ones) with a test.
 - [ ] Removed modules no longer referenced from `modules/tabs`.
@@ -373,6 +408,7 @@ size: M
 **Verification:** `pnpm test`; restoring a saved space with an old editor tab does not crash.
 
 ### app-shell-D12 — Terminal-default WorkspaceSurface
+
 ```yaml
 id: app-shell-D12
 depends-on: [app-shell-D11, app-shell-D01]
@@ -382,15 +418,18 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** The workspace renders terminals by default and only lazy-mounts content tabs registered by optional tools.
 
 **Acceptance criteria:**
+
 - [ ] No static import of editor/preview/markdown/git stacks from `src/app`.
 - [ ] Hidden terminal tabs keep running (TER-005).
 
 **Verification:** `pnpm test` incl. budget tests; manual: `pnpm dev` in hidden tab continues (13.2:8).
 
 ### app-shell-D13 — New AppShell with central terminal area
+
 ```yaml
 id: app-shell-D13
 depends-on: [app-shell-D01, app-shell-D07, app-shell-D08, app-shell-D09, app-shell-D12]
@@ -401,9 +440,11 @@ scope: ui
 size: L
 size-exception: Replaces the App.tsx layout tree in one go; logic was already extracted by D07/D08/D10, so the diff is mostly JSX moves.
 ```
+
 **Goal:** `AppShell` renders title bar, navigator, optional sidebar, terminal stack and status bar per design; `App.tsx` becomes a small coordinator.
 
 **Acceptance criteria:**
+
 - [ ] TerminalStack mounted once, never re-parented by orientation/sidebar changes.
 - [ ] No imports from ai/editor/explorer/git/lsp/preview in `src/app`.
 - [ ] D04 tests pass.
@@ -411,6 +452,7 @@ size-exception: Replaces the App.tsx layout tree in one go; logic was already ex
 **Verification:** `pnpm test`; manual 13.2:5/13.2:6 on Windows.
 
 ### app-shell-D14 — Orientable tab navigator (horizontal/vertical)
+
 ```yaml
 id: app-shell-D14
 depends-on: [app-shell-D01, app-shell-D10]
@@ -420,9 +462,11 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** One `TabNavigator` over the navigation store with horizontal and vertical presentations.
 
 **Acceptance criteria:**
+
 - [ ] Orientation persisted in preferences; switching never restarts PTYs.
 - [ ] Reorder, close, rename, agent status badge (via `tabAgentStatus`).
 - [ ] Old TabBar/TabSwitcherHud removed.
@@ -430,6 +474,7 @@ size: M
 **Verification:** `pnpm test`; manual switch with nvim running in a tab.
 
 ### app-shell-D15 — Tab and pane context menus
+
 ```yaml
 id: app-shell-D15
 depends-on: [app-shell-D14]
@@ -439,14 +484,17 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** Context menus for tabs and panes (close, close others/right, rename, split, move).
 
 **Acceptance criteria:**
+
 - [ ] Actions call existing navigation-store planners.
 
 **Verification:** `pnpm test`; manual.
 
 ### app-shell-D16 — New-tab menu as profile catalog
+
 ```yaml
 id: app-shell-D16
 depends-on: [app-shell-D14, state-settings-D01?]
@@ -456,15 +504,18 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** New-tab menu lists profiles (and agent launchers) instead of IDE tools.
 
 **Acceptance criteria:**
+
 - [ ] Opening a tab with a chosen profile; default profile on plain new tab.
 - [ ] Old NewTabMenu removed.
 
 **Verification:** `pnpm test`; manual pwsh + WSL profiles.
 
 ### app-shell-D17 — Projects sidebar placeholder
+
 ```yaml
 id: app-shell-D17
 depends-on: [app-shell-D01, app-shell-D13]
@@ -474,15 +525,18 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** Collapsible projects sidebar with persisted width replacing explorer/source-control rail.
 
 **Acceptance criteria:**
+
 - [ ] `SidebarViewId` no longer references explorer/source-control; SidebarRail removed.
 - [ ] Collapse/expand never stops processes.
 
 **Verification:** `pnpm test` (`useSidebarPanel.test.ts`); manual collapse with running TUI.
 
 ### app-shell-D18 — Header/title bar and window controls
+
 ```yaml
 id: app-shell-D18
 depends-on: [app-shell-D01, app-shell-D13]
@@ -492,15 +546,18 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** New title bar per design with search entry routed to terminal search and platform window controls.
 
 **Acceptance criteria:**
+
 - [ ] No editor imports in header; search works for terminal panes.
 - [ ] Custom window controls on Windows/Linux (or native if decided); macOS traffic lights intact.
 
 **Verification:** manual on Windows 11 (min/max/close, drag region); `pnpm test`.
 
 ### app-shell-D19 — Status bar rebuild
+
 ```yaml
 id: app-shell-D19
 depends-on: [app-shell-D01, app-shell-D09]
@@ -510,15 +567,18 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** Status bar shows cwd, shell/WSL context; no AI/LSP/diagnostics controls.
 
 **Acceptance criteria:**
+
 - [ ] DiagnosticsBadge, AI pills and LSP pill removed from the shell status bar.
 - [ ] Context indicators use `pathUtils` and `useSystemInfo`.
 
 **Verification:** `pnpm test`; manual.
 
 ### app-shell-D20 — Prune command palette and shortcuts of removed features
+
 ```yaml
 id: app-shell-D20
 depends-on: [app-shell-D09, ide-tools-D01?]
@@ -528,9 +588,11 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** Registry contains only commands/shortcuts whose features exist; user overrides for removed ids are ignored safely.
 
 **Acceptance criteria:**
+
 - [ ] `ai.*`, `editor.*`, `explorer.*`, `tab.newEditor`, `tab.newPreview` removed (or moved to optional modules' own registration).
 - [ ] Orientation toggle and split shortcuts present.
 - [ ] Stored overrides for unknown ids dropped without error.
@@ -538,6 +600,7 @@ size: S
 **Verification:** `pnpm test` (`shortcuts.test.ts`, `shortcutDefaults.test.ts`, `resolveShortcut.test.ts`).
 
 ### app-shell-D21 — Terminal/project oriented command palette
+
 ```yaml
 id: app-shell-D21
 depends-on: [app-shell-D02, app-shell-D20]
@@ -547,15 +610,18 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** Palette built on the new design, with terminal, tab, profile and project actions; file search only when the optional tool exists.
 
 **Acceptance criteria:**
+
 - [ ] Command list driven by a registry that optional modules can extend.
 - [ ] MRU/fuzzy libs reused; no explorer import.
 
 **Verification:** `pnpm test` (palette lib tests); manual.
 
 ### app-shell-D22 — Close confirmation dialogs on new design
+
 ```yaml
 id: app-shell-D22
 depends-on: [app-shell-D02, app-shell-D06]
@@ -565,14 +631,17 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** Close-tab/close-app confirmation dialogs rebuilt per design.
 
 **Acceptance criteria:**
+
 - [ ] Same opt-out and "close anyway" semantics.
 
 **Verification:** manual close with running process.
 
 ### app-shell-D23 — Design-system primitives and global styles
+
 ```yaml
 id: app-shell-D23
 depends-on: [app-shell-D02, app-shell-D03]
@@ -583,9 +652,11 @@ scope: ui
 size: L
 size-exception: Primitive restyle has wide fan-in; split per primitive group when the design is known (one PR per group).
 ```
+
 **Goal:** Replace Terax styling of primitives and globals.css with the user's tokens, keeping terminal font-face rules and the motion/compositing budget tests.
 
 **Acceptance criteria:**
+
 - [ ] Terax `terax-*` animations removed or renamed per design.
 - [ ] `@font-face` for terminal symbol fonts preserved.
 - [ ] Motion/compositing budget tests adapted and green.
@@ -593,6 +664,7 @@ size-exception: Primitive restyle has wide fan-in; split per primitive group whe
 **Verification:** `pnpm test`; visual check light/dark.
 
 ### app-shell-D24 — Visible app name and Terax storage keys in the shell
+
 ```yaml
 id: app-shell-D24
 depends-on: [build-identity-D01?]
@@ -602,15 +674,18 @@ type: task
 scope: ui
 size: XS
 ```
+
 **Goal:** The shell shows "lut" and its webview keys are confirmed isolated from Terax.
 
 **Acceptance criteria:**
+
 - [ ] `index.html` title and `useWindowTitle` APP_NAME read "lut"; "Quit Terax?" text updated.
 - [ ] Verified that webview localStorage is under lut's data dir after the bundle id change (documented).
 
 **Verification:** run lut next to an installed Terax; sidebar width / palette MRU are independent.
 
 ### app-shell-D25 — Update budget tests after AI/editor removal and bundle id change
+
 ```yaml
 id: app-shell-D25
 depends-on: [app-shell-D09, build-identity-D01?]
@@ -620,15 +695,18 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** dist/eager/feature-loading tests reflect the reduced bundle and the new identifier.
 
 **Acceptance criteria:**
+
 - [ ] Forbidden-chunk lists and lazy-stack expectations match remaining modules.
 - [ ] Bench identifier guard uses lut's identifier.
 
 **Verification:** `pnpm test src/app`.
 
 ### app-shell-D26 — Decide IDE-tied shell helpers
+
 ```yaml
 id: app-shell-D26
 depends-on: [ide-tools-D01?]
@@ -638,9 +716,11 @@ type: task
 scope: ui
 size: XS
 ```
+
 **Goal:** Move `useGitBranch`, `useAssetGrant` and `code-highlight.css` into their owning optional modules, or delete them with those modules.
 
 **Acceptance criteria:**
+
 - [ ] None of these remain in `src/app`, `src/lib` or `src/styles` without a consumer.
 
 **Verification:** `pnpm tsc --noEmit`, `pnpm test`.

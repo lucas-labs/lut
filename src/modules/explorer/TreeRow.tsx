@@ -1,12 +1,12 @@
-import { isPrimaryModifierPressed } from "@/lib/platform";
-import { cn } from "@/lib/utils";
-import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { memo } from "react";
-import { FileIcon, FolderIcon } from "./FileIcon";
-import { InlineInput } from "./InlineInput";
-import { explorerGitTextClass } from "./lib/gitStatusColor";
-import type { GitStatusCode } from "./lib/gitStatusUtils";
+import { isPrimaryModifierPressed } from '@/lib/platform';
+import { cn } from '@/lib/utils';
+import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { memo } from 'react';
+import { FileIcon, FolderIcon } from './FileIcon';
+import { InlineInput } from './InlineInput';
+import { explorerGitTextClass } from './lib/gitStatusColor';
+import type { GitStatusCode } from './lib/gitStatusUtils';
 
 export type SelectModifiers = { shift: boolean; mod: boolean };
 
@@ -60,25 +60,14 @@ function EntryRowImpl(props: EntryRowProps) {
 
   if (isRenaming) {
     return (
-      <div
-        className="flex h-6 w-full min-w-0 items-center gap-2 px-1.5 text-[13px]"
-        style={{ paddingLeft }}
-      >
+      <div className="flex h-6 w-full min-w-0 items-center gap-2 px-1.5 text-[13px]" style={{ paddingLeft }}>
         <span className="size-3.5 shrink-0" />
         {isDir ? (
-          <FolderIcon
-            name={name}
-            expanded={isExpanded}
-            className="size-4 shrink-0"
-          />
+          <FolderIcon name={name} expanded={isExpanded} className="size-4 shrink-0" />
         ) : (
           <FileIcon name={name} className="size-4 shrink-0" />
         )}
-        <InlineInput
-          initial={name}
-          onCommit={actions.commitRename}
-          onCancel={actions.cancelRename}
-        />
+        <InlineInput initial={name} onCommit={actions.commitRename} onCancel={actions.cancelRename} />
       </div>
     );
   }
@@ -102,17 +91,11 @@ function EntryRowImpl(props: EntryRowProps) {
       type="button"
       data-fs-path={path}
       onClick={handleClick}
-      onDoubleClick={() =>
-        !isDir && !multiSelectActive && actions.beginRename(path)
-      }
+      onDoubleClick={() => !isDir && !multiSelectActive && actions.beginRename(path)}
       className={cn(
-        "group flex h-6 w-full min-w-0 cursor-pointer items-center gap-2 rounded-sm px-1.5 text-left text-[13px] transition-colors hover:bg-accent/70",
-        isSelected
-          ? "bg-accent text-foreground"
-          : gitignored
-            ? "text-muted-foreground/70"
-            : "text-foreground/85",
-        isDropTarget && "bg-primary/10 ring-1 ring-inset ring-primary/60",
+        'group flex h-6 w-full min-w-0 cursor-pointer items-center gap-2 rounded-sm px-1.5 text-left text-[13px] transition-colors hover:bg-accent/70',
+        isSelected ? 'bg-accent text-foreground' : gitignored ? 'text-muted-foreground/70' : 'text-foreground/85',
+        isDropTarget && 'bg-primary/10 ring-1 ring-inset ring-primary/60',
       )}
       style={{ paddingLeft }}
     >
@@ -122,26 +105,19 @@ function EntryRowImpl(props: EntryRowProps) {
             icon={ArrowRight01Icon}
             size={12}
             strokeWidth={2.25}
-            className={cn("transition-transform", isExpanded && "rotate-90")}
+            className={cn('transition-transform', isExpanded && 'rotate-90')}
           />
         ) : null}
       </span>
       {isDir ? (
-        <FolderIcon
-          name={name}
-          expanded={isExpanded}
-          className="size-4 shrink-0"
-        />
+        <FolderIcon name={name} expanded={isExpanded} className="size-4 shrink-0" />
       ) : (
         <FileIcon name={name} className="size-4 shrink-0" />
       )}
       <span
         className={cn(
-          "min-w-0 flex-1 truncate",
-          !isSelected &&
-            !gitignored &&
-            gitStatusCode &&
-            explorerGitTextClass(gitStatusCode),
+          'min-w-0 flex-1 truncate',
+          !isSelected && !gitignored && gitStatusCode && explorerGitTextClass(gitStatusCode),
         )}
       >
         {name}
@@ -154,31 +130,26 @@ export const EntryRow = memo(EntryRowImpl);
 
 export type PendingRowProps = {
   depth: number;
-  kind: "file" | "dir";
+  kind: 'file' | 'dir';
   onCommit: (name: string) => void | Promise<void>;
   onCancel: () => void;
 };
 
-export function PendingRow({
-  depth,
-  kind,
-  onCommit,
-  onCancel,
-}: PendingRowProps) {
+export function PendingRow({ depth, kind, onCommit, onCancel }: PendingRowProps) {
   return (
     <div
       className="flex h-6 w-full min-w-0 items-center gap-2 px-1.5 text-[13px]"
       style={{ paddingLeft: 6 + depth * 12 }}
     >
       <span className="size-3.5 shrink-0" />
-      {kind === "dir" ? (
+      {kind === 'dir' ? (
         <FolderIcon name="" className="size-4 shrink-0 opacity-70" />
       ) : (
         <FileIcon name="untitled" className="size-4 shrink-0 opacity-70" />
       )}
       <InlineInput
         initial=""
-        placeholder={kind === "dir" ? "New folder" : "New file"}
+        placeholder={kind === 'dir' ? 'New folder' : 'New file'}
         onCommit={onCommit}
         onCancel={onCancel}
       />
@@ -186,20 +157,12 @@ export function PendingRow({
   );
 }
 
-export function StatusRow({
-  depth,
-  message,
-  tone,
-}: {
-  depth: number;
-  message: string;
-  tone: "muted" | "error";
-}) {
+export function StatusRow({ depth, message, tone }: { depth: number; message: string; tone: 'muted' | 'error' }) {
   return (
     <div
       className={cn(
-        "h-6 truncate px-2 text-[11px] leading-6",
-        tone === "error" ? "text-destructive" : "text-muted-foreground",
+        'h-6 truncate px-2 text-[11px] leading-6',
+        tone === 'error' ? 'text-destructive' : 'text-muted-foreground',
       )}
       style={{ paddingLeft: 6 + depth * 12 + 18 }}
     >

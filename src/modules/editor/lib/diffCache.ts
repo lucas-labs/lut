@@ -1,5 +1,5 @@
-import { git,type GitDiffContentResult } from "@/modules/git";
-import { currentWorkspaceScopeKey } from "@/modules/workspace";
+import { git, type GitDiffContentResult } from '@/modules/git';
+import { currentWorkspaceScopeKey } from '@/modules/workspace';
 
 const DIFF_CACHE_LIMIT = 6;
 const inflight = new Map<string, Promise<GitDiffContentResult>>();
@@ -35,26 +35,18 @@ export function invalidateRepoDiffs(repoRoot: string): void {
   }
 }
 
-export function workingDiffKey(
-  repoRoot: string,
-  path: string,
-  mode: "-" | "+",
-): string {
+export function workingDiffKey(repoRoot: string, path: string, mode: '-' | '+'): string {
   return `${currentWorkspaceScopeKey()}|${repoRoot}|w|${mode}|${path}`;
 }
 
-export function commitDiffKey(
-  repoRoot: string,
-  sha: string,
-  path: string,
-): string {
+export function commitDiffKey(repoRoot: string, sha: string, path: string): string {
   return `${currentWorkspaceScopeKey()}|${repoRoot}|c|${sha}|${path}`;
 }
 
 export async function fetchWorkingDiff(
   repoRoot: string,
   path: string,
-  mode: "-" | "+",
+  mode: '-' | '+',
   originalPath: string | null,
 ): Promise<GitDiffContentResult> {
   const key = workingDiffKey(repoRoot, path, mode);
@@ -63,7 +55,7 @@ export async function fetchWorkingDiff(
   const pending = inflight.get(key);
   if (pending) return pending;
   const p = git
-    .diffContent(repoRoot, path, mode === "+", originalPath)
+    .diffContent(repoRoot, path, mode === '+', originalPath)
     .then((res) => {
       touch(key, res);
       return res;

@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { focusUntilActive } from "./focusRetry";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { focusUntilActive } from './focusRetry';
 
 const body = {};
 const target = {} as Element;
@@ -10,7 +10,7 @@ function setActive(element: unknown) {
 
 beforeEach(() => {
   vi.useFakeTimers();
-  vi.stubGlobal("document", { activeElement: body, body });
+  vi.stubGlobal('document', { activeElement: body, body });
 });
 
 afterEach(() => {
@@ -18,15 +18,15 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("focusUntilActive", () => {
-  it("focuses once when the first attempt sticks", () => {
+describe('focusUntilActive', () => {
+  it('focuses once when the first attempt sticks', () => {
     const focus = vi.fn(() => setActive(target));
     focusUntilActive(target, focus, () => true);
     vi.runAllTimers();
     expect(focus).toHaveBeenCalledTimes(1);
   });
 
-  it("retries on the schedule until the focus lands", () => {
+  it('retries on the schedule until the focus lands', () => {
     let attempts = 0;
     const focus = vi.fn(() => {
       attempts += 1;
@@ -44,14 +44,14 @@ describe("focusUntilActive", () => {
     expect(focus).toHaveBeenCalledTimes(3);
   });
 
-  it("gives up after the last delay", () => {
+  it('gives up after the last delay', () => {
     const focus = vi.fn();
     focusUntilActive(target, focus, () => true, [1, 2]);
     vi.runAllTimers();
     expect(focus).toHaveBeenCalledTimes(3);
   });
 
-  it("does not take focus from an element the user moved to", () => {
+  it('does not take focus from an element the user moved to', () => {
     const focus = vi.fn();
     focusUntilActive(target, focus, () => true);
     setActive({});
@@ -59,7 +59,7 @@ describe("focusUntilActive", () => {
     expect(focus).toHaveBeenCalledTimes(1);
   });
 
-  it("does not start when another element already holds the focus", () => {
+  it('does not start when another element already holds the focus', () => {
     const focus = vi.fn();
     setActive({});
     focusUntilActive(target, focus, () => true);
@@ -67,7 +67,7 @@ describe("focusUntilActive", () => {
     expect(focus).not.toHaveBeenCalled();
   });
 
-  it("does nothing when the target already has the focus", () => {
+  it('does nothing when the target already has the focus', () => {
     const focus = vi.fn();
     setActive(target);
     focusUntilActive(target, focus, () => true);
@@ -75,7 +75,7 @@ describe("focusUntilActive", () => {
     expect(focus).not.toHaveBeenCalled();
   });
 
-  it("does not start after the pane becomes ineligible during the lazy import", () => {
+  it('does not start after the pane becomes ineligible during the lazy import', () => {
     const focus = vi.fn();
     focusUntilActive(target, focus, () => false);
     vi.runAllTimers();
@@ -83,7 +83,7 @@ describe("focusUntilActive", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("abandons the old pane when both panes initially refuse focus", () => {
+  it('abandons the old pane when both panes initially refuse focus', () => {
     const other = {} as Element;
     let activePane = target;
     let refusesFocus = true;
@@ -104,7 +104,7 @@ describe("focusUntilActive", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("stops when cancelled", () => {
+  it('stops when cancelled', () => {
     const focus = vi.fn();
     const cancel = focusUntilActive(target, focus, () => true);
     cancel();

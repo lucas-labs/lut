@@ -1,4 +1,4 @@
-import type { GhosttyTerminalEvent } from "@terax/ghostty-core/protocol";
+import type { GhosttyTerminalEvent } from '@terax/ghostty-core/protocol';
 
 /** How long a prompt may be held while its end marker has been seen before. */
 export const PROMPT_PRESENTATION_WATCHDOG_MS = 1_000;
@@ -30,17 +30,17 @@ export class PromptPresentationGate {
   }
 
   observe(event: GhosttyTerminalEvent): void {
-    if (event.type === "prompt-start") {
+    if (event.type === 'prompt-start') {
       this.suppressedValue = true;
       this.awaitingEnd = true;
       this.armWatchdog();
       return;
     }
-    if (event.type !== "prompt-end" && event.type !== "end-of-input") return;
+    if (event.type !== 'prompt-end' && event.type !== 'end-of-input') return;
     // A prompt end that shows up after the watchdog gave up still proves the
     // shell sends them, so the next prompt gets the full allowance again. A
     // command starting proves nothing about the prompt.
-    if (event.type === "prompt-end" && this.awaitingEnd) this.missedEnds = 0;
+    if (event.type === 'prompt-end' && this.awaitingEnd) this.missedEnds = 0;
     this.awaitingEnd = false;
     if (this.suppressedValue) this.finish();
   }
@@ -65,11 +65,7 @@ export class PromptPresentationGate {
       this.suppressedValue = false;
       this.missedEnds = Math.min(this.missedEnds + 1, 2);
       this.release();
-    }, [
-      PROMPT_PRESENTATION_WATCHDOG_MS,
-      PROMPT_PRESENTATION_SUSPECT_MS,
-      PROMPT_PRESENTATION_MISSING_MS,
-    ][this.missedEnds]);
+    }, [PROMPT_PRESENTATION_WATCHDOG_MS, PROMPT_PRESENTATION_SUSPECT_MS, PROMPT_PRESENTATION_MISSING_MS][this.missedEnds]);
   }
 
   private clearWatchdog(): void {

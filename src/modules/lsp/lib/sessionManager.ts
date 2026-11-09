@@ -1,16 +1,16 @@
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import { currentWorkspaceEnv } from "@/modules/workspace";
-import type { Extension } from "@codemirror/state";
-import type { EditorView } from "@codemirror/view";
-import { invoke } from "@tauri-apps/api/core";
-import { toast } from "sonner";
-import type { TeraxLspClient } from "./client";
-import { detectBinary } from "./detect";
-import { getLspNavigator } from "./navigator";
-import { type LspPreset, serverForLanguage } from "./presets";
-import { useLspRuntimeStore } from "./runtimeStore";
-import type { TauriLspTransport } from "./transport";
-import { fileUriToPath, pathToFileUri } from "./uri";
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import { currentWorkspaceEnv } from '@/modules/workspace';
+import type { Extension } from '@codemirror/state';
+import type { EditorView } from '@codemirror/view';
+import { invoke } from '@tauri-apps/api/core';
+import { toast } from 'sonner';
+import type { TeraxLspClient } from './client';
+import { detectBinary } from './detect';
+import { getLspNavigator } from './navigator';
+import { type LspPreset, serverForLanguage } from './presets';
+import { useLspRuntimeStore } from './runtimeStore';
+import type { TauriLspTransport } from './transport';
+import { fileUriToPath, pathToFileUri } from './uri';
 
 const IDLE_SHUTDOWN_MS = 3 * 60 * 1000;
 const CRASH_WINDOW_MS = 5 * 60 * 1000;
@@ -54,9 +54,7 @@ function basename(path: string): string {
 
 function crashedOut(key: string): boolean {
   const now = Date.now();
-  const times = (crashTimes.get(key) ?? []).filter(
-    (t) => now - t < CRASH_WINDOW_MS,
-  );
+  const times = (crashTimes.get(key) ?? []).filter((t) => now - t < CRASH_WINDOW_MS);
   crashTimes.set(key, times);
   return times.length >= MAX_CRASHES;
 }
@@ -71,21 +69,17 @@ export async function acquireDocExtension(
   path: string,
   langId: string,
 ): Promise<LspDocHandle | null> {
-  if (currentWorkspaceEnv().kind !== "local") return null;
+  if (currentWorkspaceEnv().kind !== 'local') return null;
   const prefs = usePreferencesStore.getState();
-  const preset = serverForLanguage(
-    langId,
-    prefs.lspCustomServers,
-    prefs.lspActivation,
-  );
+  const preset = serverForLanguage(langId, prefs.lspCustomServers, prefs.lspActivation);
   if (!preset) return null;
-  if (prefs.lspActivation[preset.id] !== "enabled") return null;
+  if (prefs.lspActivation[preset.id] !== 'enabled') return null;
   if (!(await detectBinary(preset.command))) return null;
 
   // No project root means no session: a per-directory fallback multiplied
   // servers per open file and burned gigabytes.
-  const markers = preset.rootMarkers.length > 0 ? preset.rootMarkers : [".git"];
-  const root = await invoke<string | null>("lsp_resolve_root", {
+  const markers = preset.rootMarkers.length > 0 ? preset.rootMarkers : ['.git'];
+  const root = await invoke<string | null>('lsp_resolve_root', {
     path,
     markers,
   }).catch(() => null);
@@ -94,24 +88,20 @@ export async function acquireDocExtension(
   if (
     crashedOut(key) ||
     stopping.has(preset.id) ||
-    usePreferencesStore.getState().lspActivation[preset.id] !== "enabled"
+    usePreferencesStore.getState().lspActivation[preset.id] !== 'enabled'
   )
     return null;
   if (
     !sessions.has(key) &&
     !creating.has(key) &&
     new Set([
-      ...[...sessions.values()]
-        .filter((m) => m.preset.id === preset.id)
-        .map((m) => m.key),
+      ...[...sessions.values()].filter((m) => m.preset.id === preset.id).map((m) => m.key),
       ...[...creating.entries()]
         .filter(([, start]) => start.presetId === preset.id)
         .map(([key]) => key),
     ]).size >= MAX_SESSIONS_PER_PRESET
   ) {
-    console.warn(
-      `[lsp] session cap reached for ${preset.id}, skipping ${root}`,
-    );
+    console.warn(`[lsp] session cap reached for ${preset.id}, skipping ${root}`);
     return null;
   }
 
@@ -131,19 +121,18 @@ export async function acquireDocExtension(
     }
   }
 
-  const managed =
-    sessions.get(key) ?? (await getOrCreateSession(key, preset, root));
+  const managed = sessions.get(key) ?? (await getOrCreateSession(key, preset, root));
   if (!managed || managed.closing) return null;
 
   const uri = pathToFileUri(path);
   const languageId = preset.languages[langId] ?? langId;
-  const mod = await import("./client");
+  const mod = await import('./client');
   if (managed.closing) return null;
   const extension: Extension = [
     mod.lspInteractions({
       client: managed.client,
       documentUri: uri,
-      rootPath: managed.root.replace(/\\/g, "/"),
+      rootPath: managed.root.replace(/\\/g, '/'),
       onExternal: (extUri, line) => {
         const target = fileUriToPath(extUri);
         if (target) getLspNavigator()?.openFile(target, line);
@@ -153,9 +142,7 @@ export async function acquireDocExtension(
       client: managed.client,
       transport: managed.transport,
       rootUri: pathToFileUri(managed.root),
-      workspaceFolders: [
-        { uri: pathToFileUri(managed.root), name: basename(managed.root) },
-      ],
+      workspaceFolders: [{ uri: pathToFileUri(managed.root), name: basename(managed.root) }],
       documentUri: uri,
       languageId,
       allowHTMLContent: false,
@@ -175,11 +162,7 @@ export async function acquireDocExtension(
   };
 }
 
-function getOrCreateSession(
-  key: string,
-  preset: LspPreset,
-  root: string,
-): Promise<Managed | null> {
+function getOrCreateSession(key: string, preset: LspPreset, root: string): Promise<Managed | null> {
   let start = creating.get(key);
   if (!start) {
     start = {
@@ -188,9 +171,7 @@ function getOrCreateSession(
       promise: Promise.resolve(null),
     };
     creating.set(key, start);
-    start.promise = createSession(key, preset, root, start).finally(() =>
-      creating.delete(key),
-    );
+    start.promise = createSession(key, preset, root, start).finally(() => creating.delete(key));
   }
   return start.promise;
 }
@@ -205,17 +186,15 @@ async function createSession(
   if (existing) return existing;
 
   const store = useLspRuntimeStore.getState();
-  store.upsertSession({ key, presetId: preset.id, root, status: "starting" });
+  store.upsertSession({ key, presetId: preset.id, root, status: 'starting' });
 
   const [{ TauriLspTransport }, { TeraxLspClient }] = await Promise.all([
-    import("./transport"),
-    import("./client"),
+    import('./transport'),
+    import('./client'),
   ]);
 
   if (TeraxLspClient.hostPid === null) {
-    TeraxLspClient.hostPid = await invoke<number>("lsp_host_pid").catch(
-      () => null,
-    );
+    TeraxLspClient.hostPid = await invoke<number>('lsp_host_pid').catch(() => null);
   }
 
   if (start.cancelled) {
@@ -246,7 +225,7 @@ async function createSession(
     rootUri,
     workspaceFolders: [{ uri: rootUri, name: basename(root) }],
     documentUri: rootUri,
-    languageId: "",
+    languageId: '',
     initializationOptions: preset.initializationOptions,
     onClose: () => handleServerExit(key, transport),
     onError: (e) => console.error(`[lsp:${preset.id}]`, e),
@@ -283,7 +262,7 @@ async function createSession(
         key,
         presetId: preset.id,
         root,
-        status: "running",
+        status: 'running',
       });
     }
   });
@@ -324,12 +303,9 @@ function handleServerExit(key: string, transport: TauriLspTransport): void {
   if (crashedOut(key)) {
     useLspRuntimeStore
       .getState()
-      .setFailed(
-        managed.preset.id,
-        tail ? tail.slice(-300) : "The server kept crashing.",
-      );
+      .setFailed(managed.preset.id, tail ? tail.slice(-300) : 'The server kept crashing.');
     toast.error(`${managed.preset.name} language server keeps crashing`, {
-      description: tail ? tail.slice(-300) : "Giving up for this workspace.",
+      description: tail ? tail.slice(-300) : 'Giving up for this workspace.',
     });
     return;
   }
@@ -341,12 +317,8 @@ function handleServerExit(key: string, transport: TauriLspTransport): void {
   // Delay the re-acquire trigger so an OOM-killed server doesn't respawn
   // into an instant second memory spike.
   const crashes = crashTimes.get(key)?.length ?? 1;
-  const delay =
-    CRASH_COOLDOWN_MS[Math.min(crashes - 1, CRASH_COOLDOWN_MS.length - 1)];
-  setTimeout(
-    () => useLspRuntimeStore.getState().bumpGeneration(managed.preset.id),
-    delay,
-  );
+  const delay = CRASH_COOLDOWN_MS[Math.min(crashes - 1, CRASH_COOLDOWN_MS.length - 1)];
+  setTimeout(() => useLspRuntimeStore.getState().bumpGeneration(managed.preset.id), delay);
 }
 
 function addRef(managed: Managed, uri: string): void {
@@ -374,8 +346,8 @@ function releaseRef(managed: Managed, uri: string): void {
 }
 
 function reportStopFailure(error: unknown): void {
-  console.error("[lsp] shutdown failed", error);
-  toast.error("Language server failed to stop", { description: String(error) });
+  console.error('[lsp] shutdown failed', error);
+  toast.error('Language server failed to stop', { description: String(error) });
 }
 
 function closeSession(managed: Managed): Promise<void> {
@@ -390,9 +362,7 @@ function closeSession(managed: Managed): Promise<void> {
     await managed.transport.stop();
     if (sessions.get(managed.key) === managed) {
       sessions.delete(managed.key);
-      useLspRuntimeStore
-        .getState()
-        .removeSession(managed.key, managed.preset.id);
+      useLspRuntimeStore.getState().removeSession(managed.key, managed.preset.id);
     }
   })().catch((error) => {
     managed.closePromise = undefined;
@@ -417,13 +387,8 @@ function stopPresetSessions(presetId: string): Promise<void> {
   for (const start of starts) start.cancelled = true;
   const stopped = Promise.resolve()
     .then(async () => {
-      const targets = [...sessions.values()].filter(
-        (m) => m.preset.id === presetId,
-      );
-      await Promise.all([
-        ...targets.map((m) => closeSession(m)),
-        ...starts.map((s) => s.promise),
-      ]);
+      const targets = [...sessions.values()].filter((m) => m.preset.id === presetId);
+      await Promise.all([...targets.map((m) => closeSession(m)), ...starts.map((s) => s.promise)]);
       for (const key of crashTimes.keys()) {
         if (key.startsWith(`${presetId}\u0000`)) crashTimes.delete(key);
       }
@@ -433,11 +398,9 @@ function stopPresetSessions(presetId: string): Promise<void> {
   return stopped;
 }
 
-export async function lspFormatDocument(
-  view: EditorView,
-): Promise<"done" | "unsupported"> {
-  if (sessions.size === 0) return "unsupported";
-  const { formatDocumentAndWait } = await import("./client");
+export async function lspFormatDocument(view: EditorView): Promise<'done' | 'unsupported'> {
+  if (sessions.size === 0) return 'unsupported';
+  const { formatDocumentAndWait } = await import('./client');
   return formatDocumentAndWait(view);
 }
 
@@ -455,12 +418,10 @@ export async function restartPresetSessions(presetId: string): Promise<void> {
 usePreferencesStore.subscribe((state, prev) => {
   if (state.lspActivation === prev.lspActivation) return;
   for (const presetId of Object.keys(prev.lspActivation)) {
-    if (state.lspActivation[presetId] !== "enabled") {
+    if (state.lspActivation[presetId] !== 'enabled') {
       void stopPresetSessions(presetId)
         .then(() => {
-          if (
-            usePreferencesStore.getState().lspActivation[presetId] === "enabled"
-          ) {
+          if (usePreferencesStore.getState().lspActivation[presetId] === 'enabled') {
             useLspRuntimeStore.getState().bumpGeneration(presetId);
           }
         })

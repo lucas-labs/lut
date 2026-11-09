@@ -1,14 +1,14 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   beginTerminalResizeInteraction,
   endTerminalResizeInteraction,
   subscribeTerminalResizeInteraction,
-} from "./terminalResizeInteraction";
+} from './terminalResizeInteraction';
 
 afterEach(() => vi.useRealTimers());
 
-describe("terminalResizeInteraction", () => {
-  it("publishes one transaction across repeated layout updates", () => {
+describe('terminalResizeInteraction', () => {
+  it('publishes one transaction across repeated layout updates', () => {
     vi.useFakeTimers();
     const listener = vi.fn();
     const unsubscribe = subscribeTerminalResizeInteraction(listener);
@@ -25,7 +25,7 @@ describe("terminalResizeInteraction", () => {
     unsubscribe();
   });
 
-  it("stays active until nested layout transactions have completed", () => {
+  it('stays active until nested layout transactions have completed', () => {
     vi.useFakeTimers();
     const listener = vi.fn();
     const unsubscribe = subscribeTerminalResizeInteraction(listener);

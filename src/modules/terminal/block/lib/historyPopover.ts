@@ -1,19 +1,8 @@
-import {
-  type EditorState,
-  Prec,
-  StateEffect,
-  StateField,
-} from "@codemirror/state";
-import {
-  EditorView,
-  keymap,
-  showTooltip,
-  type Tooltip,
-  type TooltipView,
-} from "@codemirror/view";
-import { Clock01Icon } from "@hugeicons/core-free-icons";
-import { hugeIcon } from "./completionIcons";
-import { createPointerIntent, trackPointer } from "./pointerIntent";
+import { type EditorState, Prec, StateEffect, StateField } from '@codemirror/state';
+import { EditorView, keymap, showTooltip, type Tooltip, type TooltipView } from '@codemirror/view';
+import { Clock01Icon } from '@hugeicons/core-free-icons';
+import { hugeIcon } from './completionIcons';
+import { createPointerIntent, trackPointer } from './pointerIntent';
 
 type Fetcher = (query: string, limit: number) => Promise<string[]>;
 
@@ -70,38 +59,38 @@ const TOOLTIP: Tooltip = {
 };
 
 function historyTooltipView(view: EditorView): TooltipView {
-  const dom = document.createElement("div");
-  dom.className = "cm-history-popover";
-  const list = document.createElement("div");
-  list.className = "cm-history-list";
-  const footer = document.createElement("div");
-  footer.className = "cm-history-footer";
-  footer.textContent = "↑↓ navigate · ↵ run · esc";
+  const dom = document.createElement('div');
+  dom.className = 'cm-history-popover';
+  const list = document.createElement('div');
+  list.className = 'cm-history-list';
+  const footer = document.createElement('div');
+  footer.className = 'cm-history-footer';
+  footer.textContent = '↑↓ navigate · ↵ run · esc';
   dom.append(list, footer);
 
-  let lastSig = "";
+  let lastSig = '';
   const pointerMoved = createPointerIntent();
   const render = () => {
     const h = view.state.field(historyField);
-    const sig = `${h.index}|${h.items.length}|${h.items[0] ?? ""}`;
+    const sig = `${h.index}|${h.items.length}|${h.items[0] ?? ''}`;
     if (sig === lastSig) return;
     lastSig = sig;
     list.replaceChildren();
     h.items.forEach((cmd, i) => {
-      const row = document.createElement("div");
-      row.className = "cm-history-item";
-      if (i === h.index) row.setAttribute("aria-selected", "true");
+      const row = document.createElement('div');
+      row.className = 'cm-history-item';
+      if (i === h.index) row.setAttribute('aria-selected', 'true');
       const icon = hugeIcon(Clock01Icon, 12);
-      icon.classList.add("cm-history-icon");
-      const text = document.createElement("span");
-      text.className = "cm-history-text";
+      icon.classList.add('cm-history-icon');
+      const text = document.createElement('span');
+      text.className = 'cm-history-text';
       text.textContent = cmd;
       row.append(icon, text);
-      row.addEventListener("mousedown", (e) => {
+      row.addEventListener('mousedown', (e) => {
         e.preventDefault();
         acceptIndex(view, i);
       });
-      row.addEventListener("mousemove", (e) => {
+      row.addEventListener('mousemove', (e) => {
         if (!pointerMoved(e.clientX, e.clientY)) return;
         const cur = view.state.field(historyField, false);
         if (cur?.open && cur.index !== i) {
@@ -111,7 +100,7 @@ function historyTooltipView(view: EditorView): TooltipView {
       list.appendChild(row);
     });
     const active = list.children[h.index] as HTMLElement | undefined;
-    active?.scrollIntoView({ block: "nearest" });
+    active?.scrollIntoView({ block: 'nearest' });
   };
 
   render();
@@ -186,10 +175,10 @@ export function historyPopover(fetch: Fetcher) {
     historyField,
     Prec.highest(
       keymap.of([
-        { key: "ArrowUp", run: upOrOpen },
-        { key: "ArrowDown", run: downOrClose },
-        { key: "Enter", run: accept },
-        { key: "Escape", run: dismiss },
+        { key: 'ArrowUp', run: upOrOpen },
+        { key: 'ArrowDown', run: downOrClose },
+        { key: 'Enter', run: accept },
+        { key: 'Escape', run: dismiss },
       ]),
     ),
     EditorView.updateListener.of((u) => {

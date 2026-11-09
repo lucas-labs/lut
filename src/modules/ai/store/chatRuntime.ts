@@ -1,22 +1,13 @@
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import { Chat, type UIMessage } from "@ai-sdk/react";
-import {
-  type ChatTransport,
-  lastAssistantMessageIsCompleteWithApprovalResponses,
-} from "ai";
-import { getModel, type ModelId,providerNeedsKey } from "../config";
-import { BUILTIN_AGENTS } from "../lib/agents";
-import { createContextAwareTransport } from "../lib/transport";
-import type { ToolContext } from "../tools/tools";
-import { useAgentsStore } from "./agentsStore";
-import {
-  chats,
-  getActiveProviderKey,
-  seedMessages,
-  touchChat,
-  useChatStore,
-} from "./chatStore";
-import { usePlanStore } from "./planStore";
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import { Chat, type UIMessage } from '@ai-sdk/react';
+import { type ChatTransport, lastAssistantMessageIsCompleteWithApprovalResponses } from 'ai';
+import { getModel, type ModelId, providerNeedsKey } from '../config';
+import { BUILTIN_AGENTS } from '../lib/agents';
+import { createContextAwareTransport } from '../lib/transport';
+import type { ToolContext } from '../tools/tools';
+import { useAgentsStore } from './agentsStore';
+import { chats, getActiveProviderKey, seedMessages, touchChat, useChatStore } from './chatStore';
+import { usePlanStore } from './planStore';
 
 function makeChat(sessionId: string): Chat<UIMessage> {
   const readCache = new Map<string, { size: number; hash: number }>();
@@ -24,15 +15,11 @@ function makeChat(sessionId: string): Chat<UIMessage> {
     getCwd: () => useChatStore.getState().live.getCwd(),
     getWorkspaceRoot: () => useChatStore.getState().live.getWorkspaceRoot(),
     getTerminalContext: () => useChatStore.getState().live.getTerminalContext(),
-    isActiveTerminalPrivate: () =>
-      useChatStore.getState().live.isActiveTerminalPrivate(),
-    injectIntoActivePty: (text) =>
-      useChatStore.getState().live.injectIntoActivePty(text),
+    isActiveTerminalPrivate: () => useChatStore.getState().live.isActiveTerminalPrivate(),
+    injectIntoActivePty: (text) => useChatStore.getState().live.injectIntoActivePty(text),
     openPreview: (url) => useChatStore.getState().live.openPreview(url),
-    spawnAgent: (prompt) =>
-      useChatStore.getState().live.spawnManagedAgent(prompt, sessionId),
-    readAgentOutput: (leafId) =>
-      useChatStore.getState().live.readLeafBuffer(leafId),
+    spawnAgent: (prompt) => useChatStore.getState().live.spawnManagedAgent(prompt, sessionId),
+    readAgentOutput: (leafId) => useChatStore.getState().live.readLeafBuffer(leafId),
     readCache,
     getSessionId: () => sessionId,
   };
@@ -41,8 +28,7 @@ function makeChat(sessionId: string): Chat<UIMessage> {
     getKeys: () => useChatStore.getState().apiKeys,
     toolContext,
     getModelId: () => useChatStore.getState().selectedModelId,
-    getCustomInstructions: () =>
-      usePreferencesStore.getState().customInstructions,
+    getCustomInstructions: () => usePreferencesStore.getState().customInstructions,
     getAgentPersona: () => {
       const { activeId, customAgents } = useAgentsStore.getState();
       const all = [...BUILTIN_AGENTS, ...customAgents];
@@ -65,14 +51,11 @@ function makeChat(sessionId: string): Chat<UIMessage> {
     getMlxModelId: () => usePreferencesStore.getState().mlxModelId,
     getOllamaBaseURL: () => usePreferencesStore.getState().ollamaBaseURL,
     getOllamaModelId: () => usePreferencesStore.getState().ollamaModelId,
-    getOpenaiCompatibleBaseURL: () =>
-      usePreferencesStore.getState().openaiCompatibleBaseURL,
-    getOpenaiCompatibleModelId: () =>
-      usePreferencesStore.getState().openaiCompatibleModelId,
+    getOpenaiCompatibleBaseURL: () => usePreferencesStore.getState().openaiCompatibleBaseURL,
+    getOpenaiCompatibleModelId: () => usePreferencesStore.getState().openaiCompatibleModelId,
     getOpenaiCompatibleContextLimit: () =>
       usePreferencesStore.getState().openaiCompatibleContextLimit,
-    getOpenrouterModelId: () =>
-      usePreferencesStore.getState().openrouterModelId,
+    getOpenrouterModelId: () => usePreferencesStore.getState().openrouterModelId,
     getCustomEndpoints: () => usePreferencesStore.getState().customEndpoints,
     getCustomEndpointKeys: () => useChatStore.getState().customEndpointKeys,
     onStep: (step) => {
@@ -110,7 +93,7 @@ function makeChat(sessionId: string): Chat<UIMessage> {
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithApprovalResponses,
     onError: (e) => {
       useChatStore.getState().patchAgentMeta({
-        status: "error",
+        status: 'error',
         error: e instanceof Error ? e.message : String(e),
       });
     },

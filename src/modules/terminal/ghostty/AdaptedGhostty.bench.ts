@@ -1,48 +1,45 @@
-import { readFile } from "node:fs/promises";
+import { readFile } from 'node:fs/promises';
 import {
   TeraxGhostty,
   type TeraxGhosttyRenderState,
   type TeraxGhosttyTerminal,
-} from "@terax/ghostty-core/adapted";
-import { afterAll, beforeAll, bench, describe } from "vitest";
+} from '@terax/ghostty-core/adapted';
+import { afterAll, beforeAll, bench, describe } from 'vitest';
 
-const artifacts = ["ghostty-vt.wasm", "ghostty-vt-scalar.wasm"];
+const artifacts = ['ghostty-vt.wasm', 'ghostty-vt-scalar.wasm'];
 const terminals: TeraxGhosttyTerminal[] = [];
 const streamingUpdate = new TextEncoder().encode(
   Array.from(
     { length: 1_024 },
-    (_, index) =>
-      `\r\x1b[2Kagent ${index}: analyzing repository and streaming tokens`,
-  ).join(""),
+    (_, index) => `\r\x1b[2Kagent ${index}: analyzing repository and streaming tokens`,
+  ).join(''),
 );
 const incrementalUpdates = [
-  new TextEncoder().encode("\x1b[10;1Hagent frame A"),
-  new TextEncoder().encode("\x1b[10;1Hagent frame B"),
+  new TextEncoder().encode('\x1b[10;1Hagent frame A'),
+  new TextEncoder().encode('\x1b[10;1Hagent frame B'),
 ];
 
 // An Ink-style dynamic region: every tick erases and rewrites the same twelve
 // lines, and only the spinner glyph on the first line changes.
 const INK_LINES = 12;
-const INK_SPINNER = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-const inkErase = `${"\x1b[2K\x1b[1A".repeat(INK_LINES)}\x1b[2K\x1b[G`;
+const INK_SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+const inkErase = `${'\x1b[2K\x1b[1A'.repeat(INK_LINES)}\x1b[2K\x1b[G`;
 const inkTicks = INK_SPINNER.map((spinner) => {
   const lines = [
     `\x1b[1;36m${spinner}\x1b[0m \x1b[1mWorking\x1b[0m \x1b[2m(12s · esc to interrupt)\x1b[0m`,
-    "",
-    "\x1b[32m●\x1b[0m Read(\x1b[4msrc/modules/terminal/ghostty/AdaptedGhostty.bench.ts\x1b[0m)",
-    "  \x1b[2m⎿ Read 214 lines\x1b[0m",
-    "\x1b[32m●\x1b[0m Update(packages/ghostty-core/adapted/wasm/src/terax.zig)",
-    "  \x1b[2m⎿ Updated with 118 additions and 12 removals\x1b[0m",
-    "     \x1b[31m- const old = 1;\x1b[0m",
-    "     \x1b[32m+ const next = 2; // 日本語のコメント\x1b[0m",
-    "",
-    "\x1b[38;5;240m╭──────────────────────────────────────────────────────────────────────╮\x1b[0m",
-    "\x1b[38;5;240m│\x1b[0m > \x1b[7m \x1b[0m                                                                  \x1b[38;5;240m│\x1b[0m",
-    "\x1b[38;5;240m╰──────────────────────────────────────────────────────────────────────╯\x1b[0m",
+    '',
+    '\x1b[32m●\x1b[0m Read(\x1b[4msrc/modules/terminal/ghostty/AdaptedGhostty.bench.ts\x1b[0m)',
+    '  \x1b[2m⎿ Read 214 lines\x1b[0m',
+    '\x1b[32m●\x1b[0m Update(packages/ghostty-core/adapted/wasm/src/terax.zig)',
+    '  \x1b[2m⎿ Updated with 118 additions and 12 removals\x1b[0m',
+    '     \x1b[31m- const old = 1;\x1b[0m',
+    '     \x1b[32m+ const next = 2; // 日本語のコメント\x1b[0m',
+    '',
+    '\x1b[38;5;240m╭──────────────────────────────────────────────────────────────────────╮\x1b[0m',
+    '\x1b[38;5;240m│\x1b[0m > \x1b[7m \x1b[0m                                                                  \x1b[38;5;240m│\x1b[0m',
+    '\x1b[38;5;240m╰──────────────────────────────────────────────────────────────────────╯\x1b[0m',
   ];
-  return new TextEncoder().encode(
-    inkErase + lines.map((line) => `\x1b[2K${line}\r\n`).join(""),
-  );
+  return new TextEncoder().encode(inkErase + lines.map((line) => `\x1b[2K${line}\r\n`).join(''));
 });
 
 type InkTerminals = {
@@ -108,10 +105,7 @@ function packLikeBuildRows(state: TeraxGhosttyRenderState): number {
 beforeAll(async () => {
   for (const artifact of artifacts) {
     const bytes = await readFile(
-      new URL(
-        `../../../../packages/ghostty-core/adapted/${artifact}`,
-        import.meta.url,
-      ),
+      new URL(`../../../../packages/ghostty-core/adapted/${artifact}`, import.meta.url),
     );
     const ghostty = await TeraxGhostty.loadBytes(Uint8Array.from(bytes).buffer);
     terminals.push(
@@ -131,8 +125,8 @@ beforeAll(async () => {
       scrollSoa: ghostty.createTerminal(120, 40, options),
       scrollGpu: ghostty.createTerminal(120, 40, options),
     };
-    ink.gpu.setRenderFormat("gpu");
-    ink.scrollGpu.setRenderFormat("gpu");
+    ink.gpu.setRenderFormat('gpu');
+    ink.scrollGpu.setRenderFormat('gpu');
     for (const terminal of [ink.scrollSoa, ink.scrollGpu]) {
       for (const line of scrollLines) terminal.write(line);
     }
@@ -163,15 +157,15 @@ afterAll(() => {
 for (const [index, artifact] of artifacts.entries()) {
   describe(artifact, () => {
     let incrementalIndex = 0;
-    bench("parse a bounded streaming update", () => {
+    bench('parse a bounded streaming update', () => {
       terminals[index].write(streamingUpdate);
     });
-    bench("synchronize one changed agent row", () => {
+    bench('synchronize one changed agent row', () => {
       incrementalIndex ^= 1;
       terminals[index].write(incrementalUpdates[incrementalIndex]);
       terminals[index].updateRenderState();
     });
-    bench("synchronize an unchanged visible state", () => {
+    bench('synchronize an unchanged visible state', () => {
       terminals[index].updateRenderState();
     });
   });
@@ -179,32 +173,29 @@ for (const [index, artifact] of artifacts.entries()) {
   // One bench iteration is one Ink tick: erase + rewrite 12 lines, one spinner
   // glyph differs. "consumer" adds what the v1 renderer does with the result.
   describe(`${artifact} Ink-like 12-line region, one spinner character changing per tick`, () => {
-    bench("parse only (shared baseline)", () => {
+    bench('parse only (shared baseline)', () => {
       inkTick = (inkTick + 1) % inkTicks.length;
       inkTerminals[index].parseOnly.write(inkTicks[inkTick]);
     });
-    bench("SoA format: write + update", () => {
+    bench('SoA format: write + update', () => {
       inkTick = (inkTick + 1) % inkTicks.length;
       inkTerminals[index].soa.write(inkTicks[inkTick]);
       inkTerminals[index].soa.updateRenderState();
     });
-    bench("SoA format: write + update + JS cell packing (v1 consumer)", () => {
+    bench('SoA format: write + update + JS cell packing (v1 consumer)', () => {
       inkTick = (inkTick + 1) % inkTicks.length;
       inkTerminals[index].soa.write(inkTicks[inkTick]);
       packLikeBuildRows(inkTerminals[index].soa.updateRenderState());
     });
-    bench(
-      "GPU format: write + update (exact dirty rows, no JS cell work)",
-      () => {
-        inkTick = (inkTick + 1) % inkTicks.length;
-        const terminal = inkTerminals[index].gpu;
-        terminal.write(inkTicks[inkTick]);
-        const state = terminal.updateGpuRenderState();
-        for (const _glyph of state.newGlyphs) void _glyph;
-        terminal.acknowledgeGpuGlyphs();
-      },
-    );
-    bench("GPU format: identical redraw (no row changes)", () => {
+    bench('GPU format: write + update (exact dirty rows, no JS cell work)', () => {
+      inkTick = (inkTick + 1) % inkTicks.length;
+      const terminal = inkTerminals[index].gpu;
+      terminal.write(inkTicks[inkTick]);
+      const state = terminal.updateGpuRenderState();
+      for (const _glyph of state.newGlyphs) void _glyph;
+      terminal.acknowledgeGpuGlyphs();
+    });
+    bench('GPU format: identical redraw (no row changes)', () => {
       const terminal = inkTerminals[index].gpu;
       terminal.write(inkTicks[0]);
       terminal.updateGpuRenderState();
@@ -213,12 +204,12 @@ for (const [index, artifact] of artifacts.entries()) {
 
   // Every tick appends a line, so every visible row changes.
   describe(`${artifact} streaming log, full viewport scroll per tick`, () => {
-    bench("SoA format: write + update", () => {
+    bench('SoA format: write + update', () => {
       scrollTick = (scrollTick + 1) % scrollLines.length;
       inkTerminals[index].scrollSoa.write(scrollLines[scrollTick]);
       inkTerminals[index].scrollSoa.updateRenderState();
     });
-    bench("GPU format: write + update", () => {
+    bench('GPU format: write + update', () => {
       scrollTick = (scrollTick + 1) % scrollLines.length;
       const terminal = inkTerminals[index].scrollGpu;
       terminal.write(scrollLines[scrollTick]);

@@ -5,10 +5,7 @@ export type AnchorRect = {
   readonly height: number;
 };
 
-type AnchorStyle = Pick<
-  CSSStyleDeclaration,
-  "left" | "top" | "width" | "height" | "lineHeight"
->;
+type AnchorStyle = Pick<CSSStyleDeclaration, 'left' | 'top' | 'width' | 'height' | 'lineHeight'>;
 
 /**
  * The IME candidate window follows the input element, which otherwise rests in

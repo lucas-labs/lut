@@ -1,4 +1,4 @@
-import type { GhosttySearchSnapshot } from "@/modules/terminal/ghostty/search/GhosttySearchController";
+import type { GhosttySearchSnapshot } from '@/modules/terminal/ghostty/search/GhosttySearchController';
 
 type Disposable = { dispose(): void };
 type RecoverableSurface = Disposable & {
@@ -10,10 +10,7 @@ type RecoverableSurface = Disposable & {
   };
 };
 
-export function replaceSessionSurface<
-  Surface extends RecoverableSurface,
-  Input extends Disposable,
->(
+export function replaceSessionSurface<Surface extends RecoverableSurface, Input extends Disposable>(
   state: { surface: Surface | null; input: Input | null },
   create: () => Surface,
   attach: (surface: Surface) => void,

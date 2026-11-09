@@ -1,11 +1,11 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { GhosttyBlockSession } from "./ghosttyBlockSessions";
-import type { GhosttyTerminalModelApi } from "./GhosttyTerminalModel";
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { GhosttyBlockSession } from './ghosttyBlockSessions';
+import type { GhosttyTerminalModelApi } from './GhosttyTerminalModel';
 
 const presentation = vi.hoisted(() => ({
   listeners: new Set<(state: { visible: boolean; reclaim: boolean }) => void>(),
 }));
-vi.mock("@/modules/terminal/ghostty/windowPresentation", () => ({
+vi.mock('@/modules/terminal/ghostty/windowPresentation', () => ({
   subscribeWindowPresentation: (
     listener: (state: { visible: boolean; reclaim: boolean }) => void,
   ) => {
@@ -30,7 +30,7 @@ function fakeModel() {
     enableSemanticMarkers: markers,
     semanticMarkerLine: () => null,
     semanticMarkerColumn: () => null,
-    readTextRange: () => "",
+    readTextRange: () => '',
     readCellLine: () => [],
     bufferCursorLine: () => layout.cursor,
     viewportOriginLine: () => layout.origin,
@@ -52,14 +52,14 @@ function fakeModel() {
   return { model, markers, listeners, layout };
 }
 
-describe("block presentation ownership", () => {
-  it("coalesces damage, stops when hidden or occluded, and releases listeners", async () => {
+describe('block presentation ownership', () => {
+  it('coalesces damage, stops when hidden or occluded, and releases listeners', async () => {
     const { model, markers, listeners } = fakeModel();
     const state = new GhosttyBlockSession();
     const update = vi.fn();
     const requestFrame = vi.fn();
     const raf = vi.fn();
-    vi.stubGlobal("requestAnimationFrame", raf);
+    vi.stubGlobal('requestAnimationFrame', raf);
     state.subscribeViewport(update);
     await state.attach(model, requestFrame);
     expect(requestFrame).not.toHaveBeenCalled();
@@ -70,15 +70,13 @@ describe("block presentation ownership", () => {
     state.present();
     expect(update).toHaveBeenCalledOnce();
     expect(raf).not.toHaveBeenCalled();
-    for (const listener of presentation.listeners)
-      listener({ visible: false, reclaim: false });
+    for (const listener of presentation.listeners) listener({ visible: false, reclaim: false });
     requestFrame.mockClear();
     state.changed();
     state.present();
     expect(requestFrame).not.toHaveBeenCalled();
     expect(update).toHaveBeenCalledOnce();
-    for (const listener of presentation.listeners)
-      listener({ visible: true, reclaim: false });
+    for (const listener of presentation.listeners) listener({ visible: true, reclaim: false });
     expect(requestFrame).toHaveBeenCalledOnce();
     state.present();
     expect(update).toHaveBeenCalledTimes(2);
@@ -92,7 +90,7 @@ describe("block presentation ownership", () => {
     expect(presentation.listeners.size).toBe(0);
   });
 
-  it("cannot attach block resources after a session closes during lazy loading", async () => {
+  it('cannot attach block resources after a session closes during lazy loading', async () => {
     const { model, markers } = fakeModel();
     const state = new GhosttyBlockSession();
     const pending = state.attach(model);
@@ -104,7 +102,7 @@ describe("block presentation ownership", () => {
   });
 });
 
-describe("block chrome recomputation", () => {
+describe('block chrome recomputation', () => {
   async function presented() {
     const env = fakeModel();
     const state = new GhosttyBlockSession();
@@ -121,7 +119,7 @@ describe("block chrome recomputation", () => {
     return { ...env, state, chrome, content };
   }
 
-  it("does not recompute block chrome for frames that move nothing", async () => {
+  it('does not recompute block chrome for frames that move nothing', async () => {
     const { state, chrome, content } = await presented();
     for (let frame = 0; frame < 50; frame++) {
       state.changed();
@@ -133,11 +131,11 @@ describe("block chrome recomputation", () => {
   });
 
   it.each([
-    ["scrolling", { origin: 1 }],
-    ["scrollback growth", { history: 1 }],
-    ["a row resize", { rows: 30 }],
-    ["a column resize (reflow)", { cols: 120 }],
-  ])("recomputes block chrome after %s", async (_name, patch) => {
+    ['scrolling', { origin: 1 }],
+    ['scrollback growth', { history: 1 }],
+    ['a row resize', { rows: 30 }],
+    ['a column resize (reflow)', { cols: 120 }],
+  ])('recomputes block chrome after %s', async (_name, patch) => {
     const { state, chrome, layout } = await presented();
     Object.assign(layout, patch);
     state.changed();
@@ -148,7 +146,7 @@ describe("block chrome recomputation", () => {
     expect(chrome).toHaveBeenCalledTimes(1);
   });
 
-  it("recomputes when the cell height changes (zoom or font)", async () => {
+  it('recomputes when the cell height changes (zoom or font)', async () => {
     const { state, chrome } = await presented();
     state.cellHeight = () => 22;
     state.changed();
@@ -156,34 +154,29 @@ describe("block chrome recomputation", () => {
     expect(chrome).toHaveBeenCalledTimes(1);
   });
 
-  it("recomputes when the block set changes", async () => {
+  it('recomputes when the block set changes', async () => {
     const { state, chrome } = await presented();
-    state.controller?.handle(
-      { type: "end-of-command", marker: null, exitCode: 0 } as never,
-      "/",
-    );
+    state.controller?.handle({ type: 'end-of-command', marker: null, exitCode: 0 } as never, '/');
     state.changed();
     state.present();
     expect(chrome).toHaveBeenCalledTimes(1);
   });
 
-  it("resends the layout to a late subscriber and after presentation resumes", async () => {
+  it('resends the layout to a late subscriber and after presentation resumes', async () => {
     const { state, chrome } = await presented();
     const late = vi.fn();
     state.subscribeViewport(late);
     state.present();
     expect(late).toHaveBeenCalledTimes(1);
 
-    for (const listener of presentation.listeners)
-      listener({ visible: false, reclaim: false });
-    for (const listener of presentation.listeners)
-      listener({ visible: true, reclaim: false });
+    for (const listener of presentation.listeners) listener({ visible: false, reclaim: false });
+    for (const listener of presentation.listeners) listener({ visible: true, reclaim: false });
     chrome.mockClear();
     state.present();
     expect(chrome).toHaveBeenCalledTimes(1);
   });
 
-  it("runs the mode effect once per mode change, not per damage", async () => {
+  it('runs the mode effect once per mode change, not per damage', async () => {
     const { state, listeners } = await presented();
     const effect = vi.fn();
     state.modeEffect = effect;
@@ -191,10 +184,7 @@ describe("block chrome recomputation", () => {
     expect(effect).not.toHaveBeenCalled();
 
     // Prompt integration flips the controller from "plain" to "prompt".
-    state.controller?.handle(
-      { type: "prompt-end", blockInput: true } as never,
-      "/",
-    );
+    state.controller?.handle({ type: 'prompt-end', blockInput: true } as never, '/');
     state.changed();
     expect(effect).toHaveBeenCalledTimes(1);
     for (let i = 0; i < 20; i++) state.changed();

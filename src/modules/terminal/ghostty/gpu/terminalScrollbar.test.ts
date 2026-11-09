@@ -1,10 +1,10 @@
-import type { GhosttyTerminalModelApi } from "@/modules/terminal/ghostty/GhosttyTerminalModel";
+import type { GhosttyTerminalModelApi } from '@/modules/terminal/ghostty/GhosttyTerminalModel';
 import {
   isClampedScrollEcho,
   type ScrollbarClock,
   TerminalScrollbarSync,
-} from "@/modules/terminal/ghostty/gpu/terminalScrollbar";
-import { describe, expect, it, vi } from "vitest";
+} from '@/modules/terminal/ghostty/gpu/terminalScrollbar';
+import { describe, expect, it, vi } from 'vitest';
 
 class FakeClock implements ScrollbarClock {
   time = 0;
@@ -52,7 +52,7 @@ function harness() {
   let scrollTop = 0;
   const attributes = new Map<string, string>();
   const scrollbar = {
-    style: { visibility: "" },
+    style: { visibility: '' },
     get scrollTop() {
       reads();
       return scrollTop;
@@ -74,7 +74,7 @@ function harness() {
   const content = {
     style: {
       get height() {
-        throw new Error("content height must not be read");
+        throw new Error('content height must not be read');
       },
       set height(value: string) {
         heightWrites(value);
@@ -112,8 +112,8 @@ function harness() {
   };
 }
 
-describe("TerminalScrollbarSync", () => {
-  it("never reads the DOM while syncing, including while history grows", () => {
+describe('TerminalScrollbarSync', () => {
+  it('never reads the DOM while syncing, including while history grows', () => {
     const h = harness();
     h.scroll.offset = 0;
     h.run();
@@ -126,11 +126,11 @@ describe("TerminalScrollbarSync", () => {
     expect(h.attributeReads).not.toHaveBeenCalled();
   });
 
-  it("writes the target scroll position once for unchanged state", () => {
+  it('writes the target scroll position once for unchanged state', () => {
     const h = harness();
     expect(h.run()).toBe(60);
     expect(h.writes).toHaveBeenCalledExactlyOnceWith(60);
-    expect(h.heightWrites).toHaveBeenCalledExactlyOnceWith("300px");
+    expect(h.heightWrites).toHaveBeenCalledExactlyOnceWith('300px');
     h.writes.mockClear();
     h.heightWrites.mockClear();
     for (let frame = 0; frame < 100; frame += 1) expect(h.run()).toBe(60);
@@ -139,7 +139,7 @@ describe("TerminalScrollbarSync", () => {
     expect(h.sync.writtenScrollTop).toBe(60);
   });
 
-  it("preserves a fractional position the user produced", () => {
+  it('preserves a fractional position the user produced', () => {
     const h = harness();
     h.run();
     h.sync.invalidate();
@@ -152,7 +152,7 @@ describe("TerminalScrollbarSync", () => {
     expect(h.writes).toHaveBeenCalledExactlyOnceWith(80);
   });
 
-  it("keeps the DOM position on invalidation but rewrites it after the element is re-attached", () => {
+  it('keeps the DOM position on invalidation but rewrites it after the element is re-attached', () => {
     const h = harness();
     h.run();
     h.writes.mockClear();
@@ -163,10 +163,10 @@ describe("TerminalScrollbarSync", () => {
     h.run();
     expect(h.writes).toHaveBeenCalledExactlyOnceWith(60);
     h.run(120);
-    expect(h.heightWrites).toHaveBeenLastCalledWith("320px");
+    expect(h.heightWrites).toHaveBeenLastCalledWith('320px');
   });
 
-  it("throttles bottom-pinned growth to ten position writes a second and flushes the last value", () => {
+  it('throttles bottom-pinned growth to ten position writes a second and flushes the last value', () => {
     const h = harness();
     h.scroll.offset = 0;
     h.run();
@@ -184,7 +184,7 @@ describe("TerminalScrollbarSync", () => {
     expect(h.writes).toHaveBeenLastCalledWith(h.scroll.history * 20);
   });
 
-  it("applies jumps and user scrolling immediately", () => {
+  it('applies jumps and user scrolling immediately', () => {
     const h = harness();
     h.scroll.offset = 0;
     h.run();
@@ -196,25 +196,25 @@ describe("TerminalScrollbarSync", () => {
     expect(h.writes).toHaveBeenCalledOnce();
   });
 
-  it("hides the scrollbar on the alternate screen and when there is no history", () => {
+  it('hides the scrollbar on the alternate screen and when there is no history', () => {
     const h = harness();
     h.run();
-    expect(h.scrollbar.style.visibility).toBe("visible");
+    expect(h.scrollbar.style.visibility).toBe('visible');
     h.alternate.value = true;
     expect(h.run()).toBeNull();
-    expect(h.scrollbar.style.visibility).toBe("hidden");
+    expect(h.scrollbar.style.visibility).toBe('hidden');
     h.alternate.value = false;
     h.scroll.history = 0;
     h.scroll.offset = 0;
     expect(h.run()).toBeNull();
-    expect(h.scrollbar.style.visibility).toBe("hidden");
+    expect(h.scrollbar.style.visibility).toBe('hidden');
   });
 
-  it("updates accessibility values at most four times a second", () => {
+  it('updates accessibility values at most four times a second', () => {
     const h = harness();
     h.scroll.offset = 0;
     h.run();
-    expect(h.attributes.get("aria-valuemax")).toBe("10");
+    expect(h.attributes.get('aria-valuemax')).toBe('10');
     h.attributeWrites.mockClear();
     for (let frame = 0; frame < 120; frame += 1) {
       h.scroll.history += 1;
@@ -224,12 +224,12 @@ describe("TerminalScrollbarSync", () => {
     // About 1.9 s of growth.
     expect(h.attributeWrites.mock.calls.length).toBeLessThanOrEqual(2 * 8);
     h.clock.advance(300);
-    expect(h.attributes.get("aria-valuemax")).toBe(String(h.scroll.history));
-    expect(h.attributes.get("aria-valuenow")).toBe(String(h.scroll.history));
-    expect(h.attributes.get("aria-valuemin")).toBe("0");
+    expect(h.attributes.get('aria-valuemax')).toBe(String(h.scroll.history));
+    expect(h.attributes.get('aria-valuenow')).toBe(String(h.scroll.history));
+    expect(h.attributes.get('aria-valuemin')).toBe('0');
   });
 
-  it("leaves no timer behind after dispose", () => {
+  it('leaves no timer behind after dispose', () => {
     const h = harness();
     h.scroll.offset = 0;
     h.run();
@@ -240,7 +240,7 @@ describe("TerminalScrollbarSync", () => {
     expect(h.clock.pending).toBe(0);
   });
 
-  it("never writes a position derived from invalidated state, so the view is not sent to the top", () => {
+  it('never writes a position derived from invalidated state, so the view is not sent to the top', () => {
     // Bottom-pinned growth leaves a throttled write pending; the browser clamps the thumb when
     // the scrollback shrinks, the scroll handler sees a position it did not write and
     // invalidates. The pending write used to run with the placeholder history (-1): a negative
@@ -257,13 +257,12 @@ describe("TerminalScrollbarSync", () => {
     h.sync.invalidate();
     h.sync.observe(8);
     h.clock.advance(250);
-    for (const [value] of h.writes.mock.calls)
-      expect(value).toBeGreaterThanOrEqual(0);
+    for (const [value] of h.writes.mock.calls) expect(value).toBeGreaterThanOrEqual(0);
     expect(h.sync.writtenScrollTop).toBe(h.scroll.history * 20);
     expect(h.writes).toHaveBeenLastCalledWith(h.scroll.history * 20);
   });
 
-  it("follows the model after history shrinks under a pending write", () => {
+  it('follows the model after history shrinks under a pending write', () => {
     const h = harness();
     h.scroll.offset = 0;
     h.scroll.history = 1_000;
@@ -279,7 +278,7 @@ describe("TerminalScrollbarSync", () => {
     expect(h.sync.writtenScrollTop).toBe(494 * 20);
   });
 
-  it("never writes a negative or non-finite scroll position, whatever happens to the cache", () => {
+  it('never writes a negative or non-finite scroll position, whatever happens to the cache', () => {
     const h = harness();
     let seed = 7;
     const random = () => {
@@ -292,8 +291,7 @@ describe("TerminalScrollbarSync", () => {
       const roll = random();
       if (roll < 0.4) h.scroll.history += 1;
       else if (roll < 0.45) h.scroll.history = Math.floor(random() * 500);
-      else if (roll < 0.5)
-        h.scroll.offset = Math.floor(random() * h.scroll.history);
+      else if (roll < 0.5) h.scroll.offset = Math.floor(random() * h.scroll.history);
       else if (roll < 0.6) h.scroll.offset = 0;
       else if (roll < 0.7) h.sync.invalidate();
       else if (roll < 0.72) h.sync.forget();
@@ -310,8 +308,8 @@ describe("TerminalScrollbarSync", () => {
   });
 });
 
-describe("isClampedScrollEcho", () => {
-  it("recognizes the browser clamping a write to shorter content, and nothing a user can do", () => {
+describe('isClampedScrollEcho', () => {
+  it('recognizes the browser clamping a write to shorter content, and nothing a user can do', () => {
     // Content 9,128 high in a 730 viewport: the thumb tops out at 8,398.
     expect(isClampedScrollEcho(17_476, 8_398, 9_128, 730)).toBe(true);
     // A drag away from the bottom, or one that lands where the thumb was written.

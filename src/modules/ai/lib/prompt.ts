@@ -1,5 +1,5 @@
-import type { ProviderId } from "@/modules/ai/config";
-import type { ModelMessage, SystemModelMessage } from "ai";
+import type { ProviderId } from '@/modules/ai/config';
+import type { ModelMessage, SystemModelMessage } from 'ai';
 
 export type PreparedAgentPrompt = {
   system: SystemModelMessage[];
@@ -12,14 +12,12 @@ export function prepareAgentPrompt(
   history: readonly ModelMessage[],
   provider: ProviderId,
 ): PreparedAgentPrompt {
-  const system: SystemModelMessage[] = [
-    { role: "system", content: stableSystem },
-  ];
+  const system: SystemModelMessage[] = [{ role: 'system', content: stableSystem }];
   if (planInstructions) {
-    system.push({ role: "system", content: planInstructions });
+    system.push({ role: 'system', content: planInstructions });
   }
   const messages = history.slice();
-  if (provider !== "anthropic") return { system, messages };
+  if (provider !== 'anthropic') return { system, messages };
 
   system[0] = withAnthropicCacheMarker(system[0]);
   const lastIdx = messages.length - 1;
@@ -34,7 +32,7 @@ function withAnthropicCacheMarker<T extends ModelMessage>(message: T): T {
     ...message,
     providerOptions: {
       ...(message.providerOptions ?? {}),
-      anthropic: { cacheControl: { type: "ephemeral" } },
+      anthropic: { cacheControl: { type: 'ephemeral' } },
     },
   };
 }

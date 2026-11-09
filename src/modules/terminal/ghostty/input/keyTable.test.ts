@@ -1,25 +1,21 @@
-import { Key } from "@terax/ghostty-core/protocol";
-import { describe, expect, it } from "vitest";
-import { baseTextForCode, KEY_MAP, unshiftedCodepoint } from "./keyTable";
+import { Key } from '@terax/ghostty-core/protocol';
+import { describe, expect, it } from 'vitest';
+import { baseTextForCode, KEY_MAP, unshiftedCodepoint } from './keyTable';
 
-describe("KEY_MAP", () => {
-  it("maps the generated runs to the keys of the same name", () => {
+describe('KEY_MAP', () => {
+  it('maps the generated runs to the keys of the same name', () => {
     const named = Key as unknown as Record<string, Key>;
-    for (const letter of "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    for (const letter of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')
       expect(KEY_MAP[`Key${letter}`], letter).toBe(named[letter]);
-    const digits = "ZERO ONE TWO THREE FOUR FIVE SIX SEVEN EIGHT NINE".split(
-      " ",
-    );
+    const digits = 'ZERO ONE TWO THREE FOUR FIVE SIX SEVEN EIGHT NINE'.split(' ');
     digits.forEach((name, digit) => {
       expect(KEY_MAP[`Digit${digit}`], name).toBe(named[name]);
-      expect(KEY_MAP[`Numpad${digit}`], `KP_${digit}`).toBe(
-        named[`KP_${digit}`],
-      );
+      expect(KEY_MAP[`Numpad${digit}`], `KP_${digit}`).toBe(named[`KP_${digit}`]);
     });
     for (let n = 1; n <= 24; n++) expect(KEY_MAP[`F${n}`]).toBe(named[`F${n}`]);
   });
 
-  it("maps every named key to the key it has always encoded as", () => {
+  it('maps every named key to the key it has always encoded as', () => {
     expect(
       Object.fromEntries(
         Object.entries(KEY_MAP).filter(
@@ -72,7 +68,7 @@ describe("KEY_MAP", () => {
     });
   });
 
-  it("maps the named keys", () => {
+  it('maps the named keys', () => {
     expect(KEY_MAP.ArrowUp).toBe(Key.UP);
     expect(KEY_MAP.PageDown).toBe(Key.PAGE_DOWN);
     expect(KEY_MAP.Backquote).toBe(Key.GRAVE);
@@ -82,7 +78,7 @@ describe("KEY_MAP", () => {
   });
 });
 
-describe("unshiftedCodepoint", () => {
+describe('unshiftedCodepoint', () => {
   const press = (key: string, code: string, shiftKey = false) => ({
     key,
     code,
@@ -90,31 +86,31 @@ describe("unshiftedCodepoint", () => {
   });
 
   it.each([
-    [press("a", "KeyA"), 97],
-    [press("A", "KeyA", true), 97],
-    [press(":", "Semicolon", true), 59],
-    [press("!", "Digit1", true), 49],
-    [press("_", "Minus", true), 45],
-    [press("ä", "Quote"), 228],
-    [press("Enter", "Enter"), 0],
-    [press("Dead", "KeyE"), 101],
-  ])("%j -> %s", (event, expected) => {
+    [press('a', 'KeyA'), 97],
+    [press('A', 'KeyA', true), 97],
+    [press(':', 'Semicolon', true), 59],
+    [press('!', 'Digit1', true), 49],
+    [press('_', 'Minus', true), 45],
+    [press('ä', 'Quote'), 228],
+    [press('Enter', 'Enter'), 0],
+    [press('Dead', 'KeyE'), 101],
+  ])('%j -> %s', (event, expected) => {
     expect(unshiftedCodepoint(event)).toBe(expected);
   });
 });
 
-describe("baseTextForCode", () => {
+describe('baseTextForCode', () => {
   it.each([
-    ["KeyB", false, "b"],
-    ["KeyB", true, "B"],
-    ["Digit2", false, "2"],
-    ["Digit2", true, "@"],
-    ["Period", false, "."],
-    ["Period", true, ">"],
-    ["Space", false, " "],
-    ["Enter", false, null],
-    ["ArrowLeft", false, null],
-  ])("%s (shift %s) -> %s", (code, shift, expected) => {
+    ['KeyB', false, 'b'],
+    ['KeyB', true, 'B'],
+    ['Digit2', false, '2'],
+    ['Digit2', true, '@'],
+    ['Period', false, '.'],
+    ['Period', true, '>'],
+    ['Space', false, ' '],
+    ['Enter', false, null],
+    ['ArrowLeft', false, null],
+  ])('%s (shift %s) -> %s', (code, shift, expected) => {
     expect(baseTextForCode(code, shift)).toBe(expected);
   });
 });

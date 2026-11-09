@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef } from "react";
+import { useCallback, useLayoutEffect, useRef } from 'react';
 import {
   applyDrag,
   applyResize,
@@ -7,9 +7,9 @@ import {
   type Geom,
   type ResizeDir,
   type Viewport,
-} from "./miniWindowGeometry";
+} from './miniWindowGeometry';
 
-const STORE_KEY = "terax-ui-mini-window-geom";
+const STORE_KEY = 'terax-ui-mini-window-geom';
 
 const viewport = (): Viewport => ({
   vw: window.innerWidth,
@@ -22,10 +22,10 @@ function loadGeom(): Geom | null {
     if (!raw) return null;
     const p = JSON.parse(raw) as Partial<Geom>;
     if (
-      typeof p.x === "number" &&
-      typeof p.y === "number" &&
-      typeof p.w === "number" &&
-      typeof p.h === "number"
+      typeof p.x === 'number' &&
+      typeof p.y === 'number' &&
+      typeof p.w === 'number' &&
+      typeof p.h === 'number'
     ) {
       return { x: p.x, y: p.y, w: p.w, h: p.h };
     }
@@ -87,9 +87,9 @@ export function useMiniWindowGeometry() {
     // Reclamp into the new viewport; persistence is left to the next gesture
     // since loadGeom re-clamps on startup anyway.
     const onResize = () => write(clampGeom(geom.current, viewport()));
-    window.addEventListener("resize", onResize);
+    window.addEventListener('resize', onResize);
     return () => {
-      window.removeEventListener("resize", onResize);
+      window.removeEventListener('resize', onResize);
       if (frame.current) cancelAnimationFrame(frame.current);
     };
   }, [write]);
@@ -108,7 +108,7 @@ export function useMiniWindowGeometry() {
       if (armed) {
         e.preventDefault();
         el.setPointerCapture?.(pointerId);
-        document.body.style.userSelect = "none";
+        document.body.style.userSelect = 'none';
       }
 
       const onMove = (ev: PointerEvent) => {
@@ -118,22 +118,22 @@ export function useMiniWindowGeometry() {
           if (Math.abs(dx) < threshold && Math.abs(dy) < threshold) return;
           armed = true;
           el.setPointerCapture?.(pointerId);
-          document.body.style.userSelect = "none";
+          document.body.style.userSelect = 'none';
         }
         write(compute(start, dx, dy, viewport()));
       };
       const onUp = () => {
-        el.removeEventListener("pointermove", onMove);
-        el.removeEventListener("pointerup", onUp);
-        el.removeEventListener("pointercancel", onUp);
+        el.removeEventListener('pointermove', onMove);
+        el.removeEventListener('pointerup', onUp);
+        el.removeEventListener('pointercancel', onUp);
         if (!armed) return;
         el.releasePointerCapture?.(pointerId);
-        document.body.style.userSelect = "";
+        document.body.style.userSelect = '';
         saveGeom(geom.current);
       };
-      el.addEventListener("pointermove", onMove);
-      el.addEventListener("pointerup", onUp);
-      el.addEventListener("pointercancel", onUp);
+      el.addEventListener('pointermove', onMove);
+      el.addEventListener('pointerup', onUp);
+      el.addEventListener('pointercancel', onUp);
     },
     [write],
   );
@@ -142,12 +142,7 @@ export function useMiniWindowGeometry() {
     (e: React.PointerEvent) => {
       if (e.button !== 0) return;
       const target = e.target as HTMLElement;
-      if (
-        target.closest(
-          "button, input, select, textarea, a, [role], [data-no-drag]",
-        )
-      )
-        return;
+      if (target.closest('button, input, select, textarea, a, [role], [data-no-drag]')) return;
       beginGesture(e, applyDrag, 4);
     },
     [beginGesture],

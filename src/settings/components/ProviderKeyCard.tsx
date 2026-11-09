@@ -1,9 +1,9 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
-import { cn } from "@/lib/utils";
-import type { ProviderInfo } from "@/modules/ai/config";
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
+import { cn } from '@/lib/utils';
+import type { ProviderInfo } from '@/modules/ai/config';
 import {
   ArrowUpRight01Icon,
   Cancel01Icon,
@@ -11,11 +11,11 @@ import {
   Edit02Icon,
   ViewIcon,
   ViewOffSlashIcon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { openUrl } from "@tauri-apps/plugin-opener";
-import { useEffect, useState } from "react";
-import { ProviderIcon } from "./ProviderIcon";
+} from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { openUrl } from '@tauri-apps/plugin-opener';
+import { useEffect, useState } from 'react';
+import { ProviderIcon } from './ProviderIcon';
 
 type Props = {
   provider: ProviderInfo;
@@ -26,19 +26,13 @@ type Props = {
 };
 
 function maskKey(key: string): string {
-  if (key.length <= 8) return "•".repeat(key.length);
-  return `${key.slice(0, 4)}${"•".repeat(8)}${key.slice(-4)}`;
+  if (key.length <= 8) return '•'.repeat(key.length);
+  return `${key.slice(0, 4)}${'•'.repeat(8)}${key.slice(-4)}`;
 }
 
-export function ProviderKeyCard({
-  provider,
-  currentKey,
-  onSave,
-  onClear,
-  onRemove,
-}: Props) {
+export function ProviderKeyCard({ provider, currentKey, onSave, onClear, onRemove }: Props) {
   const [editing, setEditing] = useState(!currentKey);
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState('');
   const [reveal, setReveal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +44,7 @@ export function ProviderKeyCard({
   const submit = async () => {
     const trimmed = value.trim();
     if (!trimmed) {
-      setError("Enter your API key.");
+      setError('Enter your API key.');
       return;
     }
     if (provider.keyPrefix && !trimmed.startsWith(provider.keyPrefix)) {
@@ -61,7 +55,7 @@ export function ProviderKeyCard({
     setError(null);
     try {
       await onSave(trimmed);
-      setValue("");
+      setValue('');
       setReveal(false);
     } catch (e) {
       setError(`Failed to save: ${String(e)}`);
@@ -80,11 +74,7 @@ export function ProviderKeyCard({
             variant="outline"
             className="ml-1 h-4 gap-1 border-border/60 bg-muted/40 px-1.5 text-[10px] font-normal text-muted-foreground"
           >
-            <HugeiconsIcon
-              icon={CheckmarkCircle02Icon}
-              size={9}
-              strokeWidth={2}
-            />
+            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={9} strokeWidth={2} />
             Connected
           </Badge>
         ) : null}
@@ -94,11 +84,7 @@ export function ProviderKeyCard({
           className="ml-auto inline-flex items-center gap-0.5 text-[10.5px] text-muted-foreground transition-colors hover:text-foreground"
         >
           Get key
-          <HugeiconsIcon
-            icon={ArrowUpRight01Icon}
-            size={11}
-            strokeWidth={1.75}
-          />
+          <HugeiconsIcon icon={ArrowUpRight01Icon} size={11} strokeWidth={1.75} />
         </button>
         {onRemove ? (
           <Button
@@ -118,14 +104,10 @@ export function ProviderKeyCard({
           <div className="flex gap-1.5">
             <div className="relative flex-1">
               <Input
-                type={reveal ? "text" : "password"}
+                type={reveal ? 'text' : 'password'}
                 autoComplete="off"
                 spellCheck={false}
-                placeholder={
-                  provider.keyPrefix
-                    ? `${provider.keyPrefix}…`
-                    : "Paste API key"
-                }
+                placeholder={provider.keyPrefix ? `${provider.keyPrefix}…` : 'Paste API key'}
                 value={value}
                 disabled={saving}
                 onChange={(e) => {
@@ -133,11 +115,11 @@ export function ProviderKeyCard({
                   if (error) setError(null);
                 }}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") {
+                  if (e.key === 'Enter') {
                     e.preventDefault();
                     void submit();
-                  } else if (e.key === "Escape" && currentKey) {
-                    setValue("");
+                  } else if (e.key === 'Escape' && currentKey) {
+                    setValue('');
                     setReveal(false);
                     setError(null);
                     setEditing(false);
@@ -150,13 +132,9 @@ export function ProviderKeyCard({
                 onClick={() => setReveal((v) => !v)}
                 tabIndex={-1}
                 className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground/60 hover:text-foreground"
-                aria-label={reveal ? "Hide key" : "Show key"}
+                aria-label={reveal ? 'Hide key' : 'Show key'}
               >
-                <HugeiconsIcon
-                  icon={reveal ? ViewOffSlashIcon : ViewIcon}
-                  size={12}
-                  strokeWidth={1.75}
-                />
+                <HugeiconsIcon icon={reveal ? ViewOffSlashIcon : ViewIcon} size={12} strokeWidth={1.75} />
               </button>
             </div>
             <Button
@@ -169,26 +147,16 @@ export function ProviderKeyCard({
               Save
             </Button>
           </div>
-          {error ? (
-            <p className="text-[10.5px] text-destructive">{error}</p>
-          ) : null}
+          {error ? <p className="text-[10.5px] text-destructive">{error}</p> : null}
         </div>
       ) : (
         <div className="flex items-center gap-1.5">
           <code
-            className={cn(
-              "flex-1 truncate rounded bg-muted/40 px-2 py-1 font-mono text-[11px] text-muted-foreground",
-            )}
+            className={cn('flex-1 truncate rounded bg-muted/40 px-2 py-1 font-mono text-[11px] text-muted-foreground')}
           >
-            {maskKey(currentKey ?? "")}
+            {maskKey(currentKey ?? '')}
           </code>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => setEditing(true)}
-            title="Replace"
-            className="size-7"
-          >
+          <Button size="icon" variant="ghost" onClick={() => setEditing(true)} title="Replace" className="size-7">
             <HugeiconsIcon icon={Edit02Icon} size={12} strokeWidth={1.75} />
           </Button>
           {!onRemove ? (

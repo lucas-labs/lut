@@ -5,8 +5,7 @@ type BatchMoveItem = {
 };
 
 export type FsMoveResult =
-  | { status: "conflict"; replaceable: boolean; token: string }
-  | { status: "moved" };
+  { status: 'conflict'; replaceable: boolean; token: string } | { status: 'moved' };
 
 export type BatchMoveOutcome = {
   moved: number;
@@ -15,31 +14,25 @@ export type BatchMoveOutcome = {
 };
 
 type BatchMoveDeps = {
-  move: (
-    item: BatchMoveItem,
-    expectedConflict: string | null,
-  ) => Promise<FsMoveResult>;
-  resolveConflict: (item: BatchMoveItem) => Promise<"replace" | "skip">;
+  move: (item: BatchMoveItem, expectedConflict: string | null) => Promise<FsMoveResult>;
+  resolveConflict: (item: BatchMoveItem) => Promise<'replace' | 'skip'>;
   canReplace: (item: BatchMoveItem) => boolean;
   onMoved: (item: BatchMoveItem) => void;
   isCurrent: () => boolean;
 };
 
 function joinPath(parent: string, name: string): string {
-  return parent.endsWith("/") ? `${parent}${name}` : `${parent}/${name}`;
+  return parent.endsWith('/') ? `${parent}${name}` : `${parent}/${name}`;
 }
 
 function normalizePath(path: string): string {
-  return path.replace(/\\/g, "/");
+  return path.replace(/\\/g, '/');
 }
 
 export function excludeNestedSources(sources: string[]): string[] {
   const normalized = sources.map(normalizePath);
   return normalized.filter(
-    (path) =>
-      !normalized.some(
-        (other) => other !== path && path.startsWith(`${other}/`),
-      ),
+    (path) => !normalized.some((other) => other !== path && path.startsWith(`${other}/`)),
   );
 }
 
@@ -56,7 +49,7 @@ export async function executeBatchMove(
   };
 
   for (const from of excludeNestedSources(sources)) {
-    const name = from.slice(from.lastIndexOf("/") + 1);
+    const name = from.slice(from.lastIndexOf('/') + 1);
     const item = { from, to: joinPath(targetDir, name), name };
     if (item.to === from) continue;
     if (!deps.isCurrent()) {
@@ -66,7 +59,7 @@ export async function executeBatchMove(
     try {
       let result = await deps.move(item, null);
 
-      if (result.status === "conflict") {
+      if (result.status === 'conflict') {
         if (!result.replaceable) {
           outcome.failures += 1;
           continue;
@@ -78,7 +71,7 @@ export async function executeBatchMove(
         if (!deps.isCurrent()) {
           break;
         }
-        if (resolution === "skip") continue;
+        if (resolution === 'skip') continue;
         if (!deps.canReplace(item)) {
           outcome.blocked += 1;
           continue;
@@ -86,7 +79,7 @@ export async function executeBatchMove(
         result = await deps.move(item, result.token);
       }
 
-      if (result.status === "conflict") {
+      if (result.status === 'conflict') {
         outcome.failures += 1;
       } else {
         outcome.moved += 1;

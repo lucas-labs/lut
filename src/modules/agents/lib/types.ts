@@ -1,13 +1,8 @@
-export type AgentStatus = "working" | "waiting";
+export type AgentStatus = 'working' | 'waiting';
 
-export type AgentSource = "terminal" | "local";
+export type AgentSource = 'terminal' | 'local';
 
-type AgentSignalKind =
-  | "started"
-  | "working"
-  | "attention"
-  | "finished"
-  | "exited";
+type AgentSignalKind = 'started' | 'working' | 'attention' | 'finished' | 'exited';
 
 export type AgentSignal = {
   id: number;
@@ -36,7 +31,7 @@ export type AgentNotification = {
   read: boolean;
 };
 
-export type NotificationKind = "attention" | "finished" | "error";
+export type NotificationKind = 'attention' | 'finished' | 'error';
 
 export type LocalAgentState = {
   agent: string;

@@ -1,14 +1,11 @@
-import { historyList } from "@/modules/terminal/block/lib/history";
-import { useCallback } from "react";
-import { type AsyncQueryState, useAsyncQuery } from "./useAsyncQuery";
+import { historyList } from '@/modules/terminal/block/lib/history';
+import { useCallback } from 'react';
+import { type AsyncQueryState, useAsyncQuery } from './useAsyncQuery';
 
 const LIMIT = 60;
 const DEBOUNCE_MS = 80;
 
-export function useCommandHistory(
-  term: string,
-  enabled: boolean,
-): AsyncQueryState<string> {
+export function useCommandHistory(term: string, enabled: boolean): AsyncQueryState<string> {
   const run = useCallback(
     async (q: string) => Array.from(new Set(await historyList(q, LIMIT))),
     [],

@@ -1,6 +1,6 @@
-import { currentWorkspaceEnv } from "@/modules/workspace";
-import { invoke } from "@tauri-apps/api/core";
-import { useEffect, useState } from "react";
+import { currentWorkspaceEnv } from '@/modules/workspace';
+import { invoke } from '@tauri-apps/api/core';
+import { useEffect, useState } from 'react';
 
 export type WorkspaceFilesState = {
   files: string[];
@@ -27,7 +27,7 @@ function isFresh(entry: CacheEntry): boolean {
 function fetchFiles(root: string): Promise<CacheEntry> {
   const existing = inflight.get(root);
   if (existing) return existing;
-  const promise = invoke<ListFilesResult>("fs_list_files", {
+  const promise = invoke<ListFilesResult>('fs_list_files', {
     root,
     workspace: currentWorkspaceEnv(),
   })

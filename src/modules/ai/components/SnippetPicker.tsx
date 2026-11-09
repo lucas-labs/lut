@@ -1,12 +1,10 @@
-import { PopoverContent } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { HugeiconsIcon } from "@hugeicons/react";
-import type { SlashCommandMeta } from "../lib/slashCommands";
-import type { Snippet } from "../lib/snippets";
+import { PopoverContent } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { HugeiconsIcon } from '@hugeicons/react';
+import type { SlashCommandMeta } from '../lib/slashCommands';
+import type { Snippet } from '../lib/snippets';
 
-export type PickerItem =
-  | { kind: "snippet"; snippet: Snippet }
-  | { kind: "command"; command: SlashCommandMeta };
+export type PickerItem = { kind: 'snippet'; snippet: Snippet } | { kind: 'command'; command: SlashCommandMeta };
 
 type Props = {
   items: readonly PickerItem[];
@@ -15,14 +13,9 @@ type Props = {
   onHover: (index: number) => void;
 };
 
-export function SnippetPickerContent({
-  items,
-  activeIndex,
-  onPick,
-  onHover,
-}: Props) {
-  const commands = items.filter((it) => it.kind === "command");
-  const snippets = items.filter((it) => it.kind === "snippet");
+export function SnippetPickerContent({ items, activeIndex, onPick, onHover }: Props) {
+  const commands = items.filter((it) => it.kind === 'command');
+  const snippets = items.filter((it) => it.kind === 'snippet');
   let cursor = -1;
 
   return (
@@ -48,7 +41,7 @@ export function SnippetPickerContent({
                 {commands.map((it) => {
                   cursor += 1;
                   const i = cursor;
-                  if (it.kind !== "command") return null;
+                  if (it.kind !== 'command') return null;
                   const c = it.command;
                   return (
                     <li key={`cmd-${c.name}`}>
@@ -57,23 +50,14 @@ export function SnippetPickerContent({
                         onMouseEnter={() => onHover(i)}
                         onClick={() => onPick(it)}
                         className={cn(
-                          "flex w-full items-center gap-2 px-2 py-1.5 text-left text-[12px]",
-                          i === activeIndex
-                            ? "bg-accent"
-                            : "hover:bg-accent/60",
+                          'flex w-full items-center gap-2 px-2 py-1.5 text-left text-[12px]',
+                          i === activeIndex ? 'bg-accent' : 'hover:bg-accent/60',
                         )}
                       >
-                        <HugeiconsIcon
-                          icon={c.icon}
-                          size={13}
-                          strokeWidth={1.75}
-                          className="text-muted-foreground"
-                        />
+                        <HugeiconsIcon icon={c.icon} size={13} strokeWidth={1.75} className="text-muted-foreground" />
                         <span className="flex min-w-0 flex-1 flex-col">
                           <span className="flex items-center gap-1.5">
-                            <span className="font-mono text-muted-foreground">
-                              #{c.name}
-                            </span>
+                            <span className="font-mono text-muted-foreground">#{c.name}</span>
                             <span className="font-medium">{c.label}</span>
                           </span>
                         </span>
@@ -91,7 +75,7 @@ export function SnippetPickerContent({
                 {snippets.map((it) => {
                   cursor += 1;
                   const i = cursor;
-                  if (it.kind !== "snippet") return null;
+                  if (it.kind !== 'snippet') return null;
                   const s = it.snippet;
                   return (
                     <li key={`sn-${s.id}`}>
@@ -100,22 +84,16 @@ export function SnippetPickerContent({
                         onMouseEnter={() => onHover(i)}
                         onClick={() => onPick(it)}
                         className={cn(
-                          "flex w-full flex-col items-start gap-0.5 px-2 py-1.5 text-left text-[12px]",
-                          i === activeIndex
-                            ? "bg-accent"
-                            : "hover:bg-accent/60",
+                          'flex w-full flex-col items-start gap-0.5 px-2 py-1.5 text-left text-[12px]',
+                          i === activeIndex ? 'bg-accent' : 'hover:bg-accent/60',
                         )}
                       >
                         <span className="flex w-full items-center gap-1.5">
-                          <span className="font-mono text-muted-foreground">
-                            #{s.handle}
-                          </span>
+                          <span className="font-mono text-muted-foreground">#{s.handle}</span>
                           <span className="font-medium">{s.name}</span>
                         </span>
                         {s.description ? (
-                          <span className="line-clamp-1 text-[10.5px] text-muted-foreground">
-                            {s.description}
-                          </span>
+                          <span className="line-clamp-1 text-[10.5px] text-muted-foreground">{s.description}</span>
                         ) : null}
                       </button>
                     </li>

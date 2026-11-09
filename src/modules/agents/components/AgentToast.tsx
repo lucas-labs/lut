@@ -1,6 +1,6 @@
-import { shortcutLabel } from "@/modules/shortcuts";
-import { toast } from "sonner";
-import { AgentIcon } from "../lib/agentIcon";
+import { shortcutLabel } from '@/modules/shortcuts';
+import { toast } from 'sonner';
+import { AgentIcon } from '../lib/agentIcon';
 
 type AgentToastArgs = {
   agent: string;
@@ -10,7 +10,7 @@ type AgentToastArgs = {
 };
 
 export function showAgentToast({ agent, title, body, onActivate }: AgentToastArgs) {
-  const hint = shortcutLabel("agent.focusAttention");
+  const hint = shortcutLabel('agent.focusAttention');
   toast(title, {
     description: hint ? (
       <span className="flex items-center gap-1.5">
@@ -23,7 +23,7 @@ export function showAgentToast({ agent, title, body, onActivate }: AgentToastArg
       body
     ),
     icon: <AgentIcon agent={agent} size={18} />,
-    action: { label: "Open", onClick: onActivate },
+    action: { label: 'Open', onClick: onActivate },
     duration: 6000,
   });
 }

@@ -1,17 +1,17 @@
 import {
   FOCUSED_TERMINAL_FRAME_INTERVAL_MS,
   terminalFrameIntervalMs,
-} from "@/modules/terminal/ghostty/renderScheduling";
+} from '@/modules/terminal/ghostty/renderScheduling';
 
 type Surface = { isFocused(): boolean };
 
 /** What the runtime should do next to present the earliest dirty surface. */
 export type FramePlan =
-  | { readonly kind: "idle" }
+  | { readonly kind: 'idle' }
   /** Request an animation frame now: its callback will find a surface due. */
-  | { readonly kind: "frame" }
+  | { readonly kind: 'frame' }
   /** Nothing can be due before this: sleep on a timer, then plan again. */
-  | { readonly kind: "wait"; readonly delayMs: number };
+  | { readonly kind: 'wait'; readonly delayMs: number };
 
 const INTERACTION_PRIORITY_MS = 150;
 /** Early arrival that still counts as on time (callback timestamps jitter by a fraction of a ms). */
@@ -99,33 +99,26 @@ export class SurfaceFramePacer {
     }
   }
 
-  plan(
-    surfaces: ReadonlySet<Surface>,
-    windowFocused: boolean,
-    now: number,
-  ): FramePlan {
+  plan(surfaces: ReadonlySet<Surface>, windowFocused: boolean, now: number): FramePlan {
     let earliest = Number.POSITIVE_INFINITY;
     for (const surface of surfaces) {
       earliest = Math.min(earliest, this.deadline(surface, windowFocused, now));
     }
-    if (earliest === Number.POSITIVE_INFINITY) return { kind: "idle" };
+    if (earliest === Number.POSITIVE_INFINITY) return { kind: 'idle' };
     const wait = earliest - now;
-    if (wait <= TOLERANCE_MS) return { kind: "frame" };
+    if (wait <= TOLERANCE_MS) return { kind: 'frame' };
 
     const refresh = this.currentRefresh(now);
     const last = this.lastFrameAt;
     if (last === undefined || now - last > PHASE_TTL_MS) {
       // Phase unknown: a callback lands somewhere within one refresh from now.
-      return wait <= refresh
-        ? { kind: "frame" }
-        : { kind: "wait", delayMs: wait - refresh };
+      return wait <= refresh ? { kind: 'frame' } : { kind: 'wait', delayMs: wait - refresh };
     }
     // A callback requested at t lands on the first vsync after t. Find the vsync that can serve
     // the deadline and ask for the callback only once it is the next one.
-    const vsync =
-      last + Math.ceil((earliest - TOLERANCE_MS - last) / refresh) * refresh;
-    if (now >= vsync - refresh) return { kind: "frame" };
-    return { kind: "wait", delayMs: vsync - refresh / 2 - now };
+    const vsync = last + Math.ceil((earliest - TOLERANCE_MS - last) / refresh) * refresh;
+    if (now >= vsync - refresh) return { kind: 'frame' };
+    return { kind: 'wait', delayMs: vsync - refresh / 2 - now };
   }
 
   due(surface: Surface, windowFocused: boolean, now: number): boolean {
@@ -147,11 +140,7 @@ export class SurfaceFramePacer {
       : this.refreshMs;
   }
 
-  private deadline(
-    surface: Surface,
-    windowFocused: boolean,
-    now: number,
-  ): number {
+  private deadline(surface: Surface, windowFocused: boolean, now: number): number {
     const last = this.presentedAt.get(surface);
     if (last === undefined) return Number.NEGATIVE_INFINITY;
     if (this.gestureValue) return last;

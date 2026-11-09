@@ -11,23 +11,18 @@
  * glyph, so both renderers draw the same pixels. Bold and italic never change a
  * builtin glyph.
  */
-import {
-  drawBlockElement,
-  drawBraille,
-  isBlockElement,
-  isBraille,
-} from "./builtin/blockElements";
-import { drawBoxDrawing, isBoxDrawing } from "./builtin/boxDrawing";
+import { drawBlockElement, drawBraille, isBlockElement, isBraille } from './builtin/blockElements';
+import { drawBoxDrawing, isBoxDrawing } from './builtin/boxDrawing';
 import {
   isLazyBuiltin,
   lazyBuiltinDraw,
   lazyBuiltinFailed,
   lazyBuiltinPending,
-} from "./builtin/lazyGlyphs";
-import { drawPowerline, isPowerline } from "./builtin/powerline";
-import { SpriteMask } from "./builtin/SpriteMask";
-import { builtinLineThickness, type SpriteSpec } from "./builtin/spriteSpec";
-import type { TerminalFontMetrics } from "./terminalVisuals";
+} from './builtin/lazyGlyphs';
+import { drawPowerline, isPowerline } from './builtin/powerline';
+import { SpriteMask } from './builtin/SpriteMask';
+import { builtinLineThickness, type SpriteSpec } from './builtin/spriteSpec';
+import type { TerminalFontMetrics } from './terminalVisuals';
 
 export { builtinLineThickness };
 

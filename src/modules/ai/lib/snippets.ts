@@ -1,4 +1,4 @@
-import { LazyStore } from "@tauri-apps/plugin-store";
+import { LazyStore } from '@tauri-apps/plugin-store';
 
 export type Snippet = {
   id: string;
@@ -9,8 +9,8 @@ export type Snippet = {
   content: string;
 };
 
-const STORE_PATH = "terax-ai-snippets.json";
-const KEY_LIST = "snippets";
+const STORE_PATH = 'terax-ai-snippets.json';
+const KEY_LIST = 'snippets';
 
 const store = new LazyStore(STORE_PATH, { defaults: {}, autoSave: 200 });
 
@@ -33,10 +33,10 @@ export function normalizeHandle(raw: string): string {
   return raw
     .trim()
     .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 export function isValidHandle(h: string): boolean {
@@ -69,5 +69,5 @@ export function expandSnippetTokens(
   const blocks = Array.from(matched.values()).map(
     (s) => `<snippet name="${s.handle}">\n${s.content}\n</snippet>`,
   );
-  return { body: body.replace(/[ \t]+\n/g, "\n").trim(), blocks };
+  return { body: body.replace(/[ \t]+\n/g, '\n').trim(), blocks };
 }

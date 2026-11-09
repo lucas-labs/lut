@@ -86,7 +86,7 @@ export type GitDiscardEntry = {
 
 export type GitBranchEntry = {
   name: string;
-  kind: "local" | "worktree";
+  kind: 'local' | 'worktree';
   worktreePath: string | null;
   isHead: boolean;
   isDetached: boolean;
@@ -99,37 +99,35 @@ export type GitBranchListResult = {
 // ---------------------------------------------------------------- review
 
 export type CheckpointEndpoint =
-  | { kind: "ref"; name: string }
+  | { kind: 'ref'; name: string }
   /**
    * The live working tree. Without `tree` it is snapshotted on every call;
    * pass the `tree` a summary returned (`freezeScope`) so the file diffs of one
    * view agree with it and none of them walks the whole tree again.
    */
-  | { kind: "worktree"; tree?: string };
+  | { kind: 'worktree'; tree?: string };
 
 /** What the review view is looking at. */
 export type GitDiffScope =
-  | { kind: "uncommitted" }
-  | { kind: "staged" }
-  | { kind: "unstaged" }
-  | { kind: "range"; base: string; head: string }
-  | { kind: "commit"; sha: string }
-  | { kind: "checkpoint"; from: CheckpointEndpoint; to: CheckpointEndpoint };
+  | { kind: 'uncommitted' }
+  | { kind: 'staged' }
+  | { kind: 'unstaged' }
+  | { kind: 'range'; base: string; head: string }
+  | { kind: 'commit'; sha: string }
+  | { kind: 'checkpoint'; from: CheckpointEndpoint; to: CheckpointEndpoint };
 
 type GitFileStatus =
-  | "added"
-  | "modified"
-  | "deleted"
-  | "renamed"
-  | "copied"
-  | "typeChanged"
-  | "unmerged"
-  | "untracked";
+  | 'added'
+  | 'modified'
+  | 'deleted'
+  | 'renamed'
+  | 'copied'
+  | 'typeChanged'
+  | 'unmerged'
+  | 'untracked';
 
 export type DiffSide =
-  | { kind: "rev"; id: string }
-  | { kind: "index" }
-  | { kind: "worktree"; tree?: string };
+  { kind: 'rev'; id: string } | { kind: 'index' } | { kind: 'worktree'; tree?: string };
 
 type DiffFileSummary = {
   path: string;
@@ -161,7 +159,7 @@ export type GitDiffSummary = {
   mergeBase: string | null;
 };
 
-type DiffLineKind = "context" | "add" | "remove";
+type DiffLineKind = 'context' | 'add' | 'remove';
 
 export type DiffLine = {
   kind: DiffLineKind;
@@ -186,7 +184,7 @@ export type DiffHunk = {
   removed: number;
 };
 
-type ContentsOmitted = "tooLarge" | "binary" | "submodule" | "disabled";
+type ContentsOmitted = 'tooLarge' | 'binary' | 'submodule' | 'disabled';
 
 export type GitFileDiff = {
   path: string;
@@ -209,7 +207,7 @@ export type GitFileDiff = {
   to: DiffSide;
 };
 
-type ApplyMode = "stage" | "unstage" | "revert";
+type ApplyMode = 'stage' | 'unstage' | 'revert';
 
 export type HunkSelection = {
   id: string;
@@ -217,9 +215,7 @@ export type HunkSelection = {
   lines?: number[];
 };
 
-export type ApplySelection =
-  | { kind: "file" }
-  | { kind: "hunks"; items: HunkSelection[] };
+export type ApplySelection = { kind: 'file' } | { kind: 'hunks'; items: HunkSelection[] };
 
 export type ApplyHunksRequest = {
   scope: GitDiffScope;
@@ -230,13 +226,13 @@ export type ApplyHunksRequest = {
 };
 
 type ApplyRefusalCode =
-  | "unchanged"
-  | "staleHunks"
-  | "wholeFileOnly"
-  | "unsupportedScope"
-  | "invalidSelection"
-  | "patchRejected"
-  | "needsSeparateScopes";
+  | 'unchanged'
+  | 'staleHunks'
+  | 'wholeFileOnly'
+  | 'unsupportedScope'
+  | 'invalidSelection'
+  | 'patchRejected'
+  | 'needsSeparateScopes';
 
 /** Nothing is changed when `applied` is false. */
 export type ApplyOutcome = {
@@ -265,9 +261,9 @@ export type WorktreeEntry = {
 };
 
 type WorktreeBranch =
-  | { mode: "newBranch"; name: string }
-  | { mode: "existingBranch"; name: string }
-  | { mode: "detach" };
+  | { mode: 'newBranch'; name: string }
+  | { mode: 'existingBranch'; name: string }
+  | { mode: 'detach' };
 
 export type WorktreeAddRequest = {
   /** Absolute location; omitted: `~/.terax/worktrees/<project>/<task>`. */
@@ -297,12 +293,7 @@ type ChangedPath = { path: string; status: GitFileStatus };
  * `ignored`: files git ignores but that are not regenerable (`.env`, local
  * databases), which removal would delete without a word.
  */
-type WorktreeRemoveBlocker =
-  | "locked"
-  | "dirty"
-  | "unmerged"
-  | "ignored"
-  | "inconclusive";
+type WorktreeRemoveBlocker = 'locked' | 'dirty' | 'unmerged' | 'ignored' | 'inconclusive';
 
 export type WorktreeRemoveReport = {
   removed: boolean;
@@ -359,7 +350,7 @@ export type CheckpointCreated = CheckpointInfo & {
 
 export type RestoreReport = {
   restored: boolean;
-  refusal: "changedSinceLatest" | null;
+  refusal: 'changedSinceLatest' | null;
   latestRef: string | null;
   /**
    * What `dirty` was measured against: the last restore's target when a restore
@@ -409,7 +400,7 @@ export type UpstreamInfo = {
 
 // ---------------------------------------------------------------- watch
 
-export type GitChangeKind = "head" | "index" | "refs" | "worktree";
+export type GitChangeKind = 'head' | 'index' | 'refs' | 'worktree';
 
 export type GitWatchInfo = {
   watching: boolean;
@@ -432,7 +423,7 @@ export type ProjectConfig = {
     setup: string;
     run: string;
     archive: string;
-    runMode: "concurrent" | "exclusive";
+    runMode: 'concurrent' | 'exclusive';
   };
   ports: { base: number; perTask: number };
   layout: { default: { cards: string[] } };
@@ -440,9 +431,7 @@ export type ProjectConfig = {
 };
 
 type TaskBase =
-  | { kind: "current" }
-  | { kind: "branch"; name: string }
-  | { kind: "origin"; branch: string };
+  { kind: 'current' } | { kind: 'branch'; name: string } | { kind: 'origin'; branch: string };
 
 export type TaskCreateRequest = { name: string; base?: TaskBase | null };
 
@@ -459,7 +448,7 @@ export type TaskWorktree = {
   root: string;
   path: string;
   branch: string;
-  status: "creating" | "active" | "archiving" | "archived";
+  status: 'creating' | 'active' | 'archiving' | 'archived';
   port: number;
   portCount: number;
   snapshot: TaskSnapshot | null;

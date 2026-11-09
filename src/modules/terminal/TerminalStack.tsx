@@ -1,10 +1,10 @@
-import type { Tab } from "@/modules/tabs";
-import type { TerminalSearchController } from "@/modules/terminal/search/TerminalSearchController";
-import { useEffect, useMemo, useRef } from "react";
-import { selectLiveTerminals } from "./lib/liveTerminals";
-import { leafIds } from "./lib/panes";
-import { PaneTreeView } from "./PaneTreeView";
-import type { TerminalPaneHandle } from "./TerminalPane";
+import type { Tab } from '@/modules/tabs';
+import type { TerminalSearchController } from '@/modules/terminal/search/TerminalSearchController';
+import { useEffect, useMemo, useRef } from 'react';
+import { selectLiveTerminals } from './lib/liveTerminals';
+import { leafIds } from './lib/panes';
+import { PaneTreeView } from './PaneTreeView';
+import type { TerminalPaneHandle } from './TerminalPane';
 
 type Props = {
   tabs: Tab[];
@@ -24,15 +24,7 @@ type Bundle = {
   onExit: (leafId: number, code: number) => void;
 };
 
-export function TerminalStack({
-  tabs,
-  activeId,
-  registerHandle,
-  onSearchReady,
-  onCwd,
-  onExit,
-  onFocusLeaf,
-}: Props) {
+export function TerminalStack({ tabs, activeId, registerHandle, onSearchReady, onCwd, onExit, onFocusLeaf }: Props) {
   const terminals = useMemo(() => selectLiveTerminals(tabs), [tabs]);
 
   const registerRef = useRef(registerHandle);
@@ -69,8 +61,7 @@ export function TerminalStack({
 
   useEffect(() => {
     const live = new Set<number>();
-    for (const t of terminals)
-      for (const id of leafIds(t.paneTree)) live.add(id);
+    for (const t of terminals) for (const id of leafIds(t.paneTree)) live.add(id);
     for (const id of bundles.current.keys()) {
       if (!live.has(id)) bundles.current.delete(id);
     }
@@ -96,8 +87,8 @@ export function TerminalStack({
             data-terminal-tab={t.id}
             className="absolute inset-0"
             style={{
-              visibility: tabVisible ? "visible" : "hidden",
-              pointerEvents: tabVisible ? "auto" : "none",
+              visibility: tabVisible ? 'visible' : 'hidden',
+              pointerEvents: tabVisible ? 'auto' : 'none',
             }}
             aria-hidden={!tabVisible}
           >

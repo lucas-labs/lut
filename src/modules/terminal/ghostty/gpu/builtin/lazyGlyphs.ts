@@ -10,17 +10,17 @@
  * handshake as the lazily loaded icon face. If the code cannot load, the
  * characters fall back to the font.
  */
-import { notifySymbolFontsChanged } from "@/lib/fonts";
-import { fillBlock, fillFractions,SHADE_MEDIUM } from "./blockElements";
+import { notifySymbolFontsChanged } from '@/lib/fonts';
+import { fillBlock, fillFractions, SHADE_MEDIUM } from './blockElements';
 import {
   diagonalUpperLeftToLowerRight,
   diagonalUpperRightToLowerLeft,
   drawLines,
   LINE_HEAVY,
   LINE_LIGHT,
-} from "./boxDrawing";
-import { signedArea,type SpriteMask } from "./SpriteMask";
-import type { SpriteSpec } from "./spriteSpec";
+} from './boxDrawing';
+import { signedArea, type SpriteMask } from './SpriteMask';
+import type { SpriteSpec } from './spriteSpec';
 
 /** The eager drawing helpers the lazily loaded code builds on (`legacyComputing.ts`). */
 export type BuiltinTools = {
@@ -77,7 +77,7 @@ let loading: Promise<void> | null = null;
 
 /** Loads the drawing code once and tells the terminals when it settles. */
 export function loadLazyBuiltin(): Promise<void> {
-  loading ??= import("./legacyComputing")
+  loading ??= import('./legacyComputing')
     .then(
       (module) => {
         module.bindBuiltinTools({

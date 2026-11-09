@@ -1,29 +1,29 @@
-import { beforeAll, describe, expect, it } from "vitest";
-import { loadLazyBuiltin } from "./lazyGlyphs";
-import { SpriteMask } from "./SpriteMask";
+import { beforeAll, describe, expect, it } from 'vitest';
+import { loadLazyBuiltin } from './lazyGlyphs';
+import { SpriteMask } from './SpriteMask';
 
-type Helpers = typeof import("./legacyComputing");
+type Helpers = typeof import('./legacyComputing');
 let helpers: Helpers;
 
 // The module takes its drawing helpers from `lazyGlyphs.ts` once it has loaded.
 beforeAll(async () => {
   await loadLazyBuiltin();
-  helpers = await import("./legacyComputing");
+  helpers = await import('./legacyComputing');
 });
 
 function sum(mask: SpriteMask): number {
   return mask.data.reduce((total, value) => total + value, 0) / 255;
 }
 
-describe("legacy computing mask helpers", () => {
-  it("inverts every pixel", () => {
+describe('legacy computing mask helpers', () => {
+  it('inverts every pixel', () => {
     const mask = new SpriteMask(3, 2);
     mask.box(0, 0, 1, 2, 200);
     helpers.invertMask(mask);
     expect(Array.from(mask.data)).toEqual([55, 255, 255, 55, 255, 255]);
   });
 
-  it("insets a ring by a distance, and gives up when it collapses", () => {
+  it('insets a ring by a distance, and gives up when it collapses', () => {
     const mask = new SpriteMask(10, 10);
     helpers.outlineRing(mask, [0, 0, 10, 0, 10, 10, 0, 10], 2);
     // A square frame two pixels wide.

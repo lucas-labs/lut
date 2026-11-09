@@ -1,33 +1,33 @@
 const NERD_FONT_CANDIDATES = [
-  "JetBrainsMono Nerd Font",
-  "JetBrainsMono Nerd Font Mono",
-  "JetBrainsMonoNL Nerd Font",
-  "FiraCode Nerd Font",
-  "FiraCode Nerd Font Mono",
-  "FiraMono Nerd Font",
-  "MesloLGS NF",
-  "MesloLGS Nerd Font",
-  "MesloLGS Nerd Font Mono",
-  "MesloLGM Nerd Font",
-  "MesloLGM Nerd Font Mono",
-  "Hack Nerd Font",
-  "Hack Nerd Font Mono",
-  "CaskaydiaCove Nerd Font",
-  "CaskaydiaCove Nerd Font Mono",
-  "CaskaydiaMono Nerd Font",
-  "Iosevka Nerd Font",
-  "Iosevka Term Nerd Font",
-  "SauceCodePro Nerd Font",
-  "SauceCodePro Nerd Font Mono",
-  "SourceCodePro Nerd Font",
-  "RobotoMono Nerd Font",
-  "UbuntuMono Nerd Font",
-  "DejaVuSansM Nerd Font",
-  "Hasklug Nerd Font",
+  'JetBrainsMono Nerd Font',
+  'JetBrainsMono Nerd Font Mono',
+  'JetBrainsMonoNL Nerd Font',
+  'FiraCode Nerd Font',
+  'FiraCode Nerd Font Mono',
+  'FiraMono Nerd Font',
+  'MesloLGS NF',
+  'MesloLGS Nerd Font',
+  'MesloLGS Nerd Font Mono',
+  'MesloLGM Nerd Font',
+  'MesloLGM Nerd Font Mono',
+  'Hack Nerd Font',
+  'Hack Nerd Font Mono',
+  'CaskaydiaCove Nerd Font',
+  'CaskaydiaCove Nerd Font Mono',
+  'CaskaydiaMono Nerd Font',
+  'Iosevka Nerd Font',
+  'Iosevka Term Nerd Font',
+  'SauceCodePro Nerd Font',
+  'SauceCodePro Nerd Font Mono',
+  'SourceCodePro Nerd Font',
+  'RobotoMono Nerd Font',
+  'UbuntuMono Nerd Font',
+  'DejaVuSansM Nerd Font',
+  'Hasklug Nerd Font',
 ];
 
-const SYMBOLS_FAMILY = "Terax Terminal Symbols";
-const EXTENDED_SYMBOLS_FAMILY = "Terax Terminal Symbols MDI";
+const SYMBOLS_FAMILY = 'Terax Terminal Symbols';
+const EXTENDED_SYMBOLS_FAMILY = 'Terax Terminal Symbols MDI';
 
 /**
  * Per codepoint, the first face that has the glyph wins. The installed Symbols Nerd
@@ -36,8 +36,8 @@ const EXTENDED_SYMBOLS_FAMILY = "Terax Terminal Symbols MDI";
  */
 const FALLBACK_CHAIN = `"JetBrains Mono", "Symbols Nerd Font Mono", "Symbols Nerd Font", "${SYMBOLS_FAMILY}", "${EXTENDED_SYMBOLS_FAMILY}", SFMono-Regular, Menlo, monospace`;
 
-const PROBE_SAMPLES = ["mmmmmmmmmmlli", "Wim0123\ue0a0\ue718\u{f024b}"];
-const PROBE_BASELINES = ["monospace", "serif", "sans-serif"];
+const PROBE_SAMPLES = ['mmmmmmmmmmlli', 'Wim0123\ue0a0\ue718\u{f024b}'];
+const PROBE_BASELINES = ['monospace', 'serif', 'sans-serif'];
 const PROBE_SIZE = 72;
 
 let detected: string | null = null;
@@ -48,21 +48,21 @@ const availability = new Map<string, boolean>();
 
 export function ensureMonoFontsLoaded(): Promise<void> {
   if (monoReady) return monoReady;
-  if (typeof document === "undefined" || !document.fonts?.load) {
+  if (typeof document === 'undefined' || !document.fonts?.load) {
     monoReady = Promise.resolve();
     return monoReady;
   }
   monoReady = Promise.allSettled([
     document.fonts.load('400 14px "JetBrains Mono"'),
     document.fonts.load('700 14px "JetBrains Mono"'),
-    document.fonts.load(`400 14px "${SYMBOLS_FAMILY}"`, "\ue0a0\ue718"),
+    document.fonts.load(`400 14px "${SYMBOLS_FAMILY}"`, '\ue0a0\ue718'),
   ]).then(() => undefined);
   return monoReady;
 }
 
 let symbolEpoch = 0;
 const symbolListeners = new Set<() => void>();
-let extendedSymbols: "idle" | "loading" | "settled" = "idle";
+let extendedSymbols: 'idle' | 'loading' | 'settled' = 'idle';
 
 /** Increments each time a lazily loaded glyph source arrives (`useSyncExternalStore` snapshot). */
 export function symbolFontEpoch(): number {
@@ -88,20 +88,18 @@ export function subscribeSymbolFonts(listener: () => void): () => void {
  * A face that cannot load settles too, so the glyph falls back to the system.
  */
 export function extendedSymbolsPending(): boolean {
-  if (extendedSymbols === "settled") return false;
-  if (extendedSymbols === "loading") return true;
-  if (typeof document === "undefined" || !document.fonts?.load) {
-    extendedSymbols = "settled";
+  if (extendedSymbols === 'settled') return false;
+  if (extendedSymbols === 'loading') return true;
+  if (typeof document === 'undefined' || !document.fonts?.load) {
+    extendedSymbols = 'settled';
     return false;
   }
-  extendedSymbols = "loading";
+  extendedSymbols = 'loading';
   const settle = () => {
-    extendedSymbols = "settled";
+    extendedSymbols = 'settled';
     notifySymbolFontsChanged();
   };
-  document.fonts
-    .load(`400 14px "${EXTENDED_SYMBOLS_FAMILY}"`, "\u{f024b}")
-    .then(settle, settle);
+  document.fonts.load(`400 14px "${EXTENDED_SYMBOLS_FAMILY}"`, '\u{f024b}').then(settle, settle);
   return true;
 }
 
@@ -110,12 +108,12 @@ export function resolveFontFamily(userInput: string): string {
   if (!name) return detectMonoFontFamily();
   // A comma means the user gave a full stack; otherwise quote the single family.
   // Strip any quotes first so a stray quote can't produce a malformed token.
-  const head = name.includes(",") ? name : quoteFamily(name);
+  const head = name.includes(',') ? name : quoteFamily(name);
   return `${head}, ${FALLBACK_CHAIN}`;
 }
 
 function quoteFamily(name: string): string {
-  return `"${name.replace(/['"]/g, "")}"`;
+  return `"${name.replace(/['"]/g, '')}"`;
 }
 
 /**
@@ -133,7 +131,7 @@ export function isFontAvailable(family: string): boolean {
   const context = measurementContext();
   if (!context) return false;
   let available = false;
-  const quoted = name.includes(",") ? name : quoteFamily(name);
+  const quoted = name.includes(',') ? name : quoteFamily(name);
   for (const baseline of PROBE_BASELINES) {
     for (const sample of PROBE_SAMPLES) {
       const key = `${baseline}|${sample}`;
@@ -157,7 +155,7 @@ export function isFontAvailable(family: string): boolean {
 
 export function detectMonoFontFamily(): string {
   if (detected) return detected;
-  if (typeof document === "undefined") {
+  if (typeof document === 'undefined') {
     detected = FALLBACK_CHAIN;
     return detected;
   }
@@ -169,8 +167,6 @@ export function detectMonoFontFamily(): string {
 function measurementContext(): CanvasRenderingContext2D | null {
   if (probeContext !== undefined) return probeContext;
   probeContext =
-    typeof document === "undefined"
-      ? null
-      : document.createElement("canvas").getContext("2d");
+    typeof document === 'undefined' ? null : document.createElement('canvas').getContext('2d');
   return probeContext;
 }

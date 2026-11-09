@@ -1,4 +1,4 @@
-import type { BlockMode } from "./modeMachine";
+import type { BlockMode } from './modeMachine';
 
 /**
  * Everything `GhosttyBlocks.visibleBlocks` depends on. If two reads of the
@@ -28,10 +28,7 @@ export type BlockViewportSignature = {
   cursorLine: number;
 };
 
-export function sameBlockViewport(
-  a: BlockViewportSignature,
-  b: BlockViewportSignature,
-): boolean {
+export function sameBlockViewport(a: BlockViewportSignature, b: BlockViewportSignature): boolean {
   return (
     a.mode === b.mode &&
     a.revision === b.revision &&

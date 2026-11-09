@@ -1,7 +1,7 @@
-import { currentWorkspaceEnv } from "@/modules/workspace";
-import { invoke } from "@tauri-apps/api/core";
-import { useCallback } from "react";
-import { type AsyncQueryState, useAsyncQuery } from "./useAsyncQuery";
+import { currentWorkspaceEnv } from '@/modules/workspace';
+import { invoke } from '@tauri-apps/api/core';
+import { useCallback } from 'react';
+import { type AsyncQueryState, useAsyncQuery } from './useAsyncQuery';
 
 export const CONTENT_SEARCH_MIN_QUERY = 2;
 const LIMIT = 80;
@@ -28,7 +28,7 @@ export function useContentSearch(
   const run = useCallback(
     async (q: string): Promise<ContentHit[]> => {
       if (!root) return [];
-      const res = await invoke<GrepResponse>("fs_grep_interactive", {
+      const res = await invoke<GrepResponse>('fs_grep_interactive', {
         pattern: q,
         root,
         maxResults: LIMIT,

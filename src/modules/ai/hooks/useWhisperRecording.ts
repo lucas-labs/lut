@@ -1,19 +1,19 @@
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
-import type { SttProvider } from "../config";
-import { type SttOptions,transcribeAudio } from "../lib/stt";
-import { useChatStore } from "../store/chatStore";
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import type { SttProvider } from '../config';
+import { type SttOptions, transcribeAudio } from '../lib/stt';
+import { useChatStore } from '../store/chatStore';
 
 const MIME_CANDIDATES = [
-  "audio/webm;codecs=opus",
-  "audio/webm",
-  "audio/ogg;codecs=opus",
-  "audio/mp4",
+  'audio/webm;codecs=opus',
+  'audio/webm',
+  'audio/ogg;codecs=opus',
+  'audio/mp4',
 ];
 
 function pickMime(): string | undefined {
-  if (typeof MediaRecorder === "undefined") return undefined;
+  if (typeof MediaRecorder === 'undefined') return undefined;
   for (const m of MIME_CANDIDATES) {
     if (MediaRecorder.isTypeSupported(m)) return m;
   }
@@ -21,30 +21,26 @@ function pickMime(): string | undefined {
 }
 
 function providerNeedsKey(provider: SttProvider): boolean {
-  return provider !== "whispercpp";
+  return provider !== 'whispercpp';
 }
 
 function getApiKeyForStt(
-  apiKeys: import("../lib/keyring").ProviderKeys,
+  apiKeys: import('../lib/keyring').ProviderKeys,
   provider: SttProvider,
 ): string | null {
-  if (provider === "openai") return apiKeys.openai;
-  if (provider === "groq") return apiKeys.groq;
+  if (provider === 'openai') return apiKeys.openai;
+  if (provider === 'groq') return apiKeys.groq;
   return null;
 }
 
-type State = "idle" | "recording" | "transcribing";
+type State = 'idle' | 'recording' | 'transcribing';
 
-export function useWhisperRecording({
-  onResult,
-}: {
-  onResult: (text: string) => void;
-}) {
+export function useWhisperRecording({ onResult }: { onResult: (text: string) => void }) {
   const apiKeys = useChatStore((s) => s.apiKeys);
   const sttProvider = usePreferencesStore((s) => s.sttProvider);
   const groqSttModel = usePreferencesStore((s) => s.groqSttModel);
   const whispercppBaseURL = usePreferencesStore((s) => s.whispercppBaseURL);
-  const [state, setState] = useState<State>("idle");
+  const [state, setState] = useState<State>('idle');
   const recRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
@@ -54,9 +50,9 @@ export function useWhisperRecording({
   const hasKey = needsKey ? !!providerKey : true;
 
   const supported =
-    typeof navigator !== "undefined" &&
+    typeof navigator !== 'undefined' &&
     !!navigator.mediaDevices?.getUserMedia &&
-    typeof MediaRecorder !== "undefined";
+    typeof MediaRecorder !== 'undefined';
 
   const sttOptions: SttOptions = {
     groqSttModel,
@@ -70,11 +66,11 @@ export function useWhisperRecording({
 
   const stop = useCallback(() => {
     const rec = recRef.current;
-    if (rec && rec.state !== "inactive") rec.stop();
+    if (rec && rec.state !== 'inactive') rec.stop();
   }, []);
 
   const start = useCallback(async () => {
-    if (!supported || !hasKey || state !== "idle") return;
+    if (!supported || !hasKey || state !== 'idle') return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
@@ -86,33 +82,33 @@ export function useWhisperRecording({
       };
       rec.onstop = async () => {
         const blob = new Blob(chunksRef.current, {
-          type: rec.mimeType || "audio/webm",
+          type: rec.mimeType || 'audio/webm',
         });
         chunksRef.current = [];
         teardownStream();
         if (blob.size === 0) {
-          setState("idle");
+          setState('idle');
           return;
         }
-        setState("transcribing");
+        setState('transcribing');
         try {
           const text = await transcribeAudio(blob, sttProvider, apiKeys, sttOptions);
           if (text.trim()) onResult(text.trim());
         } catch (e) {
-          console.error("stt.transcribe", e);
-          toast.error(e instanceof Error ? e.message : "Transcription failed");
+          console.error('stt.transcribe', e);
+          toast.error(e instanceof Error ? e.message : 'Transcription failed');
         } finally {
-          setState("idle");
+          setState('idle');
         }
       };
       recRef.current = rec;
       rec.start();
-      setState("recording");
+      setState('recording');
     } catch (e) {
-      console.error("stt.getUserMedia", e);
-      toast.error("Microphone access failed");
+      console.error('stt.getUserMedia', e);
+      toast.error('Microphone access failed');
       teardownStream();
-      setState("idle");
+      setState('idle');
     }
   }, [apiKeys, sttProvider, sttOptions, onResult, state, supported, hasKey]);
 
@@ -125,8 +121,8 @@ export function useWhisperRecording({
 
   return {
     state,
-    recording: state === "recording",
-    transcribing: state === "transcribing",
+    recording: state === 'recording',
+    transcribing: state === 'transcribing',
     start,
     stop,
     supported,

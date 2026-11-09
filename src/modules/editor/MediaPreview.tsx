@@ -1,9 +1,9 @@
-import { cn } from "@/lib/utils";
-import { useCallback } from "react";
-import { bindMediaPlayback } from "./lib/mediaPreview";
+import { cn } from '@/lib/utils';
+import { useCallback } from 'react';
+import { bindMediaPlayback } from './lib/mediaPreview';
 
 type Props = {
-  kind: "video" | "audio";
+  kind: 'video' | 'audio';
   src: string;
   active: boolean;
 };
@@ -21,10 +21,7 @@ export function MediaPreview({ kind, src, active }: Props) {
       ref={bindMedia}
       controls
       preload="metadata"
-      className={cn(
-        kind === "video" ? "max-w-full max-h-full" : "w-full max-w-md",
-        !active && "hidden",
-      )}
+      className={cn(kind === 'video' ? 'max-w-full max-h-full' : 'w-full max-w-md', !active && 'hidden')}
       src={src}
     />
   );

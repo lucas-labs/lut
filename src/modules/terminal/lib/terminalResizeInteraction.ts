@@ -4,14 +4,11 @@ type InteractionToken = object;
 type InteractionListener = (active: boolean) => void;
 
 type ResizeInteractionState = {
-  readonly activeInteractions: Map<
-    InteractionToken,
-    ReturnType<typeof setTimeout>
-  >;
+  readonly activeInteractions: Map<InteractionToken, ReturnType<typeof setTimeout>>;
   readonly listeners: Set<InteractionListener>;
 };
 
-const GLOBAL_STATE_KEY = "__TERAX_TERMINAL_RESIZE_INTERACTION__";
+const GLOBAL_STATE_KEY = '__TERAX_TERMINAL_RESIZE_INTERACTION__';
 const globalScope = globalThis as typeof globalThis & {
   [GLOBAL_STATE_KEY]?: ResizeInteractionState;
 };
@@ -38,10 +35,7 @@ export function beginTerminalResizeInteraction(token: InteractionToken): void {
   if (previousWatchdog !== undefined) globalThis.clearTimeout(previousWatchdog);
   state.activeInteractions.set(
     token,
-    globalThis.setTimeout(
-      () => endTerminalResizeInteraction(token),
-      MAX_RESIZE_INTERACTION_MS,
-    ),
+    globalThis.setTimeout(() => endTerminalResizeInteraction(token), MAX_RESIZE_INTERACTION_MS),
   );
   if (wasInactive) notifyListeners(true);
 }
@@ -59,9 +53,7 @@ export function terminalResizeInteractionActive(): boolean {
   return state.activeInteractions.size > 0;
 }
 
-export function subscribeTerminalResizeInteraction(
-  listener: InteractionListener,
-): () => void {
+export function subscribeTerminalResizeInteraction(listener: InteractionListener): () => void {
   state.listeners.add(listener);
   if (terminalResizeInteractionActive()) listener(true);
   return () => state.listeners.delete(listener);

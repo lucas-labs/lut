@@ -1,12 +1,9 @@
-import { BlockOverlay } from "@/modules/terminal/block/BlockOverlay";
-import { BlockWatermark } from "@/modules/terminal/block/BlockWatermark";
-import { ensureGhosttyBlocks } from "@/modules/terminal/ghostty/ghosttyBlockSessions";
-import { ghosttyBlockCellHeight } from "@/modules/terminal/ghostty/useGhosttyTerminalSession";
-import {
-  focusLeafInput,
-  submitToLeaf,
-} from "@/modules/terminal/lib/terminalSessionApi";
-import { useCallback, useSyncExternalStore } from "react";
+import { BlockOverlay } from '@/modules/terminal/block/BlockOverlay';
+import { BlockWatermark } from '@/modules/terminal/block/BlockWatermark';
+import { ensureGhosttyBlocks } from '@/modules/terminal/ghostty/ghosttyBlockSessions';
+import { ghosttyBlockCellHeight } from '@/modules/terminal/ghostty/useGhosttyTerminalSession';
+import { focusLeafInput, submitToLeaf } from '@/modules/terminal/lib/terminalSessionApi';
+import { useCallback, useSyncExternalStore } from 'react';
 
 export default function GhosttyBlockOverlay({ leafId }: { leafId: number }) {
   const state = ensureGhosttyBlocks(leafId);
@@ -27,16 +24,13 @@ export default function GhosttyBlockOverlay({ leafId }: { leafId: number }) {
         subscribe={state.subscribeViewport}
         getVisible={getVisible}
         readOutput={(id) => state.controller?.readById(id)?.output ?? null}
-        searchBlock={(id, query, signal) =>
-          state.controller?.searchBlock(id, query, signal) ??
-          Promise.resolve([])
-        }
+        searchBlock={(id, query, signal) => state.controller?.searchBlock(id, query, signal) ?? Promise.resolve([])}
         revealMatch={(match) => state.controller?.revealMatch(match)}
         clearSearch={() => state.controller?.clearSearch()}
-        promptReady={mode === "prompt"}
+        promptReady={mode === 'prompt'}
         onRunAgain={(command) => submitToLeaf(leafId, command)}
         onRestoreFocus={() => {
-          if (state.getMode() === "prompt") focusLeafInput(leafId);
+          if (state.getMode() === 'prompt') focusLeafInput(leafId);
         }}
       />
     </>

@@ -1,4 +1,4 @@
-import type { SidebarViewId } from "@/modules/sidebar";
+import type { SidebarViewId } from '@/modules/sidebar';
 
 /**
  * Who is currently displaying the repository status, and therefore whether the
@@ -24,11 +24,7 @@ export type StatusConsumers = {
   explorerDecorations: boolean;
 };
 
-const GIT_TAB_KINDS: ReadonlySet<string> = new Set([
-  "git-diff",
-  "git-history",
-  "git-commit-file",
-]);
+const GIT_TAB_KINDS: ReadonlySet<string> = new Set(['git-diff', 'git-history', 'git-commit-file']);
 
 export function isGitTabKind(kind: string | undefined): boolean {
   return kind !== undefined && GIT_TAB_KINDS.has(kind);
@@ -42,12 +38,10 @@ export function statusConsumers(input: {
 }): StatusConsumers {
   const sidebarShown = !input.sidebarCollapsed;
   return {
-    panel: sidebarShown && input.sidebarView === "source-control",
+    panel: sidebarShown && input.sidebarView === 'source-control',
     gitTab: isGitTabKind(input.activeTabKind),
     explorerDecorations:
-      sidebarShown &&
-      input.sidebarView === "explorer" &&
-      input.explorerGitDecorations,
+      sidebarShown && input.sidebarView === 'explorer' && input.explorerGitDecorations,
   };
 }
 

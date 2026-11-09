@@ -1,7 +1,7 @@
 export type LspSwitchState = {
   checked: boolean;
   checking: boolean;
-  enableAction: "enable" | "install" | "wait";
+  enableAction: 'enable' | 'install' | 'wait';
 };
 
 export function resolveLspSwitchState(
@@ -11,7 +11,6 @@ export function resolveLspSwitchState(
   return {
     checked: enabled && detected !== null,
     checking: detected === undefined,
-    enableAction:
-      detected === undefined ? "wait" : detected ? "enable" : "install",
+    enableAction: detected === undefined ? 'wait' : detected ? 'enable' : 'install',
   };
 }

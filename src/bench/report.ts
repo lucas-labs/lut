@@ -1,10 +1,9 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from '@tauri-apps/api/core';
 
 export type NativeSnapshot = Record<string, unknown>;
 
-export const nativeWindow = <T = NativeSnapshot>(
-  action: Record<string, unknown>,
-) => invoke<T>("bench_window", { action });
+export const nativeWindow = <T = NativeSnapshot>(action: Record<string, unknown>) =>
+  invoke<T>('bench_window', { action });
 
 /**
  * Posts one phase event to the orchestrator and resolves when it has finished sampling the
@@ -17,7 +16,7 @@ export async function reportPhase(
   phase: string,
   body: Record<string, unknown>,
 ): Promise<{ retry: boolean }> {
-  const native = await nativeWindow({ cmd: "snapshot" });
+  const native = await nativeWindow({ cmd: 'snapshot' });
   const event = {
     phase,
     tWall: Date.now(),
@@ -26,26 +25,22 @@ export async function reportPhase(
     ...body,
   };
   const response = await fetch(`${reportUrl}/event`, {
-    method: "POST",
+    method: 'POST',
     body: JSON.stringify(event),
-    cache: "no-store",
-    credentials: "omit",
+    cache: 'no-store',
+    credentials: 'omit',
   });
-  if (!response.ok)
-    throw new Error(`orchestrator refused phase ${phase}: ${response.status}`);
+  if (!response.ok) throw new Error(`orchestrator refused phase ${phase}: ${response.status}`);
   const reply = (await response.json()) as { retry?: boolean };
   return { retry: Boolean(reply.retry) };
 }
 
-export async function reportError(
-  reportUrl: string,
-  error: unknown,
-): Promise<void> {
+export async function reportError(reportUrl: string, error: unknown): Promise<void> {
   const e = error as Error;
   await fetch(`${reportUrl}/event`, {
-    method: "POST",
+    method: 'POST',
     body: JSON.stringify({
-      phase: "error",
+      phase: 'error',
       error: String(error),
       stack: e?.stack,
     }),

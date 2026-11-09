@@ -1,8 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
-import { TerminalFitQueue } from "./TerminalFitQueue";
+import { describe, expect, it, vi } from 'vitest';
+import { TerminalFitQueue } from './TerminalFitQueue';
 
-describe("TerminalFitQueue", () => {
-  it("coalesces observer samples and applies only the newest geometry", () => {
+describe('TerminalFitQueue', () => {
+  it('coalesces observer samples and applies only the newest geometry', () => {
     const queue = new TerminalFitQueue();
     const measure = vi.fn(() => ({ width: 900, height: 500 }));
 
@@ -21,7 +21,7 @@ describe("TerminalFitQueue", () => {
     });
   });
 
-  it("remeasures at commit time when an explicit sample is unavailable", () => {
+  it('remeasures at commit time when an explicit sample is unavailable', () => {
     const queue = new TerminalFitQueue();
     queue.request({ width: 700, height: 500 });
     queue.request();
@@ -32,7 +32,7 @@ describe("TerminalFitQueue", () => {
     });
   });
 
-  it("drops pending geometry when its surface detaches", () => {
+  it('drops pending geometry when its surface detaches', () => {
     const queue = new TerminalFitQueue();
     queue.request({ width: 700, height: 500 });
     queue.clear();

@@ -1,6 +1,6 @@
-import type { Chat, UIMessage } from "@ai-sdk/react";
-import { toast } from "sonner";
-import { create } from "zustand";
+import type { Chat, UIMessage } from '@ai-sdk/react';
+import { toast } from 'sonner';
+import { create } from 'zustand';
 import {
   DEFAULT_MODEL_ID,
   endpointIdFromCompatModel,
@@ -8,11 +8,11 @@ import {
   isCompatModelId,
   type ModelId,
   type ProviderId,
-} from "../config";
-import type { AgentUsage } from "../lib/agent";
-import { type CustomEndpointKeys,EMPTY_PROVIDER_KEYS, type ProviderKeys } from "../lib/keyring";
-import { pushRecentModel } from "../lib/modelPrefs";
-import { persistDelay } from "../lib/persistSchedule";
+} from '../config';
+import type { AgentUsage } from '../lib/agent';
+import { type CustomEndpointKeys, EMPTY_PROVIDER_KEYS, type ProviderKeys } from '../lib/keyring';
+import { pushRecentModel } from '../lib/modelPrefs';
+import { persistDelay } from '../lib/persistSchedule';
 import {
   deleteSessionData,
   deriveTitle,
@@ -23,8 +23,8 @@ import {
   saveMessages,
   saveSessionsList,
   type SessionMeta,
-} from "../lib/sessions";
-import { useTodosStore } from "./todoStore";
+} from '../lib/sessions';
+import { useTodosStore } from './todoStore';
 
 export type Live = {
   getCwd: () => string | null;
@@ -41,12 +41,7 @@ export type Live = {
   readLeafBuffer: (leafId: number) => string | null;
 };
 
-export type AgentRunStatus =
-  | "idle"
-  | "thinking"
-  | "streaming"
-  | "awaiting-approval"
-  | "error";
+export type AgentRunStatus = 'idle' | 'thinking' | 'streaming' | 'awaiting-approval' | 'error';
 
 export type AgentMeta = {
   status: AgentRunStatus;
@@ -67,7 +62,7 @@ const ZERO_USAGE: AgentUsage = {
 };
 
 const IDLE_META: AgentMeta = {
-  status: "idle",
+  status: 'idle',
   step: null,
   approvalsPending: 0,
   error: null,
@@ -85,13 +80,10 @@ type MiniState = {
 type PendingSelection = {
   id: string;
   text: string;
-  source: "terminal" | "editor";
+  source: 'terminal' | 'editor';
 };
 
-type ApprovalResponder = (
-  approvalId: string,
-  approved: boolean,
-) => void;
+type ApprovalResponder = (approvalId: string, approved: boolean) => void;
 
 type StoreState = {
   live: Live;
@@ -132,7 +124,7 @@ type StoreState = {
   consumePrefill: () => string | null;
 
   pendingSelections: PendingSelection[];
-  attachSelection: (text: string, source: "terminal" | "editor") => void;
+  attachSelection: (text: string, source: 'terminal' | 'editor') => void;
   consumeSelections: () => PendingSelection[];
 
   agentMeta: AgentMeta;
@@ -293,8 +285,7 @@ export const useChatStore = create<StoreState>((set, get) => ({
   },
 
   agentMeta: IDLE_META,
-  patchAgentMeta: (patch) =>
-    set((s) => ({ agentMeta: { ...s.agentMeta, ...patch } })),
+  patchAgentMeta: (patch) => set((s) => ({ agentMeta: { ...s.agentMeta, ...patch } })),
   resetAgentMeta: () => set({ agentMeta: IDLE_META }),
 
   sessionsHydrated: false,
@@ -309,7 +300,7 @@ export const useChatStore = create<StoreState>((set, get) => ({
     // Reuse the most recent untitled "New chat" session if one exists from
     // the previous run — no point stacking empty placeholder sessions every
     // launch. Otherwise prepend a fresh one.
-    const reusable = sessions[0]?.title === "New chat" ? sessions[0] : null;
+    const reusable = sessions[0]?.title === 'New chat' ? sessions[0] : null;
     let nextSessions: SessionMeta[];
     let freshId: string;
     if (reusable) {
@@ -319,7 +310,7 @@ export const useChatStore = create<StoreState>((set, get) => ({
       freshId = newSessionId();
       const fresh: SessionMeta = {
         id: freshId,
-        title: "New chat",
+        title: 'New chat',
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
@@ -339,7 +330,7 @@ export const useChatStore = create<StoreState>((set, get) => ({
     const id = newSessionId();
     const meta: SessionMeta = {
       id,
-      title: "New chat",
+      title: 'New chat',
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
@@ -372,7 +363,7 @@ export const useChatStore = create<StoreState>((set, get) => ({
       .catch((error) => {
         // Stay on the current conversation: opening this one empty could later
         // overwrite a healthy file that was only momentarily unreadable.
-        toast.error("Could not open conversation", {
+        toast.error('Could not open conversation', {
           id: `conversation-open:${id}`,
           description: String(error),
         });
@@ -396,7 +387,7 @@ export const useChatStore = create<StoreState>((set, get) => ({
     if (remaining.length === 0) {
       const fresh: SessionMeta = {
         id: newSessionId(),
-        title: "New chat",
+        title: 'New chat',
         createdAt: Date.now(),
         updatedAt: Date.now(),
       };
@@ -431,7 +422,7 @@ export const useChatStore = create<StoreState>((set, get) => ({
     const sessions = get().sessions;
     const meta = sessions.find((s) => s.id === id);
     if (!meta) return;
-    const isUntitled = !meta.title || meta.title === "New chat";
+    const isUntitled = !meta.title || meta.title === 'New chat';
     if (!isUntitled) return;
     const nextTitle = deriveTitle(messages);
     if (nextTitle === meta.title) return;

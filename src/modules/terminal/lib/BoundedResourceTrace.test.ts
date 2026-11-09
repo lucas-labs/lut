@@ -1,7 +1,7 @@
-import { BoundedResourceTrace } from "@/modules/terminal/lib/BoundedResourceTrace";
-import { expect, it } from "vitest";
+import { BoundedResourceTrace } from '@/modules/terminal/lib/BoundedResourceTrace';
+import { expect, it } from 'vitest';
 
-it("retains only the latest 600 samples in chronological order", () => {
+it('retains only the latest 600 samples in chronological order', () => {
   const trace = new BoundedResourceTrace<number>();
   for (let index = 0; index < 10_000; index++) trace.record(index);
   const snapshot = trace.snapshot();

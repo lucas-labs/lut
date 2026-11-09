@@ -1,34 +1,17 @@
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import {
-  allServers,
-  detectBinary,
-  type LspPreset,
-  redetectBinary,
-  useLspRuntimeStore,
-} from "@/modules/lsp";
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import {
-  type LspCustomServer,
-  setLspActivation,
-  setLspCustomServers,
-} from "@/modules/settings/store";
-import { Delete02Icon, Refresh01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { useEffect, useId, useState } from "react";
-import { LspInstallDialog } from "./LspInstallDialog";
-import { resolveLspSwitchState } from "./lspSwitchState";
-import { SettingRow } from "./SettingRow";
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { allServers, detectBinary, type LspPreset, redetectBinary, useLspRuntimeStore } from '@/modules/lsp';
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import { type LspCustomServer, setLspActivation, setLspCustomServers } from '@/modules/settings/store';
+import { Delete02Icon, Refresh01Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { useEffect, useId, useState } from 'react';
+import { LspInstallDialog } from './LspInstallDialog';
+import { resolveLspSwitchState } from './lspSwitchState';
+import { SettingRow } from './SettingRow';
 
 export function LspServersGroup() {
   const activation = usePreferencesStore((s) => s.lspActivation);
@@ -46,14 +29,14 @@ export function LspServersGroup() {
         <ServerRow
           key={server.id}
           server={server}
-          enabled={activation[server.id] === "enabled"}
+          enabled={activation[server.id] === 'enabled'}
           custom={customServers.some((c) => c.id === server.id)}
           customServers={customServers}
           onInstall={() => setInstallTarget(server)}
         />
       ))}
       <LspInstallDialog
-        key={installTarget?.id ?? "closed"}
+        key={installTarget?.id ?? 'closed'}
         server={installTarget}
         onClose={() => setInstallTarget(null)}
       />
@@ -80,13 +63,8 @@ function ServerRow({
     void detectBinary(server.command);
   }, [server.command]);
 
-  const langs = Object.keys(server.languages).join(", ");
-  const status =
-    detected === undefined
-      ? "checking..."
-      : detected
-        ? detected
-        : "not found on PATH";
+  const langs = Object.keys(server.languages).join(', ');
+  const status = detected === undefined ? 'checking...' : detected ? detected : 'not found on PATH';
   const switchState = resolveLspSwitchState(enabled, detected);
 
   return (
@@ -94,9 +72,7 @@ function ServerRow({
       title={
         <span className="flex items-center gap-1.5">
           {server.name}
-          {detected ? (
-            <span className="size-1.5 rounded-full bg-emerald-500" />
-          ) : null}
+          {detected ? <span className="size-1.5 rounded-full bg-emerald-500" /> : null}
         </span>
       }
       description={`${server.command} (${langs}) - ${status}`}
@@ -116,9 +92,7 @@ function ServerRow({
             className="cursor-pointer rounded p-1 text-muted-foreground hover:bg-accent hover:text-destructive"
             onClick={() => {
               void setLspActivation(server.id, null);
-              void setLspCustomServers(
-                customServers.filter((c) => c.id !== server.id),
-              );
+              void setLspCustomServers(customServers.filter((c) => c.id !== server.id));
             }}
             title="Remove server"
           >
@@ -128,15 +102,15 @@ function ServerRow({
         <Switch
           checked={switchState.checked}
           disabled={switchState.checking}
-          aria-label={`${switchState.checked ? "Disable" : "Enable"} ${server.name} language server`}
+          aria-label={`${switchState.checked ? 'Disable' : 'Enable'} ${server.name} language server`}
           onCheckedChange={(checked) => {
             if (!checked) {
-              void setLspActivation(server.id, "dismissed");
+              void setLspActivation(server.id, 'dismissed');
               return;
             }
-            if (switchState.enableAction === "enable") {
-              void setLspActivation(server.id, "enabled");
-            } else if (switchState.enableAction === "install") {
+            if (switchState.enableAction === 'enable') {
+              void setLspActivation(server.id, 'enabled');
+            } else if (switchState.enableAction === 'install') {
               onInstall();
             }
           }}
@@ -146,32 +120,25 @@ function ServerRow({
   );
 }
 
-function AddCustomServerDialog({
-  customServers,
-}: {
-  customServers: LspCustomServer[];
-}) {
+function AddCustomServerDialog({ customServers }: { customServers: LspCustomServer[] }) {
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [command, setCommand] = useState("");
-  const [args, setArgs] = useState("");
-  const [extensions, setExtensions] = useState("");
-  const [languageId, setLanguageId] = useState("");
-  const [rootMarkers, setRootMarkers] = useState("");
+  const [name, setName] = useState('');
+  const [command, setCommand] = useState('');
+  const [args, setArgs] = useState('');
+  const [extensions, setExtensions] = useState('');
+  const [languageId, setLanguageId] = useState('');
+  const [rootMarkers, setRootMarkers] = useState('');
   const formId = useId();
 
   const parsedExts = extensions
-    .split(",")
-    .map((s) => s.trim().replace(/^\./, "").toLowerCase())
+    .split(',')
+    .map((s) => s.trim().replace(/^\./, '').toLowerCase())
     .filter(Boolean);
-  const valid =
-    name.trim().length > 0 &&
-    command.trim().length > 0 &&
-    parsedExts.length > 0;
+  const valid = name.trim().length > 0 && command.trim().length > 0 && parsedExts.length > 0;
 
   const save = () => {
     if (!valid) return;
-    const langId = languageId.trim() || (parsedExts[0] ?? "");
+    const langId = languageId.trim() || (parsedExts[0] ?? '');
     const id = `custom-${command.trim()}`;
     const server: LspCustomServer = {
       id,
@@ -180,30 +147,22 @@ function AddCustomServerDialog({
       args: args.trim() ? args.trim().split(/\s+/) : [],
       languages: Object.fromEntries(parsedExts.map((e) => [e, langId])),
       rootMarkers: rootMarkers
-        .split(",")
+        .split(',')
         .map((s) => s.trim())
         .filter(Boolean),
     };
-    void setLspCustomServers([
-      ...customServers.filter((c) => c.id !== id),
-      server,
-    ]);
-    void setLspActivation(id, "enabled");
+    void setLspCustomServers([...customServers.filter((c) => c.id !== id), server]);
+    void setLspActivation(id, 'enabled');
     setOpen(false);
-    setName("");
-    setCommand("");
-    setArgs("");
-    setExtensions("");
-    setLanguageId("");
-    setRootMarkers("");
+    setName('');
+    setCommand('');
+    setArgs('');
+    setExtensions('');
+    setLanguageId('');
+    setRootMarkers('');
   };
 
-  const field = (
-    label: string,
-    value: string,
-    onChange: (v: string) => void,
-    placeholder: string,
-  ) => (
+  const field = (label: string, value: string, onChange: (v: string) => void, placeholder: string) => (
     <div className="flex flex-col gap-1">
       <Label htmlFor={`${formId}-${label}`} className="text-[11px]">
         {label}
@@ -230,12 +189,12 @@ function AddCustomServerDialog({
           <DialogTitle className="text-sm">Custom language server</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-2.5">
-          {field("Name", name, setName, "Zig")}
-          {field("Command", command, setCommand, "zls")}
-          {field("Arguments", args, setArgs, "--stdio")}
-          {field("File extensions", extensions, setExtensions, "zig, zon")}
-          {field("LSP language id", languageId, setLanguageId, "zig")}
-          {field("Root markers", rootMarkers, setRootMarkers, "build.zig")}
+          {field('Name', name, setName, 'Zig')}
+          {field('Command', command, setCommand, 'zls')}
+          {field('Arguments', args, setArgs, '--stdio')}
+          {field('File extensions', extensions, setExtensions, 'zig, zon')}
+          {field('LSP language id', languageId, setLanguageId, 'zig')}
+          {field('Root markers', rootMarkers, setRootMarkers, 'build.zig')}
         </div>
         <DialogFooter>
           <Button size="sm" disabled={!valid} onClick={save}>

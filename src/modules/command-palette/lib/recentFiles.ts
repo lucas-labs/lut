@@ -1,7 +1,7 @@
 // Files opened through the palette, newest first, kept per project root.
 // localStorage keeps it off the preferences store and its IPC broadcast path.
 
-const KEY = "terax-palette-recent-files";
+const KEY = 'terax-palette-recent-files';
 export const MAX_RECENT_FILES = 12;
 const MAX_RECENT_ROOTS = 24;
 
@@ -36,13 +36,11 @@ export function recordInStore(
 }
 
 function sanitize(raw: unknown): RecentStore {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
   const out: RecentStore = {};
   for (const [root, list] of Object.entries(raw)) {
     if (!Array.isArray(list)) continue;
-    out[root] = list
-      .filter((p): p is string => typeof p === "string")
-      .slice(0, MAX_RECENT_FILES);
+    out[root] = list.filter((p): p is string => typeof p === 'string').slice(0, MAX_RECENT_FILES);
   }
   return out;
 }

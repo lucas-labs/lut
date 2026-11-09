@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const harness = vi.hoisted(() => ({
   cursor: 0,
@@ -19,7 +19,7 @@ const harness = vi.hoisted(() => ({
   hydrateSessions: vi.fn(),
   initPrefs: vi.fn(),
 }));
-vi.mock("react", () => {
+vi.mock('react', () => {
   function slot<T>(initial: () => T): T {
     const index = harness.cursor++;
     if (!(index in harness.slots)) harness.slots[index] = initial();
@@ -35,13 +35,8 @@ vi.mock("react", () => {
         },
       ];
     },
-    useEffect: (
-      effect: () => void | (() => void),
-      deps: readonly unknown[],
-    ) => {
-      const cell = slot<{ deps?: readonly unknown[]; cleanup?: () => void }>(
-        () => ({}),
-      );
+    useEffect: (effect: () => void | (() => void), deps: readonly unknown[]) => {
+      const cell = slot<{ deps?: readonly unknown[]; cleanup?: () => void }>(() => ({}));
       if (
         cell.deps?.length === deps.length &&
         cell.deps.every((value, i) => Object.is(value, deps[i]))
@@ -59,27 +54,25 @@ vi.mock("react", () => {
     },
   };
 });
-vi.mock("@/modules/settings/preferences", () => {
+vi.mock('@/modules/settings/preferences', () => {
   const prefs = new Proxy(harness.prefs, {
-    get: (target, key) =>
-      key === "init" ? harness.initPrefs : (Reflect.get(target, key) ?? ""),
+    get: (target, key) => (key === 'init' ? harness.initPrefs : (Reflect.get(target, key) ?? '')),
   });
   return {
-    usePreferencesStore: Object.assign(
-      (select: (state: unknown) => unknown) => select(prefs),
-      { getState: () => prefs },
-    ),
+    usePreferencesStore: Object.assign((select: (state: unknown) => unknown) => select(prefs), {
+      getState: () => prefs,
+    }),
   };
 });
-vi.mock("@/modules/settings/store", () => ({
+vi.mock('@/modules/settings/store', () => ({
   onKeysChanged: harness.onKeysChanged,
 }));
-vi.mock("../lib/keyring", () => ({
+vi.mock('../lib/keyring', () => ({
   getAllKeys: harness.getAllKeys,
   getAllCustomEndpointKeys: harness.getEndpointKeys,
   hasAnyKey: () => false,
 }));
-vi.mock("../store/chatStore", () => ({
+vi.mock('../store/chatStore', () => ({
   useChatStore: (select: (state: unknown) => unknown) =>
     select({
       apiKeys: {},
@@ -90,17 +83,17 @@ vi.mock("../store/chatStore", () => ({
       hydrateSessions: harness.hydrateSessions,
     }),
 }));
-vi.mock("../store/agentsStore", () => ({
+vi.mock('../store/agentsStore', () => ({
   useAgentsStore: { getState: () => ({ hydrate: vi.fn() }) },
 }));
-vi.mock("../store/snippetsStore", () => ({
+vi.mock('../store/snippetsStore', () => ({
   useSnippetsStore: { getState: () => ({ hydrate: vi.fn() }) },
 }));
-vi.mock("@/modules/agents/lib/review", () => ({
+vi.mock('@/modules/agents/lib/review', () => ({
   firePendingReviewForSession: vi.fn(),
 }));
 
-import { useAiBootstrap } from "./useAiBootstrap";
+import { useAiBootstrap } from './useAiBootstrap';
 
 function render() {
   harness.cursor = 0;
@@ -119,15 +112,15 @@ beforeEach(() => {
   harness.prefs.hydrated = false;
   harness.prefs.customEndpoints = [];
   harness.hydrateSessions.mockResolvedValue(undefined);
-  harness.getAllKeys.mockResolvedValue({ provider: "key" });
-  harness.getEndpointKeys.mockResolvedValue({ custom: "key" });
+  harness.getAllKeys.mockResolvedValue({ provider: 'key' });
+  harness.getEndpointKeys.mockResolvedValue({ custom: 'key' });
   harness.onKeysChanged.mockResolvedValue(harness.unlisten);
 });
 afterEach(() => {
   for (const cleanup of harness.cleanups) cleanup();
 });
 
-it("loads one provider batch across cold preference hydration and refreshes on key changes", async () => {
+it('loads one provider batch across cold preference hydration and refreshes on key changes', async () => {
   expect(render().keysLoaded).toBe(false);
   harness.prefs.hydrated = true;
   render();
@@ -136,19 +129,15 @@ it("loads one provider batch across cold preference hydration and refreshes on k
   expect(harness.getAllKeys).toHaveBeenCalledTimes(1);
   expect(harness.getEndpointKeys).toHaveBeenCalledTimes(1);
   expect(harness.onKeysChanged).toHaveBeenCalledTimes(1);
-  harness.prefs.customEndpoints = [
-    { id: "new", baseURL: "http://localhost", modelId: "model" },
-  ];
+  harness.prefs.customEndpoints = [{ id: 'new', baseURL: 'http://localhost', modelId: 'model' }];
   harness.onKeysChanged.mock.calls[0][0]();
   await Promise.resolve();
   expect(harness.getAllKeys).toHaveBeenCalledTimes(2);
-  expect(harness.getEndpointKeys).toHaveBeenLastCalledWith(
-    harness.prefs.customEndpoints,
-  );
+  expect(harness.getEndpointKeys).toHaveBeenLastCalledWith(harness.prefs.customEndpoints);
   expect(harness.setApiKeys).toHaveBeenCalledTimes(2);
 });
 
-it("ignores in-flight results after unmount and releases the listener", async () => {
+it('ignores in-flight results after unmount and releases the listener', async () => {
   harness.prefs.hydrated = true;
   let finishProvider!: (keys: object) => void;
   let finishEndpoint!: (keys: object) => void;
@@ -165,22 +154,22 @@ it("ignores in-flight results after unmount and releases the listener", async ()
   render();
   for (const cleanup of harness.cleanups) cleanup();
   harness.cleanups.clear();
-  finishProvider({ provider: "late" });
-  finishEndpoint({ custom: "late" });
+  finishProvider({ provider: 'late' });
+  finishEndpoint({ custom: 'late' });
   await Promise.resolve();
   expect(harness.setApiKeys).not.toHaveBeenCalled();
   expect(harness.setEndpointKeys).not.toHaveBeenCalled();
   expect(harness.unlisten).toHaveBeenCalledTimes(1);
 });
 
-it("loads and refreshes provider keys even when preference initialization fails", async () => {
-  const failed = Promise.reject(new Error("preference storage unavailable"));
+it('loads and refreshes provider keys even when preference initialization fails', async () => {
+  const failed = Promise.reject(new Error('preference storage unavailable'));
   await failed.catch(() => {});
   harness.initPrefs.mockReturnValue(failed);
   render();
   await Promise.resolve();
   expect(render().keysLoaded).toBe(true);
-  expect(harness.setApiKeys).toHaveBeenCalledWith({ provider: "key" });
+  expect(harness.setApiKeys).toHaveBeenCalledWith({ provider: 'key' });
   expect(harness.getEndpointKeys).not.toHaveBeenCalled();
   harness.onKeysChanged.mock.calls[0][0]();
   await Promise.resolve();

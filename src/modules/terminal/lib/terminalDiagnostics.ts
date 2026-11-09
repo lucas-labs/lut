@@ -1,31 +1,29 @@
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import { terminalRendererReport } from "@/modules/terminal/backend/selection";
-import { ghosttyCoreRuntimeDiagnostics } from "@/modules/terminal/ghostty/GhosttyCoreRuntime";
-import { webGpuTerminalRuntimeDiagnostics } from "@/modules/terminal/ghostty/gpu/WebGpuTerminalRuntime";
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import { terminalRendererReport } from '@/modules/terminal/backend/selection';
+import { ghosttyCoreRuntimeDiagnostics } from '@/modules/terminal/ghostty/GhosttyCoreRuntime';
+import { webGpuTerminalRuntimeDiagnostics } from '@/modules/terminal/ghostty/gpu/WebGpuTerminalRuntime';
 import {
   ghosttySessionDiagnostics,
   ghosttySessionResourceTotals,
-} from "@/modules/terminal/ghostty/sessionDiagnostics";
-import { webGlTerminalRuntimeDiagnostics } from "@/modules/terminal/ghostty/webgl/WebGlTerminalRuntime";
-import { subscribeWindowPresentation } from "@/modules/terminal/ghostty/windowPresentation";
-import { windowPresentationDiagnostics } from "@/modules/terminal/ghostty/windowPresentation";
-import { BoundedResourceTrace } from "@/modules/terminal/lib/BoundedResourceTrace";
-import { ptyTransportDiagnostics } from "@/modules/terminal/lib/pty-bridge";
-import { terminalResizeInteractionActive } from "@/modules/terminal/lib/terminalResizeInteraction";
-import { invoke } from "@tauri-apps/api/core";
-import { supportsWasmSimd } from "@terax/ghostty-core/adapted";
-import { terminalCanvasDiagnostics } from "./canvasDiagnostics";
+} from '@/modules/terminal/ghostty/sessionDiagnostics';
+import { webGlTerminalRuntimeDiagnostics } from '@/modules/terminal/ghostty/webgl/WebGlTerminalRuntime';
+import { subscribeWindowPresentation } from '@/modules/terminal/ghostty/windowPresentation';
+import { windowPresentationDiagnostics } from '@/modules/terminal/ghostty/windowPresentation';
+import { BoundedResourceTrace } from '@/modules/terminal/lib/BoundedResourceTrace';
+import { ptyTransportDiagnostics } from '@/modules/terminal/lib/pty-bridge';
+import { terminalResizeInteractionActive } from '@/modules/terminal/lib/terminalResizeInteraction';
+import { invoke } from '@tauri-apps/api/core';
+import { supportsWasmSimd } from '@terax/ghostty-core/adapted';
+import { terminalCanvasDiagnostics } from './canvasDiagnostics';
 
 export function terminalDebugStats() {
   return {
     schemaVersion: 1,
     timestamp: Date.now(),
     presentation: windowPresentationDiagnostics(),
-    wasmVariant: supportsWasmSimd() ? "simd" : "scalar",
+    wasmVariant: supportsWasmSimd() ? 'simd' : 'scalar',
     renderer: {
-      ...terminalRendererReport(
-        usePreferencesStore.getState().terminalRenderer,
-      ),
+      ...terminalRendererReport(usePreferencesStore.getState().terminalRenderer),
       devicePixelRatio: window.devicePixelRatio,
       canvases: terminalCanvasDiagnostics(),
     },
@@ -36,15 +34,15 @@ export function terminalDebugStats() {
     ghosttySessions: ghosttySessionDiagnostics(),
     ghosttyResources: ghosttySessionResourceTotals(),
     terminalResizeInteractionActive: terminalResizeInteractionActive(),
-    domCanvases: document.querySelectorAll("canvas").length,
+    domCanvases: document.querySelectorAll('canvas').length,
     jsHeapBytes:
-      (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory
-        ?.usedJSHeapSize ?? null,
+      (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize ??
+      null,
   };
 }
 
 export async function terminalDebugSnapshot() {
-  const native = await invoke("pty_diagnostics");
+  const native = await invoke('pty_diagnostics');
   return { ...terminalDebugStats(), native };
 }
 

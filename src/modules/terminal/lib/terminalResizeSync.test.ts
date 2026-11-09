@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { TerminalResizeSync } from "./terminalResizeSync";
+import { describe, expect, it } from 'vitest';
+import { TerminalResizeSync } from './terminalResizeSync';
 
 function harness() {
   const log: string[] = [];
@@ -23,20 +23,20 @@ function harness() {
   return { sync, model, pty, log };
 }
 
-describe("TerminalResizeSync", () => {
-  it("resizes the model and tells the PTY in one call, model first", () => {
+describe('TerminalResizeSync', () => {
+  it('resizes the model and tells the PTY in one call, model first', () => {
     const { sync, log } = harness();
-    expect(sync.request(100, 30)).toBe("applied");
-    expect(log).toEqual(["model 100x30", "pty 100x30"]);
+    expect(sync.request(100, 30)).toBe('applied');
+    expect(log).toEqual(['model 100x30', 'pty 100x30']);
   });
 
-  it("does nothing for dimensions the grid already has", () => {
+  it('does nothing for dimensions the grid already has', () => {
     const { sync, log } = harness();
-    expect(sync.request(80, 24)).toBe("unchanged");
+    expect(sync.request(80, 24)).toBe('unchanged');
     expect(log).toEqual([]);
   });
 
-  it("keeps the model and the PTY identical after every request", () => {
+  it('keeps the model and the PTY identical after every request', () => {
     const { sync, model, pty } = harness();
     for (const [cols, rows] of [
       [90, 24],

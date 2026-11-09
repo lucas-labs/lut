@@ -1,10 +1,10 @@
-import { create } from "zustand";
-import { native } from "../lib/native";
+import { create } from 'zustand';
+import { native } from '../lib/native';
 
 export type QueuedEdit = {
   id: string;
   /** Tool that produced the queued mutation. */
-  kind: "write_file" | "edit" | "multi_edit" | "create_directory";
+  kind: 'write_file' | 'edit' | 'multi_edit' | 'create_directory';
   path: string;
   /** Original file content (empty for new files / create_directory). */
   originalContent: string;
@@ -37,20 +37,18 @@ export function newQueuedEditId(): string {
 export const usePlanStore = create<PlanState>((set, get) => ({
   active: false,
   queue: [],
-  toggle: () =>
-    set((s) => ({ active: !s.active, queue: s.active ? [] : s.queue })),
+  toggle: () => set((s) => ({ active: !s.active, queue: s.active ? [] : s.queue })),
   enable: () => set({ active: true }),
   disable: () => set({ active: false, queue: [] }),
   enqueue: (q) => set((s) => ({ queue: [...s.queue, q] })),
-  removeOne: (id) =>
-    set((s) => ({ queue: s.queue.filter((q) => q.id !== id) })),
+  removeOne: (id) => set((s) => ({ queue: s.queue.filter((q) => q.id !== id) })),
   clear: () => set({ queue: [] }),
   async applyAll() {
     const items = get().queue;
     const results: { id: string; ok: boolean; error?: string }[] = [];
     for (const q of items) {
       try {
-        if (q.kind === "create_directory") {
+        if (q.kind === 'create_directory') {
           await native.createDir(q.path);
         } else {
           await native.writeFile(q.path, q.proposedContent);

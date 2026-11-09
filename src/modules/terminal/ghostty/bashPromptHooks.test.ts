@@ -1,21 +1,16 @@
-import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import { expect, it } from "vitest";
+import { spawnSync } from 'node:child_process';
+import { existsSync, readFileSync } from 'node:fs';
+import { expect, it } from 'vitest';
 
-const windowsBash = "C:/Program Files/Git/bin/bash.exe";
-const bash = process.platform === "win32" ? windowsBash : "/bin/bash";
+const windowsBash = 'C:/Program Files/Git/bin/bash.exe';
+const bash = process.platform === 'win32' ? windowsBash : '/bin/bash';
 const integration = readFileSync(
-  new URL(
-    "../../../../src-tauri/src/modules/pty/scripts/bashrc.bash",
-    import.meta.url,
-  ),
-  "utf8",
-).replace(/\r\n/g, "\n");
+  new URL('../../../../src-tauri/src/modules/pty/scripts/bashrc.bash', import.meta.url),
+  'utf8',
+).replace(/\r\n/g, '\n');
 
-it
-  .skipIf(!existsSync(bash))
-  .each(["scalar", "array", "empty", "single", "sparse", "registered"])(
-  "preserves Bash prompt hooks (%s)",
+it.skipIf(!existsSync(bash)).each(['scalar', 'array', 'empty', 'single', 'sparse', 'registered'])(
+  'preserves Bash prompt hooks (%s)',
   (mode) => {
     const fixture = `
 source() { :; }
@@ -69,25 +64,21 @@ if [ "$1" != empty ]; then
 fi
 case "$PS1" in 'test> '*) ;; *) exit 19 ;; esac
 `;
-    const result = spawnSync(
-      bash,
-      ["--noprofile", "--norc", "-s", "--", mode],
-      {
-        input: `${fixture}\n${integration}\n${verify}`,
-        encoding: "utf8",
-        timeout: 10000,
-        env: { PATH: process.env.PATH ?? "/usr/bin:/bin" },
-      },
-    );
+    const result = spawnSync(bash, ['--noprofile', '--norc', '-s', '--', mode], {
+      input: `${fixture}\n${integration}\n${verify}`,
+      encoding: 'utf8',
+      timeout: 10000,
+      env: { PATH: process.env.PATH ?? '/usr/bin:/bin' },
+    });
     expect(result.error).toBeUndefined();
-    expect(result.stderr).toBe("");
+    expect(result.stderr).toBe('');
     expect(result.signal).toBeNull();
     expect(result.status).toBe(0);
   },
 );
 
 it.skipIf(!existsSync(bash))(
-  "puts the prompt end behind every PROMPT_COMMAND entry that rebuilds PS1",
+  'puts the prompt end behind every PROMPT_COMMAND entry that rebuilds PS1',
   () => {
     const script = `
 source() { :; }
@@ -98,11 +89,11 @@ PS1=
 eval "$PROMPT_COMMAND"
 case "$PS1" in 'fw> '*'133;B'*) ;; *) exit 10 ;; esac
 `;
-    const result = spawnSync(bash, ["--noprofile", "--norc", "-s"], {
+    const result = spawnSync(bash, ['--noprofile', '--norc', '-s'], {
       input: script,
-      encoding: "utf8",
+      encoding: 'utf8',
       timeout: 10000,
-      env: { PATH: process.env.PATH ?? "/usr/bin:/bin" },
+      env: { PATH: process.env.PATH ?? '/usr/bin:/bin' },
     });
     expect(result.error).toBeUndefined();
     expect(result.status).toBe(0);

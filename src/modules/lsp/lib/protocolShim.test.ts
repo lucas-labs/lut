@@ -1,32 +1,32 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 import {
   CompletionItemKind,
   CompletionTriggerKind,
   DiagnosticSeverity,
   DocumentHighlightKind,
-} from "./protocolShim";
+} from './protocolShim';
 
-describe("LSP protocol shim enum values", () => {
-  it("keeps DiagnosticSeverity on the wire values", () => {
+describe('LSP protocol shim enum values', () => {
+  it('keeps DiagnosticSeverity on the wire values', () => {
     expect(DiagnosticSeverity.Error).toBe(1);
     expect(DiagnosticSeverity.Warning).toBe(2);
     expect(DiagnosticSeverity.Information).toBe(3);
     expect(DiagnosticSeverity.Hint).toBe(4);
   });
 
-  it("keeps CompletionTriggerKind on the wire values", () => {
+  it('keeps CompletionTriggerKind on the wire values', () => {
     expect(CompletionTriggerKind.Invoked).toBe(1);
     expect(CompletionTriggerKind.TriggerCharacter).toBe(2);
     expect(CompletionTriggerKind.TriggerForIncompleteCompletions).toBe(3);
   });
 
-  it("keeps DocumentHighlightKind on the wire values", () => {
+  it('keeps DocumentHighlightKind on the wire values', () => {
     expect(DocumentHighlightKind.Text).toBe(1);
     expect(DocumentHighlightKind.Read).toBe(2);
     expect(DocumentHighlightKind.Write).toBe(3);
   });
 
-  it("keeps representative CompletionItemKind entries on the wire values", () => {
+  it('keeps representative CompletionItemKind entries on the wire values', () => {
     expect(CompletionItemKind.Text).toBe(1);
     expect(CompletionItemKind.Method).toBe(2);
     expect(CompletionItemKind.Function).toBe(3);

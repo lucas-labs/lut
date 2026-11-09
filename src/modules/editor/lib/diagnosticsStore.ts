@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
 type DiagnosticCounts = { errors: number; warnings: number };
 
@@ -12,12 +12,7 @@ export const useDiagnosticsStore = create<State>((set) => ({
   report: (path, counts) =>
     set((s) => {
       const prev = s.byPath[path];
-      if (
-        counts &&
-        prev &&
-        prev.errors === counts.errors &&
-        prev.warnings === counts.warnings
-      ) {
+      if (counts && prev && prev.errors === counts.errors && prev.warnings === counts.warnings) {
         return s;
       }
       if (!counts && !prev) return s;

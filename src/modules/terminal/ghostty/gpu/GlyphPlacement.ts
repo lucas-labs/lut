@@ -30,14 +30,14 @@ export type GlyphMeasure = {
 };
 
 export type GlyphConstraint =
-  | { readonly mode: "native" }
-  | { readonly mode: "icon" }
-  | { readonly mode: "stretch"; readonly span: 1 | 2 };
+  | { readonly mode: 'native' }
+  | { readonly mode: 'icon' }
+  | { readonly mode: 'stretch'; readonly span: 1 | 2 };
 
-const NATIVE: GlyphConstraint = { mode: "native" };
-const ICON: GlyphConstraint = { mode: "icon" };
-const STRETCH_1: GlyphConstraint = { mode: "stretch", span: 1 };
-const STRETCH_2: GlyphConstraint = { mode: "stretch", span: 2 };
+const NATIVE: GlyphConstraint = { mode: 'native' };
+const ICON: GlyphConstraint = { mode: 'icon' };
+const STRETCH_1: GlyphConstraint = { mode: 'stretch', span: 1 };
+const STRETCH_2: GlyphConstraint = { mode: 'stretch', span: 2 };
 
 /** Widest an icon may be, in cells. */
 const ICON_MAX_CELLS = 2;
@@ -69,10 +69,7 @@ export function constraintFor(codepoint: number): GlyphConstraint {
 export function isNeighbourAware(codepoint: number): boolean {
   if (!isPrivateUse(codepoint)) return false;
   const constraint = constraintFor(codepoint);
-  return (
-    constraint.mode === "icon" ||
-    (constraint.mode === "stretch" && constraint.span === 2)
-  );
+  return constraint.mode === 'icon' || (constraint.mode === 'stretch' && constraint.span === 2);
 }
 
 /**
@@ -143,8 +140,8 @@ export function placeGlyph(
   if (!(inkWidth > 0) || !(inkHeight > 0)) return IDENTITY_PLACEMENT;
 
   const constraint = constraintFor(codepoint);
-  if (constraint.mode === "native") return IDENTITY_PLACEMENT;
-  if (constraint.mode === "stretch") {
+  if (constraint.mode === 'native') return IDENTITY_PLACEMENT;
+  if (constraint.mode === 'stretch') {
     const width = cellWidth * (roomy ? constraint.span : 1);
     const scaleX = width / inkWidth;
     const scaleY = cellHeight / inkHeight;
@@ -226,13 +223,9 @@ export function layoutGlyph(
     };
   }
   const left = Math.max(0, Math.ceil(measure.left * scaleX - shiftX || 0));
-  const right = Math.ceil(
-    (measure.right ? shiftX + measure.right * scaleX : 0) || cell.width,
-  );
+  const right = Math.ceil((measure.right ? shiftX + measure.right * scaleX : 0) || cell.width);
   const ascent = Math.ceil(measure.ascent * scaleY || cell.baseline);
-  const descent = Math.ceil(
-    measure.descent * scaleY || cell.height - cell.baseline,
-  );
+  const descent = Math.ceil(measure.descent * scaleY || cell.height - cell.baseline);
   return {
     width: Math.min(limit, Math.max(1, left + right + padding * 2)),
     height: Math.min(limit, Math.max(1, ascent + descent + padding * 2)),
@@ -252,14 +245,7 @@ export function layoutGlyph(
 export function drawGlyph(
   context: Pick<
     CanvasRenderingContext2D,
-    | "fillText"
-    | "save"
-    | "restore"
-    | "translate"
-    | "scale"
-    | "beginPath"
-    | "rect"
-    | "clip"
+    'fillText' | 'save' | 'restore' | 'translate' | 'scale' | 'beginPath' | 'rect' | 'clip'
   >,
   text: string,
   layout: GlyphLayout,

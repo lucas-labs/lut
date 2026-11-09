@@ -3,13 +3,13 @@ import {
   type EditorThemeId,
   type EditorThemePref,
   isEditorThemeId,
-} from "@/modules/settings/store";
-import { getBuiltinTheme, getDefaultTheme } from "./themes";
-import type { Theme } from "./types";
+} from '@/modules/settings/store';
+import { getBuiltinTheme, getDefaultTheme } from './themes';
+import type { Theme } from './types';
 
-const FALLBACK: Record<"light" | "dark", EditorThemeId> = {
-  light: "github-light",
-  dark: "atomone",
+const FALLBACK: Record<'light' | 'dark', EditorThemeId> = {
+  light: 'github-light',
+  dark: 'atomone',
 };
 
 /**
@@ -21,16 +21,11 @@ export function resolveEditorThemeId(
   pref: EditorThemePref,
   themeId: string,
   customThemes: Theme[],
-  mode: "light" | "dark",
+  mode: 'light' | 'dark',
 ): EditorThemeId {
   if (pref !== EDITOR_THEME_AUTO) return pref;
   const theme =
-    customThemes.find((t) => t.id === themeId) ??
-    getBuiltinTheme(themeId) ??
-    getDefaultTheme();
-  const mapped =
-    theme.editorTheme?.[mode] ??
-    theme.editorTheme?.dark ??
-    theme.editorTheme?.light;
+    customThemes.find((t) => t.id === themeId) ?? getBuiltinTheme(themeId) ?? getDefaultTheme();
+  const mapped = theme.editorTheme?.[mode] ?? theme.editorTheme?.dark ?? theme.editorTheme?.light;
   return isEditorThemeId(mapped) ? mapped : FALLBACK[mode];
 }

@@ -1,17 +1,17 @@
-import { useManagedAgentsStore } from "@/modules/agents/store/managedAgentsStore";
-import type { Tab } from "@/modules/tabs";
+import { useManagedAgentsStore } from '@/modules/agents/store/managedAgentsStore';
+import type { Tab } from '@/modules/tabs';
 import {
   findLeafCwd,
   type TerminalPaneHandle,
   whenSessionReady,
   writeToSession,
-} from "@/modules/terminal";
-import { invoke } from "@tauri-apps/api/core";
-import { type RefObject, useEffect, useRef } from "react";
-import type { Live } from "../store/chatStore";
-import { redactSensitive } from "./redact";
+} from '@/modules/terminal';
+import { invoke } from '@tauri-apps/api/core';
+import { type RefObject, useEffect, useRef } from 'react';
+import type { Live } from '../store/chatStore';
+import { redactSensitive } from './redact';
 
-type TuiWaitResult = "ready" | "gone" | "timeout";
+type TuiWaitResult = 'ready' | 'gone' | 'timeout';
 
 async function waitForClaudeTuiReady(
   readBuf: () => string | null,
@@ -20,11 +20,11 @@ async function waitForClaudeTuiReady(
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     const buf = readBuf();
-    if (buf === null) return "gone";
-    if (buf.includes("shortcuts") || buf.includes("? for")) return "ready";
+    if (buf === null) return 'gone';
+    if (buf.includes('shortcuts') || buf.includes('? for')) return 'ready';
     await new Promise((r) => setTimeout(r, 120));
   }
-  return "timeout";
+  return 'timeout';
 }
 
 type Params = {
@@ -35,10 +35,7 @@ type Params = {
   launchCwd: string | null;
   home: string | null;
   openPreviewTab: (url: string) => void;
-  newAgentTab: (
-    cwd: string | undefined,
-    title: string,
-  ) => { tabId: number; leafId: number };
+  newAgentTab: (cwd: string | undefined, title: string) => { tabId: number; leafId: number };
   terminalRefs: RefObject<Map<number, TerminalPaneHandle>>;
 };
 
@@ -60,16 +57,12 @@ export function useAiLiveBridge(params: Params) {
     const findCwd = () => {
       const { activeId, tabs, explorerRoot, launchCwd, home } = ref.current;
       const active = tabs.find((x) => x.id === activeId);
-      if (active?.kind === "terminal") {
-        return (
-          findLeafCwd(active.paneTree, active.activeLeafId) ??
-          active.cwd ??
-          null
-        );
+      if (active?.kind === 'terminal') {
+        return findLeafCwd(active.paneTree, active.activeLeafId) ?? active.cwd ?? null;
       }
       for (let i = tabs.length - 1; i >= 0; i--) {
         const t = tabs[i];
-        if (t.kind !== "terminal") continue;
+        if (t.kind !== 'terminal') continue;
         const cwd = findLeafCwd(t.paneTree, t.activeLeafId) ?? t.cwd;
         if (cwd) return cwd;
       }
@@ -81,7 +74,7 @@ export function useAiLiveBridge(params: Params) {
       getTerminalContext: () => {
         const { activeId, tabs } = ref.current;
         const t = tabs.find((x) => x.id === activeId);
-        if (t?.kind !== "terminal") return null;
+        if (t?.kind !== 'terminal') return null;
         if (t.private) return null;
         const buf = terminalRefs.current.get(t.activeLeafId)?.getBuffer(300);
         return buf ? redactSensitive(buf) : null;
@@ -89,12 +82,12 @@ export function useAiLiveBridge(params: Params) {
       isActiveTerminalPrivate: () => {
         const { activeId, tabs } = ref.current;
         const t = tabs.find((x) => x.id === activeId);
-        return t?.kind === "terminal" && t.private === true;
+        return t?.kind === 'terminal' && t.private === true;
       },
       injectIntoActivePty: (text) => {
         const { activeId, tabs } = ref.current;
         const t = tabs.find((x) => x.id === activeId);
-        if (t?.kind !== "terminal") return false;
+        if (t?.kind !== 'terminal') return false;
         const term = terminalRefs.current.get(t.activeLeafId);
         if (!term) return false;
         term.write(text);
@@ -108,7 +101,7 @@ export function useAiLiveBridge(params: Params) {
       getActiveFile: () => {
         const { activeId, tabs } = ref.current;
         const t = tabs.find((x) => x.id === activeId);
-        return t?.kind === "editor" ? t.path : null;
+        return t?.kind === 'editor' ? t.path : null;
       },
       openPreview: (url: string) => {
         ref.current.openPreviewTab(url);
@@ -117,23 +110,15 @@ export function useAiLiveBridge(params: Params) {
       spawnManagedAgent: (prompt: string, sessionId: string) => {
         const trimmed = prompt.trim();
         if (!trimmed) return null;
-        const oneLine = trimmed.replace(/\s*\r?\n\s*/g, " ");
+        const oneLine = trimmed.replace(/\s*\r?\n\s*/g, ' ');
         const cwd = findCwd();
-        const short =
-          oneLine.length > 32 ? `${oneLine.slice(0, 32)}…` : oneLine;
-        const { tabId, leafId } = ref.current.newAgentTab(
-          cwd ?? undefined,
-          `claude · ${short}`,
-        );
-        useManagedAgentsStore
-          .getState()
-          .register({ leafId, tabId, sessionId, task: oneLine, cwd });
-        const hooksReady = invoke("agent_enable_hooks", { agent: "claude" }).catch(
-          () => {},
-        );
+        const short = oneLine.length > 32 ? `${oneLine.slice(0, 32)}…` : oneLine;
+        const { tabId, leafId } = ref.current.newAgentTab(cwd ?? undefined, `claude · ${short}`);
+        useManagedAgentsStore.getState().register({ leafId, tabId, sessionId, task: oneLine, cwd });
+        const hooksReady = invoke('agent_enable_hooks', { agent: 'claude' }).catch(() => {});
         void (async () => {
           await Promise.all([whenSessionReady(leafId), hooksReady]);
-          if (!writeToSession(leafId, "claude\r")) {
+          if (!writeToSession(leafId, 'claude\r')) {
             useManagedAgentsStore.getState().remove(leafId);
             return;
           }
@@ -142,11 +127,9 @@ export function useAiLiveBridge(params: Params) {
             return term ? term.getBuffer(120) : null;
           };
           const result = await waitForClaudeTuiReady(readBuf);
-          if (result !== "ready") {
-            if (result === "timeout") {
-              console.warn(
-                "[terax] Claude TUI did not appear in time; aborting prompt send",
-              );
+          if (result !== 'ready') {
+            if (result === 'timeout') {
+              console.warn('[terax] Claude TUI did not appear in time; aborting prompt send');
             }
             useManagedAgentsStore.getState().remove(leafId);
             return;
@@ -155,8 +138,8 @@ export function useAiLiveBridge(params: Params) {
             useManagedAgentsStore.getState().remove(leafId);
             return;
           }
-          setTimeout(() => writeToSession(leafId, "\r"), 120);
-          useManagedAgentsStore.getState().setPhase(leafId, "working");
+          setTimeout(() => writeToSession(leafId, '\r'), 120);
+          useManagedAgentsStore.getState().setPhase(leafId, 'working');
         })();
         return { tabId, leafId };
       },

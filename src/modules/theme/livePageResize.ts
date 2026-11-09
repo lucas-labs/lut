@@ -13,13 +13,13 @@
 // rest keeps WebKit's own tiling. A drag is a burst of `resize` events; it
 // ends after `LIVE_RESIZE_IDLE_MS` without one.
 
-export const LIVE_RESIZE_ATTR = "data-live-resize";
+export const LIVE_RESIZE_ATTR = 'data-live-resize';
 export const LIVE_RESIZE_IDLE_MS = 250;
 
 type Unsubscribe = () => void;
 
 export type LivePageResizeSources = {
-  root: Pick<Element, "setAttribute" | "removeAttribute">;
+  root: Pick<Element, 'setAttribute' | 'removeAttribute'>;
   onResize: (listener: () => void) => Unsubscribe;
   setTimer: (callback: () => void, ms: number) => unknown;
   clearTimer: (handle: unknown) => void;
@@ -45,7 +45,7 @@ export function installLivePageResize(
   const stopListening = sources.onResize(() => {
     if (!active) {
       active = true;
-      sources.root.setAttribute(LIVE_RESIZE_ATTR, "");
+      sources.root.setAttribute(LIVE_RESIZE_ATTR, '');
     }
     if (timer !== null) sources.clearTimer(timer);
     timer = sources.setTimer(end, idleMs);
@@ -65,8 +65,8 @@ export function installLivePageResizeInBrowser(): Unsubscribe {
   return installLivePageResize({
     root: document.documentElement,
     onResize: (listener) => {
-      window.addEventListener("resize", listener, { passive: true });
-      return () => window.removeEventListener("resize", listener);
+      window.addEventListener('resize', listener, { passive: true });
+      return () => window.removeEventListener('resize', listener);
     },
     setTimer: (callback, ms) => window.setTimeout(callback, ms),
     clearTimer: (handle) => window.clearTimeout(handle as number),

@@ -1,8 +1,8 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
 const DEFAULT_MAX_ROUNDS = 3;
 
-type ManagedPhase = "spawning" | "working" | "reviewing" | "done";
+type ManagedPhase = 'spawning' | 'working' | 'reviewing' | 'done';
 
 export type ManagedAgent = {
   leafId: number;
@@ -51,7 +51,7 @@ export const useManagedAgentsStore = create<ManagedAgentsState>((set, get) => ({
           cwd,
           rounds: 0,
           maxRounds: maxRounds ?? DEFAULT_MAX_ROUNDS,
-          phase: "spawning",
+          phase: 'spawning',
           reviewedAtRound: -1,
           pendingReview: false,
         },
@@ -93,7 +93,7 @@ export const useManagedAgentsStore = create<ManagedAgentsState>((set, get) => ({
       return {
         agents: {
           ...s.agents,
-          [leafId]: { ...a, rounds: a.rounds + 1, phase: "working" },
+          [leafId]: { ...a, rounds: a.rounds + 1, phase: 'working' },
         },
       };
     }),
@@ -108,6 +108,5 @@ export const useManagedAgentsStore = create<ManagedAgentsState>((set, get) => ({
 
   get: (leafId) => get().agents[leafId],
 
-  getBySessionId: (sessionId) =>
-    Object.values(get().agents).find((a) => a.sessionId === sessionId),
+  getBySessionId: (sessionId) => Object.values(get().agents).find((a) => a.sessionId === sessionId),
 }));

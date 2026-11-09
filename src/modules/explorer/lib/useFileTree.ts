@@ -1,29 +1,15 @@
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import {
-  currentWorkspaceEnv,
-  useWorkspaceEnvStore,
-  workspaceScopeKey,
-} from "@/modules/workspace";
-import { invoke } from "@tauri-apps/api/core";
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
-import { toast } from "sonner";
-import {
-  excludeNestedSources,
-  executeBatchMove,
-  type FsMoveResult,
-} from "./batchMove";
-import { listenFsChanged, watchAdd, watchRemove } from "./watch";
-import { createWatchRegistry, planVisibilityEdge } from "./watchRegistry";
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import { currentWorkspaceEnv, useWorkspaceEnvStore, workspaceScopeKey } from '@/modules/workspace';
+import { invoke } from '@tauri-apps/api/core';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import { excludeNestedSources, executeBatchMove, type FsMoveResult } from './batchMove';
+import { listenFsChanged, watchAdd, watchRemove } from './watch';
+import { createWatchRegistry, planVisibilityEdge } from './watchRegistry';
 
 export type DirEntry = {
   name: string;
-  kind: "file" | "dir" | "symlink";
+  kind: 'file' | 'dir' | 'symlink';
   size: number;
   mtime: number;
   gitignored: boolean;
@@ -32,26 +18,26 @@ export type DirEntry = {
 type DeleteBatchResult = { deleted: string[]; failed: number };
 
 type ChildrenState =
-  | { status: "idle" }
-  | { status: "loading" }
-  | { status: "loaded"; entries: DirEntry[] }
-  | { status: "error"; message: string };
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'loaded'; entries: DirEntry[] }
+  | { status: 'error'; message: string };
 
 type TreeState = Record<string, ChildrenState>;
 
 export type PendingCreate = {
   parentPath: string;
-  kind: "file" | "dir";
+  kind: 'file' | 'dir';
 };
 
 export function joinPath(parent: string, name: string): string {
-  if (parent.endsWith("/")) return `${parent}${name}`;
+  if (parent.endsWith('/')) return `${parent}${name}`;
   return `${parent}/${name}`;
 }
 
 function dirname(path: string): string {
-  const i = path.lastIndexOf("/");
-  if (i <= 0) return "/";
+  const i = path.lastIndexOf('/');
+  if (i <= 0) return '/';
   return path.slice(0, i);
 }
 
@@ -85,11 +71,7 @@ function isUnder(key: string, root: string): boolean {
 function sameDirListing(a: DirEntry[], b: DirEntry[]): boolean {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) {
-    if (
-      a[i].name !== b[i].name ||
-      a[i].kind !== b[i].kind ||
-      a[i].gitignored !== b[i].gitignored
-    )
+    if (a[i].name !== b[i].name || a[i].kind !== b[i].kind || a[i].gitignored !== b[i].gitignored)
       return false;
   }
   return true;
@@ -116,9 +98,7 @@ export function useFileTree(rootPath: string | null, options?: Options) {
   const gitDecorationsRef = useRef(gitDecorations);
   const [nodes, setNodes] = useState<TreeState>({});
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [pendingCreate, setPendingCreate] = useState<PendingCreate | null>(
-    null,
-  );
+  const [pendingCreate, setPendingCreate] = useState<PendingCreate | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
 
   const active = options?.active ?? true;
@@ -132,12 +112,10 @@ export function useFileTree(rootPath: string | null, options?: Options) {
   const expandedRef = useRef(expanded);
   const nodesRef = useRef(nodes);
   const optionsRef = useRef(options);
-  const scopeKey = `${workspaceKey}\u0000${rootPath ?? ""}`;
+  const scopeKey = `${workspaceKey}\u0000${rootPath ?? ''}`;
   const scopeKeyRef = useRef(scopeKey);
   const scopeGenerationRef = useRef(0);
-  const conflictPromptsRef = useRef<Map<string | number, () => void>>(
-    new Map(),
-  );
+  const conflictPromptsRef = useRef<Map<string | number, () => void>>(new Map());
 
   const cancelConflictPrompts = useCallback(() => {
     for (const cancel of [...conflictPromptsRef.current.values()]) cancel();
@@ -163,7 +141,7 @@ export function useFileTree(rootPath: string | null, options?: Options) {
 
   useEffect(
     () => () => {
-      scopeKeyRef.current = "";
+      scopeKeyRef.current = '';
       scopeGenerationRef.current += 1;
       cancelConflictPrompts();
     },
@@ -194,11 +172,11 @@ export function useFileTree(rootPath: string | null, options?: Options) {
       if (scopeKeyRef.current !== scopeKey) return false;
       const generation = scopeGenerationRef.current;
       const isCurrent = () => generation === scopeGenerationRef.current;
-      if (nodesRef.current[path]?.status !== "loaded") {
-        setNodes((s) => ({ ...s, [path]: { status: "loading" } }));
+      if (nodesRef.current[path]?.status !== 'loaded') {
+        setNodes((s) => ({ ...s, [path]: { status: 'loading' } }));
       }
       try {
-        const entries = await invoke<DirEntry[]>("fs_read_dir", {
+        const entries = await invoke<DirEntry[]>('fs_read_dir', {
           path,
           showHidden: showHiddenRef.current,
           gitDecorations: gitDecorationsRef.current,
@@ -207,22 +185,16 @@ export function useFileTree(rootPath: string | null, options?: Options) {
         if (!isCurrent()) return false;
 
         const prev = nodesRef.current[path];
-        if (
-          prev?.status === "loaded" &&
-          sameDirListing(prev.entries, entries)
-        ) {
+        if (prev?.status === 'loaded' && sameDirListing(prev.entries, entries)) {
           return true;
         }
 
         const liveDirs = new Set(
-          entries
-            .filter((e) => e.kind === "dir")
-            .map((e) => joinPath(path, e.name)),
+          entries.filter((e) => e.kind === 'dir').map((e) => joinPath(path, e.name)),
         );
         const removedRoots: string[] = [];
         for (const key of Object.keys(nodesRef.current)) {
-          if (dirname(key) === path && !liveDirs.has(key))
-            removedRoots.push(key);
+          if (dirname(key) === path && !liveDirs.has(key)) removedRoots.push(key);
         }
         const dead = new Set<string>();
         if (removedRoots.length > 0) {
@@ -239,7 +211,7 @@ export function useFileTree(rootPath: string | null, options?: Options) {
         setNodes((s) => {
           const next: TreeState = {};
           for (const [k, v] of Object.entries(s)) if (!dead.has(k)) next[k] = v;
-          next[path] = { status: "loaded", entries };
+          next[path] = { status: 'loaded', entries };
           return next;
         });
 
@@ -257,7 +229,7 @@ export function useFileTree(rootPath: string | null, options?: Options) {
         if (!isCurrent()) return false;
         setNodes((s) => ({
           ...s,
-          [path]: { status: "error", message: String(e) },
+          [path]: { status: 'error', message: String(e) },
         }));
         return false;
       }
@@ -318,7 +290,7 @@ export function useFileTree(rootPath: string | null, options?: Options) {
     if (!plan.resync) return;
     const targets = new Set(watches.paths());
     for (const [path, state] of Object.entries(nodesRef.current)) {
-      if (state.status === "loaded") targets.add(path);
+      if (state.status === 'loaded') targets.add(path);
     }
     for (const path of targets) void fetchChildren(path);
   }, [active, watches, fetchChildren]);
@@ -334,8 +306,8 @@ export function useFileTree(rootPath: string | null, options?: Options) {
       const dirs = new Set<string>();
       for (const p of paths) {
         const parent = dirname(p);
-        if (current[parent]?.status === "loaded") dirs.add(parent);
-        if (current[p]?.status === "loaded") dirs.add(p);
+        if (current[parent]?.status === 'loaded') dirs.add(parent);
+        if (current[p]?.status === 'loaded') dirs.add(p);
       }
       for (const d of dirs) void fetchChildren(d);
     }).then((un) => {
@@ -359,7 +331,7 @@ export function useFileTree(rootPath: string | null, options?: Options) {
       return;
     }
     for (const [path, state] of Object.entries(nodesRef.current)) {
-      if (state.status === "loaded") void fetchChildren(path);
+      if (state.status === 'loaded') void fetchChildren(path);
     }
   }, [showHidden, gitDecorations, fetchChildren]);
 
@@ -414,7 +386,7 @@ export function useFileTree(rootPath: string | null, options?: Options) {
   // --- mutations ---
 
   const beginCreate = useCallback(
-    (parentPath: string, kind: "file" | "dir") => {
+    (parentPath: string, kind: 'file' | 'dir') => {
       setRenaming(null);
       setPendingCreate({ parentPath, kind });
       // Ensure the parent is expanded so the input row is visible.
@@ -446,8 +418,7 @@ export function useFileTree(rootPath: string | null, options?: Options) {
         return;
       }
       const path = joinPath(pendingCreate.parentPath, trimmed);
-      const cmd =
-        pendingCreate.kind === "dir" ? "fs_create_dir" : "fs_create_file";
+      const cmd = pendingCreate.kind === 'dir' ? 'fs_create_dir' : 'fs_create_file';
       try {
         await invoke(cmd, { path, workspace: currentWorkspaceEnv() });
         await fetchChildren(pendingCreate.parentPath);
@@ -472,14 +443,14 @@ export function useFileTree(rootPath: string | null, options?: Options) {
       if (!renaming) return;
       const trimmed = newName.trim();
       const parent = dirname(renaming);
-      const oldName = renaming.slice(parent === "/" ? 1 : parent.length + 1);
+      const oldName = renaming.slice(parent === '/' ? 1 : parent.length + 1);
       if (!trimmed || trimmed === oldName) {
         setRenaming(null);
         return;
       }
       const to = joinPath(parent, trimmed);
       try {
-        await invoke("fs_rename", {
+        await invoke('fs_rename', {
           from: renaming,
           to,
           workspace,
@@ -487,7 +458,7 @@ export function useFileTree(rootPath: string | null, options?: Options) {
         optionsRef.current?.onPathRenamed?.(renaming, to);
         if (scopeKeyRef.current === scopeKey) await fetchChildren(parent);
       } catch (e) {
-        console.error("fs_rename failed:", e);
+        console.error('fs_rename failed:', e);
       } finally {
         setRenaming(null);
       }
@@ -498,13 +469,13 @@ export function useFileTree(rootPath: string | null, options?: Options) {
   const deletePath = useCallback(
     async (path: string) => {
       try {
-        await invoke("fs_delete", { path, workspace });
+        await invoke('fs_delete', { path, workspace });
         optionsRef.current?.onPathsDeleted?.([path]);
         if (scopeKeyRef.current === scopeKey) {
           await fetchChildren(dirname(path));
         }
       } catch (e) {
-        console.error("fs_delete failed:", e);
+        console.error('fs_delete failed:', e);
       }
     },
     [workspace, scopeKey, fetchChildren],
@@ -516,10 +487,11 @@ export function useFileTree(rootPath: string | null, options?: Options) {
       const topLevelPaths = excludeNestedSources(paths);
       const run = async () => {
         if (scopeKeyRef.current !== scopeKey) return;
-        const { deleted, failed } = await invoke<DeleteBatchResult>(
-          "fs_delete_batch",
-          { paths: topLevelPaths, root: rootPath ?? "", workspace },
-        );
+        const { deleted, failed } = await invoke<DeleteBatchResult>('fs_delete_batch', {
+          paths: topLevelPaths,
+          root: rootPath ?? '',
+          workspace,
+        });
         if (deleted.length > 0) {
           optionsRef.current?.onPathsDeleted?.(deleted);
         }
@@ -527,7 +499,7 @@ export function useFileTree(rootPath: string | null, options?: Options) {
           const parents = new Set(deleted.map(dirname));
           await Promise.all([...parents].map((path) => fetchChildren(path)));
         }
-        if (failed > 0) toast.error("Delete failed for one or more items");
+        if (failed > 0) toast.error('Delete failed for one or more items');
       };
       await run();
     },
@@ -536,10 +508,10 @@ export function useFileTree(rootPath: string | null, options?: Options) {
 
   const resolveMoveConflict = useCallback(
     (name: string) =>
-      new Promise<"replace" | "skip">((resolve) => {
+      new Promise<'replace' | 'skip'>((resolve) => {
         let settled = false;
         let id: string | number;
-        const finish = (resolution: "replace" | "skip", dismiss: boolean) => {
+        const finish = (resolution: 'replace' | 'skip', dismiss: boolean) => {
           if (settled) return;
           settled = true;
           conflictPromptsRef.current.delete(id);
@@ -549,13 +521,13 @@ export function useFileTree(rootPath: string | null, options?: Options) {
         id = toast.warning(`"${name}" already exists`, {
           duration: Infinity,
           action: {
-            label: "Replace",
-            onClick: () => finish("replace", true),
+            label: 'Replace',
+            onClick: () => finish('replace', true),
           },
-          cancel: { label: "Skip", onClick: () => finish("skip", true) },
-          onDismiss: () => finish("skip", false),
+          cancel: { label: 'Skip', onClick: () => finish('skip', true) },
+          onDismiss: () => finish('skip', false),
         });
-        conflictPromptsRef.current.set(id, () => finish("skip", true));
+        conflictPromptsRef.current.set(id, () => finish('skip', true));
       }),
     [],
   );
@@ -568,16 +540,15 @@ export function useFileTree(rootPath: string | null, options?: Options) {
         const parents = new Set<string>([toDir]);
         const outcome = await executeBatchMove(sources, toDir, {
           move: (item, expectedConflict) =>
-            invoke<FsMoveResult>("fs_move", {
+            invoke<FsMoveResult>('fs_move', {
               from: item.from,
               to: item.to,
-              root: rootPath ?? "",
+              root: rootPath ?? '',
               expectedConflict,
               workspace,
             }),
           resolveConflict: (item) => resolveMoveConflict(item.name),
-          canReplace: (item) =>
-            optionsRef.current?.canReplacePath?.(item.to) ?? true,
+          canReplace: (item) => optionsRef.current?.canReplacePath?.(item.to) ?? true,
           onMoved: (item) => {
             parents.add(dirname(item.from));
             optionsRef.current?.onPathRenamed?.(item.from, item.to);
@@ -589,12 +560,10 @@ export function useFileTree(rootPath: string | null, options?: Options) {
           await Promise.all([...parents].map((path) => fetchChildren(path)));
         }
         if (outcome.blocked > 0) {
-          toast.warning("Close destination before replacing");
+          toast.warning('Close destination before replacing');
         }
         if (outcome.failures > 0) {
-          toast.error(
-            outcome.moved > 0 ? "Some items could not be moved" : "Move failed",
-          );
+          toast.error(outcome.moved > 0 ? 'Some items could not be moved' : 'Move failed');
         }
       };
       await run();

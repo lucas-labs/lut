@@ -1,9 +1,9 @@
 import {
   ensureGhosttyBlocks,
   ghosttyBlocks,
-} from "@/modules/terminal/ghostty/ghosttyBlockSessions";
-import * as ghosttySession from "@/modules/terminal/ghostty/useGhosttyTerminalSession";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+} from '@/modules/terminal/ghostty/ghosttyBlockSessions';
+import * as ghosttySession from '@/modules/terminal/ghostty/useGhosttyTerminalSession';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   clearFocusedTerminal,
   disposeSession,
@@ -11,18 +11,18 @@ import {
   leafGridSelection,
   whenSessionReady,
   writeToSession,
-} from "./terminalSessionApi";
+} from './terminalSessionApi';
 
-vi.mock("@/modules/terminal/ghostty/useGhosttyTerminalSession", () => ({
+vi.mock('@/modules/terminal/ghostty/useGhosttyTerminalSession', () => ({
   clearGhosttySession: vi.fn(() => false),
   disposeGhosttySession: vi.fn(() => false),
   focusGhosttySession: vi.fn(),
   ghosttyFocusedLeaf: vi.fn(() => null),
   ghosttyLeafHasForegroundProcess: vi.fn(async () => false),
   ghosttyLeafIdForPty: vi.fn(() => null),
-  ghosttyCwdForLeaf: vi.fn(() => "/workspace"),
+  ghosttyCwdForLeaf: vi.fn(() => '/workspace'),
   ghosttyPtyIdForLeaf: vi.fn(() => null),
-  ghosttySelectionForLeaf: vi.fn(() => "selected output"),
+  ghosttySelectionForLeaf: vi.fn(() => 'selected output'),
   hasGhosttySession: vi.fn(() => false),
   interruptGhosttySession: vi.fn(() => false),
   pasteIntoGhosttySession: vi.fn(() => false),
@@ -32,7 +32,7 @@ vi.mock("@/modules/terminal/ghostty/useGhosttyTerminalSession", () => ({
   writeToGhosttySession: vi.fn(() => false),
 }));
 
-describe("terminalSessionApi", () => {
+describe('terminalSessionApi', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(ghosttySession.writeToGhosttySession).mockReturnValue(false);
@@ -42,23 +42,23 @@ describe("terminalSessionApi", () => {
     vi.mocked(ghosttySession.hasGhosttySession).mockReturnValue(false);
   });
 
-  it("writes directly to the owning Ghostty session", () => {
+  it('writes directly to the owning Ghostty session', () => {
     vi.mocked(ghosttySession.writeToGhosttySession).mockReturnValue(true);
 
-    expect(writeToSession(7, "hello")).toBe(true);
+    expect(writeToSession(7, 'hello')).toBe(true);
   });
 
-  it("returns failure when there is no accepting session", () => {
-    expect(writeToSession(8, "data")).toBe(false);
+  it('returns failure when there is no accepting session', () => {
+    expect(writeToSession(8, 'data')).toBe(false);
   });
 
-  it("routes cwd and grid selection to the owning Ghostty model", () => {
+  it('routes cwd and grid selection to the owning Ghostty model', () => {
     vi.mocked(ghosttySession.hasGhosttySession).mockReturnValue(true);
-    expect(leafCwd(7)).toBe("/workspace");
-    expect(leafGridSelection(7)).toBe("selected output");
+    expect(leafCwd(7)).toBe('/workspace');
+    expect(leafGridSelection(7)).toBe('selected output');
   });
 
-  it("clears and disposes focused Ghostty sessions through the Ghostty session", () => {
+  it('clears and disposes focused Ghostty sessions through the Ghostty session', () => {
     vi.mocked(ghosttySession.ghosttyFocusedLeaf).mockReturnValue(9);
     vi.mocked(ghosttySession.clearGhosttySession).mockReturnValue(true);
     vi.mocked(ghosttySession.disposeGhosttySession).mockReturnValue(true);
@@ -68,7 +68,7 @@ describe("terminalSessionApi", () => {
     expect(ghosttySession.disposeGhosttySession).toHaveBeenCalledWith(9);
   });
 
-  it("waits on an existing Ghostty model and releases its readiness timer", async () => {
+  it('waits on an existing Ghostty model and releases its readiness timer', async () => {
     vi.mocked(ghosttySession.hasGhosttySession).mockReturnValue(true);
 
     await whenSessionReady(10);
@@ -76,18 +76,16 @@ describe("terminalSessionApi", () => {
     expect(ghosttySession.whenGhosttySessionReady).toHaveBeenCalledWith(10);
   });
 
-  it("releases precreated block state when a leaf closes before initialization", () => {
-    ensureGhosttyBlocks(12).draft = "pending input";
+  it('releases precreated block state when a leaf closes before initialization', () => {
+    ensureGhosttyBlocks(12).draft = 'pending input';
     disposeSession(12);
     expect(ghosttyBlocks(12)).toBeUndefined();
   });
 
-  it("handles a Ghostty session created after the readiness request", async () => {
+  it('handles a Ghostty session created after the readiness request', async () => {
     vi.useFakeTimers();
     try {
-      vi.mocked(ghosttySession.hasGhosttySession)
-        .mockReturnValueOnce(false)
-        .mockReturnValue(true);
+      vi.mocked(ghosttySession.hasGhosttySession).mockReturnValueOnce(false).mockReturnValue(true);
 
       const ready = whenSessionReady(11);
       await vi.advanceTimersByTimeAsync(10);

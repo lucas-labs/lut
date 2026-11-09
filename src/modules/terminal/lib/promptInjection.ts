@@ -1,4 +1,4 @@
-import { enqueueTerminalInput } from "../ghostty/input/terminalInputEncoding";
+import { enqueueTerminalInput } from '../ghostty/input/terminalInputEncoding';
 
 export type ShellInputState = {
   /** The shell has reported OSC 133 at least once. */
@@ -48,8 +48,7 @@ export function writeAtShellPrompt(
   data: string,
   agentActive: () => boolean,
 ): boolean {
-  if (session.shellExited || session.disposed || !session.pty || !session.model)
-    return false;
+  if (session.shellExited || session.disposed || !session.pty || !session.model) return false;
   const accepts = shellAcceptsInjectedCommand({
     integrated: session.promptIntegrated,
     commandRunning: session.commandRunning,

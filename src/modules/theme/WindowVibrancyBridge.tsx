@@ -1,7 +1,7 @@
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import { useEffect } from "react";
-import { useTheme } from "./ThemeProvider";
-import { applyVibrancy } from "./vibrancy";
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import { useEffect } from 'react';
+import { useTheme } from './ThemeProvider';
+import { applyVibrancy } from './vibrancy';
 
 /** Main window only: `window_set_backdrop` targets its caller. */
 export function WindowVibrancyBridge() {
@@ -11,7 +11,7 @@ export function WindowVibrancyBridge() {
 
   useEffect(() => {
     if (!hydrated) return;
-    void applyVibrancy(enabled, resolvedMode === "dark", activeTheme.id);
+    void applyVibrancy(enabled, resolvedMode === 'dark', activeTheme.id);
   }, [enabled, hydrated, resolvedMode, activeTheme.id]);
 
   return null;

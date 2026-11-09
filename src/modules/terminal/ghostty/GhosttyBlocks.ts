@@ -3,10 +3,10 @@ import type {
   BlockMatch,
   PositionedBlock,
   VisibleBlocks,
-} from "@/modules/terminal/block/lib/blockTypes";
-import type { BlockMode } from "@/modules/terminal/block/lib/modeMachine";
-import type { GhosttyTerminalModelApi } from "@/modules/terminal/ghostty/GhosttyTerminalModel";
-import type { GhosttyTerminalEvent } from "@terax/ghostty-core/protocol";
+} from '@/modules/terminal/block/lib/blockTypes';
+import type { BlockMode } from '@/modules/terminal/block/lib/modeMachine';
+import type { GhosttyTerminalModelApi } from '@/modules/terminal/ghostty/GhosttyTerminalModel';
+import type { GhosttyTerminalEvent } from '@terax/ghostty-core/protocol';
 
 const MAX_BLOCKS = 1000;
 const MAX_METADATA_UNITS = 256 * 1024;
@@ -14,12 +14,12 @@ type BlockModel = GhosttyTerminalModelApi &
   Required<
     Pick<
       GhosttyTerminalModelApi,
-      | "enableSemanticMarkers"
-      | "semanticMarkerLine"
-      | "semanticMarkerColumn"
-      | "readTextRange"
-      | "readCellLine"
-      | "bufferCursorLine"
+      | 'enableSemanticMarkers'
+      | 'semanticMarkerLine'
+      | 'semanticMarkerColumn'
+      | 'readTextRange'
+      | 'readCellLine'
+      | 'bufferCursorLine'
     >
   >;
 
@@ -39,11 +39,11 @@ export class GhosttyBlocks {
   private readonly model: BlockModel;
   private entries: Entry[] = [];
   private live: Entry | null = null;
-  private phase: "prompt" | "running" = "prompt";
+  private phase: 'prompt' | 'running' = 'prompt';
   private integrated = false;
   private blockInputDisabled = false;
   private selected: string | null = null;
-  private pendingCommand = "";
+  private pendingCommand = '';
   private pendingCommandComplete = false;
   private sequence = 0;
   private metadataUnits = 0;
@@ -57,8 +57,8 @@ export class GhosttyBlocks {
   }
 
   get mode(): BlockMode {
-    if (this.model.modes().alternateScreen) return "alt";
-    return this.integrated && !this.blockInputDisabled ? this.phase : "plain";
+    if (this.model.modes().alternateScreen) return 'alt';
+    return this.integrated && !this.blockInputDisabled ? this.phase : 'plain';
   }
 
   get hasAnyBlock(): boolean {
@@ -88,34 +88,31 @@ export class GhosttyBlocks {
 
   handle(event: GhosttyTerminalEvent, cwd: string): void {
     if (
-      event.type === "end-of-input" ||
-      event.type === "end-of-command" ||
-      event.type === "screen-cleared" ||
-      event.type === "overflow"
+      event.type === 'end-of-input' ||
+      event.type === 'end-of-command' ||
+      event.type === 'screen-cleared' ||
+      event.type === 'overflow'
     )
       this.entryRevision++;
-    if (event.type === "prompt-end") {
+    if (event.type === 'prompt-end') {
       this.integrated = true;
       this.blockInputDisabled = event.blockInput === false;
     }
-    if (event.type === "prompt-start" || event.type === "prompt-end")
-      this.phase = "prompt";
+    if (event.type === 'prompt-start' || event.type === 'prompt-end') this.phase = 'prompt';
     // A shell that replaced itself (exec zsh) or died inside a command never
     // reports its end; the next prompt does, or the block would run forever.
-    if (event.type === "prompt-start" && this.live && event.marker) {
+    if (event.type === 'prompt-start' && this.live && event.marker) {
       this.finish(event.marker, null);
       this.entryRevision++;
     }
-    if (event.type === "end-of-input") {
+    if (event.type === 'end-of-input') {
       this.integrated = true;
-      this.phase = "running";
+      this.phase = 'running';
       if (!event.marker) return;
       if (this.live) this.finish(event.marker, null);
-      const command =
-        this.pendingCommand ||
-        decodeBlockCommand(event.command ?? "").slice(0, 8192);
+      const command = this.pendingCommand || decodeBlockCommand(event.command ?? '').slice(0, 8192);
       const canRerun = !!this.pendingCommand && this.pendingCommandComplete;
-      this.pendingCommand = "";
+      this.pendingCommand = '';
       this.pendingCommandComplete = false;
       this.live = {
         id: String(++this.sequence),
@@ -130,20 +127,17 @@ export class GhosttyBlocks {
       };
       this.entries.push(this.live);
       this.metadataUnits += this.live.command.length + this.live.cwd.length;
-      while (
-        this.entries.length > MAX_BLOCKS ||
-        this.metadataUnits > MAX_METADATA_UNITS
-      ) {
+      while (this.entries.length > MAX_BLOCKS || this.metadataUnits > MAX_METADATA_UNITS) {
         const removed = this.entries.shift();
         if (!removed) break;
         this.metadataUnits -= removed.command.length + removed.cwd.length;
       }
-    } else if (event.type === "end-of-command") {
-      this.phase = "prompt";
+    } else if (event.type === 'end-of-command') {
+      this.phase = 'prompt';
       if (event.marker) this.finish(event.marker, event.exitCode);
-    } else if (event.type === "screen-cleared") {
+    } else if (event.type === 'screen-cleared') {
       this.clearMetadata();
-    } else if (event.type === "overflow") {
+    } else if (event.type === 'overflow') {
       this.clear();
     }
   }
@@ -170,7 +164,7 @@ export class GhosttyBlocks {
     this.metadataUnits = 0;
     this.live = null;
     this.selected = null;
-    this.pendingCommand = "";
+    this.pendingCommand = '';
     this.pendingCommandComplete = false;
     this.model.setBlockSearchMatch?.(null);
   }
@@ -190,9 +184,7 @@ export class GhosttyBlocks {
     if (start == null || end == null) return null;
     const startCol = this.model.semanticMarkerColumn?.(entry.start) ?? 0;
     const endCol =
-      entry.end === null
-        ? this.model.cols
-        : (this.model.semanticMarkerColumn?.(entry.end) ?? 0);
+      entry.end === null ? this.model.cols : (this.model.semanticMarkerColumn?.(entry.end) ?? 0);
     const empty = end === start && endCol <= startCol;
     return {
       start,
@@ -206,21 +198,19 @@ export class GhosttyBlocks {
   readById(id: string): BlockContext | null {
     const entry = this.entries.find((entry) => entry.id === id);
     const range = entry && this.range(entry);
-    if (!entry || !range || this.mode === "alt") return null;
+    if (!entry || !range || this.mode === 'alt') return null;
     return {
       command: entry.command,
       cwd: entry.cwd,
       exitCode: entry.exitCode,
       output: range.empty
-        ? ""
-        : this.model
-            .readTextRange(range.start, range.end, range.startCol, range.endCol)
-            .trimEnd(),
+        ? ''
+        : this.model.readTextRange(range.start, range.end, range.startCol, range.endCol).trimEnd(),
     };
   }
 
   visibleBlocks(cellHeight: number): VisibleBlocks {
-    if (this.mode === "alt" || this.mode === "plain" || cellHeight <= 0)
+    if (this.mode === 'alt' || this.mode === 'plain' || cellHeight <= 0)
       return { blocks: [], sticky: null, generation: this.clearGeneration };
     const viewport = this.model.viewportOriginLine();
     const blocks: PositionedBlock[] = [];
@@ -237,11 +227,7 @@ export class GhosttyBlocks {
       const entry = this.entries[index];
       const range = this.range(entry);
       if (range && range.start > viewport + this.model.rows + 2) break;
-      if (
-        !range ||
-        range.end + 1 < viewport ||
-        range.start > viewport + this.model.rows + 2
-      )
+      if (!range || range.end + 1 < viewport || range.start > viewport + this.model.rows + 2)
         continue;
       const top = (range.start - viewport) * cellHeight;
       const block: PositionedBlock = {
@@ -265,12 +251,11 @@ export class GhosttyBlocks {
   }
 
   selectAtLine(line: number): boolean {
-    if (this.mode === "alt" || this.model.modes().mouseTracking) return false;
+    if (this.mode === 'alt' || this.model.modes().mouseTracking) return false;
     for (let index = this.entries.length - 1; index >= 0; index--) {
       const entry = this.entries[index];
       const range = this.range(entry);
-      if (!range || range.empty || line < range.start || line > range.end)
-        continue;
+      if (!range || range.empty || line < range.start || line > range.end) continue;
       if (entry.id === this.selected) return this.clearSelection();
       this.select(entry, range);
       return true;
@@ -298,10 +283,8 @@ export class GhosttyBlocks {
   }
 
   navigate(direction: -1 | 1): boolean {
-    if (this.mode === "alt") return false;
-    const selected = this.entries.findIndex(
-      (entry) => entry.id === this.selected,
-    );
+    if (this.mode === 'alt') return false;
+    const selected = this.entries.findIndex((entry) => entry.id === this.selected);
     let index = selected < 0 ? this.entries.length - 1 : selected + direction;
     while (index >= 0 && index < this.entries.length) {
       const entry = this.entries[index];
@@ -316,62 +299,38 @@ export class GhosttyBlocks {
     return false;
   }
 
-  async searchBlock(
-    id: string,
-    query: string,
-    signal?: AbortSignal,
-  ): Promise<BlockMatch[]> {
+  async searchBlock(id: string, query: string, signal?: AbortSignal): Promise<BlockMatch[]> {
     const entry = this.entries.find((entry) => entry.id === id);
     const range = entry && this.range(entry);
-    if (
-      !entry ||
-      !range ||
-      range.empty ||
-      !query ||
-      this.mode === "alt" ||
-      signal?.aborted
-    )
+    if (!entry || !range || range.empty || !query || this.mode === 'alt' || signal?.aborted)
       return [];
     const generation = this.clearGeneration;
     const cols = this.model.cols;
     const matches: BlockMatch[] = [];
     let sliceStart = performance.now();
-    for (
-      let line = range.start;
-      line <= range.end && matches.length < 500;
-      line++
-    ) {
+    for (let line = range.start; line <= range.end && matches.length < 500; line++) {
       if (
         line > range.start &&
-        ((line - range.start) % 128 === 0 ||
-          performance.now() - sliceStart >= 4)
+        ((line - range.start) % 128 === 0 || performance.now() - sliceStart >= 4)
       ) {
         await new Promise<void>((resolve) => {
           const finish = () => {
             clearTimeout(timer);
-            signal?.removeEventListener("abort", finish);
+            signal?.removeEventListener('abort', finish);
             resolve();
           };
           const timer = setTimeout(finish, 0);
-          signal?.addEventListener("abort", finish, { once: true });
+          signal?.addEventListener('abort', finish, { once: true });
         });
         sliceStart = performance.now();
-        if (
-          signal?.aborted ||
-          generation !== this.clearGeneration ||
-          this.model.isDisposed?.()
-        )
+        if (signal?.aborted || generation !== this.clearGeneration || this.model.isDisposed?.())
           return [];
-        if (
-          cols !== this.model.cols ||
-          this.model.semanticMarkerLine(entry.start) !== range.start
-        )
+        if (cols !== this.model.cols || this.model.semanticMarkerLine(entry.start) !== range.start)
           return [];
       }
       for (const match of matchCellText(this.model.readCellLine(line), query)) {
         if (line === range.start && match.col < range.startCol) continue;
-        if (line === range.end && match.col + match.len > range.endCol + 1)
-          continue;
+        if (line === range.end && match.col + match.len > range.endCol + 1) continue;
         matches.push({ line, ...match });
         if (matches.length === 500) break;
       }
@@ -389,9 +348,7 @@ export class GhosttyBlocks {
   }
 
   private revealLine(line: number): void {
-    this.model.scrollTo(
-      Math.max(0, this.model.scrollPosition().history - line),
-    );
+    this.model.scrollTo(Math.max(0, this.model.scrollPosition().history - line));
   }
 
   dispose(): void {
@@ -401,14 +358,14 @@ export class GhosttyBlocks {
 }
 
 function decodeBlockCommand(raw: string): string {
-  if (raw.startsWith("cmdline_url=")) {
+  if (raw.startsWith('cmdline_url=')) {
     try {
-      return decodeURIComponent(raw.slice(12).split(";")[0]);
+      return decodeURIComponent(raw.slice(12).split(';')[0]);
     } catch {
-      return "";
+      return '';
     }
   }
-  if (/^(?:aid|cl|cmdline|redraw)=/.test(raw)) return "";
+  if (/^(?:aid|cl|cmdline|redraw)=/.test(raw)) return '';
   return raw;
 }
 
@@ -416,7 +373,7 @@ export function matchCellText(
   cells: readonly string[],
   query: string,
 ): { col: number; len: number }[] {
-  let text = "";
+  let text = '';
   const columns: number[] = [];
   for (let col = 0; col < cells.length; col++) {
     const value = cells[col].toLowerCase();
@@ -426,21 +383,19 @@ export function matchCellText(
   const needle = query.toLowerCase();
   if (!needle) return [];
   const result: { col: number; len: number }[] = [];
-  for (let from = 0; result.length < 500; ) {
+  for (let from = 0; result.length < 500;) {
     const index = text.indexOf(needle, from);
     if (index < 0) break;
     const col = columns[index];
     let end = columns[index + needle.length - 1] + 1;
-    if (end < cells.length && cells[end] === "") end++;
+    if (end < cells.length && cells[end] === '') end++;
     result.push({ col, len: end - col });
     from = index + needle.length;
   }
   return result;
 }
 
-function requireBlockModel(
-  model: GhosttyTerminalModelApi,
-): asserts model is BlockModel {
+function requireBlockModel(model: GhosttyTerminalModelApi): asserts model is BlockModel {
   if (
     !model.enableSemanticMarkers ||
     !model.semanticMarkerLine ||
@@ -449,5 +404,5 @@ function requireBlockModel(
     !model.readCellLine ||
     !model.bufferCursorLine
   )
-    throw new Error("Terminal model does not support command blocks");
+    throw new Error('Terminal model does not support command blocks');
 }

@@ -1,10 +1,10 @@
-import { needsYou } from "./reducer";
-import type { Agent, AgentRegistry, AgentState } from "./types";
+import { needsYou } from './reducer';
+import type { Agent, AgentRegistry, AgentState } from './types';
 
 /** Tie-break when two agents began needing the user in the same instant. */
 const URGENCY: Partial<Record<AgentState, number>> = {
-  "needs-approval": 0,
-  "needs-input": 1,
+  'needs-approval': 0,
+  'needs-input': 1,
   error: 2,
   done: 3,
 };
@@ -20,10 +20,7 @@ export function attentionOrder(
 ): Agent[] {
   const includeDone = options.includeDone ?? true;
   return Object.values(registry)
-    .filter(
-      (agent) =>
-        needsAttention(agent) && (includeDone || agent.state !== "done"),
-    )
+    .filter((agent) => needsAttention(agent) && (includeDone || agent.state !== 'done'))
     .sort(
       (a, b) =>
         (a.attentionSince ?? a.updatedAt) - (b.attentionSince ?? b.updatedAt) ||
@@ -50,7 +47,7 @@ export function subagentCounts(agent: Agent): SubagentCounts {
   const counts = { running: 0, done: 0, total: 0 };
   for (const subagent of Object.values(agent.subagents)) {
     counts.total += 1;
-    if (subagent.state === "running") counts.running += 1;
+    if (subagent.state === 'running') counts.running += 1;
     else counts.done += 1;
   }
   return counts;

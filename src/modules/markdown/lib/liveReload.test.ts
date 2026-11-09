@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { createCoalescer, type Timers,touchesPath } from "./liveReload";
+import { describe, expect, it } from 'vitest';
+import { createCoalescer, type Timers, touchesPath } from './liveReload';
 
 function fakeTimers() {
   let time = 0;
@@ -30,19 +30,19 @@ function fakeTimers() {
   return { timers, advance };
 }
 
-describe("touchesPath", () => {
-  it("matches the file regardless of separator style", () => {
-    expect(touchesPath(["C:\\p\\a.md"], "C:/p/a.md")).toBe(true);
-    expect(touchesPath(["/p/b.md", "/p/a.md"], "/p/a.md")).toBe(true);
+describe('touchesPath', () => {
+  it('matches the file regardless of separator style', () => {
+    expect(touchesPath(['C:\\p\\a.md'], 'C:/p/a.md')).toBe(true);
+    expect(touchesPath(['/p/b.md', '/p/a.md'], '/p/a.md')).toBe(true);
   });
 
-  it("ignores other files and parent directories", () => {
-    expect(touchesPath(["/p", "/p/b.md"], "/p/a.md")).toBe(false);
+  it('ignores other files and parent directories', () => {
+    expect(touchesPath(['/p', '/p/b.md'], '/p/a.md')).toBe(false);
   });
 });
 
-describe("createCoalescer", () => {
-  it("collapses a burst into one trailing call", () => {
+describe('createCoalescer', () => {
+  it('collapses a burst into one trailing call', () => {
     const { timers, advance } = fakeTimers();
     let calls = 0;
     const c = createCoalescer(() => calls++, 100, 1000, timers);
@@ -58,7 +58,7 @@ describe("createCoalescer", () => {
     expect(c.pending).toBe(false);
   });
 
-  it("still fires every maxWait while events keep arriving", () => {
+  it('still fires every maxWait while events keep arriving', () => {
     const { timers, advance } = fakeTimers();
     let calls = 0;
     const c = createCoalescer(() => calls++, 100, 300, timers);
@@ -69,7 +69,7 @@ describe("createCoalescer", () => {
     expect(calls).toBe(2);
   });
 
-  it("cancel drops a pending call", () => {
+  it('cancel drops a pending call', () => {
     const { timers, advance } = fakeTimers();
     let calls = 0;
     const c = createCoalescer(() => calls++, 100, 1000, timers);

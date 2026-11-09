@@ -38,10 +38,7 @@ export class WindowPresentationPolicy {
       return;
     }
     this.hiddenAt ??= Date.now();
-    if (
-      sleeping ||
-      Date.now() - this.hiddenAt >= PRESENTATION_RECLAIM_DELAY_MS
-    ) {
+    if (sleeping || Date.now() - this.hiddenAt >= PRESENTATION_RECLAIM_DELAY_MS) {
       this.cancelTimer();
       this.set(RECLAIMED);
       return;

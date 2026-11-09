@@ -1,19 +1,19 @@
-import { findLeafCwd } from "@/modules/terminal/lib/panes";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useEffect } from "react";
-import type { Tab } from "./useTabs";
+import { findLeafCwd } from '@/modules/terminal/lib/panes';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { useEffect } from 'react';
+import type { Tab } from './useTabs';
 
-const APP_NAME = "Terax";
+const APP_NAME = 'Terax';
 
 function basename(path: string): string {
   const parts = path.split(/[\\/]/).filter(Boolean);
-  return parts.length ? parts[parts.length - 1] : "/";
+  return parts.length ? parts[parts.length - 1] : '/';
 }
 
 /** Label of the focused tab — for terminals, the active pane's folder. */
 function tabLabel(tab: Tab | undefined): string {
-  if (!tab) return "";
-  if (tab.kind === "terminal") {
+  if (!tab) return '';
+  if (tab.kind === 'terminal') {
     const cwd = findLeafCwd(tab.paneTree, tab.activeLeafId) ?? tab.cwd;
     return cwd ? basename(cwd) : tab.title;
   }
@@ -29,11 +29,8 @@ function tabLabel(tab: Tab | undefined): string {
  * project when the focused terminal sits at the project root. Falls back to the
  * app name when there's nothing to show.
  */
-export function useWindowTitle(
-  activeTab: Tab | undefined,
-  explorerRoot: string | null,
-): void {
-  const project = explorerRoot ? basename(explorerRoot) : "";
+export function useWindowTitle(activeTab: Tab | undefined, explorerRoot: string | null): void {
+  const project = explorerRoot ? basename(explorerRoot) : '';
   const label = tabLabel(activeTab);
 
   useEffect(() => {

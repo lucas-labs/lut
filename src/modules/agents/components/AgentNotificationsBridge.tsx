@@ -1,17 +1,13 @@
-import type { Tab } from "@/modules/tabs";
-import {
-  hasLeaf,
-  leafIdForPty,
-  subscribeAgentSignals,
-} from "@/modules/terminal";
-import { useEffect, useRef } from "react";
-import { displayAgent } from "../lib/format";
-import { maybeTriggerManagedReview } from "../lib/review";
-import { routeAgentNotification } from "../lib/route";
-import type { AgentSession, AgentSignal } from "../lib/types";
-import { useWindowFocus } from "../lib/useWindowFocus";
-import { useAgentStore } from "../store/agentStore";
-import { useManagedAgentsStore } from "../store/managedAgentsStore";
+import type { Tab } from '@/modules/tabs';
+import { hasLeaf, leafIdForPty, subscribeAgentSignals } from '@/modules/terminal';
+import { useEffect, useRef } from 'react';
+import { displayAgent } from '../lib/format';
+import { maybeTriggerManagedReview } from '../lib/review';
+import { routeAgentNotification } from '../lib/route';
+import type { AgentSession, AgentSignal } from '../lib/types';
+import { useWindowFocus } from '../lib/useWindowFocus';
+import { useAgentStore } from '../store/agentStore';
+import { useManagedAgentsStore } from '../store/managedAgentsStore';
 
 type Activate = (tabId: number, leafId: number) => void;
 type Ctx = {
@@ -21,30 +17,22 @@ type Ctx = {
   onActivate: Activate;
 };
 
-function tabInfo(
-  tabs: Tab[],
-  leafId: number,
-): { tabId: number; title: string } | null {
+function tabInfo(tabs: Tab[], leafId: number): { tabId: number; title: string } | null {
   for (const t of tabs) {
-    if (t.kind === "terminal" && hasLeaf(t.paneTree, leafId)) {
+    if (t.kind === 'terminal' && hasLeaf(t.paneTree, leafId)) {
       return { tabId: t.id, title: t.title };
     }
   }
   return null;
 }
 
-function route(
-  session: AgentSession,
-  kind: "attention" | "finished",
-  ctx: Ctx,
-): void {
+function route(session: AgentSession, kind: 'attention' | 'finished', ctx: Ctx): void {
   const info = tabInfo(ctx.tabs, session.leafId);
   const name = displayAgent(session.agent);
-  const heading =
-    kind === "attention" ? `${name} needs your input` : `${name} finished`;
+  const heading = kind === 'attention' ? `${name} needs your input` : `${name} finished`;
 
   routeAgentNotification({
-    source: "terminal",
+    source: 'terminal',
     agent: session.agent,
     kind,
     title: heading,
@@ -52,7 +40,7 @@ function route(
     focused: ctx.focused,
     visible: ctx.activeId === session.tabId,
     // Stop fires every turn, so finished only updates the bell; attention toasts.
-    allowToast: kind === "attention",
+    allowToast: kind === 'attention',
     tabId: session.tabId,
     leafId: session.leafId,
     onActivate: () => ctx.onActivate(session.tabId, session.leafId),
@@ -65,29 +53,29 @@ function handleSignal(sig: AgentSignal, ctx: Ctx): void {
   const store = useAgentStore.getState();
 
   switch (sig.kind) {
-    case "started": {
+    case 'started': {
       const info = tabInfo(ctx.tabs, leafId);
       if (!info) return;
-      store.start(leafId, info.tabId, sig.agent ?? "agent");
+      store.start(leafId, info.tabId, sig.agent ?? 'agent');
       return;
     }
-    case "working":
-      store.setStatus(leafId, "working");
+    case 'working':
+      store.setStatus(leafId, 'working');
       return;
-    case "attention": {
-      store.setStatus(leafId, "waiting");
+    case 'attention': {
+      store.setStatus(leafId, 'waiting');
       const session = store.sessions[leafId];
-      if (session) route(session, "attention", ctx);
+      if (session) route(session, 'attention', ctx);
       return;
     }
-    case "finished": {
-      store.setStatus(leafId, "waiting");
+    case 'finished': {
+      store.setStatus(leafId, 'waiting');
       const session = store.sessions[leafId];
-      if (session) route(session, "finished", ctx);
+      if (session) route(session, 'finished', ctx);
       maybeTriggerManagedReview(leafId);
       return;
     }
-    case "exited":
+    case 'exited':
       store.finish(leafId);
       useManagedAgentsStore.getState().remove(leafId);
       return;
@@ -108,13 +96,7 @@ export function AgentNotificationsBridge({
   ctxRef.current = { tabs, activeId, focused, onActivate };
 
   // Shares the terminal module's single `terax:agent-signal` listener.
-  useEffect(
-    () =>
-      subscribeAgentSignals((signal) =>
-        handleSignal(signal as AgentSignal, ctxRef.current),
-      ),
-    [],
-  );
+  useEffect(() => subscribeAgentSignals((signal) => handleSignal(signal as AgentSignal, ctxRef.current)), []);
 
   return null;
 }

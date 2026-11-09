@@ -6,7 +6,7 @@ import {
   type TerminalLinkSegment,
   type TerminalTextLink,
   upperBound,
-} from "./terminalLinks";
+} from './terminalLinks';
 
 const MAX_EXPLICIT_LINK_CELLS = 4_096;
 const MAX_LINK_TEXT_LENGTH = 512;
@@ -97,12 +97,7 @@ export class ViewportLinkResolver {
       kind: link.kind,
       uri: link.uri,
       text: link.uri,
-      segments: cellSpanSegments(
-        first,
-        Math.max(first, last),
-        source.cols,
-        scan.startRow,
-      ),
+      segments: cellSpanSegments(first, Math.max(first, last), source.cols, scan.startRow),
       path: link.path,
       line: link.line,
       column: link.column,
@@ -117,25 +112,18 @@ function scanRows(source: ViewportLinkSource, row: number): PlainScan {
   while (startRow > 0 && row - startRow < 8 && source.rowWrapped[startRow]) {
     startRow--;
   }
-  while (
-    endRow + 1 < source.rows &&
-    endRow - startRow < 8 &&
-    source.rowWrapped[endRow + 1]
-  ) {
+  while (endRow + 1 < source.rows && endRow - startRow < 8 && source.rowWrapped[endRow + 1]) {
     endRow++;
   }
-  let text = "";
+  let text = '';
   const offsets: number[] = [];
-  const lines = source.readLines(
-    source.origin + startRow,
-    source.origin + endRow,
-  );
+  const lines = source.readLines(source.origin + startRow, source.origin + endRow);
   for (let y = startRow; y <= endRow; y++) {
     const cells = lines.get(source.origin + y)?.cells;
     for (let x = 0; x < source.cols; x++) {
       offsets.push(text.length);
       // Wide-character spacers read as "" and contribute no text.
-      text += cells?.[x] ?? " ";
+      text += cells?.[x] ?? ' ';
     }
   }
   return {
@@ -149,19 +137,11 @@ function scanRows(source: ViewportLinkSource, row: number): PlainScan {
   };
 }
 
-function explicitLinkHit(
-  source: ViewportLinkSource,
-  index: number,
-  uri: string,
-): TerminalLinkHit {
+function explicitLinkHit(source: ViewportLinkSource, index: number, uri: string): TerminalLinkHit {
   const id = source.linkIds[index];
   let first = index;
   let last = index;
-  while (
-    first > 0 &&
-    source.linkIds[first - 1] === id &&
-    index - first < MAX_EXPLICIT_LINK_CELLS
-  ) {
+  while (first > 0 && source.linkIds[first - 1] === id && index - first < MAX_EXPLICIT_LINK_CELLS) {
     first--;
   }
   while (
@@ -172,27 +152,23 @@ function explicitLinkHit(
     last++;
   }
   const segments = cellSpanSegments(first, last, source.cols, 0);
-  return { kind: "osc8", uri, text: segmentsText(source, segments), segments };
+  return { kind: 'osc8', uri, text: segmentsText(source, segments), segments };
 }
 
 function segmentsText(
   source: ViewportLinkSource,
   segments: readonly TerminalLinkSegment[],
 ): string {
-  if (segments.length === 0) return "";
+  if (segments.length === 0) return '';
   const lines = source.readLines(
     source.origin + segments[0].row,
     source.origin + segments[segments.length - 1].row,
   );
-  let text = "";
+  let text = '';
   for (const segment of segments) {
     const cells = lines.get(source.origin + segment.row)?.cells;
-    for (
-      let x = segment.start;
-      x < segment.end && text.length < MAX_LINK_TEXT_LENGTH;
-      x++
-    ) {
-      text += cells?.[x] ?? " ";
+    for (let x = segment.start; x < segment.end && text.length < MAX_LINK_TEXT_LENGTH; x++) {
+      text += cells?.[x] ?? ' ';
     }
   }
   return text;
@@ -207,10 +183,6 @@ function linkAtViewportCell(
   return new ViewportLinkResolver(model).at(row, column);
 }
 
-export function linkUriAt(
-  model: ViewportLinkModel,
-  row: number,
-  column: number,
-): string | null {
+export function linkUriAt(model: ViewportLinkModel, row: number, column: number): string | null {
   return linkAtViewportCell(model, row, column)?.uri ?? null;
 }

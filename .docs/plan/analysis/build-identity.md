@@ -123,12 +123,12 @@ shared with an installed Terax: bundle id, registry keys, executables, env vars 
 dirs, hook markers, git refs/files written into user repos, store file names, updater URLs/keys, keyring service).
 Totals: **1964 occurrences, 553 distinct tokens**.
 
-| class | total | build-identity | backend-core | agents | ide-tools | terminal | ai | app-shell | state-settings |
-|---|---|---|---|---|---|---|---|---|---|
-| (a) identity isolation | 368 | 49 | 122 | 85 | 86 | 4 | 13 | 3 | 6 |
-| (b) visual rebranding | 290 | 42 | 50 | 55 | 11 | 77 | 24 | 20 | 11 |
-| (c) internal, rename on touch | 1306 | 80 | 341 | 84 | 73 | 552 | 34 | 96 | 46 |
-| all | 1964 | 171 | 513 | 224 | 170 | 633 | 71 | 119 | 63 |
+| class                         | total | build-identity | backend-core | agents | ide-tools | terminal | ai  | app-shell | state-settings |
+| ----------------------------- | ----- | -------------- | ------------ | ------ | --------- | -------- | --- | --------- | -------------- |
+| (a) identity isolation        | 368   | 49             | 122          | 85     | 86        | 4        | 13  | 3         | 6              |
+| (b) visual rebranding         | 290   | 42             | 50           | 55     | 11        | 77       | 24  | 20        | 11             |
+| (c) internal, rename on touch | 1306  | 80             | 341          | 84     | 73        | 552      | 34  | 96        | 46             |
+| all                           | 1964  | 171            | 513          | 224    | 170       | 633      | 71  | 119       | 63             |
 
 Notes on (b)/(c): (b) is dominated by the word "Terax" in user text, comments and doc strings (243 occurrences of
 bare `Terax`, many in comments that are really (c)); (c) is dominated by `TeraxGhostty*` types (terminal),
@@ -141,129 +141,129 @@ dirs cache join `cache.join("terax")` (`control.rs:758`, `crates/terax-cli/src/l
 
 Full class (a) list (token | occurrences | areas | first occurrence):
 
-| token | n | areas | first |
-|---|---|---|---|
-| `TERAX_USER_ZDOTDIR` | 25 | backend-core:25 | src-tauri/src/modules/pty/scripts/zprofile.zsh:9 |
-| `TERAX_CLI` | 23 | agents:15, backend-core:8 | src-tauri/src/modules/agent.rs:272 |
-| `OpenInTerax` | 15 | build-identity:15 | src-tauri/installer-hooks.nsh:6 |
-| `TERAX_BLOCKS` | 14 | backend-core:13, terminal:1 | src-tauri/src/modules/pty/scripts/bashrc.bash:30 |
-| `terax/project.toml` | 13 | ide-tools:13 | src-tauri/src/modules/git/project_config.rs:121 |
-| `terax-cli` | 12 | agents:8, build-identity:4 | scripts/build-cli.mjs:59 |
-| `$TERAX_CLI` | 11 | agents:7, backend-core:4 | src-tauri/src/modules/agent.rs:278 |
-| `terax.exe` | 10 | build-identity:6, agents:4 | src-tauri/installer-hooks.nsh:7 |
-| `$env:TERAX_CLI` | 10 | agents:7, backend-core:3 | src-tauri/src/modules/agent.rs:284 |
-| `TERAX_CONTROL_ADDR` | 8 | agents:6, backend-core:2 | src-tauri/crates/terax-cli/src/hook.rs:56 |
-| `TERAX_CONTROL_TOKEN` | 8 | agents:6, backend-core:2 | src-tauri/crates/terax-cli/src/hook.rs:57 |
-| `terax-shell-integration` | 8 | backend-core:8 | src-tauri/src/modules/pty/scripts/bashrc.bash:1 |
-| `terax-control-protocol` | 7 | build-identity:4, agents:3 | src-tauri/Cargo.lock:4945 |
-| `TERAX_PANE_ID` | 7 | agents:5, backend-core:2 | src-tauri/crates/terax-cli/src/hook.rs:55 |
-| `TERAX_TERMINAL` | 7 | agents:1, backend-core:6 | src-tauri/src/modules/agent.rs:652 |
-| `terax/worktrees` | 7 | ide-tools:7 | src-tauri/src/modules/git/project_config.rs:35 |
-| `__TERAX_HOOKS_LOADED` | 7 | backend-core:7 | src-tauri/src/modules/pty/scripts/bashrc.bash:10 |
-| `app.crynta.terax` | 6 | build-identity:4, app-shell:1, state-settings:1 | scripts/app-lab/run.py:216 |
-| `TERAX_WSL_LOGIN_SHELL` | 6 | backend-core:6 | src-tauri/src/modules/pty/session.rs:702 |
-| `__terax_notify` | 5 | backend-core:1, agents:4 | src-tauri/src/lib.rs:170 |
-| `refs/terax/checkpoints` | 5 | ide-tools:5 | src-tauri/src/modules/git/checkpoint.rs:2 |
-| `refs/terax/checkpoints/t/1` | 5 | ide-tools:5 | src-tauri/src/modules/git/checkpoint.rs:1544 |
-| `https://github.com/crynta/terax-ai/releases/download/v$` | 4 | build-identity:4 | nix/package.nix:12 |
-| `git/terax-worktree-id` | 4 | ide-tools:4 | src-tauri/src/modules/git/followup_tests.rs:238 |
-| `refs/terax` | 4 | ide-tools:4 | src-tauri/src/modules/git/hardening_tests.rs:196 |
-| `$TERAX_FORK_LOG` | 4 | backend-core:4 | src-tauri/src/modules/pty/scripts/bashrc.test.bash:183 |
-| `home/vinicios/.cache/terax/shell-integration/zsh` | 4 | backend-core:4 | src-tauri/src/modules/pty/shell_init.rs:1023 |
-| `crates/terax-cli` | 3 | build-identity:3 | src-tauri/Cargo.toml:11 |
-| `crates/terax-control-protocol` | 3 | build-identity:3 | src-tauri/Cargo.toml:11 |
-| `TERAX_USER_ZDOTDIR:-$HOME` | 3 | backend-core:3 | src-tauri/src/modules/pty/scripts/zlogin.zsh:14 |
-| `terax-ai` | 3 | ai:1, app-shell:2 | src/modules/ai/config.ts:1 |
-| `https://github.com/crynta/terax-ai` | 2 | build-identity:1, state-settings:1 | public/licenses/terax.txt:2 |
-| `TERAX_HOOK_TIMEOUT` | 2 | agents:2 | src-tauri/crates/terax-cli/src/hook.rs:58 |
-| `TERAX_HOOK_WAIT` | 2 | agents:2 | src-tauri/crates/terax-cli/src/hook.rs:68 |
-| `TERAX_HOOK_DEBUG` | 2 | agents:2 | src-tauri/crates/terax-cli/src/hook.rs:69 |
-| `terax-pi-notifications-v2` | 2 | agents:2 | src-tauri/src/modules/agent.rs:184 |
-| `process.env.TERAX_CLI` | 2 | agents:2 | src-tauri/src/modules/agent.rs:189 |
-| `process.env.TERAX_PANE_ID` | 2 | agents:2 | src-tauri/src/modules/agent.rs:190 |
-| `terax-ai-sessions.json` | 2 | ai:2 | src-tauri/src/modules/ai_sessions.rs:34 |
-| `terax-cli.exe` | 2 | agents:2 | src-tauri/src/modules/control.rs:807 |
-| `home/me/.cache/terax/control.json` | 2 | ide-tools:1, ai:1 | src-tauri/src/modules/fs/ai.rs:444 |
-| `C:/Users/me/AppData/Local/terax/control.json` | 2 | ide-tools:1, ai:1 | src-tauri/src/modules/fs/ai.rs:445 |
-| `refs/terax/tasks` | 2 | ide-tools:2 | src-tauri/src/modules/git/checkpoint.rs:639 |
-| `repo/.git/terax-no-hooks` | 2 | ide-tools:2 | src-tauri/src/modules/git/hardening_tests.rs:582 |
-| `refs/terax/checkpoints/task` | 2 | ide-tools:2 | src-tauri/src/modules/git/refs.rs:246 |
-| `TERAX_WORKSPACE_PATH` | 2 | ide-tools:2 | src-tauri/src/modules/git/task_worktree.rs:97 |
-| `refs/terax/checkpoints/task-1/1` | 2 | ide-tools:2 | src-tauri/src/modules/git/tasks_tests.rs:532 |
-| `TERAX_MARKER` | 2 | backend-core:2 | src-tauri/src/modules/pty/agent_detect.rs:35 |
-| `TERAX_FORK_LOG` | 2 | backend-core:2 | src-tauri/src/modules/pty/scripts/bashrc.test.bash:178 |
-| `TERAX_FORK_CWD` | 2 | backend-core:2 | src-tauri/src/modules/pty/scripts/bashrc.test.bash:178 |
-| `$global:__TERAX_HOOKS_LOADED` | 2 | backend-core:2 | src-tauri/src/modules/pty/scripts/profile.ps1:6 |
-| `terax.fish` | 2 | backend-core:2 | src-tauri/src/modules/pty/shell_init.rs:476 |
-| `cache/terax/shell-integration/zsh` | 2 | backend-core:2 | src-tauri/src/modules/pty/shell_init.rs:537 |
-| `home/vinicios/.cache/terax/shell-integration/bash/bashrc` | 2 | backend-core:2 | src-tauri/src/modules/pty/shell_init.rs:1103 |
-| `app/terax-cli` | 2 | backend-core:2 | src-tauri/src/modules/pty/shell_init.rs:1286 |
-| `refs/terax/checkpoints/task-1/2` | 2 | ide-tools:2 | src/modules/git/api.test.ts:170 |
-| `$TERAX_BLOCKS` | 2 | terminal:2 | src/modules/terminal/ghostty/shellBlockCompatibility.test.ts:27 |
-| `src-tauri/binaries/terax-cli` | 1 | build-identity:1 | scripts/app-lab/export-tree.sh:26 |
-| `terax-cli$` | 1 | agents:1 | scripts/build-cli.mjs:76 |
-| `terax-cli-$` | 1 | agents:1 | scripts/build-cli.mjs:81 |
-| `terax-pi-notifications-v` | 1 | agents:1 | src-tauri/src/modules/agent.rs:136 |
-| `$TERAX_TERMINAL` | 1 | agents:1 | src-tauri/src/modules/agent.rs:1058 |
-| `terax-pi-notifications-v1` | 1 | agents:1 | src-tauri/src/modules/agent.rs:1301 |
-| `cache/terax/control.json` | 1 | ide-tools:1 | src-tauri/src/modules/fs/project_memory.rs:170 |
-| `terax-worktree-id` | 1 | ide-tools:1 | src-tauri/src/modules/git/checkpoint.rs:39 |
-| `terax-last-restore` | 1 | ide-tools:1 | src-tauri/src/modules/git/checkpoint.rs:40 |
-| `terax-no-hooks` | 1 | ide-tools:1 | src-tauri/src/modules/git/checkpoint.rs:41 |
-| `refs/terax/checkpoints/t1/10` | 1 | ide-tools:1 | src-tauri/src/modules/git/checkpoint.rs:1344 |
-| `nrefs/terax/checkpoints/t1/2` | 1 | ide-tools:1 | src-tauri/src/modules/git/checkpoint.rs:1344 |
-| `nrefs/terax/checkpoints/t1/x` | 1 | ide-tools:1 | src-tauri/src/modules/git/checkpoint.rs:1344 |
-| `git/terax-no-hooks` | 1 | ide-tools:1 | src-tauri/src/modules/git/followup_tests.rs:218 |
-| `git/terax-last-restore` | 1 | ide-tools:1 | src-tauri/src/modules/git/followup_tests.rs:553 |
-| `refs/terax/checkpoints/t/prerestore` | 1 | ide-tools:1 | src-tauri/src/modules/git/hardening_tests.rs:114 |
-| `$TERAX_PORT` | 1 | ide-tools:1 | src-tauri/src/modules/git/project_config.rs:56 |
-| `refs/terax/checkpoints/task-1/7` | 1 | ide-tools:1 | src-tauri/src/modules/git/refs.rs:233 |
-| `refs/terax/checkpoints/task-1` | 1 | ide-tools:1 | src-tauri/src/modules/git/refs.rs:237 |
-| `refs/terax/checkpoints/task/x` | 1 | ide-tools:1 | src-tauri/src/modules/git/refs.rs:248 |
-| `refs/terax/checkpoints/task/-1` | 1 | ide-tools:1 | src-tauri/src/modules/git/refs.rs:249 |
-| `refs/terax/checkpoints/../7` | 1 | ide-tools:1 | src-tauri/src/modules/git/refs.rs:250 |
-| `refs/terax/checkpoints/a/b/7` | 1 | ide-tools:1 | src-tauri/src/modules/git/refs.rs:251 |
-| `refs/terax/checkpoints/task/99999999999` | 1 | ide-tools:1 | src-tauri/src/modules/git/refs.rs:252 |
-| `terax-tasks.lock` | 1 | ide-tools:1 | src-tauri/src/modules/git/task_state.rs:48 |
-| `TERAX_TASK` | 1 | ide-tools:1 | src-tauri/src/modules/git/task_worktree.rs:96 |
-| `TERAX_ROOT_PATH` | 1 | ide-tools:1 | src-tauri/src/modules/git/task_worktree.rs:98 |
-| `TERAX_PORT` | 1 | ide-tools:1 | src-tauri/src/modules/git/task_worktree.rs:99 |
-| `TERAX_PORT_` | 1 | ide-tools:1 | src-tauri/src/modules/git/task_worktree.rs:102 |
-| `terax-empty-hooks` | 1 | ide-tools:1 | src-tauri/src/modules/git/task_worktree.rs:251 |
-| `terax/worktrees-other` | 1 | ide-tools:1 | src-tauri/src/modules/git/task_worktree_tests.rs:88 |
-| `terax/worktrees-other/task` | 1 | ide-tools:1 | src-tauri/src/modules/git/task_worktree_tests.rs:89 |
-| `TERAX_PORT_9` | 1 | ide-tools:1 | src-tauri/src/modules/git/task_worktree_tests.rs:473 |
-| `terax/task-worktrees.json` | 1 | ide-tools:1 | src-tauri/src/modules/git/task_worktree_tests.rs:842 |
-| `refs/terax/checkpoints/x` | 1 | ide-tools:1 | src-tauri/src/modules/git/tasks_tests.rs:635 |
-| `refs/terax/checkpoints/../1` | 1 | ide-tools:1 | src-tauri/src/modules/git/tasks_tests.rs:636 |
-| `refs/terax/checkpoints/t/2` | 1 | ide-tools:1 | src-tauri/src/modules/git/tasks_tests.rs:738 |
-| `terax-task-hooks` | 1 | ide-tools:1 | src-tauri/src/modules/git/worktree.rs:446 |
-| `$TERAX_FORK_CWD` | 1 | backend-core:1 | src-tauri/src/modules/pty/scripts/bashrc.test.bash:180 |
-| `__TERAX_HOST` | 1 | backend-core:1 | src-tauri/src/modules/pty/scripts/init.fish:28 |
-| `$__TERAX_HOST` | 1 | backend-core:1 | src-tauri/src/modules/pty/scripts/init.fish:81 |
-| `$env:TERAX_BLOCKS` | 1 | backend-core:1 | src-tauri/src/modules/pty/scripts/profile.ps1:99 |
-| `$TERAX_USER_ZDOTDIR` | 1 | backend-core:1 | src-tauri/src/modules/pty/scripts/zshenv.zsh:25 |
-| `TERAX_USER_ZDOTDIR-unset` | 1 | backend-core:1 | src-tauri/src/modules/pty/scripts/zshrc.test.py:279 |
-| `TERAX_USER_ZDOTDIR:-$` | 1 | backend-core:1 | src-tauri/src/modules/pty/scripts/zshrc.zsh:15 |
-| `cache/terax/shell-integration` | 1 | backend-core:1 | src-tauri/src/modules/pty/shell_init.rs:857 |
-| `binaries/terax-cli` | 1 | build-identity:1 | src-tauri/tauri.conf.json:39 |
-| `https://github.com/crynta/terax-ai/releases/latest/download/latest.json` | 1 | build-identity:1 | src-tauri/tauri.conf.json:121 |
-| `terax-ai-agents.json` | 1 | ai:1 | src/modules/ai/lib/agents.ts:82 |
-| `library/caches/terax` | 1 | ai:1 | src/modules/ai/lib/pathPolicy.json:51 |
-| `cache/terax` | 1 | ai:1 | src/modules/ai/lib/pathPolicy.json:52 |
-| `appdata/local/terax` | 1 | ai:1 | src/modules/ai/lib/pathPolicy.json:53 |
-| `appdata/local/app.crynta.terax` | 1 | ai:1 | src/modules/ai/lib/pathPolicy.json:54 |
-| `local/share/app.crynta.terax` | 1 | ai:1 | src/modules/ai/lib/pathPolicy.json:55 |
-| `terax-ai-snippets.json` | 1 | ai:1 | src/modules/ai/lib/snippets.ts:12 |
-| `terax-ai-todos.json` | 1 | ai:1 | src/modules/ai/lib/todos.ts:12 |
-| `refs/terax/checkpoints/task-1/12` | 1 | ide-tools:1 | src/modules/git/scope.test.ts:195 |
-| `refs/terax/checkpoints/$` | 1 | ide-tools:1 | src/modules/git/scope.ts:123 |
-| `terax-settings.json` | 1 | state-settings:1 | src/modules/settings/store.ts:225 |
-| `terax-spaces.json` | 1 | state-settings:1 | src/modules/spaces/lib/store.ts:21 |
-| `terax-custom-themes.json` | 1 | state-settings:1 | src/modules/theme/customThemes.ts:5 |
-| `terax:updater:last-check` | 1 | build-identity:1 | src/modules/updater/useUpdater.ts:7 |
-| `https://api.github.com/repos/crynta/terax-ai/releases/latest` | 1 | build-identity:1 | src/modules/updater/useUpdater.ts:10 |
-| `crynta/terax-ai` | 1 | state-settings:1 | src/settings/sections/AboutSection.tsx:106 |
+| token                                                                     | n   | areas                                           | first                                                           |
+| ------------------------------------------------------------------------- | --- | ----------------------------------------------- | --------------------------------------------------------------- |
+| `TERAX_USER_ZDOTDIR`                                                      | 25  | backend-core:25                                 | src-tauri/src/modules/pty/scripts/zprofile.zsh:9                |
+| `TERAX_CLI`                                                               | 23  | agents:15, backend-core:8                       | src-tauri/src/modules/agent.rs:272                              |
+| `OpenInTerax`                                                             | 15  | build-identity:15                               | src-tauri/installer-hooks.nsh:6                                 |
+| `TERAX_BLOCKS`                                                            | 14  | backend-core:13, terminal:1                     | src-tauri/src/modules/pty/scripts/bashrc.bash:30                |
+| `terax/project.toml`                                                      | 13  | ide-tools:13                                    | src-tauri/src/modules/git/project_config.rs:121                 |
+| `terax-cli`                                                               | 12  | agents:8, build-identity:4                      | scripts/build-cli.mjs:59                                        |
+| `$TERAX_CLI`                                                              | 11  | agents:7, backend-core:4                        | src-tauri/src/modules/agent.rs:278                              |
+| `terax.exe`                                                               | 10  | build-identity:6, agents:4                      | src-tauri/installer-hooks.nsh:7                                 |
+| `$env:TERAX_CLI`                                                          | 10  | agents:7, backend-core:3                        | src-tauri/src/modules/agent.rs:284                              |
+| `TERAX_CONTROL_ADDR`                                                      | 8   | agents:6, backend-core:2                        | src-tauri/crates/terax-cli/src/hook.rs:56                       |
+| `TERAX_CONTROL_TOKEN`                                                     | 8   | agents:6, backend-core:2                        | src-tauri/crates/terax-cli/src/hook.rs:57                       |
+| `terax-shell-integration`                                                 | 8   | backend-core:8                                  | src-tauri/src/modules/pty/scripts/bashrc.bash:1                 |
+| `terax-control-protocol`                                                  | 7   | build-identity:4, agents:3                      | src-tauri/Cargo.lock:4945                                       |
+| `TERAX_PANE_ID`                                                           | 7   | agents:5, backend-core:2                        | src-tauri/crates/terax-cli/src/hook.rs:55                       |
+| `TERAX_TERMINAL`                                                          | 7   | agents:1, backend-core:6                        | src-tauri/src/modules/agent.rs:652                              |
+| `terax/worktrees`                                                         | 7   | ide-tools:7                                     | src-tauri/src/modules/git/project_config.rs:35                  |
+| `__TERAX_HOOKS_LOADED`                                                    | 7   | backend-core:7                                  | src-tauri/src/modules/pty/scripts/bashrc.bash:10                |
+| `app.crynta.terax`                                                        | 6   | build-identity:4, app-shell:1, state-settings:1 | scripts/app-lab/run.py:216                                      |
+| `TERAX_WSL_LOGIN_SHELL`                                                   | 6   | backend-core:6                                  | src-tauri/src/modules/pty/session.rs:702                        |
+| `__terax_notify`                                                          | 5   | backend-core:1, agents:4                        | src-tauri/src/lib.rs:170                                        |
+| `refs/terax/checkpoints`                                                  | 5   | ide-tools:5                                     | src-tauri/src/modules/git/checkpoint.rs:2                       |
+| `refs/terax/checkpoints/t/1`                                              | 5   | ide-tools:5                                     | src-tauri/src/modules/git/checkpoint.rs:1544                    |
+| `https://github.com/crynta/terax-ai/releases/download/v$`                 | 4   | build-identity:4                                | nix/package.nix:12                                              |
+| `git/terax-worktree-id`                                                   | 4   | ide-tools:4                                     | src-tauri/src/modules/git/followup_tests.rs:238                 |
+| `refs/terax`                                                              | 4   | ide-tools:4                                     | src-tauri/src/modules/git/hardening_tests.rs:196                |
+| `$TERAX_FORK_LOG`                                                         | 4   | backend-core:4                                  | src-tauri/src/modules/pty/scripts/bashrc.test.bash:183          |
+| `home/vinicios/.cache/terax/shell-integration/zsh`                        | 4   | backend-core:4                                  | src-tauri/src/modules/pty/shell_init.rs:1023                    |
+| `crates/terax-cli`                                                        | 3   | build-identity:3                                | src-tauri/Cargo.toml:11                                         |
+| `crates/terax-control-protocol`                                           | 3   | build-identity:3                                | src-tauri/Cargo.toml:11                                         |
+| `TERAX_USER_ZDOTDIR:-$HOME`                                               | 3   | backend-core:3                                  | src-tauri/src/modules/pty/scripts/zlogin.zsh:14                 |
+| `terax-ai`                                                                | 3   | ai:1, app-shell:2                               | src/modules/ai/config.ts:1                                      |
+| `https://github.com/crynta/terax-ai`                                      | 2   | build-identity:1, state-settings:1              | public/licenses/terax.txt:2                                     |
+| `TERAX_HOOK_TIMEOUT`                                                      | 2   | agents:2                                        | src-tauri/crates/terax-cli/src/hook.rs:58                       |
+| `TERAX_HOOK_WAIT`                                                         | 2   | agents:2                                        | src-tauri/crates/terax-cli/src/hook.rs:68                       |
+| `TERAX_HOOK_DEBUG`                                                        | 2   | agents:2                                        | src-tauri/crates/terax-cli/src/hook.rs:69                       |
+| `terax-pi-notifications-v2`                                               | 2   | agents:2                                        | src-tauri/src/modules/agent.rs:184                              |
+| `process.env.TERAX_CLI`                                                   | 2   | agents:2                                        | src-tauri/src/modules/agent.rs:189                              |
+| `process.env.TERAX_PANE_ID`                                               | 2   | agents:2                                        | src-tauri/src/modules/agent.rs:190                              |
+| `terax-ai-sessions.json`                                                  | 2   | ai:2                                            | src-tauri/src/modules/ai_sessions.rs:34                         |
+| `terax-cli.exe`                                                           | 2   | agents:2                                        | src-tauri/src/modules/control.rs:807                            |
+| `home/me/.cache/terax/control.json`                                       | 2   | ide-tools:1, ai:1                               | src-tauri/src/modules/fs/ai.rs:444                              |
+| `C:/Users/me/AppData/Local/terax/control.json`                            | 2   | ide-tools:1, ai:1                               | src-tauri/src/modules/fs/ai.rs:445                              |
+| `refs/terax/tasks`                                                        | 2   | ide-tools:2                                     | src-tauri/src/modules/git/checkpoint.rs:639                     |
+| `repo/.git/terax-no-hooks`                                                | 2   | ide-tools:2                                     | src-tauri/src/modules/git/hardening_tests.rs:582                |
+| `refs/terax/checkpoints/task`                                             | 2   | ide-tools:2                                     | src-tauri/src/modules/git/refs.rs:246                           |
+| `TERAX_WORKSPACE_PATH`                                                    | 2   | ide-tools:2                                     | src-tauri/src/modules/git/task_worktree.rs:97                   |
+| `refs/terax/checkpoints/task-1/1`                                         | 2   | ide-tools:2                                     | src-tauri/src/modules/git/tasks_tests.rs:532                    |
+| `TERAX_MARKER`                                                            | 2   | backend-core:2                                  | src-tauri/src/modules/pty/agent_detect.rs:35                    |
+| `TERAX_FORK_LOG`                                                          | 2   | backend-core:2                                  | src-tauri/src/modules/pty/scripts/bashrc.test.bash:178          |
+| `TERAX_FORK_CWD`                                                          | 2   | backend-core:2                                  | src-tauri/src/modules/pty/scripts/bashrc.test.bash:178          |
+| `$global:__TERAX_HOOKS_LOADED`                                            | 2   | backend-core:2                                  | src-tauri/src/modules/pty/scripts/profile.ps1:6                 |
+| `terax.fish`                                                              | 2   | backend-core:2                                  | src-tauri/src/modules/pty/shell_init.rs:476                     |
+| `cache/terax/shell-integration/zsh`                                       | 2   | backend-core:2                                  | src-tauri/src/modules/pty/shell_init.rs:537                     |
+| `home/vinicios/.cache/terax/shell-integration/bash/bashrc`                | 2   | backend-core:2                                  | src-tauri/src/modules/pty/shell_init.rs:1103                    |
+| `app/terax-cli`                                                           | 2   | backend-core:2                                  | src-tauri/src/modules/pty/shell_init.rs:1286                    |
+| `refs/terax/checkpoints/task-1/2`                                         | 2   | ide-tools:2                                     | src/modules/git/api.test.ts:170                                 |
+| `$TERAX_BLOCKS`                                                           | 2   | terminal:2                                      | src/modules/terminal/ghostty/shellBlockCompatibility.test.ts:27 |
+| `src-tauri/binaries/terax-cli`                                            | 1   | build-identity:1                                | scripts/app-lab/export-tree.sh:26                               |
+| `terax-cli$`                                                              | 1   | agents:1                                        | scripts/build-cli.mjs:76                                        |
+| `terax-cli-$`                                                             | 1   | agents:1                                        | scripts/build-cli.mjs:81                                        |
+| `terax-pi-notifications-v`                                                | 1   | agents:1                                        | src-tauri/src/modules/agent.rs:136                              |
+| `$TERAX_TERMINAL`                                                         | 1   | agents:1                                        | src-tauri/src/modules/agent.rs:1058                             |
+| `terax-pi-notifications-v1`                                               | 1   | agents:1                                        | src-tauri/src/modules/agent.rs:1301                             |
+| `cache/terax/control.json`                                                | 1   | ide-tools:1                                     | src-tauri/src/modules/fs/project_memory.rs:170                  |
+| `terax-worktree-id`                                                       | 1   | ide-tools:1                                     | src-tauri/src/modules/git/checkpoint.rs:39                      |
+| `terax-last-restore`                                                      | 1   | ide-tools:1                                     | src-tauri/src/modules/git/checkpoint.rs:40                      |
+| `terax-no-hooks`                                                          | 1   | ide-tools:1                                     | src-tauri/src/modules/git/checkpoint.rs:41                      |
+| `refs/terax/checkpoints/t1/10`                                            | 1   | ide-tools:1                                     | src-tauri/src/modules/git/checkpoint.rs:1344                    |
+| `nrefs/terax/checkpoints/t1/2`                                            | 1   | ide-tools:1                                     | src-tauri/src/modules/git/checkpoint.rs:1344                    |
+| `nrefs/terax/checkpoints/t1/x`                                            | 1   | ide-tools:1                                     | src-tauri/src/modules/git/checkpoint.rs:1344                    |
+| `git/terax-no-hooks`                                                      | 1   | ide-tools:1                                     | src-tauri/src/modules/git/followup_tests.rs:218                 |
+| `git/terax-last-restore`                                                  | 1   | ide-tools:1                                     | src-tauri/src/modules/git/followup_tests.rs:553                 |
+| `refs/terax/checkpoints/t/prerestore`                                     | 1   | ide-tools:1                                     | src-tauri/src/modules/git/hardening_tests.rs:114                |
+| `$TERAX_PORT`                                                             | 1   | ide-tools:1                                     | src-tauri/src/modules/git/project_config.rs:56                  |
+| `refs/terax/checkpoints/task-1/7`                                         | 1   | ide-tools:1                                     | src-tauri/src/modules/git/refs.rs:233                           |
+| `refs/terax/checkpoints/task-1`                                           | 1   | ide-tools:1                                     | src-tauri/src/modules/git/refs.rs:237                           |
+| `refs/terax/checkpoints/task/x`                                           | 1   | ide-tools:1                                     | src-tauri/src/modules/git/refs.rs:248                           |
+| `refs/terax/checkpoints/task/-1`                                          | 1   | ide-tools:1                                     | src-tauri/src/modules/git/refs.rs:249                           |
+| `refs/terax/checkpoints/../7`                                             | 1   | ide-tools:1                                     | src-tauri/src/modules/git/refs.rs:250                           |
+| `refs/terax/checkpoints/a/b/7`                                            | 1   | ide-tools:1                                     | src-tauri/src/modules/git/refs.rs:251                           |
+| `refs/terax/checkpoints/task/99999999999`                                 | 1   | ide-tools:1                                     | src-tauri/src/modules/git/refs.rs:252                           |
+| `terax-tasks.lock`                                                        | 1   | ide-tools:1                                     | src-tauri/src/modules/git/task_state.rs:48                      |
+| `TERAX_TASK`                                                              | 1   | ide-tools:1                                     | src-tauri/src/modules/git/task_worktree.rs:96                   |
+| `TERAX_ROOT_PATH`                                                         | 1   | ide-tools:1                                     | src-tauri/src/modules/git/task_worktree.rs:98                   |
+| `TERAX_PORT`                                                              | 1   | ide-tools:1                                     | src-tauri/src/modules/git/task_worktree.rs:99                   |
+| `TERAX_PORT_`                                                             | 1   | ide-tools:1                                     | src-tauri/src/modules/git/task_worktree.rs:102                  |
+| `terax-empty-hooks`                                                       | 1   | ide-tools:1                                     | src-tauri/src/modules/git/task_worktree.rs:251                  |
+| `terax/worktrees-other`                                                   | 1   | ide-tools:1                                     | src-tauri/src/modules/git/task_worktree_tests.rs:88             |
+| `terax/worktrees-other/task`                                              | 1   | ide-tools:1                                     | src-tauri/src/modules/git/task_worktree_tests.rs:89             |
+| `TERAX_PORT_9`                                                            | 1   | ide-tools:1                                     | src-tauri/src/modules/git/task_worktree_tests.rs:473            |
+| `terax/task-worktrees.json`                                               | 1   | ide-tools:1                                     | src-tauri/src/modules/git/task_worktree_tests.rs:842            |
+| `refs/terax/checkpoints/x`                                                | 1   | ide-tools:1                                     | src-tauri/src/modules/git/tasks_tests.rs:635                    |
+| `refs/terax/checkpoints/../1`                                             | 1   | ide-tools:1                                     | src-tauri/src/modules/git/tasks_tests.rs:636                    |
+| `refs/terax/checkpoints/t/2`                                              | 1   | ide-tools:1                                     | src-tauri/src/modules/git/tasks_tests.rs:738                    |
+| `terax-task-hooks`                                                        | 1   | ide-tools:1                                     | src-tauri/src/modules/git/worktree.rs:446                       |
+| `$TERAX_FORK_CWD`                                                         | 1   | backend-core:1                                  | src-tauri/src/modules/pty/scripts/bashrc.test.bash:180          |
+| `__TERAX_HOST`                                                            | 1   | backend-core:1                                  | src-tauri/src/modules/pty/scripts/init.fish:28                  |
+| `$__TERAX_HOST`                                                           | 1   | backend-core:1                                  | src-tauri/src/modules/pty/scripts/init.fish:81                  |
+| `$env:TERAX_BLOCKS`                                                       | 1   | backend-core:1                                  | src-tauri/src/modules/pty/scripts/profile.ps1:99                |
+| `$TERAX_USER_ZDOTDIR`                                                     | 1   | backend-core:1                                  | src-tauri/src/modules/pty/scripts/zshenv.zsh:25                 |
+| `TERAX_USER_ZDOTDIR-unset`                                                | 1   | backend-core:1                                  | src-tauri/src/modules/pty/scripts/zshrc.test.py:279             |
+| `TERAX_USER_ZDOTDIR:-$`                                                   | 1   | backend-core:1                                  | src-tauri/src/modules/pty/scripts/zshrc.zsh:15                  |
+| `cache/terax/shell-integration`                                           | 1   | backend-core:1                                  | src-tauri/src/modules/pty/shell_init.rs:857                     |
+| `binaries/terax-cli`                                                      | 1   | build-identity:1                                | src-tauri/tauri.conf.json:39                                    |
+| `https://github.com/crynta/terax-ai/releases/latest/download/latest.json` | 1   | build-identity:1                                | src-tauri/tauri.conf.json:121                                   |
+| `terax-ai-agents.json`                                                    | 1   | ai:1                                            | src/modules/ai/lib/agents.ts:82                                 |
+| `library/caches/terax`                                                    | 1   | ai:1                                            | src/modules/ai/lib/pathPolicy.json:51                           |
+| `cache/terax`                                                             | 1   | ai:1                                            | src/modules/ai/lib/pathPolicy.json:52                           |
+| `appdata/local/terax`                                                     | 1   | ai:1                                            | src/modules/ai/lib/pathPolicy.json:53                           |
+| `appdata/local/app.crynta.terax`                                          | 1   | ai:1                                            | src/modules/ai/lib/pathPolicy.json:54                           |
+| `local/share/app.crynta.terax`                                            | 1   | ai:1                                            | src/modules/ai/lib/pathPolicy.json:55                           |
+| `terax-ai-snippets.json`                                                  | 1   | ai:1                                            | src/modules/ai/lib/snippets.ts:12                               |
+| `terax-ai-todos.json`                                                     | 1   | ai:1                                            | src/modules/ai/lib/todos.ts:12                                  |
+| `refs/terax/checkpoints/task-1/12`                                        | 1   | ide-tools:1                                     | src/modules/git/scope.test.ts:195                               |
+| `refs/terax/checkpoints/$`                                                | 1   | ide-tools:1                                     | src/modules/git/scope.ts:123                                    |
+| `terax-settings.json`                                                     | 1   | state-settings:1                                | src/modules/settings/store.ts:225                               |
+| `terax-spaces.json`                                                       | 1   | state-settings:1                                | src/modules/spaces/lib/store.ts:21                              |
+| `terax-custom-themes.json`                                                | 1   | state-settings:1                                | src/modules/theme/customThemes.ts:5                             |
+| `terax:updater:last-check`                                                | 1   | build-identity:1                                | src/modules/updater/useUpdater.ts:7                             |
+| `https://api.github.com/repos/crynta/terax-ai/releases/latest`            | 1   | build-identity:1                                | src/modules/updater/useUpdater.ts:10                            |
+| `crynta/terax-ai`                                                         | 1   | state-settings:1                                | src/settings/sections/AboutSection.tsx:106                      |
 
 ### 2. Updater
 
@@ -284,20 +284,20 @@ Full class (a) list (token | occurrences | areas | first occurrence):
 
 ### 3. Network audit (F0:5)
 
-| # | call | where | owner area | target | lut decision |
-|---|---|---|---|---|---|
-| 1 | Tauri updater `check()` / `downloadAndInstall` | `useUpdater.ts:104,123`; config `tauri.conf.json:118-123` | build-identity | github.com/crynta/terax-ai | neutralize (F0:4) |
-| 2 | `fetch` GitHub releases API (Linux) | `useUpdater.ts:52` | build-identity | api.github.com/repos/crynta/terax-ai | neutralize (F0:4) |
-| 3 | `ai_http_stream` / reqwest | `src-tauri/src/modules/net.rs:240-270`, clients `net/clients.rs:186` | ai (backend `net`) | any provider URL chosen by the user | removed with AI (ADR-004, 9.9) |
-| 4 | `lm_ping` | `net.rs:147-163` | ai | local model servers | removed with AI |
-| 5 | AI SDK provider defaults + headers `HTTP-Referer: https://terax.ai`, `X-Title: Terax` | `src/modules/ai/lib/agent.ts:130-159` | ai | deepseek, mistral, openrouter, … | removed with AI; until then, the referer leaks Terax identity |
-| 6 | Speech-to-text | `src/modules/ai/lib/stt.ts:3,15` | ai | api.groq.com | removed with AI |
-| 7 | Web preview probe + iframe | `src/modules/preview/PreviewAddressBar.tsx:224`; CSP `frame-src http: https:` | ide-tools | user-entered URL | depends on preview decision |
-| 8 | `git fetch` (spawns git) | `src/modules/source-control/useSourceControl.ts:425,511` | ide-tools | user's remotes | user-initiated only |
-| 9 | Bench report server | `src/bench/report.ts:28,45`, `early.ts:71` | build-identity | localhost (bench builds only) | compiled out of product builds |
-| 10 | WebView2 bootstrapper at install | `tauri.conf.json:82-84` | build-identity | Microsoft | keep (or `embedBootstrapper`; open question) |
-| 11 | Local only, not outbound: `terax-pty:` protocol, `/notification.mp3` | `src/modules/terminal/lib/pty-bridge.ts:39`, `agents/lib/sound.ts:7` | terminal / agents | in-app | n/a |
-| 12 | External links opened in the browser (About repo/website) | `AboutSection.tsx:11-12` | state-settings | github/terax.app | rebrand (identity:2) |
+| #   | call                                                                                  | where                                                                         | owner area         | target                               | lut decision                                                  |
+| --- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------ | ------------------------------------ | ------------------------------------------------------------- |
+| 1   | Tauri updater `check()` / `downloadAndInstall`                                        | `useUpdater.ts:104,123`; config `tauri.conf.json:118-123`                     | build-identity     | github.com/crynta/terax-ai           | neutralize (F0:4)                                             |
+| 2   | `fetch` GitHub releases API (Linux)                                                   | `useUpdater.ts:52`                                                            | build-identity     | api.github.com/repos/crynta/terax-ai | neutralize (F0:4)                                             |
+| 3   | `ai_http_stream` / reqwest                                                            | `src-tauri/src/modules/net.rs:240-270`, clients `net/clients.rs:186`          | ai (backend `net`) | any provider URL chosen by the user  | removed with AI (ADR-004, 9.9)                                |
+| 4   | `lm_ping`                                                                             | `net.rs:147-163`                                                              | ai                 | local model servers                  | removed with AI                                               |
+| 5   | AI SDK provider defaults + headers `HTTP-Referer: https://terax.ai`, `X-Title: Terax` | `src/modules/ai/lib/agent.ts:130-159`                                         | ai                 | deepseek, mistral, openrouter, …     | removed with AI; until then, the referer leaks Terax identity |
+| 6   | Speech-to-text                                                                        | `src/modules/ai/lib/stt.ts:3,15`                                              | ai                 | api.groq.com                         | removed with AI                                               |
+| 7   | Web preview probe + iframe                                                            | `src/modules/preview/PreviewAddressBar.tsx:224`; CSP `frame-src http: https:` | ide-tools          | user-entered URL                     | depends on preview decision                                   |
+| 8   | `git fetch` (spawns git)                                                              | `src/modules/source-control/useSourceControl.ts:425,511`                      | ide-tools          | user's remotes                       | user-initiated only                                           |
+| 9   | Bench report server                                                                   | `src/bench/report.ts:28,45`, `early.ts:71`                                    | build-identity     | localhost (bench builds only)        | compiled out of product builds                                |
+| 10  | WebView2 bootstrapper at install                                                      | `tauri.conf.json:82-84`                                                       | build-identity     | Microsoft                            | keep (or `embedBootstrapper`; open question)                  |
+| 11  | Local only, not outbound: `terax-pty:` protocol, `/notification.mp3`                  | `src/modules/terminal/lib/pty-bridge.ts:39`, `agents/lib/sound.ts:7`          | terminal / agents  | in-app                               | n/a                                                           |
+| 12  | External links opened in the browser (About repo/website)                             | `AboutSection.tsx:11-12`                                                      | state-settings     | github/terax.app                     | rebrand (identity:2)                                          |
 
 No telemetry, analytics, crash reporting, remote fonts or CDN: fonts are bundled through `@fontsource*`
 (`package.json`), CSP `font-src 'self' data:` (`tauri.conf.json:29`), and grep finds no sentry/posthog/analytics
@@ -326,18 +326,18 @@ code. The CSP `connect-src ... https:` is the wide door that should close after 
 
 ### 5. Bundle identity (F0:10)
 
-| field | value | file:line | Phase 0? |
-|---|---|---|---|
-| identifier | `app.crynta.terax` | `tauri.conf.json:5` | **yes**: derives app data/config/local-data dirs, stores, window-state and WebView localStorage |
-| productName | `Terax` | `tauri.conf.json:3` | binary/installer name: yes (exe and NSIS install dir collide with Terax's per-user install); label text is visual |
-| Cargo bin | `terax` (`default-run`) | `Cargo.toml:2,8` | yes (exe `terax.exe` used by installer hooks and `control.rs:927`) |
-| sidecar | `binaries/terax-cli` | `tauri.conf.json:39`, `build.rs:15` | yes (hook CLI, F0:10 "CLI auxiliar de hooks"); coordinated with agents |
-| data dirs not derived from identifier | `dirs::cache_dir()/terax`, `~/.cache/terax/shell-integration` | `control.rs:758`, `shell_init.rs:449` | yes, but owned by agents/backend-core |
-| deep links / URI schemes | none (only internal `terax-pty` protocol) | `tauri.conf.json:29` | no |
-| file associations | "Terax Document", 60 exts | `tauri.conf.json:98-113` | yes: on Windows they register ProgIDs per productName; remove (2.3) |
-| installer hooks | `OpenInTerax` HKCU verbs | `installer-hooks.nsh:6-25` | **yes**: shared keys; lut's uninstaller would delete Terax's verbs |
-| updater | endpoint + pubkey | `tauri.conf.json:118-123` | yes (F0:4) |
-| window titles, descriptions, copyright, publisher, icons, plist strings | Terax / Crynta | various | no, visual (identity:2) |
+| field                                                                   | value                                                         | file:line                             | Phase 0?                                                                                                          |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| identifier                                                              | `app.crynta.terax`                                            | `tauri.conf.json:5`                   | **yes**: derives app data/config/local-data dirs, stores, window-state and WebView localStorage                   |
+| productName                                                             | `Terax`                                                       | `tauri.conf.json:3`                   | binary/installer name: yes (exe and NSIS install dir collide with Terax's per-user install); label text is visual |
+| Cargo bin                                                               | `terax` (`default-run`)                                       | `Cargo.toml:2,8`                      | yes (exe `terax.exe` used by installer hooks and `control.rs:927`)                                                |
+| sidecar                                                                 | `binaries/terax-cli`                                          | `tauri.conf.json:39`, `build.rs:15`   | yes (hook CLI, F0:10 "CLI auxiliar de hooks"); coordinated with agents                                            |
+| data dirs not derived from identifier                                   | `dirs::cache_dir()/terax`, `~/.cache/terax/shell-integration` | `control.rs:758`, `shell_init.rs:449` | yes, but owned by agents/backend-core                                                                             |
+| deep links / URI schemes                                                | none (only internal `terax-pty` protocol)                     | `tauri.conf.json:29`                  | no                                                                                                                |
+| file associations                                                       | "Terax Document", 60 exts                                     | `tauri.conf.json:98-113`              | yes: on Windows they register ProgIDs per productName; remove (2.3)                                               |
+| installer hooks                                                         | `OpenInTerax` HKCU verbs                                      | `installer-hooks.nsh:6-25`            | **yes**: shared keys; lut's uninstaller would delete Terax's verbs                                                |
+| updater                                                                 | endpoint + pubkey                                             | `tauri.conf.json:118-123`             | yes (F0:4)                                                                                                        |
+| window titles, descriptions, copyright, publisher, icons, plist strings | Terax / Crynta                                                | various                               | no, visual (identity:2)                                                                                           |
 
 ### 6. Capabilities
 
@@ -367,6 +367,7 @@ code. The CSP `connect-src ... https:` is the wide door that should close after 
 ## Draft issues
 
 ### build-identity-D01 — Neutralize the Terax updater
+
 ```yaml
 id: build-identity-D01
 depends-on: []
@@ -376,9 +377,11 @@ type: task
 scope: be
 size: S
 ```
+
 **Goal:** lut must never contact Terax's release infrastructure nor install a Terax binary.
 
 **Acceptance criteria:**
+
 - [ ] `plugins.updater` (endpoint and pubkey) removed from `src-tauri/tauri.conf.json`; `createUpdaterArtifacts` set to `false`.
 - [ ] `useUpdater` never calls `check()` nor fetches the GitHub API; automatic and manual checks report "updates disabled".
 - [ ] No remaining reference to `crynta/terax-ai` releases in `src/` or `src-tauri/` (grep).
@@ -386,6 +389,7 @@ size: S
 **Verification:** `pnpm check-types && pnpm test`; `pnpm tauri build` succeeds without signing keys; app start with a network monitor shows no request to github.com.
 
 ### build-identity-D02 — Outbound network audit report
+
 ```yaml
 id: build-identity-D02
 depends-on: [build-identity-D01]
@@ -395,9 +399,11 @@ type: task
 scope: none
 size: S
 ```
+
 **Goal:** a committed list of every outbound network call, its owner and its fate in lut.
 
 **Acceptance criteria:**
+
 - [ ] `.docs/` gains a network audit table (call, file:line, target, decision) based on this analysis, re-checked against the code.
 - [ ] Calls to Terax services (updater, `HTTP-Referer: https://terax.ai`) are either removed or linked to the issue that removes them.
 - [ ] Confirms no telemetry/CDN/remote fonts.
@@ -405,6 +411,7 @@ size: S
 **Verification:** grep for `fetch(`, `reqwest`, `https://` reproduces the table; reviewer cross-checks.
 
 ### build-identity-D03 — Document toolchain and effective build commands
+
 ```yaml
 id: build-identity-D03
 depends-on: []
@@ -414,9 +421,11 @@ type: task
 scope: none
 size: S
 ```
+
 **Goal:** reproducible build instructions for Windows, macOS and Linux.
 
 **Acceptance criteria:**
+
 - [ ] `.docs/` documents Node >= 22, pnpm 11.9.0 (corepack), Rust stable, Tauri CLI 2.12, optional Zig 0.16 for WASM, OS prerequisites.
 - [ ] Commands for install, dev, release build, tests, lint, Rust tests/clippy, with the sidecar prebuild explained.
 - [ ] Records the OS/toolchain versions actually used for the Phase 0 baseline and the POSIX-only scripts.
@@ -424,6 +433,7 @@ size: S
 **Verification:** a clean checkout on Windows 11 builds and starts following only the document.
 
 ### build-identity-D04 — Isolate the bundle identifier and data directory
+
 ```yaml
 id: build-identity-D04
 depends-on: [build-identity-D01]
@@ -433,9 +443,11 @@ type: task
 scope: be
 size: S
 ```
+
 **Goal:** lut's app data, stores, window state and WebView storage live under its own identifier.
 
 **Acceptance criteria:**
+
 - [ ] `identifier` in `tauri.conf.json` set to the value chosen by the user.
 - [ ] Bench guard (`src-tauri/src/modules/bench.rs:17`, tests `:731-739`) and `scripts/app-lab/run.py:58,216` follow the new identifier.
 - [ ] Startup on a machine with Terax installed creates a new data dir and does not read Terax's.
@@ -443,6 +455,7 @@ size: S
 **Verification:** `cargo test --features bench bench` passes; launch app, inspect `%APPDATA%`/`%LOCALAPPDATA%` (or platform equivalent) for the new dir only.
 
 ### build-identity-D05 — Rename executable and Explorer verbs
+
 ```yaml
 id: build-identity-D05
 depends-on: [build-identity-D04, agents-D01?]
@@ -452,9 +465,11 @@ type: task
 scope: be
 size: S
 ```
+
 **Goal:** the installed binary and Windows shell verbs never collide with Terax's.
 
 **Acceptance criteria:**
+
 - [ ] Cargo bin/`default-run` renamed to `lut`; `productName` gives a non-Terax installer/install dir.
 - [ ] `installer-hooks.nsh` uses lut-owned registry keys and `lut.exe`; uninstall removes only those keys.
 - [ ] `control.rs` launcher names updated (coordinated with agents isolation).
@@ -462,6 +477,7 @@ size: S
 **Verification:** NSIS install of lut next to Terax: both "Open in" verbs present; uninstalling lut leaves Terax's keys (regedit).
 
 ### build-identity-D06 — Remove Terax-only packaging and review configs
+
 ```yaml
 id: build-identity-D06
 depends-on: []
@@ -471,15 +487,18 @@ type: task
 scope: none
 size: XS
 ```
+
 **Goal:** no file in the repo distributes Terax binaries or configures Terax's services.
 
 **Acceptance criteria:**
+
 - [ ] `flake.nix`, `flake.lock`, `nix/` removed.
 - [ ] `.coderabbit.yaml` removed (unless the user keeps it).
 
 **Verification:** `git grep -i "releases/download"` returns nothing; build unaffected.
 
 ### build-identity-D07 — Verify and complete license bundling
+
 ```yaml
 id: build-identity-D07
 depends-on: [build-identity-D03]
@@ -489,9 +508,11 @@ type: task
 scope: be
 size: S
 ```
+
 **Goal:** every shipped bundle carries the Apache-2.0 license, the Terax provenance/modification notice and third-party licenses.
 
 **Acceptance criteria:**
+
 - [ ] Bundle contains `licenses/terminal/*.txt`, and the Terax notice (`public/licenses/terax.txt` in dist or as a bundle resource).
 - [ ] `bundle.copyright` reflects lut while retaining the Terax attribution in the notice.
 - [ ] Decision recorded on a generated third-party notices file for Rust/npm deps.
@@ -499,6 +520,7 @@ size: S
 **Verification:** inspect the built installer/app resources on Windows; files present.
 
 ### build-identity-D08 — Least-privilege capabilities after removals
+
 ```yaml
 id: build-identity-D08
 depends-on: [build-identity-D01, ai-D01?]
@@ -508,15 +530,18 @@ type: task
 scope: be
 size: XS
 ```
+
 **Goal:** capabilities grant only what remaining features use.
 
 **Acceptance criteria:**
+
 - [ ] `updater:default` removed (until F7), `process:default` only if still used; `settings` window label kept or removed per settings decision.
 - [ ] Each remaining permission maps to a used plugin API (listed in PR).
 
 **Verification:** `pnpm tauri dev`; exercise clipboard, notifications, autostart, window controls with no permission errors in the log.
 
 ### build-identity-D09 — Prune dependencies and build config after area removals
+
 ```yaml
 id: build-identity-D09
 depends-on: [ai-D01?, ide-tools-D01?]
@@ -526,9 +551,11 @@ type: task
 scope: none
 size: M
 ```
+
 **Goal:** package.json, Cargo deps, Vite chunks and size budgets reflect only remaining code.
 
 **Acceptance criteria:**
+
 - [ ] Unused npm deps removed after `pnpm knip` and the eager/dist graph confirm no importers.
 - [ ] `vite.config.ts` manualChunks and `.size-limit.json` entries for removed chunks removed; budgets retightened.
 - [ ] POSIX-only scripts made cross-platform or documented.
@@ -536,6 +563,7 @@ size: M
 **Verification:** `pnpm install --frozen-lockfile && pnpm build && pnpm size && pnpm test && pnpm knip` pass.
 
 ### build-identity-D10 — Drop editor file associations and tighten CSP
+
 ```yaml
 id: build-identity-D10
 depends-on: [ai-D01?]
@@ -545,15 +573,18 @@ type: task
 scope: be
 size: XS
 ```
+
 **Goal:** lut does not register as an editor for code files nor allow arbitrary https connections.
 
 **Acceptance criteria:**
+
 - [ ] `bundle.fileAssociations` removed (or reduced per user decision).
 - [ ] CSP `connect-src` drops `https:` once AI is removed; `frame-src` follows the preview decision.
 
 **Verification:** install on Windows: no "Terax Document"/lut entries in "Open with"; app works with no CSP violations in devtools.
 
 ### build-identity-D11 — Design: lut visual identity (icon, names)
+
 ```yaml
 id: build-identity-D11
 depends-on: []
@@ -563,12 +594,15 @@ type: design
 scope: ui
 size: S
 ```
+
 **Goal:** the user defines the lut icon, product display name casing, window title and installer texts.
 
 **Acceptance criteria:**
+
 - [ ] Icon source (1024px) and display strings delivered.
 
 ### build-identity-D12 — Apply lut visual identity to the bundle
+
 ```yaml
 id: build-identity-D12
 depends-on: [build-identity-D11, build-identity-D05]
@@ -578,15 +612,18 @@ type: task
 scope: be
 size: S
 ```
+
 **Goal:** bundle metadata and icons show lut.
 
 **Acceptance criteria:**
+
 - [ ] Icons regenerated with `pnpm tauri icon`; android/ios sets removed; `terax-icon.png`, `public/logo.png` replaced.
 - [ ] productName/title/descriptions/copyright/publisher and Info.plist strings say lut; entitlements per user decision.
 
 **Verification:** `pnpm tauri build`; installer and window show lut icon and name.
 
 ### build-identity-D13 — Design: update experience
+
 ```yaml
 id: build-identity-D13
 depends-on: []
@@ -596,12 +633,15 @@ type: design
 scope: ui
 size: S
 ```
+
 **Goal:** the user designs how update availability, channel and opt-out are shown.
 
 **Acceptance criteria:**
+
 - [ ] Design for notification, progress, restart and settings (channel stable/beta, disable).
 
 ### build-identity-D14 — Release pipeline and lut signing key (spike)
+
 ```yaml
 id: build-identity-D14
 depends-on: [build-identity-D05]
@@ -611,14 +651,17 @@ type: spike
 scope: none
 size: S
 ```
+
 **Goal:** decide where lut releases are hosted, how bundles are signed and how the update manifest is published.
 
 **Acceptance criteria:**
+
 - [ ] Hosting and endpoint chosen; new minisign key generated and stored outside the repo; per-OS code-signing options listed.
 
 **Verification:** a test release manifest validates with the new public key.
 
 ### build-identity-D15 — lut auto-updater
+
 ```yaml
 id: build-identity-D15
 depends-on: [build-identity-D13, build-identity-D14]
@@ -628,9 +671,11 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** updates only from lut's endpoint, signature verification mandatory, configurable channel and opt-out.
 
 **Acceptance criteria:**
+
 - [ ] `plugins.updater` points to lut's endpoint and key; Linux path uses lut's release API.
 - [ ] Channel and disable settings respected; unsigned/wrongly signed bundle is rejected.
 - [ ] UI follows the design from build-identity-D13.
@@ -638,6 +683,7 @@ size: M
 **Verification:** install old build, publish newer test release: update applies; tampered bundle rejected.
 
 ### build-identity-D16 — Verify side-by-side isolation from Terax
+
 ```yaml
 id: build-identity-D16
 depends-on: [build-identity-D04, build-identity-D05, build-identity-D01]
@@ -647,9 +693,11 @@ type: task
 scope: none
 size: S
 ```
+
 **Goal:** prove lut shares no data, hooks, env vars or updater with an installed Terax.
 
 **Acceptance criteria:**
+
 - [ ] Checklist run with Terax installed: data dirs, cache dirs, registry verbs, hook entries in Claude/Codex settings, env vars in a lut shell, update requests.
 - [ ] Results recorded in `.docs/`.
 

@@ -1,20 +1,16 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import type { AiDiffStatus } from "@/modules/tabs";
-import { presentableDiff, unifiedMergeView } from "@codemirror/merge";
-import { EditorState, type Extension } from "@codemirror/state";
-import { EditorView } from "@codemirror/view";
-import { Cancel01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import CodeMirror, { type ReactCodeMirrorRef } from "@uiw/react-codemirror";
-import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  buildSharedExtensions,
-  DEFAULT_INDENT,
-  languageCompartment,
-} from "./lib/extensions";
-import { resolveLanguage, resolveLanguageSync } from "./lib/languageResolver";
-import { useEditorThemeExt } from "./lib/useEditorThemeExt";
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import type { AiDiffStatus } from '@/modules/tabs';
+import { presentableDiff, unifiedMergeView } from '@codemirror/merge';
+import { EditorState, type Extension } from '@codemirror/state';
+import { EditorView } from '@codemirror/view';
+import { Cancel01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import CodeMirror, { type ReactCodeMirrorRef } from '@uiw/react-codemirror';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { buildSharedExtensions, DEFAULT_INDENT, languageCompartment } from './lib/extensions';
+import { resolveLanguage, resolveLanguageSync } from './lib/languageResolver';
+import { useEditorThemeExt } from './lib/useEditorThemeExt';
 
 type Props = {
   path: string;
@@ -27,10 +23,7 @@ type Props = {
 };
 
 const SHARED_EXT: readonly Extension[] = buildSharedExtensions();
-const READONLY_EXT: Extension[] = [
-  EditorState.readOnly.of(true),
-  EditorView.editable.of(false),
-];
+const READONLY_EXT: Extension[] = [EditorState.readOnly.of(true), EditorView.editable.of(false)];
 
 const DIFF_THEME = EditorView.theme({
   // ".cm-changedLine": {
@@ -65,43 +58,30 @@ const DIFF_THEME = EditorView.theme({
   // ".cm-deletedLineGutter": {
   //   backgroundColor: "#ef4444",
   // },
-  ".cm-changedText": {
-    background: "#88ff881a !important",
+  '.cm-changedText': {
+    background: '#88ff881a !important',
   },
 });
 
 const STATUS_LABEL: Record<AiDiffStatus, string> = {
-  pending: "Pending review",
-  approved: "Applied",
-  rejected: "Rejected",
+  pending: 'Pending review',
+  approved: 'Applied',
+  rejected: 'Rejected',
 };
 
-const STATUS_BADGE: Record<
-  AiDiffStatus,
-  "outline" | "secondary" | "destructive"
-> = {
-  pending: "outline",
-  approved: "secondary",
-  rejected: "destructive",
+const STATUS_BADGE: Record<AiDiffStatus, 'outline' | 'secondary' | 'destructive'> = {
+  pending: 'outline',
+  approved: 'secondary',
+  rejected: 'destructive',
 };
 
-export function AiDiffPane({
-  path,
-  originalContent,
-  proposedContent,
-  status,
-  isNewFile,
-  onAccept,
-  onReject,
-}: Props) {
+export function AiDiffPane({ path, originalContent, proposedContent, status, isNewFile, onAccept, onReject }: Props) {
   const cmRef = useRef<ReactCodeMirrorRef>(null);
   const themeExt = useEditorThemeExt();
 
   // Language resolves before mount; reconfiguring after would leave the
   // merge view's deleted-chunk widgets unhighlighted.
-  const [lang, setLang] = useState<Extension | null>(
-    () => resolveLanguageSync(path)?.ext ?? null,
-  );
+  const [lang, setLang] = useState<Extension | null>(() => resolveLanguageSync(path)?.ext ?? null);
   useEffect(() => {
     if (lang) return;
     let cancelled = false;
@@ -132,19 +112,13 @@ export function AiDiffPane({
     [originalContent, lang],
   );
 
-  const stats = useMemo(
-    () => computeLineStats(originalContent, proposedContent),
-    [originalContent, proposedContent],
-  );
+  const stats = useMemo(() => computeLineStats(originalContent, proposedContent), [originalContent, proposedContent]);
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
       <div className="flex h-9 shrink-0 items-center justify-between gap-2 border-b border-border/60 px-3">
         <div className="flex min-w-0 items-center gap-2">
-          <Badge
-            className="text-[11px] px-2.5 py-2.5"
-            variant={STATUS_BADGE[status]}
-          >
+          <Badge className="text-[11px] px-2.5 py-2.5" variant={STATUS_BADGE[status]}>
             {STATUS_LABEL[status]}
           </Badge>
           {isNewFile ? (
@@ -152,38 +126,21 @@ export function AiDiffPane({
               New file
             </span>
           ) : null}
-          <span
-            className="truncate font-mono text-[11px] text-muted-foreground"
-            title={path}
-          >
+          <span className="truncate font-mono text-[11px] text-muted-foreground" title={path}>
             {path}
           </span>
           <span className="flex shrink-0 items-center gap-1.5 text-[10.5px] tabular-nums">
-            <span className="text-emerald-600 dark:text-emerald-400">
-              +{stats.added}
-            </span>
-            <span className="text-rose-600 dark:text-rose-400">
-              −{stats.removed}
-            </span>
+            <span className="text-emerald-600 dark:text-emerald-400">+{stats.added}</span>
+            <span className="text-rose-600 dark:text-rose-400">−{stats.removed}</span>
           </span>
         </div>
-        {status === "pending" ? (
+        {status === 'pending' ? (
           <div className="flex shrink-0 items-center gap-1.5">
-            <Button
-              size="sm"
-              variant="default"
-              onClick={onAccept}
-              className="h-7 gap-1.5"
-            >
+            <Button size="sm" variant="default" onClick={onAccept} className="h-7 gap-1.5">
               <HugeiconsIcon icon={Tick02Icon} size={13} strokeWidth={2} />
               Accept
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={onReject}
-              className="h-7 gap-1.5"
-            >
+            <Button size="sm" variant="ghost" onClick={onReject} className="h-7 gap-1.5">
               <HugeiconsIcon icon={Cancel01Icon} size={13} strokeWidth={2} />
               Reject
             </Button>
@@ -213,10 +170,7 @@ export function AiDiffPane({
   );
 }
 
-function computeLineStats(
-  original: string,
-  proposed: string,
-): { added: number; removed: number } {
+function computeLineStats(original: string, proposed: string): { added: number; removed: number } {
   const changes = presentableDiff(original, proposed);
   let added = 0;
   let removed = 0;
@@ -236,6 +190,6 @@ function countLines(doc: string, from: number, to: number): number {
   for (let i = 0; i < slice.length; i++) {
     if (slice.charCodeAt(i) === 10) n++;
   }
-  if (slice.endsWith("\n")) n--;
+  if (slice.endsWith('\n')) n--;
   return Math.max(n, 1);
 }

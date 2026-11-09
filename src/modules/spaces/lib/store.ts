@@ -1,6 +1,6 @@
-import type { WorkspaceEnv } from "@/modules/workspace";
-import { LazyStore } from "@tauri-apps/plugin-store";
-import type { SerializedTab } from "./serialize";
+import type { WorkspaceEnv } from '@/modules/workspace';
+import { LazyStore } from '@tauri-apps/plugin-store';
+import type { SerializedTab } from './serialize';
 
 export type SpaceMeta = {
   id: string;
@@ -18,10 +18,10 @@ export type SpaceState = {
   activeTabIndex: number;
 };
 
-const STORE_PATH = "terax-spaces.json";
-const KEY_SPACES = "spaces";
-const KEY_ACTIVE = "activeId";
-const STATE_PREFIX = "state:";
+const STORE_PATH = 'terax-spaces.json';
+const KEY_SPACES = 'spaces';
+const KEY_ACTIVE = 'activeId';
+const STATE_PREFIX = 'state:';
 const stateKey = (id: string) => `${STATE_PREFIX}${id}`;
 
 const store = new LazyStore(STORE_PATH, { defaults: {}, autoSave: 500 });

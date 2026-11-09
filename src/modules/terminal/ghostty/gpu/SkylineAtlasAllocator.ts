@@ -32,7 +32,7 @@ export class SkylineAtlasAllocator {
   /** Extends the free area; every existing allocation stays valid. */
   grow(width: number, height: number): void {
     if (width < this.widthValue || height < this.heightValue) {
-      throw new RangeError("An atlas allocator cannot shrink");
+      throw new RangeError('An atlas allocator cannot shrink');
     }
     if (width > this.widthValue) {
       this.skyline.push({
@@ -47,12 +47,7 @@ export class SkylineAtlasAllocator {
   }
 
   allocate(width: number, height: number): AtlasRegion | null {
-    if (
-      width <= 0 ||
-      height <= 0 ||
-      width > this.width ||
-      height > this.height
-    ) {
+    if (width <= 0 || height <= 0 || width > this.width || height > this.height) {
       return null;
     }
 
@@ -65,10 +60,7 @@ export class SkylineAtlasAllocator {
       const y = this.findY(index, width, height);
       if (y < 0) continue;
       const node = this.skyline[index];
-      if (
-        y + height < bestY ||
-        (y + height === bestY && node.width < bestWidth)
-      ) {
+      if (y + height < bestY || (y + height === bestY && node.width < bestWidth)) {
         bestIndex = index;
         bestX = node.x;
         bestY = y + height;

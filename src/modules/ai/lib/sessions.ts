@@ -1,7 +1,7 @@
-import type { UIMessage } from "@ai-sdk/react";
-import { invoke } from "@tauri-apps/api/core";
-import { LazyStore } from "@tauri-apps/plugin-store";
-import { toast } from "sonner";
+import type { UIMessage } from '@ai-sdk/react';
+import { invoke } from '@tauri-apps/api/core';
+import { LazyStore } from '@tauri-apps/plugin-store';
+import { toast } from 'sonner';
 
 export type SessionMeta = {
   id: string;
@@ -10,10 +10,10 @@ export type SessionMeta = {
   updatedAt: number;
 };
 
-const STORE_PATH = "terax-ai-sessions.json";
-const KEY_SESSIONS = "sessions";
-const KEY_ACTIVE = "activeId";
-const LEGACY_PREFIX = "messages:";
+const STORE_PATH = 'terax-ai-sessions.json';
+const KEY_SESSIONS = 'sessions';
+const KEY_ACTIVE = 'activeId';
+const LEGACY_PREFIX = 'messages:';
 /** A pre-migration copy older than this, with nothing left to migrate, goes. */
 const LEFTOVER_BACKUP_MAX_AGE_SECS = 7 * 24 * 60 * 60;
 const DEFAULT_FLUSH_TIMEOUT_MS = 5_000;
@@ -36,9 +36,7 @@ export type FlushResult = {
   failed: string[];
 };
 
-type WriteOp =
-  | { kind: "save"; messages: UIMessage[]; durable: boolean }
-  | { kind: "delete" };
+type WriteOp = { kind: 'save'; messages: UIMessage[]; durable: boolean } | { kind: 'delete' };
 type Waiter = { resolve: () => void; reject: (error: unknown) => void };
 
 let migration: Promise<void> | null = null;
@@ -53,8 +51,7 @@ const notices = new Set<string>();
 function escapeHeader(value: unknown): string {
   return JSON.stringify(value).replace(
     /[^\x20-\x7e]/g,
-    (character) =>
-      `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`,
+    (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, '0')}`,
   );
 }
 
@@ -63,9 +60,9 @@ async function saveNative(
   messages: UIMessage[],
   options: { migrate?: boolean; durable?: boolean } = {},
 ): Promise<void> {
-  await invoke("ai_session_save", encoder.encode(JSON.stringify(messages)), {
+  await invoke('ai_session_save', encoder.encode(JSON.stringify(messages)), {
     headers: {
-      "x-terax-session": escapeHeader({
+      'x-terax-session': escapeHeader({
         id,
         migrate: options.migrate === true,
         durable: options.durable === true,
@@ -85,7 +82,7 @@ function migrateMessages(): Promise<void> {
     const keys = await store.keys();
     const legacy = keys.filter((key) => key.startsWith(LEGACY_PREFIX));
     if (legacy.length === 0) {
-      await invoke("ai_session_prune_backup", {
+      await invoke('ai_session_prune_backup', {
         maxAgeSecs: LEFTOVER_BACKUP_MAX_AGE_SECS,
       }).catch(() => {});
       return;
@@ -113,19 +110,19 @@ function migrateMessages(): Promise<void> {
     try {
       if (migrated.length > 0) await store.save();
       if (failed.length === 0 && migrated.length > 0) {
-        await invoke("ai_session_finish_migration", { ids: migrated });
+        await invoke('ai_session_finish_migration', { ids: migrated });
       }
     } catch (error) {
-      console.warn("Could not finalize the chat history migration:", error);
+      console.warn('Could not finalize the chat history migration:', error);
     }
     if (failed.length > 0) {
-      toast.warning("Some chat history could not be migrated", {
-        id: "conversation-migration",
-        description: `${failed.length} conversation${failed.length === 1 ? "" : "s"} will be retried next launch.`,
+      toast.warning('Some chat history could not be migrated', {
+        id: 'conversation-migration',
+        description: `${failed.length} conversation${failed.length === 1 ? '' : 's'} will be retried next launch.`,
       });
     }
   })().catch((error) => {
-    console.warn("Chat history migration failed:", error);
+    console.warn('Chat history migration failed:', error);
   });
   return migration;
 }
@@ -143,30 +140,30 @@ function serial<T>(id: string, operation: () => Promise<T>): Promise<T> {
 }
 
 function mergeOps(previous: WriteOp | undefined, next: WriteOp): WriteOp {
-  if (next.kind === "delete" || previous?.kind !== "save") return next;
+  if (next.kind === 'delete' || previous?.kind !== 'save') return next;
   // A durable request must survive being coalesced into a newer, lazier save.
   return { ...next, durable: next.durable || previous.durable };
 }
 
 async function execute(id: string, op: WriteOp): Promise<void> {
   await migrateMessages();
-  if (op.kind === "save") {
+  if (op.kind === 'save') {
     await saveNative(id, op.messages, { durable: op.durable });
     return;
   }
-  await invoke("ai_session_delete", { id });
+  await invoke('ai_session_delete', { id });
   const legacyKey = `${LEGACY_PREFIX}${id}`;
   if (await store.has(legacyKey)) await store.delete(legacyKey);
 }
 
 function reportFailure(id: string, error: unknown) {
   notices.add(id);
-  toast.error("Could not save conversation", {
+  toast.error('Could not save conversation', {
     id: `conversation-save:${id}`,
     duration: Number.POSITIVE_INFINITY,
     description: String(error),
     action: {
-      label: "Retry",
+      label: 'Retry',
       onClick: () => {
         const latest = failedWrites.get(id);
         if (latest && !pendingWrites.has(id)) {
@@ -234,27 +231,25 @@ export async function loadMessages(id: string): Promise<UIMessage[] | null> {
   await migrateMessages();
   try {
     return await serial(id, async () => {
-      const buffer = await invoke<ArrayBuffer>("ai_session_load", { id });
-      return buffer.byteLength === 0
-        ? null
-        : (JSON.parse(decoder.decode(buffer)) as UIMessage[]);
+      const buffer = await invoke<ArrayBuffer>('ai_session_load', { id });
+      return buffer.byteLength === 0 ? null : (JSON.parse(decoder.decode(buffer)) as UIMessage[]);
     });
   } catch (error) {
-    if (!String(error).includes("corrupt:")) throw error;
-    toast.error("A conversation file was damaged", {
+    if (!String(error).includes('corrupt:')) throw error;
+    toast.error('A conversation file was damaged', {
       id: `conversation-damaged:${id}`,
-      description: "It was set aside and the conversation starts empty.",
+      description: 'It was set aside and the conversation starts empty.',
     });
     return null;
   }
 }
 
 export async function saveSessionsList(sessions: SessionMeta[]): Promise<void> {
-  await serial("$metadata", () => store.set(KEY_SESSIONS, sessions));
+  await serial('$metadata', () => store.set(KEY_SESSIONS, sessions));
 }
 
 export async function saveActiveId(id: string | null): Promise<void> {
-  await serial("$metadata", () => store.set(KEY_ACTIVE, id));
+  await serial('$metadata', () => store.set(KEY_ACTIVE, id));
 }
 
 /**
@@ -267,20 +262,20 @@ export function saveMessages(
   options: { durable?: boolean } = {},
 ): Promise<void> {
   return write(id, {
-    kind: "save",
+    kind: 'save',
     messages,
     durable: options.durable === true,
   });
 }
 
 export function deleteSessionData(id: string): Promise<void> {
-  return write(id, { kind: "delete" });
+  return write(id, { kind: 'delete' });
 }
 
 function withTimeout<T>(work: Promise<T>, ms: number): Promise<T> {
   let timer: ReturnType<typeof setTimeout>;
   const expiry = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => reject(new Error("timed out")), Math.max(0, ms));
+    timer = setTimeout(() => reject(new Error('timed out')), Math.max(0, ms));
   });
   return Promise.race([work, expiry]).finally(() => clearTimeout(timer));
 }
@@ -297,9 +292,7 @@ export async function flushSessionWrites(
   const startedAt = Date.now();
   for (const [id, op] of [...failedWrites]) {
     if (pendingWrites.has(id)) continue;
-    void write(id, op.kind === "save" ? { ...op, durable: true } : op).catch(
-      () => {},
-    );
+    void write(id, op.kind === 'save' ? { ...op, durable: true } : op).catch(() => {});
   }
   const drain = async () => {
     while (operations.size > 0) {
@@ -323,11 +316,7 @@ export async function flushSessionWrites(
   }
   const failed = [...failedWrites.keys()];
   return {
-    ok:
-      !timedOut &&
-      !metadataFailed &&
-      failed.length === 0 &&
-      pendingWrites.size === 0,
+    ok: !timedOut && !metadataFailed && failed.length === 0 && pendingWrites.size === 0,
     timedOut,
     failed,
   };
@@ -339,18 +328,18 @@ export function newSessionId(): string {
 
 export function deriveTitle(messages: UIMessage[]): string {
   for (const m of messages) {
-    if (m.role !== "user") continue;
+    if (m.role !== 'user') continue;
     for (const p of m.parts) {
-      if (p.type !== "text") continue;
+      if (p.type !== 'text') continue;
       const text = (p as { text: string }).text
-        .replace(/<terminal-context[\s\S]*?<\/terminal-context>\s*/g, "")
-        .replace(/<selection[\s\S]*?<\/selection>\s*/g, "")
-        .replace(/<file[\s\S]*?<\/file>\s*/g, "")
+        .replace(/<terminal-context[\s\S]*?<\/terminal-context>\s*/g, '')
+        .replace(/<selection[\s\S]*?<\/selection>\s*/g, '')
+        .replace(/<file[\s\S]*?<\/file>\s*/g, '')
         .trim();
       if (!text) continue;
-      const first = text.split("\n")[0].trim();
+      const first = text.split('\n')[0].trim();
       return first.length > 40 ? `${first.slice(0, 40)}…` : first;
     }
   }
-  return "New chat";
+  return 'New chat';
 }

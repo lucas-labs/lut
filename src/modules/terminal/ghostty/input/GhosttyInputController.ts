@@ -1,10 +1,10 @@
-import type { ImeAnchor } from "@/modules/terminal/ghostty/input/ImeAnchor";
-import { TerminalInputProxy } from "@/modules/terminal/ghostty/input/TerminalInputProxy";
-import type { TerminalMouse } from "@/modules/terminal/ghostty/input/TerminalMouse";
-import { TerminalNativeSelection } from "@/modules/terminal/ghostty/input/TerminalNativeSelection";
-import { readTerminalClipboard } from "@/modules/terminal/lib/terminalClipboard";
-import { Key, KeyAction, type KeyEvent } from "@terax/ghostty-core/protocol";
-import type { GhosttyTerminalModelApi } from "../GhosttyTerminalModel";
+import type { ImeAnchor } from '@/modules/terminal/ghostty/input/ImeAnchor';
+import { TerminalInputProxy } from '@/modules/terminal/ghostty/input/TerminalInputProxy';
+import type { TerminalMouse } from '@/modules/terminal/ghostty/input/TerminalMouse';
+import { TerminalNativeSelection } from '@/modules/terminal/ghostty/input/TerminalNativeSelection';
+import { readTerminalClipboard } from '@/modules/terminal/lib/terminalClipboard';
+import { Key, KeyAction, type KeyEvent } from '@terax/ghostty-core/protocol';
+import type { GhosttyTerminalModelApi } from '../GhosttyTerminalModel';
 import {
   buildKeyEvent,
   canonicalKittyPress,
@@ -14,9 +14,9 @@ import {
   type KeyRoute,
   KITTY_REPORT_EVENT_TYPES,
   routeKeyDown,
-} from "./keyRouting";
-import { type MacOptionAsAlt, optionActsAsMeta } from "./macOptionAsAlt";
-import { encodeTerminalPaste } from "./terminalInputEncoding";
+} from './keyRouting';
+import { type MacOptionAsAlt, optionActsAsMeta } from './macOptionAsAlt';
+import { encodeTerminalPaste } from './terminalInputEncoding';
 import {
   cursorKeySequence,
   DEFAULT_SCROLL_SPEED,
@@ -25,13 +25,13 @@ import {
   wheelLines,
   wheelRoute,
   wheelUnits,
-} from "./terminalWheel";
+} from './terminalWheel';
 
 const DUPLICATE_INPUT_WINDOW_MS = 75;
 const MODE_CURSOR_KEYS = 1;
 const MODE_ALTERNATE_SCROLL = 1007;
 
-type InputSource = "keydown" | "beforeinput" | "composition" | "paste";
+type InputSource = 'keydown' | 'beforeinput' | 'composition' | 'paste';
 
 export type GhosttyInputControllerOptions = {
   readonly model: GhosttyTerminalModelApi;
@@ -70,22 +70,19 @@ export class GhosttyInputController {
   private readonly wheel = new WheelAccumulator();
   private composing = false;
   private optionKeys = 0;
-  private lastData = "";
+  private lastData = '';
   private lastSource: InputSource | null = null;
   private lastDataAt = 0;
   private disposed = false;
 
   constructor(private readonly options: GhosttyInputControllerOptions) {
-    const userAgent =
-      typeof navigator === "undefined" ? "" : navigator.userAgent;
+    const userAgent = typeof navigator === 'undefined' ? '' : navigator.userAgent;
     this.isMac = options.isMac ?? /Mac|iPhone|iPad/.test(userAgent);
-    const isWindows =
-      options.isWindows ?? (!this.isMac && /Windows/.test(userAgent));
+    const isWindows = options.isWindows ?? (!this.isMac && /Windows/.test(userAgent));
     this.keyContext = {
       isMac: this.isMac,
       isWindows,
-      optionIsMeta: () =>
-        optionActsAsMeta(options.macOptionAsAlt?.() ?? "off", this.optionKeys),
+      optionIsMeta: () => optionActsAsMeta(options.macOptionAsAlt?.() ?? 'off', this.optionKeys),
       composing: () => this.composing,
       alternateScreen: () => options.model.modes().alternateScreen,
       kittyFlags: () => this.kittyFlags(),
@@ -106,17 +103,15 @@ export class GhosttyInputController {
     for (const [target, type, listener, listenerOptions] of this.listeners())
       target.addEventListener(type, listener, listenerOptions);
     this.loadCold(
-      "IME anchor",
-      () => import("./ImeAnchor"),
+      'IME anchor',
+      () => import('./ImeAnchor'),
       ({ ImeAnchor }) => {
-        this.imeAnchor = new ImeAnchor(options.input.style, () =>
-          this.cursorCell(),
-        );
+        this.imeAnchor = new ImeAnchor(options.input.style, () => this.cursorCell());
       },
     );
     this.loadCold(
-      "mouse reporting",
-      () => import("./TerminalMouse"),
+      'mouse reporting',
+      () => import('./TerminalMouse'),
       ({ TerminalMouse }) => {
         this.mouse = new TerminalMouse({
           model: options.model,
@@ -161,7 +156,7 @@ export class GhosttyInputController {
     if (this.options.onPaste?.(text)) return;
     this.emitText(
       encodeTerminalPaste(text, this.options.model.modes().bracketedPaste),
-      "paste",
+      'paste',
       false,
     );
   }
@@ -178,28 +173,18 @@ export class GhosttyInputController {
       target.removeEventListener(type, listener);
   }
 
-  private listeners(): [
-    EventTarget,
-    string,
-    EventListener,
-    AddEventListenerOptions?,
-  ][] {
+  private listeners(): [EventTarget, string, EventListener, AddEventListenerOptions?][] {
     const { input, pointerTarget } = this.options;
     return [
-      [input, "keydown", this.handleKeyDown as EventListener],
-      [input, "keyup", this.handleKeyUp as EventListener],
-      [input, "beforeinput", this.handleBeforeInput as EventListener],
-      [input, "compositionstart", this.handleCompositionStart],
-      [input, "compositionend", this.handleCompositionEnd as EventListener],
-      [input, "paste", this.handlePaste as EventListener],
-      [input, "focus", this.handleFocus],
-      [input, "blur", this.handleBlur],
-      [
-        pointerTarget,
-        "wheel",
-        this.handleWheel as EventListener,
-        { passive: false },
-      ],
+      [input, 'keydown', this.handleKeyDown as EventListener],
+      [input, 'keyup', this.handleKeyUp as EventListener],
+      [input, 'beforeinput', this.handleBeforeInput as EventListener],
+      [input, 'compositionstart', this.handleCompositionStart],
+      [input, 'compositionend', this.handleCompositionEnd as EventListener],
+      [input, 'paste', this.handlePaste as EventListener],
+      [input, 'focus', this.handleFocus],
+      [input, 'blur', this.handleBlur],
+      [pointerTarget, 'wheel', this.handleWheel as EventListener, { passive: false }],
     ];
   }
 
@@ -209,10 +194,8 @@ export class GhosttyInputController {
 
   /** Which Option keys are held (1 left, 2 right): a key event does not say. */
   private trackOptionKeys(event: KeyboardEvent, down: boolean): void {
-    const bit =
-      event.code === "AltLeft" ? 1 : event.code === "AltRight" ? 2 : 0;
-    if (bit)
-      this.optionKeys = down ? this.optionKeys | bit : this.optionKeys & ~bit;
+    const bit = event.code === 'AltLeft' ? 1 : event.code === 'AltRight' ? 2 : 0;
+    if (bit) this.optionKeys = down ? this.optionKeys | bit : this.optionKeys & ~bit;
     if (!event.altKey) this.optionKeys = 0;
   }
 
@@ -222,12 +205,12 @@ export class GhosttyInputController {
     if (ignoredForIme(event, this.keyContext)) return;
 
     let route = routeKeyDown(event, this.keyContext);
-    if (route.kind === "paste") {
+    if (route.kind === 'paste') {
       consume(event);
       this.pasteFromClipboard(event, route);
       return;
     }
-    if (route.kind === "copy") {
+    if (route.kind === 'copy') {
       if (this.options.onCopy()) {
         consume(event);
         return;
@@ -241,22 +224,22 @@ export class GhosttyInputController {
     }
 
     switch (route.kind) {
-      case "bytes":
+      case 'bytes':
         consume(event);
-        this.emitText(route.text, "keydown");
+        this.emitText(route.text, 'keydown');
         return;
-      case "text":
+      case 'text':
         consume(event);
         this.emitText(
           route.text,
-          "keydown",
+          'keydown',
           true,
           true,
           true,
           route.key === null ? undefined : { event, key: route.key },
         );
         return;
-      case "key": {
+      case 'key': {
         const encoded = this.encodeKeyDown(event, route.key, route.utf8);
         if (encoded.byteLength > 0) {
           consume(event);
@@ -272,7 +255,7 @@ export class GhosttyInputController {
 
   private pasteFromClipboard(
     event: KeyboardEvent,
-    route: Extract<KeyRoute, { kind: "paste" }>,
+    route: Extract<KeyRoute, { kind: 'paste' }>,
   ): void {
     // Ctrl+V is also a key: an application that reads the clipboard itself (an
     // image paste) gets it when there is no text to paste.
@@ -293,9 +276,7 @@ export class GhosttyInputController {
       }
       if (!data || !encoded || encoded.byteLength === 0) return;
       this.options.onData(
-        (flags & KITTY_REPORT_EVENT_TYPES) !== 0
-          ? canonicalKittyPress(encoded)
-          : encoded,
+        (flags & KITTY_REPORT_EVENT_TYPES) !== 0 ? canonicalKittyPress(encoded) : encoded,
       );
       // A press that went out as plain text has no release to report.
       if (encoded[0] !== 0x1b) return;
@@ -311,11 +292,7 @@ export class GhosttyInputController {
     });
   }
 
-  private encodeKeyDown(
-    event: KeyboardEvent,
-    key: Key,
-    utf8?: string,
-  ): Uint8Array {
+  private encodeKeyDown(event: KeyboardEvent, key: Key, utf8?: string): Uint8Array {
     const flags = this.kittyFlags();
     const action = event.repeat ? KeyAction.REPEAT : KeyAction.PRESS;
     const data = buildKeyEvent(event, key, action, flags, utf8);
@@ -367,19 +344,16 @@ export class GhosttyInputController {
   private readonly handleBeforeInput = (event: InputEvent): void => {
     if (this.composing || event.isComposing) return;
     const { inputType } = event;
-    if (inputType === "insertFromPaste") {
+    if (inputType === 'insertFromPaste') {
       if (event.data) this.paste(event.data);
       consume(event);
       return;
     }
-    const text =
-      inputType === "insertText" || inputType === "insertReplacementText";
-    const data = text
-      ? event.data
-      : (BEFORE_INPUT_BYTES.get(inputType) ?? null);
+    const text = inputType === 'insertText' || inputType === 'insertReplacementText';
+    const data = text ? event.data : (BEFORE_INPUT_BYTES.get(inputType) ?? null);
     if (!data) return;
     consume(event);
-    this.emitText(data, "beforeinput", true, true, text);
+    this.emitText(data, 'beforeinput', true, true, text);
     this.proxy.arm();
   };
 
@@ -391,12 +365,12 @@ export class GhosttyInputController {
   private readonly handleCompositionEnd = (event: CompositionEvent): void => {
     this.composing = false;
     this.imeAnchor?.end();
-    if (event.data) this.emitText(event.data, "composition", true, true, true);
+    if (event.data) this.emitText(event.data, 'composition', true, true, true);
     this.proxy.arm();
   };
 
   private readonly handlePaste = (event: ClipboardEvent): void => {
-    const text = event.clipboardData?.getData("text/plain") ?? "";
+    const text = event.clipboardData?.getData('text/plain') ?? '';
     if (!text) return;
     consume(event);
     this.paste(text);
@@ -404,7 +378,7 @@ export class GhosttyInputController {
 
   private readonly handleFocus = (): void => {
     if (this.options.model.modes().focusReporting) {
-      this.emitText("\x1b[I", "keydown", false, false);
+      this.emitText('\x1b[I', 'keydown', false, false);
     }
   };
 
@@ -416,7 +390,7 @@ export class GhosttyInputController {
     this.imeAnchor?.end();
     this.wheel.reset();
     if (this.options.model.modes().focusReporting) {
-      this.emitText("\x1b[O", "keydown", false, false);
+      this.emitText('\x1b[O', 'keydown', false, false);
     }
   };
 
@@ -445,8 +419,7 @@ export class GhosttyInputController {
       mouseTracking: modes.mouseTracking,
       shiftKey: event.shiftKey,
       alternateScreen: modes.alternateScreen,
-      alternateScroll:
-        modes.alternateScreen && model.mode(MODE_ALTERNATE_SCROLL),
+      alternateScroll: modes.alternateScreen && model.mode(MODE_ALTERNATE_SCROLL),
     });
     const lines = wheelLines(
       event.deltaY,
@@ -456,7 +429,7 @@ export class GhosttyInputController {
       this.options.scrollSpeed?.() ?? DEFAULT_SCROLL_SPEED,
     );
 
-    if (route === "scrollback") {
+    if (route === 'scrollback') {
       if (model.scrollPosition().history === 0) {
         this.wheel.reset();
         return;
@@ -468,19 +441,12 @@ export class GhosttyInputController {
     }
 
     consume(event);
-    const count = this.wheel.push(
-      route,
-      wheelUnits(route, lines),
-      MAX_WHEEL_REPORTS_PER_EVENT,
-    );
+    const count = this.wheel.push(route, wheelUnits(route, lines), MAX_WHEEL_REPORTS_PER_EVENT);
     if (count === 0) return;
     const times = Math.abs(count);
-    if (route === "arrows") {
-      const sequence = cursorKeySequence(
-        count < 0 ? "up" : "down",
-        model.mode(MODE_CURSOR_KEYS),
-      );
-      this.emitText(sequence.repeat(times), "keydown", false);
+    if (route === 'arrows') {
+      const sequence = cursorKeySequence(count < 0 ? 'up' : 'down', model.mode(MODE_CURSOR_KEYS));
+      this.emitText(sequence.repeat(times), 'keydown', false);
       return;
     }
     this.mouse?.wheel(event, count < 0, times);
@@ -502,7 +468,7 @@ export class GhosttyInputController {
       data === this.lastData &&
       now - this.lastDataAt < DUPLICATE_INPUT_WINDOW_MS
     ) {
-      this.lastData = "";
+      this.lastData = '';
       this.lastSource = null;
       return;
     }
@@ -511,9 +477,7 @@ export class GhosttyInputController {
     this.lastDataAt = now;
     if (editableText && this.options.onText?.(data)) return;
     if (scrollToBottom) this.options.model.scrollToBottom();
-    let bytes = keyed
-      ? this.encodeKeyDown(keyed.event, keyed.key)
-      : this.encoder.encode(data);
+    let bytes = keyed ? this.encodeKeyDown(keyed.event, keyed.key) : this.encoder.encode(data);
     // Typed text is never dropped because the encoder had no form for the key.
     if (keyed && bytes.byteLength === 0) bytes = this.encoder.encode(data);
     if (bytes.byteLength > 0) this.options.onData(bytes);
@@ -522,10 +486,10 @@ export class GhosttyInputController {
 
 /** What an editing command that reaches the input element means to the PTY. */
 const BEFORE_INPUT_BYTES: ReadonlyMap<string, string> = new Map([
-  ["insertLineBreak", "\r"],
-  ["insertParagraph", "\r"],
-  ["deleteContentBackward", "\x7f"],
-  ["deleteContentForward", "\x1b[3~"],
+  ['insertLineBreak', '\r'],
+  ['insertParagraph', '\r'],
+  ['deleteContentBackward', '\x7f'],
+  ['deleteContentForward', '\x1b[3~'],
 ]);
 
 function consume(event: Event): void {

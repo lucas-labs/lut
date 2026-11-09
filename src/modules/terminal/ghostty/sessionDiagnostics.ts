@@ -1,6 +1,6 @@
-import { ghosttyBlocks } from "./ghosttyBlockSessions";
-import { webGpuTerminalRuntimeDiagnostics } from "./gpu/WebGpuTerminalRuntime";
-import { ghosttySessionsForDiagnostics } from "./useGhosttyTerminalSession";
+import { ghosttyBlocks } from './ghosttyBlockSessions';
+import { webGpuTerminalRuntimeDiagnostics } from './gpu/WebGpuTerminalRuntime';
+import { ghosttySessionsForDiagnostics } from './useGhosttyTerminalSession';
 
 export function ghosttySessionDiagnostics() {
   return [...ghosttySessionsForDiagnostics()].map((session) => ({
@@ -48,7 +48,7 @@ export function ghosttySessionResourceTotals() {
     scrollbackLines += model?.scrollbackLines ?? 0;
     const surface = session.surface;
     if (!surface) continue;
-    if (surface.backend === "ghostty-webgpu") {
+    if (surface.backend === 'ghostty-webgpu') {
       const stats = surface.diagnostics();
       surfaceCpuBytes += stats.cpuBufferBytes;
       surfaceGpuBufferBytes += stats.gpuBufferBytes;
@@ -65,8 +65,7 @@ export function ghosttySessionResourceTotals() {
   }
 
   // The WebGPU swapchain belongs to the window canvases, not to the panes drawing into them.
-  const windowCanvasBytes =
-    webGpuTerminalRuntimeDiagnostics()?.canvases.colorBytes ?? 0;
+  const windowCanvasBytes = webGpuTerminalRuntimeDiagnostics()?.canvases.colorBytes ?? 0;
   canvasColorBytes += windowCanvasBytes;
   estimatedSwapchainBytes += windowCanvasBytes * 3;
 

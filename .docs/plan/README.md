@@ -88,24 +88,24 @@ Covering and "Not planned" are mutually exclusive. Every "Not planned" item that
 
 Epic metadata:
 
-| key | required | value |
-|---|---|---|
-| `id` | yes | `E01` |
-| `depends-on` | yes | list of epic ids |
-| `refs` | yes | proposal item ids, proposal section keys (`8.4`, `F3`) or `.docs/…` paths — documentation pointers |
+| key          | required | value                                                                                              |
+| ------------ | -------- | -------------------------------------------------------------------------------------------------- |
+| `id`         | yes      | `E01`                                                                                              |
+| `depends-on` | yes      | list of epic ids                                                                                   |
+| `refs`       | yes      | proposal item ids, proposal section keys (`8.4`, `F3`) or `.docs/…` paths — documentation pointers |
 
 Issue metadata:
 
-| key | required | value |
-|---|---|---|
-| `id` | yes | `E01-03` |
-| `depends-on` | yes | list of issue ids (blocked-by) |
-| `refs` | yes | documentation pointers (not counted as coverage) |
-| `covers` | yes (not for `closeout`) | proposal item ids and/or inventory item ids this issue implements |
-| `type` | yes | `task` · `design` (UI design work owned by the user) · `spike` (investigation) · `closeout` |
-| `scope` | yes | `ui` · `be` · `none` (matches commit scopes) |
-| `size` | yes | `XS` · `S` · `M` · `L` · `XL` |
-| `size-exception` | if size is L/XL | why it can't be split (e.g. mechanical deletion of a whole module) |
+| key              | required                 | value                                                                                       |
+| ---------------- | ------------------------ | ------------------------------------------------------------------------------------------- |
+| `id`             | yes                      | `E01-03`                                                                                    |
+| `depends-on`     | yes                      | list of issue ids (blocked-by)                                                              |
+| `refs`           | yes                      | documentation pointers (not counted as coverage)                                            |
+| `covers`         | yes (not for `closeout`) | proposal item ids and/or inventory item ids this issue implements                           |
+| `type`           | yes                      | `task` · `design` (UI design work owned by the user) · `spike` (investigation) · `closeout` |
+| `scope`          | yes                      | `ui` · `be` · `none` (matches commit scopes)                                                |
+| `size`           | yes                      | `XS` · `S` · `M` · `L` · `XL`                                                               |
+| `size-exception` | if size is L/XL          | why it can't be split (e.g. mechanical deletion of a whole module)                          |
 
 Issue body (required labels, bold):
 

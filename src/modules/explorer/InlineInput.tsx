@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from 'react';
 
 type Props = {
   initial: string;
@@ -12,12 +12,7 @@ type Props = {
  * Enter commits, Escape cancels, blur commits (matches VSCode behavior —
  * dismissing the input is an implicit commit so a typed name isn't lost).
  */
-export function InlineInput({
-  initial,
-  placeholder,
-  onCommit,
-  onCancel,
-}: Props) {
+export function InlineInput({ initial, placeholder, onCommit, onCancel }: Props) {
   const [value, setValue] = useState(initial);
   const ref = useRef<HTMLInputElement>(null);
   const committedRef = useRef(false);
@@ -40,7 +35,7 @@ export function InlineInput({
     // visible — there is no scroll-into-view we need from focus().
     const focus = () => {
       el.focus({ preventScroll: true });
-      const dot = initial.lastIndexOf(".");
+      const dot = initial.lastIndexOf('.');
       if (dot > 0) el.setSelectionRange(0, dot);
       else el.select();
     };
@@ -74,10 +69,10 @@ export function InlineInput({
       placeholder={placeholder}
       onChange={(e) => setValue(e.target.value)}
       onKeyDown={(e) => {
-        if (e.key === "Enter") {
+        if (e.key === 'Enter') {
           e.preventDefault();
           commit();
-        } else if (e.key === "Escape") {
+        } else if (e.key === 'Escape') {
           e.preventDefault();
           cancel();
         }

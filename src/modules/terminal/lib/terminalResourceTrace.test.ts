@@ -1,8 +1,8 @@
-import { recordTerminalResources } from "@/modules/terminal/lib/terminalDiagnostics";
-import { afterEach, expect, it, vi } from "vitest";
+import { recordTerminalResources } from '@/modules/terminal/lib/terminalDiagnostics';
+import { afterEach, expect, it, vi } from 'vitest';
 
 const bridge = vi.hoisted(() => ({ listeners: new Set<() => void>() }));
-vi.mock("@/modules/terminal/ghostty/windowPresentation", () => ({
+vi.mock('@/modules/terminal/ghostty/windowPresentation', () => ({
   windowPresentationDiagnostics: () => ({ visible: true }),
   subscribeWindowPresentation: (callback: () => void) => {
     bridge.listeners.add(callback);
@@ -10,26 +10,26 @@ vi.mock("@/modules/terminal/ghostty/windowPresentation", () => ({
     return () => bridge.listeners.delete(callback);
   },
 }));
-vi.mock("@/modules/terminal/ghostty/GhosttyCoreRuntime", () => ({
+vi.mock('@/modules/terminal/ghostty/GhosttyCoreRuntime', () => ({
   ghosttyCoreRuntimeDiagnostics: () => ({ wasmMemoryBytes: 0 }),
 }));
-vi.mock("@/modules/terminal/ghostty/gpu/WebGpuTerminalRuntime", () => ({
+vi.mock('@/modules/terminal/ghostty/gpu/WebGpuTerminalRuntime', () => ({
   webGpuTerminalRuntimeDiagnostics: () => null,
 }));
-vi.mock("@/modules/terminal/ghostty/webgl/WebGlTerminalRuntime", () => ({
+vi.mock('@/modules/terminal/ghostty/webgl/WebGlTerminalRuntime', () => ({
   webGlTerminalRuntimeDiagnostics: () => null,
 }));
-vi.mock("@/modules/terminal/ghostty/sessionDiagnostics", () => ({
+vi.mock('@/modules/terminal/ghostty/sessionDiagnostics', () => ({
   ghosttySessionResourceTotals: () => ({}),
   ghosttySessionDiagnostics: () => [],
 }));
-vi.mock("@/modules/terminal/lib/pty-bridge", () => ({
+vi.mock('@/modules/terminal/lib/pty-bridge', () => ({
   ptyTransportDiagnostics: () => ({}),
 }));
 
 afterEach(() => vi.useRealTimers());
 
-it("runs only one explicit recording and automatically releases its timers and subscription", () => {
+it('runs only one explicit recording and automatically releases its timers and subscription', () => {
   vi.useFakeTimers();
   expect(vi.getTimerCount()).toBe(0);
   const first = recordTerminalResources();

@@ -1,9 +1,9 @@
-import { cn, isMarkdownPath } from "@/lib/utils";
-import { MarkdownViewToggle } from "@/modules/markdown";
-import type { EditorTab, Tab } from "@/modules/tabs";
-import { useWindowInactive } from "@/modules/theme/WindowActivityBridge";
-import { useEffect, useRef } from "react";
-import { EditorPane, type EditorPaneHandle } from "./EditorPane";
+import { cn, isMarkdownPath } from '@/lib/utils';
+import { MarkdownViewToggle } from '@/modules/markdown';
+import type { EditorTab, Tab } from '@/modules/tabs';
+import { useWindowInactive } from '@/modules/theme/WindowActivityBridge';
+import { useEffect, useRef } from 'react';
+import { EditorPane, type EditorPaneHandle } from './EditorPane';
 
 type Props = {
   tabs: Tab[];
@@ -11,20 +11,11 @@ type Props = {
   onDirtyChange: (id: number, dirty: boolean) => void;
   registerHandle: (id: number, handle: EditorPaneHandle | null) => void;
   onCloseTab: (id: number) => void;
-  onSetMarkdownView: (id: number, mode: "rendered" | "raw") => void;
+  onSetMarkdownView: (id: number, mode: 'rendered' | 'raw') => void;
 };
 
-export function EditorStack({
-  tabs,
-  activeId,
-  onDirtyChange,
-  registerHandle,
-  onCloseTab,
-  onSetMarkdownView,
-}: Props) {
-  const editors = tabs.filter(
-    (t): t is EditorTab => t.kind === "editor" && !t.cold,
-  );
+export function EditorStack({ tabs, activeId, onDirtyChange, registerHandle, onCloseTab, onSetMarkdownView }: Props) {
+  const editors = tabs.filter((t): t is EditorTab => t.kind === 'editor' && !t.cold);
 
   // Stable per-tab callbacks. Inline arrows in `ref` and `onDirtyChange`
   // change identity every render, which makes React detach+reattach the ref
@@ -44,9 +35,7 @@ export function EditorStack({
     closeRef.current = onCloseTab;
   }, [onCloseTab]);
 
-  const refCallbacks = useRef(
-    new Map<number, (h: EditorPaneHandle | null) => void>(),
-  );
+  const refCallbacks = useRef(new Map<number, (h: EditorPaneHandle | null) => void>());
   const dirtyCallbacks = useRef(new Map<number, (dirty: boolean) => void>());
   const closeCallbacks = useRef(new Map<number, () => void>());
 
@@ -99,10 +88,7 @@ export function EditorStack({
         return (
           <div
             key={t.id}
-            className={cn(
-              "absolute inset-0",
-              !visible && "invisible pointer-events-none",
-            )}
+            className={cn('absolute inset-0', !visible && 'invisible pointer-events-none')}
             aria-hidden={!visible}
           >
             <div className="relative h-full overflow-hidden bg-background">

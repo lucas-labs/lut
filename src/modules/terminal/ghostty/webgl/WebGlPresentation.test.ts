@@ -1,10 +1,10 @@
-import type { GhosttyTerminalModelApi } from "@/modules/terminal/ghostty/GhosttyTerminalModel";
-import { WebGlCellRenderer } from "@/modules/terminal/ghostty/webgl/WebGlCellRenderer";
-import { afterEach, expect, it, vi } from "vitest";
+import type { GhosttyTerminalModelApi } from '@/modules/terminal/ghostty/GhosttyTerminalModel';
+import { WebGlCellRenderer } from '@/modules/terminal/ghostty/webgl/WebGlCellRenderer';
+import { afterEach, expect, it, vi } from 'vitest';
 
 afterEach(() => vi.unstubAllGlobals());
 
-it("keeps unchanged WebGL frames idle, retains cursor buffers, and presents cached data on request", () => {
+it('keeps unchanged WebGL frames idle, retains cursor buffers, and presents cached data on request', () => {
   const methods = new Map<string, ReturnType<typeof vi.fn>>();
   const gl = new Proxy(
     {},
@@ -13,14 +13,14 @@ it("keeps unchanged WebGL frames idle, retains cursor buffers, and presents cach
         if (/^[A-Z_0-9]+$/.test(key)) return 1;
         let method = methods.get(key);
         if (!method) {
-          method = vi.fn(() => (key === "getExtension" ? null : {}));
+          method = vi.fn(() => (key === 'getExtension' ? null : {}));
           methods.set(key, method);
         }
         return method;
       },
     },
   );
-  vi.stubGlobal("document", {
+  vi.stubGlobal('document', {
     createElement: () =>
       Object.assign(new EventTarget(), {
         width: 1,
@@ -28,11 +28,11 @@ it("keeps unchanged WebGL frames idle, retains cursor buffers, and presents cach
         style: {},
         setAttribute() {},
         remove() {},
-        getContext: (kind: string) => (kind === "webgl2" ? gl : {}),
+        getContext: (kind: string) => (kind === 'webgl2' ? gl : {}),
       }),
   });
   const renderer = new WebGlCellRenderer();
-  const cursor = { x: 0, y: 0, visible: true, blinking: false, style: "block" };
+  const cursor = { x: 0, y: 0, visible: true, blinking: false, style: 'block' };
   let background = 0;
   const model = {
     cols: 80,
@@ -63,9 +63,9 @@ it("keeps unchanged WebGL frames idle, retains cursor buffers, and presents cach
           cellHeight: 16,
           baseline: 12,
           font: {
-            family: "monospace",
+            family: 'monospace',
             size: 14,
-            weight: "400",
+            weight: '400',
             lineHeight: 1.2,
             letterSpacing: 0,
           },
@@ -87,21 +87,20 @@ it("keeps unchanged WebGL frames idle, retains cursor buffers, and presents cach
     renderer.resize(80, 24);
     const frame = {
       model,
-      damage: { kind: "none" as const },
+      damage: { kind: 'none' as const },
       cursorVisible: true,
       textBlinkVisible: true,
       selection: null,
       searchMatchAt: () => 0 as const,
     };
     expect(renderer.render(frame)).toBe(true);
-    const upload = methods.get("bufferData");
-    const glyphUpload = methods.get("bufferSubData");
-    const draw = methods.get("drawElementsInstanced");
+    const upload = methods.get('bufferData');
+    const glyphUpload = methods.get('bufferSubData');
+    const draw = methods.get('drawElementsInstanced');
     upload?.mockClear();
     glyphUpload?.mockClear();
     draw?.mockClear();
-    for (let index = 0; index < 100; index++)
-      expect(renderer.render(frame)).toBe(false);
+    for (let index = 0; index < 100; index++) expect(renderer.render(frame)).toBe(false);
     expect(upload).not.toHaveBeenCalled();
     expect(draw).not.toHaveBeenCalled();
     cursor.x++;
@@ -117,15 +116,13 @@ it("keeps unchanged WebGL frames idle, retains cursor buffers, and presents cach
     renderer.render(frame);
     draw?.mockClear();
     for (let index = 0; index < 100; index++)
-      expect(
-        renderer.render({ ...frame, cursorVisible: index % 2 === 0 }),
-      ).toBe(false);
+      expect(renderer.render({ ...frame, cursorVisible: index % 2 === 0 })).toBe(false);
     expect(draw).not.toHaveBeenCalled();
     upload?.mockClear();
     glyphUpload?.mockClear();
     const rowDamage = {
       ...frame,
-      damage: { kind: "rows" as const, ranges: [{ start: 3, end: 3 }] },
+      damage: { kind: 'rows' as const, ranges: [{ start: 3, end: 3 }] },
     };
     expect(renderer.render(rowDamage)).toBe(true);
     expect(upload).not.toHaveBeenCalled();
@@ -135,20 +132,16 @@ it("keeps unchanged WebGL frames idle, retains cursor buffers, and presents cach
     expect(renderer.render(rowDamage)).toBe(true);
     expect(upload).toHaveBeenCalledOnce();
     expect(upload?.mock.calls[0][1].length).toBe(9);
-    renderer.render({ ...frame, damage: { kind: "full" } });
+    renderer.render({ ...frame, damage: { kind: 'full' } });
     const rectangleBytes = renderer.diagnostics().uploadedRectangleBytes;
     upload?.mockClear();
     glyphUpload?.mockClear();
     background = 0x223344;
     renderer.render(rowDamage);
     expect(upload).not.toHaveBeenCalled();
-    expect(renderer.diagnostics().uploadedRectangleBytes - rectangleBytes).toBe(
-      36,
-    );
+    expect(renderer.diagnostics().uploadedRectangleBytes - rectangleBytes).toBe(36);
     expect(
-      glyphUpload?.mock.calls.some(
-        (call) => call[1] === 3 * 36 && call[2].byteLength === 36,
-      ),
+      glyphUpload?.mock.calls.some((call) => call[1] === 3 * 36 && call[2].byteLength === 36),
     ).toBe(true);
     background = 0;
     upload?.mockClear();
@@ -156,13 +149,11 @@ it("keeps unchanged WebGL frames idle, retains cursor buffers, and presents cach
     expect(upload).not.toHaveBeenCalled();
     cursor.visible = true;
     renderer.render(frame);
-    renderer.canvas.dispatchEvent(new Event("webglcontextrestored"));
+    renderer.canvas.dispatchEvent(new Event('webglcontextrestored'));
     upload?.mockClear();
     expect(renderer.render(frame)).toBe(true);
     expect(
-      upload?.mock.calls.some(
-        (call) => call[1] instanceof Float32Array && call[1].length === 9,
-      ),
+      upload?.mock.calls.some((call) => call[1] instanceof Float32Array && call[1].length === 9),
     ).toBe(true);
   } finally {
     renderer.dispose();

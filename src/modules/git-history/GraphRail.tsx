@@ -1,5 +1,5 @@
-import { memo, type ReactElement } from "react";
-import type { GraphEdge, GraphRow } from "./lib/graph";
+import { memo, type ReactElement } from 'react';
+import type { GraphEdge, GraphRow } from './lib/graph';
 
 const LANE_WIDTH = 14;
 const RAIL_PADDING_X = 8;
@@ -25,7 +25,7 @@ type Props = {
 };
 
 function renderTopEdge(edge: GraphEdge, midY: number): ReactElement | null {
-  if (edge.kind === "straight") {
+  if (edge.kind === 'straight') {
     const x = laneX(edge.lane);
     return (
       <line
@@ -40,7 +40,7 @@ function renderTopEdge(edge: GraphEdge, midY: number): ReactElement | null {
       />
     );
   }
-  if (edge.kind === "merge") {
+  if (edge.kind === 'merge') {
     const xFrom = laneX(edge.fromLane);
     const xTo = laneX(edge.toLane);
     const c1y = midY * 0.55;
@@ -58,12 +58,8 @@ function renderTopEdge(edge: GraphEdge, midY: number): ReactElement | null {
   return null;
 }
 
-function renderBottomEdge(
-  edge: GraphEdge,
-  midY: number,
-  bottomY: number,
-): ReactElement | null {
-  if (edge.kind === "straight") {
+function renderBottomEdge(edge: GraphEdge, midY: number, bottomY: number): ReactElement | null {
+  if (edge.kind === 'straight') {
     const x = laneX(edge.lane);
     return (
       <line
@@ -78,7 +74,7 @@ function renderBottomEdge(
       />
     );
   }
-  if (edge.kind === "branch") {
+  if (edge.kind === 'branch') {
     const xFrom = laneX(edge.fromLane);
     const xTo = laneX(edge.toLane);
     const c1y = midY + (bottomY - midY) * 0.45;
@@ -96,12 +92,7 @@ function renderBottomEdge(
   return null;
 }
 
-export const GraphRail = memo(function GraphRail({
-  row,
-  rowHeight,
-  maxLaneCount,
-  active,
-}: Props) {
+export const GraphRail = memo(function GraphRail({ row, rowHeight, maxLaneCount, active }: Props) {
   const width = railWidth(maxLaneCount);
   const midY = Math.round(rowHeight / 2);
   const nodeX = laneX(row.lane);
@@ -140,13 +131,7 @@ export const GraphRail = memo(function GraphRail({
         />
       ) : null}
       {overflow ? (
-        <text
-          x={width - 4}
-          y={midY + 3}
-          textAnchor="end"
-          className="fill-muted-foreground"
-          style={{ fontSize: 8 }}
-        >
+        <text x={width - 4} y={midY + 3} textAnchor="end" className="fill-muted-foreground" style={{ fontSize: 8 }}>
           +{row.laneCount - visible}
         </text>
       ) : null}

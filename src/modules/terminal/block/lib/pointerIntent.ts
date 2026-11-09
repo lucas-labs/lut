@@ -9,10 +9,10 @@ let tracking = false;
  * apart. Installed once, on first use.
  */
 export function trackPointer(): void {
-  if (tracking || typeof document === "undefined") return;
+  if (tracking || typeof document === 'undefined') return;
   tracking = true;
   document.addEventListener(
-    "mousemove",
+    'mousemove',
     (event) => {
       lastSeen = { x: event.clientX, y: event.clientY };
     },

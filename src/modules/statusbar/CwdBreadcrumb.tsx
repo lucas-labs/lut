@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import { Badge } from '@/components/ui/badge';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -6,25 +6,20 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+} from '@/components/ui/breadcrumb';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import { currentWorkspaceEnv } from "@/modules/workspace";
-import {
-  ArrowDown01Icon,
-  Folder01Icon,
-  Home03Icon,
-  MoreHorizontalIcon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { invoke } from "@tauri-apps/api/core";
-import { useCallback, useEffect, useState } from "react";
-import { segmentsFromCwd } from "./lib/pathUtils";
+} from '@/components/ui/dropdown-menu';
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import { currentWorkspaceEnv } from '@/modules/workspace';
+import { ArrowDown01Icon, Folder01Icon, Home03Icon, MoreHorizontalIcon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { invoke } from '@tauri-apps/api/core';
+import { useCallback, useEffect, useState } from 'react';
+import { segmentsFromCwd } from './lib/pathUtils';
 
 type Props = {
   cwd: string | null;
@@ -34,13 +29,13 @@ type Props = {
 };
 
 function dirname(path: string): string {
-  const i = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
-  if (i <= 0) return "/";
+  const i = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+  if (i <= 0) return '/';
   return path.slice(0, i);
 }
 
 function basename(path: string): string {
-  const i = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
+  const i = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
   return i === -1 ? path : path.slice(i + 1);
 }
 
@@ -56,22 +51,12 @@ export function CwdBreadcrumb({ cwd, filePath, home, onCd }: Props) {
       <Breadcrumb>
         <BreadcrumbList className="gap-1 text-xs sm:gap-1.5">
           {first ? (
-            <BreadcrumbSegment
-              label={first.label}
-              isHome={first.isHome}
-              onClick={() => onCd(first.fullPath)}
-            />
+            <BreadcrumbSegment label={first.label} isHome={first.isHome} onClick={() => onCd(first.fullPath)} />
           ) : null}
-          {middle.length > 0 ? (
-            <CollapsedSegments segments={middle} onCd={onCd} />
-          ) : null}
+          {middle.length > 0 ? <CollapsedSegments segments={middle} onCd={onCd} /> : null}
           {middle.map((s) => (
             <span key={s.fullPath} className="contents max-md:hidden">
-              <BreadcrumbSegment
-                label={s.label}
-                isHome={s.isHome}
-                onClick={() => onCd(s.fullPath)}
-              />
+              <BreadcrumbSegment label={s.label} isHome={s.isHome} onClick={() => onCd(s.fullPath)} />
             </span>
           ))}
           <BreadcrumbItem>
@@ -83,9 +68,7 @@ export function CwdBreadcrumb({ cwd, filePath, home, onCd }: Props) {
   }
 
   if (!cwd) {
-    return (
-      <span className="text-xs text-muted-foreground/70">no directory</span>
-    );
+    return <span className="text-xs text-muted-foreground/70">no directory</span>;
   }
 
   const segments = segmentsFromCwd(cwd, home);
@@ -104,56 +87,29 @@ export function CwdBreadcrumb({ cwd, filePath, home, onCd }: Props) {
             onClick={() => onCd(firstParent.fullPath)}
           />
         ) : null}
-        {middleParents.length > 0 ? (
-          <CollapsedSegments segments={middleParents} onCd={onCd} />
-        ) : null}
+        {middleParents.length > 0 ? <CollapsedSegments segments={middleParents} onCd={onCd} /> : null}
         {middleParents.map((s) => (
           <span key={s.fullPath} className="contents max-md:hidden">
-            <BreadcrumbSegment
-              label={s.label}
-              isHome={s.isHome}
-              onClick={() => onCd(s.fullPath)}
-            />
+            <BreadcrumbSegment label={s.label} isHome={s.isHome} onClick={() => onCd(s.fullPath)} />
           </span>
         ))}
         <BreadcrumbItem>
-          <CurrentSegmentDropdown
-            label={current.label}
-            path={current.fullPath}
-            onCd={onCd}
-          />
+          <CurrentSegmentDropdown label={current.label} path={current.fullPath} onCd={onCd} />
         </BreadcrumbItem>
       </BreadcrumbList>
     </Breadcrumb>
   );
 }
 
-function BreadcrumbSegment({
-  label,
-  isHome,
-  onClick,
-}: {
-  label: string;
-  isHome: boolean;
-  onClick: () => void;
-}) {
+function BreadcrumbSegment({ label, isHome, onClick }: { label: string; isHome: boolean; onClick: () => void }) {
   return (
     <>
       <BreadcrumbItem>
         <BreadcrumbLink asChild>
           <button type="button" onClick={onClick} className="cursor-pointer">
-            <Badge
-              variant="outline"
-              className="gap-1 text-muted-foreground hover:text-foreground"
-            >
-              {isHome ? (
-                <HugeiconsIcon
-                  icon={Home03Icon}
-                  className="size-3"
-                  strokeWidth={1.75}
-                />
-              ) : null}
-              {isHome ? "Home" : label}
+            <Badge variant="outline" className="gap-1 text-muted-foreground hover:text-foreground">
+              {isHome ? <HugeiconsIcon icon={Home03Icon} className="size-3" strokeWidth={1.75} /> : null}
+              {isHome ? 'Home' : label}
             </Badge>
           </button>
         </BreadcrumbLink>
@@ -163,15 +119,7 @@ function BreadcrumbSegment({
   );
 }
 
-function CurrentSegmentDropdown({
-  label,
-  path,
-  onCd,
-}: {
-  label: string;
-  path: string;
-  onCd: (p: string) => void;
-}) {
+function CurrentSegmentDropdown({ label, path, onCd }: { label: string; path: string; onCd: (p: string) => void }) {
   const showHidden = usePreferencesStore((s) => s.showHidden);
   const [open, setOpen] = useState(false);
   const [children, setChildren] = useState<string[] | null>(null);
@@ -180,7 +128,7 @@ function CurrentSegmentDropdown({
   const load = useCallback(async () => {
     setError(null);
     try {
-      const dirs = await invoke<string[]>("list_subdirs", {
+      const dirs = await invoke<string[]>('list_subdirs', {
         path,
         showHidden,
         workspace: currentWorkspaceEnv(),
@@ -200,47 +148,29 @@ function CurrentSegmentDropdown({
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <BreadcrumbPage className="flex cursor-pointer items-center gap-1 rounded-sm px-1 py-0.5 text-foreground hover:bg-accent">
-          {label === "~" ? (
+          {label === '~' ? (
             <>
-              <HugeiconsIcon
-                icon={Home03Icon}
-                className="size-3"
-                strokeWidth={1.75}
-              />
+              <HugeiconsIcon icon={Home03Icon} className="size-3" strokeWidth={1.75} />
               Home
             </>
           ) : (
             label
           )}
-          <HugeiconsIcon
-            icon={ArrowDown01Icon}
-            className="size-3 opacity-70"
-            strokeWidth={2}
-          />
+          <HugeiconsIcon icon={ArrowDown01Icon} className="size-3 opacity-70" strokeWidth={2} />
         </BreadcrumbPage>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
         {children === null ? (
-          <div className="px-2 py-1.5 text-xs text-muted-foreground">
-            Loading…
-          </div>
+          <div className="px-2 py-1.5 text-xs text-muted-foreground">Loading…</div>
         ) : children.length === 0 ? (
-          <div className="px-2 py-1.5 text-xs text-muted-foreground">
-            {error ?? "No subfolders"}
-          </div>
+          <div className="px-2 py-1.5 text-xs text-muted-foreground">{error ?? 'No subfolders'}</div>
         ) : (
           children.map((name) => (
             <DropdownMenuItem
               key={name}
-              onSelect={() =>
-                onCd(path.endsWith("/") ? `${path}${name}` : `${path}/${name}`)
-              }
+              onSelect={() => onCd(path.endsWith('/') ? `${path}${name}` : `${path}/${name}`)}
             >
-              <HugeiconsIcon
-                icon={Folder01Icon}
-                className="size-3.5 text-muted-foreground"
-                strokeWidth={1.75}
-              />
+              <HugeiconsIcon icon={Folder01Icon} className="size-3.5 text-muted-foreground" strokeWidth={1.75} />
               {name}
             </DropdownMenuItem>
           ))
@@ -267,25 +197,18 @@ function CollapsedSegments({
               title="Show hidden folders"
               className="flex items-center rounded-sm px-1 text-muted-foreground hover:bg-accent hover:text-foreground"
             >
-              <HugeiconsIcon
-                icon={MoreHorizontalIcon}
-                className="size-3"
-                strokeWidth={1.75}
-              />
+              <HugeiconsIcon icon={MoreHorizontalIcon} className="size-3" strokeWidth={1.75} />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="min-w-44">
             {segments.map((s) => (
-              <DropdownMenuItem
-                key={s.fullPath}
-                onSelect={() => onCd(s.fullPath)}
-              >
+              <DropdownMenuItem key={s.fullPath} onSelect={() => onCd(s.fullPath)}>
                 <HugeiconsIcon
                   icon={s.isHome ? Home03Icon : Folder01Icon}
                   className="size-3.5 text-muted-foreground"
                   strokeWidth={1.75}
                 />
-                <span className="truncate">{s.isHome ? "Home" : s.label}</span>
+                <span className="truncate">{s.isHome ? 'Home' : s.label}</span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>

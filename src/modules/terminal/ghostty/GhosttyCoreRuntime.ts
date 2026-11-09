@@ -1,31 +1,28 @@
-import { TeraxGhostty } from "@terax/ghostty-core/adapted";
-import type { GhosttyTerminalConfig } from "@terax/ghostty-core/protocol";
-import { AdaptedGhosttyTerminalModel } from "./AdaptedGhosttyTerminalModel";
+import { TeraxGhostty } from '@terax/ghostty-core/adapted';
+import type { GhosttyTerminalConfig } from '@terax/ghostty-core/protocol';
+import { AdaptedGhosttyTerminalModel } from './AdaptedGhosttyTerminalModel';
 import {
   allocateScrollbackBytes,
   DEFAULT_SCROLLBACK_BUDGET_BYTES,
   normalizeScrollbackLines,
   requestedScrollbackBytes,
   type ScrollbackDemand,
-} from "./core/scrollbackBudget";
-import type {
-  GhosttyTerminalModelApi,
-  GhosttyTerminalModelOptions,
-} from "./GhosttyTerminalModel";
+} from './core/scrollbackBudget';
+import type { GhosttyTerminalModelApi, GhosttyTerminalModelOptions } from './GhosttyTerminalModel';
 
 const IDLE_WASM_RELEASE_MS = 60_000;
 
 export type GhosttyModelOptions = Omit<
   GhosttyTerminalModelOptions,
-  "onDispose" | "config" | "backend"
+  'onDispose' | 'config' | 'backend'
 > & {
   readonly leafId: number;
-  readonly backend?: GhosttyTerminalModelOptions["backend"];
+  readonly backend?: GhosttyTerminalModelOptions['backend'];
   readonly config?: GhosttyTerminalConfig;
 };
 
 export type GhosttyRuntimeDiagnostics = {
-  readonly status: "cold" | "loading" | "ready" | "failed";
+  readonly status: 'cold' | 'loading' | 'ready' | 'failed';
   /** Linear memory summed over the instances of all live models. */
   readonly wasmMemoryBytes: number;
   /** Live WebAssembly instances: one per model. */
@@ -59,7 +56,7 @@ export class GhosttyCoreRuntime {
   private readonly pendingModels = new Set<number>();
   private loadPromise: Promise<TeraxGhostty> | null = null;
   private ghostty: TeraxGhostty | null = null;
-  private status: GhosttyRuntimeDiagnostics["status"] = "cold";
+  private status: GhosttyRuntimeDiagnostics['status'] = 'cold';
   private lastError: string | null = null;
   private idleReleaseTimer: ReturnType<typeof setTimeout> | null = null;
   private scrollbackBudgetBytes: number;
@@ -70,8 +67,7 @@ export class GhosttyCoreRuntime {
     options: GhosttyCoreRuntimeOptions = {},
   ) {
     this.loader = loader;
-    this.scrollbackBudgetBytes =
-      options.scrollbackBudgetBytes ?? DEFAULT_SCROLLBACK_BUDGET_BYTES;
+    this.scrollbackBudgetBytes = options.scrollbackBudgetBytes ?? DEFAULT_SCROLLBACK_BUDGET_BYTES;
   }
 
   preload(): Promise<void> {
@@ -79,17 +75,10 @@ export class GhosttyCoreRuntime {
     return this.load().then(() => this.scheduleIdleRelease());
   }
 
-  async createModel(
-    options: GhosttyModelOptions,
-  ): Promise<GhosttyTerminalModelApi> {
+  async createModel(options: GhosttyModelOptions): Promise<GhosttyTerminalModelApi> {
     this.cancelIdleRelease();
-    if (
-      this.models.has(options.leafId) ||
-      this.pendingModels.has(options.leafId)
-    ) {
-      throw new Error(
-        `Ghostty model already exists for leaf ${options.leafId}`,
-      );
+    if (this.models.has(options.leafId) || this.pendingModels.has(options.leafId)) {
+      throw new Error(`Ghostty model already exists for leaf ${options.leafId}`);
     }
 
     this.pendingModels.add(options.leafId);
@@ -97,7 +86,7 @@ export class GhosttyCoreRuntime {
       const ghostty = await this.load();
       this.assertLive();
       const model = new AdaptedGhosttyTerminalModel(ghostty, {
-        backend: options.backend ?? "ghostty-webgpu",
+        backend: options.backend ?? 'ghostty-webgpu',
         cols: options.cols,
         rows: options.rows,
         config: options.config,
@@ -139,7 +128,7 @@ export class GhosttyCoreRuntime {
    */
   setScrollbackBudget(bytes: number): void {
     if (!Number.isFinite(bytes) || bytes <= 0) {
-      throw new RangeError("Scrollback budget must be a positive byte count");
+      throw new RangeError('Scrollback budget must be a positive byte count');
     }
     this.scrollbackBudgetBytes = Math.floor(bytes);
     this.rebalanceScrollback();
@@ -151,7 +140,7 @@ export class GhosttyCoreRuntime {
     this.cancelIdleRelease();
     this.ghostty = null;
     this.loadPromise = null;
-    this.status = "cold";
+    this.status = 'cold';
     this.lastError = null;
   }
 
@@ -171,9 +160,7 @@ export class GhosttyCoreRuntime {
       modelCount: this.models.size,
       pendingModelCount: this.pendingModels.size,
       idleReleaseScheduled: this.idleReleaseTimer !== null,
-      nativeDeviceAttributes: this.ghostty
-        ? nativeDeviceAttributes(this.ghostty)
-        : null,
+      nativeDeviceAttributes: this.ghostty ? nativeDeviceAttributes(this.ghostty) : null,
       scrollbackBudgetBytes: this.scrollbackBudgetBytes,
       scrollbackRequestedBytes: requested,
       scrollbackGrantedBytes: granted,
@@ -182,12 +169,11 @@ export class GhosttyCoreRuntime {
   }
 
   private load(): Promise<TeraxGhostty> {
-    if (this.disposed)
-      return Promise.reject(new Error("Ghostty runtime is disposed"));
+    if (this.disposed) return Promise.reject(new Error('Ghostty runtime is disposed'));
     if (this.ghostty) return Promise.resolve(this.ghostty);
     if (this.loadPromise) return this.loadPromise;
 
-    this.status = "loading";
+    this.status = 'loading';
     this.lastError = null;
     this.loadPromise = Promise.resolve()
       .then(() => {
@@ -197,14 +183,13 @@ export class GhosttyCoreRuntime {
       .then((ghostty) => {
         this.assertLive();
         this.ghostty = ghostty;
-        this.status = "ready";
+        this.status = 'ready';
         return ghostty;
       })
       .catch((error: unknown) => {
         if (!this.disposed) {
-          this.status = "failed";
-          this.lastError =
-            error instanceof Error ? error.message : String(error);
+          this.status = 'failed';
+          this.lastError = error instanceof Error ? error.message : String(error);
           this.loadPromise = null;
         }
         throw error;
@@ -227,10 +212,7 @@ export class GhosttyCoreRuntime {
   private rebalanceScrollback(): void {
     const models = [...this.models.values()];
     if (models.length === 0) return;
-    const grants = allocateScrollbackBytes(
-      this.scrollbackDemands(),
-      this.scrollbackBudgetBytes,
-    );
+    const grants = allocateScrollbackBytes(this.scrollbackDemands(), this.scrollbackBudgetBytes);
     models.forEach((model, index) => {
       model.setScrollbackByteLimit(grants[index]);
     });
@@ -258,7 +240,7 @@ export class GhosttyCoreRuntime {
       if (this.models.size > 0 || this.pendingModels.size > 0) return;
       this.ghostty = null;
       this.loadPromise = null;
-      this.status = "cold";
+      this.status = 'cold';
       this.lastError = null;
     }, IDLE_WASM_RELEASE_MS);
     unrefTimer(this.idleReleaseTimer);
@@ -271,7 +253,7 @@ export class GhosttyCoreRuntime {
   }
 
   private assertLive(): void {
-    if (this.disposed) throw new Error("Ghostty runtime is disposed");
+    if (this.disposed) throw new Error('Ghostty runtime is disposed');
   }
 }
 
@@ -286,9 +268,9 @@ function nativeDeviceAttributes(ghostty: TeraxGhostty): boolean {
   const terminal = ghostty.createTerminal(2, 1);
   let result: boolean;
   try {
-    terminal.write(new TextEncoder().encode("\x1b[c\x1b[>c"));
+    terminal.write(new TextEncoder().encode('\x1b[c\x1b[>c'));
     const response = new TextDecoder().decode(terminal.drainOutputBytes());
-    result = response.includes("\x1b[?") && response.includes("\x1b[>");
+    result = response.includes('\x1b[?') && response.includes('\x1b[>');
   } finally {
     terminal.dispose();
   }
@@ -315,7 +297,7 @@ if (import.meta.hot) {
 }
 
 function unrefTimer(timer: ReturnType<typeof setTimeout>): void {
-  if (typeof timer !== "object" || timer === null || !("unref" in timer)) {
+  if (typeof timer !== 'object' || timer === null || !('unref' in timer)) {
     return;
   }
   (timer as { unref(): void }).unref();

@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
-import { startBenchDriver } from "./driver";
-import type { BenchAppApi } from "./types";
+import { useEffect, useRef } from 'react';
+import { startBenchDriver } from './driver';
+import type { BenchAppApi } from './types';
 
 /**
  * Mounted by App only in TERAX_BENCH builds. It hands the live tab actions to the scenario driver

@@ -1,4 +1,4 @@
-import { type Extension, RangeSetBuilder } from "@codemirror/state";
+import { type Extension, RangeSetBuilder } from '@codemirror/state';
 import {
   Decoration,
   type DecorationSet,
@@ -6,13 +6,12 @@ import {
   ViewPlugin,
   type ViewUpdate,
   WidgetType,
-} from "@codemirror/view";
+} from '@codemirror/view';
 
-const COLOR_RE =
-  /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})\b|(?:rgba?|hsla?)\([^)]*\)/gi;
+const COLOR_RE = /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})\b|(?:rgba?|hsla?)\([^)]*\)/gi;
 
 function isHex(color: string): boolean {
-  return color.startsWith("#");
+  return color.startsWith('#');
 }
 
 function toHex6(color: string): string {
@@ -53,19 +52,19 @@ class SwatchWidget extends WidgetType {
   }
 
   toDOM(view: EditorView): HTMLElement {
-    const wrap = document.createElement("span");
-    wrap.className = "cm-color-swatch";
+    const wrap = document.createElement('span');
+    wrap.className = 'cm-color-swatch';
     wrap.style.backgroundColor = this.color;
     if (!this.editable) return wrap;
 
-    const input = document.createElement("input");
-    input.type = "color";
-    input.className = "cm-color-swatch-input";
+    const input = document.createElement('input');
+    input.type = 'color';
+    input.className = 'cm-color-swatch-input';
     input.value = toHex6(this.color);
-    input.addEventListener("input", () => {
+    input.addEventListener('input', () => {
       wrap.style.backgroundColor = applyHex(this.color, input.value);
     });
-    input.addEventListener("change", () => {
+    input.addEventListener('change', () => {
       view.dispatch({
         changes: {
           from: this.from,

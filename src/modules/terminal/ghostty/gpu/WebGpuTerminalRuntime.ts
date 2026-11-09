@@ -1,25 +1,21 @@
-import { smoothHooks } from "@/bench/smoothHooks";
-import { SurfaceFramePacer } from "@/modules/terminal/ghostty/SurfaceFramePacer";
+import { smoothHooks } from '@/bench/smoothHooks';
+import { SurfaceFramePacer } from '@/modules/terminal/ghostty/SurfaceFramePacer';
 import {
   subscribeWindowPresentation,
   terminalWindowPresentation,
-} from "@/modules/terminal/ghostty/windowPresentation";
-import type { WindowPresentation } from "@/modules/terminal/ghostty/WindowPresentationPolicy";
-import { subscribeTerminalResizeInteraction } from "@/modules/terminal/lib/terminalResizeInteraction";
+} from '@/modules/terminal/ghostty/windowPresentation';
+import type { WindowPresentation } from '@/modules/terminal/ghostty/WindowPresentationPolicy';
+import { subscribeTerminalResizeInteraction } from '@/modules/terminal/lib/terminalResizeInteraction';
 import {
   bindTerminalWindowFocus,
   terminalFrameIntervalMs,
   terminalWindowFocused,
-} from "../renderScheduling";
-import {
-  GcPressureMirror,
-  gcPressureOptionsFromStorage,
-  type GcPressureStats,
-} from "./GcPressure";
-import { GlyphAtlas } from "./GlyphAtlas";
-import type { RasterBudget } from "./GlyphMap";
-import { BACKGROUND_SHADER, GLYPH_SHADER } from "./shaders";
-import type { TerminalFontMetrics } from "./terminalVisuals";
+} from '../renderScheduling';
+import { GcPressureMirror, gcPressureOptionsFromStorage, type GcPressureStats } from './GcPressure';
+import { GlyphAtlas } from './GlyphAtlas';
+import type { RasterBudget } from './GlyphMap';
+import { BACKGROUND_SHADER, GLYPH_SHADER } from './shaders';
+import type { TerminalFontMetrics } from './terminalVisuals';
 import {
   findTerminalArea,
   type PaneBinding,
@@ -29,7 +25,7 @@ import {
   type WindowCanvasStats,
   windowFrameNeeded,
   type WindowFrameStart,
-} from "./WebGpuWindowCanvas";
+} from './WebGpuWindowCanvas';
 
 const MAX_ATLAS_COUNT = 8;
 const MAX_WARM_UNUSED_ATLASES = 1;
@@ -59,10 +55,7 @@ export interface WebGpuRuntimeSurface extends WindowCanvasPane {
    * pane's pixels differ and a window frame must draw them. Encodes nothing: the window
    * canvas draws every visible pane after all surfaces prepared.
    */
-  prepareFrame(
-    resources: WebGpuSharedResources,
-    budget?: RasterBudget,
-  ): boolean;
+  prepareFrame(resources: WebGpuSharedResources, budget?: RasterBudget): boolean;
   /** The pane's first frame reached the screen: its DOM background can step aside. */
   handleCanvasRevealed?(): void;
   /**
@@ -186,16 +179,11 @@ class LatencyTracker {
 export class WebGpuTerminalRuntime {
   /** One canvas per terminal area (a window has one); never destroyed while the runtime lives. */
   private readonly windows = new Map<HTMLElement, WebGpuWindowCanvas>();
-  private readonly paneWindows = new Map<
-    WebGpuRuntimeSurface,
-    WebGpuWindowCanvas
-  >();
+  private readonly paneWindows = new Map<WebGpuRuntimeSurface, WebGpuWindowCanvas>();
   private windowsCreated = 0;
   private windowsDestroyed = 0;
   private windowsReused = 0;
-  private readonly gcMirror = new GcPressureMirror(
-    gcPressureOptionsFromStorage(),
-  );
+  private readonly gcMirror = new GcPressureMirror(gcPressureOptionsFromStorage());
   private readonly surfaces = new Set<WebGpuRuntimeSurface>();
   private dirtySurfaces = new Set<WebGpuRuntimeSurface>();
   private renderSurfaces = new Set<WebGpuRuntimeSurface>();
@@ -206,7 +194,7 @@ export class WebGpuTerminalRuntime {
   private readonly movedSurfaces = new Set<WebGpuRuntimeSurface>();
   private readonly atlases = new Map<string, AtlasEntry>();
   private device: GPUDevice | null = null;
-  private format: GPUTextureFormat = "bgra8unorm";
+  private format: GPUTextureFormat = 'bgra8unorm';
   private backgroundPipeline: GPURenderPipeline | null = null;
   private glyphPipeline: GPURenderPipeline | null = null;
   private bindGroupLayout: GPUBindGroupLayout | null = null;
@@ -233,8 +221,7 @@ export class WebGpuTerminalRuntime {
   private readonly workDoneLatency = new LatencyTracker();
   private readonly focusedLatency = new LatencyTracker();
   private readonly backgroundLatency = new LatencyTracker();
-  private latestWait: { through: number; completion: Promise<unknown> } | null =
-    null;
+  private latestWait: { through: number; completion: Promise<unknown> } | null = null;
   private deviceRecoveries = 0;
   private fatalError: Error | null = null;
   private windowFocused = terminalWindowFocused();
@@ -250,12 +237,8 @@ export class WebGpuTerminalRuntime {
     const runtime = new WebGpuTerminalRuntime();
     try {
       await runtime.initializeDevice();
-      runtime.unbindPresentation = subscribeWindowPresentation(
-        runtime.handleVisibility,
-      );
-      runtime.unbindWindowFocus = bindTerminalWindowFocus(
-        runtime.handleWindowFocus,
-      );
+      runtime.unbindPresentation = subscribeWindowPresentation(runtime.handleVisibility);
+      runtime.unbindWindowFocus = bindTerminalWindowFocus(runtime.handleWindowFocus);
       runtime.unbindResizeInteraction = subscribeTerminalResizeInteraction(
         runtime.handleResizeInteraction,
       );
@@ -271,10 +254,7 @@ export class WebGpuTerminalRuntime {
    * the terminal area the host lives in and gets the binding through which it reports its
    * layout and reads its rectangle.
    */
-  register(
-    surface: WebGpuRuntimeSurface,
-    host?: HTMLElement,
-  ): PaneBinding | null {
+  register(surface: WebGpuRuntimeSurface, host?: HTMLElement): PaneBinding | null {
     this.assertLive();
     this.assertHealthy();
     let binding: PaneBinding | null = null;
@@ -302,10 +282,7 @@ export class WebGpuTerminalRuntime {
     if (this.dirtySurfaces.size === 0) this.cancelScheduledFrame();
   }
 
-  private joinWindow(
-    surface: WebGpuRuntimeSurface,
-    host: HTMLElement,
-  ): PaneBinding {
+  private joinWindow(surface: WebGpuRuntimeSurface, host: HTMLElement): PaneBinding {
     const area = findTerminalArea(host);
     let target = this.windows.get(area);
     if (!target) {
@@ -319,10 +296,9 @@ export class WebGpuTerminalRuntime {
         break;
       }
       if (!target) {
-        const created: WebGpuWindowCanvas = new WebGpuWindowCanvas(
-          this.canvasConfiguration(),
-          { requestFrame: () => this.scheduleWindow(created) },
-        );
+        const created: WebGpuWindowCanvas = new WebGpuWindowCanvas(this.canvasConfiguration(), {
+          requestFrame: () => this.scheduleWindow(created),
+        });
         this.windowsCreated += 1;
         target = created;
       }
@@ -371,10 +347,7 @@ export class WebGpuTerminalRuntime {
     this.requestFrame();
   }
 
-  acquireGlyphAtlas(
-    metrics: TerminalFontMetrics,
-    user?: WebGpuRuntimeSurface,
-  ): GlyphAtlasLease {
+  acquireGlyphAtlas(metrics: TerminalFontMetrics, user?: WebGpuRuntimeSurface): GlyphAtlasLease {
     this.assertLive();
     const key = fontAtlasKey(metrics);
     let entry = this.atlases.get(key);
@@ -412,8 +385,7 @@ export class WebGpuTerminalRuntime {
       requestFlush: () => {
         if (released || owned.flushRequested) return;
         owned.flushRequested = true;
-        const wait =
-          owned.lastFlush + ATLAS_FLUSH_COOLDOWN_MS - performance.now();
+        const wait = owned.lastFlush + ATLAS_FLUSH_COOLDOWN_MS - performance.now();
         if (wait <= 0) {
           for (const surface of owned.users) this.schedule(surface);
           return;
@@ -443,7 +415,7 @@ export class WebGpuTerminalRuntime {
       !this.bindGroupLayout ||
       !this.emptyStorage
     ) {
-      throw new Error("WebGPU terminal runtime is not ready");
+      throw new Error('WebGPU terminal runtime is not ready');
     }
     return {
       device: this.device,
@@ -509,14 +481,10 @@ export class WebGpuTerminalRuntime {
       },
       stagingBytes,
       deviceRecoveries: this.deviceRecoveries,
-      recoveryPending:
-        this.recovering !== null || this.pendingRecoveryReason !== null,
+      recoveryPending: this.recovering !== null || this.pendingRecoveryReason !== null,
       pendingSurfaces: this.dirtySurfaces.size,
       windowFocused: this.windowFocused,
-      targetFrameIntervalMs: terminalFrameIntervalMs(
-        this.windowFocused,
-        this.hasFocusedSurface(),
-      ),
+      targetFrameIntervalMs: terminalFrameIntervalMs(this.windowFocused, this.hasFocusedSurface()),
       frameScheduled: this.animationFrame !== null || this.frameTimer !== null,
       healthy: this.fatalError === null,
       lastError: this.fatalError?.message ?? null,
@@ -524,9 +492,7 @@ export class WebGpuTerminalRuntime {
   }
 
   private canvasStats(): WebGpuCanvasStats {
-    const windows = [...this.windows.values()].map((target) =>
-      target.diagnostics(),
-    );
+    const windows = [...this.windows.values()].map((target) => target.diagnostics());
     let colorBytes = 0;
     let backingStoreResizes = 0;
     let windowFrames = 0;
@@ -586,12 +552,9 @@ export class WebGpuTerminalRuntime {
    * Occlusion and sleep pause: no frame is scheduled and surfaces cancel their timers, but every
    * canvas, buffer and atlas texture stays exactly as it is (see WebGpuWindowCanvas for why).
    */
-  private readonly handleVisibility = ({
-    visible,
-  }: WindowPresentation): void => {
+  private readonly handleVisibility = ({ visible }: WindowPresentation): void => {
     if (visible && (this.pendingRecoveryReason || this.recovering)) {
-      if (this.pendingRecoveryReason)
-        void this.recoverDevice(this.pendingRecoveryReason);
+      if (this.pendingRecoveryReason) void this.recoverDevice(this.pendingRecoveryReason);
       return;
     }
     if (!visible) this.cancelScheduledFrame();
@@ -614,10 +577,7 @@ export class WebGpuTerminalRuntime {
   };
 
   private requestFrame(): void {
-    if (
-      this.inFlightFrames >= MAX_IN_FLIGHT_FRAMES &&
-      this.dirtySurfaces.size > 0
-    )
+    if (this.inFlightFrames >= MAX_IN_FLIGHT_FRAMES && this.dirtySurfaces.size > 0)
       this.stalledFrameRequests += 1;
     if (
       this.disposed ||
@@ -631,25 +591,17 @@ export class WebGpuTerminalRuntime {
     ) {
       return;
     }
-    const plan = this.pacer.plan(
-      this.dirtySurfaces,
-      this.windowFocused,
-      performance.now(),
-    );
-    if (plan.kind === "idle") return;
+    const plan = this.pacer.plan(this.dirtySurfaces, this.windowFocused, performance.now());
+    if (plan.kind === 'idle') return;
     const now = performance.now();
     if (this.frameTimer !== null) {
       // A pane that turns dirty while the page sleeps for a later deadline (a background tick)
       // must not wait for that sleep: keep it only if it already ends in time.
-      if (
-        plan.kind === "wait" &&
-        now + plan.delayMs >= this.frameTimerDueAt - 0.5
-      )
-        return;
+      if (plan.kind === 'wait' && now + plan.delayMs >= this.frameTimerDueAt - 0.5) return;
       clearTimeout(this.frameTimer);
       this.frameTimer = null;
     }
-    if (plan.kind === "wait") {
+    if (plan.kind === 'wait') {
       // Sleep until a callback requested then lands on a vsync that can serve the deadline.
       this.frameTimerDueAt = now + plan.delayMs;
       this.frameTimer = setTimeout(() => {
@@ -659,9 +611,7 @@ export class WebGpuTerminalRuntime {
       }, plan.delayMs);
       return;
     }
-    this.animationFrame = requestAnimationFrame((frameAt) =>
-      this.flushFrame(frameAt),
-    );
+    this.animationFrame = requestAnimationFrame((frameAt) => this.flushFrame(frameAt));
   }
 
   private flushFrame(frameAt = performance.now()): void {
@@ -718,10 +668,7 @@ export class WebGpuTerminalRuntime {
         due += 1;
         const waited = this.pacer.waited(surface, frameAt);
         if (waited !== undefined)
-          (surface.isFocused()
-            ? this.focusedLatency
-            : this.backgroundLatency
-          ).record(waited);
+          (surface.isFocused() ? this.focusedLatency : this.backgroundLatency).record(waited);
         // Before preparing: a change the upload itself schedules (a glyph backlog) is a new wait.
         this.pacer.settled(surface);
         try {
@@ -759,12 +706,11 @@ export class WebGpuTerminalRuntime {
           continue;
         target.consumeDirty();
         encoder ??= resources.device.createCommandEncoder({
-          label: "Terax terminal window frame",
+          label: 'Terax terminal window frame',
         });
         const result = target.encode(encoder, resources);
         if (result.drawn > 0) rendered = true;
-        for (const pane of result.revealed)
-          revealed.push(pane as WebGpuRuntimeSurface);
+        for (const pane of result.revealed) revealed.push(pane as WebGpuRuntimeSurface);
       }
       let submitted = false;
       if (encoder && rendered) {
@@ -777,10 +723,7 @@ export class WebGpuTerminalRuntime {
         this.inFlightFrames += 1;
         submitted = true;
         this.gcMirror.noteFrame();
-        this.peakInFlightFrames = Math.max(
-          this.peakInFlightFrames,
-          this.inFlightFrames,
-        );
+        this.peakInFlightFrames = Math.max(this.peakInFlightFrames, this.inFlightFrames);
         // One wait at a time: frames submitted while it is pending are covered by the next one,
         // which starts as soon as this one resolves. A burst therefore costs a wait per GPU round
         // trip instead of one per frame, and a frame is held back only while two are unconfirmed.
@@ -840,17 +783,12 @@ export class WebGpuTerminalRuntime {
         this.pendingWaits = Math.max(0, this.pendingWaits - 1);
         this.workDoneLatency.record(performance.now() - issuedAt);
         this.confirmedFrames = Math.max(this.confirmedFrames, through);
-        this.inFlightFrames = Math.max(
-          0,
-          this.submittedFrames - this.confirmedFrames,
-        );
-        if (this.inFlightFrames > 0 && this.pendingWaits === 0)
-          this.confirmFrames();
+        this.inFlightFrames = Math.max(0, this.submittedFrames - this.confirmedFrames);
+        if (this.inFlightFrames > 0 && this.pendingWaits === 0) this.confirmFrames();
         this.requestFrame();
       },
       (error: unknown) => {
-        if (this.disposed || generation !== this.generation || this.fatalError)
-          return;
+        if (this.disposed || generation !== this.generation || this.fatalError) return;
         void this.recoverDevice(toError(error).message);
       },
     );
@@ -909,27 +847,25 @@ export class WebGpuTerminalRuntime {
   }
 
   private async initializeDevice(): Promise<void> {
-    if (typeof navigator === "undefined" || !("gpu" in navigator)) {
-      throw new Error("WebGPU is unavailable in this webview");
+    if (typeof navigator === 'undefined' || !('gpu' in navigator)) {
+      throw new Error('WebGPU is unavailable in this webview');
     }
     const adapter = await navigator.gpu.requestAdapter({
-      powerPreference: "low-power",
+      powerPreference: 'low-power',
     });
     this.assertLive();
-    if (!adapter) throw new Error("No compatible WebGPU adapter was found");
+    if (!adapter) throw new Error('No compatible WebGPU adapter was found');
     const device = await adapter.requestDevice({
-      label: "Terax shared terminal renderer",
+      label: 'Terax shared terminal renderer',
     });
     if (this.disposed || this.fatalError) {
       device.destroy();
       this.assertLive();
       this.assertHealthy();
     }
-    device.addEventListener("uncapturederror", (event) => {
+    device.addEventListener('uncapturederror', (event) => {
       if (this.disposed || this.device !== device) return;
-      this.disable(
-        new Error(`WebGPU validation error: ${event.error.message}`),
-      );
+      this.disable(new Error(`WebGPU validation error: ${event.error.message}`));
     });
 
     this.device = device;
@@ -941,18 +877,10 @@ export class WebGpuTerminalRuntime {
     let initialized = false;
     const generation = this.generation;
     void device.lost.then((info) => {
-      if (
-        !this.disposed &&
-        !this.fatalError &&
-        generation === this.generation
-      ) {
+      if (!this.disposed && !this.fatalError && generation === this.generation) {
         const reason = info.message || String(info.reason);
         if (!initialized || this.recovering) {
-          this.disable(
-            new Error(
-              `WebGPU device was lost during initialization: ${reason}`,
-            ),
-          );
+          this.disable(new Error(`WebGPU device was lost during initialization: ${reason}`));
         } else void this.recoverDevice(reason);
       }
     });
@@ -961,29 +889,25 @@ export class WebGpuTerminalRuntime {
     this.assertHealthy();
     initialized = true;
     const configuration = this.canvasConfiguration();
-    for (const target of this.windows.values())
-      target.reconfigure(configuration);
+    for (const target of this.windows.values()) target.reconfigure(configuration);
   }
 
-  private async createSharedResources(
-    device: GPUDevice,
-    format: GPUTextureFormat,
-  ): Promise<void> {
+  private async createSharedResources(device: GPUDevice, format: GPUTextureFormat): Promise<void> {
     const visibility = GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT;
     const storage = (binding: number): GPUBindGroupLayoutEntry => ({
       binding,
       visibility,
-      buffer: { type: "read-only-storage" },
+      buffer: { type: 'read-only-storage' },
     });
     const atlasTexture = (binding: number): GPUBindGroupLayoutEntry => ({
       binding,
       visibility: GPUShaderStage.FRAGMENT,
-      texture: { sampleType: "unfilterable-float" },
+      texture: { sampleType: 'unfilterable-float' },
     });
     this.bindGroupLayout = device.createBindGroupLayout({
-      label: "Terax terminal bindings",
+      label: 'Terax terminal bindings',
       entries: [
-        { binding: 0, visibility, buffer: { type: "uniform" } },
+        { binding: 0, visibility, buffer: { type: 'uniform' } },
         storage(1),
         storage(2),
         storage(3),
@@ -997,49 +921,49 @@ export class WebGpuTerminalRuntime {
     });
 
     const backgroundModule = device.createShaderModule({
-      label: "Terax terminal background shader",
+      label: 'Terax terminal background shader',
       code: BACKGROUND_SHADER,
     });
     const glyphModule = device.createShaderModule({
-      label: "Terax terminal glyph shader",
+      label: 'Terax terminal glyph shader',
       code: GLYPH_SHADER,
     });
     const [backgroundPipeline, glyphPipeline] = await Promise.all([
       device.createRenderPipelineAsync({
-        label: "Terax terminal background pipeline",
+        label: 'Terax terminal background pipeline',
         layout,
-        vertex: { module: backgroundModule, entryPoint: "vertex_main" },
+        vertex: { module: backgroundModule, entryPoint: 'vertex_main' },
         fragment: {
           module: backgroundModule,
-          entryPoint: "fragment_main",
+          entryPoint: 'fragment_main',
           targets: [{ format }],
         },
-        primitive: { topology: "triangle-list" },
+        primitive: { topology: 'triangle-list' },
       }),
       device.createRenderPipelineAsync({
-        label: "Terax terminal glyph pipeline",
+        label: 'Terax terminal glyph pipeline',
         layout,
-        vertex: { module: glyphModule, entryPoint: "vertex_main" },
+        vertex: { module: glyphModule, entryPoint: 'vertex_main' },
         fragment: {
           module: glyphModule,
-          entryPoint: "fragment_main",
+          entryPoint: 'fragment_main',
           targets: [
             {
               format,
               blend: {
                 color: {
-                  srcFactor: "src-alpha",
-                  dstFactor: "one-minus-src-alpha",
+                  srcFactor: 'src-alpha',
+                  dstFactor: 'one-minus-src-alpha',
                 },
                 alpha: {
-                  srcFactor: "one",
-                  dstFactor: "one-minus-src-alpha",
+                  srcFactor: 'one',
+                  dstFactor: 'one-minus-src-alpha',
                 },
               },
             },
           ],
         },
-        primitive: { topology: "triangle-list" },
+        primitive: { topology: 'triangle-list' },
       }),
     ]);
     this.assertLive();
@@ -1047,7 +971,7 @@ export class WebGpuTerminalRuntime {
     this.backgroundPipeline = backgroundPipeline;
     this.glyphPipeline = glyphPipeline;
     this.emptyStorage = device.createBuffer({
-      label: "Terax terminal empty storage",
+      label: 'Terax terminal empty storage',
       size: 16,
       usage: GPUBufferUsage.STORAGE,
     });
@@ -1077,9 +1001,7 @@ export class WebGpuTerminalRuntime {
       } catch (error) {
         if (!this.disposed)
           this.disable(
-            new Error(
-              `WebGPU recovery failed after ${reason}: ${toError(error).message}`,
-            ),
+            new Error(`WebGPU recovery failed after ${reason}: ${toError(error).message}`),
           );
       } finally {
         this.recovering = null;
@@ -1188,14 +1110,12 @@ export class WebGpuTerminalRuntime {
 
   private assertHealthy(): void {
     if (this.fatalError) {
-      throw new Error(
-        `WebGPU terminal runtime is disabled: ${this.fatalError.message}`,
-      );
+      throw new Error(`WebGPU terminal runtime is disabled: ${this.fatalError.message}`);
     }
   }
 
   private assertLive(): void {
-    if (this.disposed) throw new Error("WebGPU terminal runtime is disposed");
+    if (this.disposed) throw new Error('WebGPU terminal runtime is disposed');
   }
 }
 
@@ -1222,9 +1142,7 @@ export function webGpuTerminalRuntimeDiagnostics(): WebGpuRuntimeStats | null {
 
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
-    void sharedRuntimePromise
-      ?.then((runtime) => runtime.dispose())
-      .catch(() => undefined);
+    void sharedRuntimePromise?.then((runtime) => runtime.dispose()).catch(() => undefined);
     sharedRuntime = null;
     sharedRuntimePromise = null;
   });
@@ -1243,15 +1161,14 @@ function fontAtlasKey(metrics: TerminalFontMetrics): string {
     metrics.deviceCellWidth,
     metrics.deviceCellHeight,
     metrics.deviceBaseline,
-  ].join("|");
+  ].join('|');
 }
 
 /** A per-frame wall-clock allowance for glyph rasterization. */
 export function createRasterBudget(limitMs: number): RasterBudget {
   const start = performance.now();
   return {
-    exhausted: (allowanceMs = limitMs) =>
-      performance.now() - start >= allowanceMs,
+    exhausted: (allowanceMs = limitMs) => performance.now() - start >= allowanceMs,
   };
 }
 

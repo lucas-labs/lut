@@ -1,9 +1,9 @@
-import type { BlockMode } from "@/modules/terminal/block/lib/modeMachine";
+import type { BlockMode } from '@/modules/terminal/block/lib/modeMachine';
 import {
   disposeGhosttyBlocks,
   ensureGhosttyBlocks,
   ghosttyBlocks,
-} from "@/modules/terminal/ghostty/ghosttyBlockSessions";
+} from '@/modules/terminal/ghostty/ghosttyBlockSessions';
 import {
   clearGhosttySession,
   disposeGhosttySession,
@@ -20,15 +20,12 @@ import {
   submitToGhosttySession,
   whenGhosttySessionReady,
   writeToGhosttySession,
-} from "@/modules/terminal/ghostty/useGhosttyTerminalSession";
-export type { WatermarkState } from "@/modules/terminal/ghostty/ghosttyBlockSessions";
-import type { WatermarkState } from "@/modules/terminal/ghostty/ghosttyBlockSessions";
-import { forgetLeafPresentation } from "@/modules/terminal/lib/ptyPresentation";
+} from '@/modules/terminal/ghostty/useGhosttyTerminalSession';
+export type { WatermarkState } from '@/modules/terminal/ghostty/ghosttyBlockSessions';
+import type { WatermarkState } from '@/modules/terminal/ghostty/ghosttyBlockSessions';
+import { forgetLeafPresentation } from '@/modules/terminal/lib/ptyPresentation';
 
-export async function whenSessionReady(
-  leafId: number,
-  timeoutMs = 4_000,
-): Promise<void> {
+export async function whenSessionReady(leafId: number, timeoutMs = 4_000): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     const remaining = Math.max(0, deadline - Date.now());
@@ -62,10 +59,7 @@ export function leafCwd(leafId: number): string | null {
 
 export function navigateFocusedBlocks(direction: -1 | 1): boolean {
   const leaf = ghosttyFocusedLeaf();
-  return (
-    leaf !== null &&
-    (ghosttyBlocks(leaf)?.controller?.navigate(direction) ?? false)
-  );
+  return leaf !== null && (ghosttyBlocks(leaf)?.controller?.navigate(direction) ?? false);
 }
 
 export function clearLeafBlockSelection(leafId: number): boolean {
@@ -77,28 +71,19 @@ export function leafGridSelection(leafId: number): string | null {
 }
 
 export function getLeafBlockMode(leafId: number): BlockMode {
-  return ghosttyBlocks(leafId)?.getMode() ?? "plain";
+  return ghosttyBlocks(leafId)?.getMode() ?? 'plain';
 }
 
-export function subscribeLeafBlockMode(
-  leafId: number,
-  callback: () => void,
-): () => void {
+export function subscribeLeafBlockMode(leafId: number, callback: () => void): () => void {
   return ensureGhosttyBlocks(leafId).subscribeMode(callback);
 }
 
-export function setLeafInputFocus(
-  leafId: number,
-  callback: (() => void) | null,
-): void {
+export function setLeafInputFocus(leafId: number, callback: (() => void) | null): void {
   const state = callback ? ensureGhosttyBlocks(leafId) : ghosttyBlocks(leafId);
   if (state) state.focus = callback;
 }
 
-export function setLeafInputPaste(
-  leafId: number,
-  paste: ((text: string) => void) | null,
-): void {
+export function setLeafInputPaste(leafId: number, paste: ((text: string) => void) | null): void {
   const state = paste ? ensureGhosttyBlocks(leafId) : ghosttyBlocks(leafId);
   if (state) state.paste = paste;
 }
@@ -113,12 +98,12 @@ export function setLeafInputKeyDown(
 
 export function focusLeafInput(leafId: number): void {
   const state = ghosttyBlocks(leafId);
-  if (state?.getMode() === "prompt" && state.focus) state.focus();
+  if (state?.getMode() === 'prompt' && state.focus) state.focus();
   else focusGhosttySession(leafId);
 }
 
 export function getLeafDraft(leafId: number): string {
-  return ghosttyBlocks(leafId)?.draft ?? "";
+  return ghosttyBlocks(leafId)?.draft ?? '';
 }
 
 export function setLeafDraft(leafId: number, text: string): void {
@@ -134,7 +119,7 @@ export function setLeafInputActivity(leafId: number, active: boolean): void {
 }
 
 export function blockWatermarkState(leafId: number): WatermarkState {
-  return ghosttyBlocks(leafId)?.watermark() ?? "hidden";
+  return ghosttyBlocks(leafId)?.watermark() ?? 'hidden';
 }
 
 export function clearFocusedTerminal(): boolean {
@@ -151,9 +136,7 @@ export function ptyIdForLeaf(leafId: number): number | null {
   return ghosttyPtyIdForLeaf(leafId);
 }
 
-export async function leafHasForegroundProcess(
-  leafId: number,
-): Promise<boolean> {
+export async function leafHasForegroundProcess(leafId: number): Promise<boolean> {
   return ghosttyLeafHasForegroundProcess(leafId);
 }
 
@@ -167,10 +150,7 @@ function delay(milliseconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-async function withTimeout(
-  promise: Promise<unknown>,
-  timeoutMs: number,
-): Promise<void> {
+async function withTimeout(promise: Promise<unknown>, timeoutMs: number): Promise<void> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     await Promise.race([

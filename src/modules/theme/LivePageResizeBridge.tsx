@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { installLivePageResizeInBrowser } from "./livePageResize";
+import { useEffect } from 'react';
+import { installLivePageResizeInBrowser } from './livePageResize';
 
 /**
  * Marks `<html>` with `data-live-resize` while the window is being resized so

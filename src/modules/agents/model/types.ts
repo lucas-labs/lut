@@ -1,41 +1,35 @@
 export const AGENT_STATES = [
-  "starting",
-  "working",
-  "needs-input",
-  "needs-approval",
-  "done",
-  "error",
-  "idle",
-  "exited",
+  'starting',
+  'working',
+  'needs-input',
+  'needs-approval',
+  'done',
+  'error',
+  'idle',
+  'exited',
 ] as const;
 
 export type AgentState = (typeof AGENT_STATES)[number];
 
-export type WaitingReason =
-  | "permission"
-  | "input"
-  | "idle"
-  | "elicitation"
-  | "attention"
-  | "error";
+export type WaitingReason = 'permission' | 'input' | 'idle' | 'elicitation' | 'attention' | 'error';
 
 /** Where the freshest evidence about an agent came from, strongest last. */
-export type Provenance = "process" | "osc" | "hook";
+export type Provenance = 'process' | 'osc' | 'hook';
 
 export type HookEventKind =
-  | "session-start"
-  | "prompt"
-  | "tool-start"
-  | "tool-end"
-  | "permission-request"
-  | "permission-resolved"
-  | "notification"
-  | "stop"
-  | "stop-failure"
-  | "interrupt"
-  | "subagent-start"
-  | "subagent-stop"
-  | "session-end";
+  | 'session-start'
+  | 'prompt'
+  | 'tool-start'
+  | 'tool-end'
+  | 'permission-request'
+  | 'permission-resolved'
+  | 'notification'
+  | 'stop'
+  | 'stop-failure'
+  | 'interrupt'
+  | 'subagent-start'
+  | 'subagent-stop'
+  | 'session-end';
 
 export type ToolInfo = {
   name: string;
@@ -58,7 +52,7 @@ export type PermissionInfo = {
 export type SubagentInfo = {
   id: string;
   type: string;
-  state: "running" | "done";
+  state: 'running' | 'done';
 };
 
 /** Payload of the native `terax:agent-event` event. */
@@ -79,12 +73,7 @@ export type AgentHookEvent = {
   at: number;
 };
 
-export type AgentSignalKind =
-  | "started"
-  | "working"
-  | "attention"
-  | "finished"
-  | "exited";
+export type AgentSignalKind = 'started' | 'working' | 'attention' | 'finished' | 'exited';
 
 /** Payload of the native `terax:agent-signal` event (process and OSC state). */
 export type AgentSignalEvent = {
@@ -94,15 +83,15 @@ export type AgentSignalEvent = {
 };
 
 export type AgentModelEvent =
-  | { type: "hook"; event: AgentHookEvent }
-  | { type: "signal"; signal: AgentSignalEvent; at: number }
-  | { type: "acknowledge"; ptyId: number; at: number }
-  | { type: "remove"; ptyId: number };
+  | { type: 'hook'; event: AgentHookEvent }
+  | { type: 'signal'; signal: AgentSignalEvent; at: number }
+  | { type: 'acknowledge'; ptyId: number; at: number }
+  | { type: 'remove'; ptyId: number };
 
 export type SubagentSummary = {
   id: string;
   type: string;
-  state: "running" | "done";
+  state: 'running' | 'done';
   startedAt: number;
   endedAt: number | null;
   message: string | null;

@@ -1,13 +1,10 @@
-import type { TerminalSearchController } from "@/modules/terminal/search/TerminalSearchController";
-import type { GhosttyTerminalModelApi } from "../GhosttyTerminalModel";
-import type {
-  GhosttySearchEngine,
-  GhosttySearchSnapshot,
-} from "./GhosttySearchEngine";
+import type { TerminalSearchController } from '@/modules/terminal/search/TerminalSearchController';
+import type { GhosttyTerminalModelApi } from '../GhosttyTerminalModel';
+import type { GhosttySearchEngine, GhosttySearchSnapshot } from './GhosttySearchEngine';
 
 export type { GhosttySearchSnapshot };
 
-const IDLE: GhosttySearchSnapshot = { query: "", pendingDirection: null };
+const IDLE: GhosttySearchSnapshot = { query: '', pendingDirection: null };
 
 /**
  * What every surface owns as its search controller. The engine behind it
@@ -30,18 +27,18 @@ export class GhosttySearchController implements TerminalSearchController {
 
   findNext(query: string): boolean {
     if (this.search) return this.search.findNext(query);
-    return this.defer(query !== "" && !this.suspended, {
+    return this.defer(query !== '' && !this.suspended, {
       query,
-      pendingDirection: "next",
+      pendingDirection: 'next',
       unstarted: true,
     });
   }
 
   findPrevious(query: string): boolean {
     if (this.search) return this.search.findPrevious(query);
-    return this.defer(query !== "" && !this.suspended, {
+    return this.defer(query !== '' && !this.suspended, {
       query,
-      pendingDirection: "previous",
+      pendingDirection: 'previous',
       unstarted: true,
     });
   }
@@ -114,7 +111,7 @@ export class GhosttySearchController implements TerminalSearchController {
 
   private load(): void {
     this.loading = true;
-    import("./GhosttySearchEngine").then(
+    import('./GhosttySearchEngine').then(
       ({ GhosttySearchEngine }) => {
         if (this.disposed) return;
         const search = new GhosttySearchEngine(this.model, this.onChange);
@@ -128,7 +125,7 @@ export class GhosttySearchController implements TerminalSearchController {
       },
       (error) => {
         this.loading = false;
-        console.error("[terax] terminal search failed to load", error);
+        console.error('[terax] terminal search failed to load', error);
       },
     );
   }

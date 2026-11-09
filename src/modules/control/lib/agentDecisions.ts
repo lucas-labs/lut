@@ -1,25 +1,21 @@
-import type { AgentModelEvent } from "@/modules/agents/model";
-import { invoke } from "@tauri-apps/api/core";
-import {
-  agentEventsReady,
-  hookEventToModelEvent,
-  subscribeAgentEvents,
-} from "./agentEvents";
-import { createReadinessQueue } from "./readiness";
+import type { AgentModelEvent } from '@/modules/agents/model';
+import { invoke } from '@tauri-apps/api/core';
+import { agentEventsReady, hookEventToModelEvent, subscribeAgentEvents } from './agentEvents';
+import { createReadinessQueue } from './readiness';
 
 /** The UI's answer to an agent's permission request. */
 export type AgentDecision =
   | {
-      behavior: "allow";
+      behavior: 'allow';
       /** Index of the request's suggestion to apply as an "always allow". */
       remember?: number;
     }
-  | { behavior: "deny"; message?: string; interrupt?: boolean }
+  | { behavior: 'deny'; message?: string; interrupt?: boolean }
   /** Hand the question back to the agent's own prompt. */
-  | { behavior: "ask" };
+  | { behavior: 'ask' };
 
 const setDecisionsReady = createReadinessQueue((ready) =>
-  invoke("agent_decisions_ready", { ready }),
+  invoke('agent_decisions_ready', { ready }),
 );
 
 // Connections share one native flag for this window, so it is withdrawn only
@@ -30,11 +26,8 @@ let decisionConnections = 0;
  * Answers a pending permission request. False when it already ended (the
  * agent was answered in its own terminal, closed, or timed out).
  */
-export function resolveAgentDecision(
-  requestId: string,
-  decision: AgentDecision,
-): Promise<boolean> {
-  return invoke<boolean>("agent_decision_respond", { requestId, decision });
+export function resolveAgentDecision(requestId: string, decision: AgentDecision): Promise<boolean> {
+  return invoke<boolean>('agent_decision_respond', { requestId, decision });
 }
 
 /**
@@ -47,9 +40,7 @@ export function connectAgentEvents(
   dispatch: (event: AgentModelEvent) => void,
   options: { decisions: boolean },
 ): () => void {
-  const stop = subscribeAgentEvents((event) =>
-    dispatch(hookEventToModelEvent(event)),
-  );
+  const stop = subscribeAgentEvents((event) => dispatch(hookEventToModelEvent(event)));
   let disposed = false;
   let announced = false;
   if (options.decisions) {
@@ -64,7 +55,7 @@ export function connectAgentEvents(
         return decisionConnections === 1 ? setDecisionsReady(true) : undefined;
       })
       .catch((error) => {
-        console.error("[terax] could not enable agent decisions:", error);
+        console.error('[terax] could not enable agent decisions:', error);
       });
   }
   return () => {
@@ -75,7 +66,7 @@ export function connectAgentEvents(
     decisionConnections -= 1;
     if (decisionConnections > 0) return;
     void setDecisionsReady(false).catch((error) => {
-      console.error("[terax] could not withdraw agent decisions:", error);
+      console.error('[terax] could not withdraw agent decisions:', error);
     });
   };
 }

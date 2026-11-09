@@ -1,9 +1,4 @@
-import type {
-  ApplySelection,
-  DiffHunk,
-  GitFileDiff,
-  HunkSelection,
-} from "./types";
+import type { ApplySelection, DiffHunk, GitFileDiff, HunkSelection } from './types';
 
 /**
  * Which changed lines of which hunks are picked, keyed by hunk id. An entry
@@ -14,7 +9,7 @@ export type HunkSelectionState = ReadonlyMap<string, HunkPick>;
 
 type HunkPick = { all: boolean; lines: ReadonlySet<number> };
 
-export type HunkSelectionLevel = "none" | "partial" | "all";
+export type HunkSelectionLevel = 'none' | 'partial' | 'all';
 
 export const emptySelection: HunkSelectionState = new Map();
 
@@ -22,7 +17,7 @@ export const emptySelection: HunkSelectionState = new Map();
 export function changedLineIndexes(hunk: DiffHunk): number[] {
   const out: number[] = [];
   hunk.lines.forEach((line, index) => {
-    if (line.kind !== "context") out.push(index);
+    if (line.kind !== 'context') out.push(index);
   });
   return out;
 }
@@ -32,11 +27,11 @@ export function hunkSelectionLevel(
   hunk: DiffHunk,
 ): HunkSelectionLevel {
   const pick = selection.get(hunk.id);
-  if (!pick) return "none";
-  if (pick.all) return "all";
+  if (!pick) return 'none';
+  if (pick.all) return 'all';
   const changed = changedLineIndexes(hunk);
-  if (pick.lines.size === 0) return "none";
-  return pick.lines.size >= changed.length ? "all" : "partial";
+  if (pick.lines.size === 0) return 'none';
+  return pick.lines.size >= changed.length ? 'all' : 'partial';
 }
 
 export function isLineSelected(
@@ -46,7 +41,7 @@ export function isLineSelected(
 ): boolean {
   const pick = selection.get(hunk.id);
   if (!pick) return false;
-  return pick.all ? hunk.lines[lineIndex]?.kind !== "context" : pick.lines.has(lineIndex);
+  return pick.all ? hunk.lines[lineIndex]?.kind !== 'context' : pick.lines.has(lineIndex);
 }
 
 function withPick(
@@ -60,11 +55,8 @@ function withPick(
   return next;
 }
 
-export function toggleHunk(
-  selection: HunkSelectionState,
-  hunk: DiffHunk,
-): HunkSelectionState {
-  return hunkSelectionLevel(selection, hunk) === "all"
+export function toggleHunk(selection: HunkSelectionState, hunk: DiffHunk): HunkSelectionState {
+  return hunkSelectionLevel(selection, hunk) === 'all'
     ? withPick(selection, hunk.id, null)
     : withPick(selection, hunk.id, { all: true, lines: new Set() });
 }
@@ -75,13 +67,11 @@ export function toggleLine(
   hunk: DiffHunk,
   lineIndex: number,
 ): HunkSelectionState {
-  if (hunk.lines[lineIndex]?.kind === "context" || !hunk.lines[lineIndex]) {
+  if (hunk.lines[lineIndex]?.kind === 'context' || !hunk.lines[lineIndex]) {
     return selection;
   }
   const current = new Set<number>(
-    selection.get(hunk.id)?.all
-      ? changedLineIndexes(hunk)
-      : (selection.get(hunk.id)?.lines ?? []),
+    selection.get(hunk.id)?.all ? changedLineIndexes(hunk) : (selection.get(hunk.id)?.lines ?? []),
   );
   if (current.has(lineIndex)) current.delete(lineIndex);
   else current.add(lineIndex);
@@ -94,10 +84,7 @@ export function toggleLine(
 
 export function selectAllHunks(diff: GitFileDiff): HunkSelectionState {
   return new Map(
-    diff.hunks.map((hunk): [string, HunkPick] => [
-      hunk.id,
-      { all: true, lines: new Set() },
-    ]),
+    diff.hunks.map((hunk): [string, HunkPick] => [hunk.id, { all: true, lines: new Set() }]),
   );
 }
 
@@ -127,7 +114,7 @@ export function hasSelection(selection: HunkSelectionState): boolean {
  */
 export function isWholeFileOnly(diff: GitFileDiff): boolean {
   return (
-    diff.status !== "modified" ||
+    diff.status !== 'modified' ||
     diff.binary ||
     diff.submodule ||
     diff.symlink ||
@@ -158,14 +145,14 @@ export function toApplySelection(
     const pick = selection.get(hunk.id);
     if (!pick) continue;
     const level = hunkSelectionLevel(selection, hunk);
-    if (level === "none") continue;
-    if (level === "all") {
+    if (level === 'none') continue;
+    if (level === 'all') {
       items.push({ id: hunk.id });
     } else {
       items.push({ id: hunk.id, lines: [...pick.lines].sort((a, b) => a - b) });
     }
   }
-  return items.length > 0 ? { kind: "hunks", items } : null;
+  return items.length > 0 ? { kind: 'hunks', items } : null;
 }
 
 /** Added / removed line counts of what is currently picked, for button labels. */
@@ -178,13 +165,13 @@ export function selectionCounts(
   let removed = 0;
   for (const hunk of diff.hunks) {
     const level = hunkSelectionLevel(selection, hunk);
-    if (level === "none") continue;
+    if (level === 'none') continue;
     hunks += 1;
     hunk.lines.forEach((line, index) => {
-      if (line.kind === "context" || !isLineSelected(selection, hunk, index)) {
+      if (line.kind === 'context' || !isLineSelected(selection, hunk, index)) {
         return;
       }
-      if (line.kind === "add") added += 1;
+      if (line.kind === 'add') added += 1;
       else removed += 1;
     });
   }

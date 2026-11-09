@@ -3,15 +3,15 @@ import type {
   TerminalDamage,
   TerminalModel,
   TerminalRowRange,
-} from "@/modules/terminal/backend/contracts";
-import type { TerminalCellReader } from "@/modules/terminal/ghostty/core/packedCells";
-import type { ViewportLinkSource } from "@/modules/terminal/ghostty/core/ViewportLinkResolver";
-import type { TeraxGhosttyGpuGlyph } from "@terax/ghostty-core/adapted";
+} from '@/modules/terminal/backend/contracts';
+import type { TerminalCellReader } from '@/modules/terminal/ghostty/core/packedCells';
+import type { ViewportLinkSource } from '@/modules/terminal/ghostty/core/ViewportLinkResolver';
+import type { TeraxGhosttyGpuGlyph } from '@terax/ghostty-core/adapted';
 import type {
   GhosttyTerminalConfig,
   GhosttyTerminalEvent,
   KeyEvent,
-} from "@terax/ghostty-core/protocol";
+} from '@terax/ghostty-core/protocol';
 
 export type GhosttyTerminalModelOptions = {
   readonly backend: Extract<TerminalBackendKind, `ghostty-${string}`>;
@@ -52,7 +52,7 @@ export type GhosttySearchViewportSpan = {
 };
 
 /** Per-cell representation the model is currently producing. */
-export type GhosttyRenderFormat = "soa" | "gpu";
+export type GhosttyRenderFormat = 'soa' | 'gpu';
 
 export type GhosttyGpuGlyph = TeraxGhosttyGpuGlyph;
 
@@ -150,12 +150,9 @@ export interface GhosttyTerminalModelApi extends TerminalModel {
   setSearchQuery(query: string): GhosttySearchStatus;
   clearSearch(): void;
   stepSearch(budget?: number): GhosttySearchStatus;
-  selectSearchMatch(direction: "next" | "previous"): GhosttySearchStatus;
+  selectSearchMatch(direction: 'next' | 'previous'): GhosttySearchStatus;
   searchViewportMatches(): readonly GhosttySearchViewportSpan[];
-  setCursorOptions(
-    style: "block" | "underline" | "bar",
-    blinking: boolean,
-  ): void;
+  setCursorOptions(style: 'block' | 'underline' | 'bar', blinking: boolean): void;
   grapheme(row: number, column: number): string;
   linkSource(): ViewportLinkSource;
   scrollPosition(): { readonly offset: number; readonly history: number };
@@ -181,17 +178,10 @@ export interface GhosttyTerminalModelApi extends TerminalModel {
   enableSemanticMarkers?(enabled: boolean): void;
   semanticMarkerColumn?(id: number): number | null;
   semanticMarkerLine?(id: number): number | null;
-  readTextRange?(
-    startLine: number,
-    endLine: number,
-    startCol?: number,
-    endCol?: number,
-  ): string;
+  readTextRange?(startLine: number, endLine: number, startCol?: number, endCol?: number): string;
   bufferCursorLine?(): number;
   bufferCursorColumn?(): number;
   readCellLine?(line: number): readonly string[];
   blockSearchActive?(): boolean;
-  setBlockSearchMatch?(
-    match: { line: number; col: number; len: number } | null,
-  ): void;
+  setBlockSearchMatch?(match: { line: number; col: number; len: number } | null): void;
 }

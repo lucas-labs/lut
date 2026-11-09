@@ -1,8 +1,8 @@
-import { SurfaceFramePacer } from "@/modules/terminal/ghostty/SurfaceFramePacer";
-import { describe, expect, it } from "vitest";
+import { SurfaceFramePacer } from '@/modules/terminal/ghostty/SurfaceFramePacer';
+import { describe, expect, it } from 'vitest';
 
-describe("per-pane frame pacing", () => {
-  it("gives only the interacting pane foreground cadence while the window is unfocused", () => {
+describe('per-pane frame pacing', () => {
+  it('gives only the interacting pane foreground cadence while the window is unfocused', () => {
     const pacer = new SurfaceFramePacer();
     const scrolling = { isFocused: () => false };
     const streaming = { isFocused: () => true };
@@ -10,14 +10,14 @@ describe("per-pane frame pacing", () => {
     pacer.presented(streaming, 0);
     pacer.interact(scrolling, 5);
     expect(pacer.plan(new Set([scrolling]), false, 5)).toEqual({
-      kind: "frame",
+      kind: 'frame',
     });
     expect(pacer.due(scrolling, false, 17)).toBe(true);
     expect(pacer.due(streaming, false, 17)).toBe(false);
     pacer.presented(scrolling, 140);
     expect(pacer.due(scrolling, false, 160)).toBe(false);
     expect(pacer.due(scrolling, false, 207)).toBe(true);
-    expect(pacer.plan(new Set(), false, 207)).toEqual({ kind: "idle" });
+    expect(pacer.plan(new Set(), false, 207)).toEqual({ kind: 'idle' });
   });
 
   it("does not pull background panes to the focused pane's cadence", () => {
@@ -41,20 +41,18 @@ describe("per-pane frame pacing", () => {
     expect(backgroundFrames).toBe(300);
   });
 
-  it("presents a pane that has never drawn at once and sleeps between unfocused frames", () => {
+  it('presents a pane that has never drawn at once and sleeps between unfocused frames', () => {
     const pacer = new SurfaceFramePacer();
     const surface = { isFocused: () => true };
     const dirty = new Set([surface]);
-    expect(pacer.plan(dirty, true, 0)).toEqual({ kind: "frame" });
+    expect(pacer.plan(dirty, true, 0)).toEqual({ kind: 'frame' });
     pacer.presented(surface, 0);
     expect(pacer.due(surface, true, 8)).toBe(false);
     expect(pacer.due(surface, true, 1_000 / 60)).toBe(true);
     // Unknown display phase: sleep until one refresh before the deadline.
     const plan = pacer.plan(dirty, false, 0);
-    expect(plan.kind).toBe("wait");
-    expect(plan.kind === "wait" ? plan.delayMs : 0).toBeCloseTo(
-      1_000 / 15 - 1_000 / 60,
-    );
+    expect(plan.kind).toBe('wait');
+    expect(plan.kind === 'wait' ? plan.delayMs : 0).toBeCloseTo(1_000 / 15 - 1_000 / 60);
     expect(pacer.due(surface, false, 50)).toBe(false);
     expect(pacer.due(surface, false, 1_000 / 15)).toBe(true);
     pacer.reset();
@@ -62,8 +60,8 @@ describe("per-pane frame pacing", () => {
   });
 });
 
-describe("resize gestures", () => {
-  it("presents every pane on every display refresh while a gesture is live, whatever its cadence", () => {
+describe('resize gestures', () => {
+  it('presents every pane on every display refresh while a gesture is live, whatever its cadence', () => {
     const pacer = new SurfaceFramePacer();
     const background = { isFocused: () => false };
     const unfocusedWindowPane = { isFocused: () => true };
@@ -80,7 +78,7 @@ describe("resize gestures", () => {
     }
     pacer.dirty(background, 10);
     expect(pacer.plan(new Set([background]), true, 10)).toEqual({
-      kind: "frame",
+      kind: 'frame',
     });
 
     // The gesture ends: the cadence is back.
@@ -90,8 +88,8 @@ describe("resize gestures", () => {
   });
 });
 
-describe("shared frame ticks", () => {
-  it("makes a background pane wait for the end of the tick in which it turned dirty", () => {
+describe('shared frame ticks', () => {
+  it('makes a background pane wait for the end of the tick in which it turned dirty', () => {
     const pacer = new SurfaceFramePacer();
     const pane = { isFocused: () => false };
     pacer.presented(pane, 0);
@@ -114,13 +112,11 @@ describe("shared frame ticks", () => {
     expect(pacer.due(second, true, boundary)).toBe(true);
     // And they share one frame request: nothing is due before the boundary.
     const plan = pacer.plan(new Set([first, second]), true, 105);
-    expect(plan.kind).toBe("wait");
-    expect(plan.kind === "wait" ? plan.delayMs : 0).toBeCloseTo(
-      boundary - 105 - 1_000 / 60,
-    );
+    expect(plan.kind).toBe('wait');
+    expect(plan.kind === 'wait' ? plan.delayMs : 0).toBeCloseTo(boundary - 105 - 1_000 / 60);
   });
 
-  it("presents a pane at most once per tick, even after a late frame", () => {
+  it('presents a pane at most once per tick, even after a late frame', () => {
     const pacer = new SurfaceFramePacer();
     const pane = { isFocused: () => false };
     const tick = 1_000 / 30;
@@ -140,7 +136,7 @@ describe("shared frame ticks", () => {
     expect(pacer.due(pane, true, tick * 6)).toBe(true);
   });
 
-  it("never delays the focused pane or a pane the user is interacting with", () => {
+  it('never delays the focused pane or a pane the user is interacting with', () => {
     const pacer = new SurfaceFramePacer();
     const focused = { isFocused: () => true };
     const other = { isFocused: () => false };
@@ -154,7 +150,7 @@ describe("shared frame ticks", () => {
     expect(pacer.due(other, true, 101 + 1_000 / 60)).toBe(true);
   });
 
-  it("snaps every pane of an unfocused window to its slower tick", () => {
+  it('snaps every pane of an unfocused window to its slower tick', () => {
     const pacer = new SurfaceFramePacer();
     const pane = { isFocused: () => true };
     pacer.presented(pane, 0);
@@ -165,7 +161,7 @@ describe("shared frame ticks", () => {
   });
 });
 
-describe("frame wakeups", () => {
+describe('frame wakeups', () => {
   it("costs one animation frame per presented frame at the display's own rate", () => {
     const h = simulation({ refreshMs: 1_000 / 60, windowFocused: true });
     const pane = h.pane(true);
@@ -176,7 +172,7 @@ describe("frame wakeups", () => {
     expect(h.stats.frames).toBeGreaterThan(170);
   });
 
-  it("does not spend an animation frame per vsync waiting for a 60 Hz pane on a 120 Hz display", () => {
+  it('does not spend an animation frame per vsync waiting for a 60 Hz pane on a 120 Hz display', () => {
     const h = simulation({ refreshMs: 1_000 / 120, windowFocused: true });
     const pane = h.pane(true);
     h.everyVsync(pane, 4_000);
@@ -199,13 +195,12 @@ describe("frame wakeups", () => {
     }
   });
 
-  it("wakes the page at most once per tick for four agent panes redrawing a dozen times a second", () => {
+  it('wakes the page at most once per tick for four agent panes redrawing a dozen times a second', () => {
     const seconds = 10;
     const h = simulation({ refreshMs: 1_000 / 60, windowFocused: true });
     const panes = [h.pane(true), h.pane(false), h.pane(false), h.pane(false)];
     // Roughly 12 Hz each, out of phase, like four independent sessions.
-    for (const [index, pane] of panes.entries())
-      h.every(pane, 83, seconds * 1_000, index * 21 + 3);
+    for (const [index, pane] of panes.entries()) h.every(pane, 83, seconds * 1_000, index * 21 + 3);
     h.run(seconds * 1_000);
     const redraws = panes.length * Math.floor((seconds * 1_000) / 83);
     // Before shared ticks every redraw of a background pane was its own frame.
@@ -221,9 +216,7 @@ describe("frame wakeups", () => {
       background.every(pane, 83, seconds * 1_000, index * 21 + 5);
     background.run(seconds * 1_000);
     expect(background.stats.frames).toBeLessThanOrEqual(seconds * 30 + 2);
-    expect(background.stats.frames).toBeLessThan(
-      background.stats.presents * 0.7,
-    );
+    expect(background.stats.frames).toBeLessThan(background.stats.presents * 0.7);
   });
 });
 
@@ -245,21 +238,20 @@ function simulation(options: { refreshMs: number; windowFocused: boolean }) {
   let now = 0;
   let framePending = false;
   let timerPending = false;
-  const at = (time: number, run: () => void) =>
-    queue.push({ at: time, seq: seq++, run });
+  const at = (time: number, run: () => void) => queue.push({ at: time, seq: seq++, run });
   const nextVsync = (time: number) =>
     (Math.floor(time / options.refreshMs + 1e-9) + 1) * options.refreshMs;
   const request = () => {
     if (framePending || timerPending || dirty.size === 0) return;
     const plan = pacer.plan(dirty, options.windowFocused, now);
-    if (plan.kind === "wait") {
+    if (plan.kind === 'wait') {
       timerPending = true;
       at(now + plan.delayMs, () => {
         timerPending = false;
         stats.timers += 1;
         request();
       });
-    } else if (plan.kind === "frame") {
+    } else if (plan.kind === 'frame') {
       framePending = true;
       const vsync = nextVsync(now);
       at(vsync, () => flush(vsync));
@@ -297,15 +289,10 @@ function simulation(options: { refreshMs: number; windowFocused: boolean }) {
     pane: (focused: boolean): Surface => ({ isFocused: () => focused }),
     /** New output every `periodMs` after `offsetMs`. */
     every(pane: Surface, periodMs: number, untilMs: number, offsetMs = 0) {
-      for (let time = offsetMs; time < untilMs; time += periodMs)
-        output(pane, time);
+      for (let time = offsetMs; time < untilMs; time += periodMs) output(pane, time);
     },
     everyVsync(pane: Surface, untilMs: number) {
-      for (
-        let time = options.refreshMs / 2;
-        time < untilMs;
-        time += options.refreshMs
-      )
+      for (let time = options.refreshMs / 2; time < untilMs; time += options.refreshMs)
         output(pane, time);
     },
     run(untilMs: number) {

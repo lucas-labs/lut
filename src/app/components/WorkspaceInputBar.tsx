@@ -1,32 +1,32 @@
-import { homeRelativePath } from "@/lib/homeRelativePath";
-import { cn } from "@/lib/utils";
-import { AiInputBarConnect } from "@/modules/ai";
-import { Chip } from "@/modules/ai/components/Chip";
-import { ChipsRow } from "@/modules/ai/components/ChipsRow";
-import { useComposer } from "@/modules/ai/lib/composer";
-import { useBlockController } from "@/modules/terminal/lib/blockController";
-import { focusLeafInput } from "@/modules/terminal/lib/terminalSessionApi";
+import { homeRelativePath } from '@/lib/homeRelativePath';
+import { cn } from '@/lib/utils';
+import { AiInputBarConnect } from '@/modules/ai';
+import { Chip } from '@/modules/ai/components/Chip';
+import { ChipsRow } from '@/modules/ai/components/ChipsRow';
+import { useComposer } from '@/modules/ai/lib/composer';
+import { useBlockController } from '@/modules/terminal/lib/blockController';
+import { focusLeafInput } from '@/modules/terminal/lib/terminalSessionApi';
 import {
   AiContentGenerator02Icon,
   CommandLineIcon,
   Folder01Icon,
   GitBranchIcon,
   TerminalIcon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import { OsIcon } from "./OsIcon";
-import { useGitBranch } from "./useGitBranch";
-import { useSystemInfo } from "./useSystemInfo";
+} from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { OsIcon } from './OsIcon';
+import { useGitBranch } from './useGitBranch';
+import { useSystemInfo } from './useSystemInfo';
 
-const ShellInput = lazy(() => import("@/modules/terminal/block/ShellInput"));
+const ShellInput = lazy(() => import('@/modules/terminal/block/ShellInput'));
 const AiComposerInput = lazy(() =>
-  import("@/modules/ai/components/AiComposerInput").then((m) => ({
+  import('@/modules/ai/components/AiComposerInput').then((m) => ({
     default: m.AiComposerInput,
   })),
 );
 
-export const TOGGLE_BLOCK_INPUT_EVENT = "terax:toggle-block-input";
+export const TOGGLE_BLOCK_INPUT_EVENT = 'terax:toggle-block-input';
 
 type Props = {
   isBlockTab: boolean;
@@ -55,13 +55,13 @@ export function WorkspaceInputBar({
   const { os, shell } = useSystemInfo();
 
   const controller = useBlockController(isBlockTab ? activeLeafId : null);
-  const blockMode = controller?.blockMode ?? "prompt";
+  const blockMode = controller?.blockMode ?? 'prompt';
 
   // Re-resolve the branch chip when a command finishes (covers `git checkout`).
   const [promptNonce, setPromptNonce] = useState(0);
   const prevBlockMode = useRef(blockMode);
   useEffect(() => {
-    if (prevBlockMode.current !== "prompt" && blockMode === "prompt") {
+    if (prevBlockMode.current !== 'prompt' && blockMode === 'prompt') {
       setPromptNonce((n) => n + 1);
     }
     prevBlockMode.current = blockMode;
@@ -69,22 +69,22 @@ export function WorkspaceInputBar({
   const branch = useGitBranch(isTerminalTab ? cwd : null, promptNonce);
 
   const showToggle = isBlockTab && hasComposer;
-  const [mode, setMode] = useState<"shell" | "ai">("shell");
-  const effectiveMode = !isBlockTab ? "ai" : hasComposer ? mode : "shell";
+  const [mode, setMode] = useState<'shell' | 'ai'>('shell');
+  const effectiveMode = !isBlockTab ? 'ai' : hasComposer ? mode : 'shell';
 
   const mounted = keysLoaded || isBlockTab;
   const open = isBlockTab || (keysLoaded && panelOpen);
 
   const [aiLoaded, setAiLoaded] = useState(false);
   useEffect(() => {
-    if (open && effectiveMode === "ai") setAiLoaded(true);
+    if (open && effectiveMode === 'ai') setAiLoaded(true);
   }, [open, effectiveMode]);
   const renderAi = hasComposer && aiLoaded;
 
-  const switchMode = (next: "shell" | "ai") => {
+  const switchMode = (next: 'shell' | 'ai') => {
     setMode(next);
     requestAnimationFrame(() => {
-      if (next === "ai") c.textareaRef.current?.focus();
+      if (next === 'ai') c.textareaRef.current?.focus();
       else if (activeLeafId != null) focusLeafInput(activeLeafId);
     });
   };
@@ -95,8 +95,7 @@ export function WorkspaceInputBar({
   switchModeRef.current = switchMode;
   useEffect(() => {
     if (!showToggle) return;
-    const onToggle = () =>
-      switchModeRef.current(modeRef.current === "shell" ? "ai" : "shell");
+    const onToggle = () => switchModeRef.current(modeRef.current === 'shell' ? 'ai' : 'shell');
     window.addEventListener(TOGGLE_BLOCK_INPUT_EVENT, onToggle);
     return () => window.removeEventListener(TOGGLE_BLOCK_INPUT_EVENT, onToggle);
   }, [showToggle]);
@@ -149,8 +148,8 @@ export function WorkspaceInputBar({
           <div className="flex items-end gap-2.5">
             <div className="relative min-w-0 flex-1">
               {isBlockTab && controller && activeLeafId != null && (
-                <div className={cn(effectiveMode !== "shell" && "hidden")}>
-                  {blockMode === "plain" ? (
+                <div className={cn(effectiveMode !== 'shell' && 'hidden')}>
+                  {blockMode === 'plain' ? (
                     <button
                       type="button"
                       className="text-sm text-muted-foreground hover:text-foreground"
@@ -163,7 +162,7 @@ export function WorkspaceInputBar({
                       <ShellInput
                         leafId={activeLeafId}
                         mode={blockMode}
-                        focused={effectiveMode === "shell"}
+                        focused={effectiveMode === 'shell'}
                         onSubmit={controller.submitCommand}
                         onInterrupt={controller.interrupt}
                         getCwd={controller.getCwd}
@@ -173,7 +172,7 @@ export function WorkspaceInputBar({
                 </div>
               )}
               {renderAi && (
-                <div className={cn(effectiveMode !== "ai" && "hidden")}>
+                <div className={cn(effectiveMode !== 'ai' && 'hidden')}>
                   <Suspense fallback={null}>
                     <AiComposerInput />
                   </Suspense>
@@ -191,45 +190,24 @@ export function WorkspaceInputBar({
     );
 
   return (
-    <div
-      data-ai-input-bar
-      data-state={open ? "open" : "closed"}
-      className="terax-reveal"
-      aria-hidden={!open}
-    >
+    <div data-ai-input-bar data-state={open ? 'open' : 'closed'} className="terax-reveal" aria-hidden={!open}>
       <div>{content}</div>
     </div>
   );
 }
 
-function ModeToggle({
-  mode,
-  onChange,
-}: {
-  mode: "shell" | "ai";
-  onChange: (next: "shell" | "ai") => void;
-}) {
+function ModeToggle({ mode, onChange }: { mode: 'shell' | 'ai'; onChange: (next: 'shell' | 'ai') => void }) {
   return (
     <div className="relative grid shrink-0 grid-cols-2 rounded-md p-0.5 text-[10.5px] ring-1 ring-inset ring-border/35">
       <span
         aria-hidden
         className="pointer-events-none absolute inset-y-0.5 left-0.5 w-[calc(50%-2px)] rounded-[4px] bg-accent/60 transition-transform duration-200 ease-out"
         style={{
-          transform: mode === "ai" ? "translateX(100%)" : "translateX(0)",
+          transform: mode === 'ai' ? 'translateX(100%)' : 'translateX(0)',
         }}
       />
-      <SegButton
-        active={mode === "shell"}
-        icon={TerminalIcon}
-        label="Shell"
-        onClick={() => onChange("shell")}
-      />
-      <SegButton
-        active={mode === "ai"}
-        icon={AiContentGenerator02Icon}
-        label="AI"
-        onClick={() => onChange("ai")}
-      />
+      <SegButton active={mode === 'shell'} icon={TerminalIcon} label="Shell" onClick={() => onChange('shell')} />
+      <SegButton active={mode === 'ai'} icon={AiContentGenerator02Icon} label="AI" onClick={() => onChange('ai')} />
     </div>
   );
 }
@@ -250,10 +228,8 @@ function SegButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "relative z-10 flex items-center justify-center gap-1 rounded-[4px] px-2 py-[2.5px] font-medium transition-colors",
-        active
-          ? "text-foreground/90"
-          : "text-muted-foreground/70 hover:text-foreground",
+        'relative z-10 flex items-center justify-center gap-1 rounded-[4px] px-2 py-[2.5px] font-medium transition-colors',
+        active ? 'text-foreground/90' : 'text-muted-foreground/70 hover:text-foreground',
       )}
     >
       <HugeiconsIcon icon={icon} size={11} strokeWidth={1.75} />

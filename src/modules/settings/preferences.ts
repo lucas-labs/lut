@@ -1,10 +1,10 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 import {
   DEFAULT_PREFERENCES,
   loadPreferences,
   onPreferencesChange,
   type Preferences,
-} from "./store";
+} from './store';
 
 type State = Preferences & {
   hydrated: boolean;
@@ -14,14 +14,14 @@ type State = Preferences & {
 
 let initPromise: Promise<void> | null = null;
 
-const FAST_BG_KIND_KEY = "terax-ui-bg-kind-shadow";
-const FAST_BG_IMAGE_ID_KEY = "terax-ui-bg-image-shadow";
+const FAST_BG_KIND_KEY = 'terax-ui-bg-kind-shadow';
+const FAST_BG_IMAGE_ID_KEY = 'terax-ui-bg-image-shadow';
 
 function mirrorBgFastPath(
-  kind: Preferences["backgroundKind"],
-  imageId: Preferences["backgroundImageId"],
+  kind: Preferences['backgroundKind'],
+  imageId: Preferences['backgroundImageId'],
 ): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
   try {
     window.localStorage.setItem(FAST_BG_KIND_KEY, kind);
     if (imageId) window.localStorage.setItem(FAST_BG_IMAGE_ID_KEY, imageId);
@@ -35,11 +35,11 @@ export function readBgFastPath(): {
   active: boolean;
   imageId: string | null;
 } {
-  if (typeof window === "undefined") return { active: false, imageId: null };
+  if (typeof window === 'undefined') return { active: false, imageId: null };
   try {
     const kind = window.localStorage.getItem(FAST_BG_KIND_KEY);
     const imageId = window.localStorage.getItem(FAST_BG_IMAGE_ID_KEY);
-    return { active: kind === "image" && !!imageId, imageId };
+    return { active: kind === 'image' && !!imageId, imageId };
   } catch {
     return { active: false, imageId: null };
   }
@@ -57,7 +57,7 @@ export const usePreferencesStore = create<State>((set) => ({
         mirrorBgFastPath(prefs.backgroundKind, prefs.backgroundImageId);
         void onPreferencesChange((key, value) => {
           set({ [key]: value } as Partial<State>);
-          if (key === "backgroundKind" || key === "backgroundImageId") {
+          if (key === 'backgroundKind' || key === 'backgroundImageId') {
             const s = usePreferencesStore.getState();
             mirrorBgFastPath(s.backgroundKind, s.backgroundImageId);
           }

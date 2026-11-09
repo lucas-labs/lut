@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   allocateMirrorBuffer,
   GC_MIRROR_BATCH_BYTES,
@@ -7,12 +7,12 @@ import {
   GcPressureMirror,
   gcPressureOptionsFromStorage,
   NATIVE_BYTES_PER_FRAME,
-} from "./GcPressure";
+} from './GcPressure';
 
 afterEach(() => vi.unstubAllGlobals());
 
-describe("GcPressureMirror", () => {
-  it("weighs a frame at ten times the native cost it pins", () => {
+describe('GcPressureMirror', () => {
+  it('weighs a frame at ten times the native cost it pins', () => {
     const sizes: number[] = [];
     const mirror = new GcPressureMirror({
       allocate: (bytes) => sizes.push(bytes),
@@ -27,7 +27,7 @@ describe("GcPressureMirror", () => {
     });
   });
 
-  it("allocates nothing until a batch of frames has built up", () => {
+  it('allocates nothing until a batch of frames has built up', () => {
     const allocate = vi.fn();
     const mirror = new GcPressureMirror({
       bytesPerFrame: 12_900,
@@ -62,7 +62,7 @@ describe("GcPressureMirror", () => {
     };
   }
 
-  it("mirrors the whole cost without drifting over many frames", () => {
+  it('mirrors the whole cost without drifting over many frames', () => {
     const { sizes, total } = run(100, 60, {
       bytesPerFrame: 12_900,
       batchBytes: 64 * 1024,
@@ -70,19 +70,17 @@ describe("GcPressureMirror", () => {
     // Under the cap everything owed is allocated except what is still below one batch.
     expect(total).toBeLessThanOrEqual(6_000 * 12_900);
     expect(6_000 * 12_900 - total).toBeLessThan(64 * 1024);
-    expect(
-      sizes.every((bytes) => bytes >= 64 * 1024 && bytes < 64 * 1024 + 12_900),
-    ).toBe(true);
+    expect(sizes.every((bytes) => bytes >= 64 * 1024 && bytes < 64 * 1024 + 12_900)).toBe(true);
   });
 
-  it("mirrors every frame of a 25 fps stream, the case the weight was measured at", () => {
+  it('mirrors every frame of a 25 fps stream, the case the weight was measured at', () => {
     const { sizes, mirror } = run(25, 60);
     expect(sizes).toHaveLength(25 * 60);
     expect(new Set(sizes)).toEqual(new Set([129_000]));
     expect(mirror.diagnostics().allocations).toBe(25 * 60);
   });
 
-  it("caps the mirrored bytes per second at the display rate instead of allocating a buffer per frame", () => {
+  it('caps the mirrored bytes per second at the display rate instead of allocating a buffer per frame', () => {
     const seconds = 20;
     const { sizes, total, mirror } = run(120, seconds);
     const cap = GC_MIRROR_MAX_BYTES_PER_SECOND;
@@ -99,7 +97,7 @@ describe("GcPressureMirror", () => {
     });
   });
 
-  it("does not store up cost the cap held back: a stall is followed by one burst, not a debt", () => {
+  it('does not store up cost the cap held back: a stall is followed by one burst, not a debt', () => {
     const sizes: number[] = [];
     let clock = 0;
     const mirror = new GcPressureMirror({
@@ -119,7 +117,7 @@ describe("GcPressureMirror", () => {
     );
   });
 
-  it("can run uncapped for experiments", () => {
+  it('can run uncapped for experiments', () => {
     const { sizes } = run(120, 5, { maxBytesPerSecond: 0 });
     expect(sizes).toHaveLength(600);
     // Frames in one instant (no time passes) are not special either.
@@ -138,7 +136,7 @@ describe("GcPressureMirror", () => {
     expect(Math.max(...sizes)).toBeLessThan(1024 * 1024);
   });
 
-  it("is inert when disabled", () => {
+  it('is inert when disabled', () => {
     const allocate = vi.fn();
     const mirror = new GcPressureMirror({ bytesPerFrame: 0, allocate });
     for (let frame = 0; frame < 10_000; frame++) mirror.noteFrame();
@@ -146,7 +144,7 @@ describe("GcPressureMirror", () => {
     expect(mirror.diagnostics().enabled).toBe(false);
   });
 
-  it("allocates real ArrayBuffers by default", () => {
+  it('allocates real ArrayBuffers by default', () => {
     const mirror = new GcPressureMirror({
       bytesPerFrame: 40_000,
       batchBytes: 64 * 1024,
@@ -157,17 +155,17 @@ describe("GcPressureMirror", () => {
   });
 });
 
-describe("allocateMirrorBuffer", () => {
+describe('allocateMirrorBuffer', () => {
   const prototype = ArrayBuffer.prototype as { transfer?: unknown };
-  const original = Object.getOwnPropertyDescriptor(prototype, "transfer");
+  const original = Object.getOwnPropertyDescriptor(prototype, 'transfer');
   afterEach(() => {
-    if (original) Object.defineProperty(prototype, "transfer", original);
+    if (original) Object.defineProperty(prototype, 'transfer', original);
     else delete prototype.transfer;
   });
 
-  it("detaches the buffer at once when the engine can, so no pages stay resident", () => {
+  it('detaches the buffer at once when the engine can, so no pages stay resident', () => {
     const transfer = vi.fn();
-    Object.defineProperty(prototype, "transfer", {
+    Object.defineProperty(prototype, 'transfer', {
       value: transfer,
       configurable: true,
       writable: true,
@@ -176,8 +174,8 @@ describe("allocateMirrorBuffer", () => {
     expect(transfer).toHaveBeenCalledExactlyOnceWith(0);
   });
 
-  it("tolerates an engine without ArrayBuffer.prototype.transfer", () => {
-    Object.defineProperty(prototype, "transfer", {
+  it('tolerates an engine without ArrayBuffer.prototype.transfer', () => {
+    Object.defineProperty(prototype, 'transfer', {
       value: undefined,
       configurable: true,
       writable: true,
@@ -185,9 +183,9 @@ describe("allocateMirrorBuffer", () => {
     expect(() => allocateMirrorBuffer(65_536)).not.toThrow();
   });
 
-  it("is what a default mirror allocates with", () => {
+  it('is what a default mirror allocates with', () => {
     const transfer = vi.fn();
-    Object.defineProperty(prototype, "transfer", {
+    Object.defineProperty(prototype, 'transfer', {
       value: transfer,
       configurable: true,
       writable: true,
@@ -197,9 +195,9 @@ describe("allocateMirrorBuffer", () => {
   });
 });
 
-describe("gcPressureOptionsFromStorage", () => {
+describe('gcPressureOptionsFromStorage', () => {
   const read = (value: string | null | Error) => {
-    vi.stubGlobal("window", {
+    vi.stubGlobal('window', {
       localStorage: {
         getItem: () => {
           if (value instanceof Error) throw value;
@@ -210,21 +208,21 @@ describe("gcPressureOptionsFromStorage", () => {
     return gcPressureOptionsFromStorage();
   };
 
-  it("reads the override and ignores bad values", () => {
+  it('reads the override and ignores bad values', () => {
     expect(read(null)).toEqual({});
-    expect(read("off")).toEqual({ bytesPerFrame: 0 });
-    expect(read("20000")).toEqual({
+    expect(read('off')).toEqual({ bytesPerFrame: 0 });
+    expect(read('20000')).toEqual({
       bytesPerFrame: 20000,
       batchBytes: undefined,
     });
-    expect(read("20000:131072")).toEqual({
+    expect(read('20000:131072')).toEqual({
       bytesPerFrame: 20000,
       batchBytes: 131072,
     });
-    expect(read("soon")).toEqual({
+    expect(read('soon')).toEqual({
       bytesPerFrame: undefined,
       batchBytes: undefined,
     });
-    expect(read(new Error("blocked"))).toEqual({});
+    expect(read(new Error('blocked'))).toEqual({});
   });
 });

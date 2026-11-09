@@ -1,10 +1,7 @@
-import type { GhosttyTerminalModelApi } from "../GhosttyTerminalModel";
+import type { GhosttyTerminalModelApi } from '../GhosttyTerminalModel';
 
 export type MouseHost = {
-  readonly model: Pick<
-    GhosttyTerminalModelApi,
-    "cols" | "rows" | "mode" | "modes"
-  >;
+  readonly model: Pick<GhosttyTerminalModelApi, 'cols' | 'rows' | 'mode' | 'modes'>;
   readonly pointerTarget: HTMLElement;
   readonly cellSize: () => { width: number; height: number };
   /** CSS pixels the drawn grid is moved up inside the pointer target; zero when absent. */
@@ -23,35 +20,28 @@ export class TerminalMouse {
   private buttons = 0;
   private lastMotion: string | null = null;
   private lastPress: MouseEvent | null = null;
-  private readonly documentRelease = (event: MouseEvent): void =>
-    this.button(event, true);
+  private readonly documentRelease = (event: MouseEvent): void => this.button(event, true);
 
   private readonly listeners: [string, (event: MouseEvent) => void][] = [
-    ["mousedown", (event) => this.button(event, false)],
-    ["mouseup", (event) => this.button(event, true)],
-    ["mousemove", (event) => this.move(event)],
+    ['mousedown', (event) => this.button(event, false)],
+    ['mouseup', (event) => this.button(event, true)],
+    ['mousemove', (event) => this.move(event)],
   ];
 
   constructor(private readonly host: MouseHost) {
     for (const [type, listener] of this.listeners)
       host.pointerTarget.addEventListener(type, listener as EventListener);
-    host.pointerTarget.ownerDocument.defaultView?.addEventListener(
-      "blur",
-      this.releaseButtons,
-    );
+    host.pointerTarget.ownerDocument.defaultView?.addEventListener('blur', this.releaseButtons);
   }
 
   dispose(): void {
     this.clearButtons();
     this.host.pointerTarget.ownerDocument.defaultView?.removeEventListener(
-      "blur",
+      'blur',
       this.releaseButtons,
     );
     for (const [type, listener] of this.listeners)
-      this.host.pointerTarget.removeEventListener(
-        type,
-        listener as EventListener,
-      );
+      this.host.pointerTarget.removeEventListener(type, listener as EventListener);
   }
 
   button(event: MouseEvent, release: boolean): void {
@@ -72,7 +62,7 @@ export class TerminalMouse {
       this.buttons |= bit;
       this.lastPress = event;
       this.host.pointerTarget.ownerDocument.addEventListener(
-        "mouseup",
+        'mouseup',
         this.documentRelease as EventListener,
         true,
       );
@@ -87,8 +77,7 @@ export class TerminalMouse {
     const position = event && this.position(event);
     if (event && position && this.host.model.modes().mouseTracking)
       for (let button = 0; button < 3; button++)
-        if ((this.buttons & (1 << button)) !== 0)
-          this.send(button, position, true, event);
+        if ((this.buttons & (1 << button)) !== 0) this.send(button, position, true, event);
     this.clearButtons();
   };
 
@@ -97,7 +86,7 @@ export class TerminalMouse {
     this.lastPress = null;
     this.lastMotion = null;
     this.host.pointerTarget.ownerDocument.removeEventListener(
-      "mouseup",
+      'mouseup',
       this.documentRelease as EventListener,
       true,
     );
@@ -107,10 +96,7 @@ export class TerminalMouse {
     const { model } = this.host;
     const buttonMotion = model.mode(1002);
     const anyMotion = model.mode(1003);
-    if (
-      event.shiftKey ||
-      (!anyMotion && (!buttonMotion || this.buttons === 0))
-    ) {
+    if (event.shiftKey || (!anyMotion && (!buttonMotion || this.buttons === 0))) {
       this.lastMotion = null;
       return;
     }
@@ -135,7 +121,7 @@ export class TerminalMouse {
       anyMotion ? 1 : 0,
       model.mode(1006) ? 1 : 0,
       model.mode(1005) ? 1 : 0,
-    ].join(":");
+    ].join(':');
     consume(event);
     if (signature === this.lastMotion) return;
     this.lastMotion = signature;
@@ -148,8 +134,7 @@ export class TerminalMouse {
     if (!position || times <= 0) return;
     const report = this.report(up ? 64 : 65, position, false, event);
     const reports = new Uint8Array(report.length * times);
-    for (let index = 0; index < times; index++)
-      reports.set(report, index * report.length);
+    for (let index = 0; index < times; index++) reports.set(report, index * report.length);
     this.host.send(reports);
   }
 
@@ -161,18 +146,13 @@ export class TerminalMouse {
     return {
       col: Math.max(
         1,
-        Math.min(
-          model.cols,
-          Math.floor((event.clientX - rect.left) / cell.width) + 1,
-        ),
+        Math.min(model.cols, Math.floor((event.clientX - rect.left) / cell.width) + 1),
       ),
       row: Math.max(
         1,
         Math.min(
           model.rows,
-          Math.floor(
-            (event.clientY - rect.top + (gridShiftY?.() ?? 0)) / cell.height,
-          ) + 1,
+          Math.floor((event.clientY - rect.top + (gridShiftY?.() ?? 0)) / cell.height) + 1,
         ),
       ),
     };
@@ -184,14 +164,10 @@ export class TerminalMouse {
     release: boolean,
     event: MouseEvent,
   ): Uint8Array {
-    const modifiers = this.host.model.mode(9)
-      ? 0
-      : terminalMouseModifiers(event);
+    const modifiers = this.host.model.mode(9) ? 0 : terminalMouseModifiers(event);
     const encodedButton = button + modifiers;
     if (this.host.model.mode(1006))
-      return encoder.encode(
-        `\x1b[<${encodedButton};${col};${row}${release ? "m" : "M"}`,
-      );
+      return encoder.encode(`\x1b[<${encodedButton};${col};${row}${release ? 'm' : 'M'}`);
     const legacyButton = release ? 3 + modifiers : encodedButton;
     const utf8 = this.host.model.mode(1005);
     const limit = utf8 ? 2047 : 255;
@@ -203,9 +179,7 @@ export class TerminalMouse {
       Math.min(limit, col + 32),
       Math.min(limit, row + 32),
     ];
-    return utf8
-      ? encoder.encode(String.fromCharCode(...bytes))
-      : Uint8Array.from(bytes);
+    return utf8 ? encoder.encode(String.fromCharCode(...bytes)) : Uint8Array.from(bytes);
   }
 
   private send(
@@ -220,7 +194,7 @@ export class TerminalMouse {
 }
 
 export function terminalMouseModifiers(
-  event: Pick<MouseEvent, "altKey" | "ctrlKey" | "shiftKey">,
+  event: Pick<MouseEvent, 'altKey' | 'ctrlKey' | 'shiftKey'>,
 ): number {
   let modifiers = 0;
   if (event.shiftKey) modifiers |= 4;

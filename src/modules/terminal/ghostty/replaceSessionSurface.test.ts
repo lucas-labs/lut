@@ -1,11 +1,11 @@
-import type { GhosttyTerminalModelApi } from "@/modules/terminal/ghostty/GhosttyTerminalModel";
-import { replaceSessionSurface } from "@/modules/terminal/ghostty/replaceSessionSurface";
-import { GhosttySearchEngine } from "@/modules/terminal/ghostty/search/GhosttySearchEngine";
-import { describe, expect, it, vi } from "vitest";
+import type { GhosttyTerminalModelApi } from '@/modules/terminal/ghostty/GhosttyTerminalModel';
+import { replaceSessionSurface } from '@/modules/terminal/ghostty/replaceSessionSurface';
+import { GhosttySearchEngine } from '@/modules/terminal/ghostty/search/GhosttySearchEngine';
+import { describe, expect, it, vi } from 'vitest';
 
 function surface() {
   const search = {
-    snapshot: vi.fn(() => ({ query: "agent", pendingDirection: null })),
+    snapshot: vi.fn(() => ({ query: 'agent', pendingDirection: null })),
     restore: vi.fn(),
     suspend: vi.fn(),
     resume: vi.fn(),
@@ -13,8 +13,8 @@ function surface() {
   return { dispose: vi.fn(), searchController: () => search };
 }
 
-describe("renderer replacement ownership", () => {
-  it("transfers pending search navigation once when native scrolling notifies both surfaces", () => {
+describe('renderer replacement ownership', () => {
+  it('transfers pending search navigation once when native scrolling notifies both surfaces', () => {
     let complete = false;
     const damage = new Set<() => void>();
     const status = () => ({
@@ -52,7 +52,7 @@ describe("renderer replacement ownership", () => {
       };
     };
     const previous = create();
-    previous.searchController().findNext("agent");
+    previous.searchController().findNext('agent');
     complete = true;
     const state = { surface: previous, input: { dispose: vi.fn() } };
     replaceSessionSurface(state, create, vi.fn(), () => ({ dispose: vi.fn() }));
@@ -62,7 +62,7 @@ describe("renderer replacement ownership", () => {
     state.surface.dispose();
   });
 
-  it("commits presentation only after attachment and retains the PTY and model", () => {
+  it('commits presentation only after attachment and retains the PTY and model', () => {
     const previous = surface();
     const previousInput = { dispose: vi.fn() };
     const replacement = surface();
@@ -82,7 +82,7 @@ describe("renderer replacement ownership", () => {
     expect(state.surface).toBe(replacement);
     expect(state.input).toBe(input);
     expect(replacement.searchController().restore).toHaveBeenCalledWith({
-      query: "agent",
+      query: 'agent',
       pendingDirection: null,
     });
     expect(previous.dispose).toHaveBeenCalledOnce();
@@ -91,27 +91,27 @@ describe("renderer replacement ownership", () => {
     expect(pty.close).not.toHaveBeenCalled();
   });
 
-  it.each(["input", "attach", "search"])(
-    "rolls back a failed %s stage and releases partial resources",
+  it.each(['input', 'attach', 'search'])(
+    'rolls back a failed %s stage and releases partial resources',
     (failure) => {
       const previous = surface();
       const previousInput = { dispose: vi.fn() };
       const replacement = surface();
       const input = { dispose: vi.fn() };
       const state = { surface: previous, input: previousInput };
-      if (failure === "search")
+      if (failure === 'search')
         replacement.searchController().restore.mockImplementation(() => {
-          throw new Error("search");
+          throw new Error('search');
         });
       expect(() =>
         replaceSessionSurface(
           state,
           () => replacement,
           () => {
-            if (failure === "attach") throw new Error("attach");
+            if (failure === 'attach') throw new Error('attach');
           },
           () => {
-            if (failure === "input") throw new Error("input");
+            if (failure === 'input') throw new Error('input');
             return input;
           },
         ),
@@ -122,7 +122,7 @@ describe("renderer replacement ownership", () => {
       expect(previousInput.dispose).not.toHaveBeenCalled();
       expect(previous.searchController().resume).toHaveBeenCalledOnce();
       expect(replacement.dispose).toHaveBeenCalledOnce();
-      expect(input.dispose).toHaveBeenCalledTimes(failure === "input" ? 0 : 1);
+      expect(input.dispose).toHaveBeenCalledTimes(failure === 'input' ? 0 : 1);
     },
   );
 });

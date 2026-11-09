@@ -30,31 +30,31 @@ Method: validator run; all 136 draft issues parsed from the `## Draft issues` se
 
 ### Duplicate or overlapping drafts (merge, or keep one and cross-reference it)
 
-| Concern | Drafts | Recommendation |
-|---|---|---|
-| Move `workspaceAuthorize` wrappers out of `modules/ai` (F2:3) | ai-D02 ≡ app-shell-D05 | Keep ai-D02, which covers all four importers (useSpacesBoot.ts:1, useWorkspaceSwitcher.ts:3, App.tsx:33, useGitStatus.ts:1). Drop app-shell-D05. |
-| Rename `TERAX_*` env vars exported to PTYs | agents-D01 ⊇ backend-core-D02 | agents-D01's acceptance criteria already rename shell_init.rs and the scripts. The rename must be one atomic PR, because the CLI reads the variables (terax-cli/src/lib.rs:107,285) that shell_init.rs:195-219 exports. Merge them into one issue. |
-| Hook marker and `__terax_notify` removal | agents-D02 ⊇ backend-core-D03 | Merge. lib.rs:169-180, agent_detect.rs:35 and agent.rs:255,644 change together. |
-| `terax` launcher, sidecar and shell function rename | agents-D03 vs build-identity-D05 (control.rs:927,946) vs backend-core-D02 (`terax` function) | Assign one owner. Note that agents-D03 forgets bashrc.bash:35. |
-| Read policy protects lut's control dir | ai-D03 (pathPolicy.json) vs ide-tools-D02 (read_policy.rs:15) | One issue, in the same PR as the descriptor move (see removal orders). |
-| Remove AI settings sections and prefs | ai-D07 vs state-settings-D02/D03 | Both delete ModelsSection and the AI part of AgentsSection. Keep state-settings-D02 for sections and state-settings-D03 for store keys. Drop ai-D07, or reduce it to the `lm_ping` command. |
-| AI in the editor and source control | ai-D08 ≡ ide-tools-D06 (autocomplete) + ide-tools-D07 | Keep the ide-tools drafts, which are finer-grained. Drop ai-D08. |
-| AI entry points in the shell | ai-D05/ai-D06 vs app-shell-D06 (close guard flush, useAppCloseGuard.ts:2-6), app-shell-D09 (WorkspaceInputBar, AiComposerProvider App.tsx:1694), app-shell-D20 (palette/shortcuts), terminal-D12 (BlockOverlay.tsx:12) and ide-tools-D06 (AiDiffPane vs the ai-diff tab kind) | One owner per file. Suggested split: ai-D05 unmounts App.tsx only; app-shell-D06/D09 and terminal-D12 handle their own files; ai-D06 is reduced to statusbar, shortcuts, palette and the ai-diff kind. |
-| Split ratios (PRJ-006) | terminal-D04 vs state-settings-D07 | terminal-D04 changes the model (panes.ts:14); state-settings-D07 persists it. state-settings-D07 should depend on terminal-D04 and stop covering PRJ-006 itself. |
-| Per-profile appearance (PRO-005, F3:5) | terminal-D07 vs state-settings-D13 | Renderer override (terminal-D07) and then the resolver (state-settings-D13). Add the edge state-settings-D13 → terminal-D07. |
-| Prompt-ready signal (8.4:6) | backend-core-D12 (per-PTY BE signal) vs terminal-D09 (OSC 133 FE contract) | Two answers to one question. Decide FE-only (terminal-D09, which already works through GhosttySemanticEventRouter) or BE. Don't build both. |
-| Open file links without LSP | terminal-D11 vs ide-tools-D08 | ide-tools-D08 (pure move of navigator.ts) goes first. terminal-D11 then adds the OS-opener fallback. Add the edge terminal-D11 → ide-tools-D08. |
-| Open tab with profile (PRO-011) | terminal-D06 vs app-shell-D16 | terminal-D06 owns the launch API; app-shell-D16 owns the menu UI. app-shell-D16 depends on `state-settings-D01?`, which is unrelated. It should depend on terminal-D06 and on a profile-UI design issue, which does not exist yet. |
-| Webview storage keys | state-settings-D01 vs app-shell-D24 | state-settings-D01 renames the theme shadow keys in ThemeProvider.tsx:47-48 and settings.html:11 but **not index.html:11**, which also reads `terax-ui-theme-shadow` (app-shell area). After the rename the main window's pre-paint reads a key that is never written again, which causes a theme flash. index.html must be in the same PR. |
-| Bench identifier | build-identity-D04 vs app-shell-D25 | See removal orders: it must be the same PR. |
-| Dependency pruning (9.9:6) | ai-D11 vs build-identity-D09 | ai-D11 handles AI deps; build-identity-D09 handles the rest after ide-tools. Make that explicit. |
+| Concern                                                       | Drafts                                                                                                                                                                                                                                                                        | Recommendation                                                                                                                                                                                                                                                                                                                              |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Move `workspaceAuthorize` wrappers out of `modules/ai` (F2:3) | ai-D02 ≡ app-shell-D05                                                                                                                                                                                                                                                        | Keep ai-D02, which covers all four importers (useSpacesBoot.ts:1, useWorkspaceSwitcher.ts:3, App.tsx:33, useGitStatus.ts:1). Drop app-shell-D05.                                                                                                                                                                                            |
+| Rename `TERAX_*` env vars exported to PTYs                    | agents-D01 ⊇ backend-core-D02                                                                                                                                                                                                                                                 | agents-D01's acceptance criteria already rename shell_init.rs and the scripts. The rename must be one atomic PR, because the CLI reads the variables (terax-cli/src/lib.rs:107,285) that shell_init.rs:195-219 exports. Merge them into one issue.                                                                                          |
+| Hook marker and `__terax_notify` removal                      | agents-D02 ⊇ backend-core-D03                                                                                                                                                                                                                                                 | Merge. lib.rs:169-180, agent_detect.rs:35 and agent.rs:255,644 change together.                                                                                                                                                                                                                                                             |
+| `terax` launcher, sidecar and shell function rename           | agents-D03 vs build-identity-D05 (control.rs:927,946) vs backend-core-D02 (`terax` function)                                                                                                                                                                                  | Assign one owner. Note that agents-D03 forgets bashrc.bash:35.                                                                                                                                                                                                                                                                              |
+| Read policy protects lut's control dir                        | ai-D03 (pathPolicy.json) vs ide-tools-D02 (read_policy.rs:15)                                                                                                                                                                                                                 | One issue, in the same PR as the descriptor move (see removal orders).                                                                                                                                                                                                                                                                      |
+| Remove AI settings sections and prefs                         | ai-D07 vs state-settings-D02/D03                                                                                                                                                                                                                                              | Both delete ModelsSection and the AI part of AgentsSection. Keep state-settings-D02 for sections and state-settings-D03 for store keys. Drop ai-D07, or reduce it to the `lm_ping` command.                                                                                                                                                 |
+| AI in the editor and source control                           | ai-D08 ≡ ide-tools-D06 (autocomplete) + ide-tools-D07                                                                                                                                                                                                                         | Keep the ide-tools drafts, which are finer-grained. Drop ai-D08.                                                                                                                                                                                                                                                                            |
+| AI entry points in the shell                                  | ai-D05/ai-D06 vs app-shell-D06 (close guard flush, useAppCloseGuard.ts:2-6), app-shell-D09 (WorkspaceInputBar, AiComposerProvider App.tsx:1694), app-shell-D20 (palette/shortcuts), terminal-D12 (BlockOverlay.tsx:12) and ide-tools-D06 (AiDiffPane vs the ai-diff tab kind) | One owner per file. Suggested split: ai-D05 unmounts App.tsx only; app-shell-D06/D09 and terminal-D12 handle their own files; ai-D06 is reduced to statusbar, shortcuts, palette and the ai-diff kind.                                                                                                                                      |
+| Split ratios (PRJ-006)                                        | terminal-D04 vs state-settings-D07                                                                                                                                                                                                                                            | terminal-D04 changes the model (panes.ts:14); state-settings-D07 persists it. state-settings-D07 should depend on terminal-D04 and stop covering PRJ-006 itself.                                                                                                                                                                            |
+| Per-profile appearance (PRO-005, F3:5)                        | terminal-D07 vs state-settings-D13                                                                                                                                                                                                                                            | Renderer override (terminal-D07) and then the resolver (state-settings-D13). Add the edge state-settings-D13 → terminal-D07.                                                                                                                                                                                                                |
+| Prompt-ready signal (8.4:6)                                   | backend-core-D12 (per-PTY BE signal) vs terminal-D09 (OSC 133 FE contract)                                                                                                                                                                                                    | Two answers to one question. Decide FE-only (terminal-D09, which already works through GhosttySemanticEventRouter) or BE. Don't build both.                                                                                                                                                                                                 |
+| Open file links without LSP                                   | terminal-D11 vs ide-tools-D08                                                                                                                                                                                                                                                 | ide-tools-D08 (pure move of navigator.ts) goes first. terminal-D11 then adds the OS-opener fallback. Add the edge terminal-D11 → ide-tools-D08.                                                                                                                                                                                             |
+| Open tab with profile (PRO-011)                               | terminal-D06 vs app-shell-D16                                                                                                                                                                                                                                                 | terminal-D06 owns the launch API; app-shell-D16 owns the menu UI. app-shell-D16 depends on `state-settings-D01?`, which is unrelated. It should depend on terminal-D06 and on a profile-UI design issue, which does not exist yet.                                                                                                          |
+| Webview storage keys                                          | state-settings-D01 vs app-shell-D24                                                                                                                                                                                                                                           | state-settings-D01 renames the theme shadow keys in ThemeProvider.tsx:47-48 and settings.html:11 but **not index.html:11**, which also reads `terax-ui-theme-shadow` (app-shell area). After the rename the main window's pre-paint reads a key that is never written again, which causes a theme flash. index.html must be in the same PR. |
+| Bench identifier                                              | build-identity-D04 vs app-shell-D25                                                                                                                                                                                                                                           | See removal orders: it must be the same PR.                                                                                                                                                                                                                                                                                                 |
+| Dependency pruning (9.9:6)                                    | ai-D11 vs build-identity-D09                                                                                                                                                                                                                                                  | ai-D11 handles AI deps; build-identity-D09 handles the rest after ide-tools. Make that explicit.                                                                                                                                                                                                                                            |
 
 ### Contradictory dispositions
 
 - **Spaces:** `state-settings/spaces-persistence` is `replace`, and state-settings-D06 says a new `projects` module
   "replaces `spaces/lib/store.ts`". The proposal says the opposite: ADR-006, ADR-005 ("adapt themes and Spaces") and
   §5.6 ("do not discard the split serialization or the hydration infrastructure", IR-51). terminal-D04 and
-  state-settings-D07 also *extend* `serialize.ts`. state-settings-D06 also says "spaces state migrated once if present",
+  state-settings-D07 also _extend_ `serialize.ts`. state-settings-D06 also says "spaces state migrated once if present",
   while the state-settings open questions say "lut starts clean". Pick one: evolve spaces into projects (`adapt`), or replace it.
 - **Vibrancy:** `backend-core/vibrancy` (vibrancy.rs) is `defer` (backend-core-D15), but its only frontend,
   `state-settings/theme-window-platform` (theme/vibrancy.ts), is `keep`. Both should follow the same decision.
@@ -82,7 +82,7 @@ Method: validator run; all 136 draft issues parsed from the `## Draft issues` se
 ### Removal orders that would break the build or runtime
 
 1. **build-identity-D04 breaks `src/app/dist-budget.test.ts:313-318`.** vite.config.ts:17-28 rejects a bench identifier
-   equal to the *current* `identifier`. The test asserts that `app.crynta.terax` is rejected, which stops being true once
+   equal to the _current_ `identifier`. The test asserts that `app.crynta.terax` is rejected, which stops being true once
    tauri.conf.json:5 changes. The test update must be in build-identity-D04, not in app-shell-D25.
 2. **Cycle agents-D09 ↔ ai-D09.** agents-D09 deletes `managedAgentsStore`, which is imported by ai/tools/agent.ts,
    useAiLiveBridge.ts and useAiBootstrap.ts, so it must follow ai-D09. ai-D09 needs `review.ts` gone first,
@@ -132,6 +132,7 @@ The token regex splits on `;`, so these identity strings fell into (b) or were l
 **213 of 369** proposal items are not in any draft's `covers`. Grouped:
 
 **Belong to a code area but no draft lists them** (often the work exists in a draft; only the `covers` entry is missing):
+
 - Terminal P0 features that exist today and need a verification/keep issue: TER-001, TER-002, TER-004, TER-005, TER-006,
   TER-007, TER-009, TER-012, TER-013; 13.2:1, 13.2:2, 13.2:3, 13.2:4, 13.2:7, 13.2:8; 16:1, 16:2, 16:4, 16:5, 16:24.
 - Renderer and architecture constraints, which should be attached as `covers` to app-shell-D04, terminal-D02 or terminal-D15, or
@@ -143,6 +144,7 @@ The token regex splits on `;`, so these identity strings fell into (b) or were l
 - Gates: F0:gate, F1:gate, F2:gate, F3:gate, F4:gate, F5:gate, F7:gate.
 
 **Belong to no code area. They need new issues** (new modules, docs, process):
+
 - **Profiles module. No area owns it.** This is the largest gap. terminal-D06 depends on `profiles-D??` and backend-core-D08 on `state-settings-D??`,
   and neither exists. Uncovered: PRO-001, PRO-004, PRO-007, PRO-010, PRO-012, F3:1, F3:2, F3:4, F3:7, 6.2:5, 7.3, plus
   IR-11, IR-23, IR-24, IR-62–IR-66. There is also no **design** issue for the profile manager, picker or icon UI.
@@ -169,9 +171,10 @@ The token regex splits on `;`, so these identity strings fell into (b) or were l
 ## Draft issue problems
 
 **Too big or should be split:**
+
 - state-settings-D09 (M) mixes four concerns: consent model with hashing, the startup runner (after prompt-ready), per-pane result UI
   (retry / open shell), and import trust. Split it. The UI part needs a design.
-- state-settings-D06 (M): new projects store, Zod schema and migrations, *plus* dropping the IDE tab kinds from the serializer.
+- state-settings-D06 (M): new projects store, Zod schema and migrations, _plus_ dropping the IDE tab kinds from the serializer.
   This is likely more than 400 lines. Split the schema/store from the serializer change.
 - app-shell-D10 (L): moves the pure planners and extracts the store in one PR, and also replaces `window.__teraxNewBlockTab`
   (useTabs.ts:804). Split into a refactor-only move, then the store, then the global.
@@ -185,6 +188,7 @@ The token regex splits on `;`, so these identity strings fell into (b) or were l
   split per design section once the design exists. Their size-exceptions already say so; plan.md should make the split explicit.
 
 **UI work not blocked by a `design` issue:**
+
 - state-settings-D09 (consent and per-pane result UI), app-shell-D24 (visible app name is visual rebranding, identity:2;
   it should depend on build-identity-D11, not be in Phase 0), app-shell-D16 (no profile-picker design exists), ide-tools-D15
   ("or rebuild" variant has no design dependency), state-settings-D14 (adds an "edit externally" action).
@@ -193,12 +197,14 @@ The token regex splits on `;`, so these identity strings fell into (b) or were l
   status/error UI; the optional status bar (IR-87) and focus mode (IR-86).
 
 **Refactor mixed with behaviour change:**
+
 - terminal-D11 combines the LSP decoupling, the `spaces` import removal and the new OS-opener fallback.
 - ai-D03 combines a file move with a new policy (lut dirs added).
 - app-shell-D10, ide-tools-D04, state-settings-D06: see above.
 - backend-core-D02: rename plus stripping of inherited vars.
 
 **Missing dependency edges between areas** (besides the placeholders and wrong ids listed under Validator):
+
 - build-identity-D04 must include the dist-budget.test.ts update (removal order #1).
 - ai-D09 needs edges to terminal-D12, agents-D09a, app-shell-D06, app-shell-D09, app-shell-D19, state-settings-D03, ai-D03,
   ide-tools-D06 and ide-tools-D07.
@@ -216,12 +222,14 @@ The token regex splits on `;`, so these identity strings fell into (b) or were l
 
 Mechanical check: 1075 `file:line` citations in the area `.md` files. 1072 resolve to an existing file and line
 range. The three that do not:
+
 - agents.md:47 `route.ts:30-73`: `src/modules/agents/lib/route.ts` has 69 lines.
 - state-settings.md `agents/.../AgentLauncherPanel.tsx:93`: elided path. The real file is
   `src/modules/agents/components/AgentLauncherPanel.tsx:93`, and the line is correct.
 - terminal.md `src/foo.ts:10`: an example inside a verification step, not a claim.
 
 Substantive errors found in the sample of about 60 manually checked claims (all others matched the code):
+
 - **backend-core** (Couplings, Answers §6 and crossAreaFindings): "history/ is only used by terminal block-mode suggestions". This is wrong.
   `src/modules/command-palette/hooks/useCommandHistory.ts:1` uses `historyList` (`history_list`) for the palette's
   history mode (CommandPalette.tsx:99-101).

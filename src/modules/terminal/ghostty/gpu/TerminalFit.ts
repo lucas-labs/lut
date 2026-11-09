@@ -1,4 +1,4 @@
-import type { TerminalFontMetrics } from "./terminalVisuals";
+import type { TerminalFontMetrics } from './terminalVisuals';
 
 const MIN_COLUMNS = 2;
 const MAX_COLUMNS = 512;
@@ -57,8 +57,7 @@ export function fitTerminalViewport(
   const deviceHeight = deviceBounds?.height ?? hostHeight * scale;
   const reserved = Math.round(Math.max(0, gutter) * scale);
   if (
-    hostDeviceWidth + DEVICE_ROUNDING_TOLERANCE_PX <
-      MIN_COLUMNS * deviceCellWidth ||
+    hostDeviceWidth + DEVICE_ROUNDING_TOLERANCE_PX < MIN_COLUMNS * deviceCellWidth ||
     deviceHeight + DEVICE_ROUNDING_TOLERANCE_PX < MIN_ROWS * deviceCellHeight
   ) {
     return null;
@@ -67,17 +66,12 @@ export function fitTerminalViewport(
   // The gutter never takes a pane below its minimum two columns, and never makes a wider
   // pane fit fewer columns than a narrower one.
   const cols = clamp(
-    Math.floor(
-      (hostDeviceWidth - reserved + DEVICE_ROUNDING_TOLERANCE_PX) /
-        deviceCellWidth,
-    ),
+    Math.floor((hostDeviceWidth - reserved + DEVICE_ROUNDING_TOLERANCE_PX) / deviceCellWidth),
     MIN_COLUMNS,
     MAX_COLUMNS,
   );
   const rows = clamp(
-    Math.floor(
-      (deviceHeight + DEVICE_ROUNDING_TOLERANCE_PX) / deviceCellHeight,
-    ),
+    Math.floor((deviceHeight + DEVICE_ROUNDING_TOLERANCE_PX) / deviceCellHeight),
     MIN_ROWS,
     MAX_ROWS,
   );

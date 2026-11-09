@@ -1,10 +1,10 @@
-import { DEFAULT_SPACE_ID, type Tab } from "@/modules/tabs/lib/useTabs";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { type RefObject, useEffect } from "react";
-import { resolveControlContext } from "./lib/context";
-import { createReadinessQueue } from "./lib/readiness";
+import { DEFAULT_SPACE_ID, type Tab } from '@/modules/tabs/lib/useTabs';
+import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { type RefObject, useEffect } from 'react';
+import { resolveControlContext } from './lib/context';
+import { createReadinessQueue } from './lib/readiness';
 
 type ControlError = {
   code: string;
@@ -50,27 +50,24 @@ class RequestError extends Error {
 }
 
 export function parseOpenRequest(params: unknown): OpenRequest {
-  if (typeof params !== "object" || params === null) {
-    throw new RequestError("invalid_params", "open parameters are required");
+  if (typeof params !== 'object' || params === null) {
+    throw new RequestError('invalid_params', 'open parameters are required');
   }
   const value = params as Record<string, unknown>;
-  if (typeof value.path !== "string" || value.path.length === 0) {
-    throw new RequestError("invalid_params", "open path is required");
+  if (typeof value.path !== 'string' || value.path.length === 0) {
+    throw new RequestError('invalid_params', 'open path is required');
   }
   if (
     value.line !== undefined &&
     (!Number.isSafeInteger(value.line) || (value.line as number) < 1)
   ) {
-    throw new RequestError("invalid_params", "line must be a positive integer");
+    throw new RequestError('invalid_params', 'line must be a positive integer');
   }
   if (value.column !== undefined) {
-    throw new RequestError(
-      "unsupported_parameter",
-      "column targeting is not supported yet",
-    );
+    throw new RequestError('unsupported_parameter', 'column targeting is not supported yet');
   }
-  if (value.focus !== undefined && typeof value.focus !== "boolean") {
-    throw new RequestError("invalid_params", "focus must be a boolean");
+  if (value.focus !== undefined && typeof value.focus !== 'boolean') {
+    throw new RequestError('invalid_params', 'focus must be a boolean');
   }
   return {
     path: value.path,
@@ -80,14 +77,11 @@ export function parseOpenRequest(params: unknown): OpenRequest {
 }
 
 const setFrontendReady = createReadinessQueue((ready) =>
-  invoke("control_frontend_ready", { ready }),
+  invoke('control_frontend_ready', { ready }),
 );
 
-async function respond(
-  requestId: string,
-  response: FrontendResponse,
-): Promise<void> {
-  const delivered = await invoke<boolean>("control_respond", {
+async function respond(requestId: string, response: FrontendResponse): Promise<void> {
+  const delivered = await invoke<boolean>('control_respond', {
     requestId,
     response,
   });
@@ -116,11 +110,11 @@ export function useControlBridge({
           activeSpaceIdRef.current ?? DEFAULT_SPACE_ID,
           request.caller.pane_id,
         );
-        if (request.method === "identify") {
+        if (request.method === 'identify') {
           await respond(request.id, { ok: true, result: context });
           return;
         }
-        if (request.method === "open") {
+        if (request.method === 'open') {
           const open = parseOpenRequest(request.params);
           let focused = false;
           if (open.focus) {
@@ -130,19 +124,14 @@ export function useControlBridge({
               await window.setFocus();
               focused = true;
             } catch (error) {
-              console.warn("[terax] could not focus control target:", error);
+              console.warn('[terax] could not focus control target:', error);
             }
           }
           const tabId = onOpen({ ...open, spaceId: context.space_id });
           if (tabId === null) {
-            throw new RequestError(
-              "open_failed",
-              "Terax could not create an editor tab",
-            );
+            throw new RequestError('open_failed', 'Terax could not create an editor tab');
           }
-          await new Promise<void>((resolve) =>
-            requestAnimationFrame(() => resolve()),
-          );
+          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
           await respond(request.id, {
             ok: true,
             result: {
@@ -156,24 +145,19 @@ export function useControlBridge({
           });
           return;
         }
-        throw new RequestError(
-          "unknown_method",
-          `unsupported frontend method '${request.method}'`,
-        );
+        throw new RequestError('unknown_method', `unsupported frontend method '${request.method}'`);
       } catch (error) {
         const responseError =
           error instanceof RequestError
             ? { code: error.code, message: error.message }
-            : { code: "frontend_error", message: String(error) };
-        await respond(request.id, { ok: false, error: responseError }).catch(
-          (responseError) => {
-            console.error("[terax] control response failed:", responseError);
-          },
-        );
+            : { code: 'frontend_error', message: String(error) };
+        await respond(request.id, { ok: false, error: responseError }).catch((responseError) => {
+          console.error('[terax] control response failed:', responseError);
+        });
       }
     };
 
-    void listen<ControlRequest>("terax:control-request", (event) => {
+    void listen<ControlRequest>('terax:control-request', (event) => {
       void handleRequest(event.payload);
     })
       .then((stop) => {
@@ -185,14 +169,14 @@ export function useControlBridge({
         return setFrontendReady(true);
       })
       .catch((error) => {
-        console.error("[terax] control bridge setup failed:", error);
+        console.error('[terax] control bridge setup failed:', error);
       });
 
     return () => {
       disposed = true;
       unlisten?.();
       void setFrontendReady(false).catch((error) => {
-        console.error("[terax] control bridge cleanup failed:", error);
+        console.error('[terax] control bridge cleanup failed:', error);
       });
     };
   }, [ready, tabsRef, activeTabIdRef, activeSpaceIdRef, onOpen]);

@@ -1,10 +1,10 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 import {
   deleteTodos as persistDelete,
   loadTodos as persistLoad,
   saveTodos as persistSave,
   type Todo,
-} from "../lib/todos";
+} from '../lib/todos';
 
 type TodosState = {
   /** Map of sessionId -> todos. */

@@ -1,5 +1,5 @@
-import { git } from "@/modules/git";
-import { useEffect, useState } from "react";
+import { git } from '@/modules/git';
+import { useEffect, useState } from 'react';
 
 // `nonce` forces a re-resolve (e.g. on command finish) so `git checkout` shows.
 export function useGitBranch(cwd: string | null, nonce = 0): string | null {

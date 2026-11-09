@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -6,17 +6,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { type LspPreset,redetectBinary } from "@/modules/lsp";
-import { setLspActivation } from "@/modules/settings/store";
-import {
-  Copy01Icon,
-  Refresh01Icon,
-  Tick02Icon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { openUrl } from "@tauri-apps/plugin-opener";
-import { useEffect, useState } from "react";
+} from '@/components/ui/dialog';
+import { type LspPreset, redetectBinary } from '@/modules/lsp';
+import { setLspActivation } from '@/modules/settings/store';
+import { Copy01Icon, Refresh01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { openUrl } from '@tauri-apps/plugin-opener';
+import { useEffect, useState } from 'react';
 
 type Props = {
   server: LspPreset | null;
@@ -51,7 +47,7 @@ export function LspInstallDialog({ server, onClose }: Props) {
     setNotFound(false);
     const path = await redetectBinary(server.command);
     if (path) {
-      await setLspActivation(server.id, "enabled");
+      await setLspActivation(server.id, 'enabled');
       onClose();
       return;
     }
@@ -65,42 +61,32 @@ export function LspInstallDialog({ server, onClose }: Props) {
         <DialogHeader>
           <DialogTitle>Install {server.name} language server</DialogTitle>
           <DialogDescription>
-            Terax could not find{" "}
-            <code className="font-mono text-foreground">{server.command}</code>{" "}
-            on your PATH. Install it, then check again to enable this language
-            server.
+            Terax could not find <code className="font-mono text-foreground">{server.command}</code> on your PATH.
+            Install it, then check again to enable this language server.
           </DialogDescription>
         </DialogHeader>
 
         {server.install ? (
           <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono text-[11px]">
-            <span className="min-w-0 flex-1 select-text break-all">
-              {server.install.command}
-            </span>
+            <span className="min-w-0 flex-1 select-text break-all">{server.install.command}</span>
             <button
               type="button"
               className="shrink-0 cursor-pointer rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
               onClick={() => void copyInstallCommand()}
               title="Copy install command"
             >
-              <HugeiconsIcon
-                icon={copied ? Tick02Icon : Copy01Icon}
-                size={13}
-                strokeWidth={2}
-              />
+              <HugeiconsIcon icon={copied ? Tick02Icon : Copy01Icon} size={13} strokeWidth={2} />
             </button>
           </div>
         ) : (
           <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-            Install this custom server manually and make sure its command is
-            available on PATH.
+            Install this custom server manually and make sure its command is available on PATH.
           </p>
         )}
 
         {notFound ? (
           <p className="text-xs text-destructive">
-            Still not found. Finish the installation and make sure the command
-            is available on PATH.
+            Still not found. Finish the installation and make sure the command is available on PATH.
           </p>
         ) : null}
 
@@ -110,27 +96,21 @@ export function LspInstallDialog({ server, onClose }: Props) {
               variant="ghost"
               size="sm"
               className="mr-auto"
-              onClick={() =>
-                void openUrl(server.install?.docsUrl ?? "").catch(console.error)
-              }
+              onClick={() => void openUrl(server.install?.docsUrl ?? '').catch(console.error)}
             >
               Documentation
             </Button>
           ) : (
             <span />
           )}
-          <Button
-            size="sm"
-            disabled={checking}
-            onClick={() => void checkAgain()}
-          >
+          <Button size="sm" disabled={checking} onClick={() => void checkAgain()}>
             <HugeiconsIcon
               icon={Refresh01Icon}
               size={12}
               strokeWidth={1.9}
-              className={checking ? "animate-spin" : undefined}
+              className={checking ? 'animate-spin' : undefined}
             />
-            {checking ? "Checking..." : "Check again"}
+            {checking ? 'Checking...' : 'Check again'}
           </Button>
         </DialogFooter>
       </DialogContent>

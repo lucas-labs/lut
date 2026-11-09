@@ -1,5 +1,5 @@
-import { invoke } from "@tauri-apps/api/core";
-import { useLspRuntimeStore } from "./runtimeStore";
+import { invoke } from '@tauri-apps/api/core';
+import { useLspRuntimeStore } from './runtimeStore';
 
 const pending = new Map<string, Promise<string | null>>();
 
@@ -8,7 +8,7 @@ export function detectBinary(command: string): Promise<string | null> {
   if (cached !== undefined) return Promise.resolve(cached);
   let p = pending.get(command);
   if (!p) {
-    p = invoke<string | null>("lsp_detect", { command })
+    p = invoke<string | null>('lsp_detect', { command })
       .catch(() => null)
       .then((path) => {
         pending.delete(command);

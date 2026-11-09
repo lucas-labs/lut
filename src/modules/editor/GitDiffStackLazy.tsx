@@ -1,9 +1,9 @@
-import type { GitDiffStack as GitDiffStackType } from "@/modules/editor/GitDiffStack";
-import type { ComponentProps } from "react";
-import { lazy, Suspense } from "react";
+import type { GitDiffStack as GitDiffStackType } from '@/modules/editor/GitDiffStack';
+import type { ComponentProps } from 'react';
+import { lazy, Suspense } from 'react';
 
 const GitDiffStackInner = lazy(() =>
-  import("@/modules/editor/GitDiffStack").then((m) => ({
+  import('@/modules/editor/GitDiffStack').then((m) => ({
     default: m.GitDiffStack,
   })),
 );
@@ -12,11 +12,7 @@ type Props = ComponentProps<typeof GitDiffStackType>;
 
 export function GitDiffStack(props: Props) {
   if (
-    !props.tabs.some(
-      (tab) =>
-        (tab.kind === "git-diff" || tab.kind === "git-commit-file") &&
-        tab.id === props.activeId,
-    )
+    !props.tabs.some((tab) => (tab.kind === 'git-diff' || tab.kind === 'git-commit-file') && tab.id === props.activeId)
   )
     return null;
   return (

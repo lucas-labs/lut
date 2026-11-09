@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const pluginStore = vi.hoisted(() => {
   const instances: {
@@ -23,7 +23,7 @@ const pluginStore = vi.hoisted(() => {
   return { instances, LazyStore };
 });
 
-vi.mock("@tauri-apps/plugin-store", () => ({
+vi.mock('@tauri-apps/plugin-store', () => ({
   LazyStore: pluginStore.LazyStore,
 }));
 
@@ -32,85 +32,85 @@ const events = vi.hoisted(() => ({
   emit: vi.fn(async () => undefined),
 }));
 
-vi.mock("@tauri-apps/api/event", () => events);
+vi.mock('@tauri-apps/api/event', () => events);
 
-import type { Theme } from "./types";
+import type { Theme } from './types';
 
 function theme(id: string): Theme {
   return {
     id,
     name: id,
-    author: "",
-    description: "",
+    author: '',
+    description: '',
     variants: {},
   };
 }
 
 async function loadModule() {
   vi.resetModules();
-  return await import("./customThemes");
+  return await import('./customThemes');
 }
 
-describe("custom theme store", () => {
+describe('custom theme store', () => {
   beforeEach(() => {
     pluginStore.instances.length = 0;
     events.emit.mockClear();
     events.listen.mockClear();
   });
 
-  it("treats a missing or malformed store value as an empty list", async () => {
+  it('treats a missing or malformed store value as an empty list', async () => {
     const mod = await loadModule();
 
     await expect(mod.listCustomThemes()).resolves.toEqual([]);
 
     const store = pluginStore.instances[0];
-    store.data.set("themes", "not-an-array");
+    store.data.set('themes', 'not-an-array');
     await expect(mod.listCustomThemes()).resolves.toEqual([]);
   });
 
-  it("upserts by id: appends unknown ids and replaces known ones", async () => {
+  it('upserts by id: appends unknown ids and replaces known ones', async () => {
     const mod = await loadModule();
 
-    await mod.saveCustomTheme(theme("a"));
-    await mod.saveCustomTheme(theme("b"));
-    await mod.saveCustomTheme(theme("a"));
+    await mod.saveCustomTheme(theme('a'));
+    await mod.saveCustomTheme(theme('b'));
+    await mod.saveCustomTheme(theme('a'));
 
     const store = pluginStore.instances[0];
-    const stored = store.data.get("themes") as Theme[];
-    expect(stored.map((t) => t.id)).toEqual(["b", "a"]);
+    const stored = store.data.get('themes') as Theme[];
+    expect(stored.map((t) => t.id)).toEqual(['b', 'a']);
     expect(store.save).toHaveBeenCalledTimes(3);
-    expect(events.emit).toHaveBeenCalledWith("terax://custom-themes-changed");
+    expect(events.emit).toHaveBeenCalledWith('terax://custom-themes-changed');
   });
 
-  it("delete is a no-op when the id does not exist", async () => {
+  it('delete is a no-op when the id does not exist', async () => {
     const mod = await loadModule();
-    await mod.saveCustomTheme(theme("a"));
+    await mod.saveCustomTheme(theme('a'));
     events.emit.mockClear();
     const store = pluginStore.instances[0];
     store.set.mockClear();
     store.save.mockClear();
 
-    await mod.deleteCustomTheme("missing");
+    await mod.deleteCustomTheme('missing');
 
     expect(store.set).not.toHaveBeenCalled();
     expect(store.save).not.toHaveBeenCalled();
     expect(events.emit).not.toHaveBeenCalled();
   });
 
-  it("delete removes only the target theme and persists", async () => {
+  it('delete removes only the target theme and persists', async () => {
     const mod = await loadModule();
-    await mod.saveCustomTheme(theme("a"));
-    await mod.saveCustomTheme(theme("b"));
+    await mod.saveCustomTheme(theme('a'));
+    await mod.saveCustomTheme(theme('b'));
 
-    await mod.deleteCustomTheme("a");
+    await mod.deleteCustomTheme('a');
 
     const store = pluginStore.instances[0];
-    const stored = store.data.get("themes") as Theme[];
-    expect(stored.map((t) => t.id)).toEqual(["b"]);
-    expect(events.emit).toHaveBeenCalledWith("terax://custom-themes-changed");
+    const stored = store.data.get('themes') as Theme[];
+    expect(stored.map((t) => t.id)).toEqual(['b']);
+    expect(events.emit).toHaveBeenCalledWith('terax://custom-themes-changed');
   });
 
-  it("subscribes to store-key changes and cross-window events once", async () => {
+  it('subscribes to store-key changes and cross-window events once', async () => {
     const mod = await loadModule();
     const cb = vi.fn();
 
@@ -118,10 +118,10 @@ describe("custom theme store", () => {
 
     const store = pluginStore.instances[0];
     const keyHandler = store.onChange.mock.calls[0][0] as (k: string) => void;
-    keyHandler("themes");
+    keyHandler('themes');
     expect(cb).toHaveBeenCalledTimes(1);
 
-    keyHandler("other");
+    keyHandler('other');
     expect(cb).toHaveBeenCalledTimes(1);
 
     unlisten();

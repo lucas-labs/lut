@@ -2,15 +2,15 @@ const MAX_SCAN_LINES = 1000;
 
 // Histogram of positive indent-width deltas between consecutive lines; the
 // most common step is the indent unit (VS Code style heuristic).
-export function detectIndentUnit(text: string, fallback = "  "): string {
+export function detectIndentUnit(text: string, fallback = '  '): string {
   let tabLines = 0;
   let spaceLines = 0;
   const deltas = new Map<number, number>();
   let prevWidth = 0;
   let scanned = 0;
 
-  for (let start = 0; start < text.length && scanned < MAX_SCAN_LINES; ) {
-    let end = text.indexOf("\n", start);
+  for (let start = 0; start < text.length && scanned < MAX_SCAN_LINES;) {
+    let end = text.indexOf('\n', start);
     if (end === -1) end = text.length;
     scanned += 1;
 
@@ -34,7 +34,7 @@ export function detectIndentUnit(text: string, fallback = "  "): string {
     start = end + 1;
   }
 
-  if (tabLines > spaceLines) return "\t";
+  if (tabLines > spaceLines) return '\t';
   if (spaceLines === 0) return fallback;
 
   let best = 0;
@@ -45,5 +45,5 @@ export function detectIndentUnit(text: string, fallback = "  "): string {
       bestCount = count;
     }
   }
-  return best > 0 ? " ".repeat(best) : fallback;
+  return best > 0 ? ' '.repeat(best) : fallback;
 }

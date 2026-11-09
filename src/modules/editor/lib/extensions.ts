@@ -1,10 +1,10 @@
-import { detectMonoFontFamily } from "@/lib/fonts";
-import { indentUnit } from "@codemirror/language";
-import { lintGutter } from "@codemirror/lint";
-import { search } from "@codemirror/search";
-import { Compartment, EditorState, type Extension } from "@codemirror/state";
-import { EditorView } from "@codemirror/view";
-import { chromeTheme } from "./chromeTheme";
+import { detectMonoFontFamily } from '@/lib/fonts';
+import { indentUnit } from '@codemirror/language';
+import { lintGutter } from '@codemirror/lint';
+import { search } from '@codemirror/search';
+import { Compartment, EditorState, type Extension } from '@codemirror/state';
+import { EditorView } from '@codemirror/view';
+import { chromeTheme } from './chromeTheme';
 
 // Compartments allow runtime reconfiguration without rebuilding state.
 export const languageCompartment = new Compartment();
@@ -14,24 +14,21 @@ export const lspCompartment = new Compartment();
 export const indentCompartment = new Compartment();
 
 export function indentExtension(unit: string): Extension {
-  return [
-    indentUnit.of(unit),
-    EditorState.tabSize.of(unit === "\t" ? 4 : unit.length),
-  ];
+  return [indentUnit.of(unit), EditorState.tabSize.of(unit === '\t' ? 4 : unit.length)];
 }
 
-export const DEFAULT_INDENT: Extension = indentExtension("  ");
+export const DEFAULT_INDENT: Extension = indentExtension('  ');
 
-const WORD_WRAP_COLUMN_VAR = "--terax-editor-wrap-column";
+const WORD_WRAP_COLUMN_VAR = '--terax-editor-wrap-column';
 const WORD_WRAP_COLUMN_THEME = EditorView.theme({
-  ".cm-content.cm-lineWrapping": {
+  '.cm-content.cm-lineWrapping': {
     maxWidth: `var(${WORD_WRAP_COLUMN_VAR})`,
-    marginLeft: "6px",
-    marginRight: "2px",
+    marginLeft: '6px',
+    marginRight: '2px',
   },
-  ".cm-content.cm-lineWrapping .cm-line": {
-    paddingLeft: "0",
-    paddingRight: "0",
+  '.cm-content.cm-lineWrapping .cm-line': {
+    paddingLeft: '0',
+    paddingRight: '0',
   },
 });
 
@@ -56,74 +53,69 @@ const SHARED_EXTENSIONS: readonly Extension[] = Object.freeze([
   lintGutter(),
   chromeTheme(),
   EditorView.theme({
-    "&, &.cm-editor, &.cm-editor.cm-focused": {
-      backgroundColor: "transparent !important",
-      color: "var(--foreground)",
-      outline: "none",
-      padding: "8px",
+    '&, &.cm-editor, &.cm-editor.cm-focused': {
+      backgroundColor: 'transparent !important',
+      color: 'var(--foreground)',
+      outline: 'none',
+      padding: '8px',
     },
-    ".cm-scroller": {
+    '.cm-scroller': {
       fontFamily: detectMonoFontFamily(),
-      fontSize: "calc(var(--editor-font-size, 13px) * var(--app-zoom, 1))",
-      lineHeight: "1.55",
-      backgroundColor: "transparent !important",
+      fontSize: 'calc(var(--editor-font-size, 13px) * var(--app-zoom, 1))',
+      lineHeight: '1.55',
+      backgroundColor: 'transparent !important',
     },
-    ".cm-content": {
-      caretColor: "var(--foreground)",
-      backgroundColor: "transparent !important",
+    '.cm-content': {
+      caretColor: 'var(--foreground)',
+      backgroundColor: 'transparent !important',
     },
-    ".cm-gutters": {
-      backgroundColor: "transparent !important",
-      color: "var(--muted-foreground)",
+    '.cm-gutters': {
+      backgroundColor: 'transparent !important',
+      color: 'var(--muted-foreground)',
     },
-    ".cm-gutter-lint": {
-      width: "0px",
+    '.cm-gutter-lint': {
+      width: '0px',
     },
-    ".cm-gutter": { backgroundColor: "transparent !important" },
-    ".cm-lineNumbers .cm-gutterElement": {
-      opacity: "0.55",
+    '.cm-gutter': { backgroundColor: 'transparent !important' },
+    '.cm-lineNumbers .cm-gutterElement': {
+      opacity: '0.55',
     },
-    ".cm-foldGutter": { width: "10px" },
-    ".cm-foldGutter .cm-gutterElement": {
-      color: "var(--muted-foreground)",
-      opacity: "0.5",
+    '.cm-foldGutter': { width: '10px' },
+    '.cm-foldGutter .cm-gutterElement': {
+      color: 'var(--muted-foreground)',
+      opacity: '0.5',
     },
-    ".cm-activeLine": {
-      borderTopRightRadius: "5px",
-      borderBottomRightRadius: "5px",
-      backgroundColor: "color-mix(in srgb, var(--foreground) 4%, transparent)",
+    '.cm-activeLine': {
+      borderTopRightRadius: '5px',
+      borderBottomRightRadius: '5px',
+      backgroundColor: 'color-mix(in srgb, var(--foreground) 4%, transparent)',
     },
-    ".cm-lineNumbers .cm-activeLineGutter": {
-      borderTopLeftRadius: "5px",
-      borderBottomLeftRadius: "5px",
-      userSelect: "none",
+    '.cm-lineNumbers .cm-activeLineGutter': {
+      borderTopLeftRadius: '5px',
+      borderBottomLeftRadius: '5px',
+      userSelect: 'none',
     },
-    ".cm-cursor, .cm-dropCursor": {
-      borderLeftColor: "var(--foreground)",
+    '.cm-cursor, .cm-dropCursor': {
+      borderLeftColor: 'var(--foreground)',
     },
     // Vim normal-mode block cursor — translucent foreground, no rose hue.
-    ".cm-fat-cursor": {
-      background:
-        "color-mix(in srgb, var(--foreground) 35%, transparent) !important",
-      outline:
-        "1px solid color-mix(in srgb, var(--foreground) 55%, transparent) !important",
-      color: "var(--foreground) !important",
-      borderRadius: "2px",
+    '.cm-fat-cursor': {
+      background: 'color-mix(in srgb, var(--foreground) 35%, transparent) !important',
+      outline: '1px solid color-mix(in srgb, var(--foreground) 55%, transparent) !important',
+      color: 'var(--foreground) !important',
+      borderRadius: '2px',
     },
-    "&:not(.cm-focused) .cm-fat-cursor": {
-      background: "transparent !important",
-      outline:
-        "1px solid color-mix(in srgb, var(--foreground) 35%, transparent) !important",
+    '&:not(.cm-focused) .cm-fat-cursor': {
+      background: 'transparent !important',
+      outline: '1px solid color-mix(in srgb, var(--foreground) 35%, transparent) !important',
     },
-    ".cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection":
-      {
-        backgroundColor:
-          "color-mix(in srgb, var(--foreground) 18%, transparent) !important",
-      },
-    ".cm-panels": {
-      backgroundColor: "var(--popover)",
-      color: "var(--popover-foreground)",
-      borderColor: "var(--border)",
+    '.cm-selectionBackground, &.cm-focused .cm-selectionBackground, ::selection': {
+      backgroundColor: 'color-mix(in srgb, var(--foreground) 18%, transparent) !important',
+    },
+    '.cm-panels': {
+      backgroundColor: 'var(--popover)',
+      color: 'var(--popover-foreground)',
+      borderColor: 'var(--border)',
     },
   }),
 ]);

@@ -1,7 +1,7 @@
-import "@/modules/terminal/block/block.css";
+import '@/modules/terminal/block/block.css';
 
-import { unescapeForShell } from "@/lib/shellQuote";
-import { buildTerminalTheme } from "@/styles/terminalTheme";
+import { unescapeForShell } from '@/lib/shellQuote';
+import { buildTerminalTheme } from '@/styles/terminalTheme';
 import {
   acceptCompletion,
   autocompletion,
@@ -12,20 +12,11 @@ import {
   completionStatus,
   moveCompletionSelection,
   startCompletion,
-} from "@codemirror/autocomplete";
-import {
-  defaultKeymap,
-  history,
-  historyKeymap,
-  insertNewline,
-} from "@codemirror/commands";
-import {
-  HighlightStyle,
-  StreamLanguage,
-  syntaxHighlighting,
-} from "@codemirror/language";
-import { shell } from "@codemirror/legacy-modes/mode/shell";
-import { Compartment, EditorState, Prec } from "@codemirror/state";
+} from '@codemirror/autocomplete';
+import { defaultKeymap, history, historyKeymap, insertNewline } from '@codemirror/commands';
+import { HighlightStyle, StreamLanguage, syntaxHighlighting } from '@codemirror/language';
+import { shell } from '@codemirror/legacy-modes/mode/shell';
+import { Compartment, EditorState, Prec } from '@codemirror/state';
 import {
   crosshairCursor,
   drawSelection,
@@ -34,14 +25,14 @@ import {
   placeholder,
   rectangularSelection,
   tooltips,
-} from "@codemirror/view";
-import { tags as t } from "@lezer/highlight";
-import { completionIcon } from "./completionIcons";
-import { historyOpen, historyPopover } from "./historyPopover";
-import { inlineSuggestion } from "./inlineSuggest";
-import { pathCompletionResult, pathCompletions } from "./pathComplete";
-import { usesWindowsShell } from "./shellSyntax";
-import { shellWordAt } from "./shellWord";
+} from '@codemirror/view';
+import { tags as t } from '@lezer/highlight';
+import { completionIcon } from './completionIcons';
+import { historyOpen, historyPopover } from './historyPopover';
+import { inlineSuggestion } from './inlineSuggest';
+import { pathCompletionResult, pathCompletions } from './pathComplete';
+import { usesWindowsShell } from './shellSyntax';
+import { shellWordAt } from './shellWord';
 
 const shellLanguage = StreamLanguage.define(shell);
 
@@ -87,124 +78,124 @@ export type ShellEditorHandle = {
 // of "type a command, get a list"; the Rust history layer (later) ranks real
 // usage on top. The dynamic layer below adds words already on screen.
 const SHELL_KEYWORDS = [
-  "if",
-  "then",
-  "else",
-  "elif",
-  "fi",
-  "for",
-  "while",
-  "do",
-  "done",
-  "case",
-  "esac",
-  "in",
-  "function",
-  "select",
-  "until",
-  "return",
-  "break",
-  "continue",
-  "export",
-  "unset",
-  "alias",
-  "unalias",
-  "source",
-  "set",
-  "local",
-  "read",
+  'if',
+  'then',
+  'else',
+  'elif',
+  'fi',
+  'for',
+  'while',
+  'do',
+  'done',
+  'case',
+  'esac',
+  'in',
+  'function',
+  'select',
+  'until',
+  'return',
+  'break',
+  'continue',
+  'export',
+  'unset',
+  'alias',
+  'unalias',
+  'source',
+  'set',
+  'local',
+  'read',
 ];
 const SHELL_COMMANDS = [
-  "cd",
-  "ls",
-  "pwd",
-  "echo",
-  "printf",
-  "cat",
-  "grep",
-  "rg",
-  "find",
-  "fd",
-  "awk",
-  "sed",
-  "sort",
-  "uniq",
-  "wc",
-  "head",
-  "tail",
-  "less",
-  "tee",
-  "xargs",
-  "cut",
-  "tr",
-  "diff",
-  "touch",
-  "mkdir",
-  "rmdir",
-  "rm",
-  "cp",
-  "mv",
-  "ln",
-  "chmod",
-  "chown",
-  "stat",
-  "du",
-  "df",
-  "ps",
-  "top",
-  "htop",
-  "kill",
-  "jobs",
-  "nohup",
-  "env",
-  "which",
-  "man",
-  "history",
-  "clear",
-  "exit",
-  "ssh",
-  "scp",
-  "rsync",
-  "curl",
-  "wget",
-  "ping",
-  "tar",
-  "gzip",
-  "zip",
-  "unzip",
-  "make",
-  "cmake",
-  "gcc",
-  "clang",
-  "git",
-  "gh",
-  "node",
-  "npm",
-  "npx",
-  "pnpm",
-  "yarn",
-  "bun",
-  "deno",
-  "python",
-  "python3",
-  "pip",
-  "pip3",
-  "cargo",
-  "rustc",
-  "rustup",
-  "go",
-  "docker",
-  "kubectl",
-  "helm",
-  "terraform",
-  "brew",
-  "apt",
-  "systemctl",
-  "code",
-  "vim",
-  "nvim",
-  "nano",
-  "open",
+  'cd',
+  'ls',
+  'pwd',
+  'echo',
+  'printf',
+  'cat',
+  'grep',
+  'rg',
+  'find',
+  'fd',
+  'awk',
+  'sed',
+  'sort',
+  'uniq',
+  'wc',
+  'head',
+  'tail',
+  'less',
+  'tee',
+  'xargs',
+  'cut',
+  'tr',
+  'diff',
+  'touch',
+  'mkdir',
+  'rmdir',
+  'rm',
+  'cp',
+  'mv',
+  'ln',
+  'chmod',
+  'chown',
+  'stat',
+  'du',
+  'df',
+  'ps',
+  'top',
+  'htop',
+  'kill',
+  'jobs',
+  'nohup',
+  'env',
+  'which',
+  'man',
+  'history',
+  'clear',
+  'exit',
+  'ssh',
+  'scp',
+  'rsync',
+  'curl',
+  'wget',
+  'ping',
+  'tar',
+  'gzip',
+  'zip',
+  'unzip',
+  'make',
+  'cmake',
+  'gcc',
+  'clang',
+  'git',
+  'gh',
+  'node',
+  'npm',
+  'npx',
+  'pnpm',
+  'yarn',
+  'bun',
+  'deno',
+  'python',
+  'python3',
+  'pip',
+  'pip3',
+  'cargo',
+  'rustc',
+  'rustup',
+  'go',
+  'docker',
+  'kubectl',
+  'helm',
+  'terraform',
+  'brew',
+  'apt',
+  'systemctl',
+  'code',
+  'vim',
+  'nvim',
+  'nano',
+  'open',
 ];
 
 const DOC_WORD_RE = /[A-Za-z_][\w./-]+/g;
@@ -213,21 +204,18 @@ const VALID_FOR = /^[\w./+-]*$/;
 // separator (; & | newline ( { ), so the 2nd command in `a; b` completes too.
 const SEGMENT_START = /(^|[\n;&|(){}])\s*$/;
 
-function commandOptions(
-  prefix: string,
-  getCommands: () => string[],
-): Completion[] {
+function commandOptions(prefix: string, getCommands: () => string[]): Completion[] {
   const names = getCommands();
   const src = names.length ? names : SHELL_COMMANDS;
   const out: Completion[] = [];
   for (const label of src) {
     if (label.startsWith(prefix)) {
-      out.push({ label, type: "function" });
+      out.push({ label, type: 'function' });
       if (out.length >= 50) break;
     }
   }
   for (const k of SHELL_KEYWORDS) {
-    if (k.startsWith(prefix)) out.push({ label: k, type: "keyword" });
+    if (k.startsWith(prefix)) out.push({ label: k, type: 'keyword' });
   }
   return out;
 }
@@ -239,16 +227,13 @@ function docWordOptions(ctx: CompletionContext, current: string): Completion[] {
     const w = m[0];
     if (seen.has(w)) continue;
     seen.add(w);
-    out.push({ label: w, type: "text" });
+    out.push({ label: w, type: 'text' });
     if (out.length >= 50) break;
   }
   return out;
 }
 
-export function makeCompletionSource(
-  getCommands: () => string[],
-  getCwd: () => string | null,
-) {
+export function makeCompletionSource(getCommands: () => string[], getCwd: () => string | null) {
   return async (ctx: CompletionContext): Promise<CompletionResult | null> => {
     if (historyOpen(ctx.state)) return null;
     const typed = ctx.state.doc.toString();
@@ -266,8 +251,7 @@ export function makeCompletionSource(
     }
     const cwd = getCwd();
     if (cwd) {
-      if (unescapeForShell(typed.slice(word.start, word.end), windows) === null)
-        return null;
+      if (unescapeForShell(typed.slice(word.start, word.end), windows) === null) return null;
       const res = await pathCompletions(word.text, cwd);
       if (getCwd() !== cwd) return null;
       if (res?.options.length) {
@@ -286,11 +270,11 @@ export function makeCompletionSource(
 // line is colored by the same theme the terminal grid uses.
 function highlightStyle(): HighlightStyle {
   const c = buildTerminalTheme();
-  const fg = c.foreground ?? "inherit";
+  const fg = c.foreground ?? 'inherit';
   return HighlightStyle.define([
     { tag: t.keyword, color: c.magenta ?? fg },
     { tag: t.string, color: c.green ?? fg },
-    { tag: t.comment, color: c.brightBlack ?? fg, fontStyle: "italic" },
+    { tag: t.comment, color: c.brightBlack ?? fg, fontStyle: 'italic' },
     { tag: [t.number, t.bool, t.atom], color: c.yellow ?? fg },
     { tag: t.standard(t.variableName), color: c.cyan ?? fg },
     { tag: t.special(t.variableName), color: c.blue ?? fg },
@@ -301,51 +285,52 @@ function highlightStyle(): HighlightStyle {
 
 function baseTheme(fontFamily: string, fontSize: number, fontWeight: string) {
   const c = buildTerminalTheme();
-  const caret = c.cursor ?? c.foreground ?? "currentColor";
+  const caret = c.cursor ?? c.foreground ?? 'currentColor';
   return EditorView.theme({
-    "&": {
-      backgroundColor: "transparent",
-      color: c.foreground ?? "inherit",
+    '&': {
+      backgroundColor: 'transparent',
+      color: c.foreground ?? 'inherit',
       fontSize: `${fontSize}px`,
-      minHeight: "1.5em",
+      minHeight: '1.5em',
     },
-    ".cm-content": {
-      padding: "0 2px",
+    '.cm-content': {
+      padding: '0 2px',
       fontFamily,
       fontWeight,
       caretColor: caret,
-      lineHeight: "1.5",
-      minHeight: "1.5em",
+      lineHeight: '1.5',
+      minHeight: '1.5em',
     },
-    ".cm-line": { padding: "0", lineHeight: "1.5", minHeight: "1.5em" },
-    ".cm-scroller": {
+    '.cm-line': { padding: '0', lineHeight: '1.5', minHeight: '1.5em' },
+    '.cm-scroller': {
       fontFamily,
-      lineHeight: "1.5",
-      overflow: "auto",
-      minHeight: "1.5em",
-      maxHeight: "200px",
+      lineHeight: '1.5',
+      overflow: 'auto',
+      minHeight: '1.5em',
+      maxHeight: '200px',
     },
-    "&.cm-focused": { outline: "none" },
-    ".cm-cursor, .cm-dropCursor": { borderLeftColor: caret },
-    "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection":
-      { backgroundColor: c.selectionBackground ?? "rgba(255,255,255,0.15)" },
-    ".cm-placeholder": { color: "rgba(128,128,128,0.5)" },
-    ".cm-ghost": { opacity: "0.4" },
-    ".cm-tooltip": {
-      backgroundColor: "var(--popover)",
-      color: "var(--popover-foreground)",
-      border: "1px solid var(--border)",
-      borderRadius: "8px",
-      overflow: "hidden",
-      boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+    '&.cm-focused': { outline: 'none' },
+    '.cm-cursor, .cm-dropCursor': { borderLeftColor: caret },
+    '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection': {
+      backgroundColor: c.selectionBackground ?? 'rgba(255,255,255,0.15)',
     },
-    ".cm-tooltip-autocomplete > ul": { fontFamily, maxHeight: "16rem" },
-    ".cm-tooltip-autocomplete > ul > li": { padding: "2px 8px" },
-    ".cm-tooltip-autocomplete ul li[aria-selected]": {
-      backgroundColor: "var(--accent, rgba(127,127,127,0.2))",
-      color: "var(--accent-foreground, inherit)",
+    '.cm-placeholder': { color: 'rgba(128,128,128,0.5)' },
+    '.cm-ghost': { opacity: '0.4' },
+    '.cm-tooltip': {
+      backgroundColor: 'var(--popover)',
+      color: 'var(--popover-foreground)',
+      border: '1px solid var(--border)',
+      borderRadius: '8px',
+      overflow: 'hidden',
+      boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
     },
-    ".cm-completionIcon": { paddingRight: "0.6em", opacity: "0.7" },
+    '.cm-tooltip-autocomplete > ul': { fontFamily, maxHeight: '16rem' },
+    '.cm-tooltip-autocomplete > ul > li': { padding: '2px 8px' },
+    '.cm-tooltip-autocomplete ul li[aria-selected]': {
+      backgroundColor: 'var(--accent, rgba(127,127,127,0.2))',
+      color: 'var(--accent-foreground, inherit)',
+    },
+    '.cm-completionIcon': { paddingRight: '0.6em', opacity: '0.7' },
   });
 }
 
@@ -354,12 +339,12 @@ function baseTheme(fontFamily: string, fontSize: number, fontWeight: string) {
 // history popover / cursor movement).
 const completionNav = Prec.highest(
   keymap.of([
-    { key: "ArrowDown", run: moveCompletionSelection(true) },
-    { key: "ArrowUp", run: moveCompletionSelection(false) },
-    { key: "Ctrl-n", run: moveCompletionSelection(true) },
-    { key: "Ctrl-p", run: moveCompletionSelection(false) },
-    { key: "Ctrl-y", run: acceptCompletion },
-    { key: "Escape", run: closeCompletion },
+    { key: 'ArrowDown', run: moveCompletionSelection(true) },
+    { key: 'ArrowUp', run: moveCompletionSelection(false) },
+    { key: 'Ctrl-n', run: moveCompletionSelection(true) },
+    { key: 'Ctrl-p', run: moveCompletionSelection(false) },
+    { key: 'Ctrl-y', run: acceptCompletion },
+    { key: 'Escape', run: closeCompletion },
   ]),
 );
 
@@ -371,13 +356,13 @@ export function createShellEditor(opts: ShellEditorOptions): ShellEditorHandle {
 
   const clear = (view: EditorView) =>
     view.dispatch({
-      changes: { from: 0, to: view.state.doc.length, insert: "" },
+      changes: { from: 0, to: view.state.doc.length, insert: '' },
     });
 
   const submitKeys = Prec.highest(
     keymap.of([
       {
-        key: "Enter",
+        key: 'Enter',
         run: (view) => {
           // Enter always runs the line (Tab is accept). Predictable shell UX.
           if (view.state.readOnly) return false;
@@ -388,16 +373,16 @@ export function createShellEditor(opts: ShellEditorOptions): ShellEditorHandle {
           return true;
         },
       },
-      { key: "Shift-Enter", run: insertNewline },
+      { key: 'Shift-Enter', run: insertNewline },
       {
-        key: "Tab",
+        key: 'Tab',
         run: (view) =>
-          completionStatus(view.state) === "active"
+          completionStatus(view.state) === 'active'
             ? acceptCompletion(view)
             : startCompletion(view),
       },
       {
-        key: "Ctrl-c",
+        key: 'Ctrl-c',
         run: (view) => {
           opts.onInterrupt();
           clear(view);
@@ -409,7 +394,7 @@ export function createShellEditor(opts: ShellEditorOptions): ShellEditorHandle {
   );
 
   const state = EditorState.create({
-    doc: "",
+    doc: '',
     extensions: [
       history(),
       drawSelection({ cursorBlinkRate: 1100 }),
@@ -422,10 +407,7 @@ export function createShellEditor(opts: ShellEditorOptions): ShellEditorHandle {
       highlightComp.of(syntaxHighlighting(highlightStyle())),
       autocompletion({
         override: [
-          makeCompletionSource(
-            opts.commandNames ?? (() => []),
-            opts.getCwd ?? (() => null),
-          ),
+          makeCompletionSource(opts.commandNames ?? (() => []), opts.getCwd ?? (() => null)),
         ],
         icons: false,
         defaultKeymap: false,
@@ -434,7 +416,7 @@ export function createShellEditor(opts: ShellEditorOptions): ShellEditorHandle {
       completionNav,
       ...(opts.suggest ? inlineSuggestion(opts.suggest) : []),
       ...(opts.historyList ? historyPopover(opts.historyList) : []),
-      placeholderComp.of(placeholder(opts.placeholderText ?? "Run a command")),
+      placeholderComp.of(placeholder(opts.placeholderText ?? 'Run a command')),
       ...(opts.onChange
         ? [
             EditorView.updateListener.of((u) => {
@@ -445,18 +427,9 @@ export function createShellEditor(opts: ShellEditorOptions): ShellEditorHandle {
       submitKeys,
       keymap.of([...defaultKeymap, ...historyKeymap]),
       ...(opts.onEscape
-        ? [
-            Prec.lowest(
-              keymap.of([
-                { key: "Escape", run: () => opts.onEscape?.() ?? false },
-              ]),
-            ),
-          ]
+        ? [Prec.lowest(keymap.of([{ key: 'Escape', run: () => opts.onEscape?.() ?? false }]))]
         : []),
-      editableComp.of([
-        EditorView.editable.of(true),
-        EditorState.readOnly.of(false),
-      ]),
+      editableComp.of([EditorView.editable.of(true), EditorState.readOnly.of(false)]),
       themeComp.of(baseTheme(opts.fontFamily, opts.fontSize, opts.fontWeight)),
     ],
   });

@@ -1,10 +1,5 @@
-import { create } from "zustand";
-import type {
-  AgentNotification,
-  AgentSession,
-  AgentStatus,
-  LocalAgentState,
-} from "../lib/types";
+import { create } from 'zustand';
+import type { AgentNotification, AgentSession, AgentStatus, LocalAgentState } from '../lib/types';
 
 const MAX_NOTIFICATIONS = 50;
 
@@ -18,9 +13,7 @@ type AgentStoreState = {
   setStatus: (leafId: number, status: AgentStatus) => void;
   finish: (leafId: number) => void;
   setLocalAgent: (state: LocalAgentState) => void;
-  pushNotification: (
-    n: Omit<AgentNotification, "id" | "at" | "read">,
-  ) => void;
+  pushNotification: (n: Omit<AgentNotification, 'id' | 'at' | 'read'>) => void;
   markAllRead: () => void;
   clearNotifications: () => void;
 };
@@ -40,7 +33,7 @@ export const useAgentStore = create<AgentStoreState>((set) => ({
             leafId,
             tabId,
             agent,
-            status: "working",
+            status: 'working',
             startedAt: now,
             lastActivityAt: now,
             attentionSince: null,
@@ -61,7 +54,7 @@ export const useAgentStore = create<AgentStoreState>((set) => ({
             ...prev,
             status,
             lastActivityAt: now,
-            attentionSince: status === "waiting" ? now : null,
+            attentionSince: status === 'waiting' ? now : null,
           },
         },
       };
@@ -106,7 +99,7 @@ export const useAgentStore = create<AgentStoreState>((set) => ({
  *  the keyboard jump-to-attention shortcut. Null when none is waiting. */
 export function nextAttentionTarget(): { tabId: number; leafId: number } | null {
   const waiting = Object.values(useAgentStore.getState().sessions)
-    .filter((s) => s.status === "waiting")
+    .filter((s) => s.status === 'waiting')
     .sort((a, b) => (b.attentionSince ?? 0) - (a.attentionSince ?? 0));
   const t = waiting[0];
   return t ? { tabId: t.tabId, leafId: t.leafId } : null;
