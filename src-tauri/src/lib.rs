@@ -194,8 +194,6 @@ pub fn run() {
         .menu(app_menu::build)
         .on_menu_event(app_menu::handle_event);
     builder
-        .plugin(tauri_plugin_process::init())
-        .plugin(tauri_plugin_updater::Builder::new().build())
         // Skip restoring VISIBLE — frontend calls window.show() after first
         // paint so the user never sees a transparent window-shadow flash on
         // Windows/Linux.

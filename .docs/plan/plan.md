@@ -64,7 +64,7 @@ type: task
 scope: none
 size: S
 ```
-**Goal:** Every existing test/lint/check command is run on Windows 11 and its result, including pre-existing failures, is recorded before any code change.
+**Goal:** Every existing test/lint/check command is run on Windows 11 and its result, including pre-existing failures, is recorded before any other code change (only the updater removal, E01-02, may land first: it does not touch tests or checks).
 
 **Acceptance criteria:**
 - [ ] `.docs/testing/baseline.md` created with sections: environment and versions, build, test registry, known failures, performance (filled by E01-11/E01-12).
