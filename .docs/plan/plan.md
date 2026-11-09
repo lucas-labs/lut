@@ -3794,11 +3794,55 @@ size: M
 
 **Verification:** `pnpm test`; manual: toggle an LSP server and run the install flow.
 
+### E13-12 — Make the zoom shortcuts work on non-US keyboard layouts
+
+```yaml
+id: E13-12
+depends-on: [E13-01]
+refs: [TER-008, .docs/testing/baseline.md]
+covers: [app-shell/shortcuts]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** zoom in and out from the keyboard on any layout. Found by the Windows smoke test (E01-13) on a Spanish layout: the defaults are `Ctrl+=` / `Ctrl+Shift++` (in) and `Ctrl+Shift+-` (out) in `src/modules/shortcuts/shortcutDefaults.ts`, so `Ctrl++` (main row or numpad) is not a shortcut and types `+` into the prompt, and there is no way to zoom out; `Ctrl+Shift++` on the numpad zooms in and `Ctrl+0` resets.
+
+**Acceptance criteria:**
+
+- [ ] `Ctrl++` and `Ctrl+-` zoom in and out on US and Spanish layouts, from the main row and from the numpad; the existing bindings keep working.
+- [ ] A zoom shortcut never reaches the terminal as text.
+- [ ] Tests cover the bindings for the key/code combinations of both layouts and the numpad.
+
+**Verification:** `pnpm test` (shortcuts tests); manual on Windows with a Spanish layout: `Ctrl++`, `Ctrl+-` and `Ctrl+0` on the main row and the numpad.
+
+### E13-13 — Spike: sharper terminal text on Windows
+
+```yaml
+id: E13-13
+depends-on: []
+refs: [5.4, 13.4, .docs/testing/baseline.md]
+covers: [terminal/webgpu-renderer]
+type: spike
+scope: ui
+size: M
+```
+
+**Goal:** decide how to make terminal text as sharp as in Windows Terminal. Found by the Windows smoke test (E01-13): lut draws glyphs with grayscale antialiasing and looks slightly blurry next to Windows Terminal, which uses ClearType (subpixel) through DirectWrite. The renderer invariants (§5.4) forbid changing the atlas or the WebGPU renderer casually, hence a spike first.
+
+**Acceptance criteria:**
+
+- [ ] Side-by-side captures of lut (WebGPU and WebGL) and Windows Terminal with the same font, size and theme at 100% and 125% scale, recorded in the PR.
+- [ ] Options evaluated with their cost and risk: subpixel (per-channel) coverage in the glyph atlas, gamma/contrast tuning (the existing `terax:terminal-text-contrast` curve), device-pixel snapping of glyph positions and sizes, and font hinting.
+- [ ] A recommendation, with the follow-up issues added to the plan, or a decision to keep grayscale antialiasing.
+
+**Verification:** the captures and the decision in the PR; any follow-up issue synced.
+
 ### E13-11 — Close-out: settings and theming
 
 ```yaml
 id: E13-11
-depends-on: [E13-01, E13-02, E13-03, E13-04, E13-05, E13-06, E13-07, E13-08, E13-09, E13-10]
+depends-on: [E13-01, E13-02, E13-03, E13-04, E13-05, E13-06, E13-07, E13-08, E13-09, E13-10, E13-12, E13-13]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
@@ -4215,11 +4259,33 @@ size: S
 
 **Verification:** `pnpm test`; manual: open pwsh + WSL panes with different themes, restart, both restore with their profile.
 
+### E14-19 — Emit the PowerShell prompt markers before the user's prompt runs
+
+```yaml
+id: E14-19
+depends-on: []
+refs: [.docs/testing/baseline.md]
+covers: [backend-core/shell-integration-scripts]
+type: task
+scope: be
+size: S
+```
+
+**Goal:** a PowerShell prompt that writes itself with `Write-Host` (pshazz, and likely other prompt tools) is not followed by an extra blank line. Found by the Windows smoke test (E01-13): with a two-line pshazz prompt the cursor sits one line below the `$`, while Windows Terminal shows it next to it. In `src-tauri/src/modules/pty/scripts/profile.ps1` the wrapper returns `OSC 133 D/A + OSC 7 + <user prompt> + OSC 133 B`, but a `Write-Host` prompt has already printed by then, so 133;A arrives after the visible prompt and the terminal starts a fresh line.
+
+**Acceptance criteria:**
+
+- [ ] OSC 133 D and A (and OSC 7) are written with `[Console]::Write` before the user's `prompt` runs; the wrapper returns only the user's prompt plus 133 B.
+- [ ] Prompts that return a string, prompts that use `Write-Host`, and the default `PS >` prompt all keep the cursor on the prompt line, with cwd and prompt tracking still working.
+- [ ] A test exercises the script with a `Write-Host` prompt (like the Bash prompt-hook tests) or the PR records a manual run with pshazz.
+
+**Verification:** `pnpm tauri dev` on Windows with pshazz: the cursor follows the `$`; `cd` updates the cwd breadcrumb.
+
 ### E14-18 — Close-out: profiles model and launch
 
 ```yaml
 id: E14-18
-depends-on: [E14-01, E14-02, E14-03, E14-04, E14-05, E14-06, E14-07, E14-08, E14-09, E14-10, E14-11, E14-12, E14-13, E14-14, E14-15, E14-16, E14-17]
+depends-on: [E14-01, E14-02, E14-03, E14-04, E14-05, E14-06, E14-07, E14-08, E14-09, E14-10, E14-11, E14-12, E14-13, E14-14, E14-15, E14-16, E14-17, E14-19]
 refs: [F3]
 covers: []
 type: closeout
