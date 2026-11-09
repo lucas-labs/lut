@@ -128,6 +128,7 @@ size: M
 - [ ] `.github/workflows/ci.yml` runs on pull requests and pushes to `master`: `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm format:check`, `pnpm check-types`, `pnpm test`, `pnpm build`, `pnpm knip`, and from `src-tauri/` `cargo fmt --all --check`, `cargo test --locked --workspace` and `cargo clippy --all-targets --locked -- -D warnings`.
 - [ ] Runs on `windows-latest` (primary platform). macOS and Linux jobs are added by E24-01 (decision 20); this issue does not add them.
 - [ ] Pre-existing failures recorded in the baseline are fixed in their own issues or explicitly allowed to fail with a link to the baseline entry; nothing is skipped silently.
+- [ ] Until E02-05 deletes the git agent-task backend, `cargo test` skips its tests explicitly: one `--skip modules::git::<module>` per module of `ide-tools/git-agent-tasks` (checkpoint, worktree, task_worktree, task_state, project_config, commands_tasks, commands_review, review, diff, patch, branch, edge_tests, feedback_tests, followup_tests, hardening_tests, review_tests, tasks_tests, task_worktree_tests), listed in one place in the workflow with a comment linking E02-05 and the baseline entry. They are the slowest and the flaky tests of the suite (without `modules::git` the lib tests take ~8 s instead of 10–15 min on Windows).
 - [ ] pnpm and cargo caches configured; toolchain versions match `.docs/development/build.md`.
 
 **Verification:** open a test PR; all jobs run and their status matches `.docs/testing/baseline.md`.
@@ -605,6 +606,7 @@ size-exception: mechanical deletion of ~14k lines (checkpoint/worktree/task/revi
 
 - [ ] The files of `ide-tools/git-agent-tasks` (checkpoint, worktree, task_worktree, task_state, project_config, commands_tasks, commands_review, review, diff, patch, branch and their `*_tests.rs`) deleted; registrations at `lib.rs:353-374` removed; `refs.rs` checkpoint prefix removed if unused.
 - [ ] `src-tauri/tests/git_operations.rs` worktree/checkpoint cases removed or rewritten.
+- [ ] The `--skip` list for the agent-task tests is removed from the CI workflow (added by E01-05), and the baseline entry is updated.
 - [ ] `git grep -n -i "refs/terax\|\.terax/\|TERAX_PORT\|TERAX_TASK\|terax/worktrees" src-tauri` returns nothing.
 
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace` and `cargo clippy --all-targets --locked -- -D warnings` pass; app starts and the Git panel still refreshes its change list after a commit (`git_watch`).
