@@ -526,7 +526,7 @@ def summarize(report: dict) -> str:
     if workload in ("occlusion", "canvas", "tabs"):
         mode = config.get("occlusionMode", "orderout")
         if workload == "canvas":
-            out.append(f"  raw WebGPU canvas probe, variant '{config.get('variant')}' (no Terax renderer)")
+            out.append(f"  raw WebGPU canvas probe, variant '{config.get('variant')}' (no lut renderer)")
         if workload == "tabs":
             out.append(f"  one-pane tab <-> four-pane tab; cycles {config.get('cycles')}; dwell {config.get('dwellMs')} ms on each tab per switch; {config.get('order') or 'hide-first'}" + (f"; park {config.get('parkMs')}" if config.get('parkMs') else ""))
         else:

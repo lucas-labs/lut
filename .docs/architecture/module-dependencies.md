@@ -36,7 +36,7 @@ specifier is a type count as type-only, `import()` as lazy. Tauri commands are m
   - `tabs` ↔ `agents` (the back edge is type-only).
 - **`ai` is gone.** It was imported by 12 modules; E05-01, E05-05, E05-09 and E05-10 cut those edges (the shared
   workspace wrappers moved to `workspace/native.ts`) and E05-13 deleted the module.
-- **`terminal` reaches `bench`** from four renderer files (`smoothHooks`), active only in `__TERAX_BENCH__` builds.
+- **`terminal` reaches `bench`** from four renderer files (`smoothHooks`), active only in `__LUT_BENCH__` builds.
 - **`git` is a leaf** (it imports only `workspace`); its users are `source-control`, `git-history`, `editor` (diffs),
   `explorer` (status types) and `app`.
 - **Index bypass is common:** most modules are imported through internal paths rather than their `index.ts` (see
@@ -47,16 +47,16 @@ specifier is a type count as type-only, `import()` as lazy. Tauri commands are m
 The generated facts list each module's public API, state, commands, events and deep imports. For the core modules,
 the contract in words:
 
-| Module     | Offers                                                                             | Owns                                                                         | IPC                                                                                    | Known couplings                                                  |
-| ---------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `app`      | The window: layout, shortcut handlers, launch and close flows                      | No store; the tab model through `useTabs` state                              | `pty_close_all`, `pty_shell_name`, `agent_enable_hooks`; `terax:open-file`             | Imports 25 modules, with deep imports into `terminal` and `tabs` |
-| `terminal` | `TerminalStack`, session API (write, dispose, ready, foreground), pane tree        | Sessions map, agent activity and drop stores, renderer flags in localStorage | `pty_*`, `history_*`, `window_presentation_state`; the `terax-pty` scheme              | `tabs` (types), `spaces`, `bench`, `lsp`                         |
-| `tabs`     | `useTabs` (tab model, 8 kinds, planners), `TabBar`, tab switcher, window title     | Tabs and active tab in React state                                           | None                                                                                   | `terminal` (pane tree, sessions), `agents`, `editor`, `explorer` |
-| `spaces`   | Spaces store, persistence and boot, switcher                                       | `useSpaces`, `lut-spaces.json`                                               | `workspace_authorize` through `workspaceNative`                                        | `tabs` (serializes `Tab[]`), `terminal`, `workspace`             |
-| `agents`   | Notification bell and bridge, launcher, attention target                           | `useAgentStore`                                                              | `agent_enable_hooks`, `agent_hooks_status`; `terax:agent-signal` through `terminal`    | `terminal` (activity), `tabs`; `model/` not wired                |
-| `control`  | `useControlBridge` (CLI `identify`/`open`); a staged agent-event API (`agents.ts`) | Nothing                                                                      | `control_*`, `agent_decision*`, `agent_hooks_*`; `terax:control-request`, agent events | `tabs`, `terminal` (pane context); only `app` imports it         |
-| `editor`   | Editor and git diff stacks                                                         | `useDiagnosticsStore`                                                        | `fs_*` read/write/stat, `shell_run_command` (formatter), git diffs through `git`       | `lsp`, `explorer`, `markdown`, `theme`, `tabs`                   |
-| `git`      | The `git` API wrapper, change subscription, types                                  | Nothing                                                                      | `git_*` and `task_*` through wrappers; `terax:git-changed`                             | `workspace` only; many wrappers unused (E02-04)                  |
+| Module     | Offers                                                                             | Owns                                                                         | IPC                                                                                  | Known couplings                                                  |
+| ---------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| `app`      | The window: layout, shortcut handlers, launch and close flows                      | No store; the tab model through `useTabs` state                              | `pty_close_all`, `pty_shell_name`, `agent_enable_hooks`; `lut:open-file`             | Imports 25 modules, with deep imports into `terminal` and `tabs` |
+| `terminal` | `TerminalStack`, session API (write, dispose, ready, foreground), pane tree        | Sessions map, agent activity and drop stores, renderer flags in localStorage | `pty_*`, `history_*`, `window_presentation_state`; the `lut-pty` scheme              | `tabs` (types), `spaces`, `bench`, `lsp`                         |
+| `tabs`     | `useTabs` (tab model, 8 kinds, planners), `TabBar`, tab switcher, window title     | Tabs and active tab in React state                                           | None                                                                                 | `terminal` (pane tree, sessions), `agents`, `editor`, `explorer` |
+| `spaces`   | Spaces store, persistence and boot, switcher                                       | `useSpaces`, `lut-spaces.json`                                               | `workspace_authorize` through `workspaceNative`                                      | `tabs` (serializes `Tab[]`), `terminal`, `workspace`             |
+| `agents`   | Notification bell and bridge, launcher, attention target                           | `useAgentStore`                                                              | `agent_enable_hooks`, `agent_hooks_status`; `lut:agent-signal` through `terminal`    | `terminal` (activity), `tabs`; `model/` not wired                |
+| `control`  | `useControlBridge` (CLI `identify`/`open`); a staged agent-event API (`agents.ts`) | Nothing                                                                      | `control_*`, `agent_decision*`, `agent_hooks_*`; `lut:control-request`, agent events | `tabs`, `terminal` (pane context); only `app` imports it         |
+| `editor`   | Editor and git diff stacks                                                         | `useDiagnosticsStore`                                                        | `fs_*` read/write/stat, `shell_run_command` (formatter), git diffs through `git`     | `lsp`, `explorer`, `markdown`, `theme`, `tabs`                   |
+| `git`      | The `git` API wrapper, change subscription, types                                  | Nothing                                                                      | `git_*` and `task_*` through wrappers; `lut:git-changed`                             | `workspace` only; many wrappers unused (E02-04)                  |
 
 ## Generated
 
@@ -130,13 +130,13 @@ Public API: what `index.ts` exports. Owned state: zustand stores, plugin-store f
 - **Public API** (no index): —
 - **Owned state:** —
 - **Commands:** `agent_enable_hooks`, `pty_close_all`; through wrappers: `workspace_authorize`, `workspace_current_dir`
-- **Events:** `terax:open-file`
+- **Events:** `lut:open-file`
 - **Deep imports:** —
 
 #### bench
 
 - **Public API** (no index): —
-- **Owned state:** `terax:bench:` (localStorage), `terax:terminal-diagnostics` (localStorage)
+- **Owned state:** `lut:bench:` (localStorage), `lut:terminal-diagnostics` (localStorage)
 - **Commands:** `bench_config`, `bench_exit`, `bench_window`
 - **Events:** —
 - **Deep imports:** —
@@ -144,7 +144,7 @@ Public API: what `index.ts` exports. Owned state: zustand stores, plugin-store f
 #### command-palette
 
 - **Public API** (`modules/command-palette/index.ts`): `CommandPalette`, `OpenFileTarget`, `PaletteInitialMode`, `createCommandItems`
-- **Owned state:** `terax-palette-mru` (localStorage), `terax-palette-recent-files` (localStorage)
+- **Owned state:** `lut-palette-mru` (localStorage), `lut-palette-recent-files` (localStorage)
 - **Commands:** `fs_grep_interactive`, `fs_search`, `fs_warm_index`
 - **Events:** —
 - **Deep imports:** —
@@ -162,7 +162,7 @@ Public API: what `index.ts` exports. Owned state: zustand stores, plugin-store f
 - **Public API** (`modules/control/index.ts`): `useControlBridge`
 - **Owned state:** —
 - **Commands:** `agent_decision_respond`, `agent_decisions_ready`, `agent_disable_hooks`, `agent_enable_hooks`, `agent_hooks_apply`, `agent_hooks_plan`, `agent_hooks_status`, `control_frontend_ready`, `control_respond`
-- **Events:** `terax:agent-event`, `terax:control-request`, `terax:terminal-notification`
+- **Events:** `lut:agent-event`, `lut:control-request`, `lut:terminal-notification`
 - **Deep imports:** —
 
 #### editor
@@ -186,7 +186,7 @@ Public API: what `index.ts` exports. Owned state: zustand stores, plugin-store f
 - **Public API** (`modules/git/index.ts`): `* from ./changes`, `* from ./types`, `git`
 - **Owned state:** —
 - **Commands:** —; through wrappers: `git_unwatch`, `git_watch`
-- **Events:** `terax:git-changed`
+- **Events:** `lut:git-changed`
 - **Deep imports:** —
 
 #### git-history
@@ -242,7 +242,7 @@ Public API: what `index.ts` exports. Owned state: zustand stores, plugin-store f
 - **Public API** (no index): —
 - **Owned state:** `lut-settings.json` (store file), `lut-ui-bg-image-shadow` (localStorage), `lut-ui-bg-kind-shadow` (localStorage), `usePreferencesStore`
 - **Commands:** `open_settings_window`
-- **Events:** `terax://prefs-changed`
+- **Events:** `lut://prefs-changed`
 - **Deep imports:** `openSettingsWindow.ts` (app, settings-window), `preferences.ts` (agents, app, command-palette, editor, explorer, header, lib, lsp, settings-window, shortcuts, spaces, statusbar, terminal, theme), `store.ts` (agents, app, bench, editor, lib, lsp, settings-window, terminal, theme, workspace)
 
 #### settings-window
@@ -250,7 +250,7 @@ Public API: what `index.ts` exports. Owned state: zustand stores, plugin-store f
 - **Public API** (no index): —
 - **Owned state:** —
 - **Commands:** `pty_list_shells`, `wsl_list_distros`
-- **Events:** `terax:settings-tab`
+- **Events:** `lut:settings-tab`
 - **Deep imports:** —
 
 #### shortcuts
@@ -264,7 +264,7 @@ Public API: what `index.ts` exports. Owned state: zustand stores, plugin-store f
 #### sidebar
 
 - **Public API** (`modules/sidebar/index.ts`): `SIDEBAR_MAX_WIDTH`, `SIDEBAR_MIN_WIDTH`, `SidebarRail`, `SidebarViewId`, `useSidebarPanel`
-- **Owned state:** `terax.sidebar.collapsed` (localStorage), `terax.sidebar.view` (localStorage), `terax.sidebar.width` (localStorage)
+- **Owned state:** `lut.sidebar.collapsed` (localStorage), `lut.sidebar.view` (localStorage), `lut.sidebar.width` (localStorage)
 - **Commands:** —
 - **Events:** —
 - **Deep imports:** —
@@ -312,9 +312,9 @@ Public API: what `index.ts` exports. Owned state: zustand stores, plugin-store f
 #### terminal
 
 - **Public API** (`modules/terminal/index.ts`): `PaneBounds`, `PaneNode`, `TerminalPaneHandle`, `TerminalPathDropTarget`, `TerminalStack`, `clearFocusedTerminal`, `disposeSession`, `findLeafCwd`, `hasLeaf`, `isTerminalSurfaceTarget`, `leafHasForegroundProcess`, `leafIdForPty`, `leafIds`, `ptyIdForLeaf`, `subscribeAgentSignals`, `useAgentActivityStore`, `useTerminalFileDrop`, `whenSessionReady`, `writeToSession`
-- **Owned state:** `terax.experimental.terminal-backend` (localStorage), `terax:terminal-diagnostics` (localStorage), `terax:terminal-gc-mirror` (localStorage), `terax:terminal-text-contrast` (localStorage), `useAgentActivityStore`, `useTerminalDropStore`
+- **Owned state:** `lut.experimental.terminal-backend` (localStorage), `lut:terminal-diagnostics` (localStorage), `lut:terminal-gc-mirror` (localStorage), `lut:terminal-text-contrast` (localStorage), `useAgentActivityStore`, `useTerminalDropStore`
 - **Commands:** `fs_canonicalize`, `fs_stat`, `pty_close`, `pty_diagnostics`, `pty_has_foreground_process`, `pty_open`, `pty_resize`, `pty_session_shell`, `pty_set_colors`, `pty_set_presentation`, `pty_stream_open`, `pty_write`, `window_presentation_state`
-- **Events:** `terax:agent-signal`, `terax:window-presentation`
+- **Events:** `lut:agent-signal`, `lut:window-presentation`
 - **Deep imports:** `ghostty/input/macOptionAsAlt.ts` (settings, settings-window), `ghostty/input/terminalWheel.ts` (settings), `ghostty/renderScheduling.ts` (app), `ghostty/windowPresentation.ts` (app), `lib/agentActivity.ts` (tabs), `lib/panes.ts` (control, spaces, tabs), `lib/terminalClipboard.ts` (bench), `lib/terminalDiagnostics.ts` (app, bench), `lib/terminalDiagnosticsEnabled.ts` (app), `lib/terminalSessionApi.ts` (tabs), `search/TerminalSearchController.ts` (app, header)
 
 #### theme
@@ -322,7 +322,7 @@ Public API: what `index.ts` exports. Owned state: zustand stores, plugin-store f
 - **Public API** (`modules/theme/index.ts`): `LivePageResizeBridge`, `ThemeProvider`, `WindowActivityBridge`, `WindowVibrancyBridge`, `listBuiltinThemes`, `resolveEditorThemeId`, `resolveTerminalFont`, `useTheme`, `useThemeFileEditing`
 - **Owned state:** `lut-custom-themes.json` (store file), `lut-ui-theme-id-shadow` (localStorage), `lut-ui-theme-shadow` (localStorage)
 - **Commands:** `fs_create_dir`, `fs_delete`, `fs_read_file`, `fs_stat`, `fs_write_file`, `window_backdrop_kind`, `window_set_backdrop`
-- **Events:** `fs:file-written`, `terax://custom-themes-changed`, `terax://theme-edit`
+- **Events:** `fs:file-written`, `lut://custom-themes-changed`, `lut://theme-edit`
 - **Deep imports:** `bgImageStore.ts` (settings-window), `customThemes.ts` (settings-window), `themeFiles.ts` (settings-window), `themes/index.ts` (settings-window), `types.ts` (settings-window), `validateTheme.ts` (settings-window), `vibrancy.ts` (settings-window), `WindowActivityBridge.tsx` (editor)
 
 #### workspace

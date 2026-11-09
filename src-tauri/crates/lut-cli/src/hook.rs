@@ -7,16 +7,16 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
-use serde_json::Value;
-use terax_control_protocol::hook::{
+use lut_control_protocol::hook::{
     decision_output, is_decision_event, trim_payload, AgentName, HookParams, HookResult,
     DEFAULT_DECISION_SECS, MAX_DECISION_SECS, MAX_PAYLOAD_BYTES, MAX_STDIN_BYTES,
     NO_DECISION_OUTPUT,
 };
-use terax_control_protocol::{
+use lut_control_protocol::{
     CallerContext, ControlDescriptor, ControlRequest, ControlResponse, METHOD_HOOK,
     PROTOCOL_VERSION,
 };
+use serde_json::Value;
 
 use crate::{
     io_error, parse_loopback_address, read_response, request_id, validate_endpoint, write_request,
@@ -37,7 +37,7 @@ const FIRST_RESPONSE: Duration = Duration::from_secs(2);
 const DECISION_SLACK: Duration = Duration::from_secs(10);
 const MAX_EVENT_NAME: usize = 64;
 
-/// Terax context a hook inherits from the shell that started the agent.
+/// lut context a hook inherits from the shell that started the agent.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HookEnvironment {
     pub pane_id: u32,
@@ -49,7 +49,7 @@ pub struct HookEnvironment {
 }
 
 impl HookEnvironment {
-    /// `None` when this process is not inside a Terax pane, which makes the
+    /// `None` when this process is not inside a lut pane, which makes the
     /// hook inert in every other terminal.
     pub fn from_lookup(get: impl Fn(&str) -> Option<String>) -> Option<Self> {
         let pane_id = get("LUT_PANE_ID")?.trim().parse::<u32>().ok()?;
@@ -83,7 +83,7 @@ pub fn main(args: &[OsString]) -> ExitCode {
     ExitCode::SUCCESS
 }
 
-/// Delivers one agent hook to Terax and prints what the agent expects on
+/// Delivers one agent hook to lut and prints what the agent expects on
 /// stdout. Never fails the agent: every problem degrades to `{}`.
 pub fn run(
     args: &[OsString],
@@ -219,7 +219,7 @@ fn read_payload(mut stdin: Box<dyn Read + Send>) -> Value {
     let (done, finished) = mpsc::channel::<()>();
     let shared = Arc::clone(&buffer);
     let spawned = thread::Builder::new()
-        .name("terax-hook-stdin".into())
+        .name("lut-hook-stdin".into())
         .spawn(move || {
             let mut chunk = [0u8; 16 * 1024];
             loop {
@@ -275,7 +275,7 @@ mod tests {
     }
 
     #[test]
-    fn the_environment_requires_every_terax_variable() {
+    fn the_environment_requires_every_lut_variable() {
         let full: &[(&str, &str)] = &[
             ("LUT_PANE_ID", "7"),
             ("LUT_CONTROL_ADDR", "127.0.0.1:4000"),
@@ -345,7 +345,7 @@ mod tests {
     }
 
     #[test]
-    fn outside_terax_the_hook_prints_an_empty_object_and_does_nothing() {
+    fn outside_lut_the_hook_prints_an_empty_object_and_does_nothing() {
         let mut out = Vec::new();
         run(
             &args(&["claude", "Stop"]),

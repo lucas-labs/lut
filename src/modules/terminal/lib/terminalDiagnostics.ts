@@ -12,8 +12,8 @@ import { windowPresentationDiagnostics } from '@/modules/terminal/ghostty/window
 import { BoundedResourceTrace } from '@/modules/terminal/lib/BoundedResourceTrace';
 import { ptyTransportDiagnostics } from '@/modules/terminal/lib/pty-bridge';
 import { terminalResizeInteractionActive } from '@/modules/terminal/lib/terminalResizeInteraction';
+import { supportsWasmSimd } from '@lut/ghostty-core/adapted';
 import { invoke } from '@tauri-apps/api/core';
-import { supportsWasmSimd } from '@terax/ghostty-core/adapted';
 import { terminalCanvasDiagnostics } from './canvasDiagnostics';
 
 export function terminalDebugStats() {
@@ -48,9 +48,9 @@ export async function terminalDebugSnapshot() {
 
 export function installTerminalDiagnostics(): void {
   Object.assign(window, {
-    __teraxTerm: terminalDebugStats,
-    __teraxTermSnapshot: terminalDebugSnapshot,
-    __teraxTermTrace: recordTerminalResources,
+    __lutTerm: terminalDebugStats,
+    __lutTermSnapshot: terminalDebugSnapshot,
+    __lutTermTrace: recordTerminalResources,
   });
 }
 

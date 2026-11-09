@@ -145,7 +145,7 @@ export class LazyTerminalLinks {
           links.ingest(event);
         }
       } catch (error) {
-        console.error('[terax] terminal link support failed to load:', error);
+        console.error('[lut] terminal link support failed to load:', error);
       } finally {
         queue = null;
         clickStamp = null;

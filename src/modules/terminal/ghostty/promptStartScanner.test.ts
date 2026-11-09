@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { TeraxGhostty } from '@terax/ghostty-core/adapted';
+import { LutGhostty } from '@lut/ghostty-core/adapted';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 const bytes = (text: string) => new TextEncoder().encode(text);
@@ -7,12 +7,12 @@ const bytes = (text: string) => new TextEncoder().encode(text);
 describe.each(['ghostty-vt', 'ghostty-vt-scalar'])(
   'parser-time prompt markers (%s)',
   (artifact) => {
-    let core: TeraxGhostty;
+    let core: LutGhostty;
     beforeAll(async () => {
       const file = await readFile(
         new URL(`../../../../packages/ghostty-core/adapted/${artifact}.wasm`, import.meta.url),
       );
-      core = await TeraxGhostty.loadBytes(Uint8Array.from(file).buffer);
+      core = await LutGhostty.loadBytes(Uint8Array.from(file).buffer);
     });
 
     function markers(chunks: string[]) {

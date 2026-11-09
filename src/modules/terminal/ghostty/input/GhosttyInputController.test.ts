@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import type { GhosttyTerminalModelApi } from '@/modules/terminal/ghostty/GhosttyTerminalModel';
-import { Key, Mods } from '@terax/ghostty-core';
-import { TeraxGhostty } from '@terax/ghostty-core/adapted';
+import { Key, Mods } from '@lut/ghostty-core';
+import { LutGhostty } from '@lut/ghostty-core/adapted';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeElement, FakeTextArea } from './fakeTextArea';
 import { GhosttyInputController } from './GhosttyInputController';
@@ -295,7 +295,7 @@ describe('GhosttyInputController', () => {
       const bytes = await readFile(
         new URL(`../../../../../packages/ghostty-core/adapted/${artifact}`, import.meta.url),
       );
-      const core = await TeraxGhostty.loadBytes(Uint8Array.from(bytes).buffer);
+      const core = await LutGhostty.loadBytes(Uint8Array.from(bytes).buffer);
       const terminal = core.createTerminal(80, 24);
       const input = new FakeTextArea();
       const onData = vi.fn();
@@ -461,7 +461,7 @@ describe('GhosttyInputController', () => {
       const bytes = await readFile(
         new URL(`../../../../../packages/ghostty-core/adapted/${artifact}`, import.meta.url),
       );
-      const core = await TeraxGhostty.loadBytes(Uint8Array.from(bytes).buffer);
+      const core = await LutGhostty.loadBytes(Uint8Array.from(bytes).buffer);
       const terminal = core.createTerminal(80, 24);
       const input = new FakeTextArea();
       const onData = vi.fn();
@@ -561,7 +561,7 @@ describe('GhosttyInputController', () => {
       const bytes = await readFile(
         new URL(`../../../../../packages/ghostty-core/adapted/${artifact}`, import.meta.url),
       );
-      const core = await TeraxGhostty.loadBytes(Uint8Array.from(bytes).buffer);
+      const core = await LutGhostty.loadBytes(Uint8Array.from(bytes).buffer);
       const terminal = core.createTerminal(80, 24);
       const input = new FakeTextArea();
       const onData = vi.fn();
@@ -613,7 +613,7 @@ describe('GhosttyInputController', () => {
       const bytes = await readFile(
         new URL(`../../../../../packages/ghostty-core/adapted/${artifact}`, import.meta.url),
       );
-      const core = await TeraxGhostty.loadBytes(Uint8Array.from(bytes).buffer);
+      const core = await LutGhostty.loadBytes(Uint8Array.from(bytes).buffer);
       const terminal = core.createTerminal(80, 24);
       const input = new FakeTextArea();
       const onData = vi.fn();

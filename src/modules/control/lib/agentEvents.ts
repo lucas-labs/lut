@@ -9,8 +9,8 @@ import type {
 } from '@/modules/agents/model';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 
-export const AGENT_EVENT = 'terax:agent-event';
-export const TERMINAL_NOTIFICATION_EVENT = 'terax:terminal-notification';
+export const AGENT_EVENT = 'lut:agent-event';
+export const TERMINAL_NOTIFICATION_EVENT = 'lut:terminal-notification';
 
 const KINDS: ReadonlySet<string> = new Set<HookEventKind>([
   'session-start',
@@ -83,7 +83,7 @@ function parseSubagent(value: unknown): SubagentInfo | undefined {
   return { id: subagentId, type: text(subagent.type) ?? 'agent', state };
 }
 
-/** Validates a native `terax:agent-event` payload; null when malformed. */
+/** Validates a native `lut:agent-event` payload; null when malformed. */
 export function parseAgentHookEvent(payload: unknown): AgentHookEvent | null {
   const raw = dict(payload);
   if (!raw) return null;
@@ -168,7 +168,7 @@ function fanout<T>(eventName: string, parse: (payload: unknown) => T | null): Fa
         try {
           handler(value);
         } catch (error) {
-          console.error(`[terax] ${eventName} handler failed:`, error);
+          console.error(`[lut] ${eventName} handler failed:`, error);
         }
       }
     });
@@ -178,7 +178,7 @@ function fanout<T>(eventName: string, parse: (payload: unknown) => T | null): Fa
     attachResult.catch(() => undefined);
     pending.catch((error) => {
       if (attached === pending) attached = null;
-      console.error(`[terax] could not listen for ${eventName}:`, error);
+      console.error(`[lut] could not listen for ${eventName}:`, error);
     });
   };
 
@@ -209,7 +209,7 @@ export function hookEventToModelEvent(event: AgentHookEvent): AgentModelEvent {
   return { type: 'hook', event };
 }
 
-/** Adapts a legacy `terax:agent-signal` (process and OSC state) for the model. */
+/** Adapts a legacy `lut:agent-signal` (process and OSC state) for the model. */
 export function signalToModelEvent(
   signal: AgentSignalEvent,
   at: number = Date.now(),

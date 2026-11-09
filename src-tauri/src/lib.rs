@@ -98,7 +98,7 @@ async fn open_settings_window(app: tauri::AppHandle, tab: Option<String>) -> Res
         if let Some(t) = tab.as_deref().filter(|s| !s.is_empty()) {
             // emit() serializes via JSON — no string-escape footgun, unlike
             // eval() with format!(). Frontend listens via Tauri event API.
-            let _ = window.emit("terax:settings-tab", t);
+            let _ = window.emit("lut:settings-tab", t);
         }
         return Ok(());
     }
@@ -111,7 +111,7 @@ async fn open_settings_window(app: tauri::AppHandle, tab: Option<String>) -> Res
         .visible(false)
         .always_on_top(settings_always_on_top(cfg!(target_os = "macos")));
 
-    // A normal-level child stays above Terax but recedes with the app on macOS.
+    // A normal-level child stays above lut but recedes with the app on macOS.
     // Never combine the macOS parent with always_on_top; that breaks WebView
     // compositing and can hide Settings behind the main window (#33, #957).
     let builder = if let Some(main) = app.get_webview_window("main") {
@@ -210,7 +210,7 @@ pub fn run() {
         )
         .plugin(tauri_plugin_opener::init())
         // One async scheme multiplexes every terminal's output; see pty/hub.rs.
-        .register_asynchronous_uri_scheme_protocol("terax-pty", pty::stream_protocol)
+        .register_asynchronous_uri_scheme_protocol("lut-pty", pty::stream_protocol)
         .register_asynchronous_uri_scheme_protocol("asset", fs::assets::serve)
         .on_page_load(|webview, payload| {
             if matches!(payload.event(), tauri::webview::PageLoadEvent::Started) {
@@ -416,7 +416,7 @@ pub fn run() {
                     if let Some(state) = app.try_state::<LaunchFiles>() {
                         *state.0.lock().expect("LaunchFiles mutex poisoned") = target.files.clone();
                     }
-                    let _ = app.emit("terax:open-file", target.files);
+                    let _ = app.emit("lut:open-file", target.files);
                 }
                 _ => {}
             }

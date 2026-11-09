@@ -6,7 +6,7 @@ const samples = new WeakMap<HTMLCanvasElement, Sample>();
 export function terminalCanvasDiagnostics() {
   const devicePixelRatio = window.devicePixelRatio;
   return Array.from(
-    document.querySelectorAll<HTMLCanvasElement>('[data-terax-terminal-canvas]'),
+    document.querySelectorAll<HTMLCanvasElement>('[data-lut-terminal-canvas]'),
     (canvas) => {
       const rect = canvas.getBoundingClientRect();
       const cssSize = { width: rect.width, height: rect.height };

@@ -6,12 +6,12 @@ import type {
 } from '@/modules/terminal/backend/contracts';
 import type { TerminalCellReader } from '@/modules/terminal/ghostty/core/packedCells';
 import type { ViewportLinkSource } from '@/modules/terminal/ghostty/core/ViewportLinkResolver';
-import type { TeraxGhosttyGpuGlyph } from '@terax/ghostty-core/adapted';
+import type { LutGhosttyGpuGlyph } from '@lut/ghostty-core/adapted';
 import type {
   GhosttyTerminalConfig,
   GhosttyTerminalEvent,
   KeyEvent,
-} from '@terax/ghostty-core/protocol';
+} from '@lut/ghostty-core/protocol';
 
 export type GhosttyTerminalModelOptions = {
   readonly backend: Extract<TerminalBackendKind, `ghostty-${string}`>;
@@ -54,7 +54,7 @@ export type GhosttySearchViewportSpan = {
 /** Per-cell representation the model is currently producing. */
 export type GhosttyRenderFormat = 'soa' | 'gpu';
 
-export type GhosttyGpuGlyph = TeraxGhosttyGpuGlyph;
+export type GhosttyGpuGlyph = LutGhosttyGpuGlyph;
 
 export type GhosttyGpuFrameOptions = {
   /**
@@ -68,7 +68,7 @@ export type GhosttyGpuFrameOptions = {
 /**
  * Everything a GPU renderer needs for one frame, produced by
  * `GhosttyTerminalModelApi.consumeGpuFrame()`. Cell records are 16 bytes per
- * cell; see `@terax/ghostty-core/adapted` (`GPU_CELL_*`, `decodeGpuCell`) for
+ * cell; see `@lut/ghostty-core/adapted` (`GPU_CELL_*`, `decodeGpuCell`) for
  * the exact word layout. `cells` and `memory.buffer` are borrowed: use them
  * synchronously (for example `queue.writeBuffer`) before the next call into
  * the model, because any WASM allocation can replace `memory.buffer`.

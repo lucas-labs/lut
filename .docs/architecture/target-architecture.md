@@ -19,7 +19,7 @@ From §6.1, with what exists today:
 | `ProjectNavigator`                               | `modules/spaces` (switcher), sidebar with explorer and source control        | E16, E18      |
 | `TabNavigator` (horizontal or vertical)          | `modules/tabs` (`TabBar`, `useTabs` React state, 8 tab kinds)                | E07, E08, E12 |
 | `WorkspaceView` → `TerminalStack` (kept)         | `app/components/WorkspaceSurface.tsx` → `modules/terminal/TerminalStack.tsx` | E07           |
-| Agent status, activity, notifications            | `modules/agents`, `modules/control`, `terax:agent-signal`                    | E19, E20, E21 |
+| Agent status, activity, notifications            | `modules/agents`, `modules/control`, `lut:agent-signal`                      | E19, E20, E21 |
 | Optional tools (editor, Git, explorer), lazy     | Always-mounted IDE modules                                                   | E10           |
 | PTY manager, shell integration, session registry | `src-tauri/src/modules/pty/`                                                 | E14, E17      |
 | Control server, agent hooks, hook broker         | `control.rs`, `agent_events.rs`, `agent.rs`, `lut-cli`                       | E02, E19, E20 |
@@ -102,7 +102,7 @@ UI intent (new tab / split, profile id)
   → sessions: pty_open(profile id, pane id, size, cwd override)
       → backend resolves and validates the profile, builds the command with shell integration, spawns on
         portable-pty (ConPTY on Windows)
-  → output: terax-pty scheme long-poll per webview, credit-based acks, presentation class per PTY
+  → output: lut-pty scheme long-poll per webview, credit-based acks, presentation class per PTY
   → Ghostty WASM model parses; the shared WebGPU canvas (WebGL fallback) draws the pane's viewport
   → OSC 7 / OSC 133 from the integration scripts update cwd and prompt state; the shell-ready event (E17-11) marks
     the prompt
@@ -146,5 +146,5 @@ The pieces exist today under Terax names (`lut-cli hook`, `control.rs`, `agent_e
 As in §5.4 and kept as is: `libghostty-vt` compiled to WASM is the terminal model, one per leaf; a single WebGPU canvas
 per window draws every visible pane through viewport and scissor, with glyph atlases shared per font; WebGL is the
 fallback. `TerminalStack` keeps every live terminal mounted and hides inactive tabs with `visibility`. Output reaches
-the model through the `terax-pty` scheme, with presentation classes so hidden panes are coalesced. Per-pane font and
+the model through the `lut-pty` scheme, with presentation classes so hidden panes are coalesced. Per-pane font and
 theme on the shared canvas are a spike before any commitment (decision 9, E14-01).

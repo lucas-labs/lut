@@ -1,4 +1,4 @@
-import { Key } from '@terax/ghostty-core/protocol';
+import { Key } from '@lut/ghostty-core/protocol';
 
 /**
  * Physical key (`KeyboardEvent.code`) to the Ghostty key it encodes as. Most

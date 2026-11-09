@@ -1,4 +1,4 @@
-# terax-shell-integration (zlogin)
+# lut-shell-integration (zlogin)
 #
 # zshrc.zsh normally hands ZDOTDIR back to the user, so zsh reads their own
 # .zlogin directly and this file is not used. It stays for shells that reach it
@@ -10,11 +10,11 @@
 # first render — themes that condition prompt color on `%?` (robbyrussell etc.)
 # show a red error indicator on a clean shell start.
 {
-  _terax_zdotdir="$ZDOTDIR"
-  _terax_user_zdotdir="${LUT_USER_ZDOTDIR:-$HOME}"
-  ZDOTDIR="$_terax_user_zdotdir"
-  [ -f "$_terax_user_zdotdir/.zlogin" ] && source "$_terax_user_zdotdir/.zlogin"
-  ZDOTDIR="$_terax_zdotdir"
-  unset _terax_zdotdir _terax_user_zdotdir
+  _lut_zdotdir="$ZDOTDIR"
+  _lut_user_zdotdir="${LUT_USER_ZDOTDIR:-$HOME}"
+  ZDOTDIR="$_lut_user_zdotdir"
+  [ -f "$_lut_user_zdotdir/.zlogin" ] && source "$_lut_user_zdotdir/.zlogin"
+  ZDOTDIR="$_lut_zdotdir"
+  unset _lut_zdotdir _lut_user_zdotdir
 }
 :

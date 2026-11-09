@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { decodeGpuCell, GPU_CELL_BYTES, TeraxGhostty } from '@terax/ghostty-core/adapted';
+import { decodeGpuCell, GPU_CELL_BYTES, LutGhostty } from '@lut/ghostty-core/adapted';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { AdaptedGhosttyTerminalModel } from './AdaptedGhosttyTerminalModel';
 import { linkUriAt } from './core/ViewportLinkResolver';
@@ -10,13 +10,13 @@ const encoder = new TextEncoder();
 describe.each(['ghostty-vt', 'ghostty-vt-scalar'])(
   'GPU frames from the adapted Ghostty model (%s)',
   (artifact) => {
-    let core: TeraxGhostty;
+    let core: LutGhostty;
 
     beforeAll(async () => {
       const file = await readFile(
         new URL(`../../../../packages/ghostty-core/adapted/${artifact}.wasm`, import.meta.url),
       );
-      core = await TeraxGhostty.loadBytes(Uint8Array.from(file).buffer);
+      core = await LutGhostty.loadBytes(Uint8Array.from(file).buffer);
     });
 
     function create(cols = 40, rows = 8) {

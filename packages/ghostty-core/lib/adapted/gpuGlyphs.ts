@@ -1,6 +1,6 @@
 import type {
-  TeraxGhosttyGpuGlyph,
-  TeraxGhosttyGpuGlyphBatch,
+  LutGhosttyGpuGlyph,
+  LutGhosttyGpuGlyphBatch,
 } from "./types";
 
 const MAX_GLYPH_CODEPOINTS = 1_024;
@@ -10,14 +10,14 @@ const MAX_GLYPH_CODEPOINTS = 1_024;
  * validated as they are decoded so a corrupted stream throws instead of
  * reading past the batch.
  */
-export class GpuGlyphBatch implements TeraxGhosttyGpuGlyphBatch {
+export class GpuGlyphBatch implements LutGhosttyGpuGlyphBatch {
   constructor(readonly words: Uint32Array) {}
 
   get isEmpty(): boolean {
     return this.words.length === 0;
   }
 
-  *[Symbol.iterator](): Iterator<TeraxGhosttyGpuGlyph> {
+  *[Symbol.iterator](): Iterator<LutGhosttyGpuGlyph> {
     const words = this.words;
     let offset = 0;
     while (offset < words.length) {
@@ -43,7 +43,7 @@ export class GpuGlyphBatch implements TeraxGhosttyGpuGlyphBatch {
     }
   }
 
-  toArray(): TeraxGhosttyGpuGlyph[] {
+  toArray(): LutGhosttyGpuGlyph[] {
     return Array.from(this);
   }
 }

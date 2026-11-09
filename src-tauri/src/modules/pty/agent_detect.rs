@@ -2,8 +2,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+use lut_control_protocol::hook::clean_text;
 use memchr::memchr2;
-use terax_control_protocol::hook::clean_text;
 
 const ESC: u8 = 0x1b;
 const BEL: u8 = 0x07;

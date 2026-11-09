@@ -120,7 +120,7 @@ export function useTerminalFileDrop(): TerminalPathDropTarget {
         if (disposed) fn();
         else unlisten = fn;
       })
-      .catch((err) => console.error('[terax] drag-drop listen failed:', err));
+      .catch((err) => console.error('[lut] drag-drop listen failed:', err));
 
     return () => {
       disposed = true;

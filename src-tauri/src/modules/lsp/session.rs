@@ -181,7 +181,7 @@ pub fn spawn(
     });
 
     let session_reader = session.clone();
-    let reader_thread = spawn_thread(format!("terax-lsp-reader-{id}"), move || {
+    let reader_thread = spawn_thread(format!("lut-lsp-reader-{id}"), move || {
         let mut decoder = FrameDecoder::default();
         let mut buf = [0u8; READ_BUF];
         loop {
@@ -214,7 +214,7 @@ pub fn spawn(
     let stderr_tail: Arc<Mutex<std::collections::VecDeque<String>>> =
         Arc::new(Mutex::new(std::collections::VecDeque::new()));
     let stderr_tail_w = stderr_tail.clone();
-    spawn_thread(format!("terax-lsp-stderr-{id}"), move || {
+    spawn_thread(format!("lut-lsp-stderr-{id}"), move || {
         let mut buf = [0u8; 4096];
         let mut line: Vec<u8> = Vec::new();
         let push_line = |line: &mut Vec<u8>| {
@@ -254,7 +254,7 @@ pub fn spawn(
     // One thread both reaps the server and polices its memory: the wait is a
     // timed condvar sleep, so an idle server costs two wakeups per minute and
     // no dedicated polling thread.
-    spawn_thread(format!("terax-lsp-waiter-{id}"), move || {
+    spawn_thread(format!("lut-lsp-waiter-{id}"), move || {
         let mut check_at = next_memory_check(Instant::now(), true);
         let code = loop {
             match child_waiter.wait_deadline(check_at) {

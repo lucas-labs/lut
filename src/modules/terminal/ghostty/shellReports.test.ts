@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { TeraxGhostty } from '@terax/ghostty-core/adapted';
+import { LutGhostty } from '@lut/ghostty-core/adapted';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { GhosttySemanticEventRouter } from './core/GhosttySemanticEventRouter';
 import {
@@ -10,13 +10,13 @@ import {
 
 vi.mock('@/lib/platform', () => ({ IS_WINDOWS: true }));
 
-let ghostty: TeraxGhostty;
+let ghostty: LutGhostty;
 
 beforeAll(async () => {
   const file = await readFile(
     new URL('../../../../packages/ghostty-core/adapted/ghostty-vt.wasm', import.meta.url),
   );
-  ghostty = await TeraxGhostty.loadBytes(Uint8Array.from(file).buffer);
+  ghostty = await LutGhostty.loadBytes(Uint8Array.from(file).buffer);
 });
 
 afterEach(() => vi.useRealTimers());

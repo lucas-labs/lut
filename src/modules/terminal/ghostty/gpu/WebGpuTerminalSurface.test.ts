@@ -840,7 +840,7 @@ describe('WebGPU surface resource lifecycle', () => {
   it('keeps its DOM background until the window canvas has shown its first frame', async () => {
     const h = await harness();
     const root = h.elements.find(
-      (e) => e.getAttribute('data-terax-ghostty-surface') === 'webgpu',
+      (e) => e.getAttribute('data-lut-ghostty-surface') === 'webgpu',
     ) as unknown as { style: { backgroundColor: string } };
     expect(root.style.backgroundColor).toBe('rgb(0 0 0)');
     h.render();
@@ -1032,9 +1032,9 @@ describe('a resize gesture ending in a prompt redraw hold', () => {
 
 describe('failure paths', () => {
   const root = (h: Awaited<ReturnType<typeof harness>>) =>
-    h.elements.find(
-      (e) => e.getAttribute('data-terax-ghostty-surface') === 'webgpu',
-    ) as unknown as { style: { backgroundColor: string } };
+    h.elements.find((e) => e.getAttribute('data-lut-ghostty-surface') === 'webgpu') as unknown as {
+      style: { backgroundColor: string };
+    };
 
   it('covers the canvas with its own background when the runtime fails, until the fallback takes over', async () => {
     const h = await harness();
@@ -1447,7 +1447,7 @@ async function harness(options: { scale?: number } = {}) {
         left: entry.left,
         top: entry.top,
       });
-      const root = elements.find((e) => e.getAttribute('data-terax-ghostty-surface') === 'webgpu');
+      const root = elements.find((e) => e.getAttribute('data-lut-ghostty-surface') === 'webgpu');
       if (root) {
         root.getBoundingClientRect = () => ({
           width: entry.width,

@@ -170,7 +170,7 @@ impl HookFacts {
     }
 }
 
-/// Payload of the `terax:agent-event` Tauri event.
+/// Payload of the `lut:agent-event` Tauri event.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AgentEvent {

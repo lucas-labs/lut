@@ -1,9 +1,9 @@
 mod common;
 
 use common::{git_available, FsFixture, GitRepoFixture};
-use terax_lib::modules::fs::index::FileIndexState;
-use terax_lib::modules::fs::search::{run_search, SearchOptions};
-use terax_lib::modules::fs::tree::{
+use lut_lib::modules::fs::index::FileIndexState;
+use lut_lib::modules::fs::search::{run_search, SearchOptions};
+use lut_lib::modules::fs::tree::{
     read_dir_entries as fs_read_dir, subdirs as list_subdirs, EntryKind,
 };
 
@@ -11,9 +11,9 @@ fn fs_search(
     root: String,
     query: String,
     limit: Option<usize>,
-    workspace: Option<terax_lib::modules::workspace::WorkspaceEnv>,
+    workspace: Option<lut_lib::modules::workspace::WorkspaceEnv>,
     show_hidden: Option<bool>,
-) -> Result<terax_lib::modules::fs::search::SearchResult, String> {
+) -> Result<lut_lib::modules::fs::search::SearchResult, String> {
     run_search(
         &FileIndexState::default(),
         root,

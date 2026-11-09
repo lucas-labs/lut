@@ -1,6 +1,6 @@
-//! Server side of `terax hook`: validates a hook delivered over the control
-//! socket, turns it into a `terax:agent-event`, keeps the legacy
-//! `terax:agent-signal` stream in step, and brokers permission decisions.
+//! Server side of `lut hook`: validates a hook delivered over the control
+//! socket, turns it into a `lut:agent-event`, keeps the legacy
+//! `lut:agent-signal` stream in step, and brokers permission decisions.
 
 use std::collections::{HashMap, HashSet};
 use std::io::Write;
@@ -9,19 +9,19 @@ use std::sync::mpsc::{self, Receiver, RecvTimeoutError, SyncSender};
 use std::sync::Mutex;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
-use serde_json::json;
-use tauri::{Emitter, Manager};
-use terax_control_protocol::hook::{
+use lut_control_protocol::hook::{
     normalize, AgentEvent, AgentName, HookDecision, HookFacts, HookKind, HookParams, HookResult,
     NormalizeError, MAX_DECISION_SECS,
 };
-use terax_control_protocol::{ControlRequest, ControlResponse};
+use lut_control_protocol::{ControlRequest, ControlResponse};
+use serde_json::json;
+use tauri::{Emitter, Manager};
 
 use crate::modules::pty::agent_detect::{AgentSignal, HookIntent};
 use crate::modules::pty::PaneTarget;
 
-pub const AGENT_EVENT: &str = "terax:agent-event";
-const SIGNAL_EVENT: &str = "terax:agent-signal";
+pub const AGENT_EVENT: &str = "lut:agent-event";
+const SIGNAL_EVENT: &str = "lut:agent-signal";
 
 const MAX_PENDING_DECISIONS: usize = 16;
 const MAX_PENDING_PER_PANE: usize = 4;
@@ -92,7 +92,7 @@ struct Pending {
     sender: SyncSender<HookDecision>,
 }
 
-/// Pending permission requests awaiting an answer from the Terax UI.
+/// Pending permission requests awaiting an answer from the lut UI.
 #[derive(Default)]
 pub struct DecisionBroker {
     ready_windows: Mutex<HashSet<String>>,
@@ -620,12 +620,12 @@ pub(crate) mod test_host {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use lut_control_protocol::{CallerContext, PROTOCOL_VERSION};
     use serde_json::Value;
     use std::io::{BufRead, BufReader, Read, Write};
     use std::net::TcpListener;
     use std::sync::Arc;
     use std::thread;
-    use terax_control_protocol::{CallerContext, PROTOCOL_VERSION};
 
     use super::test_host::FakeHost;
 

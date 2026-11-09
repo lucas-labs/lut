@@ -1,4 +1,4 @@
-import { Key, KeyAction, Mods } from '@terax/ghostty-core/protocol';
+import { Key, KeyAction, Mods } from '@lut/ghostty-core/protocol';
 import { describe, expect, it } from 'vitest';
 import {
   buildKeyEvent,

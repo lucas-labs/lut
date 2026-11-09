@@ -129,7 +129,7 @@ fn copy_item(src: &Path, dest: &Path, rename_on_conflict: bool) -> io::Result<Os
 
     // Publish only complete items; the same-filesystem rename is no-replace.
     let staging = tempfile::Builder::new()
-        .prefix(".terax-copy-")
+        .prefix(".lut-copy-")
         .tempdir_in(dest)?;
     let staged = staging.path().join("item");
     copy_recursive(src, &staged, 0)?;

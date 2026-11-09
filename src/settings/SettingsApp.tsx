@@ -83,7 +83,7 @@ export function SettingsApp() {
       // A removed tab (models, agents) falls back to general.
       setActive((VALID_TABS as string[]).includes(detail) ? (detail as SettingsTab) : 'general');
     };
-    const unlistenPromise = getCurrentWebviewWindow().listen<string>('terax:settings-tab', (e) => apply(e.payload));
+    const unlistenPromise = getCurrentWebviewWindow().listen<string>('lut:settings-tab', (e) => apply(e.payload));
     return () => {
       void unlistenPromise.then((un) => un());
     };

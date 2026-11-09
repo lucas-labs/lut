@@ -77,7 +77,7 @@ struct AgentSpec {
 
 /// Longer than the longest decision wait the CLI accepts plus its socket
 /// slack, so lut always answers before the agent gives up on the hook.
-const DECISION_HOOK_TIMEOUT: u32 = terax_control_protocol::hook::MAX_DECISION_SECS + 60;
+const DECISION_HOOK_TIMEOUT: u32 = lut_control_protocol::hook::MAX_DECISION_SECS + 60;
 
 const AGENTS: &[AgentSpec] = &[
     AgentSpec {

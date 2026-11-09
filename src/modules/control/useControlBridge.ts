@@ -86,7 +86,7 @@ async function respond(requestId: string, response: FrontendResponse): Promise<v
     response,
   });
   if (!delivered) {
-    console.warn(`[terax] control response expired: ${requestId}`);
+    console.warn(`[lut] control response expired: ${requestId}`);
   }
 }
 
@@ -124,7 +124,7 @@ export function useControlBridge({
               await window.setFocus();
               focused = true;
             } catch (error) {
-              console.warn('[terax] could not focus control target:', error);
+              console.warn('[lut] could not focus control target:', error);
             }
           }
           const tabId = onOpen({ ...open, spaceId: context.space_id });
@@ -152,12 +152,12 @@ export function useControlBridge({
             ? { code: error.code, message: error.message }
             : { code: 'frontend_error', message: String(error) };
         await respond(request.id, { ok: false, error: responseError }).catch((responseError) => {
-          console.error('[terax] control response failed:', responseError);
+          console.error('[lut] control response failed:', responseError);
         });
       }
     };
 
-    void listen<ControlRequest>('terax:control-request', (event) => {
+    void listen<ControlRequest>('lut:control-request', (event) => {
       void handleRequest(event.payload);
     })
       .then((stop) => {
@@ -169,14 +169,14 @@ export function useControlBridge({
         return setFrontendReady(true);
       })
       .catch((error) => {
-        console.error('[terax] control bridge setup failed:', error);
+        console.error('[lut] control bridge setup failed:', error);
       });
 
     return () => {
       disposed = true;
       unlisten?.();
       void setFrontendReady(false).catch((error) => {
-        console.error('[terax] control bridge cleanup failed:', error);
+        console.error('[lut] control bridge cleanup failed:', error);
       });
     };
   }, [ready, tabsRef, activeTabIdRef, activeSpaceIdRef, onOpen]);

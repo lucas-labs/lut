@@ -4,7 +4,7 @@ import type { Theme } from './types';
 
 const STORE_PATH = 'lut-custom-themes.json';
 const KEY = 'themes';
-const CHANGED_EVENT = 'terax://custom-themes-changed';
+const CHANGED_EVENT = 'lut://custom-themes-changed';
 
 const store = new LazyStore(STORE_PATH, { defaults: {}, autoSave: 200 });
 

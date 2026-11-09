@@ -1,4 +1,4 @@
-import { Key } from '@terax/ghostty-core/protocol';
+import { Key } from '@lut/ghostty-core/protocol';
 import { describe, expect, it } from 'vitest';
 import { baseTextForCode, KEY_MAP, unshiftedCodepoint } from './keyTable';
 

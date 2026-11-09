@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import type { GhosttyTerminalModelApi } from '@/modules/terminal/ghostty/GhosttyTerminalModel';
-import { TeraxGhostty } from '@terax/ghostty-core/adapted';
-import type { KeyEvent } from '@terax/ghostty-core/protocol';
+import { LutGhostty } from '@lut/ghostty-core/adapted';
+import type { KeyEvent } from '@lut/ghostty-core/protocol';
 import { describe, expect, it, vi } from 'vitest';
 import { FakeElement, FakeTextArea } from './fakeTextArea';
 import { GhosttyInputController } from './GhosttyInputController';
@@ -689,7 +689,7 @@ const ROWS: Row[] = [
 
 const ARTIFACTS = ['ghostty-vt.wasm', 'ghostty-vt-scalar.wasm'] as const;
 
-const cores = new Map<string, Awaited<ReturnType<typeof TeraxGhostty.loadBytes>>>();
+const cores = new Map<string, Awaited<ReturnType<typeof LutGhostty.loadBytes>>>();
 
 async function loadCore(artifact: string) {
   const cached = cores.get(artifact);
@@ -697,7 +697,7 @@ async function loadCore(artifact: string) {
   const bytes = await readFile(
     new URL(`../../../../../packages/ghostty-core/adapted/${artifact}`, import.meta.url),
   );
-  const core = await TeraxGhostty.loadBytes(Uint8Array.from(bytes).buffer);
+  const core = await LutGhostty.loadBytes(Uint8Array.from(bytes).buffer);
   cores.set(artifact, core);
   return core;
 }
@@ -780,7 +780,7 @@ function keyEvent(row: Row, type: 'keydown' | 'keyup'): KeyboardEvent {
 }
 
 function terminalModel(
-  terminal: ReturnType<Awaited<ReturnType<typeof TeraxGhostty.loadBytes>>['createTerminal']>,
+  terminal: ReturnType<Awaited<ReturnType<typeof LutGhostty.loadBytes>>['createTerminal']>,
 ): GhosttyTerminalModelApi {
   return {
     cols: 80,

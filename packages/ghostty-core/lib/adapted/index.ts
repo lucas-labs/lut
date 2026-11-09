@@ -4,10 +4,10 @@ export {
   ADAPTED_GHOSTTY_SCALAR_WASM_SHA256,
   supportsWasmSimd,
   ADAPTED_RESTTY_COMMIT,
-  TeraxGhostty,
-  TeraxGhosttyInstance,
-  TeraxGhosttyTerminal,
-} from "./TeraxGhostty";
+  LutGhostty,
+  LutGhosttyInstance,
+  LutGhosttyTerminal,
+} from "./LutGhostty";
 export {
   GPU_ATTR_BLINK,
   GPU_ATTR_OVERLINE,
@@ -22,24 +22,24 @@ export {
   GPU_GLYPH_ITALIC,
   decodeGpuCell,
 } from "./gpuCells";
-export type { TeraxGhosttyGpuCell } from "./gpuCells";
+export type { LutGhosttyGpuCell } from "./gpuCells";
 export { GpuGlyphBatch } from "./gpuGlyphs";
 export type {
-  TeraxGhosttyCursor,
-  TeraxGhosttyGpuGlyph,
-  TeraxGhosttyGpuGlyphBatch,
-  TeraxGhosttyGpuRenderState,
-  TeraxGhosttyLine,
-  TeraxGhosttyRenderBase,
-  TeraxGhosttyRenderFormat,
-  TeraxGhosttyInstantiate,
-  TeraxGhosttyLoadOptions,
-  TeraxGhosttyMemoryStats,
-  TeraxGhosttyKeyEvent,
-  TeraxGhosttyRenderState,
-  TeraxGhosttySearchStatus,
-  TeraxGhosttySearchViewportSpan,
-  TeraxGhosttySelection,
-  TeraxGhosttyTerminalOptions,
-  TeraxGhosttyTerminalResourceStats,
+  LutGhosttyCursor,
+  LutGhosttyGpuGlyph,
+  LutGhosttyGpuGlyphBatch,
+  LutGhosttyGpuRenderState,
+  LutGhosttyLine,
+  LutGhosttyRenderBase,
+  LutGhosttyRenderFormat,
+  LutGhosttyInstantiate,
+  LutGhosttyLoadOptions,
+  LutGhosttyMemoryStats,
+  LutGhosttyKeyEvent,
+  LutGhosttyRenderState,
+  LutGhosttySearchStatus,
+  LutGhosttySearchViewportSpan,
+  LutGhosttySelection,
+  LutGhosttyTerminalOptions,
+  LutGhosttyTerminalResourceStats,
 } from "./types";

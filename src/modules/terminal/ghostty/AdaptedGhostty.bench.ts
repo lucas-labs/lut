@@ -1,13 +1,13 @@
 import { readFile } from 'node:fs/promises';
 import {
-  TeraxGhostty,
-  type TeraxGhosttyRenderState,
-  type TeraxGhosttyTerminal,
-} from '@terax/ghostty-core/adapted';
+  LutGhostty,
+  type LutGhosttyRenderState,
+  type LutGhosttyTerminal,
+} from '@lut/ghostty-core/adapted';
 import { afterAll, beforeAll, bench, describe } from 'vitest';
 
 const artifacts = ['ghostty-vt.wasm', 'ghostty-vt-scalar.wasm'];
-const terminals: TeraxGhosttyTerminal[] = [];
+const terminals: LutGhosttyTerminal[] = [];
 const streamingUpdate = new TextEncoder().encode(
   Array.from(
     { length: 1_024 },
@@ -30,7 +30,7 @@ const inkTicks = INK_SPINNER.map((spinner) => {
     '',
     '\x1b[32m●\x1b[0m Read(\x1b[4msrc/modules/terminal/ghostty/AdaptedGhostty.bench.ts\x1b[0m)',
     '  \x1b[2m⎿ Read 214 lines\x1b[0m',
-    '\x1b[32m●\x1b[0m Update(packages/ghostty-core/adapted/wasm/src/terax.zig)',
+    '\x1b[32m●\x1b[0m Update(packages/ghostty-core/adapted/wasm/src/lut.zig)',
     '  \x1b[2m⎿ Updated with 118 additions and 12 removals\x1b[0m',
     '     \x1b[31m- const old = 1;\x1b[0m',
     '     \x1b[32m+ const next = 2; // 日本語のコメント\x1b[0m',
@@ -43,11 +43,11 @@ const inkTicks = INK_SPINNER.map((spinner) => {
 });
 
 type InkTerminals = {
-  readonly parseOnly: TeraxGhosttyTerminal;
-  readonly soa: TeraxGhosttyTerminal;
-  readonly gpu: TeraxGhosttyTerminal;
-  readonly scrollSoa: TeraxGhosttyTerminal;
-  readonly scrollGpu: TeraxGhosttyTerminal;
+  readonly parseOnly: LutGhosttyTerminal;
+  readonly soa: LutGhosttyTerminal;
+  readonly gpu: LutGhosttyTerminal;
+  readonly scrollSoa: LutGhosttyTerminal;
+  readonly scrollGpu: LutGhosttyTerminal;
 };
 // A streaming log: one new line per tick scrolls the whole viewport.
 const scrollLines = Array.from({ length: 64 }, (_, line) =>
@@ -64,7 +64,7 @@ let inkTick = 0;
  * and a 64-byte instance written for every cell, blank or not.
  */
 const packScratch = new Uint32Array(16);
-function packLikeBuildRows(state: TeraxGhosttyRenderState): number {
+function packLikeBuildRows(state: LutGhosttyRenderState): number {
   let checksum = 0;
   const { cols } = state;
   for (let row = 0; row < state.rows; row += 1) {
@@ -107,7 +107,7 @@ beforeAll(async () => {
     const bytes = await readFile(
       new URL(`../../../../packages/ghostty-core/adapted/${artifact}`, import.meta.url),
     );
-    const ghostty = await TeraxGhostty.loadBytes(Uint8Array.from(bytes).buffer);
+    const ghostty = await LutGhostty.loadBytes(Uint8Array.from(bytes).buffer);
     terminals.push(
       ghostty.createTerminal(120, 40, {
         maxScrollbackBytes: 8 * 1024 * 1024,

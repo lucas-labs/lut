@@ -12,7 +12,7 @@ export function openExternalUrl(href: string, onSettled?: () => void): Promise<v
 
   return openUrl(href)
     .catch((error) => {
-      console.error('[terax] failed to open external link:', error);
+      console.error('[lut] failed to open external link:', error);
     })
     .finally(() => onSettled?.());
 }

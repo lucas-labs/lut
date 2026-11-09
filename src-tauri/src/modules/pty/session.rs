@@ -19,8 +19,8 @@ use super::shell_init;
 use super::terminal_colors::{ColorState, TerminalColors};
 use crate::modules::workspace::WorkspaceEnv;
 
-const AGENT_EVENT: &str = "terax:agent-signal";
-const NOTIFICATION_EVENT: &str = "terax:terminal-notification";
+const AGENT_EVENT: &str = "lut:agent-signal";
+const NOTIFICATION_EVENT: &str = "lut:terminal-notification";
 
 const READ_BUF: usize = 16 * 1024;
 const EXIT_ACK_TIMEOUT: Duration = Duration::from_secs(30);
@@ -380,7 +380,7 @@ pub(super) fn spawn_with(
     let spawn_error =
         |what: &str, e: std::io::Error| format!("could not start PTY {what} thread: {e}");
     thread::Builder::new()
-        .name("terax-pty-writer".into())
+        .name("lut-pty-writer".into())
         .stack_size(WRITER_STACK)
         .spawn(move || {
             while let Some(message) = input_rx.blocking_recv() {
@@ -398,7 +398,7 @@ pub(super) fn spawn_with(
     let spawn_at = Instant::now();
     let output_r = output.clone();
     let reader_thread = thread::Builder::new()
-        .name("terax-pty-reader".into())
+        .name("lut-pty-reader".into())
         .stack_size(READER_STACK)
         .spawn(move || {
             let mut buf = [0u8; READ_BUF];
@@ -484,7 +484,7 @@ pub(super) fn spawn_with(
     #[cfg(windows)]
     let master_e = session.master.clone();
     thread::Builder::new()
-        .name("terax-pty-waiter".into())
+        .name("lut-pty-waiter".into())
         .stack_size(WAITER_STACK)
         .spawn(move || {
             let code = match child.wait() {

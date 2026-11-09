@@ -18,7 +18,7 @@ if platform.system() != "Darwin":
     raise SystemExit("This smoke runner currently supports macOS only.")
 root = Path(__file__).resolve().parent
 repo = root.parent.parent
-output = (args.output or Path(tempfile.mkdtemp(prefix="terax-ipc-profile-"))).resolve()
+output = (args.output or Path(tempfile.mkdtemp(prefix="lut-ipc-profile-"))).resolve()
 output.mkdir(parents=True, exist_ok=True)
 finished = threading.Event()
 result = {}
@@ -48,9 +48,9 @@ threading.Thread(target=server.serve_forever, daemon=True).start()
 identifier = f"dev.lucode.lut.ipc-lab-{uuid.uuid4().hex[:12]}"
 config = output / "tauri.conf.json"
 config.write_text(json.dumps({
-    "productName": "Terax IPC Lab", "identifier": identifier,
+    "productName": "lut IPC Lab", "identifier": identifier,
     "build": {"beforeBuildCommand": "", "frontendDist": str(output / "dist")},
-    "app": {"windows": [{"label": "main", "title": "Terax IPC Lab", "width": 800, "height": 500, "visible": True}]},
+    "app": {"windows": [{"label": "main", "title": "lut IPC Lab", "width": 800, "height": 500, "visible": True}]},
     "bundle": {"active": False},
 }))
 tree = output / "tree"
@@ -59,7 +59,7 @@ for d in range(80):
     folder.mkdir(parents=True, exist_ok=True)
     for f in range(100):
         (folder / f"f{f:03}.txt").write_text("".join(f"line {i} of file {f}\n" for i in range(40)))
-env = {**os.environ, "TERAX_IPC_BASE_URL": f"http://127.0.0.1:{server.server_port}", "TERAX_IPC_DIST": str(output / "dist"), "TERAX_IPC_TREE": str(tree.resolve())}
+env = {**os.environ, "LUT_IPC_BASE_URL": f"http://127.0.0.1:{server.server_port}", "LUT_IPC_DIST": str(output / "dist"), "LUT_IPC_TREE": str(tree.resolve())}
 process = None
 try:
     with (output / "build.log").open("w") as log:

@@ -31,7 +31,7 @@ it.each([
   'http://asset.localhost/C:/repo/demo.html',
   'https://tauri.localhost',
   'http://ipc.localhost',
-  'http://terax-pty.localhost',
+  'http://lut-pty.localhost',
 ])('never treats application protocol %s as a dev server', (url) => {
   expect(loopbackPreviewOrigin(url)).toBeNull();
 });

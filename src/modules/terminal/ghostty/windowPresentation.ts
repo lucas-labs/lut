@@ -85,7 +85,7 @@ function connect(): void {
   sync();
   if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
     void getCurrentWindow()
-      .listen<NativePresentation>('terax:window-presentation', ({ payload }) => accept(payload))
+      .listen<NativePresentation>('lut:window-presentation', ({ payload }) => accept(payload))
       .then(async (stop) => {
         if (disposed) {
           stop();
@@ -96,7 +96,7 @@ function connect(): void {
       })
       .catch((error: unknown) => {
         if (!disposed)
-          console.warn('[terax] Native window presentation tracking unavailable:', error);
+          console.warn('[lut] Native window presentation tracking unavailable:', error);
       });
   }
   disconnect = () => {

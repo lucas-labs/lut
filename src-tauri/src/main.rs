@@ -14,5 +14,5 @@ fn main() {
         }
     }
 
-    terax_lib::run()
+    lut_lib::run()
 }

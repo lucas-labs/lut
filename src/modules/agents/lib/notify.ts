@@ -25,7 +25,7 @@ export async function osNotify(title: string, body: string): Promise<OsNotificat
     sendNotification({ title, body });
     return 'requested';
   } catch (e) {
-    console.warn('[terax] os notification failed:', e);
+    console.warn('[lut] os notification failed:', e);
     return 'failed';
   }
 }

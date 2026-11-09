@@ -8,7 +8,7 @@ const MAX_KEYS: usize = 64;
 const START_STRING_CAP: usize = 2048;
 const MIN_STRING_CAP: usize = 64;
 
-/// Top-level fields that can be megabytes and that Terax never reads.
+/// Top-level fields that can be megabytes and that lut never reads.
 const DROPPED: &[&str] = &[
     "tool_response",
     "tool_result",

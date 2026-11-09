@@ -9,8 +9,8 @@ import { chromium } from "playwright";
 import { PNG } from "pngjs";
 import { createServer } from "vite";
 
-const out = process.env.TERAX_VISUAL_OUT ?? await fs.mkdtemp(path.join(os.tmpdir(), "terax-scaling-"));
-process.env.TERAX_VISUAL_OUT = out;
+const out = process.env.LUT_VISUAL_OUT ?? await fs.mkdtemp(path.join(os.tmpdir(), "lut-scaling-"));
+process.env.LUT_VISUAL_OUT = out;
 const server = await createServer({
   configFile: fileURLToPath(new URL("./vite.config.ts", import.meta.url)),
   server: { host: "127.0.0.1", port: 0 },
@@ -50,7 +50,7 @@ try {
     const browser = await chromium.launch({
       executablePath: process.env.CHROME_PATH,
       channel: process.env.CHROME_CHANNEL ?? "chromium",
-      args: ["--enable-unsafe-webgpu", "--enable-unsafe-swiftshader", "--force-color-profile=srgb", `--force-device-scale-factor=${dpr}`, ...(process.platform === "linux" || process.env.TERAX_VISUAL_SOFTWARE === "1" ? ["--use-angle=swiftshader", "--use-webgpu-adapter=swiftshader"] : [])],
+      args: ["--enable-unsafe-webgpu", "--enable-unsafe-swiftshader", "--force-color-profile=srgb", `--force-device-scale-factor=${dpr}`, ...(process.platform === "linux" || process.env.LUT_VISUAL_SOFTWARE === "1" ? ["--use-angle=swiftshader", "--use-webgpu-adapter=swiftshader"] : [])],
     });
     // Also bounds page.evaluate if device loss prevents the pending texture readback.
     const deadline = setTimeout(() => void browser.close(), 60_000);

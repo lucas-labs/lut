@@ -23,7 +23,7 @@ function IconSlot({ url, className, width, height, onError, ...rest }: IconImgPr
       alt=""
       width={width}
       height={height}
-      className={cn(className, arrivedLate && 'terax-icon-in')}
+      className={cn(className, arrivedLate && 'lut-icon-in')}
       onError={onError}
     />
   );

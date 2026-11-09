@@ -2,7 +2,7 @@ const RESERVED_HOSTS = new Set([
   'asset.localhost',
   'tauri.localhost',
   'ipc.localhost',
-  'terax-pty.localhost',
+  'lut-pty.localhost',
 ]);
 
 export function isAllowedPreviewUrl(

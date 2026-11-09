@@ -18,7 +18,7 @@ import { LazyStore } from '@tauri-apps/plugin-store';
 
 export type ThemePref = 'system' | 'light' | 'dark';
 
-export const DEFAULT_THEME_ID = 'terax-default';
+export const DEFAULT_THEME_ID = 'lut-default';
 
 export type BackgroundKind = 'none' | 'image';
 
@@ -303,7 +303,7 @@ const store = new LazyStore(STORE_PATH, { defaults: {}, autoSave: 200 });
 // page lives in a separate webview, so writes there never reach the main
 // window's subscribers. Mirror every setter through a Tauri event so any
 // window can listen.
-const PREFS_CHANGED_EVENT = 'terax://prefs-changed';
+const PREFS_CHANGED_EVENT = 'lut://prefs-changed';
 
 async function writePref<T>(key: string, value: T): Promise<void> {
   await store.set(key, value);

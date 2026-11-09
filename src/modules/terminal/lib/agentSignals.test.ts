@@ -33,7 +33,7 @@ describe('agent signal fan-out', () => {
     await mod.ensureAgentActivityListener();
 
     expect(native.listen).toHaveBeenCalledTimes(1);
-    expect(native.listen).toHaveBeenCalledWith('terax:agent-signal', expect.any(Function));
+    expect(native.listen).toHaveBeenCalledWith('lut:agent-signal', expect.any(Function));
 
     native.emit?.({ payload: { id: 7, kind: 'working', agent: 'claude' } });
     expect(mod.useAgentActivityStore.getState().phases[7]).toBe('working');

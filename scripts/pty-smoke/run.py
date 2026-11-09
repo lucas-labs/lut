@@ -26,7 +26,7 @@ if platform.system() != "Darwin":
     raise SystemExit("This smoke runner currently supports macOS only.")
 root = Path(__file__).resolve().parent
 repo = (args.repo or root.parent.parent).resolve()
-output = (args.output or Path(tempfile.mkdtemp(prefix="terax-pty-smoke-"))).resolve()
+output = (args.output or Path(tempfile.mkdtemp(prefix="lut-pty-smoke-"))).resolve()
 output.mkdir(parents=True, exist_ok=True)
 finished = threading.Event()
 result = {}
@@ -88,8 +88,8 @@ def check_gate(gate):
     }
     failed = [name for name, ok in expected.items() if not ok]
     if failed:
-        raise RuntimeError(f"terax-pty admission checks failed: {failed}\n{json.dumps(gate, indent=2)}")
-    print("terax-pty admission checks passed")
+        raise RuntimeError(f"lut-pty admission checks failed: {failed}\n{json.dumps(gate, indent=2)}")
+    print("lut-pty admission checks passed")
 
 
 server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
@@ -108,23 +108,23 @@ build_config = {"beforeBuildCommand": "", "frontendDist": str(output / "dist")}
 if dev_port:
     build_config["devUrl"] = f"http://localhost:{dev_port}"
 config.write_text(json.dumps({
-    "productName": "Terax PTY Smoke", "identifier": identifier,
+    "productName": "lut PTY Smoke", "identifier": identifier,
     "build": build_config,
     # The real CSP, so the custom scheme is checked against production policy.
     "app": {
         "security": {"csp": real["app"]["security"]["csp"]},
-        "windows": [{"label": "main", "title": "Terax PTY Smoke", "width": 900, "height": 600, "visible": True}],
+        "windows": [{"label": "main", "title": "lut PTY Smoke", "width": 900, "height": 600, "visible": True}],
     },
     "bundle": {"active": False},
 }))
 env = {**os.environ,
-       "TERAX_SMOKE_BASE_URL": f"http://127.0.0.1:{server.server_port}",
-       "TERAX_SMOKE_DIST": str(output / "dist"),
-       "TERAX_SMOKE_DRIVER": args.driver,
-       "TERAX_SMOKE_ONLY": args.only,
-       "TERAX_SMOKE_FAST": "1" if args.fast else "0",
-       "TERAX_SMOKE_IDLE_MS": str(args.idle_ms),
-       "TERAX_SMOKE_SPIN_SECONDS": str(args.spin_seconds)}
+       "LUT_SMOKE_BASE_URL": f"http://127.0.0.1:{server.server_port}",
+       "LUT_SMOKE_DIST": str(output / "dist"),
+       "LUT_SMOKE_DRIVER": args.driver,
+       "LUT_SMOKE_ONLY": args.only,
+       "LUT_SMOKE_FAST": "1" if args.fast else "0",
+       "LUT_SMOKE_IDLE_MS": str(args.idle_ms),
+       "LUT_SMOKE_SPIN_SECONDS": str(args.spin_seconds)}
 process = None
 dev_server = None
 try:

@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
-import { Ghostty, type GhosttyTerminal, Key, KeyAction, Mods } from '@terax/ghostty-core';
-import type { GhosttyTerminalEvent } from '@terax/ghostty-core/protocol';
+import { Ghostty, type GhosttyTerminal, Key, KeyAction, Mods } from '@lut/ghostty-core';
+import type { GhosttyTerminalEvent } from '@lut/ghostty-core/protocol';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 let ghostty: Ghostty;
@@ -168,8 +168,8 @@ describe('vendored libghostty-vt compatibility', () => {
     const terminal = ghostty.createTerminal(80, 24);
     try {
       terminal.write(
-        '\x1b]2;Terax title\x07' +
-          '\x1b]7;file://localhost/Users/terax\x1b\\' +
+        '\x1b]2;lut title\x07' +
+          '\x1b]7;file://localhost/Users/lut\x1b\\' +
           '\x1b]133;A\x07' +
           '\x1b]133;B\x07' +
           '\x1b]133;C\x07' +
@@ -179,8 +179,8 @@ describe('vendored libghostty-vt compatibility', () => {
       );
 
       expect(terminal.drainEvents()).toEqual([
-        { type: 'title', title: 'Terax title' },
-        { type: 'pwd', uri: 'file://localhost/Users/terax' },
+        { type: 'title', title: 'lut title' },
+        { type: 'pwd', uri: 'file://localhost/Users/lut' },
         { type: 'prompt-start' },
         { type: 'prompt-end' },
         { type: 'end-of-input' },
@@ -197,8 +197,8 @@ describe('vendored libghostty-vt compatibility', () => {
   it('resolves OSC 8 links with a reusable WASM buffer', () => {
     const terminal = ghostty.createTerminal(80, 24);
     try {
-      const uri = 'https://terax.dev/docs';
-      terminal.write(`\x1b]8;;${uri}\x1b\\Terax\x1b]8;;\x1b\\`);
+      const uri = 'https://lut.dev/docs';
+      terminal.write(`\x1b]8;;${uri}\x1b\\label\x1b]8;;\x1b\\`);
       terminal.update();
       expect(terminal.getHyperlinkUri(0, 0)).toBe(uri);
       const warmBytes = ghostty.getMemoryBytes();
