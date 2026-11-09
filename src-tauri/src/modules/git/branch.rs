@@ -208,10 +208,7 @@ pub fn current_branch(repo: &ResolvedGitDirectory) -> Result<Option<String>> {
 
 /// `(full ref, short name)` of the remote-tracking branch git resolves for
 /// `branch`'s upstream, or `None` when none is configured or none maps.
-fn tracking_ref_of(
-    repo: &ResolvedGitDirectory,
-    branch: &str,
-) -> Result<Option<(String, String)>> {
+fn tracking_ref_of(repo: &ResolvedGitDirectory, branch: &str) -> Result<Option<(String, String)>> {
     let output = run(
         repo,
         os_args([

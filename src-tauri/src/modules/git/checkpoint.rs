@@ -93,7 +93,8 @@ impl Admin {
             .map_err(|e| GitError::command("git checkpoint", format!("no random source: {e}")))?;
         let id: String = bytes.iter().map(|b| format!("{b:02x}")).collect();
         publish_worktree_id(&self.dir, &id, &|from, to| std::fs::hard_link(from, to))?;
-        read().ok_or_else(|| GitError::command("git checkpoint", "could not record the worktree id"))
+        read()
+            .ok_or_else(|| GitError::command("git checkpoint", "could not record the worktree id"))
     }
 }
 
@@ -1450,7 +1451,10 @@ mod tests {
     #[test]
     fn the_worktree_id_is_published_by_hard_link_when_the_file_system_has_them() {
         let dir = tempfile::tempdir().unwrap();
-        publish_worktree_id(dir.path(), SOME_ID, &|from, to| std::fs::hard_link(from, to)).unwrap();
+        publish_worktree_id(dir.path(), SOME_ID, &|from, to| {
+            std::fs::hard_link(from, to)
+        })
+        .unwrap();
         assert_eq!(
             std::fs::read_to_string(dir.path().join(WORKTREE_ID_FILE)).unwrap(),
             SOME_ID
@@ -1474,7 +1478,10 @@ mod tests {
 
         // Never replaces an id another caller published first, on either path.
         publish_worktree_id(dir.path(), OTHER_ID, &no_hard_links).unwrap();
-        publish_worktree_id(dir.path(), OTHER_ID, &|from, to| std::fs::hard_link(from, to)).unwrap();
+        publish_worktree_id(dir.path(), OTHER_ID, &|from, to| {
+            std::fs::hard_link(from, to)
+        })
+        .unwrap();
         assert_eq!(
             std::fs::read_to_string(dir.path().join(WORKTREE_ID_FILE)).unwrap(),
             SOME_ID
@@ -1513,7 +1520,10 @@ mod tests {
         );
 
         keep_modification_time(&real, &copy).unwrap();
-        assert_eq!(std::fs::metadata(&copy).unwrap().modified().unwrap(), long_ago);
+        assert_eq!(
+            std::fs::metadata(&copy).unwrap().modified().unwrap(),
+            long_ago
+        );
         assert_eq!(
             std::fs::metadata(&copy).unwrap().permissions().mode() & 0o777,
             0o644,

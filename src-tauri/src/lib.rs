@@ -217,7 +217,9 @@ pub fn run() {
         .register_asynchronous_uri_scheme_protocol("asset", fs::assets::serve)
         .on_page_load(|webview, payload| {
             if matches!(payload.event(), tauri::webview::PageLoadEvent::Started) {
-                if let Some(grants) = webview.try_state::<fs::assets::AssetGrants>() { grants.revoke_owner(webview.label()); }
+                if let Some(grants) = webview.try_state::<fs::assets::AssetGrants>() {
+                    grants.revoke_owner(webview.label());
+                }
                 if let Some(state) = webview.try_state::<net::AiStreamState>() {
                     state.cancel_window(webview.window().label());
                 }
@@ -433,7 +435,9 @@ pub fn run() {
                     event: tauri::WindowEvent::Destroyed,
                     ..
                 } => {
-                    if let Some(grants) = app.try_state::<fs::assets::AssetGrants>() { grants.revoke_owner(&label); }
+                    if let Some(grants) = app.try_state::<fs::assets::AssetGrants>() {
+                        grants.revoke_owner(&label);
+                    }
                     if let Some(state) = app.try_state::<net::AiStreamState>() {
                         state.cancel_window(&label);
                     }

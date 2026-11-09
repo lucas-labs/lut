@@ -513,8 +513,9 @@ pub fn push(
 /// to the remote git is configured to push the branch to (`pushRemote`, then
 /// `remote.pushDefault`), else `origin`, else the only remote.
 fn push_set_upstream(repo_root: &ResolvedGitDirectory) -> Result<GitPushResult> {
-    let branch = crate::modules::git::branch::current_branch(repo_root)?
-        .ok_or_else(|| GitError::command("git push", "HEAD is detached; check out a branch first"))?;
+    let branch = crate::modules::git::branch::current_branch(repo_root)?.ok_or_else(|| {
+        GitError::command("git push", "HEAD is detached; check out a branch first")
+    })?;
     let remotes = crate::modules::git::branch::list_remotes(repo_root)?;
     let remote = crate::modules::git::branch::push_remote_for(repo_root, &branch, &remotes)?
         .ok_or_else(|| {
