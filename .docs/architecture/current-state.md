@@ -14,7 +14,7 @@ Paths are relative to `src/` for the frontend and to `src-tauri/src/` for the ba
   or `` `name` ``). The only
   `invoke` with a non-literal name (`modules/explorer/lib/useFileTree.ts`, `fs_create_dir`/`fs_create_file`) is matched
   by the same search.
-- **Wrapper objects:** `modules/git/api.ts` (`git.*`) and `modules/ai/lib/native.ts` (`native.*`) wrap commands in
+- **Wrapper objects:** `modules/git/api.ts` (`git.*`) and `modules/workspace/native.ts` (`workspaceNative.*`) wrap commands in
   object methods. For those, the callers listed are the files that call the method, including chained calls split
   across lines.
 - **Reachability:** an import graph from the two webview entries (`main.tsx`, `settings/main.tsx`), following static
@@ -51,7 +51,7 @@ To re-check after a change: `git grep -n "generate_handler" src-tauri/src` gives
 | `app/hooks/`      | Close guards (`useAppCloseGuard`, `useTabCloseGuards`, `tabCloseGuards`) and `useWorkspaceSwitcher`.                                                                                                                                                                     |
 | `settings/`       | The settings window app (`SettingsApp.tsx`, `sections/`, `components/`).                                                                                                                                                                                                 |
 | `lib/`            | Shared helpers: `utils` (`cn`), `platform`, `fonts`, `launchDir`, `useAssetGrant`, `shellQuote`, `homeRelativePath`, `external-link`, `usePresence`, `useZoom`.                                                                                                          |
-| `components/`     | `WindowControls.tsx`, shadcn primitives (`ui/`) and AI chat elements (`ai-elements/`); the last two are excluded from lint and format.                                                                                                                                   |
+| `components/`     | `WindowControls.tsx` and shadcn primitives (`ui/`); `ui/` is excluded from lint and format.                                                                                                                                                                              |
 | `bench/`          | The in-app benchmark driver, loaded only when built with `TERAX_BENCH` (`__TERAX_BENCH__`).                                                                                                                                                                              |
 
 ### Feature modules (`src/modules/`)
@@ -61,7 +61,6 @@ Sizes count non-test `.ts`/`.tsx` files; tests are the `*.test.*` files in the m
 | Module            | Role                                                                                                                                                              | Files | Lines  | Tests |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------ | ----- |
 | `terminal`        | Panes and sessions: `TerminalStack`, `PaneTreeView`, `TerminalPane`; Ghostty WASM model and WebGPU/WebGL renderers (`ghostty/`); PTY bridge and helpers (`lib/`). | 125   | 23 720 | 115   |
-| `ai`              | Built-in BYOK AI: chat, mini window, tools, sessions, keyring, HTTP proxy (removed by E05).                                                                       | 59    | 9 641  | 30    |
 | `explorer`        | File tree, file operations, drag and drop, clipboard paste, watcher, inline search.                                                                               | 23    | 6 407  | 9     |
 | `editor`          | CodeMirror editor, diff stacks (git and AI), external formatter, file sync.                                                                                       | 36    | 4 801  | 13    |
 | `theme`           | Theme provider, built-in and custom themes, theme files, vibrancy, surface layer, window activity.                                                                | 36    | 3 364  | 13    |
@@ -85,22 +84,16 @@ Sizes count non-test `.ts`/`.tsx` files; tests are the `*.test.*` files in the m
 
 ### Stores (zustand)
 
-| Store                   | File                                         | Holds                                                  |
-| ----------------------- | -------------------------------------------- | ------------------------------------------------------ |
-| `usePreferencesStore`   | `modules/settings/preferences.ts`            | User preferences, mirrored from the settings store     |
-| `useSpaces`             | `modules/spaces/lib/useSpaces.ts`            | Spaces and the active space                            |
-| `useWorkspaceEnvStore`  | `modules/workspace/env.ts`                   | Current workspace environment (local / WSL)            |
-| `useAgentActivityStore` | `modules/terminal/lib/agentActivity.ts`      | Per-pane agent activity from `terax:agent-signal`      |
-| `useTerminalDropStore`  | `modules/terminal/lib/dropStore.ts`          | File-drop target over terminal panes                   |
-| `useAgentStore`         | `modules/agents/store/agentStore.ts`         | CLI agent sessions per pane and notifications          |
-| `useManagedAgentsStore` | `modules/agents/store/managedAgentsStore.ts` | Agents started by the agent launch flow (task, rounds) |
-| `useDiagnosticsStore`   | `modules/editor/lib/diagnosticsStore.ts`     | LSP diagnostics per file                               |
-| `useLspRuntimeStore`    | `modules/lsp/lib/runtimeStore.ts`            | LSP server status                                      |
-| `useChatStore`          | `modules/ai/store/chatStore.ts`              | AI chat sessions                                       |
-| `useAgentsStore`        | `modules/ai/store/agentsStore.ts`            | AI agent definitions                                   |
-| `useSnippetsStore`      | `modules/ai/store/snippetsStore.ts`          | AI prompt snippets                                     |
-| `usePlanStore`          | `modules/ai/store/planStore.ts`              | AI plan mode                                           |
-| `useTodosStore`         | `modules/ai/store/todoStore.ts`              | AI to-do list                                          |
+| Store                   | File                                     | Holds                                              |
+| ----------------------- | ---------------------------------------- | -------------------------------------------------- |
+| `usePreferencesStore`   | `modules/settings/preferences.ts`        | User preferences, mirrored from the settings store |
+| `useSpaces`             | `modules/spaces/lib/useSpaces.ts`        | Spaces and the active space                        |
+| `useWorkspaceEnvStore`  | `modules/workspace/env.ts`               | Current workspace environment (local / WSL)        |
+| `useAgentActivityStore` | `modules/terminal/lib/agentActivity.ts`  | Per-pane agent activity from `terax:agent-signal`  |
+| `useTerminalDropStore`  | `modules/terminal/lib/dropStore.ts`      | File-drop target over terminal panes               |
+| `useAgentStore`         | `modules/agents/store/agentStore.ts`     | CLI agent sessions per pane and notifications      |
+| `useDiagnosticsStore`   | `modules/editor/lib/diagnosticsStore.ts` | LSP diagnostics per file                           |
+| `useLspRuntimeStore`    | `modules/lsp/lib/runtimeStore.ts`        | LSP server status                                  |
 
 The tab model is not a store: `useTabs` keeps `tabs` and `activeId` in React state inside `App`. The terminal sessions
 live in a module-level map keyed by leaf id (`modules/terminal/ghostty/useGhosttyTerminalSession.ts`).
@@ -108,18 +101,15 @@ live in a module-level map keyed by leaf id (`modules/terminal/ghostty/useGhostt
 ### Persisted state
 
 - **Tauri store files** (`@tauri-apps/plugin-store`, `LazyStore`): `terax-settings.json` (`modules/settings/store.ts`),
-  `terax-spaces.json` (`modules/spaces/lib/store.ts`), `terax-custom-themes.json` (`modules/theme/customThemes.ts`),
-  and the AI files `terax-ai-agents.json`, `terax-ai-sessions.json`, `terax-ai-snippets.json`, `terax-ai-todos.json`
-  (`modules/ai/lib/`).
+  `terax-spaces.json` (`modules/spaces/lib/store.ts`), `terax-custom-themes.json` (`modules/theme/customThemes.ts`).
 - **localStorage:** `terax-ui-theme-shadow` (read by `index.html` and `settings.html` before first paint, written by
   `modules/theme/ThemeProvider.tsx`), `terax-ui-theme-id-shadow` (`ThemeProvider.tsx`), `terax-ui-bg-kind-shadow`,
   `terax-ui-bg-image-shadow`
   (`modules/settings/preferences.ts`), `terax.sidebar.width|view|collapsed` (`modules/sidebar/useSidebarPanel.ts`),
-  `terax-palette-mru`, `terax-palette-recent-files` (`modules/command-palette/lib/`), `terax-ui-mini-window-geom`
-  (`modules/ai/lib/useMiniWindowGeometry.ts`), `terax.experimental.terminal-backend`
+  `terax-palette-mru`, `terax-palette-recent-files` (`modules/command-palette/lib/`), `terax.experimental.terminal-backend`
   (`modules/terminal/backend/selection.ts`), and the diagnostics flags `terax:terminal-diagnostics`,
   `terax:terminal-gc-mirror`, `terax:terminal-text-contrast`.
-- **Backend files:** AI session files (`modules/ai_sessions.rs`), secrets in the OS keychain (`modules/secrets.rs`), the
+- **Backend files:** AI session files (`modules/ai_sessions.rs`) and secrets in the OS keychain (`modules/secrets.rs`), with no frontend caller since E05-13; the
   control descriptor and CLI launcher under the cache dir (`modules/control.rs`), shell-integration scripts under the
   cache dir (`modules/pty/shell_init.rs`). E02 moves all of them to lut names.
 
@@ -146,11 +136,10 @@ reads `window.__TAURI__`.
 | `beforeunload`/`blur`/`visibilitychange`, save spaces | `modules/spaces/lib/useSpacePersistence.ts`                                                                                                  |
 | `visibilitychange`, renderer and PTY presentation     | `modules/terminal/ghostty/windowPresentation.ts`, `modules/terminal/lib/ptyPresentation.ts`, `modules/theme/SurfaceLayer.tsx`                |
 | `focus`/`blur`                                        | `modules/terminal/ghostty/renderScheduling.ts`, `modules/theme/windowActivity.ts`, `modules/source-control/useSourceControl.ts` (focus only) |
-| `resize`                                              | `modules/theme/livePageResize.ts`, `modules/theme/SurfaceLayer.tsx`, `modules/ai/lib/useMiniWindowGeometry.ts`                               |
+| `resize`                                              | `modules/theme/livePageResize.ts`, `modules/theme/SurfaceLayer.tsx`                                                                          |
 | `pointermove`/`pointerup`/`pointercancel`, drags      | `modules/explorer/lib/useExplorerDnd.ts`, `modules/terminal/PaneTreeView.tsx`                                                                |
-| `mousedown`/`mouseup`/`keydown`, AI selection popup   | `modules/ai/hooks/useSelectionAskAi.ts`, `modules/ai/components/SelectionAskAi.tsx`, `modules/ai/components/AiMiniWindow.tsx`                |
 
-**DOM custom events** (dispatched on `window` by `app/App.tsx`): `terax:ai-attach-file` (listened in `modules/ai/lib/composer.tsx`).
+**DOM custom events:** none since E05-06 removed `terax:ai-attach-file`.
 
 **Tauri window hooks:** `onCloseRequested` (`app/hooks/useAppCloseGuard.ts`), `onResized`
 (`components/WindowControls.tsx`), `onFocusChanged` (`modules/agents/lib/useWindowFocus.ts`,
@@ -212,14 +201,14 @@ backend, E02-18 removed `fs_grep`, `fs_glob` and `git_show_commit`, and E06-06 r
 The tables below list each one with the frontend files that call it; for the wrapper objects the caller is written as
 `` `git.method` → users ``; `workspaceNative` is in `modules/workspace/native.ts`.
 
-**Commands without a real caller (3):**
+**Commands without a real caller (28):**
 
-| Commands                 | Why                                                        | Removed by |
-| ------------------------ | ---------------------------------------------------------- | ---------- |
-| `pty_has_foreground_job` | No caller                                                  | E14-11     |
-| `lm_ping`                | No caller since E05-11 removed the Models settings section | E05-16     |
-| `shell_session_close`    | Only `native.shellSessionClose`, which nothing calls       | E05-15     |
-| `wsl_default_distro`     | No caller; kept as an input for WSL profile detection      | (E14-06)   |
+| Commands                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Why                                                        | Removed by             |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------- |
+| `pty_has_foreground_job`                                                                                                                                                                                                                                                                                                                                                                                                                                                         | No caller                                                  | E14-11                 |
+| `lm_ping`                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | No caller since E05-11 removed the Models settings section | E05-16                 |
+| `shell_session_close`, `ai_read_file`, `ai_read_dir`, `ai_grep`, `ai_glob`, `fs_read_project_memory`, `fs_list_files`, `shell_session_open`, `shell_session_run`, `shell_bg_spawn`, `shell_bg_logs`, `shell_bg_kill`, `shell_bg_list`, `secrets_get`, `secrets_set`, `secrets_delete`, `secrets_get_all`, `ai_http_stream`, `ai_http_cancel`, `ai_http_ack`, `ai_session_load`, `ai_session_save`, `ai_session_delete`, `ai_session_finish_migration`, `ai_session_prune_backup` | No caller since E05-13 deleted the AI module               | E05-14, E05-15, E05-16 |
+| `wsl_default_distro`                                                                                                                                                                                                                                                                                                                                                                                                                                                             | No caller; kept as an input for WSL profile detection      | (E14-06)               |
 
 **Callers the running app never loads:** `agent_decisions_ready` and `agent_decision_respond`
 (`modules/control/lib/agentDecisions.ts`) and `agent_disable_hooks`, `agent_hooks_plan`, `agent_hooks_apply` (only
@@ -248,35 +237,35 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 
 #### fs
 
-| Command                  | Handler              | Frontend caller(s)                                                                                                                                                                                                                                                                                                 |
-| ------------------------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `list_subdirs`           | `fs::tree`           | `modules/statusbar/CwdBreadcrumb.tsx`                                                                                                                                                                                                                                                                              |
-| `fs_read_dir`            | `fs::tree`           | `modules/explorer/lib/useFileTree.ts`                                                                                                                                                                                                                                                                              |
-| `fs_read_file`           | `fs::file`           | `modules/ai/lib/composer.tsx`, `modules/editor/lib/externalFormat.ts`, `modules/editor/lib/useDocument.ts`, `modules/markdown/useMarkdownDocument.ts`, `modules/theme/useThemeFileEditing.ts`                                                                                                                      |
-| `ai_read_file`           | `fs::ai`             | `native.readFile` → `modules/ai/components/AgentRunBridge.tsx`, `modules/ai/tools/edit.ts`, `modules/ai/tools/fs.ts`                                                                                                                                                                                               |
-| `ai_read_dir`            | `fs::ai`             | `native.readDir` → `modules/ai/tools/fs.ts`                                                                                                                                                                                                                                                                        |
-| `ai_grep`                | `fs::ai`             | `native.grep` → `modules/ai/tools/search.ts`                                                                                                                                                                                                                                                                       |
-| `ai_glob`                | `fs::ai`             | `native.glob` → `modules/ai/tools/search.ts`                                                                                                                                                                                                                                                                       |
-| `asset_grant`            | `fs::assets`         | `lib/useAssetGrant.ts`                                                                                                                                                                                                                                                                                             |
-| `asset_revoke`           | `fs::assets`         | `lib/useAssetGrant.ts`                                                                                                                                                                                                                                                                                             |
-| `fs_read_project_memory` | `fs::project_memory` | `native.readProjectMemory` → `modules/ai/lib/transport.ts`                                                                                                                                                                                                                                                         |
-| `fs_write_file`          | `fs::file`           | `modules/editor/lib/useDocument.ts`, `modules/theme/themeFiles.ts`, `native.writeFile` → `modules/ai/store/planStore.ts`, `modules/ai/tools/edit.ts`, `modules/ai/tools/fs.ts`                                                                                                                                     |
-| `fs_stat`                | `fs::file`           | `modules/editor/lib/useDocument.ts`, `modules/terminal/lib/terminalLinks.ts`, `modules/theme/themeFiles.ts`                                                                                                                                                                                                        |
-| `fs_canonicalize`        | `fs::file`           | `modules/markdown/useMarkdownDocument.ts`, `modules/terminal/lib/terminalLinks.ts`, `workspaceNative.canonicalize` → `modules/explorer/lib/useGitStatus.ts`, and through `native.canonicalize` → `modules/ai/lib/transport.ts`, `modules/ai/tools/edit.ts`, `modules/ai/tools/fs.ts`, `modules/ai/tools/search.ts` |
-| `fs_create_file`         | `fs::mutate`         | `modules/editor/NewEditorDialog.tsx`, `modules/explorer/lib/useFileTree.ts`, `native.createFile` → **unused wrapper**                                                                                                                                                                                              |
-| `fs_create_dir`          | `fs::mutate`         | `modules/explorer/lib/useFileTree.ts`, `modules/theme/themeFiles.ts`, `native.createDir` → `modules/ai/store/planStore.ts`, `modules/ai/tools/fs.ts`                                                                                                                                                               |
-| `fs_rename`              | `fs::mutate`         | `modules/explorer/lib/useFileTree.ts`                                                                                                                                                                                                                                                                              |
-| `fs_move`                | `fs::mutate`         | `modules/explorer/lib/useFileTree.ts`                                                                                                                                                                                                                                                                              |
-| `fs_delete`              | `fs::mutate`         | `modules/explorer/lib/useFileTree.ts`, `modules/theme/themeFiles.ts`                                                                                                                                                                                                                                               |
-| `fs_delete_batch`        | `fs::mutate`         | `modules/explorer/lib/useFileTree.ts`                                                                                                                                                                                                                                                                              |
-| `fs_copy`                | `fs::copy`           | `modules/explorer/lib/clipboardPaste.ts`, `modules/explorer/lib/useExplorerFileDrop.ts`                                                                                                                                                                                                                            |
-| `fs_clipboard_paths`     | `fs::clipboard`      | `modules/explorer/lib/clipboardPaste.ts`                                                                                                                                                                                                                                                                           |
-| `fs_watch_add`           | `fs::watch`          | `modules/explorer/lib/watch.ts`                                                                                                                                                                                                                                                                                    |
-| `fs_watch_remove`        | `fs::watch`          | `modules/explorer/lib/watch.ts`                                                                                                                                                                                                                                                                                    |
-| `fs_search`              | `fs::search`         | `modules/command-palette/hooks/useFileSearch.ts`, `modules/explorer/ExplorerSearch.tsx`                                                                                                                                                                                                                            |
-| `fs_warm_index`          | `fs::search`         | `modules/command-palette/hooks/useFileSearch.ts`                                                                                                                                                                                                                                                                   |
-| `fs_list_files`          | `fs::search`         | `modules/ai/hooks/useWorkspaceFiles.ts`                                                                                                                                                                                                                                                                            |
-| `fs_grep_interactive`    | `fs::grep`           | `modules/command-palette/hooks/useContentSearch.ts`                                                                                                                                                                                                                                                                |
+| Command                  | Handler              | Frontend caller(s)                                                                                                                                             |
+| ------------------------ | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `list_subdirs`           | `fs::tree`           | `modules/statusbar/CwdBreadcrumb.tsx`                                                                                                                          |
+| `fs_read_dir`            | `fs::tree`           | `modules/explorer/lib/useFileTree.ts`                                                                                                                          |
+| `fs_read_file`           | `fs::file`           | `modules/editor/lib/externalFormat.ts`, `modules/editor/lib/useDocument.ts`, `modules/markdown/useMarkdownDocument.ts`, `modules/theme/useThemeFileEditing.ts` |
+| `ai_read_file`           | `fs::ai`             | **no caller**                                                                                                                                                  |
+| `ai_read_dir`            | `fs::ai`             | **no caller**                                                                                                                                                  |
+| `ai_grep`                | `fs::ai`             | **no caller**                                                                                                                                                  |
+| `ai_glob`                | `fs::ai`             | **no caller**                                                                                                                                                  |
+| `asset_grant`            | `fs::assets`         | `lib/useAssetGrant.ts`                                                                                                                                         |
+| `asset_revoke`           | `fs::assets`         | `lib/useAssetGrant.ts`                                                                                                                                         |
+| `fs_read_project_memory` | `fs::project_memory` | **no caller**                                                                                                                                                  |
+| `fs_write_file`          | `fs::file`           | `modules/editor/lib/useDocument.ts`, `modules/theme/themeFiles.ts`                                                                                             |
+| `fs_stat`                | `fs::file`           | `modules/editor/lib/useDocument.ts`, `modules/terminal/lib/terminalLinks.ts`, `modules/theme/themeFiles.ts`                                                    |
+| `fs_canonicalize`        | `fs::file`           | `modules/markdown/useMarkdownDocument.ts`, `modules/terminal/lib/terminalLinks.ts`                                                                             |
+| `fs_create_file`         | `fs::mutate`         | `modules/editor/NewEditorDialog.tsx`, `modules/explorer/lib/useFileTree.ts`                                                                                    |
+| `fs_create_dir`          | `fs::mutate`         | `modules/explorer/lib/useFileTree.ts`, `modules/theme/themeFiles.ts`                                                                                           |
+| `fs_rename`              | `fs::mutate`         | `modules/explorer/lib/useFileTree.ts`                                                                                                                          |
+| `fs_move`                | `fs::mutate`         | `modules/explorer/lib/useFileTree.ts`                                                                                                                          |
+| `fs_delete`              | `fs::mutate`         | `modules/explorer/lib/useFileTree.ts`, `modules/theme/themeFiles.ts`                                                                                           |
+| `fs_delete_batch`        | `fs::mutate`         | `modules/explorer/lib/useFileTree.ts`                                                                                                                          |
+| `fs_copy`                | `fs::copy`           | `modules/explorer/lib/clipboardPaste.ts`, `modules/explorer/lib/useExplorerFileDrop.ts`                                                                        |
+| `fs_clipboard_paths`     | `fs::clipboard`      | `modules/explorer/lib/clipboardPaste.ts`                                                                                                                       |
+| `fs_watch_add`           | `fs::watch`          | `modules/explorer/lib/watch.ts`                                                                                                                                |
+| `fs_watch_remove`        | `fs::watch`          | `modules/explorer/lib/watch.ts`                                                                                                                                |
+| `fs_search`              | `fs::search`         | `modules/command-palette/hooks/useFileSearch.ts`, `modules/explorer/ExplorerSearch.tsx`                                                                        |
+| `fs_warm_index`          | `fs::search`         | `modules/command-palette/hooks/useFileSearch.ts`                                                                                                               |
+| `fs_list_files`          | `fs::search`         | **no caller**                                                                                                                                                  |
+| `fs_grep_interactive`    | `fs::grep`           | `modules/command-palette/hooks/useContentSearch.ts`                                                                                                            |
 
 #### lsp
 
@@ -316,16 +305,16 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 
 #### shell
 
-| Command               | Handler | Frontend caller(s)                                                               |
-| --------------------- | ------- | -------------------------------------------------------------------------------- |
-| `shell_run_command`   | `shell` | `modules/editor/lib/externalFormat.ts`, `native.runCommand` → **unused wrapper** |
-| `shell_session_open`  | `shell` | `native.shellSessionOpen` → `modules/ai/tools/shell.ts`                          |
-| `shell_session_run`   | `shell` | `native.shellSessionRun` → `modules/ai/tools/shell.ts`                           |
-| `shell_session_close` | `shell` | `native.shellSessionClose` → **unused wrapper**                                  |
-| `shell_bg_spawn`      | `shell` | `native.shellBgSpawn` → `modules/ai/tools/shell.ts`                              |
-| `shell_bg_logs`       | `shell` | `native.shellBgLogs` → `modules/ai/tools/shell.ts`                               |
-| `shell_bg_kill`       | `shell` | `native.shellBgKill` → `modules/ai/tools/shell.ts`                               |
-| `shell_bg_list`       | `shell` | `native.shellBgList` → `modules/ai/tools/shell.ts`                               |
+| Command               | Handler | Frontend caller(s)                     |
+| --------------------- | ------- | -------------------------------------- |
+| `shell_run_command`   | `shell` | `modules/editor/lib/externalFormat.ts` |
+| `shell_session_open`  | `shell` | **no caller**                          |
+| `shell_session_run`   | `shell` | **no caller**                          |
+| `shell_session_close` | `shell` | **no caller**                          |
+| `shell_bg_spawn`      | `shell` | **no caller**                          |
+| `shell_bg_logs`       | `shell` | **no caller**                          |
+| `shell_bg_kill`       | `shell` | **no caller**                          |
+| `shell_bg_list`       | `shell` | **no caller**                          |
 
 #### workspace
 
@@ -361,41 +350,41 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 
 #### agent
 
-| Command               | Handler | Frontend caller(s)                                                                                                                         |
-| --------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `agent_enable_hooks`  | `agent` | `app/App.tsx`, `modules/agents/components/NotificationBell.tsx`, `modules/ai/lib/useAiLiveBridge.ts`, `modules/control/lib/hooksConfig.ts` |
-| `agent_disable_hooks` | `agent` | `modules/control/lib/hooksConfig.ts`                                                                                                       |
-| `agent_hooks_plan`    | `agent` | `modules/control/lib/hooksConfig.ts`                                                                                                       |
-| `agent_hooks_apply`   | `agent` | `modules/control/lib/hooksConfig.ts`                                                                                                       |
-| `agent_hooks_status`  | `agent` | `modules/agents/components/NotificationBell.tsx`, `modules/control/lib/hooksConfig.ts`                                                     |
+| Command               | Handler | Frontend caller(s)                                                                                    |
+| --------------------- | ------- | ----------------------------------------------------------------------------------------------------- |
+| `agent_enable_hooks`  | `agent` | `app/App.tsx`, `modules/agents/components/NotificationBell.tsx`, `modules/control/lib/hooksConfig.ts` |
+| `agent_disable_hooks` | `agent` | `modules/control/lib/hooksConfig.ts`                                                                  |
+| `agent_hooks_plan`    | `agent` | `modules/control/lib/hooksConfig.ts`                                                                  |
+| `agent_hooks_apply`   | `agent` | `modules/control/lib/hooksConfig.ts`                                                                  |
+| `agent_hooks_status`  | `agent` | `modules/agents/components/NotificationBell.tsx`, `modules/control/lib/hooksConfig.ts`                |
 
 #### secrets
 
-| Command           | Handler   | Frontend caller(s)          |
-| ----------------- | --------- | --------------------------- |
-| `secrets_get`     | `secrets` | `modules/ai/lib/keyring.ts` |
-| `secrets_set`     | `secrets` | `modules/ai/lib/keyring.ts` |
-| `secrets_delete`  | `secrets` | `modules/ai/lib/keyring.ts` |
-| `secrets_get_all` | `secrets` | `modules/ai/lib/keyring.ts` |
+| Command           | Handler   | Frontend caller(s) |
+| ----------------- | --------- | ------------------ |
+| `secrets_get`     | `secrets` | **no caller**      |
+| `secrets_set`     | `secrets` | **no caller**      |
+| `secrets_delete`  | `secrets` | **no caller**      |
+| `secrets_get_all` | `secrets` | **no caller**      |
 
 #### net
 
-| Command          | Handler | Frontend caller(s)             |
-| ---------------- | ------- | ------------------------------ |
-| `lm_ping`        | `net`   | **no caller**                  |
-| `ai_http_stream` | `net`   | `modules/ai/lib/proxyFetch.ts` |
-| `ai_http_cancel` | `net`   | `modules/ai/lib/proxyFetch.ts` |
-| `ai_http_ack`    | `net`   | `modules/ai/lib/proxyFetch.ts` |
+| Command          | Handler | Frontend caller(s) |
+| ---------------- | ------- | ------------------ |
+| `lm_ping`        | `net`   | **no caller**      |
+| `ai_http_stream` | `net`   | **no caller**      |
+| `ai_http_cancel` | `net`   | **no caller**      |
+| `ai_http_ack`    | `net`   | **no caller**      |
 
 #### ai_sessions
 
-| Command                       | Handler       | Frontend caller(s)           |
-| ----------------------------- | ------------- | ---------------------------- |
-| `ai_session_load`             | `ai_sessions` | `modules/ai/lib/sessions.ts` |
-| `ai_session_save`             | `ai_sessions` | `modules/ai/lib/sessions.ts` |
-| `ai_session_delete`           | `ai_sessions` | `modules/ai/lib/sessions.ts` |
-| `ai_session_finish_migration` | `ai_sessions` | `modules/ai/lib/sessions.ts` |
-| `ai_session_prune_backup`     | `ai_sessions` | `modules/ai/lib/sessions.ts` |
+| Command                       | Handler       | Frontend caller(s) |
+| ----------------------------- | ------------- | ------------------ |
+| `ai_session_load`             | `ai_sessions` | **no caller**      |
+| `ai_session_save`             | `ai_sessions` | **no caller**      |
+| `ai_session_delete`           | `ai_sessions` | **no caller**      |
+| `ai_session_finish_migration` | `ai_sessions` | **no caller**      |
+| `ai_session_prune_backup`     | `ai_sessions` | **no caller**      |
 
 #### vibrancy
 
@@ -437,14 +426,11 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 
 Emitted with `emit` from `@tauri-apps/api/event` so that the other window (main or settings) reloads its copy:
 
-| Event                           | Emitted and listened in                                                                         |
-| ------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `terax://prefs-changed`         | `modules/settings/store.ts`                                                                     |
-| `terax://ai-keys-changed`       | `modules/settings/store.ts` (listened only; E05-11 removed the emitter with the Models section) |
-| `terax://custom-themes-changed` | `modules/theme/customThemes.ts`                                                                 |
-| `terax://theme-edit`            | `modules/theme/themeFiles.ts`                                                                   |
-| `terax://ai-agents-changed`     | `modules/ai/store/agentsStore.ts`                                                               |
-| `terax://ai-snippets-changed`   | `modules/ai/store/snippetsStore.ts`                                                             |
+| Event                           | Emitted and listened in         |
+| ------------------------------- | ------------------------------- |
+| `terax://prefs-changed`         | `modules/settings/store.ts`     |
+| `terax://custom-themes-changed` | `modules/theme/customThemes.ts` |
+| `terax://theme-edit`            | `modules/theme/themeFiles.ts`   |
 
 ### Channels and URI schemes
 

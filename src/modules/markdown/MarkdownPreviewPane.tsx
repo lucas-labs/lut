@@ -1,6 +1,6 @@
+import { checkReadable } from '@/lib/security/security';
 import { useAssetGrant } from '@/lib/useAssetGrant';
 import { cn } from '@/lib/utils';
-import { checkReadable } from '@/modules/ai/lib/security';
 import { memo, useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { defaultRehypePlugins, Streamdown } from 'streamdown';
 import { MarkdownCode } from './code/markdown-code';

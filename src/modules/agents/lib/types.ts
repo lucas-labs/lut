@@ -1,6 +1,6 @@
 export type AgentStatus = 'working' | 'waiting';
 
-export type AgentSource = 'terminal' | 'local';
+export type AgentSource = 'terminal';
 
 type AgentSignalKind = 'started' | 'working' | 'attention' | 'finished' | 'exited';
 

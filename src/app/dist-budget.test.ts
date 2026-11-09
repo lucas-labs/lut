@@ -201,8 +201,6 @@ describe('built startup graph', () => {
       ]),
     );
     for (const stem of [
-      'ai-sdk-shared',
-      'ai-anthropic',
       'streamdown',
       'codemirror',
       'iconEngine',

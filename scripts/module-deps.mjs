@@ -19,11 +19,11 @@ const START = '<!-- module-deps:start -->';
 const END = '<!-- module-deps:end -->';
 
 /** Modules shown in the matrix (E01-08); every other module is in the per-module lists. */
-const CORE = ['app', 'terminal', 'tabs', 'spaces', 'agents', 'control', 'ai', 'editor', 'git'];
+const CORE = ['app', 'terminal', 'tabs', 'spaces', 'agents', 'control', 'editor', 'git'];
 /** Objects that wrap Tauri commands in methods; their commands are attributed to the callers of each method. */
 const WRAPPERS = [
   { file: 'src/modules/git/api.ts', obj: 'git' },
-  { file: 'src/modules/ai/lib/native.ts', obj: 'native' },
+  { file: 'src/modules/workspace/native.ts', obj: 'workspaceNative' },
 ];
 
 const posix = (p) => p.split('\\').join('/');

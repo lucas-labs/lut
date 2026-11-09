@@ -35,7 +35,6 @@ type Props = {
   onToggleSidebar: () => void;
   onOpenCommandPalette: () => void;
   onActivateAgent: (tabId: number, leafId: number) => void;
-  onActivateLocalAgent: () => void;
   onOpenSettings: () => void;
   spaceSwitcher: ReactNode;
   searchTarget: SearchTarget;
@@ -64,7 +63,6 @@ export function Header({
   onToggleSidebar,
   onOpenCommandPalette,
   onActivateAgent,
-  onActivateLocalAgent,
   onOpenSettings,
   spaceSwitcher,
   searchTarget,
@@ -123,7 +121,7 @@ export function Header({
           <HugeiconsIcon icon={CommandIcon} size={14} strokeWidth={1.75} />
         </Button>
 
-        {!IS_MAC && <NotificationBell onActivate={onActivateAgent} onActivateLocal={onActivateLocalAgent} />}
+        {!IS_MAC && <NotificationBell onActivate={onActivateAgent} />}
       </div>
 
       {!IS_MAC && <span className="mx-1.5 h-4 w-px shrink-0 rounded-full bg-border" />}
@@ -167,7 +165,7 @@ export function Header({
 
       {IS_MAC && (
         <>
-          <NotificationBell onActivate={onActivateAgent} onActivateLocal={onActivateLocalAgent} />
+          <NotificationBell onActivate={onActivateAgent} />
           {settingsButton}
         </>
       )}

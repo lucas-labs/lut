@@ -13,7 +13,7 @@ import tseslint from 'typescript-eslint';
 export default tseslint.config(
   {
     // Generated shadcn / AI-elements components are not linted (as with Biome).
-    ignores: ['src/components/ui/**', 'src/components/ai-elements/**'],
+    ignores: ['src/components/ui/**'],
   },
   {
     files: ['src/**/*.{ts,tsx}'],

@@ -543,9 +543,6 @@ export function TabIcon({ tab }: { tab: Tab }) {
   if (tab.kind === 'preview') {
     return <HugeiconsIcon icon={Globe02Icon} size={14} strokeWidth={2} className="shrink-0" />;
   }
-  if (tab.kind === 'ai-diff') {
-    return <HugeiconsIcon icon={GitCompareIcon} size={14} strokeWidth={2} className="shrink-0" />;
-  }
   if (tab.kind === 'terminal' && tab.private) {
     return <HugeiconsIcon icon={IncognitoIcon} size={14} strokeWidth={2} className="shrink-0" />;
   }

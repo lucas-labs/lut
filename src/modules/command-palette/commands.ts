@@ -16,7 +16,6 @@ import {
   Settings01Icon,
   SidebarLeftIcon,
   SourceCodeIcon,
-  SparklesIcon,
   TerminalIcon,
   ViewIcon,
 } from '@hugeicons/core-free-icons';
@@ -52,8 +51,6 @@ export type CommandPaletteActionContext = {
   focusExplorerSearch: () => void;
   toggleSidebar: () => void;
   toggleHiddenFiles: () => void;
-  toggleAi: () => void;
-  askAiSelection: () => void;
   openSettings: () => void;
   openKeyboardShortcuts: () => void;
   spaces: { id: string; name: string }[];
@@ -142,7 +139,7 @@ export function createCommandItems(ctx: CommandPaletteActionContext): PaletteIte
       id: 'tab.newPrivate',
       title: 'New private terminal',
       group: 'Tabs',
-      keywords: ['privacy', 'private', 'incognito', 'hidden from ai'],
+      keywords: ['privacy', 'private', 'incognito', 'ephemeral'],
       icon: IncognitoIcon,
       shortcutId: 'tab.newPrivate',
       run: ctx.openNewPrivate,
@@ -259,24 +256,6 @@ export function createCommandItems(ctx: CommandPaletteActionContext): PaletteIte
       icon: ViewIcon,
       shortcutId: 'explorer.toggleHidden',
       run: ctx.toggleHiddenFiles,
-    },
-    {
-      id: 'ai.toggle',
-      title: 'Toggle AI agent',
-      group: 'AI',
-      keywords: ['assistant', 'chat', 'agent'],
-      icon: SparklesIcon,
-      shortcutId: 'ai.toggle',
-      run: ctx.toggleAi,
-    },
-    {
-      id: 'ai.askSelection',
-      title: 'Ask AI about selection',
-      group: 'AI',
-      keywords: ['selection', 'explain', 'assistant', 'chat'],
-      icon: SparklesIcon,
-      shortcutId: 'ai.askSelection',
-      run: ctx.askAiSelection,
     },
   ];
 }
