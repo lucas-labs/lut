@@ -130,14 +130,13 @@ export function NotificationBell({ onActivate, onActivateLocal }: Props) {
   const [installing, setInstalling] = useState<string | null>(null);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const sessions = useAgentStore((s) => s.sessions);
-  const localAgent = useAgentStore((s) => s.localAgent);
   const notifications = useAgentStore((s) => s.notifications);
   const markAllRead = useAgentStore((s) => s.markAllRead);
   const clearNotifications = useAgentStore((s) => s.clearNotifications);
 
   const active = useMemo(() => Object.values(sessions), [sessions]);
-  const activeCount = active.length + (localAgent ? 1 : 0);
-  const waitingCount = active.filter((s) => s.status === 'waiting').length + (localAgent?.status === 'waiting' ? 1 : 0);
+  const activeCount = active.length;
+  const waitingCount = active.filter((s) => s.status === 'waiting').length;
   // attention maps to an active waiting session, so only completed events add
   // to the badge to avoid double-counting.
   const unreadDone = notifications.filter((n) => !n.read && n.kind !== 'attention').length;
@@ -235,9 +234,6 @@ export function NotificationBell({ onActivate, onActivateLocal }: Props) {
           </div>
         ) : (
           <div className="max-h-80 overflow-y-auto border-t border-border/60 p-1">
-            {localAgent ? (
-              <StatusRow agent={localAgent.agent} status={localAgent.status} onClick={activateLocal} />
-            ) : null}
             {active.map((s) => (
               <StatusRow key={s.leafId} agent={s.agent} status={s.status} onClick={() => activate(s.tabId, s.leafId)} />
             ))}
