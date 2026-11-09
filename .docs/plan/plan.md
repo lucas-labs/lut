@@ -1295,7 +1295,7 @@ size: XS
 
 ```yaml
 id: E04-08
-depends-on: [E02-02, E01-06]
+depends-on: [E02-02, E01-06, E04-09]
 refs: [.docs/plan/analysis/decisions.md]
 covers: [ADR-007]
 type: task
@@ -1303,12 +1303,14 @@ scope: none
 size: XS
 ```
 
-**Goal:** A lut-specific `.coderabbit.yaml` (decision 21f) reviews PRs once the repository is public.
+**Goal:** A lut-specific `.coderabbit.yaml` (decision 21f) reviews PRs once the repository is public. It comes after
+E04-09: CodeRabbit is free only for public repositories, so it cannot be enabled while the repository is private.
 
 **Acceptance criteria:**
 
 - [ ] `.coderabbit.yaml` written for lut: English reviews, path filters excluding lockfiles and committed WASM, review instructions pointing to `.docs/development/change-control.md`.
 - [ ] No Terax-specific settings.
+- [ ] CodeRabbit app enabled for the repository; a PR opened after the change gets a CodeRabbit review.
 
 **Verification:** the file validates against CodeRabbit's published schema (`https://coderabbit.ai/integrations/schema.v2.json`, e.g. with `npx ajv-cli validate` after converting the YAML to JSON); result recorded in the PR.
 
@@ -1316,7 +1318,7 @@ size: XS
 
 ```yaml
 id: E04-09
-depends-on: [E04-06, E04-07, E04-08, E04-10, E01-05, E03-01, E03-02]
+depends-on: [E04-06, E04-07, E04-10, E01-05, E03-01, E03-02]
 refs: [.docs/plan/analysis/decisions.md]
 covers: [ADR-007]
 type: task
@@ -1330,7 +1332,7 @@ size: XS
 
 - [ ] Repository visibility set to public (`gh repo edit --visibility public --accept-visibility-change-consequences`).
 - [ ] Branch protection on `master`: PR required, required CI checks from the CI workflow, no force pushes or deletion.
-- [ ] CodeRabbit app enabled for the repository.
+- [ ] CodeRabbit is set up afterwards by E04-08 (free only for public repositories).
 
 **Verification:** `gh api repos/{owner}/{repo}/branches/master/protection` shows the rules; a direct push to `master` is rejected.
 
