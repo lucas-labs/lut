@@ -1,6 +1,7 @@
 # Quality gate (E01-05): every PR to master and every push to master runs lint, format, type checks, tests and the
 # build. The frontend checks don't depend on the OS and run on Ubuntu (E01-24); the backend runs on Windows, the primary
-# platform. macOS and Linux backend jobs are added by E24-01.
+# platform. macOS and Linux backend jobs are added by E24-01. On a pull request each job runs only when files it depends
+# on changed (E01-25); a push to master runs every job.
 name: ci
 
 on:
@@ -19,8 +20,42 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - if: github.event_name == 'pull_request'
+        id: filter
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          # A file counts when it matches a pattern and none of the '!' ones.
+          predicate-quantifier: some-with-excludes
+          filters: |
+            # Frontend tests and vite.config.ts read files under src-tauri, so only Rust-only changes skip it.
+            frontend:
+              - '**'
+              - '!**/*.rs'
+              - '!src-tauri/Cargo.toml'
+              - '!src-tauri/Cargo.lock'
+              - '!src-tauri/crates/**'
+            # read_policy.rs embeds pathPolicy.json; the job builds the CLI sidecar with build-cli.mjs.
+            backend:
+              - 'src-tauri/**'
+              - 'src/lib/security/pathPolicy.json'
+              - 'scripts/build-cli.mjs'
+              - '.github/workflows/ci.yml'
+
   frontend:
     name: frontend (ubuntu)
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -41,6 +76,8 @@ jobs:
 
   frontend-windows:
     name: frontend shell tests (windows)
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.frontend == 'true'
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
@@ -59,6 +96,8 @@ jobs:
 
   backend:
     name: backend (windows)
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.backend == 'true'
     runs-on: windows-latest
     timeout-minutes: 45
     steps:
