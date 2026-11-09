@@ -181,4 +181,22 @@ mod tests {
         }
         assert!(readable(Path::new("/repo/environment.ts")).is_ok());
     }
+
+    #[test]
+    fn shared_policy_protects_secrets_and_control_descriptors() {
+        for path in [
+            "/repo/.env",
+            "/repo/file.pem",
+            "/repo/.git/config",
+            "/Users/me/Library/Caches/terax/control.json",
+            "/home/me/.cache/terax/control.json",
+            "C:/Users/me/AppData/Local/terax/control.json",
+            "//wsl.localhost/Ubuntu/home/me/.ssh/id_rsa",
+        ] {
+            assert!(readable(Path::new(path)).is_err(), "{path}");
+        }
+        for path in ["/repo/src/main.ts", "/repo/environment.ts", "/repo/.envoy"] {
+            assert!(readable(Path::new(path)).is_ok(), "{path}");
+        }
+    }
 }

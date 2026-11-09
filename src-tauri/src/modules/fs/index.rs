@@ -1,4 +1,4 @@
-//! Per-root file-list cache behind `fs_search` and `fs_list_files`.
+//! Per-root file-list cache behind `fs_search`.
 //!
 //! A keystroke in the explorer search used to re-walk up to 50k entries. The
 //! walk now happens once per root, the result is kept in a packed buffer, and

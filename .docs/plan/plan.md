@@ -6751,6 +6751,8 @@ size: S
 
 **Verification:** `pnpm tauri build`; `cargo test --manifest-path src-tauri/Cargo.toml`.
 
+**Notes:** Terax's AI proxy built reqwest with `rustls-no-provider` and installed the ring provider by hand (`rustls::crypto::ring::default_provider().install_default()` in the deleted `net/clients.rs`); without it reqwest panics on the first TLS request. E05-16/E05-18 removed both crates, so check which TLS backend the updater plugin pulls in and whether it needs a provider installed.
+
 ### E25-05 — Add update channel and disable settings with a check service
 
 ```yaml

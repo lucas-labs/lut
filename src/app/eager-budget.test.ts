@@ -2,14 +2,12 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { traceEager } from '../../scripts/eager-graph.mjs';
 
-// Locks the startup-bundle invariant: the heavy editor / AI / markdown stacks
+// Locks the startup-bundle invariant: the heavy editor / markdown stacks
 // must stay out of the eager graph of both window entries so they load only
 // when the user opens those surfaces. A static import that re-introduces any of
-// these (e.g. a barrel re-export of chat runtime or a
+// these (e.g. a barrel re-export of an editor runtime or a
 // `cn`-style util getting absorbed into a feature chunk) will fail here.
 const HEAVY = [
-  '@ai-sdk',
-  'ai',
   'streamdown',
   '@codemirror',
   '@uiw',
@@ -56,11 +54,11 @@ describe('startup bundle budget', () => {
     expect(lock).not.toMatch(/(?:@xterm\/|xterm-addon-|\bxterm@)/);
   });
 
-  it('main window does not eagerly pull editor/AI/markdown stacks', () => {
+  it('main window does not eagerly pull editor/markdown stacks', () => {
     expect(heavyEagerHits('src/main.tsx')).toEqual([]);
   });
 
-  it('settings window does not eagerly pull editor/AI/markdown stacks', () => {
+  it('settings window does not eagerly pull editor/markdown stacks', () => {
     expect(heavyEagerHits('src/settings/main.tsx')).toEqual([]);
   });
 

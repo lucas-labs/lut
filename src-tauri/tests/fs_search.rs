@@ -2,7 +2,7 @@ mod common;
 
 use common::{git_available, FsFixture, GitRepoFixture};
 use terax_lib::modules::fs::index::FileIndexState;
-use terax_lib::modules::fs::search::{run_list_files, run_search, SearchOptions};
+use terax_lib::modules::fs::search::{run_search, SearchOptions};
 use terax_lib::modules::fs::tree::{
     read_dir_entries as fs_read_dir, subdirs as list_subdirs, EntryKind,
 };
@@ -23,23 +23,6 @@ fn fs_search(
         show_hidden,
         SearchOptions::default(),
         &|| false,
-    )
-}
-
-fn fs_list_files(
-    root: String,
-    limit: Option<usize>,
-    max_depth: Option<usize>,
-    workspace: Option<terax_lib::modules::workspace::WorkspaceEnv>,
-    show_hidden: Option<bool>,
-) -> Result<terax_lib::modules::fs::search::ListFilesResult, String> {
-    run_list_files(
-        &FileIndexState::default(),
-        root,
-        limit,
-        max_depth,
-        workspace,
-        show_hidden,
     )
 }
 
@@ -107,33 +90,6 @@ fn search_ranks_filename_hits_before_path_hits() {
         zeta_file < inner_file,
         "filename hit should rank before path-only hit",
     );
-}
-
-#[test]
-fn list_files_returns_sorted_relative_paths() {
-    let fx = FsFixture::new();
-    fx.write("z.txt", "");
-    fx.write("a.txt", "");
-    fx.write("nested/b.txt", "");
-
-    let res = fs_list_files(fx.root_str(), None, None, None, None).expect("list");
-    assert_eq!(res.files, vec!["a.txt", "nested/b.txt", "z.txt"]);
-}
-
-#[test]
-fn list_files_max_depth_clamps() {
-    let fx = FsFixture::new();
-    fx.write("d1/d2/d3/deep.txt", "");
-    fx.write("shallow.txt", "");
-
-    let res = fs_list_files(fx.root_str(), None, Some(1), None, None).expect("list");
-    assert!(res.files.contains(&"shallow.txt".to_string()));
-    assert!(!res.files.iter().any(|f| f.contains("deep.txt")));
-}
-
-#[test]
-fn list_files_non_dir_errors() {
-    assert!(fs_list_files("/no/such/dir".into(), None, None, None, None).is_err());
 }
 
 #[test]

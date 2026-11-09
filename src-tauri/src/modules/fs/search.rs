@@ -279,66 +279,6 @@ fn rank_fuzzy(
     Some(scored)
 }
 
-#[derive(Serialize)]
-pub struct ListFilesResult {
-    pub files: Vec<String>,
-    pub truncated: bool,
-}
-
-#[tauri::command]
-pub async fn fs_list_files(
-    index: State<'_, FileIndexState>,
-    root: String,
-    limit: Option<usize>,
-    max_depth: Option<usize>,
-    workspace: Option<WorkspaceEnv>,
-    show_hidden: Option<bool>,
-) -> Result<ListFilesResult, String> {
-    let index = index.inner().clone();
-    blocking(move || run_list_files(&index, root, limit, max_depth, workspace, show_hidden)).await
-}
-
-pub fn run_list_files(
-    index: &FileIndexState,
-    root: String,
-    limit: Option<usize>,
-    max_depth: Option<usize>,
-    workspace: Option<WorkspaceEnv>,
-    show_hidden: Option<bool>,
-) -> Result<ListFilesResult, String> {
-    const DEFAULT_LIMIT: usize = 2_000;
-    const HARD_LIMIT: usize = 10_000;
-    const DEFAULT_DEPTH: usize = 8;
-    const HARD_DEPTH: usize = 16;
-
-    let cap = limit.unwrap_or(DEFAULT_LIMIT).clamp(1, HARD_LIMIT);
-    let depth = max_depth.unwrap_or(DEFAULT_DEPTH).clamp(1, HARD_DEPTH);
-    let workspace = WorkspaceEnv::from_option(workspace);
-    let root_path = resolve_path(&root, &workspace);
-    if !root_path.is_dir() {
-        return Err(format!("not a directory: {root}"));
-    }
-
-    let key = IndexKey {
-        root: root_path,
-        show_hidden: show_hidden.unwrap_or(false),
-        max_depth: Some(depth),
-    };
-    let file_index = index.get_or_build(&key);
-    let mut files = file_index.entries.iter().filter(|(_, is_dir)| !is_dir);
-    let mut listed: Vec<String> = files
-        .by_ref()
-        .take(cap)
-        .map(|(rel, _)| rel.to_string())
-        .collect();
-    let truncated = file_index.truncated || files.next().is_some();
-    listed.sort_by_cached_key(|rel| rel.to_lowercase());
-    Ok(ListFilesResult {
-        files: listed,
-        truncated,
-    })
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

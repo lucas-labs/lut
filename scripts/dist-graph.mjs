@@ -20,25 +20,12 @@ export const WINDOW_HTML = ["index.html", "settings.html"];
 
 /**
  * Chunk-name stems that must never be reachable at startup. Names come from
- * `manualChunks` in vite.config.ts; `ai-*` covers every provider SDK and the
- * shared AI SDK / zod core, `cm-*` every CodeMirror language pack.
+ * the chunk groups in vite.config.ts; `cm-*` covers every CodeMirror language pack.
  */
 export const FORBIDDEN_CHUNK_PATTERNS = [
-  /^ai-/,
   /^streamdown$/,
   /^codemirror$/,
   /^cm-(?:lang|legacy)-/,
-];
-
-/**
- * Content signatures for AI SDK / zod code that ended up in an anonymously
- * named chunk (the name check cannot see those). Both are runtime strings that
- * survive minification. Other heavy stacks (CodeMirror, Streamdown) have no
- * reliable string marker; they are caught by the sourcemap check below.
- */
-export const FORBIDDEN_SIGNATURES = [
-  { label: "zod", needle: "ZodError" },
-  { label: "ai-sdk", needle: "vercel.ai.error" },
 ];
 
 /**
@@ -47,9 +34,6 @@ export const FORBIDDEN_SIGNATURES = [
  * module a chunk contains independent of how the chunk is named.
  */
 export const FORBIDDEN_PACKAGES = [
-  /^zod$/,
-  /^ai$/,
-  /^@ai-sdk\//,
   /^@codemirror\//,
   /^@lezer\//,
   /^@uiw\//,
@@ -117,7 +101,7 @@ function distPath(href) {
   return posix.normalize(href.replace(/^\/+/, ""));
 }
 
-/** Strip the content hash: `ai-anthropic-BhxtMjzw.js` -> `ai-anthropic`. */
+/** Strip the content hash: `cm-lang-css-Bzp8a_YD.js` -> `cm-lang-css`. */
 export function chunkName(file) {
   const base = posix.basename(file).replace(/\.js$/, "");
   return base.replace(/-[A-Za-z0-9_-]{8}$/, "");
@@ -248,17 +232,6 @@ export function findViolations(trace) {
     );
     if (hit) {
       out.push({ file, reason: `bundles package "${hit}"`, via: info.via });
-      continue;
-    }
-    for (const { label, needle } of FORBIDDEN_SIGNATURES) {
-      if (info.code.includes(needle)) {
-        out.push({
-          file,
-          reason: `contains ${label} code ("${needle}")`,
-          via: info.via,
-        });
-        break;
-      }
     }
   }
   return out;
