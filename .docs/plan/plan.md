@@ -1732,7 +1732,7 @@ size: S
 
 ```yaml
 id: E05-19
-depends-on: [E05-18]
+depends-on: [E05-18, E05-21]
 refs: [F2:gate, 13.2:17, 16:16, AGT-003, F2:8]
 covers: [F2:8, F2:gate, 13.2:17, 16:16, AGT-003]
 type: task
@@ -1752,11 +1752,34 @@ size: XS
 
 **Verification:** `pnpm test`, `pnpm build`, `pnpm size`, `pnpm check:dist`, `cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace`; manual test on Windows 11 with the result recorded in the PR.
 
+### E05-21 — Restore preference loading in the main window
+
+```yaml
+id: E05-21
+depends-on: [E05-06]
+refs: [F2:gate, .docs/testing/phase2-gate.md]
+covers: [F2:gate]
+type: task
+scope: ui
+size: XS
+```
+
+**Goal:** The main window loads the saved preferences and follows changes made in Settings again. E05-06 removed
+`useAiBootstrap`, which was the only place that loaded them when saved Spaces exist; the Phase 2 gate found it.
+
+**Acceptance criteria:**
+
+- [ ] `App.tsx` loads the preference store on mount (`usePreferencesStore` `init`), so with saved Spaces a new tab honours `terminalShell` and the other terminal preferences.
+- [ ] A change made in Settings reaches the open main window without a reload.
+- [ ] UI text left over from the AI is updated: the notification bell's empty state and the workspace environment description; the palette's unused `AI` group is removed.
+
+**Verification:** `pnpm check-types` and `pnpm test` pass; manual: with saved Spaces, change the shell in Settings and open a new tab.
+
 ### E05-20 — Close-out: BYOK AI removal
 
 ```yaml
 id: E05-20
-depends-on: [E05-01, E05-02, E05-03, E05-04, E05-05, E05-06, E05-07, E05-08, E05-09, E05-10, E05-11, E05-12, E05-13, E05-14, E05-15, E05-16, E05-17, E05-18, E05-19]
+depends-on: [E05-01, E05-02, E05-03, E05-04, E05-05, E05-06, E05-07, E05-08, E05-09, E05-10, E05-11, E05-12, E05-13, E05-14, E05-15, E05-16, E05-17, E05-18, E05-19, E05-21]
 refs: [ADR-004, 9.9]
 covers: []
 type: closeout

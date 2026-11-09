@@ -132,6 +132,13 @@ export default function App() {
     resetWorkspace,
   } = useTabs(getLaunchDir() ? { cwd: getLaunchDir() } : undefined);
 
+  // Load the saved preferences into this window and follow changes made in
+  // Settings. Spaces boot only does it on a first launch with no saved spaces.
+  const initPreferences = usePreferencesStore((s) => s.init);
+  useEffect(() => {
+    void initPreferences();
+  }, [initPreferences]);
+
   // Mirror `tabs` into a ref so callbacks scheduled with `setTimeout`
   // (e.g. cdInNewTab) read the latest pane state instead of a stale closure.
   const tabsRef = useRef(tabs);
