@@ -84,6 +84,18 @@ uses the committed `.wasm` files and does not need Zig.
   `packages/ghostty-core/adapted/UPSTREAM.md`.
 - `ghostty-vt.wasm` and `official/` (legacy fork): Zig 0.15.2, steps in `packages/ghostty-core/FORK.md`.
 
+## CI
+
+`.github/workflows/ci.yml` runs on every pull request to `master` and every push to `master`. Changes that only touch
+`.docs/` or Markdown files skip it. It has two jobs on `windows-latest`:
+
+- **frontend:** `pnpm install --frozen-lockfile`, `lint`, `format:check`, `check-types`, `test`, `build`, `knip`;
+- **backend:** builds the CLI sidecar, then runs `cargo fmt --check`, `cargo clippy -D warnings` and `cargo test`.
+
+Until E02-05 deletes the git agent-task backend, `cargo test` skips its test modules (see `.docs/testing/baseline.md`).
+To run the same Rust tests locally, copy the `cargo test` step of the workflow. For a quick run of everything except
+the git module, use `cargo test --manifest-path src-tauri/Cargo.toml -p terax --lib -- --skip modules::git` (about 8 s).
+
 ## Platform-specific scripts
 
 `pnpm-workspace.yaml` sets `shellEmulator: true`: pnpm runs `package.json` scripts with its own cross-platform shell,

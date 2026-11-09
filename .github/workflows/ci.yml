@@ -1,0 +1,72 @@
+# Quality gate (E01-05): every PR to master and every push to master runs lint, format, type checks, tests and the
+# build. Windows is the primary platform; macOS and Linux jobs are added by E24-01.
+name: ci
+
+on:
+  pull_request:
+    branches: [master]
+    paths-ignore: ['.docs/**', '**/*.md']
+  push:
+    branches: [master]
+    paths-ignore: ['.docs/**', '**/*.md']
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: frontend (windows)
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      # pnpm version comes from `packageManager` in package.json.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm check-types
+      - run: pnpm test
+      - run: pnpm build
+      - run: pnpm knip
+
+  backend:
+    name: backend (windows)
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # tauri-build needs the CLI sidecar (bundle.externalBin) to exist before the app crate compiles.
+      - run: node scripts/build-cli.mjs
+      - run: cargo fmt --manifest-path src-tauri/Cargo.toml --all --check
+      - run: cargo clippy --manifest-path src-tauri/Cargo.toml --locked --workspace --all-targets -- -D warnings
+      # The git agent-task backend's tests are skipped until E02-05 deletes the backend: they are the slow (10-15 min)
+      # and flaky part of the suite. See .docs/testing/baseline.md, "flaky git agent-task test". E02-05 removes
+      # this list.
+      - name: cargo test
+        shell: bash
+        run: |
+          skip=()
+          for m in checkpoint worktree task_worktree task_state project_config commands_tasks commands_review \
+                   review diff patch branch edge_tests feedback_tests followup_tests hardening_tests review_tests \
+                   tasks_tests task_worktree_tests; do
+            skip+=(--skip "modules::git::$m")
+          done
+          cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace -- "${skip[@]}"
