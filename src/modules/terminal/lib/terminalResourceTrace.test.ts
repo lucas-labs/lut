@@ -1,5 +1,5 @@
-import { afterEach, expect, it, vi } from "vitest";
 import { recordTerminalResources } from "@/modules/terminal/lib/terminalDiagnostics";
+import { afterEach, expect, it, vi } from "vitest";
 
 const bridge = vi.hoisted(() => ({ listeners: new Set<() => void>() }));
 vi.mock("@/modules/terminal/ghostty/windowPresentation", () => ({

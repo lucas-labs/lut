@@ -1,9 +1,4 @@
-import {
-  beginTerminalResizeInteraction,
-  endTerminalResizeInteraction,
-} from "@/modules/terminal/lib/terminalResizeInteraction";
 import type { TerminalDamage } from "@/modules/terminal/backend/contracts";
-import { afterEach, describe, expect, it, vi } from "vitest";
 import type {
   GhosttyGpuFrame,
   GhosttyTerminalModelApi,
@@ -14,9 +9,14 @@ import {
   SCREEN_UNIFORM_BYTES,
 } from "@/modules/terminal/ghostty/gpu/shaders";
 import { TERMINAL_RIGHT_GUTTER_CSS_PX } from "@/modules/terminal/ghostty/gpu/TerminalFit";
-import { WebGpuTerminalSurface } from "@/modules/terminal/ghostty/gpu/WebGpuTerminalSurface";
 import { deriveFontMetrics } from "@/modules/terminal/ghostty/gpu/terminalVisuals";
+import { WebGpuTerminalSurface } from "@/modules/terminal/ghostty/gpu/WebGpuTerminalSurface";
 import { resetTerminalResizeGestureForTest } from "@/modules/terminal/lib/terminalResizeGesture";
+import {
+  beginTerminalResizeInteraction,
+  endTerminalResizeInteraction,
+} from "@/modules/terminal/lib/terminalResizeInteraction";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 const bridge = vi.hoisted(() => ({ runtime: {} as unknown, visible: true }));
 vi.mock(

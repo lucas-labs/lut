@@ -1,3 +1,9 @@
+import { usePreferencesStore } from "@/modules/settings/preferences";
+import {
+  currentWorkspaceEnv,
+  useWorkspaceEnvStore,
+  workspaceScopeKey,
+} from "@/modules/workspace";
 import { invoke } from "@tauri-apps/api/core";
 import {
   useCallback,
@@ -8,14 +14,8 @@ import {
 } from "react";
 import { toast } from "sonner";
 import {
-  currentWorkspaceEnv,
-  useWorkspaceEnvStore,
-  workspaceScopeKey,
-} from "@/modules/workspace";
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import {
-  executeBatchMove,
   excludeNestedSources,
+  executeBatchMove,
   type FsMoveResult,
 } from "./batchMove";
 import { listenFsChanged, watchAdd, watchRemove } from "./watch";

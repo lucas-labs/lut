@@ -1,5 +1,5 @@
-import { expect, it } from "vitest";
 import { BoundedResourceTrace } from "@/modules/terminal/lib/BoundedResourceTrace";
+import { expect, it } from "vitest";
 
 it("retains only the latest 600 samples in chronological order", () => {
   const trace = new BoundedResourceTrace<number>();

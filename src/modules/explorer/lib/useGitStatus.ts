@@ -4,9 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   bubbleUpDirectoryStatuses,
   buildGitStatusMap,
+  type GitStatusCode,
   lookupGitStatus,
   normalizePath,
-  type GitStatusCode,
 } from "./gitStatusUtils";
 
 const EMPTY = new Map<string, GitStatusCode>();

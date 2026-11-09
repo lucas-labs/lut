@@ -6,8 +6,8 @@ import {
   KeyAction,
   Mods,
 } from "@terax/ghostty-core";
-import { beforeAll, describe, expect, it, vi } from "vitest";
 import type { GhosttyTerminalEvent } from "@terax/ghostty-core/protocol";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 let ghostty: Ghostty;
 

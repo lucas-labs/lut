@@ -12,7 +12,6 @@ import {
   useRef,
   useState,
 } from "react";
-
 import { watchSourceControl } from "./watchSourceControl";
 
 const AUTO_FETCH_THROTTLE_MS = 5 * 60_000;

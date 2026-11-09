@@ -1,10 +1,10 @@
-import { invoke } from "@tauri-apps/api/core";
 import { setWindowVibrancy } from "@/modules/settings/store";
 import { whenSessionReady, writeToSession } from "@/modules/terminal";
 import {
   readTerminalClipboard,
   writeTerminalClipboard,
 } from "@/modules/terminal/lib/terminalClipboard";
+import { invoke } from "@tauri-apps/api/core";
 import { collectDiagnostics } from "./diagnostics";
 import { nativeWindow, reportError, reportPhase } from "./report";
 import { installSmoothProbe, type SmoothSummary } from "./smoothProbe";

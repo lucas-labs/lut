@@ -1,12 +1,12 @@
-import { describe, expect, it } from "vitest";
 import { MOD_PROP } from "@/lib/platform";
+import { describe, expect, it } from "vitest";
 import {
   buildShortcuts,
   getBindingTokens,
   type KeyBinding,
   matchBinding,
-  SHORTCUTS,
   type Shortcut,
+  SHORTCUTS,
 } from "./shortcuts";
 
 // These tests run in the vitest node environment, where the Tauri OS plugin is

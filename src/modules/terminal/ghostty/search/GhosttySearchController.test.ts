@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { replaceSessionSurface } from "../replaceSessionSurface";
 import type {
   GhosttySearchStatus,
   GhosttyTerminalModelApi,
 } from "../GhosttyTerminalModel";
+import { replaceSessionSurface } from "../replaceSessionSurface";
 import { GhosttySearchController } from "./GhosttySearchController";
 
 const status: GhosttySearchStatus = {

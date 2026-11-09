@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import { checkReadable } from "@/modules/ai/lib/security";
+import { describe, expect, it } from "vitest";
 import {
   isAllowedLocalImage,
   isInsideRoot,

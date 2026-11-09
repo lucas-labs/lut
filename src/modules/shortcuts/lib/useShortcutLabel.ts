@@ -1,5 +1,5 @@
 import { usePreferencesStore } from "@/modules/settings/preferences";
-import { getBindingTokens, SHORTCUTS, type ShortcutId } from "../shortcuts";
+import { getBindingTokens, type ShortcutId,SHORTCUTS } from "../shortcuts";
 import { labelToHint } from "./shortcutLabel";
 
 const BY_ID = new Map(SHORTCUTS.map((s) => [s.id, s]));

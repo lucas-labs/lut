@@ -13,7 +13,6 @@ import {
 } from "@/modules/editor/lib/externalFormat";
 import { EXPOSED_LANGUAGES } from "@/modules/editor/lib/languageDefinitions";
 import { usePreferencesStore } from "@/modules/settings/preferences";
-import { useShortcutHint } from "@/modules/shortcuts";
 import {
   AUTO_SAVE_DELAY_MAX,
   AUTO_SAVE_DELAY_MIN,
@@ -34,6 +33,7 @@ import {
   setEditorWordWrapColumn,
   setVimMode,
 } from "@/modules/settings/store";
+import { useShortcutHint } from "@/modules/shortcuts";
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useEffect, useState } from "react";

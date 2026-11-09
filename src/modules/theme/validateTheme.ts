@@ -1,4 +1,4 @@
-import type { Theme, ThemeColors, ThemeVariant, TerminalPalette } from "./types";
+import type { TerminalPalette,Theme, ThemeColors, ThemeVariant } from "./types";
 
 export type ValidationResult =
   | { ok: true; theme: Theme }

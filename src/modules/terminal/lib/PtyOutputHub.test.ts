@@ -1,4 +1,3 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   ACK_ONLY_BYTES,
   PtyOutputHub,
@@ -15,6 +14,7 @@ import {
   type PtyFrame,
   tokenBytes,
 } from "@/modules/terminal/lib/ptyWire";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { decodeRequest, encodeFrames } from "./ptyWireFixtures";
 
 type Call = {

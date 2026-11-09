@@ -1,6 +1,6 @@
 import type { ImeAnchor } from "@/modules/terminal/ghostty/input/ImeAnchor";
-import type { TerminalMouse } from "@/modules/terminal/ghostty/input/TerminalMouse";
 import { TerminalInputProxy } from "@/modules/terminal/ghostty/input/TerminalInputProxy";
+import type { TerminalMouse } from "@/modules/terminal/ghostty/input/TerminalMouse";
 import { TerminalNativeSelection } from "@/modules/terminal/ghostty/input/TerminalNativeSelection";
 import { readTerminalClipboard } from "@/modules/terminal/lib/terminalClipboard";
 import { Key, KeyAction, type KeyEvent } from "@terax/ghostty-core/protocol";
@@ -9,10 +9,10 @@ import {
   buildKeyEvent,
   canonicalKittyPress,
   ignoredForIme,
-  KITTY_REPORT_EVENT_TYPES,
   type KeyContext,
-  type KeyRoute,
   keyModifiers,
+  type KeyRoute,
+  KITTY_REPORT_EVENT_TYPES,
   routeKeyDown,
 } from "./keyRouting";
 import { type MacOptionAsAlt, optionActsAsMeta } from "./macOptionAsAlt";

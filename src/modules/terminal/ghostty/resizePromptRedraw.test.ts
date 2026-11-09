@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
+import { TerminalResizeSync } from "@/modules/terminal/lib/terminalResizeSync";
 import { TeraxGhostty } from "@terax/ghostty-core/adapted";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { RESIZE_PROMPT_HOLD_MS } from "./core/ResizePromptHold";
-import { TerminalResizeSync } from "@/modules/terminal/lib/terminalResizeSync";
 import { AdaptedGhosttyTerminalModel } from "./AdaptedGhosttyTerminalModel";
+import { RESIZE_PROMPT_HOLD_MS } from "./core/ResizePromptHold";
 
 const encoder = new TextEncoder();
 const PROMPT = "user@host ~ % ";

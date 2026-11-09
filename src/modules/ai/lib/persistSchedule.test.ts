@@ -1,10 +1,10 @@
-import { describe, expect, it } from "vitest";
 import {
   PERSIST_MAX_WAIT_MS,
   PERSIST_MIN_INTERVAL_MS,
   PERSIST_QUIET_MS,
   persistDelay,
 } from "@/modules/ai/lib/persistSchedule";
+import { describe, expect, it } from "vitest";
 
 describe("persistDelay", () => {
   it("waits for a quiet gap after the first change of an idle conversation", () => {

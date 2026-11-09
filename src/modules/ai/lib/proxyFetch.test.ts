@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createProxyFetch, proxyFetch } from "@/modules/ai/lib/proxyFetch";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const bridge = vi.hoisted(() => ({
   channels: [] as { onmessage: (value: ArrayBuffer) => void }[],

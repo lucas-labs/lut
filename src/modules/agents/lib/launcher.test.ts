@@ -2,11 +2,11 @@ import { leafIds } from "@/modules/terminal";
 import { describe, expect, it } from "vitest";
 import {
   AGENT_LAUNCHERS,
+  type AgentInstanceCount,
   createAgentPanePlan,
   DEFAULT_AGENT_LAUNCH_COMMANDS,
   normalizeAgentLaunchCommands,
   validateAgentLaunchCommand,
-  type AgentInstanceCount,
 } from "./launcher";
 
 function allocator(start = 1) {

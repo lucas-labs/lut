@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import type { GitChangedFile, GitStatusSnapshot } from "@/modules/git";
+import { describe, expect, it } from "vitest";
 import {
   buildGitStatusMap,
   lookupGitStatus,

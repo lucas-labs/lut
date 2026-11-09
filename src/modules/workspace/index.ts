@@ -1,10 +1,10 @@
 export {
-  currentWorkspaceScopeKey,
   currentWorkspaceEnv,
+  currentWorkspaceScopeKey,
   getWslHome,
   LOCAL_WORKSPACE,
   parseWorkspaceScopeKey,
   useWorkspaceEnvStore,
-  workspaceScopeKey,
   type WorkspaceEnv,
+  workspaceScopeKey,
 } from "./env";

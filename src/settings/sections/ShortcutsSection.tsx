@@ -16,10 +16,10 @@ import { setShortcuts } from "@/modules/settings/store";
 import {
   getBindingTokens,
   type KeyBinding,
-  SHORTCUT_GROUPS,
-  SHORTCUTS,
   type Shortcut,
+  SHORTCUT_GROUPS,
   type ShortcutId,
+  SHORTCUTS,
 } from "@/modules/shortcuts/shortcuts";
 import {
   ArrowTurnBackwardIcon,

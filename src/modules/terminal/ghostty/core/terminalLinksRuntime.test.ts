@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import type { LazyTerminalLinksOptions } from "./LazyTerminalLinks";
-import type { ViewportLinkSource } from "./ViewportLinkResolver";
 import { createTerminalLinks } from "./terminalLinksRuntime";
+import type { ViewportLinkSource } from "./ViewportLinkResolver";
 
 class FakeNode {}
 const scrollbarNode = new FakeNode();

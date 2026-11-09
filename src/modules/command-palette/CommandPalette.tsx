@@ -13,17 +13,17 @@ import { FileIcon } from "@/modules/explorer/FileIcon";
 import { usePreferencesStore } from "@/modules/settings/preferences";
 import {
   getBindingTokens,
-  SHORTCUTS,
   type KeyBinding,
   type ShortcutId,
+  SHORTCUTS,
 } from "@/modules/shortcuts";
 import { listBuiltinThemes, useTheme } from "@/modules/theme";
 import {
   AlertCircleIcon,
   ArrowTurnBackwardIcon,
   CommandIcon,
-  Tick02Icon,
   TerminalIcon,
+  Tick02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -130,7 +130,7 @@ export function CommandPalette({
   // The first row is selected whenever the rows change, not only on the next
   // keystroke: results arrive after the query that asked for them.
   const firstFilePath = fileRows[0]?.path;
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fileRows re-arms the selection when a new result set lands with the same first file.
+  // fileRows re-arms the selection when a new result set lands with the same first file.
   useEffect(() => {
     if (filesActive) setValue(firstFilePath ? `file:${firstFilePath}` : "");
   }, [filesActive, firstFilePath, fileRows]);
@@ -600,7 +600,7 @@ function Marked({
   return (
     <>
       {segments.map((seg, i) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: segments are positional and never reordered.
+        // eslint-disable-next-line react/no-array-index-key -- segments are positional and never reordered.
         <span key={i} className={cn(seg.hit ? marked : plain)}>
           {seg.text}
         </span>

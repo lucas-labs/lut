@@ -1,22 +1,22 @@
-import { terminalWindowFocused } from "@/modules/terminal/ghostty/renderScheduling";
-import { bindTerminalInteraction } from "@/modules/terminal/ghostty/input/terminalInteraction";
-import { isClampedScrollEcho, TerminalScrollbarSync } from "@/modules/terminal/ghostty/gpu/terminalScrollbar";
-import { terminalWindowPresentation } from "@/modules/terminal/ghostty/windowPresentation";
-import type { TerminalSurface } from "@/modules/terminal/backend/contracts";
 import { smoothHooks } from "@/bench/smoothHooks";
 import { isPrimaryModifierPressed } from "@/lib/platform";
+import type { TerminalSurface } from "@/modules/terminal/backend/contracts";
+import { isClampedScrollEcho, TerminalScrollbarSync } from "@/modules/terminal/ghostty/gpu/terminalScrollbar";
+import { bindTerminalInteraction } from "@/modules/terminal/ghostty/input/terminalInteraction";
+import { terminalWindowFocused } from "@/modules/terminal/ghostty/renderScheduling";
+import { terminalWindowPresentation } from "@/modules/terminal/ghostty/windowPresentation";
 import { noteTerminalHostResize } from "@/modules/terminal/lib/terminalResizeGesture";
 import {
   subscribeTerminalResizeInteraction,
   terminalResizeInteractionActive,
 } from "@/modules/terminal/lib/terminalResizeInteraction";
 import { TerminalResizeSync } from "@/modules/terminal/lib/terminalResizeSync";
+import type { Rgb } from "../core/packedCells";
+import type { TerminalLinkHit } from "../core/terminalLinks";
 import {
   type DeferredTerminalLinks,
   deferTerminalLinks,
 } from "../core/terminalLinksLoader";
-import type { Rgb } from "../core/packedCells";
-import type { TerminalLinkHit } from "../core/terminalLinks";
 import type {
   GhosttyGpuFrame,
   GhosttyTerminalModelApi,
@@ -24,7 +24,7 @@ import type {
 import { GhosttySearchController } from "../search/GhosttySearchController";
 import { TerminalSelectionController } from "../selection/TerminalSelectionController";
 import { DevicePixelRatioMonitor } from "./DevicePixelRatioMonitor";
-import { TerminalGlyphMap, type RasterBudget } from "./GlyphMap";
+import { type RasterBudget,TerminalGlyphMap } from "./GlyphMap";
 import { type DeviceRect, deviceRectsEqual } from "./PaneRects";
 import { ScreenUniform, type ScreenUniformState } from "./ScreenUniform";
 import { SCREEN_UNIFORM_BYTES } from "./shaders";
@@ -33,8 +33,8 @@ import {
   TERMINAL_RIGHT_GUTTER_CSS_PX,
 } from "./TerminalFit";
 import {
-  TerminalFitQueue,
   type TerminalFitBounds,
+  TerminalFitQueue,
   type TerminalFitQueueDiagnostics,
 } from "./TerminalFitQueue";
 import {
@@ -63,8 +63,8 @@ import {
 import {
   createRasterBudget,
   FIRST_FRAME_RASTER_BUDGET_MS,
-  type GlyphAtlasLease,
   getWebGpuTerminalRuntime,
+  type GlyphAtlasLease,
   RASTER_BUDGET_MS,
   type WebGpuRuntimeSurface,
   type WebGpuSharedResources,

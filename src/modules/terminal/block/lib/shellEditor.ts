@@ -5,10 +5,10 @@ import { buildTerminalTheme } from "@/styles/terminalTheme";
 import {
   acceptCompletion,
   autocompletion,
+  closeCompletion,
   type Completion,
   type CompletionContext,
   type CompletionResult,
-  closeCompletion,
   completionStatus,
   moveCompletionSelection,
   startCompletion,

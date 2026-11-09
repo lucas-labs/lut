@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import type { LspCustomServer } from "@/modules/settings/store";
+import { describe, expect, it } from "vitest";
 import {
   allServers,
   LSP_PRESETS,

@@ -1,4 +1,3 @@
-import type { ViewportLinkSource } from "@/modules/terminal/ghostty/core/ViewportLinkResolver";
 import type {
   PackedTerminalViewport,
   TerminalCursor,
@@ -7,6 +6,7 @@ import type {
   TerminalModes,
   TerminalRowRange,
 } from "@/modules/terminal/backend/contracts";
+import type { ViewportLinkSource } from "@/modules/terminal/ghostty/core/ViewportLinkResolver";
 import type {
   TeraxGhostty,
   TeraxGhosttyGpuRenderState,
@@ -20,19 +20,19 @@ import type {
   KeyEvent,
 } from "@terax/ghostty-core/protocol";
 import { CellFlags } from "@terax/ghostty-core/protocol";
-import { PromptPresentationGate } from "./core/PromptPresentationGate";
-import { ResizePromptHold } from "./core/ResizePromptHold";
 import {
   CELL_STRIDE,
   type Rgb,
   type TerminalCellReader,
 } from "./core/packedCells";
-import { SynchronizedOutputPresentationGate } from "./core/SynchronizedOutputPresentationGate";
+import { PromptPresentationGate } from "./core/PromptPresentationGate";
+import { ResizePromptHold } from "./core/ResizePromptHold";
 import {
   MIN_SCROLLBACK_BYTES,
   normalizeScrollbackLines,
   requestedScrollbackBytes,
 } from "./core/scrollbackBudget";
+import { SynchronizedOutputPresentationGate } from "./core/SynchronizedOutputPresentationGate";
 import { clearTerminalBufferSequence } from "./core/terminalActions";
 import type {
   GhosttyGpuFrame,

@@ -9,6 +9,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { openSettingsWindow } from "@/modules/settings/openSettingsWindow";
+import { usePreferencesStore } from "@/modules/settings/preferences";
 import { useShortcutHint } from "@/modules/shortcuts";
 import {
   Add01Icon,
@@ -29,12 +30,12 @@ import {
   GlobeIcon,
   GoogleGeminiIcon,
   Grok02Icon,
-  MistralIcon,
   Message01Icon,
   Mic01Icon,
+  MistralIcon,
   PlugIcon,
-  ServerStack01Icon,
   Search01Icon,
+  ServerStack01Icon,
   Settings01Icon,
   StarIcon,
   StopCircleIcon,
@@ -47,19 +48,18 @@ import {
   getCompatModelInfo,
   getModel,
   isCompatModelId,
-  MODELS,
-  providerNeedsKey,
-  PROVIDERS,
-  STT_PROVIDER_LABELS,
   type ModelCapabilities,
   type ModelId,
   type ModelInfo,
+  MODELS,
   type ProviderId,
+  providerNeedsKey,
+  PROVIDERS,
+  STT_PROVIDER_LABELS,
 } from "../config";
 import { ACCEPTED_FILES, useComposer } from "../lib/composer";
 import { toggleFavoriteModel } from "../lib/modelPrefs";
 import { useChatStore } from "../store/chatStore";
-import { usePreferencesStore } from "@/modules/settings/preferences";
 
 const PROVIDER_ICON = {
   openai: ChatGptIcon,

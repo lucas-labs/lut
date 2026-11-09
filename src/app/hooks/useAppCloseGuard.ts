@@ -1,9 +1,11 @@
-import { toast } from "sonner";
-import { flushPersist } from "@/modules/ai/store/chatStore";
 import {
   type FlushResult,
   flushSessionWrites,
 } from "@/modules/ai/lib/sessions";
+import { flushPersist } from "@/modules/ai/store/chatStore";
+import { usePreferencesStore } from "@/modules/settings/preferences";
+import type { Tab } from "@/modules/tabs";
+import { leafHasForegroundProcess, leafIds } from "@/modules/terminal";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   type RefObject,
@@ -12,9 +14,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import type { Tab } from "@/modules/tabs";
-import { leafHasForegroundProcess, leafIds } from "@/modules/terminal";
+import { toast } from "sonner";
 
 async function anyTerminalBusy(tabs: Tab[]): Promise<boolean> {
   const leaves = tabs.flatMap((t) =>

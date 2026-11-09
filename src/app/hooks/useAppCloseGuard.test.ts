@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  CLOSE_FLUSH_TIMEOUT_MS,
   canOptOutOfAppClosePrompt,
+  CLOSE_FLUSH_TIMEOUT_MS,
   closeAfterFlush,
 } from "./useAppCloseGuard";
 

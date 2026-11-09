@@ -1,10 +1,10 @@
+import {
+  type WindowPresentation,
+  WindowPresentationPolicy,
+} from "@/modules/terminal/ghostty/WindowPresentationPolicy";
+import { setNativeLiveResize } from "@/modules/terminal/lib/terminalResizeGesture";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { setNativeLiveResize } from "@/modules/terminal/lib/terminalResizeGesture";
-import {
-  WindowPresentationPolicy,
-  type WindowPresentation,
-} from "@/modules/terminal/ghostty/WindowPresentationPolicy";
 
 type NativePresentation = {
   revision: number;

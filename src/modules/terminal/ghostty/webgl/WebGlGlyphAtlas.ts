@@ -6,8 +6,8 @@
 import { extendedSymbolsPending } from "@/lib/fonts";
 import { CellFlags } from "@terax/ghostty-core/protocol";
 import {
-  BuiltinGlyphRenderer,
   builtinGlyphPending,
+  BuiltinGlyphRenderer,
   builtinLineThickness,
   isBuiltinGlyph,
 } from "../gpu/BuiltinGlyphs";

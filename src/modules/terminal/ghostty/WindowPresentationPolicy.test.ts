@@ -1,8 +1,8 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   PRESENTATION_RECLAIM_DELAY_MS,
   WindowPresentationPolicy,
 } from "@/modules/terminal/ghostty/WindowPresentationPolicy";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 describe("window presentation resource policy", () => {
   afterEach(() => vi.useRealTimers());

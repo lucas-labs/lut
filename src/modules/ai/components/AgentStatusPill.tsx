@@ -2,7 +2,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { AlertCircleIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useChatStore, type AgentMeta } from "../store/chatStore";
+import { type AgentMeta,useChatStore } from "../store/chatStore";
 
 type Props = {
   onClick: () => void;

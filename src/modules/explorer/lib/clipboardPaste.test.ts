@@ -1,9 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   isPasteShortcut,
-  pasteTargetDir,
   pasteClipboardFiles,
+  pasteTargetDir,
 } from "@/modules/explorer/lib/clipboardPaste";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { invoke, toast } = vi.hoisted(() => ({
   invoke: vi.fn(),

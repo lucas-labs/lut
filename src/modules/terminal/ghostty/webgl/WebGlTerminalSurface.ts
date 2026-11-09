@@ -1,24 +1,24 @@
-import { terminalWindowFocused } from "@/modules/terminal/ghostty/renderScheduling";
-import { bindTerminalInteraction } from "@/modules/terminal/ghostty/input/terminalInteraction";
+import { isPrimaryModifierPressed } from "@/lib/platform";
+import type { TerminalSurface } from "@/modules/terminal/backend/contracts";
 import { TerminalScrollbarSync } from "@/modules/terminal/ghostty/gpu/terminalScrollbar";
+import { bindTerminalInteraction } from "@/modules/terminal/ghostty/input/terminalInteraction";
+import { terminalWindowFocused } from "@/modules/terminal/ghostty/renderScheduling";
 import {
   subscribeWindowPresentation,
   terminalWindowPresentation,
 } from "@/modules/terminal/ghostty/windowPresentation";
 import type { WindowPresentation } from "@/modules/terminal/ghostty/WindowPresentationPolicy";
-import type { TerminalSurface } from "@/modules/terminal/backend/contracts";
-import { isPrimaryModifierPressed } from "@/lib/platform";
 import { noteTerminalHostResize } from "@/modules/terminal/lib/terminalResizeGesture";
 import {
   subscribeTerminalResizeInteraction,
   terminalResizeInteractionActive,
 } from "@/modules/terminal/lib/terminalResizeInteraction";
 import { TerminalResizeSync } from "@/modules/terminal/lib/terminalResizeSync";
+import type { TerminalLinkHit } from "../core/terminalLinks";
 import {
   type DeferredTerminalLinks,
   deferTerminalLinks,
 } from "../core/terminalLinksLoader";
-import type { TerminalLinkHit } from "../core/terminalLinks";
 import type { GhosttyTerminalModelApi } from "../GhosttyTerminalModel";
 import type { GestureGrowth } from "../gpu/CanvasBackingStore";
 import { DevicePixelRatioMonitor } from "../gpu/DevicePixelRatioMonitor";
@@ -49,16 +49,16 @@ import {
 import { currentTextContrast } from "../gpu/textContrast";
 import { GhosttySearchController } from "../search/GhosttySearchController";
 import { TerminalSelectionController } from "../selection/TerminalSelectionController";
+import type {
+  WebGlCellRenderer,
+  WebGlCellRendererStats,
+} from "./WebGlCellRenderer";
 import { WebGlPoolExhaustedError } from "./WebGlPoolExhaustedError";
 import {
   getWebGlTerminalRuntime,
   type WebGlRuntimeSurface,
   type WebGlTerminalRuntime,
 } from "./WebGlTerminalRuntime";
-import type {
-  WebGlCellRenderer,
-  WebGlCellRendererStats,
-} from "./WebGlCellRenderer";
 
 const CURSOR_BLINK_MS = 600;
 const TEXT_BLINK_MS = 600;

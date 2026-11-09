@@ -1,8 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
 import {
   initializeSessionGeneration,
   type SessionInitializationState,
 } from "@/modules/terminal/ghostty/sessionInitialization";
+import { describe, expect, it, vi } from "vitest";
 
 describe("Ghostty startup failure handling", () => {
   it("reports a failed attempt once while preserving session ownership", async () => {

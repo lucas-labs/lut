@@ -3,6 +3,10 @@ import type {
   TerminalFontMetrics,
   TerminalGpuTheme,
 } from "../gpu/terminalVisuals";
+import type {
+  WebGlCellRenderer,
+  WebGlRendererProfile,
+} from "./WebGlCellRenderer";
 import { WebGlPoolExhaustedError } from "./WebGlPoolExhaustedError";
 import {
   MAX_WEBGL_RENDERER_SLOTS,
@@ -11,10 +15,6 @@ import {
   type WebGlRuntimeSurface,
   WebGlTerminalRuntime,
 } from "./WebGlTerminalRuntime";
-import type {
-  WebGlRendererProfile,
-  WebGlCellRenderer,
-} from "./WebGlCellRenderer";
 
 describe("WebGlTerminalRuntime", () => {
   it.each([true, false])(

@@ -1,5 +1,5 @@
-import { expect, it, vi } from "vitest";
 import { loadSessionRenderer } from "@/modules/terminal/ghostty/loadSessionRenderer";
+import { expect, it, vi } from "vitest";
 
 it.each(["closed", "restarted", "model replaced", "surface replaced"])(
   "ignores late renderer imports and failures when %s",

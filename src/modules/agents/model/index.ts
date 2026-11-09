@@ -12,8 +12,8 @@ export {
   reduceAgents,
 } from "./reducer";
 export {
-  AGENT_STATES,
   type Agent,
+  AGENT_STATES,
   type AgentHookEvent,
   type AgentModelEvent,
   type AgentRegistry,

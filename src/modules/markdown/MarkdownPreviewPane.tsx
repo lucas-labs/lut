@@ -1,7 +1,7 @@
 import { MarkdownCode } from "@/components/ai-elements/markdown-code";
-import { checkReadable } from "@/modules/ai/lib/security";
-import { cn } from "@/lib/utils";
 import { useAssetGrant } from "@/lib/useAssetGrant";
+import { cn } from "@/lib/utils";
+import { checkReadable } from "@/modules/ai/lib/security";
 import {
   memo,
   useCallback,
@@ -37,7 +37,7 @@ export function MarkdownPreviewPane({
   const content = status.kind === "ready" ? status.content : null;
 
   // A retargeted preview starts at the top, not at the old document's offset.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: path is the trigger.
+  // path is the trigger.
   useLayoutEffect(() => {
     scrollTopRef.current = 0;
     if (scrollRef.current) scrollRef.current.scrollTop = 0;

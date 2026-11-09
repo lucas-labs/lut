@@ -4,14 +4,14 @@ import type {
   TerminalModel,
   TerminalRowRange,
 } from "@/modules/terminal/backend/contracts";
+import type { TerminalCellReader } from "@/modules/terminal/ghostty/core/packedCells";
+import type { ViewportLinkSource } from "@/modules/terminal/ghostty/core/ViewportLinkResolver";
 import type { TeraxGhosttyGpuGlyph } from "@terax/ghostty-core/adapted";
 import type {
   GhosttyTerminalConfig,
   GhosttyTerminalEvent,
   KeyEvent,
 } from "@terax/ghostty-core/protocol";
-import type { TerminalCellReader } from "@/modules/terminal/ghostty/core/packedCells";
-import type { ViewportLinkSource } from "@/modules/terminal/ghostty/core/ViewportLinkResolver";
 
 export type GhosttyTerminalModelOptions = {
   readonly backend: Extract<TerminalBackendKind, `ghostty-${string}`>;

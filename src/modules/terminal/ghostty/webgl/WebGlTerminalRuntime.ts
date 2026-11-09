@@ -8,12 +8,12 @@ import {
   terminalFrameIntervalMs,
   terminalWindowFocused,
 } from "../renderScheduling";
-import { WebGlPoolExhaustedError } from "./WebGlPoolExhaustedError";
 import {
   rendererProfileKey,
-  type WebGlRendererProfile,
   WebGlCellRenderer,
+  type WebGlRendererProfile,
 } from "./WebGlCellRenderer";
+import { WebGlPoolExhaustedError } from "./WebGlPoolExhaustedError";
 
 /**
  * Live WebGL contexts the pool holds. Chromium and WebKit drop the oldest context of a page

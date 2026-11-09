@@ -1,7 +1,7 @@
 import { routeAgentNotification } from "@/modules/agents/lib/route";
+import type { AgentStatus } from "@/modules/agents/lib/types";
 import { useWindowFocus } from "@/modules/agents/lib/useWindowFocus";
 import { useAgentStore } from "@/modules/agents/store/agentStore";
-import type { AgentStatus } from "@/modules/agents/lib/types";
 import { useEffect, useRef } from "react";
 import { useChatStore } from "../store/chatStore";
 

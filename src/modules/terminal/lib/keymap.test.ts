@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
-
 import {
   terminalDeleteSequence,
+  type TerminalKeyEvent,
   terminalLineNavigationSequence,
   terminalReadlineSequence,
   terminalWordNavigationSequence,
-  type TerminalKeyEvent,
 } from "./keymap";
 
 const evt = (partial: Partial<TerminalKeyEvent>): TerminalKeyEvent => ({

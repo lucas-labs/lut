@@ -1,8 +1,8 @@
-import * as ghosttySession from "@/modules/terminal/ghostty/useGhosttyTerminalSession";
 import {
   ensureGhosttyBlocks,
   ghosttyBlocks,
 } from "@/modules/terminal/ghostty/ghosttyBlockSessions";
+import * as ghosttySession from "@/modules/terminal/ghostty/useGhosttyTerminalSession";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   clearFocusedTerminal,

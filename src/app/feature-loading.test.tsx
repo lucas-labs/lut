@@ -1,11 +1,11 @@
-import { createElement, type ComponentType } from "react";
+import { AiDiffStack } from "@/modules/editor/AiDiffStackLazy";
+import { EditorStack } from "@/modules/editor/EditorStackLazy";
+import { GitDiffStack } from "@/modules/editor/GitDiffStackLazy";
+import { GitHistoryStack } from "@/modules/git-history/GitHistoryStackLazy";
+import { MarkdownStack } from "@/modules/markdown/MarkdownStackLazy";
+import { type ComponentType,createElement } from "react";
 import { renderToString } from "react-dom/server";
 import { expect, it, vi } from "vitest";
-import { EditorStack } from "@/modules/editor/EditorStackLazy";
-import { AiDiffStack } from "@/modules/editor/AiDiffStackLazy";
-import { GitDiffStack } from "@/modules/editor/GitDiffStackLazy";
-import { MarkdownStack } from "@/modules/markdown/MarkdownStackLazy";
-import { GitHistoryStack } from "@/modules/git-history/GitHistoryStackLazy";
 
 const loads = vi.hoisted(() => ({
   editor: vi.fn(),

@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
-
 import {
   type InjectionTarget,
-  type ShellInputState,
   shellAcceptsInjectedCommand,
+  type ShellInputState,
   writeAtShellPrompt,
 } from "./promptInjection";
 

@@ -1,5 +1,5 @@
-import { expect, it, vi } from "vitest";
 import { useChatStore } from "@/modules/ai/store/chatStore";
+import { expect, it, vi } from "vitest";
 
 const sessions = vi.hoisted(() => ({
   loadAll: vi.fn(async () => ({ sessions: [], activeId: null })),

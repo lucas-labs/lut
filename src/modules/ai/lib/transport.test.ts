@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ProviderKeys } from "./keyring";
 import type { ToolContext } from "../tools/tools";
+import type { ProviderKeys } from "./keyring";
 
 const { native, runAgentStream, currentWorkspaceEnv } = vi.hoisted(() => ({
   currentWorkspaceEnv: vi.fn(() => ({ kind: "local" })),

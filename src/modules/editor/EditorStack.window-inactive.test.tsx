@@ -1,6 +1,6 @@
 import type { EditorTab } from "@/modules/tabs";
-import { useWindowInactive } from "@/modules/theme/WindowActivityBridge";
 import { isWindowInactive } from "@/modules/theme/windowActivity";
+import { useWindowInactive } from "@/modules/theme/WindowActivityBridge";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";

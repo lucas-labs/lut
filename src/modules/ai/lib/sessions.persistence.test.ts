@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { UIMessage } from "@ai-sdk/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type Meta = { id: string; migrate: boolean; durable: boolean };
 

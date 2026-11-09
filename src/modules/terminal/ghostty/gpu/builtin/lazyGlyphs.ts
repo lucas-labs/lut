@@ -11,15 +11,15 @@
  * characters fall back to the font.
  */
 import { notifySymbolFontsChanged } from "@/lib/fonts";
-import { SHADE_MEDIUM, fillBlock, fillFractions } from "./blockElements";
+import { fillBlock, fillFractions,SHADE_MEDIUM } from "./blockElements";
 import {
-  LINE_HEAVY,
-  LINE_LIGHT,
   diagonalUpperLeftToLowerRight,
   diagonalUpperRightToLowerLeft,
   drawLines,
+  LINE_HEAVY,
+  LINE_LIGHT,
 } from "./boxDrawing";
-import { type SpriteMask, signedArea } from "./SpriteMask";
+import { signedArea,type SpriteMask } from "./SpriteMask";
 import type { SpriteSpec } from "./spriteSpec";
 
 /** The eager drawing helpers the lazily loaded code builds on (`legacyComputing.ts`). */

@@ -17,8 +17,9 @@ import {
 import { usePreferencesStore } from "@/modules/settings/preferences";
 import type { ThemePref } from "@/modules/settings/store";
 import {
-  setAgentNotificationSound,
+  coerceTerminalRenderer,
   setAgentNotifications,
+  setAgentNotificationSound,
   setAutostart,
   setConfirmCloseRunningTerminal,
   setDefaultWorkspaceEnv,
@@ -31,13 +32,12 @@ import {
   setTerminalFontSize,
   setTerminalFontWeight,
   setTerminalLetterSpacing,
-  setTerminalScrollback,
   setTerminalMacOptionAsAlt,
-  setTerminalScrollSpeed,
-  setTerminalShell,
-  coerceTerminalRenderer,
   setTerminalRenderer,
   setTerminalScreenReader,
+  setTerminalScrollback,
+  setTerminalScrollSpeed,
+  setTerminalShell,
   setZoomLevel,
   TERMINAL_FONT_SIZES,
   TERMINAL_SCROLLBACK_PRESETS,

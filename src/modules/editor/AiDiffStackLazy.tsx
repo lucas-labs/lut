@@ -1,6 +1,6 @@
+import type { AiDiffStack as AiDiffStackType } from "@/modules/editor/AiDiffStack";
 import type { ComponentProps } from "react";
 import { lazy, Suspense } from "react";
-import type { AiDiffStack as AiDiffStackType } from "@/modules/editor/AiDiffStack";
 
 const AiDiffStackInner = lazy(() =>
   import("@/modules/editor/AiDiffStack").then((m) => ({

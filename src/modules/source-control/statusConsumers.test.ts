@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import type { SidebarViewId } from "@/modules/sidebar";
+import { describe, expect, it } from "vitest";
 import { isGitTabKind, isStatusLive, statusConsumers } from "./statusConsumers";
 
 const base = {

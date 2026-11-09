@@ -1,7 +1,7 @@
-import { useCallback, useMemo } from "react";
 import { git } from "@/modules/git";
 import type { SidebarViewId } from "@/modules/sidebar";
 import type { Tab } from "@/modules/tabs";
+import { useCallback, useMemo } from "react";
 import {
   activeRepositoryContextPath,
   gitGraphRepositoryPath,

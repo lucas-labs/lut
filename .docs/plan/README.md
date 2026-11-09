@@ -126,6 +126,13 @@ the PR; newly discovered work added to `plan.md`, synced and linked in a comment
 - UI work is blocked by a `design` issue: nothing visual is implemented before the user's design exists.
   Terax's visual components and styles are not a design baseline.
 
+### Lint warnings
+
+- `pnpm lint` has a warning budget (`--max-warnings` in `package.json`): a PR may not add warnings. A PR that removes
+  warnings lowers the budget to the new count.
+- An issue that rewrites or substantially changes a component leaves it without `react-hooks` (React Compiler)
+  warnings. The ones left after the cleanups are resolved by E09-10.
+
 ### Example
 
 ````markdown

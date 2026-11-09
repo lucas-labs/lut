@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 import {
   constraintFor,
   drawGlyph,
-  type GlyphMeasure,
   GLYPH_CONSTRAINTS,
+  type GlyphMeasure,
   IDENTITY_PLACEMENT,
   isExtendedSymbol,
   isNeighbourAware,

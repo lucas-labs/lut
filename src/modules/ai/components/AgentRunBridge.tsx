@@ -1,15 +1,15 @@
-import { useChat, type UIMessage } from "@ai-sdk/react";
+import { type UIMessage,useChat } from "@ai-sdk/react";
 import type { ToolUIPart, UIMessagePart } from "ai";
 import { useEffect, useMemo, useRef } from "react";
 import { native } from "../lib/native";
 import { checkReadable } from "../lib/security";
-import { resolvePath } from "../tools/tools";
+import { getOrCreateChat } from "../store/chatRuntime";
 import {
+  type AgentRunStatus,
   flushPersist,
   useChatStore,
-  type AgentRunStatus,
 } from "../store/chatStore";
-import { getOrCreateChat } from "../store/chatRuntime";
+import { resolvePath } from "../tools/tools";
 
 /**
  * Headless bridge that mirrors chat lifecycle into the store, so the status

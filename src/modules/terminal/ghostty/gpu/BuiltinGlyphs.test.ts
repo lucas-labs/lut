@@ -1,11 +1,11 @@
 import { beforeAll, describe, expect, it } from "vitest";
+import { loadLazyBuiltin } from "./builtin/lazyGlyphs";
 import {
   BuiltinGlyphRenderer,
   builtinGlyphSpec,
   builtinLineThickness,
   isBuiltinGlyph,
 } from "./BuiltinGlyphs";
-import { loadLazyBuiltin } from "./builtin/lazyGlyphs";
 import { deriveFontMetrics } from "./terminalVisuals";
 
 // Sextants, octants and legacy computing shapes draw from code that loads on first use.

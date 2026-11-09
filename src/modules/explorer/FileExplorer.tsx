@@ -7,6 +7,13 @@ import {
   ContextMenuShortcut,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { IS_MAC } from "@/lib/platform";
+import { cn } from "@/lib/utils";
+import type { GitStatusSnapshot } from "@/modules/git";
+import { usePreferencesStore } from "@/modules/settings/preferences";
+import { useGlobalShortcuts } from "@/modules/shortcuts";
+import type { TerminalPathDropTarget } from "@/modules/terminal";
+import { useWorkspaceEnvStore } from "@/modules/workspace";
 import {
   FileAddIcon,
   Folder01Icon,
@@ -27,40 +34,33 @@ import {
   useRef,
   useState,
 } from "react";
-import { IS_MAC } from "@/lib/platform";
-import { cn } from "@/lib/utils";
 import { ExplorerSearch, type ExplorerSearchHandle } from "./ExplorerSearch";
-import {
-  EntryRow,
-  PendingRow,
-  StatusRow,
-  type RowActions,
-  type SelectModifiers,
-} from "./TreeRow";
+import { FileIcon, FolderIcon } from "./FileIcon";
 import { InlineInput } from "./InlineInput";
+import {
+  isPasteShortcut,
+  parentDir as parentOf,
+  pasteClipboardFiles,
+  pasteTargetDir,
+} from "./lib/clipboardPaste";
 import {
   copyToClipboard,
   relativePath,
   revealInFinder,
 } from "./lib/contextActions";
-import { FileIcon, FolderIcon } from "./FileIcon";
-import {
-  isPasteShortcut,
-  pasteClipboardFiles,
-  pasteTargetDir,
-  parentDir as parentOf,
-} from "./lib/clipboardPaste";
-import { useWorkspaceEnvStore } from "@/modules/workspace";
+import type { GitStatusCode } from "./lib/gitStatusUtils";
 import { COMPACT_CONTENT, COMPACT_ITEM } from "./lib/menuItemClass";
 import { useExplorerDnd } from "./lib/useExplorerDnd";
 import { useExplorerFileDrop } from "./lib/useExplorerFileDrop";
 import { useFileTree } from "./lib/useFileTree";
 import { useGitStatus } from "./lib/useGitStatus";
-import type { GitStatusCode } from "./lib/gitStatusUtils";
-import { useGlobalShortcuts } from "@/modules/shortcuts";
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import type { GitStatusSnapshot } from "@/modules/git";
-import type { TerminalPathDropTarget } from "@/modules/terminal";
+import {
+  EntryRow,
+  PendingRow,
+  type RowActions,
+  type SelectModifiers,
+  StatusRow,
+} from "./TreeRow";
 
 export type FileExplorerHandle = {
   focus: () => void;

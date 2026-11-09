@@ -1,21 +1,21 @@
 import {
+  modelSupportsTemperature,
+  providerNeedsKey,
+  resolveModel,
+} from "@/modules/ai/config";
+import { useChatStore } from "@/modules/ai/store/chatStore";
+import {
+  invalidateDiff,
+  invalidateRepoDiffs,
+  workingDiffKey,
+} from "@/modules/editor/lib/diffCache";
+import {
   git,
   type GitChangedFile,
   type GitDiscardEntry,
   type GitRepoInfo,
   type GitStatusSnapshot,
 } from "@/modules/git";
-import { useChatStore } from "@/modules/ai/store/chatStore";
-import {
-  modelSupportsTemperature,
-  providerNeedsKey,
-  resolveModel,
-} from "@/modules/ai/config";
-import {
-  invalidateDiff,
-  invalidateRepoDiffs,
-  workingDiffKey,
-} from "@/modules/editor/lib/diffCache";
 import { usePreferencesStore } from "@/modules/settings/preferences";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SourceControlSummary } from "./useSourceControl";

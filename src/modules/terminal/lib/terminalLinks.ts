@@ -1,9 +1,6 @@
-import { invoke } from "@tauri-apps/api/core";
-import { homeDir } from "@tauri-apps/api/path";
-import { revealItemInDir } from "@tauri-apps/plugin-opener";
-import { hostname } from "@tauri-apps/plugin-os";
-import { toast } from "sonner";
 import { openExternalUrl } from "@/lib/external-link";
+import { getLspNavigator } from "@/modules/lsp/lib/navigator";
+import type { TerminalLinkHit } from "@/modules/terminal/ghostty/core/terminalLinks";
 import {
   isLocalFileHost,
   isNetworkOrDevicePath,
@@ -13,9 +10,12 @@ import {
   planLinkActivation,
   resolveLinkPath,
 } from "@/modules/terminal/ghostty/core/terminalLinkTargets";
-import type { TerminalLinkHit } from "@/modules/terminal/ghostty/core/terminalLinks";
-import { getLspNavigator } from "@/modules/lsp/lib/navigator";
 import { getWslHome, type WorkspaceEnv } from "@/modules/workspace";
+import { invoke } from "@tauri-apps/api/core";
+import { homeDir } from "@tauri-apps/api/path";
+import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import { hostname } from "@tauri-apps/plugin-os";
+import { toast } from "sonner";
 
 export type LinkActivationContext = {
   /** The pane's last reported working directory, canonical form. */

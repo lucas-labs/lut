@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import {
   ADAPTED_GHOSTTY_SCALAR_WASM_SHA256,
   ADAPTED_GHOSTTY_WASM_SHA256,
+  decodeGpuCell,
   GPU_ATTR_BLINK,
   GPU_ATTR_OVERLINE,
   GPU_ATTR_SHIFT,
@@ -13,7 +14,6 @@ import {
   GPU_GLYPH_ID_MASK,
   GPU_GLYPH_ITALIC,
   TeraxGhostty,
-  decodeGpuCell,
   type TeraxGhosttyGpuCell,
   type TeraxGhosttyGpuGlyph,
   type TeraxGhosttyGpuRenderState,

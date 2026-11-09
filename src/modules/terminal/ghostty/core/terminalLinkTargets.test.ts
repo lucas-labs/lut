@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { TerminalLinkHit } from "./terminalLinks";
 import {
   isLocalFileHost,
   linkDestinationLabel,
@@ -8,7 +9,6 @@ import {
   planLinkActivation,
   resolveLinkPath,
 } from "./terminalLinkTargets";
-import type { TerminalLinkHit } from "./terminalLinks";
 
 const hit = (
   uri: string,

@@ -1,6 +1,6 @@
+import { useWorkspaceEnvStore, workspaceScopeKey } from "@/modules/workspace";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useWorkspaceEnvStore, workspaceScopeKey } from "@/modules/workspace";
 
 /** A view grants only its displayed file or Markdown image directory. */
 export function useAssetGrant(path: string | null) {

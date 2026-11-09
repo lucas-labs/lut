@@ -2,8 +2,8 @@ import { resolveFontFamily } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 import { useShortcutHint } from "@/modules/shortcuts";
 import { useTheme } from "@/modules/theme";
-import { useEffect, useRef } from "react";
 import { runScopeHandlers } from "@codemirror/view";
+import { useEffect, useRef } from "react";
 import {
   clearLeafBlockSelection,
   getLeafDraft,

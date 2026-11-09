@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  allocateMirrorBuffer,
   GC_MIRROR_BATCH_BYTES,
   GC_MIRROR_FACTOR,
   GC_MIRROR_MAX_BYTES_PER_SECOND,
-  allocateMirrorBuffer,
   GcPressureMirror,
   gcPressureOptionsFromStorage,
   NATIVE_BYTES_PER_FRAME,

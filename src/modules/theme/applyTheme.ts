@@ -1,4 +1,4 @@
-import type { Theme, ThemeColors, ThemeMode, TerminalPalette } from "./types";
+import type { TerminalPalette,Theme, ThemeColors, ThemeMode } from "./types";
 
 const COLOR_VAR: Record<keyof ThemeColors, string> = {
   background: "--background",

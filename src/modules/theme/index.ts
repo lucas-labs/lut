@@ -1,8 +1,8 @@
-export { ThemeProvider, useTheme } from "./ThemeProvider";
 export { LivePageResizeBridge } from "./LivePageResizeBridge";
-export { WindowVibrancyBridge } from "./WindowVibrancyBridge";
-export { WindowActivityBridge } from "./WindowActivityBridge";
-export { resolveTerminalFont } from "./resolveTerminalFont";
-export { useThemeFileEditing } from "./useThemeFileEditing";
-export { listBuiltinThemes } from "./themes";
 export { resolveEditorThemeId } from "./resolveEditorTheme";
+export { resolveTerminalFont } from "./resolveTerminalFont";
+export { ThemeProvider, useTheme } from "./ThemeProvider";
+export { listBuiltinThemes } from "./themes";
+export { useThemeFileEditing } from "./useThemeFileEditing";
+export { WindowActivityBridge } from "./WindowActivityBridge";
+export { WindowVibrancyBridge } from "./WindowVibrancyBridge";

@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
 import { usePreferencesStore } from "@/modules/settings/preferences";
-import { SHORTCUTS, type ShortcutId } from "../shortcuts";
+import { useEffect, useRef } from "react";
+import { type ShortcutId,SHORTCUTS } from "../shortcuts";
 import { resolveShortcut } from "./resolveShortcut";
 
 type ShortcutHandler = (e: KeyboardEvent) => void;

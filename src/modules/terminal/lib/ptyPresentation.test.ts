@@ -1,8 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   type PtyPresentationClass,
   PtyPresentationReporter,
 } from "@/modules/terminal/lib/ptyPresentation";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("PtyPresentationReporter", () => {
   let hidden: boolean;

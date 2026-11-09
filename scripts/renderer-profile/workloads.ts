@@ -72,7 +72,7 @@ const bridge = () =>
   (window as unknown as { webkit: { messageHandlers: { native: NativeBridge } } }).webkit
     .messageHandlers.native;
 
-// biome-ignore lint/suspicious/noExplicitAny: native replies are JSON documents
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- native replies are JSON documents
 async function native(cmd: string, args: object = {}): Promise<any> {
   return JSON.parse(await bridge().postMessage({ cmd, ...args }));
 }
@@ -112,10 +112,10 @@ function installCanvasInstrumentation(): void {
   const getContext = HTMLCanvasElement.prototype.getContext;
   HTMLCanvasElement.prototype.getContext = function (
     this: HTMLCanvasElement,
-    // biome-ignore lint/suspicious/noExplicitAny: forwarding overloaded arguments
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- forwarding overloaded arguments
     ...args: any[]
   ) {
-    // biome-ignore lint/suspicious/noExplicitAny: forwarding overloaded arguments
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- forwarding overloaded arguments
     const context = (getContext as any).apply(this, args);
     if (context && args[0] === "webgpu" && !seenContexts.has(context)) {
       seenContexts.add(context);
@@ -123,15 +123,15 @@ function installCanvasInstrumentation(): void {
       contexts.register(context, 0);
     }
     return context;
-    // biome-ignore lint/suspicious/noExplicitAny: forwarding overloaded arguments
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- forwarding overloaded arguments
   } as any;
-  // biome-ignore lint/suspicious/noExplicitAny: GPUCanvasContext is not in every lib.dom
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- GPUCanvasContext is not in every lib.dom
   const prototype = (window as any).GPUCanvasContext?.prototype;
   if (!prototype) return;
   const seenTextures = new WeakSet<object>();
   const wrap = (name: string, before: (result: unknown) => void) => {
     const original = prototype[name];
-    // biome-ignore lint/suspicious/noExplicitAny: forwarding arguments
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- forwarding arguments
     prototype[name] = function (this: unknown, ...args: any[]) {
       const result = original.apply(this, args);
       before(result);

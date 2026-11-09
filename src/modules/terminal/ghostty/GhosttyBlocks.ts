@@ -1,4 +1,3 @@
-import type { GhosttyTerminalEvent } from "@terax/ghostty-core/protocol";
 import type {
   BlockContext,
   BlockMatch,
@@ -7,6 +6,7 @@ import type {
 } from "@/modules/terminal/block/lib/blockTypes";
 import type { BlockMode } from "@/modules/terminal/block/lib/modeMachine";
 import type { GhosttyTerminalModelApi } from "@/modules/terminal/ghostty/GhosttyTerminalModel";
+import type { GhosttyTerminalEvent } from "@terax/ghostty-core/protocol";
 
 const MAX_BLOCKS = 1000;
 const MAX_METADATA_UNITS = 256 * 1024;

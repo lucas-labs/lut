@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 import {
+  decodeGpuCell,
   GPU_CELL_BYTES,
   TeraxGhostty,
-  decodeGpuCell,
 } from "@terax/ghostty-core/adapted";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { AdaptedGhosttyTerminalModel } from "./AdaptedGhosttyTerminalModel";

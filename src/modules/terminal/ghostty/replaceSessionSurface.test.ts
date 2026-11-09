@@ -1,7 +1,7 @@
-import { describe, expect, it, vi } from "vitest";
+import type { GhosttyTerminalModelApi } from "@/modules/terminal/ghostty/GhosttyTerminalModel";
 import { replaceSessionSurface } from "@/modules/terminal/ghostty/replaceSessionSurface";
 import { GhosttySearchEngine } from "@/modules/terminal/ghostty/search/GhosttySearchEngine";
-import type { GhosttyTerminalModelApi } from "@/modules/terminal/ghostty/GhosttyTerminalModel";
+import { describe, expect, it, vi } from "vitest";
 
 function surface() {
   const search = {

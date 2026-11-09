@@ -1,4 +1,3 @@
-import { describe, expect, it } from "vitest";
 import {
   decodeFrames,
   encodeRequest,
@@ -6,6 +5,7 @@ import {
   PtyWireError,
   tokenBytes,
 } from "@/modules/terminal/lib/ptyWire";
+import { describe, expect, it } from "vitest";
 import { decodeRequest, encodeFrames } from "./ptyWireFixtures";
 
 describe("PTY stream wire format", () => {

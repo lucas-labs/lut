@@ -1,15 +1,15 @@
-import { homeRelativePath } from "@/lib/homeRelativePath";
 import "@/modules/terminal/block/block.css";
 
-import { writeTerminalClipboard } from "@/modules/terminal/lib/terminalClipboard";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { homeRelativePath } from "@/lib/homeRelativePath";
 import { cn } from "@/lib/utils";
 import { useChatStore } from "@/modules/ai/store/chatStore";
+import { writeTerminalClipboard } from "@/modules/terminal/lib/terminalClipboard";
 import {
   ArrowDown01Icon,
   ArrowUp01Icon,
