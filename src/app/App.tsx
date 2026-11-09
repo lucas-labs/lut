@@ -1215,17 +1215,6 @@ export default function App() {
     return () => setLspNavigator(null);
   }, [openContentHit]);
 
-  const insertHistoryCommand = useMemo(
-    () =>
-      isTerminalTab && activeLeafId !== null
-        ? (cmd: string) => {
-            writeToSession(activeLeafId, cmd);
-            terminalRefs.current.get(activeLeafId)?.focus();
-          }
-        : null,
-    [isTerminalTab, activeLeafId],
-  );
-
   useAiLiveBridge({
     setLive,
     activeId,
@@ -1446,7 +1435,6 @@ export default function App() {
             workspaceRoot={explorerRoot}
             onOpenContentHit={openContentHit}
             onOpenFile={openPaletteFile}
-            insertCommand={insertHistoryCommand}
           />
 
           <NewEditorDialog

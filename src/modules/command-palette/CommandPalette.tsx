@@ -17,13 +17,11 @@ import {
   AlertCircleIcon,
   ArrowTurnBackwardIcon,
   CommandIcon,
-  TerminalIcon,
   Tick02Icon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { COMMAND_GROUPS } from './commands';
-import { useCommandHistory } from './hooks/useCommandHistory';
 import { CONTENT_SEARCH_MIN_QUERY, useContentSearch } from './hooks/useContentSearch';
 import { useFileSearch } from './hooks/useFileSearch';
 import { fuzzyBest } from './lib/fuzzy';
@@ -41,7 +39,6 @@ type Props = {
   workspaceRoot: string | null;
   onOpenContentHit: (path: string, line: number) => void;
   onOpenFile: (path: string, target: OpenFileTarget) => void;
-  insertCommand: ((cmd: string) => void) | null;
 };
 
 const SHORTCUTS_BY_ID = new Map(SHORTCUTS.map((s) => [s.id, s]));
@@ -57,7 +54,6 @@ export function CommandPalette({
   workspaceRoot,
   onOpenContentHit,
   onOpenFile,
-  insertCommand,
 }: Props) {
   const [query, setQuery] = useState('');
   const [value, setValue] = useState('');
@@ -72,7 +68,6 @@ export function CommandPalette({
   const themeFilter = inThemes ? query.trim() : '';
 
   const content = useContentSearch(workspaceRoot, parsed.term, open && !inThemes && parsed.mode === 'content');
-  const history = useCommandHistory(parsed.term, open && !inThemes && parsed.mode === 'history');
 
   const fileTarget = useMemo(
     () => parseFileTarget(parsed.mode === 'files' ? parsed.term : ''),
@@ -179,7 +174,6 @@ export function CommandPalette({
       if (item.disabledReason) return;
       if (item.id === 'theme.pick') return enterThemes();
       if (item.id === 'search.content') return setQuery('#');
-      if (item.id === 'history.open') return setQuery('>');
       recordUse(item.id);
       runAfterClose(item.run);
     },
@@ -206,14 +200,6 @@ export function CommandPalette({
       runAfterClose(() => onOpenFile(path, target));
     },
     [fileTarget.line, fileTarget.column, onOpenFile, runAfterClose, workspaceRoot],
-  );
-
-  const runHistory = useCallback(
-    (cmd: string) => {
-      if (!insertCommand) return;
-      runAfterClose(() => insertCommand(cmd));
-    },
-    [insertCommand, runAfterClose],
   );
 
   const commitTheme = useCallback(
@@ -243,9 +229,7 @@ export function CommandPalette({
       ? 'Go to file... (add :line to jump)'
       : parsed.mode === 'content'
         ? 'Find text in files...'
-        : parsed.mode === 'history'
-          ? 'Search command history...'
-          : 'Type a command, / for files, > for history, # to find in files';
+        : 'Type a command, / for files, # to find in files';
 
   const showFiles = !inThemes && parsed.mode === 'files';
 
@@ -354,37 +338,6 @@ export function CommandPalette({
                         <span className="ml-auto max-w-64 shrink-0 truncate text-[11px] font-normal text-muted-foreground">
                           {hit.rel}:{hit.line}
                         </span>
-                      </CommandItem>
-                    ))}
-                  </AsyncBody>
-                )}
-              </CommandGroup>
-            ) : parsed.mode === 'history' ? (
-              <CommandGroup heading="Command history">
-                {!insertCommand ? (
-                  <StatusItem label="Open a terminal to run history" />
-                ) : (
-                  <AsyncBody
-                    loading={history.loading}
-                    error={history.error}
-                    empty={history.results.length === 0}
-                    emptyLabel="No history"
-                    onRetry={history.retry}
-                  >
-                    {history.results.map((cmd) => (
-                      <CommandItem
-                        key={`hist:${cmd}`}
-                        value={`hist:${cmd}`}
-                        onSelect={() => runHistory(cmd)}
-                        className="text-[12.5px]"
-                      >
-                        <HugeiconsIcon
-                          icon={TerminalIcon}
-                          size={14}
-                          strokeWidth={1.75}
-                          className="text-muted-foreground"
-                        />
-                        <span className="min-w-0 flex-1 truncate font-mono text-[11.5px]">{cmd}</span>
                       </CommandItem>
                     ))}
                   </AsyncBody>

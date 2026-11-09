@@ -10,10 +10,6 @@ describe('parseQuery', () => {
     });
   });
 
-  it('routes > to command history', () => {
-    expect(parseQuery('>git')).toMatchObject({ mode: 'history', term: 'git' });
-  });
-
   it('routes # to content search', () => {
     expect(parseQuery('# useState')).toMatchObject({
       mode: 'content',
@@ -40,7 +36,6 @@ describe('parseQuery', () => {
   });
 
   it('keeps the other sigils working from the files base', () => {
-    expect(parseQuery('>git', 'files')).toMatchObject({ mode: 'history' });
     expect(parseQuery('#todo', 'files')).toMatchObject({
       mode: 'content',
       term: 'todo',

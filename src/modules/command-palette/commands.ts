@@ -232,15 +232,6 @@ export function createCommandItems(ctx: CommandPaletteActionContext): PaletteIte
       run: noop,
     },
     {
-      id: 'history.open',
-      title: 'Search command history',
-      group: 'Search',
-      keywords: ['history', 'shell', 'rerun', 'previous commands'],
-      icon: TerminalIcon,
-      trailing: '>',
-      run: noop,
-    },
-    {
       id: 'search.focus',
       title: 'Find in current tab',
       group: 'Search',

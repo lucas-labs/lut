@@ -11,7 +11,6 @@ const PREFIXES: ReadonlyArray<{
   mode: PaletteMode;
   bases: readonly PaletteBase[];
 }> = [
-  { sigil: '>', mode: 'history', bases: ['commands', 'files'] },
   { sigil: '#', mode: 'content', bases: ['commands', 'files'] },
   { sigil: '?', mode: 'help', bases: ['commands', 'files'] },
   { sigil: '/', mode: 'files', bases: ['commands'] },
@@ -36,6 +35,5 @@ export const MODE_HINTS: ReadonlyArray<{
   bases: readonly PaletteBase[];
 }> = [
   { sigil: '/', label: 'Go to file', bases: ['commands'] },
-  { sigil: '>', label: 'Search command history', bases: ['commands', 'files'] },
   { sigil: '#', label: 'Find text in files', bases: ['commands', 'files'] },
 ];
