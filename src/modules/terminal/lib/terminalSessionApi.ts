@@ -1,12 +1,17 @@
 import type { BlockMode } from "@/modules/terminal/block/lib/modeMachine";
 import {
+  disposeGhosttyBlocks,
+  ensureGhosttyBlocks,
+  ghosttyBlocks,
+} from "@/modules/terminal/ghostty/ghosttyBlockSessions";
+import {
   clearGhosttySession,
   disposeGhosttySession,
   focusGhosttySession,
+  ghosttyCwdForLeaf,
   ghosttyFocusedLeaf,
   ghosttyLeafHasForegroundProcess,
   ghosttyLeafIdForPty,
-  ghosttyCwdForLeaf,
   ghosttyPtyIdForLeaf,
   ghosttySelectionForLeaf,
   hasGhosttySession,
@@ -16,14 +21,9 @@ import {
   whenGhosttySessionReady,
   writeToGhosttySession,
 } from "@/modules/terminal/ghostty/useGhosttyTerminalSession";
-import {
-  disposeGhosttyBlocks,
-  ensureGhosttyBlocks,
-  ghosttyBlocks,
-} from "@/modules/terminal/ghostty/ghosttyBlockSessions";
 export type { WatermarkState } from "@/modules/terminal/ghostty/ghosttyBlockSessions";
-import { forgetLeafPresentation } from "@/modules/terminal/lib/ptyPresentation";
 import type { WatermarkState } from "@/modules/terminal/ghostty/ghosttyBlockSessions";
+import { forgetLeafPresentation } from "@/modules/terminal/lib/ptyPresentation";
 
 export async function whenSessionReady(
   leafId: number,

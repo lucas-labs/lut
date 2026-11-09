@@ -1,7 +1,7 @@
 import { changedTerminalText } from "@/modules/terminal/ghostty/core/accessibleTerminalText";
-import { useEffect, useEffectEvent, useState } from "react";
 import type { GhosttyTerminalModelApi } from "@/modules/terminal/ghostty/GhosttyTerminalModel";
 import { subscribeWindowPresentation } from "@/modules/terminal/ghostty/windowPresentation";
+import { useEffect, useEffectEvent, useState } from "react";
 
 export default function TerminalAccessibleOutput({
   model,

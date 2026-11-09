@@ -4,8 +4,8 @@ import {
   BACKLOG_THRESHOLD,
   GLYPH_EVICTED,
   GLYPH_PENDING,
-  TerminalGlyphMap,
   type GlyphResolver,
+  TerminalGlyphMap,
 } from "./GlyphMap";
 
 class FakeAtlas implements GlyphResolver {

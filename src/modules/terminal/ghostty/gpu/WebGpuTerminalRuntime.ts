@@ -1,23 +1,23 @@
 import { smoothHooks } from "@/bench/smoothHooks";
-import { subscribeTerminalResizeInteraction } from "@/modules/terminal/lib/terminalResizeInteraction";
 import { SurfaceFramePacer } from "@/modules/terminal/ghostty/SurfaceFramePacer";
 import {
   subscribeWindowPresentation,
   terminalWindowPresentation,
 } from "@/modules/terminal/ghostty/windowPresentation";
 import type { WindowPresentation } from "@/modules/terminal/ghostty/WindowPresentationPolicy";
+import { subscribeTerminalResizeInteraction } from "@/modules/terminal/lib/terminalResizeInteraction";
 import {
   bindTerminalWindowFocus,
   terminalFrameIntervalMs,
   terminalWindowFocused,
 } from "../renderScheduling";
-import { GlyphAtlas } from "./GlyphAtlas";
-import type { RasterBudget } from "./GlyphMap";
 import {
   GcPressureMirror,
   gcPressureOptionsFromStorage,
   type GcPressureStats,
 } from "./GcPressure";
+import { GlyphAtlas } from "./GlyphAtlas";
+import type { RasterBudget } from "./GlyphMap";
 import { BACKGROUND_SHADER, GLYPH_SHADER } from "./shaders";
 import type { TerminalFontMetrics } from "./terminalVisuals";
 import {
@@ -27,8 +27,8 @@ import {
   type WindowCanvasConfiguration,
   type WindowCanvasPane,
   type WindowCanvasStats,
-  type WindowFrameStart,
   windowFrameNeeded,
+  type WindowFrameStart,
 } from "./WebGpuWindowCanvas";
 
 const MAX_ATLAS_COUNT = 8;

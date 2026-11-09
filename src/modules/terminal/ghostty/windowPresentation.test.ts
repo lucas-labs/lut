@@ -1,9 +1,9 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { terminalResizeInteractionActive } from "@/modules/terminal/lib/terminalResizeInteraction";
 import {
   subscribeWindowPresentation,
   terminalWindowPresentation,
 } from "@/modules/terminal/ghostty/windowPresentation";
+import { terminalResizeInteractionActive } from "@/modules/terminal/lib/terminalResizeInteraction";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 const bridge = vi.hoisted(() => ({ listen: vi.fn(), invoke: vi.fn() }));
 vi.mock("@tauri-apps/api/window", () => ({

@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
-import { beforeAll, describe, expect, it } from "vitest";
 import { TeraxGhostty } from "@terax/ghostty-core/adapted";
+import { beforeAll, describe, expect, it } from "vitest";
 
 const bytes = (text: string) => new TextEncoder().encode(text);
 

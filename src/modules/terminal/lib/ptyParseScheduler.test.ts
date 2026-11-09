@@ -1,5 +1,5 @@
-import { afterEach, expect, it, vi } from "vitest";
 import { schedulePtyParse } from "@/modules/terminal/lib/ptyParseScheduler";
+import { afterEach, expect, it, vi } from "vitest";
 
 afterEach(() => vi.unstubAllGlobals());
 

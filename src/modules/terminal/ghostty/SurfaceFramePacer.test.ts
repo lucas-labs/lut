@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import { SurfaceFramePacer } from "@/modules/terminal/ghostty/SurfaceFramePacer";
+import { describe, expect, it } from "vitest";
 
 describe("per-pane frame pacing", () => {
   it("gives only the interacting pane foreground cadence while the window is unfocused", () => {

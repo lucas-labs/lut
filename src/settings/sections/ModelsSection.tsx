@@ -18,28 +18,28 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import {
-  type CustomEndpoint,
   compatModelIdForEndpoint,
+  type CustomEndpoint,
   DEFAULT_MODEL_ID,
   getAutocompleteEligibleModels,
   getCompatModelInfo,
   getModel,
   getProvider,
   isCompatModelId,
-  MODELS,
   type ModelId,
-  PROVIDERS,
+  MODELS,
   type ProviderId,
   type ProviderInfo,
   providerNeedsKey,
+  PROVIDERS,
   STT_PROVIDER_LABELS,
   type SttProvider,
   WHISPERCPP_DEFAULT_BASE_URL,
 } from "@/modules/ai/config";
 import {
-  type CustomEndpointKeys,
   clearCustomEndpointKey,
   clearKey,
+  type CustomEndpointKeys,
   getAllCustomEndpointKeys,
   getAllKeys,
   setCustomEndpointKey,

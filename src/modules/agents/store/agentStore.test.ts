@@ -1,6 +1,6 @@
 ﻿import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { nextAttentionTarget, useAgentStore } from "./agentStore";
 import type { AgentNotification } from "../lib/types";
+import { nextAttentionTarget, useAgentStore } from "./agentStore";
 
 describe("agent session store", () => {
   beforeEach(() => {

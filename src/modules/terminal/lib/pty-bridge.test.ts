@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PtyFrame } from "@/modules/terminal/lib/ptyWire";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { decodeRequest, encodeFrames } from "./ptyWireFixtures";
 
 type Request = {

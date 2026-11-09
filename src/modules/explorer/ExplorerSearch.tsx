@@ -1,5 +1,3 @@
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -7,6 +5,11 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+import { usePreferencesStore } from "@/modules/settings/preferences";
+import { currentWorkspaceEnv } from "@/modules/workspace";
 import {
   Cancel01Icon,
   Folder01Icon,
@@ -14,7 +17,6 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { invoke } from "@tauri-apps/api/core";
-import { currentWorkspaceEnv } from "@/modules/workspace";
 import {
   forwardRef,
   useEffect,
@@ -22,11 +24,9 @@ import {
   useRef,
   useState,
 } from "react";
-import { usePreferencesStore } from "@/modules/settings/preferences";
 import { FileIcon } from "./FileIcon";
 import { copyToClipboard, revealInFinder } from "./lib/contextActions";
 import { COMPACT_CONTENT, COMPACT_ITEM } from "./lib/menuItemClass";
-import { cn } from "@/lib/utils";
 
 type SearchHit = {
   path: string;

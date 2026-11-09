@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import type { Tab } from "@/modules/tabs";
+import { describe, expect, it } from "vitest";
 import {
   type CommandPaletteActionContext,
   createCommandItems,

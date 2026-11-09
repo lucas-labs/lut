@@ -1,13 +1,13 @@
-import { type RefObject, useEffect, useRef } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { useManagedAgentsStore } from "@/modules/agents/store/managedAgentsStore";
+import type { Tab } from "@/modules/tabs";
 import {
   findLeafCwd,
   type TerminalPaneHandle,
   whenSessionReady,
   writeToSession,
 } from "@/modules/terminal";
-import type { Tab } from "@/modules/tabs";
+import { invoke } from "@tauri-apps/api/core";
+import { type RefObject, useEffect, useRef } from "react";
 import type { Live } from "../store/chatStore";
 import { redactSensitive } from "./redact";
 

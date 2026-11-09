@@ -1,7 +1,7 @@
 import { Popover, PopoverAnchor } from "@/components/ui/popover";
 import { Spinner } from "@/components/ui/spinner";
-import { cn } from "@/lib/utils";
 import { usePresence } from "@/lib/usePresence";
+import { cn } from "@/lib/utils";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useWorkspaceFiles } from "../hooks/useWorkspaceFiles";
 import { useComposer } from "../lib/composer";
@@ -10,7 +10,7 @@ import { useChatStore } from "../store/chatStore";
 import { useSnippetsStore } from "../store/snippetsStore";
 import { AgentSwitcher } from "./AgentSwitcher";
 import { FilePickerContent } from "./FilePicker";
-import { SnippetPickerContent, type PickerItem } from "./SnippetPicker";
+import { type PickerItem,SnippetPickerContent } from "./SnippetPicker";
 
 type SnippetTrigger = {
   start: number;

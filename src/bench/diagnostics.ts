@@ -1,5 +1,5 @@
-import { terminalDebugStats } from "@/modules/terminal/lib/terminalDiagnostics";
 import type { Tab } from "@/modules/tabs";
+import { terminalDebugStats } from "@/modules/terminal/lib/terminalDiagnostics";
 import { drainEventLog, listenerCensus } from "./eventLog";
 import { gpuCounters } from "./gpuCounters";
 

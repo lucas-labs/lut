@@ -1,6 +1,6 @@
 import type { LinkOverlay } from "./TerminalLinkInteraction";
-import { linkDestinationLabel } from "./terminalLinkTargets";
 import type { TerminalLinkHit } from "./terminalLinks";
+import { linkDestinationLabel } from "./terminalLinkTargets";
 
 export type LinkUnderlineGeometry = {
   readonly cellWidth: number;

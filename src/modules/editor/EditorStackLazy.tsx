@@ -1,6 +1,6 @@
+import type { EditorStack as EditorStackType } from "@/modules/editor/EditorStack";
 import type { ComponentProps } from "react";
 import { lazy, Suspense } from "react";
-import type { EditorStack as EditorStackType } from "@/modules/editor/EditorStack";
 
 const EditorStackInner = lazy(() =>
   import("@/modules/editor/EditorStack").then((m) => ({

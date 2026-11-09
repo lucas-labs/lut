@@ -1,6 +1,6 @@
-import { lazy, Suspense } from "react";
-import type { ComponentProps } from "react";
 import type { GitHistoryStack as GitHistoryStackType } from "@/modules/git-history/GitHistoryStack";
+import type { ComponentProps } from "react";
+import { lazy, Suspense } from "react";
 
 const GitHistoryStackInner = lazy(() =>
   import("@/modules/git-history/GitHistoryStack").then((m) => ({

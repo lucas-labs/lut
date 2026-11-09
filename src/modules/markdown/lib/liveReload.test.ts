@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createCoalescer, touchesPath, type Timers } from "./liveReload";
+import { createCoalescer, type Timers,touchesPath } from "./liveReload";
 
 function fakeTimers() {
   let time = 0;

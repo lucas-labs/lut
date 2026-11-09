@@ -1,10 +1,10 @@
-import { describe, expect, it } from "vitest";
 import {
   firstLeafSlotId,
   leafIds,
-  swapLeafInDirection,
   type PaneNode,
+  swapLeafInDirection,
 } from "@/modules/terminal/lib/panes";
+import { describe, expect, it } from "vitest";
 
 function row(...ids: number[]): PaneNode {
   return {

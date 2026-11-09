@@ -7,7 +7,7 @@ import { parseWorkspaceScopeKey, type WorkspaceEnv } from "@/modules/workspace";
 import { useEffect, useRef } from "react";
 import { activeSpaceEnv, freshTabCwd } from "./activeSpace";
 import { freshTerminalTab, hydrateTabs } from "./serialize";
-import { loadAll, type SpaceMeta, saveActiveId, saveSpacesList } from "./store";
+import { loadAll, saveActiveId, saveSpacesList,type SpaceMeta } from "./store";
 import { useSpaces } from "./useSpaces";
 
 type Params = {

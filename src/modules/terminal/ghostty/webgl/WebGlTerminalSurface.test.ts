@@ -1,14 +1,14 @@
+import type { GhosttyTerminalModelApi } from "@/modules/terminal/ghostty/GhosttyTerminalModel";
+import { TERMINAL_RIGHT_GUTTER_CSS_PX } from "@/modules/terminal/ghostty/gpu/TerminalFit";
+import type { WebGlCellRenderer } from "@/modules/terminal/ghostty/webgl/WebGlCellRenderer";
+import { WebGlPoolExhaustedError } from "@/modules/terminal/ghostty/webgl/WebGlPoolExhaustedError";
+import { WebGlTerminalSurface } from "@/modules/terminal/ghostty/webgl/WebGlTerminalSurface";
+import type { WindowPresentation } from "@/modules/terminal/ghostty/WindowPresentationPolicy";
 import {
   beginTerminalResizeInteraction,
   endTerminalResizeInteraction,
 } from "@/modules/terminal/lib/terminalResizeInteraction";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { GhosttyTerminalModelApi } from "@/modules/terminal/ghostty/GhosttyTerminalModel";
-import type { WindowPresentation } from "@/modules/terminal/ghostty/WindowPresentationPolicy";
-import type { WebGlCellRenderer } from "@/modules/terminal/ghostty/webgl/WebGlCellRenderer";
-import { TERMINAL_RIGHT_GUTTER_CSS_PX } from "@/modules/terminal/ghostty/gpu/TerminalFit";
-import { WebGlPoolExhaustedError } from "@/modules/terminal/ghostty/webgl/WebGlPoolExhaustedError";
-import { WebGlTerminalSurface } from "@/modules/terminal/ghostty/webgl/WebGlTerminalSurface";
 
 const bridge = vi.hoisted(() => ({
   runtime: {} as unknown,

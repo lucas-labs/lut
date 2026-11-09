@@ -1,11 +1,11 @@
 import { readFile } from "node:fs/promises";
-import { beforeAll, describe, expect, it, vi } from "vitest";
-import { TeraxGhostty } from "@terax/ghostty-core/adapted";
 import { AdaptedGhosttyTerminalModel } from "@/modules/terminal/ghostty/AdaptedGhosttyTerminalModel";
 import {
   GhosttyBlocks,
   matchCellText,
 } from "@/modules/terminal/ghostty/GhosttyBlocks";
+import { TeraxGhostty } from "@terax/ghostty-core/adapted";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 describe.each(["ghostty-vt", "ghostty-vt-scalar"])(
   "Ghostty command blocks (%s)",

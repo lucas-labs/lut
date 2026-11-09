@@ -1,10 +1,10 @@
-import { describe, expect, it, vi } from "vitest";
 import type { GhosttyTerminalModelApi } from "@/modules/terminal/ghostty/GhosttyTerminalModel";
 import {
   isClampedScrollEcho,
   type ScrollbarClock,
   TerminalScrollbarSync,
 } from "@/modules/terminal/ghostty/gpu/terminalScrollbar";
+import { describe, expect, it, vi } from "vitest";
 
 class FakeClock implements ScrollbarClock {
   time = 0;

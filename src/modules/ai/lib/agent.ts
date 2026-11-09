@@ -1,12 +1,13 @@
 import {
   convertToModelMessages,
+  type LanguageModel,
   pruneMessages,
   stepCountIs,
   streamText,
-  type LanguageModel,
   type UIMessage,
 } from "ai";
 import {
+  type CustomEndpoint,
   DEFAULT_MODEL_ID,
   endpointIdFromCompatModel,
   getModelContextLimit,
@@ -16,15 +17,14 @@ import {
   MLX_DEFAULT_BASE_URL,
   modelKeepsReasoning,
   OLLAMA_DEFAULT_BASE_URL,
+  type ProviderId,
   providerNeedsKey,
   resolveModel,
   selectSystemPrompt,
-  type CustomEndpoint,
-  type ProviderId,
 } from "../config";
 import { buildTools, type ToolContext } from "../tools/tools";
 import { compactModelMessagesDetailed } from "./compact";
-import type { ProviderKeys, CustomEndpointKeys } from "./keyring";
+import type { CustomEndpointKeys,ProviderKeys } from "./keyring";
 import { prepareAgentPrompt } from "./prompt";
 import { createProxyFetch } from "./proxyFetch";
 

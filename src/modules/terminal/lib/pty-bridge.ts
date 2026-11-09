@@ -1,10 +1,11 @@
+import type { TerminalGpuTheme } from "@/modules/terminal/ghostty/gpu/terminalVisuals";
 import {
   clearAgentActivity,
   ensureAgentActivityListener,
 } from "@/modules/terminal/lib/agentActivity";
 import {
-  type PtyStreamTransport,
   PtyOutputHub,
+  type PtyStreamTransport,
 } from "@/modules/terminal/lib/PtyOutputHub";
 import {
   PtyOutputReceiver,
@@ -17,7 +18,6 @@ import {
   unbindLeafPty,
 } from "@/modules/terminal/lib/ptyPresentation";
 import { tokenBytes } from "@/modules/terminal/lib/ptyWire";
-import type { TerminalGpuTheme } from "@/modules/terminal/ghostty/gpu/terminalVisuals";
 import { currentWorkspaceEnv } from "@/modules/workspace";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";

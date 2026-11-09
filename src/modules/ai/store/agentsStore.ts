@@ -1,12 +1,12 @@
 import { emit, listen } from "@tauri-apps/api/event";
 import { create } from "zustand";
 import {
+  type Agent,
   BUILTIN_AGENTS,
   loadAgents,
   newAgentId,
   saveActiveAgentId,
   saveCustomAgents,
-  type Agent,
 } from "../lib/agents";
 
 const CHANGED_EVENT = "terax://ai-agents-changed";

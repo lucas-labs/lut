@@ -1,4 +1,4 @@
-import { type GitDiffContentResult, git } from "@/modules/git";
+import { git,type GitDiffContentResult } from "@/modules/git";
 import { currentWorkspaceScopeKey } from "@/modules/workspace";
 
 const DIFF_CACHE_LIMIT = 6;

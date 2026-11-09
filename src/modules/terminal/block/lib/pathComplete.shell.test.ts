@@ -1,6 +1,6 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { describe, expect, it } from "vitest";
 import { escapeForShell, unescapeForShell } from "@/lib/shellQuote";
+import { describe, expect, it } from "vitest";
 
 const names = [
   "My Folder/notes file.txt",

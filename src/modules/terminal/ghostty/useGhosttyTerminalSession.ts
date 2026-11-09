@@ -1,13 +1,3 @@
-import { loadSessionRenderer } from "@/modules/terminal/ghostty/loadSessionRenderer";
-import { currentWorkspaceEnv, workspaceScopeKey } from "@/modules/workspace";
-import { useSpaces } from "@/modules/spaces/lib/useSpaces";
-import {
-  ensureGhosttyBlocks,
-  ghosttyBlocks,
-  disposeGhosttyBlocks,
-} from "@/modules/terminal/ghostty/ghosttyBlockSessions";
-import { initializeSessionGeneration as startSessionInitialization } from "@/modules/terminal/ghostty/sessionInitialization";
-import { replaceSessionSurface } from "@/modules/terminal/ghostty/replaceSessionSurface";
 import {
   ensureMonoFontsLoaded,
   resolveFontFamily,
@@ -15,11 +5,22 @@ import {
   symbolFontEpoch,
 } from "@/lib/fonts";
 import { usePreferencesStore } from "@/modules/settings/preferences";
+import { useSpaces } from "@/modules/spaces/lib/useSpaces";
 import type { TerminalBackendKind } from "@/modules/terminal/backend/contracts";
+import {
+  disposeGhosttyBlocks,
+  ensureGhosttyBlocks,
+  ghosttyBlocks,
+} from "@/modules/terminal/ghostty/ghosttyBlockSessions";
+import { loadSessionRenderer } from "@/modules/terminal/ghostty/loadSessionRenderer";
+import { replaceSessionSurface } from "@/modules/terminal/ghostty/replaceSessionSurface";
+import { initializeSessionGeneration as startSessionInitialization } from "@/modules/terminal/ghostty/sessionInitialization";
+import { LatestClipboardWrite } from "@/modules/terminal/lib/LatestClipboardWrite";
 import { setLeafPresentation } from "@/modules/terminal/lib/ptyPresentation";
 import { PtyResizeDelivery } from "@/modules/terminal/lib/ptyResizeDelivery";
 import { useTerminalFont } from "@/modules/terminal/lib/useTerminalFont";
 import type { TerminalSearchController } from "@/modules/terminal/search/TerminalSearchController";
+import { currentWorkspaceEnv, workspaceScopeKey } from "@/modules/workspace";
 import { invoke } from "@tauri-apps/api/core";
 import {
   useCallback,
@@ -32,7 +33,6 @@ import {
 import { isAgentActivePty } from "../lib/agentActivity";
 import { openPty, type PtySession } from "../lib/pty-bridge";
 import { writeTerminalClipboard } from "../lib/terminalClipboard";
-import { LatestClipboardWrite } from "@/modules/terminal/lib/LatestClipboardWrite";
 import { GhosttySemanticEventRouter } from "./core/GhosttySemanticEventRouter";
 import { getGhosttyCoreRuntime } from "./GhosttyCoreRuntime";
 import type { GhosttyTerminalModelApi } from "./GhosttyTerminalModel";

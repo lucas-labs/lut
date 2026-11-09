@@ -12,8 +12,8 @@ import { MAC_DEFAULTS, WIN_LINUX_DEFAULTS } from "./shortcutDefaults";
 import {
   type KeyBinding,
   matchBinding,
-  SHORTCUTS,
   type ShortcutId,
+  SHORTCUTS,
   tabDigit,
 } from "./shortcuts";
 

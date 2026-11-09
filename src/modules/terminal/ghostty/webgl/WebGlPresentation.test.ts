@@ -1,6 +1,6 @@
-import { afterEach, expect, it, vi } from "vitest";
-import { WebGlCellRenderer } from "@/modules/terminal/ghostty/webgl/WebGlCellRenderer";
 import type { GhosttyTerminalModelApi } from "@/modules/terminal/ghostty/GhosttyTerminalModel";
+import { WebGlCellRenderer } from "@/modules/terminal/ghostty/webgl/WebGlCellRenderer";
+import { afterEach, expect, it, vi } from "vitest";
 
 afterEach(() => vi.unstubAllGlobals());
 

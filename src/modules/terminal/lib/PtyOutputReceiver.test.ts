@@ -1,9 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PtyOutputReceiver } from "@/modules/terminal/lib/PtyOutputReceiver";
 import {
   PTY_WINDOW_BYTES,
   PTY_WINDOW_CHUNKS,
 } from "@/modules/terminal/lib/ptyWire";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 function deferred() {
   let resolve!: () => void;

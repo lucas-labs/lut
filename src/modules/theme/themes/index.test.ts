@@ -1,10 +1,10 @@
-import { describe, expect, it } from "vitest";
-import { DEFAULT_THEME_ID } from "@/modules/theme/types";
 import {
   getBuiltinTheme,
   getDefaultTheme,
   listBuiltinThemes,
 } from "@/modules/theme/themes/index";
+import { DEFAULT_THEME_ID } from "@/modules/theme/types";
+import { describe, expect, it } from "vitest";
 
 describe("builtin theme registry", () => {
   it("exposes a non-empty list of themes", () => {

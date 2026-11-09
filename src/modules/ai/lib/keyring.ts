@@ -1,11 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
 import {
+  type CustomEndpoint,
   getProvider,
   KEYRING_SERVICE,
+  type ProviderId,
   PROVIDERS,
   providerSupportsKey,
-  type CustomEndpoint,
-  type ProviderId,
 } from "../config";
 
 export type ProviderKeys = Record<ProviderId, string | null>;

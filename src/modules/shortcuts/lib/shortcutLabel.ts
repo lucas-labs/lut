@@ -1,6 +1,6 @@
 import { fmtShortcut } from "@/lib/platform";
 import { usePreferencesStore } from "@/modules/settings/preferences";
-import { getBindingTokens, SHORTCUTS, type ShortcutId } from "../shortcuts";
+import { getBindingTokens, type ShortcutId,SHORTCUTS } from "../shortcuts";
 
 const BY_ID = new Map(SHORTCUTS.map((s) => [s.id, s]));
 

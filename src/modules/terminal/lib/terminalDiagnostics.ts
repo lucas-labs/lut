@@ -1,19 +1,19 @@
-import { BoundedResourceTrace } from "@/modules/terminal/lib/BoundedResourceTrace";
-import { subscribeWindowPresentation } from "@/modules/terminal/ghostty/windowPresentation";
-import { invoke } from "@tauri-apps/api/core";
 import { usePreferencesStore } from "@/modules/settings/preferences";
 import { terminalRendererReport } from "@/modules/terminal/backend/selection";
-import { supportsWasmSimd } from "@terax/ghostty-core/adapted";
 import { ghosttyCoreRuntimeDiagnostics } from "@/modules/terminal/ghostty/GhosttyCoreRuntime";
 import { webGpuTerminalRuntimeDiagnostics } from "@/modules/terminal/ghostty/gpu/WebGpuTerminalRuntime";
-import { webGlTerminalRuntimeDiagnostics } from "@/modules/terminal/ghostty/webgl/WebGlTerminalRuntime";
 import {
   ghosttySessionDiagnostics,
   ghosttySessionResourceTotals,
 } from "@/modules/terminal/ghostty/sessionDiagnostics";
+import { webGlTerminalRuntimeDiagnostics } from "@/modules/terminal/ghostty/webgl/WebGlTerminalRuntime";
+import { subscribeWindowPresentation } from "@/modules/terminal/ghostty/windowPresentation";
+import { windowPresentationDiagnostics } from "@/modules/terminal/ghostty/windowPresentation";
+import { BoundedResourceTrace } from "@/modules/terminal/lib/BoundedResourceTrace";
 import { ptyTransportDiagnostics } from "@/modules/terminal/lib/pty-bridge";
 import { terminalResizeInteractionActive } from "@/modules/terminal/lib/terminalResizeInteraction";
-import { windowPresentationDiagnostics } from "@/modules/terminal/ghostty/windowPresentation";
+import { invoke } from "@tauri-apps/api/core";
+import { supportsWasmSimd } from "@terax/ghostty-core/adapted";
 import { terminalCanvasDiagnostics } from "./canvasDiagnostics";
 
 export function terminalDebugStats() {

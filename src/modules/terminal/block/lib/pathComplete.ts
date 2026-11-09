@@ -8,7 +8,7 @@ import {
 } from "@codemirror/autocomplete";
 import { invoke } from "@tauri-apps/api/core";
 import { usesWindowsShell } from "./shellSyntax";
-import { shellWordAt, type ShellWord } from "./shellWord";
+import { type ShellWord,shellWordAt } from "./shellWord";
 
 type DirEntry = { name: string; kind: "file" | "dir" | "symlink" };
 type PathParts = { directory: string; prefix: string };

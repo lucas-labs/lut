@@ -1,13 +1,12 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import type { WebGpuRuntimeSurface } from "./WebGpuTerminalRuntime";
-import { WebGpuTerminalRuntime } from "./WebGpuTerminalRuntime";
-import type { CssRect } from "./PaneRects";
-
+import { resetTerminalResizeGestureForTest } from "@/modules/terminal/lib/terminalResizeGesture";
 import {
   beginTerminalResizeInteraction,
   endTerminalResizeInteraction,
 } from "@/modules/terminal/lib/terminalResizeInteraction";
-import { resetTerminalResizeGestureForTest } from "@/modules/terminal/lib/terminalResizeGesture";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type { CssRect } from "./PaneRects";
+import type { WebGpuRuntimeSurface } from "./WebGpuTerminalRuntime";
+import { WebGpuTerminalRuntime } from "./WebGpuTerminalRuntime";
 
 const GESTURE = {};
 const runtimes: WebGpuTerminalRuntime[] = [];

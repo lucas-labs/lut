@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
 import { resetTerminalResizeGestureForTest } from "@/modules/terminal/lib/terminalResizeGesture";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CssRect } from "./PaneRects";
 import {
   findTerminalArea,

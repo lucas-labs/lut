@@ -1,6 +1,6 @@
-import { lazy, Suspense } from "react";
-import type { ComponentProps } from "react";
 import type { MarkdownStack as MarkdownStackType } from "@/modules/markdown/MarkdownStack";
+import type { ComponentProps } from "react";
+import { lazy, Suspense } from "react";
 
 const MarkdownStackInner = lazy(() =>
   import("@/modules/markdown/MarkdownStack").then((m) => ({

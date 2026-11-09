@@ -1,8 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
 import {
   shouldDisableAskSelection,
   shouldDisablePaneSwapShortcut,
 } from "@/modules/shortcuts/lib/shortcutScope";
+import { describe, expect, it, vi } from "vitest";
 
 describe("shouldDisablePaneSwapShortcut", () => {
   it.each([

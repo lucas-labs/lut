@@ -1,12 +1,12 @@
+import { currentWorkspaceEnv } from "@/modules/workspace";
 import type { UIMessage } from "@ai-sdk/react";
 import type { CustomEndpoint } from "../config";
-import { runAgentStream, type AgentUsageDelta } from "./agent";
-import type { ProviderKeys, CustomEndpointKeys } from "./keyring";
+import type { ToolContext } from "../tools/tools";
+import { type AgentUsageDelta,runAgentStream } from "./agent";
 import { formatAiError } from "./errors";
-import { currentWorkspaceEnv } from "@/modules/workspace";
+import type { CustomEndpointKeys,ProviderKeys } from "./keyring";
 import { native } from "./native";
 import { checkReadable } from "./security";
-import type { ToolContext } from "../tools/tools";
 
 async function readTeraxMd(
   workspaceRoot: string | null,

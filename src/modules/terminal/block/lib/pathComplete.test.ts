@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { CompletionContext, type Completion } from "@codemirror/autocomplete";
+import { type Completion,CompletionContext } from "@codemirror/autocomplete";
 import { EditorState } from "@codemirror/state";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { invoke, platform, workspace } = vi.hoisted(() => ({
   invoke: vi.fn(),

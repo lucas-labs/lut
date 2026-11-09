@@ -5,8 +5,8 @@ import { AdaptedGhosttyTerminalModel } from "../AdaptedGhosttyTerminalModel";
 import type { GhosttyGpuFrame } from "../GhosttyTerminalModel";
 import {
   GLYPH_EVICTED,
-  TerminalGlyphMap,
   type GlyphResolver,
+  TerminalGlyphMap,
 } from "./GlyphMap";
 
 const encoder = new TextEncoder();

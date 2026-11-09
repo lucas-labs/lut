@@ -1,9 +1,9 @@
+import { usePreferencesStore } from "@/modules/settings/preferences";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useChatStore } from "../store/chatStore";
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import { transcribeAudio, type SttOptions } from "../lib/stt";
 import type { SttProvider } from "../config";
+import { type SttOptions,transcribeAudio } from "../lib/stt";
+import { useChatStore } from "../store/chatStore";
 
 const MIME_CANDIDATES = [
   "audio/webm;codecs=opus",

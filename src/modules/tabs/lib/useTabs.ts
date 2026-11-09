@@ -12,17 +12,17 @@ import {
   type PaneDirection,
   type PaneNode,
   removeLeaf,
-  type SplitDir,
   setLeafCwd as setLeafCwdInTree,
   siblingLeafOf,
+  type SplitDir,
   splitLeaf,
   swapLeafInDirection,
 } from "@/modules/terminal/lib/panes";
 import { disposeSession } from "@/modules/terminal/lib/terminalSessionApi";
 import {
+  type SetStateAction,
   useCallback,
   useEffect,
-  type SetStateAction,
   useRef,
   useState,
 } from "react";

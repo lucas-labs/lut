@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
 import { traceEager } from "../../scripts/eager-graph.mjs";
 
 // Locks the startup-bundle invariant: the heavy editor / AI / markdown stacks

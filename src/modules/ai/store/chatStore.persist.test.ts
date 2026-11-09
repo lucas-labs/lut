@@ -1,6 +1,6 @@
+import { flushPersist, useChatStore } from "@/modules/ai/store/chatStore";
 import type { UIMessage } from "@ai-sdk/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { flushPersist, useChatStore } from "@/modules/ai/store/chatStore";
 
 const sessions = vi.hoisted(() => ({
   saveMessages: vi.fn(

@@ -9,9 +9,10 @@ import {
   type ModelId,
   type ProviderId,
 } from "../config";
-import { useTodosStore } from "./todoStore";
 import type { AgentUsage } from "../lib/agent";
-import { EMPTY_PROVIDER_KEYS, type ProviderKeys, type CustomEndpointKeys } from "../lib/keyring";
+import { type CustomEndpointKeys,EMPTY_PROVIDER_KEYS, type ProviderKeys } from "../lib/keyring";
+import { pushRecentModel } from "../lib/modelPrefs";
+import { persistDelay } from "../lib/persistSchedule";
 import {
   deleteSessionData,
   deriveTitle,
@@ -23,8 +24,7 @@ import {
   saveSessionsList,
   type SessionMeta,
 } from "../lib/sessions";
-import { pushRecentModel } from "../lib/modelPrefs";
-import { persistDelay } from "../lib/persistSchedule";
+import { useTodosStore } from "./todoStore";
 
 export type Live = {
   getCwd: () => string | null;

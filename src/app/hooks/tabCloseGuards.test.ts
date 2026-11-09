@@ -1,17 +1,17 @@
+import type { EditorTab, MarkdownTab } from "@/modules/tabs";
 import { describe, expect, it, vi } from "vitest";
 import {
   type CloseHazardSnapshot,
   type CloseManyHazards,
   deletedPathTabs,
   evaluateCloseHazards,
-  hasOpenPathTab,
   hasCloseManyHazards,
   hasNewCloseManyHazards,
+  hasOpenPathTab,
   pathAtOrUnder,
   renamedPath,
   spacesEmptiedByTabs,
 } from "./tabCloseGuards";
-import type { EditorTab, MarkdownTab } from "@/modules/tabs";
 
 function hazards(
   dirtyIds: number[] = [],

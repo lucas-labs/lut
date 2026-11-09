@@ -1,6 +1,6 @@
+import type { WorkspaceEnv } from "@/modules/workspace";
 import { invoke } from "@tauri-apps/api/core";
 import { toast } from "sonner";
-import type { WorkspaceEnv } from "@/modules/workspace";
 
 export function parentDir(path: string, fallback: string): string {
   const i = path.lastIndexOf("/");

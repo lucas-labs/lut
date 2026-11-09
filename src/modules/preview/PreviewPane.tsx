@@ -14,11 +14,11 @@ import {
   useRef,
   useState,
 } from "react";
+import { isAllowedPreviewUrl, loopbackPreviewOrigin } from "./lib/previewUrl";
 import {
   PreviewAddressBar,
   type PreviewAddressBarHandle,
 } from "./PreviewAddressBar";
-import { isAllowedPreviewUrl, loopbackPreviewOrigin } from "./lib/previewUrl";
 
 export type PreviewPaneHandle = {
   reload: () => void;

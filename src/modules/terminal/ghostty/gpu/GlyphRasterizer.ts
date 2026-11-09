@@ -1,7 +1,7 @@
 import { extendedSymbolsPending } from "@/lib/fonts";
 import {
-  BuiltinGlyphRenderer,
   builtinGlyphPending,
+  BuiltinGlyphRenderer,
   builtinGlyphSpec,
   isBuiltinGlyph,
 } from "./BuiltinGlyphs";

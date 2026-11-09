@@ -1,11 +1,11 @@
-import { subscribeWindowPresentation } from "@/modules/terminal/ghostty/windowPresentation";
-import type { GhosttyTerminalModelApi } from "@/modules/terminal/ghostty/GhosttyTerminalModel";
-import type { GhosttyBlocks } from "@/modules/terminal/ghostty/GhosttyBlocks";
 import type { BlockMode } from "@/modules/terminal/block/lib/modeMachine";
 import {
   type BlockViewportSignature,
   sameBlockViewport,
 } from "@/modules/terminal/block/lib/viewportSignature";
+import type { GhosttyBlocks } from "@/modules/terminal/ghostty/GhosttyBlocks";
+import type { GhosttyTerminalModelApi } from "@/modules/terminal/ghostty/GhosttyTerminalModel";
+import { subscribeWindowPresentation } from "@/modules/terminal/ghostty/windowPresentation";
 
 export type WatermarkState = "visible" | "hidden" | "dead";
 

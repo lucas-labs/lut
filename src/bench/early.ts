@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import { BENCH_FLAG_PREFIX } from "./flags";
 import { installEventLog } from "./eventLog";
+import { BENCH_FLAG_PREFIX } from "./flags";
 import { installGpuCounters } from "./gpuCounters";
 import { installSmoothProbe } from "./smoothProbe";
 import type { BenchConfig } from "./types";

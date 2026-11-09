@@ -1,12 +1,4 @@
 import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import {
   DEFAULT_THEME_ID,
   loadPreferences,
   onPreferencesChange,
@@ -14,6 +6,14 @@ import {
   setThemeId as persistThemeId,
   type ThemePref,
 } from "@/modules/settings/store";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { applyTheme, clearTheme } from "./applyTheme";
 import {
   listCustomThemes,

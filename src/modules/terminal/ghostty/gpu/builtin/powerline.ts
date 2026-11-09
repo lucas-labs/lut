@@ -4,11 +4,11 @@
  * separator touches the neighbouring cell's background with no gap at any size.
  * Stylised variants are left to the font.
  */
-import { flattenCubic, type SpriteMask } from "./SpriteMask";
 import {
   diagonalUpperLeftToLowerRight,
   diagonalUpperRightToLowerLeft,
 } from "./boxDrawing";
+import { flattenCubic, type SpriteMask } from "./SpriteMask";
 import type { SpriteSpec } from "./spriteSpec";
 
 export function isPowerline(codepoint: number): boolean {

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { GhosttyTerminalModelApi } from "./GhosttyTerminalModel";
 import { GhosttyBlockSession } from "./ghosttyBlockSessions";
+import type { GhosttyTerminalModelApi } from "./GhosttyTerminalModel";
 
 const presentation = vi.hoisted(() => ({
   listeners: new Set<(state: { visible: boolean; reclaim: boolean }) => void>(),

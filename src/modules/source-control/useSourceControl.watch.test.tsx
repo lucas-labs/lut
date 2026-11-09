@@ -2,8 +2,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
-  useSourceControl,
   type SourceControlSummary,
+  useSourceControl,
 } from "./useSourceControl";
 
 const harness = vi.hoisted(() => ({

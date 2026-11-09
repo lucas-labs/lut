@@ -1,8 +1,8 @@
-import { shellDialect, type ShellDialect } from "@/lib/shellQuote";
+import { type ShellDialect,shellDialect } from "@/lib/shellQuote";
 import { invoke } from "@tauri-apps/api/core";
-import { toast } from "sonner";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { useEffect } from "react";
+import { toast } from "sonner";
 import { useTerminalDropStore } from "./dropStore";
 import { formatDroppedPaths } from "./quoteShellPath";
 import { pasteIntoSession, ptyIdForLeaf } from "./terminalSessionApi";

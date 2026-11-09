@@ -1,12 +1,12 @@
-import { cn } from "@/lib/utils";
 import { isPrimaryModifierPressed } from "@/lib/platform";
+import { cn } from "@/lib/utils";
 import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { memo } from "react";
+import { FileIcon, FolderIcon } from "./FileIcon";
 import { InlineInput } from "./InlineInput";
 import { explorerGitTextClass } from "./lib/gitStatusColor";
 import type { GitStatusCode } from "./lib/gitStatusUtils";
-import { FileIcon, FolderIcon } from "./FileIcon";
 
 export type SelectModifiers = { shift: boolean; mod: boolean };
 

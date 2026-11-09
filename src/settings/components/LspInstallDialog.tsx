@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { redetectBinary, type LspPreset } from "@/modules/lsp";
+import { type LspPreset,redetectBinary } from "@/modules/lsp";
 import { setLspActivation } from "@/modules/settings/store";
 import {
   Copy01Icon,

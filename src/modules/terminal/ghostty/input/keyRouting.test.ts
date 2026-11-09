@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   buildKeyEvent,
   canonicalKittyPress,
-  ignoredForIme,
   clipboardShortcut,
+  ignoredForIme,
   type KeyboardLike,
   type KeyContext,
   keyModifiers,
