@@ -113,7 +113,7 @@ size: S
 
 ```yaml
 id: E01-05
-depends-on: [E01-04, E01-17, E01-19, E01-20]
+depends-on: [E01-04, E01-17, E01-19, E01-20, E01-21]
 refs: [ADR-007, .docs/plan/analysis/proposal.md]
 covers: [ADR-007]
 type: task
@@ -447,11 +447,33 @@ size: XS
 
 **Verification:** on a machine with Git installed in `D:\Program Files\Git`, `pnpm exec vitest run src/modules/terminal/ghostty/bashPromptHooks.test.ts` runs the 7 tests and they pass.
 
+### E01-21 — Make the cold-roots file-index test independent of machine load
+
+```yaml
+id: E01-21
+depends-on: [E01-18]
+refs: [ADR-007, .docs/testing/baseline.md]
+covers: [ide-tools/fs-search-index, ADR-007]
+type: task
+scope: be
+size: XS
+```
+
+**Goal:** `cargo test --workspace` does not fail at random, so the CI gate (E01-05) is reliable.
+
+**Acceptance criteria:**
+
+- [ ] `modules::fs::index::tests::unrelated_cold_roots_build_without_waiting_for_each_other` no longer depends on finishing within 2 s while the rest of the suite loads the machine. It failed once in a full run during E01-18 ("B must finish while A is paused") and passed 5 of 5 times on its own. For example: a timeout far above the real build time (A stays blocked until released, so the bound only limits a hang), or a deterministic signal instead of a timeout.
+- [ ] What the test checks is unchanged: index B is built while the build of index A is paused.
+- [ ] The flaky-test entry in `.docs/testing/baseline.md` is marked fixed with a link to this issue.
+
+**Verification:** `cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace` passes three times in a row; the test fails if `get_or_build` is made to wait for other roots (checked locally, not committed).
+
 ### E01-15 — Close-out: Phase 0 baseline
 
 ```yaml
 id: E01-15
-depends-on: [E01-01, E01-02, E01-03, E01-04, E01-05, E01-06, E01-07, E01-08, E01-09, E01-10, E01-11, E01-12, E01-13, E01-14, E01-16, E01-17, E01-18, E01-19, E01-20]
+depends-on: [E01-01, E01-02, E01-03, E01-04, E01-05, E01-06, E01-07, E01-08, E01-09, E01-10, E01-11, E01-12, E01-13, E01-14, E01-16, E01-17, E01-18, E01-19, E01-20, E01-21]
 refs: [F0]
 covers: []
 type: closeout
