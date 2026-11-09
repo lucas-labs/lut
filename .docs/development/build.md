@@ -86,11 +86,13 @@ uses the committed `.wasm` files and does not need Zig.
 
 ## Platform-specific scripts
 
+`pnpm-workspace.yaml` sets `shellEmulator: true`: pnpm runs `package.json` scripts with its own cross-platform shell,
+so POSIX syntax such as `INSPECT=true vite` (`dev:inspect`, `analyze:bundle`) works the same on Windows.
+
 These `package.json` scripts do not work on Windows:
 
 | Script | Limitation |
 |---|---|
-| `dev:inspect`, `analyze:bundle` | POSIX shell: inline `VAR=value cmd`, which fails in pnpm's default Windows shell (`cmd.exe`) |
 | `profile:renderer:*`, `profile:app`, `test:ipc:macos` | macOS only (WKWebView, `footprint`, Swift); they exit on other OSes |
 
 Also macOS-only and not wired to `package.json`: `scripts/ghostty-webkit-memory.mjs` and

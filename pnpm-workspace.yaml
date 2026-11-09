@@ -1,6 +1,9 @@
 packages:
   - packages/*
 
+# Run package.json scripts with pnpm's cross-platform shell so POSIX syntax such as `VAR=x cmd`
+# works the same on Windows (cmd.exe) as on macOS and Linux.
+shellEmulator: true
 minimumReleaseAge: 4320
 minimumReleaseAgeStrict: true
 catalog:
