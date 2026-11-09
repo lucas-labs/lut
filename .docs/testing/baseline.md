@@ -374,7 +374,7 @@ Run by hand on 2026-11-09 with the release build of `1631260` (E01-13).
 | Agent (Claude Code) in a pane, hooks disabled              | ✅                                       |
 | Resize, zoom, display scale 100% → 125%                    | ✅, with the zoom shortcut failure below |
 
-Agents with hooks enabled are not part of this test: they are run by E02-16, once the hook markers are lut's (E02-11).
+Agents with hooks enabled are not part of this test: they are run by E04-13 (formerly E02-16), once the hook markers are lut's (E02-11).
 
 When lut is started from a Claude Code session, the shells inherit `CLAUDE_CODE_CHILD_SESSION` and Claude Code inside
 them warns that transcript saving is off. That is the inherited environment, not a lut defect; start lut from the
