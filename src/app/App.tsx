@@ -96,7 +96,6 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { CloseDialogs } from './components/CloseDialogs';
-import { TOGGLE_BLOCK_INPUT_EVENT, WorkspaceInputBar } from './components/WorkspaceInputBar';
 import { WorkspaceSurface } from './components/WorkspaceSurface';
 import { hasOpenPathTab, renamedPath, spacesEmptiedByTabs } from './hooks/tabCloseGuards';
 import { useAppCloseGuard } from './hooks/useAppCloseGuard';
@@ -294,11 +293,10 @@ export default function App() {
   const setLive = useChatStore((s) => s.setLive);
   const respondToApproval = useChatStore((s) => s.respondToApproval);
 
-  const { hasComposer, keysLoaded } = useAiBootstrap();
+  const { hasComposer } = useAiBootstrap();
 
   const activeTab = tabs.find((t) => t.id === activeId);
   const isTerminalTab = activeTab?.kind === 'terminal';
-  const isBlockTab = activeTerminalTab?.blocks === true;
   const isEditorTab = activeTab?.kind === 'editor';
   const isGitHistoryTab = activeTab?.kind === 'git-history';
 
@@ -803,7 +801,6 @@ export default function App() {
       'terminal.clear': () => {
         clearFocusedTerminal();
       },
-      'terminal.toggleInput': () => window.dispatchEvent(new CustomEvent(TOGGLE_BLOCK_INPUT_EVENT)),
       'blocks.prev': () => navigateFocusedBlocks(-1),
       'blocks.next': () => navigateFocusedBlocks(1),
       'search.focus': () => {
@@ -897,7 +894,7 @@ export default function App() {
         const target = (e.target as HTMLElement | null) ?? document.activeElement;
         return !isTerminalSurfaceTarget(target);
       }
-      if (id === 'terminal.toggleInput' || id === 'blocks.prev' || id === 'blocks.next') {
+      if (id === 'blocks.prev' || id === 'blocks.next') {
         return !(activeTab?.kind === 'terminal' && activeTab.blocks === true);
       }
       if (id === 'sidebar.toggle') {
@@ -1365,18 +1362,6 @@ export default function App() {
                         onSetMarkdownView={setMarkdownView}
                       />
                     </div>
-
-                    <WorkspaceInputBar
-                      isBlockTab={isBlockTab}
-                      isTerminalTab={isTerminalTab}
-                      activeLeafId={activeLeafId}
-                      cwd={activeCwd}
-                      home={home}
-                      hasComposer={hasComposer}
-                      panelOpen={panelOpen}
-                      keysLoaded={keysLoaded}
-                      onConnect={() => void openSettingsWindow('models')}
-                    />
                   </div>
                 </div>
               </ResizablePanel>

@@ -30,7 +30,6 @@ pane.swapRight: Alt+Cmd+ArrowRight
 pane.swapUp: Alt+Cmd+ArrowUp
 pane.swapDown: Alt+Cmd+ArrowDown
 pane.source: Cmd+g
-terminal.toggleInput: Cmd+u
 blocks.prev: Cmd+ArrowUp
 blocks.next: Cmd+ArrowDown
 tab.next: Ctrl+Tab

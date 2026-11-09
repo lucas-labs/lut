@@ -336,11 +336,6 @@ export function submitToGhosttySession(leafId: number, text: string): boolean {
   return accepted;
 }
 
-export function interruptGhosttySession(leafId: number): boolean {
-  const session = sessions.get(leafId);
-  return session?.writer.enqueue(Uint8Array.of(3)) ?? false;
-}
-
 export function clearGhosttySession(leafId: number): boolean {
   const session = sessions.get(leafId);
   if (!session?.model || session.disposed) return false;

@@ -7,8 +7,6 @@ const AgentRunBridgeInner = lazy(() => import('./AgentRunBridge').then((m) => ({
 
 const AiMiniWindowInner = lazy(() => import('./AiMiniWindow').then((m) => ({ default: m.AiMiniWindow })));
 
-const AiInputBarConnectInner = lazy(() => import('./AiInputBar').then((m) => ({ default: m.AiInputBarConnect })));
-
 const SelectionAskAiInner = lazy(() => import('./SelectionAskAi').then((m) => ({ default: m.SelectionAskAi })));
 
 export function AgentRunBridge(props: AgentRunBridgeProps) {
@@ -23,14 +21,6 @@ export function AiMiniWindow({ state }: { state: PresenceState }) {
   return (
     <Suspense fallback={null}>
       <AiMiniWindowInner state={state} />
-    </Suspense>
-  );
-}
-
-export function AiInputBarConnect({ onAdd }: { onAdd: () => void }) {
-  return (
-    <Suspense fallback={null}>
-      <AiInputBarConnectInner onAdd={onAdd} />
     </Suspense>
   );
 }

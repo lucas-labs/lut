@@ -37,7 +37,6 @@ describe('labelToHint', () => {
     const hint = (id: Parameters<typeof shortcutLabel>[0]) => labelToHint(shortcutLabel(id));
     expect(hint('tab.new')).toBe('Ctrl+Shift+T');
     expect(hint('tab.newPreview')).toBe('Ctrl+Shift+`');
-    expect(hint('terminal.toggleInput')).toBe('Ctrl+Shift+Y');
     expect(hint('tab.selectByIndex')).toBe('Ctrl+Shift+1');
   });
 

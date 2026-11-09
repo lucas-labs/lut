@@ -31,7 +31,6 @@ export type ShortcutId =
   | 'pane.swapDown'
   | 'pane.source'
   | 'terminal.clear'
-  | 'terminal.toggleInput'
   | 'blocks.prev'
   | 'blocks.next'
   | 'search.focus'
@@ -176,11 +175,6 @@ const SHORTCUT_META: Omit<Shortcut, 'defaultBindings'>[] = [
     id: 'pane.source',
     label: 'Toggle source panel',
     group: 'Panes',
-  },
-  {
-    id: 'terminal.toggleInput',
-    label: 'Toggle Shell / AI input',
-    group: 'Terminal',
   },
   {
     id: 'blocks.prev',
