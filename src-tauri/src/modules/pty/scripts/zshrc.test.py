@@ -58,7 +58,7 @@ def describe_environment():
 
 
 class Session:
-    def __init__(self, files, blocks=False, env=None):
+    def __init__(self, files, env=None):
         global current
         current = self
         self.dumped = False
@@ -102,8 +102,6 @@ class Session:
             "SHELL": ZSH,
             "ZDOTDIR": self.zdotdir,
         }
-        if blocks:
-            child_env["TERAX_BLOCKS"] = "1"
         for key, value in (env or {}).items():
             child_env[key] = value.replace("@HOME@", self.home)
         self.out = b""
@@ -250,13 +248,6 @@ own = "PS1=$'PROMPT> %{\\e]133;B\\a%}'\n"
 s = Session({".zshrc": own})
 s.run("true")
 check("a prompt with its own end marker is left alone", s.marks().count("133:A") == s.marks().count("133:B"), s.marks())
-s.close()
-
-# Block mode: the shell prompt is suppressed, only the markers remain.
-s = Session({".zshrc": "PS1='PROMPT> '\n"}, blocks=True)
-s.run("true")
-check("block mode draws no shell prompt", "PROMPT> " not in s.out.decode("utf-8", "replace"))
-check("block mode still ends the prompt", s.marks().count("133:B") >= 2)
 s.close()
 
 # User options that change how zsh reads arrays and unset variables must not

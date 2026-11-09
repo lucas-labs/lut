@@ -244,7 +244,6 @@ pub fn spawn(
     rows: u16,
     cwd: Option<String>,
     workspace: WorkspaceEnv,
-    blocks: bool,
     shell: Option<String>,
     control: Option<crate::modules::control::ShellControlEnv>,
     colors: Option<TerminalColors>,
@@ -281,7 +280,7 @@ pub fn spawn(
             pixel_width: 0,
             pixel_height: 0,
         },
-        move || shell_init::build_command(cwd, workspace, blocks, shell, control),
+        move || shell_init::build_command(cwd, workspace, shell, control),
     )
 }
 

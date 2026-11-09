@@ -53,7 +53,6 @@ fn fish_init_script() -> &'static str {
 pub fn build_command(
     cwd: Option<String>,
     workspace: WorkspaceEnv,
-    blocks: bool,
     shell: Option<String>,
     control: Option<ShellControlEnv>,
 ) -> Result<CommandBuilder, String> {
@@ -61,11 +60,11 @@ pub fn build_command(
     #[cfg(unix)]
     {
         let _ = workspace;
-        unix::build(cwd, blocks, shell, control)
+        unix::build(cwd, shell, control)
     }
     #[cfg(windows)]
     {
-        windows::build(cwd, workspace, blocks, shell, control)
+        windows::build(cwd, workspace, shell, control)
     }
 }
 
@@ -149,7 +148,7 @@ pub struct ShellInfo {
     pub name: String,
     pub path: String,
     /// True when Terax injects OSC 7/133 integration for this shell (cwd
-    /// tracking, command blocks, agent detection). Others spawn bare.
+    /// tracking, agent detection). Others spawn bare.
     pub integrated: bool,
 }
 
@@ -184,18 +183,10 @@ fn ensure_utf8_locale(cmd: &mut CommandBuilder) {
     cmd.env("LANG", fallback);
 }
 
-fn apply_common(
-    cmd: &mut CommandBuilder,
-    cwd: Option<String>,
-    blocks: bool,
-    control: Option<&ShellControlEnv>,
-) {
+fn apply_common(cmd: &mut CommandBuilder, cwd: Option<String>, control: Option<&ShellControlEnv>) {
     cmd.env("TERM", "xterm-256color");
     cmd.env("COLORTERM", "truecolor");
     cmd.env("TERAX_TERMINAL", "1");
-    if blocks {
-        cmd.env("TERAX_BLOCKS", "1");
-    }
     let appimage_overrides = workspace::appimage_env_overrides();
     let clean_path = match appimage_overrides.iter().find(|(key, _)| *key == "PATH") {
         Some((_, value)) => value.clone(),
@@ -351,13 +342,12 @@ mod unix {
 
     pub fn build(
         cwd: Option<String>,
-        blocks: bool,
         shell_override: Option<String>,
         control: Option<super::ShellControlEnv>,
     ) -> Result<CommandBuilder, String> {
         let (shell, shell_path) = Shell::resolve(shell_override);
         let mut cmd = CommandBuilder::new(&shell_path);
-        super::apply_common(&mut cmd, cwd, blocks, control.as_ref());
+        super::apply_common(&mut cmd, cwd, control.as_ref());
         apply_shell_init(&mut cmd, &shell, &shell_path);
         Ok(cmd)
     }
@@ -644,12 +634,11 @@ mod windows {
     pub fn build(
         cwd: Option<String>,
         workspace: WorkspaceEnv,
-        blocks: bool,
         shell: Option<String>,
         control: Option<super::ShellControlEnv>,
     ) -> Result<CommandBuilder, String> {
         if let WorkspaceEnv::Wsl { distro } = workspace {
-            let _ = (blocks, shell, control);
+            let _ = (shell, control);
             return build_wsl(cwd, distro);
         }
         let shell_path = shell
@@ -668,7 +657,7 @@ mod windows {
         let is_cmd = shell_name == "cmd.exe";
 
         let mut cmd = CommandBuilder::new(&shell_path);
-        super::apply_common(&mut cmd, cwd, blocks, control.as_ref());
+        super::apply_common(&mut cmd, cwd, control.as_ref());
 
         if is_cmd {
             let host = std::env::var("COMPUTERNAME").unwrap_or_default();
@@ -1286,7 +1275,7 @@ mod tests {
             cli_path: Some("/app/terax-cli".into()),
             cli_bin_dir: Some(std::path::PathBuf::from("/app/bin")),
         };
-        apply_common(&mut command, None, false, Some(&control));
+        apply_common(&mut command, None, Some(&control));
 
         assert_eq!(
             command.get_env("TERAX_CONTROL_ADDR"),

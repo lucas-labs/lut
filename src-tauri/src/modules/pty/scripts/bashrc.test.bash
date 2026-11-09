@@ -5,7 +5,7 @@ set -uo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 rcfile="$script_dir/bashrc.bash"
 failures=0
-unset TERAX_BLOCKS TERAX_CLI __TERAX_HOOKS_LOADED _terax_block_seen
+unset TERAX_CLI __TERAX_HOOKS_LOADED
 
 check() {
   local label="$1" expected="$2" actual="$3"
@@ -158,7 +158,7 @@ case "${BASH_VERSINFO[0]}.${BASH_VERSINFO[1]}" in
   *) check "an old bash array keeps its element 0 as one command" "_terax_precmd;one"$'\n'"_terax_finish_prompt|two|" "$array_last" ;;
 esac
 
-nounset="$(integration "" 'set -u; unset TERAX_BLOCKS _terax_block_seen; unset PS1; _terax_precmd >/dev/null; _terax_finish_prompt; printf ok')"
+nounset="$(integration "" 'set -u; unset PS1; _terax_precmd >/dev/null; _terax_finish_prompt; printf ok')"
 check "the hooks do not abort under set -u" ok "$nounset"
 
 nounset_ble="$(integration 1 'set -u; unset PROMPT_COMMAND; _terax_ble_precmd >/dev/null; printf ok')"

@@ -1375,11 +1375,46 @@ test registry, dependency matrix, licensing strategy, identity isolated from Ter
 
 **Verification:** links resolve; manual review of the summary.
 
+### E04-12 — Rename every remaining terax identifier to lut
+
+```yaml
+id: E04-12
+depends-on: [E02-06, E02-07, E02-09, E02-10, E02-11, E02-12, E02-14, E04-03, E04-04]
+refs: [identity:1, F0:10]
+covers: [identity:1, F0:10]
+type: task
+scope: none
+size: L
+size-exception: Mechanical rename across the repo; split by area, the shell scripts, the wasm and the host would disagree on protocol names between PRs.
+```
+
+**Goal:** Nothing in lut's own code, scripts, assets or protocol is named terax any more. The issues this depends on
+rename the identity (bundle id, executable, env vars, install dirs, hook markers, CLI, stores) and the user-visible
+texts; this one renames what is left (about 1500 lines when it was written, E06-05).
+
+**Acceptance criteria:**
+
+- [ ] Shell integration: the `_terax_*` and `__terax_*` functions and variables in `pty/scripts/*`, and their tests.
+- [ ] The OSC 133 prompt-end option `terax_blocks=0` (Bash before 4.4, no PS0) gets a lut name in `bashrc.bash` and in
+      `packages/ghostty-core/adapted/wasm/src/terax.zig`; the wasm (`ghostty-vt.wasm`, `ghostty-vt-scalar.wasm`) is
+      rebuilt and its build is recorded in `UPSTREAM.md`.
+- [ ] Files and modules: `terax.zig`, `TeraxGhostty.ts`, the `terax-cli` and `terax-control-protocol` crates (unless
+      E02-12 already renamed them), `terax-default` theme, `terax-terminal-symbols*` fonts, `terax-icon.png`.
+- [ ] Code identifiers, CSS names, log prefixes (`[terax]`), temp-file prefixes and comments in `src`, `src-tauri`,
+      `packages` and `scripts`.
+- [ ] Kept on purpose and listed in the PR: credit and licence (`public/licenses/terax.txt`, README credit, notices),
+      `.docs/origin-terax/`, and the places that must name Terax to stay apart from it (E02-11 hooks, E02-15
+      keychain, E02-16 coexistence).
+
+**Verification:** `git grep -i terax -- . ':!.docs'` returns only the kept list; `pnpm test`, `cargo test`, the
+script tests (`bashrc.test.bash`, `zshrc.test.py`, `init.test.fish`) and `bashCommandStart.test.ts` pass; manual:
+pwsh, bash and WSL prompts and cwd tracking still work, and old Bash still blocks injected commands.
+
 ### E04-11 — Close-out: names and going public
 
 ```yaml
 id: E04-11
-depends-on: [E04-01, E04-02, E04-03, E04-04, E04-05, E04-06, E04-07, E04-08, E04-09, E04-10]
+depends-on: [E04-01, E04-02, E04-03, E04-04, E04-05, E04-06, E04-07, E04-08, E04-09, E04-10, E04-12]
 refs: [identity]
 covers: []
 type: closeout
@@ -1976,7 +2011,7 @@ size-exception: Mechanical deletion of whole modules (block/, GhosttyBlocks*, gh
 
 ```yaml
 id: E06-05
-depends-on: [E06-03, E02-09]
+depends-on: [E06-03]
 refs: [.docs/plan/analysis/backend-core.md, .docs/plan/analysis/terminal.md]
 covers: [terminal/blocks-logic]
 type: task
@@ -1990,7 +2025,8 @@ size: M
 
 - [ ] The `blocks: Option<bool>` spawn parameter (`src-tauri/src/modules/pty/mod.rs:181`) and the export of `TERAX_BLOCKS` (or its `LUT_` rename from Phase 0) are removed.
 - [ ] Block-only branches are removed from `pty/scripts/bashrc.bash:30,79,184`, `init.fish:65,72`, `zshrc.zsh` and `profile.ps1` (incl. `_terax_block_seen`); OSC 7/133 and agent hook integration are unchanged.
-- [ ] Script tests (`bashrc.test.bash`, `init.test.fish`, `zshrc.test.py`) are updated; `src/modules/terminal/ghostty/shellBlockCompatibility.test.ts` is deleted.
+- [ ] Script tests (`bashrc.test.bash`, `init.test.fish`, `zshrc.test.py`) are updated; `src/modules/terminal/ghostty/shellBlockCompatibility.test.ts` loses its block-mode part and becomes `bashCommandStart.test.ts`: it is the only automated check of the PS0 command-start marker and of the old-Bash marker below.
+- [ ] The `OSC 133;B;terax_blocks=0` option for Bash before 4.4 stays: it tells the host the shell cannot report command start, and `promptInjection.ts` then never types a command on the user's behalf. Only its name comes from block mode.
 
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace` and `pnpm test` pass; `rg "BLOCKS|_block_seen" src-tauri/src/modules/pty src` is empty; manual: bash/zsh/pwsh prompts and cwd tracking still work.
 
@@ -4106,6 +4142,7 @@ size: M
 **Acceptance criteria:**
 
 - [ ] Windows: PowerShell 7, Windows PowerShell 5.1, CMD, Git Bash when installed, and one profile per installed WSL distro (`workspace::wsl_list_distros`).
+- [ ] Git Bash is found wherever Git for Windows is installed (from `git --exec-path` or `PATH`, as the tests do since E01-20), not only under `Program Files` on the system drive. Today `list_shells` misses a Git installed on `D:`, and `sanitize_shell_override` then ignores a terminal shell set to it (found by E06-05).
 - [ ] macOS/Linux: `/etc/shells` plus common Homebrew paths, deduplicated by canonical path.
 - [ ] Detected profiles have stable ids derived from their source (e.g. `detected:wsl:Ubuntu`), cannot be deleted but can be hidden, and their appearance can be overridden.
 - [ ] Detection runs at startup and on demand; uninstalled sources disappear from the list without breaking panes that reference them (they get the E14-10 error).

@@ -24,10 +24,12 @@ if [ -z "${__TERAX_HOOKS_LOADED-}" ]; then
   # on reload, guard with a flag.
   [ -f "$HOME/.bashrc" ] && source "$HOME/.bashrc"
 
+  # Bash before 4.4 has no PS0, so it never reports that a command started. The
+  # option tells the host (the name predates the removal of block mode), which
+  # then never types a command on the user's behalf into this shell.
   _terax_prompt_end='\[\e]133;B\e\\\]'
   if [ "${BASH_VERSINFO[0]:-0}" -lt 4 ] \
      || { [ "${BASH_VERSINFO[0]:-0}" -eq 4 ] && [ "${BASH_VERSINFO[1]:-0}" -lt 4 ]; }; then
-    unset TERAX_BLOCKS
     _terax_prompt_end='\[\e]133;B;terax_blocks=0\e\\\]'
   fi
 
@@ -71,25 +73,14 @@ if [ -z "${__TERAX_HOOKS_LOADED-}" ]; then
   }
 
   # Runs last in PROMPT_COMMAND, after every prompt framework (starship, ...)
-  # rebuilt PS1: the prompt end goes after the prompt text, and in block mode
-  # the shell prompt is suppressed for the host's input bar. Appended again
+  # rebuilt PS1: the prompt end goes after the prompt text. Appended again
   # whenever a framework dropped it; forks nothing.
   _terax_finish_prompt() {
     local _terax_ret=$?
-    if [ -n "${TERAX_BLOCKS-}" ]; then
-      # Host renders its own input bar: suppress the shell prompt (B marker
-      # only) and reserve header/gap rows, mirroring the zsh integration.
-      if [ -n "${_terax_block_seen-}" ]; then
-        PS1='\n\n\[\e]133;B\e\\\]'
-      else
-        PS1='\n\[\e]133;B\e\\\]'
-      fi
-    else
-      case "${PS1-}" in
-        *']133;B'*) ;;
-        *) PS1="${PS1-}${_terax_prompt_end}" ;;
-      esac
-    fi
+    case "${PS1-}" in
+      *']133;B'*) ;;
+      *) PS1="${PS1-}${_terax_prompt_end}" ;;
+    esac
     return "$_terax_ret"
   }
 
@@ -181,13 +172,7 @@ if [ -z "${__TERAX_HOOKS_LOADED-}" ]; then
   # on every command including inside PROMPT_COMMAND.
   if [ "${BASH_VERSINFO[0]:-0}" -gt 4 ] \
      || { [ "${BASH_VERSINFO[0]:-0}" -eq 4 ] && [ "${BASH_VERSINFO[1]:-0}" -ge 4 ]; }; then
-    if [ -n "${TERAX_BLOCKS-}" ]; then
-      # PS0 only expands, never executes: the arithmetic inside the array
-      # subscript sets the seen flag while the unset array expands to nothing.
-      PS0='\[\e]133;C\e\\\]${_terax_noop[$((_terax_block_seen=1))]-}'"${PS0:-}"
-    else
-      PS0='\[\e]133;C\e\\\]'"${PS0:-}"
-    fi
+    PS0='\[\e]133;C\e\\\]'"${PS0:-}"
   fi
 
   _terax_precmd
