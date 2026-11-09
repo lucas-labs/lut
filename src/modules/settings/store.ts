@@ -181,7 +181,7 @@ export type LspCustomServer = {
   rootMarkers: string[];
 };
 
-const STORE_PATH = 'terax-settings.json';
+const STORE_PATH = 'lut-settings.json';
 const KEY_THEME = 'theme';
 const KEY_THEME_ID = 'themeId';
 const KEY_BG_KIND = 'backgroundKind';

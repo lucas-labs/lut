@@ -51,7 +51,7 @@ remain unchanged.
 
 On Windows, select WebGPU and open a terminal at 125% and 150% display scaling.
 In a packaged build, first run
-`localStorage.setItem("terax:terminal-diagnostics", "1")` in DevTools and reload
+`localStorage.setItem("lut:terminal-diagnostics", "1")` in DevTools and reload
 the window to install the diagnostics. Then call `window.__teraxTerm().renderer`
 twice, allowing a frame between calls. The
 first call schedules a one-shot native box measurement; after a resize or display
@@ -161,7 +161,7 @@ node scripts/terminal-visual/compare.mjs parity /tmp/visual icons-gl-125 icons-g
 
 `parity` requires a `renderer=webgl` and a WebGPU capture of one pattern at one ratio to match pixel for
 pixel. Run both over `dpr=1`, `1.25`, `1.5` and `2`, and again with
-`localStorage["terax:terminal-text-contrast"] = "on"`: both renderers apply the same curve.
+`localStorage["lut:terminal-text-contrast"] = "on"`: both renderers apply the same curve.
 
 ## Window canvas and split panes
 

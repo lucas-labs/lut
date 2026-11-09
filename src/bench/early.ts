@@ -23,7 +23,7 @@ export async function installBenchEarly(): Promise<BenchConfig | null> {
       if (key.startsWith(BENCH_FLAG_PREFIX)) window.localStorage.removeItem(key);
     }
     if (config.scenario) {
-      window.localStorage.setItem('terax:terminal-diagnostics', '1');
+      window.localStorage.setItem('lut:terminal-diagnostics', '1');
       for (const [key, value] of Object.entries(config.scenario.localStorage ?? {})) {
         if (value === null) window.localStorage.removeItem(key);
         else window.localStorage.setItem(key, value);

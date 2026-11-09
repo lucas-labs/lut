@@ -8,7 +8,7 @@ import {
   terminalRendererReport,
 } from './selection';
 
-const STORAGE_KEY = 'terax.experimental.terminal-backend';
+const STORAGE_KEY = 'lut.experimental.terminal-backend';
 
 describe('terminal backend selection', () => {
   afterEach(() => vi.unstubAllGlobals());
