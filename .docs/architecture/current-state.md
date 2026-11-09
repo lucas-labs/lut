@@ -172,7 +172,7 @@ reads `window.__TAURI__`.
 5. **Setup:** bench guard (feature `bench`), macOS window-presentation observer, the control server
    (`control::start`), and on macOS destroying `settings` with `main`.
 6. **Managed state:** `PtyState`, `AiStreamState`, `SessionFilesState`, `WindowPresentationState`, `ControlState`,
-   `ShellState`, `SecretsState`, `FsWatchState`, `AssetGrants`, `GitWatchState`, `HistoryState`, `LspState`,
+   `ShellState`, `SecretsState`, `FsWatchState`, `AssetGrants`, `GitWatchState`, `LspState`,
    `Supersede`, `FileIndexState`, `WorkspaceRegistry` (bootstrapped, launch dir authorized), `LaunchDir`, `LaunchFiles`.
 7. **Run events:** on `WindowEvent::Destroyed` the window's asset grants, AI streams and PTYs are released; on `Exit`
    the LSP servers are killed and the control server shut down; on macOS `Opened` (Open With) the files are stored
@@ -194,7 +194,6 @@ reads `window.__TAURI__`.
 | `lsp/`                   | Language-server processes and JSON-RPC framing.                                                                                                       | 4     | 1 070  |
 | `agent_json.rs`          | Format-preserving edits of agents' JSON settings files.                                                                                               | 1     | 910    |
 | `shell/`                 | Non-PTY commands, persistent shell sessions and background processes for the AI tools.                                                                | 4     | 904    |
-| `history/`               | Shell history index for block-mode suggestions (removed by E06-06).                                                                                   | 3     | 798    |
 | `bench.rs`               | App benchmark support (feature `bench`).                                                                                                              | 1     | 779    |
 | `proc/`                  | Child-output capture, Windows Job Objects, RSS, `hide_console`.                                                                                       | 4     | 525    |
 | `secrets.rs`             | Secret storage in the OS keychain (AI keys).                                                                                                          | 1     | 511    |
@@ -208,18 +207,18 @@ reads `window.__TAURI__`.
 
 ### Commands
 
-115 commands are registered (3 of them only with the `bench` feature). E02-05 removed the 22 of the git agent-task
-backend and E02-18 removed `fs_grep`, `fs_glob` and `git_show_commit`. The tables below list each one with the frontend
-files that call it; for the wrapper objects the caller is written as `` `git.method` → users ``.
+111 commands are registered (3 of them only with the `bench` feature). E02-05 removed the 22 of the git agent-task
+backend, E02-18 removed `fs_grep`, `fs_glob` and `git_show_commit`, and E06-06 removed the four `history_*` commands.
+The tables below list each one with the frontend files that call it; for the wrapper objects the caller is written as
+`` `git.method` → users ``.
 
-**Commands without a real caller (6):**
+**Commands without a real caller (2):**
 
-| Commands                                                                | Why                                                                                          | Removed by |
-| ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ---------- |
-| `pty_has_foreground_job`                                                | No caller                                                                                    | E14-11     |
-| `history_suggest`, `history_commands`, `history_record`, `history_list` | No caller since E06-01 and E06-02 removed the palette history mode and the block shell input | E06-06     |
-| `shell_session_close`                                                   | Only `native.shellSessionClose`, which nothing calls                                         | E05-15     |
-| `wsl_default_distro`                                                    | No caller; kept as an input for WSL profile detection                                        | (E14-06)   |
+| Commands                 | Why                                                   | Removed by |
+| ------------------------ | ----------------------------------------------------- | ---------- |
+| `pty_has_foreground_job` | No caller                                             | E14-11     |
+| `shell_session_close`    | Only `native.shellSessionClose`, which nothing calls  | E05-15     |
+| `wsl_default_distro`     | No caller; kept as an input for WSL profile detection | (E14-06)   |
 
 **Callers the running app never loads:** `agent_decisions_ready` and `agent_decision_respond`
 (`modules/control/lib/agentDecisions.ts`) and `agent_disable_hooks`, `agent_hooks_plan`, `agent_hooks_apply` (only
@@ -396,15 +395,6 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 | `ai_session_delete`           | `ai_sessions` | `modules/ai/lib/sessions.ts` |
 | `ai_session_finish_migration` | `ai_sessions` | `modules/ai/lib/sessions.ts` |
 | `ai_session_prune_backup`     | `ai_sessions` | `modules/ai/lib/sessions.ts` |
-
-#### history
-
-| Command            | Handler   | Frontend caller(s) |
-| ------------------ | --------- | ------------------ |
-| `history_suggest`  | `history` | **no caller**      |
-| `history_commands` | `history` | **no caller**      |
-| `history_record`   | `history` | **no caller**      |
-| `history_list`     | `history` | **no caller**      |
 
 #### vibrancy
 
