@@ -28,7 +28,7 @@ struct EventSpec {
     timeout: Option<u32>,
     /// Observe-only events that never need to delay the agent.
     background: bool,
-    /// Installed when true; a Terax group for an unwanted event is removed.
+    /// Installed when true; a lut group for an unwanted event is removed.
     wanted: bool,
 }
 
@@ -76,7 +76,7 @@ struct AgentSpec {
 }
 
 /// Longer than the longest decision wait the CLI accepts plus its socket
-/// slack, so Terax always answers before the agent gives up on the hook.
+/// slack, so lut always answers before the agent gives up on the hook.
 const DECISION_HOOK_TIMEOUT: u32 = terax_control_protocol::hook::MAX_DECISION_SECS + 60;
 
 const AGENTS: &[AgentSpec] = &[
@@ -132,8 +132,8 @@ const AGENTS: &[AgentSpec] = &[
 ];
 
 const PI_EXTENSION_DIR: &str = ".pi/agent/extensions";
-const PI_EXTENSION_FILE: &str = "terax-notifications.ts";
-const PI_EXTENSION_FAMILY: &str = "terax-pi-notifications-v";
+const PI_EXTENSION_FILE: &str = "lut-notifications.ts";
+const PI_EXTENSION_FAMILY: &str = "lut-pi-notifications-v";
 struct PiHook {
     pi_event: &'static str,
     hook: &'static str,
@@ -181,13 +181,13 @@ const PI_HOOKS: &[PiHook] = &[
     },
 ];
 
-const PI_HEAD: &str = r#"// terax-pi-notifications-v2
+const PI_HEAD: &str = r#"// lut-pi-notifications-v1
 import { spawn } from "node:child_process";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 export default function (pi: ExtensionAPI) {
-  const cli = process.env.TERAX_CLI;
-  if (!cli || !process.env.TERAX_PANE_ID) return;
+  const cli = process.env.LUT_CLI;
+  if (!cli || !process.env.LUT_PANE_ID) return;
 
   const attempt = <T>(read: () => T): T | undefined => {
     try {
@@ -250,10 +250,6 @@ fn pi_extension() -> String {
     out
 }
 
-/// Hook commands that older Terax versions wrote (OSC markers, a CONOUT$
-/// helper); recognised so an install migrates them.
-const LEGACY_MARKERS: [&str; 3] = ["notify;Terax;", "terax;notify", "__terax_notify"];
-
 fn find(agent: &str) -> Result<&'static AgentSpec, String> {
     AGENTS
         .iter()
@@ -269,19 +265,19 @@ fn shell_for(style: Style, windows: bool) -> Dialect {
     }
 }
 
-/// Runs the CLI Terax exposes through `TERAX_CLI`, and prints an empty JSON
-/// object where there is none (outside Terax, or a stale path) because some
+/// Runs the CLI lut exposes through `LUT_CLI`, and prints an empty JSON
+/// object where there is none (outside lut, or a stale path) because some
 /// agents reject an empty stdout. No user data is interpolated.
 fn hook_command(dialect: Dialect, agent: &str, event: &str) -> String {
     match dialect {
         Dialect::Posix => {
-            format!(r#"[ -n "$TERAX_CLI" ] && "$TERAX_CLI" hook {agent} {event} || printf '{{}}'"#)
+            format!(r#"[ -n "$LUT_CLI" ] && "$LUT_CLI" hook {agent} {event} || printf '{{}}'"#)
         }
         Dialect::Cmd => {
-            format!(r#"if defined TERAX_CLI ("%TERAX_CLI%" hook {agent} {event}) else (echo {{}})"#)
+            format!(r#"if defined LUT_CLI ("%LUT_CLI%" hook {agent} {event}) else (echo {{}})"#)
         }
         Dialect::PowerShell => format!(
-            r#"if ($env:TERAX_CLI) {{ & $env:TERAX_CLI hook {agent} {event} }} else {{ '{{}}' }}"#
+            r#"if ($env:LUT_CLI) {{ & $env:LUT_CLI hook {agent} {event} }} else {{ '{{}}' }}"#
         ),
     }
 }
@@ -315,7 +311,7 @@ fn hook_group(spec: &AgentSpec, event: &EventSpec, windows: bool) -> Value {
             }
         }
         Style::Gemini => {
-            hook["name"] = json!("terax");
+            hook["name"] = json!("lut");
             if let Some(timeout) = event.timeout {
                 hook["timeout"] = json!(u64::from(timeout) * 1000);
             }
@@ -328,12 +324,14 @@ fn hook_group(spec: &AgentSpec, event: &EventSpec, windows: bool) -> Value {
     group
 }
 
+/// Only lut's own commands, which go through `LUT_CLI`. Terax's groups (`TERAX_CLI`, and the OSC
+/// and `__terax_notify` commands of older Terax versions) are never ours: lut neither edits nor
+/// removes them.
 fn command_is_ours(command: &str) -> bool {
-    LEGACY_MARKERS.iter().any(|marker| command.contains(marker))
-        || (command.contains("TERAX_CLI") && command.contains(" hook "))
+    command.contains("LUT_CLI") && command.contains(" hook ")
 }
 
-/// A matcher group is ours when it exists only to run Terax commands, so a
+/// A matcher group is ours when it exists only to run lut commands, so a
 /// group the user added their own commands to is never taken apart.
 fn group_is_ours(group: &Value) -> bool {
     let Some(hooks) = group.get("hooks").and_then(Value::as_array) else {
@@ -428,7 +426,7 @@ fn pi_after(existing: Option<&str>, action: Action, path: &Path) -> Result<Optio
         existing.is_some_and(|text| !text.trim().is_empty() && !text.contains(PI_EXTENSION_FAMILY));
     match action {
         Action::Install if foreign => Err(format!(
-            "{} is not managed by Terax; refusing to overwrite",
+            "{} is not managed by lut; refusing to overwrite",
             path.display()
         )),
         Action::Install => Ok(Some(pi_extension())),
@@ -549,7 +547,7 @@ fn write_atomic(path: &Path, contents: &str) -> Result<(), String> {
 fn create_temp(dir: &Path, name: &str) -> Result<(std::fs::File, PathBuf), String> {
     static NEXT: AtomicU64 = AtomicU64::new(0);
     let tmp = dir.join(format!(
-        ".{name}.terax-tmp-{}-{}",
+        ".{name}.lut-tmp-{}-{}",
         std::process::id(),
         NEXT.fetch_add(1, Ordering::Relaxed)
     ));
@@ -632,16 +630,15 @@ pub async fn agent_hooks_status(agent: String) -> bool {
         .unwrap_or(false)
 }
 
-/// True when every hook Terax installs is present and current.
+/// True when every hook lut installs is present and current.
 fn hooks_status(agent: &str) -> bool {
     plan(agent, Action::Install).is_ok_and(|plan| !plan.changed)
 }
 
-// The raw OSC 777 bytes older hooks emitted. Kept so an old Windows hook
-// config still pointing at `__terax_notify` keeps working until it is migrated.
+// The raw OSC 777 bytes the `__lut_notify` argv subcommand writes to the console (Windows).
 #[cfg(any(windows, test))]
 fn conout_marker(agent: &str, event: &str) -> String {
-    format!("\x1b]777;notify;Terax;{agent};{event}\x07")
+    format!("\x1b]777;notify;lut;{agent};{event}\x07")
 }
 
 #[cfg(windows)]
@@ -649,7 +646,7 @@ pub fn emit_conout_marker(agent: &str, event: &str) {
     use std::io::Write;
     use windows_sys::Win32::System::Console::{AttachConsole, ATTACH_PARENT_PROCESS};
 
-    if std::env::var_os("TERAX_TERMINAL").is_none() {
+    if std::env::var_os("LUT_TERMINAL").is_none() {
         return;
     }
     unsafe {
@@ -703,15 +700,15 @@ mod tests {
     fn commands_resolve_the_cli_through_the_environment_for_every_shell() {
         assert_eq!(
             hook_command(Dialect::Posix, "codex", "Stop"),
-            r#"[ -n "$TERAX_CLI" ] && "$TERAX_CLI" hook codex Stop || printf '{}'"#
+            r#"[ -n "$LUT_CLI" ] && "$LUT_CLI" hook codex Stop || printf '{}'"#
         );
         assert_eq!(
             hook_command(Dialect::Cmd, "gemini", "AfterAgent"),
-            r#"if defined TERAX_CLI ("%TERAX_CLI%" hook gemini AfterAgent) else (echo {})"#
+            r#"if defined LUT_CLI ("%LUT_CLI%" hook gemini AfterAgent) else (echo {})"#
         );
         assert_eq!(
             hook_command(Dialect::PowerShell, "claude", "Stop"),
-            r#"if ($env:TERAX_CLI) { & $env:TERAX_CLI hook claude Stop } else { '{}' }"#
+            r#"if ($env:LUT_CLI) { & $env:LUT_CLI hook claude Stop } else { '{}' }"#
         );
     }
 
@@ -722,7 +719,7 @@ mod tests {
                 for event in agent.events {
                     let group = hook_group(agent, event, windows);
                     let command = group["hooks"][0]["command"].as_str().unwrap();
-                    assert!(command.contains("TERAX_CLI"), "{command}");
+                    assert!(command.contains("LUT_CLI"), "{command}");
                     assert!(
                         command.chars().all(
                             |c| c.is_ascii_alphanumeric() || " \"$%{}()[]&|'-=_:\\".contains(c)
@@ -771,7 +768,7 @@ mod tests {
         assert!(hook.get("async").is_none());
         assert!(hook.get("shell").is_none());
         assert_eq!(unix["hooks"]["SessionEnd"][0]["hooks"][0]["timeout"], 5);
-        assert!(commands(&unix, "Stop")[0].starts_with("[ -n \"$TERAX_CLI\" ]"));
+        assert!(commands(&unix, "Stop")[0].starts_with("[ -n \"$LUT_CLI\" ]"));
 
         let windows = parsed(&install("claude", None, true));
         let hook = &windows["hooks"]["Stop"][0]["hooks"][0];
@@ -779,7 +776,7 @@ mod tests {
         assert!(hook["command"]
             .as_str()
             .unwrap()
-            .starts_with("if ($env:TERAX_CLI)"));
+            .starts_with("if ($env:LUT_CLI)"));
     }
 
     #[test]
@@ -810,7 +807,7 @@ mod tests {
         assert!(hook["command"]
             .as_str()
             .unwrap()
-            .starts_with("if defined TERAX_CLI"));
+            .starts_with("if defined LUT_CLI"));
     }
 
     #[test]
@@ -844,10 +841,10 @@ mod tests {
         let unix = parsed(&install("gemini", None, false));
         assert_eq!(unix["hooks"].as_object().unwrap().len(), 5);
         assert_eq!(unix["hooks"]["BeforeAgent"][0]["matcher"], "*");
-        assert_eq!(unix["hooks"]["AfterAgent"][0]["hooks"][0]["name"], "terax");
+        assert_eq!(unix["hooks"]["AfterAgent"][0]["hooks"][0]["name"], "lut");
         assert!(commands(&unix, "AfterAgent")[0].contains("hook gemini AfterAgent"));
         let windows = parsed(&install("gemini", None, true));
-        assert!(commands(&windows, "Notification")[0].starts_with("if defined TERAX_CLI"));
+        assert!(commands(&windows, "Notification")[0].starts_with("if defined LUT_CLI"));
     }
 
     #[test]
@@ -901,9 +898,7 @@ mod tests {
                 for event in spec(agent).events {
                     let ours = commands(&value, event.event)
                         .iter()
-                        .filter(|command| {
-                            command.contains("TERAX_CLI") || command.contains("hook ")
-                        })
+                        .filter(|command| command.contains("LUT_CLI") || command.contains("hook "))
                         .count();
                     assert_eq!(ours, usize::from(event.wanted), "{agent} {}", event.event);
                     if !event.wanted && !["PreToolUse", "BeforeTool"].contains(&event.event) {
@@ -945,10 +940,10 @@ mod tests {
             hook_group(spec, event, windows)
         };
         let posix = |agent: &str, event: &str| {
-            format!(r#"[ -n "$TERAX_CLI" ] && "$TERAX_CLI" hook {agent} {event} || printf '{{}}'"#)
+            format!(r#"[ -n "$LUT_CLI" ] && "$LUT_CLI" hook {agent} {event} || printf '{{}}'"#)
         };
         let cmd = |agent: &str, event: &str| {
-            format!(r#"if defined TERAX_CLI ("%TERAX_CLI%" hook {agent} {event}) else (echo {{}})"#)
+            format!(r#"if defined LUT_CLI ("%LUT_CLI%" hook {agent} {event}) else (echo {{}})"#)
         };
 
         assert_eq!(
@@ -990,7 +985,7 @@ mod tests {
             group("claude", "Stop", true),
             json!({ "hooks": [{
                 "type": "command",
-                "command": r#"if ($env:TERAX_CLI) { & $env:TERAX_CLI hook claude Stop } else { '{}' }"#,
+                "command": r#"if ($env:LUT_CLI) { & $env:LUT_CLI hook claude Stop } else { '{}' }"#,
                 "shell": "powershell"
             }] })
         );
@@ -998,7 +993,7 @@ mod tests {
             group("gemini", "AfterAgent", false),
             json!({
                 "matcher": "*",
-                "hooks": [{ "type": "command", "name": "terax", "command": posix("gemini", "AfterAgent") }]
+                "hooks": [{ "type": "command", "name": "lut", "command": posix("gemini", "AfterAgent") }]
             })
         );
     }
@@ -1050,28 +1045,81 @@ mod tests {
             .join("\n")
     }
 
+    /// Terax's groups as Terax writes them today and as older Terax versions did.
+    fn terax_groups() -> [&'static str; 4] {
+        [
+            r#"[ -n "$TERAX_CLI" ] && "$TERAX_CLI" hook claude Stop || printf '{}'"#,
+            r#"if ($env:TERAX_CLI) { & $env:TERAX_CLI hook claude Stop } else { '{}' }"#,
+            r#"[ -n "$TERAX_TERMINAL" ] && printf '{"terminalSequence":"\u001b]777;notify;Terax;attention\u0007"}' || true"#,
+            r#""C:\\Terax\\terax.exe" __terax_notify claude finished"#,
+        ]
+    }
+
     #[test]
-    fn legacy_hooks_are_migrated_not_duplicated() {
-        let legacy = json!({
-            "hooks": {
-                "Notification": [
-                    { "hooks": [ { "type": "command", "command": "[ -n \"$TERAX_TERMINAL\" ] && printf '{\"terminalSequence\":\"\\u001b]777;notify;Terax;attention\\u0007\"}' || true" } ] }
-                ],
-                "Stop": [
-                    { "hooks": [ { "type": "command", "command": "\"C:\\\\Terax\\\\terax.exe\" __terax_notify claude finished" } ] },
-                    { "hooks": [ { "type": "command", "command": "mine" } ] }
-                ]
+    fn terax_and_third_party_hooks_survive_a_lut_install_and_uninstall_byte_for_byte() {
+        for agent in ["claude", "codex", "gemini"] {
+            for windows in [false, true] {
+                let mut original = String::from("{\n  \"hooks\": {\n");
+                let events: Vec<_> = spec(agent).events.iter().map(|e| e.event).collect();
+                for (i, event) in events.iter().enumerate() {
+                    let terax = terax_groups()
+                        .iter()
+                        .map(|command| {
+                            format!(
+                                "      {{ \"hooks\": [ {{ \"type\": \"command\", \"command\": {} }} ] }}",
+                                serde_json::to_string(command).unwrap()
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                        .join(",\n");
+                    let comma = if i + 1 < events.len() { "," } else { "" };
+                    original.push_str(&format!(
+                        "    \"{event}\": [\n{terax},\n      {{ \"hooks\": [ {{ \"type\": \"command\", \"command\": \"audit\" }} ] }}\n    ]{comma}\n"
+                    ));
+                }
+                original.push_str("  }\n}\n");
+
+                let installed = install(agent, Some(&original), windows);
+                let value = parsed(&installed);
+                for event in &events {
+                    let commands = commands(&value, event);
+                    for terax in terax_groups() {
+                        assert!(
+                            commands.iter().any(|c| c == terax),
+                            "{agent} {event} {terax}"
+                        );
+                    }
+                    assert!(commands.iter().any(|c| c == "audit"), "{agent} {event}");
+                }
+                let removed = json_after(
+                    spec(agent),
+                    Some(&installed),
+                    Action::Uninstall,
+                    windows,
+                    &path(),
+                )
+                .unwrap()
+                .unwrap();
+                assert_eq!(removed, original, "{agent} windows={windows}");
+                // Uninstalling lut from a config that only has Terax's groups changes nothing.
+                assert_eq!(
+                    json_after(
+                        spec(agent),
+                        Some(&original),
+                        Action::Uninstall,
+                        windows,
+                        &path()
+                    )
+                    .unwrap()
+                    .unwrap(),
+                    original,
+                    "{agent} windows={windows}"
+                );
             }
-        });
-        let out = parsed(&install("claude", Some(&legacy.to_string()), false));
-        assert_eq!(commands(&out, "Notification").len(), 1);
-        assert!(commands(&out, "Notification")[0].contains("TERAX_CLI"));
-        let stop = commands(&out, "Stop");
-        assert_eq!(stop.len(), 2);
-        assert!(stop.contains(&"mine".to_string()));
-        assert!(stop
-            .iter()
-            .all(|command| !command.contains("__terax_notify")));
+        }
+        for terax in terax_groups() {
+            assert!(!command_is_ours(terax), "{terax}");
+        }
     }
 
     #[test]
@@ -1138,7 +1186,7 @@ mod tests {
         let fresh = plan_at("claude", Action::Install, &path, None, false).unwrap();
         assert!(fresh.changed);
         assert_eq!(fresh.before, None);
-        assert!(fresh.after.as_deref().unwrap().contains("TERAX_CLI"));
+        assert!(fresh.after.as_deref().unwrap().contains("LUT_CLI"));
 
         let again = plan_at("claude", Action::Install, &path, fresh.after.clone(), false).unwrap();
         assert!(!again.changed);
@@ -1218,7 +1266,7 @@ mod tests {
         let leftovers = std::fs::read_dir(dir.path())
             .unwrap()
             .filter_map(Result::ok)
-            .filter(|entry| entry.file_name().to_string_lossy().contains("terax-tmp"))
+            .filter(|entry| entry.file_name().to_string_lossy().contains("lut-tmp"))
             .count();
         assert_eq!(leftovers, 2, "only the two files created directly above");
     }
@@ -1268,7 +1316,7 @@ mod tests {
             .is_symlink());
         assert!(std::fs::read_to_string(&managed)
             .unwrap()
-            .contains("TERAX_CLI"));
+            .contains("LUT_CLI"));
         let mode = std::fs::metadata(&managed).unwrap().permissions().mode() & 0o777;
         assert_eq!(mode, 0o600);
     }
@@ -1276,10 +1324,10 @@ mod tests {
     #[test]
     fn the_pi_extension_calls_the_cli_and_stays_inert_elsewhere() {
         let extension = pi_extension();
-        assert!(extension.contains("process.env.TERAX_CLI"));
-        assert!(extension.contains("process.env.TERAX_PANE_ID"));
+        assert!(extension.contains("process.env.LUT_CLI"));
+        assert!(extension.contains("process.env.LUT_PANE_ID"));
         assert!(extension.contains(r#"["hook", "pi", event]"#));
-        assert!(extension.starts_with("// terax-pi-notifications-v2"));
+        assert!(extension.starts_with("// lut-pi-notifications-v1"));
         assert!(extension.contains("windowsHide: true"));
         assert!(!extension.contains("777"));
         for event in ["SessionStart", "UserPromptSubmit", "Stop", "SessionEnd"] {
@@ -1292,18 +1340,27 @@ mod tests {
     }
 
     #[test]
-    fn pi_install_replaces_only_terax_owned_files() {
-        let p = Path::new("/x/terax-notifications.ts");
+    fn pi_install_replaces_only_lut_owned_files() {
+        let p = Path::new("/x/lut-notifications.ts");
         assert_eq!(
             pi_after(None, Action::Install, p).unwrap().as_deref(),
             Some(pi_extension().as_str())
         );
-        let v1 = "// terax-pi-notifications-v1\nexport default () => {}\n";
+        let v1 = "// lut-pi-notifications-v1\nexport default () => {}\n";
         assert_eq!(
             pi_after(Some(v1), Action::Install, p).unwrap().as_deref(),
             Some(pi_extension().as_str())
         );
         assert!(pi_after(Some("export const mine = true;"), Action::Install, p).is_err());
+        // A Terax extension is foreign too: lut never overwrites or removes it.
+        let terax = "// terax-pi-notifications-v2\nexport default () => {}\n";
+        assert!(pi_after(Some(terax), Action::Install, p).is_err());
+        assert_eq!(
+            pi_after(Some(terax), Action::Uninstall, p)
+                .unwrap()
+                .as_deref(),
+            Some(terax)
+        );
         assert_eq!(
             pi_after(Some("  \n"), Action::Install, p)
                 .unwrap()
@@ -1352,7 +1409,7 @@ mod tests {
     fn conout_marker_matches_detector_format() {
         assert_eq!(
             conout_marker("gemini", "attention"),
-            "\u{1b}]777;notify;Terax;gemini;attention\u{7}"
+            "\u{1b}]777;notify;lut;gemini;attention\u{7}"
         );
     }
 }
