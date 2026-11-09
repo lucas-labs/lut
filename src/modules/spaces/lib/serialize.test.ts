@@ -75,7 +75,7 @@ describe('serializeTabs', () => {
 });
 
 describe('hydrateTabs', () => {
-  it('round-trips structure, cwd, blocks and active leaf', () => {
+  it('round-trips structure, cwd and active leaf', () => {
     const tree: PaneNode = {
       kind: 'split',
       id: 10,
@@ -89,7 +89,6 @@ describe('hydrateTabs', () => {
       term({
         paneTree: tree,
         activeLeafId: 12,
-        blocks: true,
         customTitle: 'x',
       }),
     ];
@@ -100,7 +99,6 @@ describe('hydrateTabs', () => {
 
     expect(restored.spaceId).toBe('s2');
     expect(restored.cold).toBe(true);
-    expect(restored.blocks).toBe(true);
     expect(restored.customTitle).toBe('x');
     expect(restored.paneTree.kind).toBe('split');
 
@@ -109,6 +107,15 @@ describe('hydrateTabs', () => {
     expect(leaves).toContain(restored.activeLeafId);
     // active leaf was the second one, which carried /b
     expect(restored.cwd).toBe('/b');
+  });
+
+  it('restores a tab persisted with the removed blocks flag as a plain terminal tab', () => {
+    const [saved] = serializeTabs([term({})]);
+    const legacy = { ...saved, blocks: true } as unknown as SerializedTab;
+    const [restored] = hydrateTabs([legacy], 's1', counter());
+    expect(restored.kind).toBe('terminal');
+    expect(restored).not.toHaveProperty('blocks');
+    expect(restored.title).not.toBe('blocks');
   });
 
   it('allocates fresh, unique, monotonic ids across all tabs and leaves', () => {

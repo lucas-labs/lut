@@ -146,6 +146,6 @@ describe('resolveShortcut', () => {
 
   it('skips repeats of shortcuts that do not allow them', () => {
     expect(run(other, press('T', 'CS', { repeat: true }))).toBeNull();
-    expect(run(other, press('ArrowDown', 'CS', { repeat: true }))).toBe('blocks.next');
+    expect(run(other, press('Tab', 'C', { repeat: true }))).toBe('tab.next');
   });
 });

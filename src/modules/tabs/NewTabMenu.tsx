@@ -24,7 +24,6 @@ import { useRef, useState } from 'react';
 
 type Props = {
   onNew: () => void;
-  onNewBlock: () => void;
   onNewPrivate: () => void;
   onNewPreview: () => void;
   onNewEditor: () => void;
@@ -32,17 +31,8 @@ type Props = {
   onLaunchAgents: (request: AgentLaunchRequest) => void;
 };
 
-export function NewTabMenu({
-  onNew,
-  onNewBlock,
-  onNewPrivate,
-  onNewPreview,
-  onNewEditor,
-  onNewGitGraph,
-  onLaunchAgents,
-}: Props) {
+export function NewTabMenu({ onNew, onNewPrivate, onNewPreview, onNewEditor, onNewGitGraph, onLaunchAgents }: Props) {
   const terminalHint = useShortcutHint('tab.new');
-  const blockHint = useShortcutHint('tab.newBlock');
   const privateHint = useShortcutHint('tab.newPrivate');
   const editorHint = useShortcutHint('tab.newEditor');
   const previewHint = useShortcutHint('tab.newPreview');
@@ -98,11 +88,6 @@ export function NewTabMenu({
                 <HugeiconsIcon icon={ComputerTerminal02Icon} size={14} strokeWidth={1.75} />
                 <span className="flex-1">Terminal</span>
                 <span className="text-xs text-muted-foreground">{terminalHint}</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={onNewBlock}>
-                <HugeiconsIcon icon={ComputerTerminal02Icon} size={14} strokeWidth={1.75} />
-                <span className="flex-1">Blocks</span>
-                <span className="text-xs text-muted-foreground">{blockHint}</span>
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={openLauncher}>
                 <HugeiconsIcon icon={AiBrowserIcon} size={14} strokeWidth={1.75} />

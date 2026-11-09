@@ -8,7 +8,6 @@ export type BenchAppApi = {
   booted: boolean;
   setActiveId: (id: number) => void;
   newTab: (cwd?: string) => number;
-  newBlockTab: (cwd?: string) => number;
   newAgentGroupTab: (
     cwd: string | undefined,
     title: string,

@@ -16,7 +16,6 @@ commandPalette.files: Cmd+p
 commandPalette.content: Shift+Cmd+h
 settings.open: Cmd+,
 tab.new: Cmd+t
-tab.newBlock: Shift+Cmd+t
 tab.newPrivate: Cmd+r
 tab.newPreview: Shift+Cmd+o
 tab.newEditor: Cmd+e
@@ -30,8 +29,6 @@ pane.swapRight: Alt+Cmd+ArrowRight
 pane.swapUp: Alt+Cmd+ArrowUp
 pane.swapDown: Alt+Cmd+ArrowDown
 pane.source: Cmd+g
-blocks.prev: Cmd+ArrowUp
-blocks.next: Cmd+ArrowDown
 tab.next: Ctrl+Tab
 tab.prev: Ctrl+Shift+Tab
 tab.selectByIndex: Cmd+1
@@ -290,7 +287,6 @@ describe('Windows and Linux defaults', () => {
     expect(hit({ ...ctrl, key: '_', code: 'Minus' }, 'view.zoomOut')).toBe(true);
     expect(hit({ ...ctrl, key: 'PageDown', code: 'PageDown' }, 'pane.focusNext')).toBe(true);
     expect(hit({ ...ctrl, key: 'PageUp', code: 'PageUp' }, 'pane.focusPrev')).toBe(true);
-    expect(hit({ ...ctrl, key: 'Q', code: 'KeyQ' }, 'tab.newBlock')).toBe(true);
   });
 });
 
