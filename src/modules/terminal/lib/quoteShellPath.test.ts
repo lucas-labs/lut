@@ -81,7 +81,8 @@ it('round trips literal paths through the platform shell', () => {
         encoding: 'utf8',
       });
   expect(output).toBe(`${paths.join('\0')}\0`);
-});
+  // Windows PowerShell can take longer than vitest's default 5 s to start on a busy machine or CI.
+}, 30_000);
 
 const fishProgram =
   process.platform === 'win32'

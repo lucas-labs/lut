@@ -1,0 +1,2 @@
+# Write LF on every platform (default "Auto" keeps whatever line ending a file already has).
+newline_style = "Unix"

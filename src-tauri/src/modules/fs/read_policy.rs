@@ -16,10 +16,9 @@ pub(super) fn readable(path: &Path) -> Result<(), String> {
     }
     static POLICY: OnceLock<(regex::RegexSet, Vec<String>)> = OnceLock::new();
     let (patterns, directories) = POLICY.get_or_init(|| {
-        let policy: PathPolicy = serde_json::from_str(include_str!(
-            "../../../../src/lib/security/pathPolicy.json"
-        ))
-        .expect("valid path policy");
+        let policy: PathPolicy =
+            serde_json::from_str(include_str!("../../../../src/lib/security/pathPolicy.json"))
+                .expect("valid path policy");
         (
             RegexSetBuilder::new(policy.secret_basenames)
                 .case_insensitive(true)
