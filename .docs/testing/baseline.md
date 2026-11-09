@@ -4,6 +4,22 @@ Results of every existing test, lint and check command on Windows 11. They were 
 `5c06b7d`, before any code change other than the updater removal (E01-02), which touches no test or check.
 Pre-existing failures are recorded here and **not fixed** in Phase 0's baseline issue.
 
+## Phase 0 deliverable
+
+Phase 0 (F0) is complete when each part below exists; this is the summary checked before the repository goes public
+(E04-10).
+
+| Part                                                    | Where                                                                                    | Issue  |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------ |
+| Reproducible build                                      | [Building lut](../development/build.md)                                                  | E01-01 |
+| Baseline of tests, lint and checks, with known failures | [Results](#results) and [Known failures](#known-failures)                                | E01-03 |
+| Phase 0 gate                                            | [Phase 0 gate (E01-14)](#phase-0-gate-e01-14)                                            | E01-14 |
+| Test registry                                           | [Test registry](#test-registry)                                                          | E01-03 |
+| Module dependency matrix and contracts                  | [Module dependencies and contracts](../architecture/module-dependencies.md)              | E01-08 |
+| Licensing strategy and inventory                        | [Licensing](../licensing.md), [`NOTICE`](../../NOTICE)                                   | E03-02 |
+| Identity isolated from Terax                            | [Coexistence with Terax (E04-13)](#coexistence-with-terax-e04-13)                        | E04-13 |
+| Terax updater removed                                   | [Network audit: checked and absent](../architecture/network-audit.md#checked-and-absent) | E01-02 |
+
 ## Environment and versions
 
 Same machine and toolchain as `.docs/development/build.md` → "Baseline environment":
