@@ -115,7 +115,7 @@ Most of the hunks (28 of 55) are in `src/modules/pty/agent_detect.rs`. The rest:
   It passed 5 of 5 times on its own and in the next full run. It did not fail in the E01-03 baseline run.
 - **Suspected cause:** the test gives index B 2 s to finish, and the rest of the suite (the git agent-task tests above all)
   loads the machine enough to exceed it.
-- **Fixed by:** E01-21 (#329).
+- **Fixed by:** E01-21 (#329). ✅ Fixed: the six waits in `fs::index` tests share a 30 s bound (`WAIT`) instead of 2 s; with get_or_build forced to serialize roots the test still fails, after 30 s.
 
 ### `cargo test`: flaky git agent-task test
 
@@ -126,6 +126,13 @@ Most of the hunks (28 of 55) are in `src/modules/pty/agent_detect.rs`. The rest:
 - **Suspected cause:** the test creates checkpoints while another thread keeps writing and deleting files, and on Windows
   this can hit a locked file.
 - **Fixed by:** E02-05 (#22), which deletes the whole git agent-task backend (decision 23).
+- **Later runs:** during E01-21, a full run failed in more than 20 other tests of the same backend (`hardening_tests`,
+  `followup_tests`…), each passing on its own (for example
+  `hardening_tests::a_directory_path_is_never_treated_as_an_untracked_file` in 2.8 s).
+- **Cost:** this backend is also what makes the suite slow on Windows. The `terax` lib tests take 10–15 min in full and
+  **8 s** with `--skip modules::git` (632 tests). The git module has 324 tests, 227 of them in agent-task files.
+- **Until E02-05:** the CI gate (E01-05) skips the agent-task test modules explicitly with `--skip`, linked to this
+  entry. For a quick local run: `cargo test --manifest-path src-tauri/Cargo.toml -p terax --lib -- --skip modules::git`.
 
 ### `pnpm lint`: warnings, not failures
 
