@@ -2052,7 +2052,10 @@ mod tests {
         let (mut produced, mut elapsed) = (0u64, 0u64);
         while fe.exit.is_none() {
             elapsed += 1;
-            assert!(elapsed < 20_000, "no exit frame within 20 s of virtual time");
+            assert!(
+                elapsed < 20_000,
+                "no exit frame within 20 s of virtual time"
+            );
             h.advance(ms(1));
             if produced < total {
                 let n = produce_per_ms.min(total - produced);

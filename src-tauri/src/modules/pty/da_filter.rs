@@ -112,12 +112,7 @@ impl DaFilter {
         false
     }
 
-    pub fn process<F: FnMut(&[u8])>(
-        &mut self,
-        input: &[u8],
-        out: &mut Vec<u8>,
-        mut respond: F,
-    ) {
+    pub fn process<F: FnMut(&[u8])>(&mut self, input: &[u8], out: &mut Vec<u8>, mut respond: F) {
         let mut i = 0;
         while i < input.len() {
             match self.state {
@@ -911,7 +906,8 @@ mod tests {
 
     #[test]
     fn ordinary_streams_are_forwarded_byte_for_byte_at_every_chunk_size() {
-        let input: &[u8] = b"\x1b]0;title with 11;? inside\x07\x1b]8;;https://x.test\x1b\\link\x1b]8;;\x1b\\\
+        let input: &[u8] =
+            b"\x1b]0;title with 11;? inside\x07\x1b]8;;https://x.test\x1b\\link\x1b]8;;\x1b\\\
             \x1b]133;A\x1b\\\x1b]7;file:///tmp\x07\x1b]1337;File=inline=1:AAAA\x07\
             \x1b_Gf=100,a=T;AAAA\x1b\\\x1bP1$r0m\x1b\\\x1bPtmux;\x1b\x1b]11;?\x07\x1b\\\
             \x1b[?2026h\x1b[38;5;196mtext\x1b[0m\x1b[?2026l\x1b(B\x1b=\x1bM";
@@ -1132,7 +1128,10 @@ mod tests {
     #[test]
     fn only_a_prompt_start_ends_scheme_reports_not_other_marks() {
         let (mut f, state) = themed();
-        run(&mut f, b"\x1b[?2031h\x1b]133;B\x07\x1b]133;C;cmd\x07\x1b]133;D;0\x07\x1b]7;file:///a\x07");
+        run(
+            &mut f,
+            b"\x1b[?2031h\x1b]133;B\x07\x1b]133;C;cmd\x07\x1b]133;D;0\x07\x1b]7;file:///a\x07",
+        );
         assert_eq!(state.update(theme([255; 3])), Some(ColorScheme::Light));
     }
 

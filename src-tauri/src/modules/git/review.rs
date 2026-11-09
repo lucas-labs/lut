@@ -17,8 +17,8 @@ use crate::modules::git::diff::{
 use crate::modules::git::errors::{GitError, Result};
 use crate::modules::git::patch::{build_patch, Anchor, HunkPick, PatchError};
 use crate::modules::git::plumbing::{
-    empty_tree, head_commit_opt, lock_for_repo, open_worktree, os_args, relative_spec, resolve_commit,
-    resolve_commit_opt, run, run_ok, stdout_text, verify_tree,
+    empty_tree, head_commit_opt, lock_for_repo, open_worktree, os_args, relative_spec,
+    resolve_commit, resolve_commit_opt, run, run_ok, stdout_text, verify_tree,
 };
 use crate::modules::git::process::{
     decode_text, ensure_success, run_git_capped, run_git_with, RunOptions,
