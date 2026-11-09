@@ -470,11 +470,32 @@ size: XS
 
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace` passes three times in a row; the test fails if `get_or_build` is made to wait for other roots (checked locally, not committed).
 
+### E01-22 — Make knip pass with the Git Bash lookup in the prompt-hook tests
+
+```yaml
+id: E01-22
+depends-on: [E01-20]
+refs: [.docs/development/build.md]
+covers: [F0:8]
+type: task
+scope: ui
+size: XS
+```
+
+**Goal:** the CI `knip` step (E01-05) passes on `master`. Since E01-20, `findGitBash()` in `src/modules/terminal/ghostty/bashPromptHooks.test.ts` runs `where git`, and `pnpm knip` fails with "Unlisted binaries: where". It went unnoticed because CI could not run.
+
+**Acceptance criteria:**
+
+- [ ] `pnpm knip` exits 0: `where` is added to `ignoreBinaries` in `knip.json` (a Windows system command, like the macOS-only `footprint` and `swiftc` already listed), or the lookup stops spawning it.
+- [ ] The prompt-hook tests still find Git Bash on Windows and still skip when it is missing.
+
+**Verification:** `pnpm knip` and `pnpm test src/modules/terminal/ghostty/bashPromptHooks.test.ts` pass.
+
 ### E01-15 — Close-out: Phase 0 baseline
 
 ```yaml
 id: E01-15
-depends-on: [E01-01, E01-02, E01-03, E01-04, E01-05, E01-06, E01-07, E01-08, E01-09, E01-10, E01-11, E01-12, E01-13, E01-14, E01-16, E01-17, E01-18, E01-19, E01-20, E01-21]
+depends-on: [E01-01, E01-02, E01-03, E01-04, E01-05, E01-06, E01-07, E01-08, E01-09, E01-10, E01-11, E01-12, E01-13, E01-14, E01-16, E01-17, E01-18, E01-19, E01-20, E01-21, E01-22]
 refs: [F0]
 covers: []
 type: closeout

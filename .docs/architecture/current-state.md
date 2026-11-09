@@ -108,9 +108,12 @@ live in a module-level map keyed by leaf id (`modules/terminal/ghostty/useGhostt
 ### Persisted state
 
 - **Tauri store files** (`@tauri-apps/plugin-store`, `LazyStore`): `terax-settings.json` (`modules/settings/store.ts`),
-  `terax-spaces.json` (`modules/spaces/lib/store.ts`), `terax-custom-themes.json` (`modules/theme/customThemes.ts`).
+  `terax-spaces.json` (`modules/spaces/lib/store.ts`), `terax-custom-themes.json` (`modules/theme/customThemes.ts`),
+  and the AI files `terax-ai-agents.json`, `terax-ai-sessions.json`, `terax-ai-snippets.json`, `terax-ai-todos.json`
+  (`modules/ai/lib/`).
 - **localStorage:** `terax-ui-theme-shadow` (read by `index.html` and `settings.html` before first paint, written by
-  `modules/theme/ThemeProvider.tsx`), `terax-ui-bg-kind-shadow`, `terax-ui-bg-image-shadow`
+  `modules/theme/ThemeProvider.tsx`), `terax-ui-theme-id-shadow` (`ThemeProvider.tsx`), `terax-ui-bg-kind-shadow`,
+  `terax-ui-bg-image-shadow`
   (`modules/settings/preferences.ts`), `terax.sidebar.width|view|collapsed` (`modules/sidebar/useSidebarPanel.ts`),
   `terax-palette-mru`, `terax-palette-recent-files` (`modules/command-palette/lib/`), `terax-ui-mini-window-geom`
   (`modules/ai/lib/useMiniWindowGeometry.ts`), `terax.experimental.terminal-backend`
