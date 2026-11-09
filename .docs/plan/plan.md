@@ -1188,7 +1188,7 @@ size: XS
 
 ```yaml
 id: E04-02
-depends-on: [E04-01]
+depends-on: [E02-07]
 refs: [identity, 13.2:21, .docs/plan/analysis/build-identity.md]
 covers: [build-identity/windows-installer-hooks]
 type: task
