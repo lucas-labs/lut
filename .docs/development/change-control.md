@@ -38,7 +38,8 @@ that seemingly visual changes can break.
 ## Quality gate
 
 - CI (`.github/workflows/ci.yml`, see `.docs/development/build.md`) runs lint, format, type checks, tests, build and knip
-  for the frontend, and fmt, clippy and tests for the backend, on Windows.
+  for the frontend on Ubuntu, the Windows-only shell tests on Windows, and fmt, clippy and tests for the backend on
+  Windows. A pull request runs only the jobs its changed files need.
 - `pnpm lint` has a warning budget (`--max-warnings`): a PR may not add warnings, and a PR that removes some lowers the
   budget.
 - Known pre-existing failures and their fixing issues are listed in `.docs/testing/baseline.md`.
@@ -47,7 +48,8 @@ that seemingly visual changes can break.
 
 - **Branches:** `<type>/<issue-id>-<slug>`, for example `fix/e01-21-flaky-index-test`.
 - **Commits:** conventional commits in English and lowercase, `<type>(<scope>): <emoji> <what>`. Titles stay under 70
-  characters; bodies have at most three lines under 100 characters. The issue goes in a `Ref: #N` trailer.
+  characters; bodies have at most three lines under 100 characters. The plan issue id goes in a `Ref:` trailer
+  (`Ref: E03-02`).
   - Scopes: `ui` (frontend) and `be` (backend), or none.
   - Types and emojis:
 
