@@ -259,7 +259,6 @@ pub fn run() {
         .manage(modules::ai_sessions::SessionFilesState::default())
         .manage(modules::window_presentation::WindowPresentationState::default())
         .manage(control_state)
-        .manage(shell::ShellState::default())
         .manage(secrets::SecretsState::default())
         .manage(fs::watch::FsWatchState::default())
         .manage(fs::assets::AssetGrants::default())
@@ -340,13 +339,6 @@ pub fn run() {
             git::commands::git_watch,
             git::commands::git_unwatch,
             shell::shell_run_command,
-            shell::shell_session_open,
-            shell::shell_session_run,
-            shell::shell_session_close,
-            shell::shell_bg_spawn,
-            shell::shell_bg_logs,
-            shell::shell_bg_kill,
-            shell::shell_bg_list,
             workspace::wsl_list_distros,
             workspace::wsl_default_distro,
             workspace::ipc::wsl_home,
