@@ -1,0 +1,12 @@
+lut
+Copyright 2026 lucode
+
+This product includes software derived from Terax
+(https://github.com/crynta/terax-ai, commit a2c0877d7fe81ed7b9560c3043d4b6c1ad9783c9),
+Copyright 2026 Crynta, licensed under the Apache License, Version 2.0.
+Files derived from Terax have been modified by the lut project; the git history of this
+repository records the changes. Terax shipped no NOTICE file of its own.
+
+This product bundles third-party components under their own licenses (MIT, SIL Open Font
+License 1.1, Apache-2.0, CC BY 4.0). Their license files ship in the application's
+licenses directory; the inventory is in .docs/licensing.md.
