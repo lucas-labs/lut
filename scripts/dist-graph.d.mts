@@ -1,6 +1,5 @@
 export const WINDOW_HTML: string[];
 export const FORBIDDEN_CHUNK_PATTERNS: RegExp[];
-export const FORBIDDEN_SIGNATURES: { label: string; needle: string }[];
 export const FORBIDDEN_PACKAGES: RegExp[];
 
 export function staticImports(code: string): string[];

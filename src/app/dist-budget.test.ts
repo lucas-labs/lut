@@ -19,11 +19,10 @@ import {
 // Complements eager-budget.test.ts. That one walks the *source* import graph;
 // this one reads what the bundler actually emitted, because chunk assignment
 // can drag heavy code into the startup graph even when the source graph is
-// clean (observed: React's CJS interop landed in the lazy `ai-sdk-shared`
-// chunk, so the always-eager `react` chunk imported it, and with it every AI
-// provider SDK and zod, in both windows). Preloaded bytes are paid by every
-// launch, so the AI SDK, zod, Streamdown, CodeMirror and the icon set must stay
-// reachable only through dynamic `import()`.
+// clean (observed: React's CJS interop landed in a lazy feature chunk, so the
+// always-eager `react` chunk imported it, and with it everything behind it, in
+// both windows). Preloaded bytes are paid by every launch, so Streamdown,
+// CodeMirror and the icon set must stay reachable only through dynamic `import()`.
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 
@@ -58,7 +57,7 @@ describe('dist graph analyzer', () => {
   });
 
   it('strips the content hash from chunk names', () => {
-    expect(chunkName('assets/ai-sdk-shared-CAWduq6e.js')).toBe('ai-sdk-shared');
+    expect(chunkName('assets/streamdown-CAWduq6e.js')).toBe('streamdown');
     expect(chunkName('assets/cm-lang-css-Bzp8a_YD.js')).toBe('cm-lang-css');
     expect(chunkName('assets/react-Cg0CyNNP.js')).toBe('react');
   });
@@ -66,12 +65,12 @@ describe('dist graph analyzer', () => {
   it("resolves npm packages through pnpm's nested node_modules", () => {
     const map = JSON.stringify({
       sources: [
-        '../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core.js',
-        '../../node_modules/.pnpm/@ai-sdk+gateway@3/node_modules/@ai-sdk/gateway/dist/index.mjs',
+        '../../node_modules/.pnpm/marked@17.0.6/node_modules/marked/lib/marked.esm.js',
+        '../../node_modules/.pnpm/@codemirror+state@6/node_modules/@codemirror/state/dist/index.js',
         '../../src/main.tsx',
       ],
     });
-    expect([...(packagesFromMap(map) ?? [])].sort()).toEqual(['@ai-sdk/gateway', 'zod']);
+    expect([...(packagesFromMap(map) ?? [])].sort()).toEqual(['@codemirror/state', 'marked']);
     expect(packagesFromMap(null)).toBeNull();
   });
 
@@ -82,43 +81,42 @@ describe('dist graph analyzer', () => {
     expect(
       findDuplicatePackages([
         map(
-          pnpm('@ai-sdk+provider-utils@4.0.30_zod@4.6.5', '@ai-sdk/provider-utils'),
+          pnpm('@lezer+common@1.2.3_@lezer+lr@1.4.2', '@lezer/common'),
           pnpm('marked@17.0.6', 'marked'),
           '../../src/main.tsx',
         ),
         map(
-          pnpm('@ai-sdk+provider-utils@4.0.36_zod@4.6.5', '@ai-sdk/provider-utils'),
+          pnpm('@lezer+common@1.3.0_@lezer+lr@1.4.2', '@lezer/common'),
           pnpm('marked@17.0.6', 'marked'),
-          pnpm('zod@4.6.5', 'zod'),
+          pnpm('streamdown@1.6.0', 'streamdown'),
         ),
         null,
       ]),
-    ).toEqual([{ name: '@ai-sdk/provider-utils', versions: ['4.0.30', '4.0.36'] }]);
+    ).toEqual([{ name: '@lezer/common', versions: ['1.2.3', '1.3.0'] }]);
     expect(findDuplicatePackages([])).toEqual([]);
   });
 
   it('follows transitive static imports and flags forbidden chunks with their importer', () => {
-    // The shape of the original regression: react -> ai-sdk-shared -> ai-*.
+    // The shape of the original regression: an eager chunk pulling a lazy stack.
     const files: Record<string, string> = {
       'index.html': '<script type="module" src="/assets/main-AAAA1111.js"></script>',
       'assets/main-AAAA1111.js': 'import"./react-BBBB2222.js";',
-      'assets/react-BBBB2222.js': 'import{n}from"./ai-sdk-shared-CCCC3333.js";',
-      'assets/ai-sdk-shared-CCCC3333.js': 'import{z}from"./ai-anthropic-DDDD4444.js";',
-      'assets/ai-anthropic-DDDD4444.js': 'export const z=1;',
+      'assets/react-BBBB2222.js': 'import{n}from"./codemirror-CCCC3333.js";',
+      'assets/codemirror-CCCC3333.js': 'import{z}from"./cm-lang-css-DDDD4444.js";',
+      'assets/cm-lang-css-DDDD4444.js': 'export const z=1;',
     };
     const trace = traceStartup(files['index.html'], (p) => files[p] ?? null);
     expect([...trace.files.keys()]).toHaveLength(4);
     expect(findViolations(trace).map((v) => [chunkName(v.file), v.via])).toEqual([
-      ['ai-sdk-shared', 'assets/react-BBBB2222.js'],
-      ['ai-anthropic', 'assets/ai-sdk-shared-CCCC3333.js'],
+      ['codemirror', 'assets/react-BBBB2222.js'],
+      ['cm-lang-css', 'assets/codemirror-CCCC3333.js'],
     ]);
   });
 
-  it('catches heavy code hiding in an anonymous chunk, by signature and by sourcemap', () => {
+  it('catches heavy code hiding in an anonymous chunk, by sourcemap', () => {
     const files: Record<string, string> = {
       'index.html': '<script type="module" src="/assets/main-AAAA1111.js"></script>',
-      'assets/main-AAAA1111.js': 'import"./dist-BBBB2222.js";import"./esm-CCCC3333.js";',
-      'assets/dist-BBBB2222.js': 'class E{};E.name="ZodError";',
+      'assets/main-AAAA1111.js': 'import"./esm-CCCC3333.js";',
       'assets/esm-CCCC3333.js': 'export const x=1;',
       'assets/esm-CCCC3333.js.map': JSON.stringify({
         sources: ['../../node_modules/.pnpm/x/node_modules/@codemirror/state/a.js'],
@@ -126,7 +124,6 @@ describe('dist graph analyzer', () => {
     };
     const trace = traceStartup(files['index.html'], (p) => files[p] ?? null);
     expect(findViolations(trace).map((v) => v.reason)).toEqual([
-      'contains zod code ("ZodError")',
       'bundles package "@codemirror/state"',
     ]);
   });
@@ -136,7 +133,7 @@ describe('dist graph analyzer', () => {
       'index.html':
         '<script type="module" src="/assets/main-AAAA1111.js"></script><link rel="modulepreload" href="/assets/react-BBBB2222.js">',
       'assets/main-AAAA1111.js':
-        'import"./react-BBBB2222.js";const l=()=>import("./ai-openai-EEEE5555.js");',
+        'import"./react-BBBB2222.js";const l=()=>import("./streamdown-EEEE5555.js");',
       'assets/react-BBBB2222.js': 'export const r=1;',
     };
     const trace = traceStartup(files['index.html'], (p) => files[p] ?? null);
@@ -181,7 +178,7 @@ describe('built startup graph', () => {
   });
 
   for (const html of ['index.html', 'settings.html']) {
-    it(`${html}: no AI SDK, zod, Streamdown, CodeMirror or icon-set code is preloaded`, () => {
+    it(`${html}: no Streamdown, CodeMirror or icon-set code is preloaded`, () => {
       const result = analyzeDist(outDir, [html])[html];
       expect(result.trace.missing).toEqual([]);
       expect(result.trace.files.size).toBeGreaterThan(5);
@@ -219,8 +216,8 @@ describe('built startup graph', () => {
   });
 
   it('bundles one version of every npm package', () => {
-    // A second copy is pure download and parse cost. Typical causes: an @ai-sdk
-    // package pinning its own provider-utils, a library pinning an old marked.
+    // A second copy is pure download and parse cost. Typical cause: a library
+    // pinning an old marked.
     // Fix with `pnpm why <name>` and a pnpm override (pnpm-workspace.yaml).
     expect(findDuplicatePackagesInDist(outDir)).toEqual([]);
   });
