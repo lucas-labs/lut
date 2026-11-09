@@ -87,8 +87,9 @@ uses the committed `.wasm` files and does not need Zig.
 
 ## CI
 
-`.github/workflows/ci.yml` runs on every pull request to `master` and every push to `master`. Changes that only touch
-`.docs/` or Markdown files skip it. Its jobs:
+`.github/workflows/ci.yml` runs on every pull request to `master` and every push to `master`. A push that only touches
+`.docs/` or Markdown files skips it; a pull request always starts it (only **changes** runs when it touches nothing
+else), so the checks `master` requires always report (E04-09). Its jobs:
 
 - **changes** (Ubuntu): on a pull request, decides which of the others run from the changed files (E01-25). A push
   to `master` runs all of them.
