@@ -1,4 +1,5 @@
 use std::path::Path;
+#[cfg(unix)]
 use std::time::Duration;
 
 use super::project_config::{self, Ports};
