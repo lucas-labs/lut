@@ -5,6 +5,7 @@ use crate::modules::git::types::{
     DiscardEntry, GitBranchListResult, GitCommitFileChange, GitCommitResult, GitDiffContentResult,
     GitDiffResult, GitLogEntry, GitPanelSnapshot, GitPushResult, GitRepoInfo, GitStatusSnapshot,
 };
+use crate::modules::git::watch::{GitWatchInfo, GitWatchState};
 use crate::modules::workspace::{WorkspaceEnv, WorkspaceRegistry};
 
 async fn blocking<F, T>(app: AppHandle, f: F) -> Result<T, String>
@@ -309,4 +310,29 @@ pub async fn git_checkout_branch(
         operations::checkout_branch(r, &repo_root, &branch, &workspace).map_err(Into::into)
     })
     .await
+}
+
+#[tauri::command]
+pub async fn git_watch(
+    repo_root: String,
+    workspace: Option<WorkspaceEnv>,
+    app: AppHandle,
+) -> Result<GitWatchInfo, String> {
+    let workspace = WorkspaceEnv::from_option(workspace);
+    let handle = app.clone();
+    blocking(app, move |r| {
+        handle
+            .state::<GitWatchState>()
+            .subscribe(&handle, r, &repo_root, &workspace)
+            .map_err(Into::into)
+    })
+    .await
+}
+
+/// `repo` is the `repo` key `git_watch` returned. Nothing is resolved or run:
+/// the worktree may already be gone, and its watch must still be released.
+#[tauri::command]
+pub async fn git_unwatch(repo: String, app: AppHandle) -> Result<(), String> {
+    app.state::<GitWatchState>().unsubscribe(&repo);
+    Ok(())
 }
