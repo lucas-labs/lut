@@ -442,8 +442,9 @@ mod unix {
     }
 
     fn integration_root() -> Result<PathBuf, String> {
-        let home = dirs::home_dir().ok_or_else(|| "could not resolve home dir".to_string())?;
-        let root = home.join(".cache").join("terax").join("shell-integration");
+        // lut's runtime dir, never Terax's `~/.cache/terax` (E02-10).
+        let cache = dirs::cache_dir().ok_or_else(|| "could not resolve cache dir".to_string())?;
+        let root = terax_control_protocol::runtime_dir(&cache).join("shell-integration");
         fs::create_dir_all(&root).map_err(|e| format!("create {}: {e}", root.display()))?;
         Ok(root)
     }
@@ -470,7 +471,7 @@ mod unix {
         let home = dirs::home_dir().ok_or_else(|| "could not resolve home dir".to_string())?;
         let dir = home.join(".config").join("fish").join("conf.d");
         fs::create_dir_all(&dir).map_err(|e| format!("create {}: {e}", dir.display()))?;
-        write_if_changed(&dir.join("terax.fish"), FISH_INIT)?;
+        write_if_changed(&dir.join("lut.fish"), FISH_INIT)?;
         Ok(())
     }
 
@@ -482,7 +483,7 @@ mod unix {
         }
         // Atomic replace: a parallel shell startup must never source a half-written file.
         let mut tmp: OsString = path.as_os_str().to_owned();
-        tmp.push(".__terax_tmp__");
+        tmp.push(".__lut_tmp__");
         let tmp = PathBuf::from(tmp);
         fs::write(&tmp, content).map_err(|e| format!("write {}: {e}", tmp.display()))?;
         fs::rename(&tmp, path).map_err(|e| {
@@ -531,7 +532,7 @@ mod unix {
 
         #[test]
         fn the_users_zdotdir_survives_a_terax_started_from_an_integrated_zsh() {
-            let integration = Path::new("/cache/terax/shell-integration/zsh");
+            let integration = Path::new("/cache/dev.lucode.lut/shell-integration/zsh");
             assert_eq!(
                 user_zdotdir_for(Some("/home/me/.config/zsh"), integration),
                 UserZdotdir::Set("/home/me/.config/zsh".into())
@@ -540,7 +541,7 @@ mod unix {
             // LUT_USER_ZDOTDIR it inherited.
             assert_eq!(
                 user_zdotdir_for(
-                    Some("/cache/terax/shell-integration/zsh"),
+                    Some("/cache/dev.lucode.lut/shell-integration/zsh"),
                     integration
                 ),
                 UserZdotdir::Keep
@@ -853,8 +854,9 @@ mod windows {
     fn prepare_wsl_integration_dir(distro: &str, shell: &str) -> Result<(String, PathBuf), String> {
         let home = crate::modules::workspace::wsl_home(distro.to_string())?;
         let linux_dir = format!(
-            "{}/.cache/terax/shell-integration/{shell}",
-            home.trim_end_matches('/')
+            "{}/.cache/{}/shell-integration/{shell}",
+            home.trim_end_matches('/'),
+            terax_control_protocol::RUNTIME_DIR_NAME
         );
         let unc_dir = crate::modules::workspace::wsl_path_to_unc(distro, &linux_dir);
         fs::create_dir_all(&unc_dir).map_err(|e| format!("create {}: {e}", unc_dir.display()))?;
@@ -900,15 +902,16 @@ mod windows {
         let linux_dir = format!("{}/.config/fish/conf.d", home.trim_end_matches('/'));
         let unc_dir = crate::modules::workspace::wsl_path_to_unc(distro, &linux_dir);
         fs::create_dir_all(&unc_dir).map_err(|e| format!("create {}: {e}", unc_dir.display()))?;
-        let unc_file = unc_dir.join("terax.fish");
+        let unc_file = unc_dir.join("lut.fish");
         let content = normalize_script(super::fish_init_script());
         write_if_changed(&unc_file, &content)?;
         Ok(())
     }
 
     fn integration_root() -> Result<PathBuf, String> {
-        let home = dirs::home_dir().ok_or_else(|| "could not resolve home dir".to_string())?;
-        let root = home.join(".cache").join("terax").join("shell-integration");
+        // lut's runtime dir, never Terax's `~/.cache/terax` (E02-10).
+        let cache = dirs::cache_dir().ok_or_else(|| "could not resolve cache dir".to_string())?;
+        let root = terax_control_protocol::runtime_dir(&cache).join("shell-integration");
         fs::create_dir_all(&root).map_err(|e| format!("create {}: {e}", root.display()))?;
         Ok(root)
     }
@@ -998,7 +1001,7 @@ mod windows {
             }
         }
         let mut tmp: OsString = path.as_os_str().to_owned();
-        tmp.push(".__terax_tmp__");
+        tmp.push(".__lut_tmp__");
         let tmp = PathBuf::from(tmp);
         fs::write(&tmp, content).map_err(|e| format!("write {}: {e}", tmp.display()))?;
         fs::rename(&tmp, path).map_err(|e| {
