@@ -184,7 +184,7 @@ reads `window.__TAURI__`.
 
 | Module                   | Role                                                                                                                                                  | Files | Lines  |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------ |
-| `git/`                   | Git CLI wrapper for the panel, history and watcher; also the unwired agent-task backend (worktrees, checkpoints, review) deleted by E02-05.           | 31    | 20 045 |
+| `git/`                   | Git CLI wrapper for the panel, history and watcher.                                                                                                   | 14    | 5 731  |
 | `pty/`                   | PTY sessions (portable-pty, ConPTY on Windows), output hub and `terax-pty` transport, shell launch and integration scripts, agent detection from OSC. | 16    | 10 905 |
 | `fs/`                    | File tree, read/write, mutations, copy, clipboard paths, watcher, search index, grep, assets, AI fs tools, read policy.                               | 19    | 8 846  |
 | `control.rs`             | Loopback TCP control server for the CLI: descriptor, per-pane tokens, request routing.                                                                | 1     | 1 533  |
@@ -210,19 +210,18 @@ reads `window.__TAURI__`.
 
 ### Commands
 
-140 commands are registered (3 of them only with the `bench` feature). The tables below list each one with the
+118 commands are registered (3 of them only with the `bench` feature; E02-05 removed the 22 of the git agent-task backend). The tables below list each one with the
 frontend files that call it; for the wrapper objects the caller is written as `` `git.method` → users ``.
 
-**Commands without a real caller (27):**
+**Commands without a real caller (5):**
 
-| Commands                                                                                                                                                                                            | Why                                                                     | Removed by     |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | -------------- |
-| `pty_has_foreground_job`                                                                                                                                                                            | No caller                                                               | E14-11         |
-| `fs_grep`, `fs_glob`                                                                                                                                                                                | No caller (the palette uses `fs_grep_interactive`)                      | E02-18         |
-| `git_show_commit`                                                                                                                                                                                   | Only `git.showCommit`, which nothing calls                              | E02-18         |
-| `git_merge_base`, `git_diff_summary`, `git_diff_file`, `git_apply_hunks`, `git_worktree_*` (4), `git_checkpoint_*` (4), `git_branch_create`, `git_branch_rename`, `git_upstream_info`, `task_*` (7) | No caller (the agent-task backend; E02-04 removed the `git.*` wrappers) | E02-04, E02-05 |
-| `shell_session_close`                                                                                                                                                                               | Only `native.shellSessionClose`, which nothing calls                    | E05-15         |
-| `wsl_default_distro`                                                                                                                                                                                | No caller; kept as an input for WSL profile detection                   | (E14-06)       |
+| Commands                 | Why                                                   | Removed by |
+| ------------------------ | ----------------------------------------------------- | ---------- |
+| `pty_has_foreground_job` | No caller                                             | E14-11     |
+| `fs_grep`, `fs_glob`     | No caller (the palette uses `fs_grep_interactive`)    | E02-18     |
+| `git_show_commit`        | Only `git.showCommit`, which nothing calls            | E02-18     |
+| `shell_session_close`    | Only `native.shellSessionClose`, which nothing calls  | E05-15     |
+| `wsl_default_distro`     | No caller; kept as an input for WSL profile detection | (E14-06)   |
 
 **Callers the running app never loads:** `agent_decisions_ready` and `agent_decision_respond`
 (`modules/control/lib/agentDecisions.ts`) and `agent_disable_hooks`, `agent_hooks_plan`, `agent_hooks_apply` (only
@@ -296,51 +295,29 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 
 #### git
 
-| Command                         | Handler                | Frontend caller(s)                                                                                                                                            |
-| ------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `git_resolve_repo`              | `git::commands`        | `git.resolveRepo` → `app/components/useGitBranch.ts`, `modules/source-control/useRepositoryTargeting.ts`, `modules/source-control/useSourceControlContext.ts` |
-| `git_panel_snapshot`            | `git::commands`        | `git.panelSnapshot` → `modules/source-control/useSourceControl.ts`                                                                                            |
-| `git_status`                    | `git::commands`        | `git.status` → `modules/source-control/useSourceControl.ts`                                                                                                   |
-| `git_diff`                      | `git::commands`        | `git.diff` → `modules/source-control/useSourceControlPanel.ts`                                                                                                |
-| `git_diff_content`              | `git::commands`        | `git.diffContent` → `modules/editor/lib/diffCache.ts`                                                                                                         |
-| `git_stage`                     | `git::commands`        | `git.stage` → `modules/source-control/useSourceControlPanel.ts`                                                                                               |
-| `git_unstage`                   | `git::commands`        | `git.unstage` → `modules/source-control/useSourceControlPanel.ts`                                                                                             |
-| `git_discard`                   | `git::commands`        | `git.discard` → `modules/source-control/useSourceControlPanel.ts`                                                                                             |
-| `git_commit`                    | `git::commands`        | `git.commit` → `modules/source-control/useSourceControlPanel.ts`                                                                                              |
-| `git_fetch`                     | `git::commands`        | `git.fetch` → `modules/source-control/useSourceControl.ts`                                                                                                    |
-| `git_pull_ff_only`              | `git::commands`        | `git.pullFfOnly` → `modules/source-control/useSourceControl.ts`                                                                                               |
-| `git_push`                      | `git::commands`        | `git.push` → `modules/source-control/useSourceControl.ts`                                                                                                     |
-| `git_log`                       | `git::commands`        | `git.log` → `modules/git-history/GitHistoryPane.tsx`                                                                                                          |
-| `git_show_commit`               | `git::commands`        | `git.showCommit` → **unused wrapper**                                                                                                                         |
-| `git_commit_files`              | `git::commands`        | `git.commitFiles` → `modules/git-history/GitHistoryPane.tsx`                                                                                                  |
-| `git_commit_file_diff`          | `git::commands`        | `git.commitFileDiff` → `modules/editor/lib/diffCache.ts`                                                                                                      |
-| `git_remote_url`                | `git::commands`        | `git.remoteUrl` → `modules/git-history/GitHistoryPane.tsx`                                                                                                    |
-| `git_list_branches`             | `git::commands`        | `git.listBranches` → `modules/source-control/SourceControlPanel.tsx`                                                                                          |
-| `git_checkout_branch`           | `git::commands`        | `git.checkoutBranch` → `modules/source-control/SourceControlPanel.tsx`                                                                                        |
-| `git_merge_base`                | `git::commands_review` | **no caller**                                                                                                                                                 |
-| `git_diff_summary`              | `git::commands_review` | **no caller**                                                                                                                                                 |
-| `git_diff_file`                 | `git::commands_review` | **no caller**                                                                                                                                                 |
-| `git_apply_hunks`               | `git::commands_review` | **no caller**                                                                                                                                                 |
-| `git_worktree_list`             | `git::commands_review` | **no caller**                                                                                                                                                 |
-| `git_worktree_add`              | `git::commands_review` | **no caller**                                                                                                                                                 |
-| `task_project_config`           | `git::commands_tasks`  | **no caller**                                                                                                                                                 |
-| `task_worktree_list`            | `git::commands_tasks`  | **no caller**                                                                                                                                                 |
-| `task_worktree_create`          | `git::commands_tasks`  | **no caller**                                                                                                                                                 |
-| `task_worktree_prepare_archive` | `git::commands_tasks`  | **no caller**                                                                                                                                                 |
-| `task_worktree_archive`         | `git::commands_tasks`  | **no caller**                                                                                                                                                 |
-| `task_worktree_restore`         | `git::commands_tasks`  | **no caller**                                                                                                                                                 |
-| `task_worktree_disk_usage`      | `git::commands_tasks`  | **no caller**                                                                                                                                                 |
-| `git_worktree_remove`           | `git::commands_review` | **no caller**                                                                                                                                                 |
-| `git_worktree_prune`            | `git::commands_review` | **no caller**                                                                                                                                                 |
-| `git_checkpoint_create`         | `git::commands_review` | **no caller**                                                                                                                                                 |
-| `git_checkpoint_list`           | `git::commands_review` | **no caller**                                                                                                                                                 |
-| `git_checkpoint_restore`        | `git::commands_review` | **no caller**                                                                                                                                                 |
-| `git_checkpoint_prune`          | `git::commands_review` | **no caller**                                                                                                                                                 |
-| `git_branch_create`             | `git::commands_review` | **no caller**                                                                                                                                                 |
-| `git_branch_rename`             | `git::commands_review` | **no caller**                                                                                                                                                 |
-| `git_upstream_info`             | `git::commands_review` | **no caller**                                                                                                                                                 |
-| `git_watch`                     | `git::commands`        | `git.watch` → `modules/git/changes.ts`                                                                                                                        |
-| `git_unwatch`                   | `git::commands`        | `git.unwatch` → `modules/git/changes.ts`                                                                                                                      |
+| Command                | Handler         | Frontend caller(s)                                                                                                                                            |
+| ---------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `git_resolve_repo`     | `git::commands` | `git.resolveRepo` → `app/components/useGitBranch.ts`, `modules/source-control/useRepositoryTargeting.ts`, `modules/source-control/useSourceControlContext.ts` |
+| `git_panel_snapshot`   | `git::commands` | `git.panelSnapshot` → `modules/source-control/useSourceControl.ts`                                                                                            |
+| `git_status`           | `git::commands` | `git.status` → `modules/source-control/useSourceControl.ts`                                                                                                   |
+| `git_diff`             | `git::commands` | `git.diff` → `modules/source-control/useSourceControlPanel.ts`                                                                                                |
+| `git_diff_content`     | `git::commands` | `git.diffContent` → `modules/editor/lib/diffCache.ts`                                                                                                         |
+| `git_stage`            | `git::commands` | `git.stage` → `modules/source-control/useSourceControlPanel.ts`                                                                                               |
+| `git_unstage`          | `git::commands` | `git.unstage` → `modules/source-control/useSourceControlPanel.ts`                                                                                             |
+| `git_discard`          | `git::commands` | `git.discard` → `modules/source-control/useSourceControlPanel.ts`                                                                                             |
+| `git_commit`           | `git::commands` | `git.commit` → `modules/source-control/useSourceControlPanel.ts`                                                                                              |
+| `git_fetch`            | `git::commands` | `git.fetch` → `modules/source-control/useSourceControl.ts`                                                                                                    |
+| `git_pull_ff_only`     | `git::commands` | `git.pullFfOnly` → `modules/source-control/useSourceControl.ts`                                                                                               |
+| `git_push`             | `git::commands` | `git.push` → `modules/source-control/useSourceControl.ts`                                                                                                     |
+| `git_log`              | `git::commands` | `git.log` → `modules/git-history/GitHistoryPane.tsx`                                                                                                          |
+| `git_show_commit`      | `git::commands` | `git.showCommit` → **unused wrapper**                                                                                                                         |
+| `git_commit_files`     | `git::commands` | `git.commitFiles` → `modules/git-history/GitHistoryPane.tsx`                                                                                                  |
+| `git_commit_file_diff` | `git::commands` | `git.commitFileDiff` → `modules/editor/lib/diffCache.ts`                                                                                                      |
+| `git_remote_url`       | `git::commands` | `git.remoteUrl` → `modules/git-history/GitHistoryPane.tsx`                                                                                                    |
+| `git_list_branches`    | `git::commands` | `git.listBranches` → `modules/source-control/SourceControlPanel.tsx`                                                                                          |
+| `git_checkout_branch`  | `git::commands` | `git.checkoutBranch` → `modules/source-control/SourceControlPanel.tsx`                                                                                        |
+| `git_watch`            | `git::commands` | `git.watch` → `modules/git/changes.ts`                                                                                                                        |
+| `git_unwatch`          | `git::commands` | `git.unwatch` → `modules/git/changes.ts`                                                                                                                      |
 
 #### shell
 
