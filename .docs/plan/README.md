@@ -24,6 +24,7 @@ accounted for. Everything in this folder is written in English.
     ├── proposal-items.mjs    builds inventory/proposal-items.json
     ├── skeleton.mjs          epic list + item -> epic assignment; builds analysis/skeleton.json
     ├── validate.mjs          validates analysis + plan + coverage
+    ├── requirements.mjs      builds/checks .docs/product/requirements.md (requirements -> issues)
     └── lib.mjs               shared helpers (plan parser, mini YAML)
 ```
 
@@ -34,9 +35,12 @@ node .docs/plan/tools/partition.mjs          # regenerate partition (fails on un
 node .docs/plan/tools/proposal-items.mjs     # regenerate proposal items
 node .docs/plan/tools/validate.mjs           # validate everything; exit 1 on any error
 node .docs/plan/tools/validate.mjs --analysis-only
+node .docs/plan/tools/requirements.mjs       # regenerate the requirements traceability (keeps hand-written cells)
 ```
 
 Re-run `proposal-items.mjs` and `validate.mjs` whenever `proposal.md` changes: list-item ids are positional.
+Re-run `requirements.mjs` whenever a requirement id is added to or removed from an issue's `covers`, or an issue that
+covers one is renamed: `validate.mjs` fails while `.docs/product/requirements.md` is out of date.
 
 ## Coverage model
 

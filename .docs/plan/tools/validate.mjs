@@ -3,6 +3,7 @@
 //   - inventory/proposal-items.json  (every proposal item covered or "Not planned")
 //   - analysis/<area>.json           (every file of the area in exactly one item; every item that is
 //                                     not "keep" covered or "Not planned")
+//   - .docs/product/requirements.md  (every requirement listed, generated columns up to date; requirements.mjs)
 //
 // usage: node .docs/plan/tools/validate.mjs [plan.md] [--analysis-only] [--allow-missing-analysis] [--partial]
 //   --partial: validate a file holding only some epics (e.g. drafts/E05.md): dependencies on ids of other epics are
@@ -11,6 +12,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { AREAS, toMatcher } from "./areas.mjs";
 import { ANALYSIS_DIR, INVENTORY_DIR, PLAN_DIR, parsePlan, readJson } from "./lib.mjs";
+import { requirementsErrors } from "./requirements.mjs";
 
 const args = process.argv.slice(2);
 const planPath = args.find((a) => !a.startsWith("--")) ?? join(PLAN_DIR, "plan.md");
@@ -227,6 +229,9 @@ const uncoveredProposal = proposal.items.filter((i) => inScope(i.id) && !covered
 const uncoveredInventory = [...analysisItems.values()].filter((i) => inScope(i.id) && i.disposition !== "keep" && !covered.has(i.id) && !notPlanned.has(i.id));
 for (const i of uncoveredProposal) err(`uncovered proposal item ${i.id}: ${i.text.slice(0, 90)}`);
 for (const i of uncoveredInventory) err(`uncovered inventory item ${i.id} (${i.disposition}): ${i.title}`);
+
+// requirements traceability: .docs/product/requirements.md lists every requirement with its current issues.
+if (!partial) for (const e of requirementsErrors(readFileSync(planPath, "utf8"))) err(e);
 
 finish({
   epics: plan.epics.length,
