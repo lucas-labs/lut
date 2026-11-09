@@ -19,7 +19,6 @@ import { useAgentStore } from '../store/agentStore';
 
 type Props = {
   onActivate: (tabId: number, leafId: number) => void;
-  onActivateLocal: () => void;
 };
 
 function relativeTime(ts: number): string {
@@ -124,7 +123,7 @@ function NotificationRow({ n, onClick }: { n: AgentNotification; onClick: () => 
   );
 }
 
-export function NotificationBell({ onActivate, onActivateLocal }: Props) {
+export function NotificationBell({ onActivate }: Props) {
   const [open, setOpen] = useState(false);
   const [hooks, setHooks] = useState<Record<string, boolean>>({});
   const [installing, setInstalling] = useState<string | null>(null);
@@ -176,14 +175,8 @@ export function NotificationBell({ onActivate, onActivateLocal }: Props) {
     setOpen(false);
   };
 
-  const activateLocal = () => {
-    onActivateLocal();
-    setOpen(false);
-  };
-
   const activateNotification = (n: AgentNotification) => {
-    if (n.source === 'local') activateLocal();
-    else activate(n.tabId, n.leafId);
+    activate(n.tabId, n.leafId);
   };
 
   const empty = activeCount === 0 && notifications.length === 0;

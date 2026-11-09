@@ -6,7 +6,6 @@ import { routeAgentNotification } from '../lib/route';
 import type { AgentSession, AgentSignal } from '../lib/types';
 import { useWindowFocus } from '../lib/useWindowFocus';
 import { useAgentStore } from '../store/agentStore';
-import { useManagedAgentsStore } from '../store/managedAgentsStore';
 
 type Activate = (tabId: number, leafId: number) => void;
 type Ctx = {
@@ -75,7 +74,6 @@ function handleSignal(sig: AgentSignal, ctx: Ctx): void {
     }
     case 'exited':
       store.finish(leafId);
-      useManagedAgentsStore.getState().remove(leafId);
       return;
   }
 }
