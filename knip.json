@@ -13,7 +13,8 @@
   ],
   "ignoreBinaries": [
     "footprint",
-    "swiftc"
+    "swiftc",
+    "where"
   ],
   "ignoreIssues": {
     "src/bench/flags.ts": [
