@@ -75,7 +75,6 @@ describe('startup bundle budget', () => {
       'ghostty/gpu/builtin/legacyComputing.ts',
       'ghostty/search/GhosttySearchEngine.ts',
       'ghostty/sessionDiagnostics.ts',
-      'ghostty/GhosttyBlocks.ts',
     ]) {
       expect(
         eager.filter((file) => file.endsWith(lazy)),

@@ -1,4 +1,3 @@
-import { ghosttyBlocks } from './ghosttyBlockSessions';
 import { webGpuTerminalRuntimeDiagnostics } from './gpu/WebGpuTerminalRuntime';
 import { ghosttySessionsForDiagnostics } from './useGhosttyTerminalSession';
 
@@ -7,7 +6,6 @@ export function ghosttySessionDiagnostics() {
     leafId: session.leafId,
     backend: session.backend,
     font: session.font,
-    blocks: ghosttyBlocks(session.leafId)?.controller?.diagnostics() ?? null,
     pty: session.pty?.id ?? null,
     visible: session.visible,
     focused: session.focused,

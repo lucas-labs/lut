@@ -32,7 +32,7 @@ export function escapeForShell(path: string, windows = IS_WINDOWS): string {
   return path.replace(POSIX_SHELL_SPECIAL, '\\$1');
 }
 
-export function shellQuoteChar(c: string, windows: boolean): string {
+function shellQuoteChar(c: string, windows: boolean): string {
   if (c === "'" || (windows && /[‘’]/.test(c))) return "'";
   if (c === '"' || (windows && /[“”]/.test(c))) return '"';
   return '';
