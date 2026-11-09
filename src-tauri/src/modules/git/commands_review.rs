@@ -8,7 +8,6 @@ use crate::modules::git::checkpoint::{self, CheckpointCreated, CheckpointInfo, R
 use crate::modules::git::review::{
     self, ApplyHunksRequest, ApplyOutcome, GitDiffScope, GitDiffSummary, GitFileDiff,
 };
-use crate::modules::git::watch::{GitWatchInfo, GitWatchState};
 use crate::modules::git::worktree::{
     self, PruneReport, WorktreeAddRequest, WorktreeAdded, WorktreeEntry, WorktreeRemoveReport,
 };
@@ -255,29 +254,4 @@ pub async fn git_upstream_info(
         branch::upstream_info(r, &repo_root, &workspace).map_err(Into::into)
     })
     .await
-}
-
-#[tauri::command]
-pub async fn git_watch(
-    repo_root: String,
-    workspace: Option<WorkspaceEnv>,
-    app: AppHandle,
-) -> Result<GitWatchInfo, String> {
-    let workspace = WorkspaceEnv::from_option(workspace);
-    let handle = app.clone();
-    blocking(app, move |r| {
-        handle
-            .state::<GitWatchState>()
-            .subscribe(&handle, r, &repo_root, &workspace)
-            .map_err(Into::into)
-    })
-    .await
-}
-
-/// `repo` is the `repo` key `git_watch` returned. Nothing is resolved or run:
-/// the worktree may already be gone, and its watch must still be released.
-#[tauri::command]
-pub async fn git_unwatch(repo: String, app: AppHandle) -> Result<(), String> {
-    app.state::<GitWatchState>().unsubscribe(&repo);
-    Ok(())
 }

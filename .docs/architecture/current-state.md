@@ -339,8 +339,8 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 | `git_branch_create`             | `git::commands_review` | **no caller**                                                                                                                                                 |
 | `git_branch_rename`             | `git::commands_review` | **no caller**                                                                                                                                                 |
 | `git_upstream_info`             | `git::commands_review` | **no caller**                                                                                                                                                 |
-| `git_watch`                     | `git::commands_review` | `git.watch` → `modules/git/changes.ts`                                                                                                                        |
-| `git_unwatch`                   | `git::commands_review` | `git.unwatch` → `modules/git/changes.ts`                                                                                                                      |
+| `git_watch`                     | `git::commands`        | `git.watch` → `modules/git/changes.ts`                                                                                                                        |
+| `git_unwatch`                   | `git::commands`        | `git.unwatch` → `modules/git/changes.ts`                                                                                                                      |
 
 #### shell
 
