@@ -374,11 +374,31 @@ Run by hand on 2026-11-09 with the release build of `1631260` (E01-13).
 | Agent (Claude Code) in a pane, hooks disabled              | ✅                                       |
 | Resize, zoom, display scale 100% → 125%                    | ✅, with the zoom shortcut failure below |
 
-Agents with hooks enabled are not part of this test: they are run by E04-13 (formerly E02-16), once the hook markers are lut's (E02-11).
+Agents with hooks enabled are not part of this test: lut will stop writing agent configs and ship its hooks as plugins the user installs by hand (E20-15), whose manual test runs them.
 
 When lut is started from a Claude Code session, the shells inherit `CLAUDE_CODE_CHILD_SESSION` and Claude Code inside
 them warns that transcript saving is off. That is the inherited environment, not a lut defect; start lut from the
 Explorer or another terminal to avoid it.
+
+## Coexistence with Terax (E04-13)
+
+Run on 2026-11-09 on Windows 11 with Terax 0.9.0 installed (not running), using the release NSIS bundle of the E04-13
+branch, installed and uninstalled silently (`/S`). The registry (`HKCU\Software\Classes`, the Uninstall keys, the
+`HKCU\Software` subkeys), the dirs under `%APPDATA%`, `%LOCALAPPDATA%`, `~/.cache` and `~`, and a fingerprint (paths,
+sizes, modification times) of Terax's install dir, data and cache dirs and of the agents' config files
+(`~/.claude/settings.json`, `~/.codex`, `~/.gemini/settings.json`) were compared before, after installing, after
+running and after uninstalling.
+
+| Check                                                                     | Result                                                                                                                                                                      |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Terax's install dir, data and cache dirs, Start-menu entry, uninstall key | ✅ unchanged at every step                                                                                                                                                  |
+| Terax's `OpenInTerax` verbs and `Terax Document` ProgID                   | ✅ unchanged at every step                                                                                                                                                  |
+| File-type defaults (`.json`, `.md`, `.ts`, …)                             | Point to `lut Document` while lut is installed (Tauri's file associations, with `Terax Document` as backup); restored to `Terax Document` on uninstall                      |
+| What lut creates                                                          | `%LOCALAPPDATA%\lut` (install dir), `HKCU\Software\lucode`, its Uninstall key, the `OpenInLut` verbs and `lut Document`; app data only under `dev.lucode.lut`               |
+| Agent config files while lut runs                                         | ✅ unchanged (lut writes them only when hooks are enabled; E20-15 removes that path)                                                                                        |
+| Network while lut runs (20 s, TCP endpoints of lut's process tree)        | Only the WebView2 browser process: Microsoft (AS8075) and `chrome.cloudflare-dns.com` (DNS over HTTPS, the machine's resolver is 1.1.1.1); nothing to GitHub or `terax.app` |
+| After uninstalling                                                        | ✅ no lut key, value, dir or file left; registry identical to before except Windows' own `PCT`/`PTT` timestamps                                                             |
+| Keychain                                                                  | ✅ no keychain code left (the BYOK AI and its `terax-ai` service were removed in E02)                                                                                       |
 
 ## Phase 0 gate (E01-14)
 
