@@ -1141,6 +1141,7 @@ size: S
 - [ ] `tauri.conf.json` window `title`, **`src-tauri/tauri.windows.conf.json:14` `title`** (it overrides `tauri.conf.json` on Windows), `index.html`/`settings.html` titles and `useWindowTitle` APP_NAME read "lut".
 - [ ] `src/app/components/CloseDialogs.tsx`, `src/modules/agents/components/NotificationBell.tsx`, `src/modules/lsp/components/LspStatusPill.tsx`, `src/settings/components/LspInstallDialog.tsx` and the About section (`AboutSection.tsx`) say lut; About links point to the lut repository.
 - [ ] BYOK AI user-visible texts say lut (decision 25): "Ask Terax anything" (`AiComposerInput.tsx:260`), `AiMiniWindow.tsx:546`, "Terax finished" / "Terax needs your approval" (`LocalAgentNotificationsBridge.tsx:66-70`) and any other visible AI string found by the grep below. Files already deleted by E05 (no order between E04 and E05) are skipped.
+- [ ] AI texts left after E05: the About tagline "Open-source AI-native terminal emulator" (`AboutSection.tsx`) and the `AI` shortcut group (`shortcuts.ts`), which only holds `agent.focusAttention`, are replaced.
 - [ ] The updater UI is already deleted (E01-02) and is not touched.
 
 **Verification:** `pnpm check-types && pnpm test`; `git grep -n "Terax" -- src src-tauri/*.conf.json index.html settings.html` returns only internal identifiers (listed in the PR); manual on Windows: the window title reads lut.
@@ -4698,11 +4699,36 @@ size: XS
 
 **Verification:** `pnpm test`; `cargo test --manifest-path src-tauri/Cargo.toml workspace`.
 
+### E16-12 — Restore each space's active tab when switching to it
+
+```yaml
+id: E16-12
+depends-on: []
+refs: [PRJ-002, .docs/testing/phase2-gate.md]
+covers: [PRJ-002]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** Switching to a space shows the tab that was active in it, instead of its last tab. Found by the Phase 2 gate;
+it predates E05. At startup only the active space's saved `activeTabIndex` is applied (`useSpacesBoot.ts`); the
+others are kept for persistence only, and the space-switch effect in `App.tsx` falls back to the space's last tab.
+
+**Acceptance criteria:**
+
+- [ ] Each space remembers its active tab during the session; switching back to it selects that tab.
+- [ ] After a restart, the first switch to a space that was not active selects the tab saved in its `activeTabIndex`.
+- [ ] A cross-space jump that sets the active tab explicitly (e.g. from an agent notification) still wins.
+- [ ] Tests cover the switch with a remembered tab, a saved index and a closed remembered tab.
+
+**Verification:** `pnpm test`; manual: two spaces, a non-last tab active in each, restart and switch between them.
+
 ### E16-11 — Close-out: projects model and persistence
 
 ```yaml
 id: E16-11
-depends-on: [E16-01, E16-02, E16-03, E16-04, E16-05, E16-06, E16-07, E16-08, E16-09, E16-10]
+depends-on: [E16-01, E16-02, E16-03, E16-04, E16-05, E16-06, E16-07, E16-08, E16-09, E16-10, E16-12]
 refs: [F4]
 covers: []
 type: closeout
