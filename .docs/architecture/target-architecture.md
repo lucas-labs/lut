@@ -22,8 +22,8 @@ From §6.1, with what exists today:
 | Agent status, activity, notifications            | `modules/agents`, `modules/control`, `terax:agent-signal`                    | E19, E20, E21 |
 | Optional tools (editor, Git, explorer), lazy     | Always-mounted IDE modules                                                   | E10           |
 | PTY manager, shell integration, session registry | `src-tauri/src/modules/pty/`                                                 | E14, E17      |
-| Control server, agent hooks, hook broker         | `control.rs`, `agent_events.rs`, `agent.rs`, `terax-cli`                     | E02, E19, E20 |
-| Project/profile persistence and launcher         | Spaces store (`terax-spaces.json`); no profiles                              | E14, E16, E17 |
+| Control server, agent hooks, hook broker         | `control.rs`, `agent_events.rs`, `agent.rs`, `lut-cli`                       | E02, E19, E20 |
+| Project/profile persistence and launcher         | Spaces store (`lut-spaces.json`); no profiles                                | E14, E16, E17 |
 | Notifications and OS integration                 | notification plugin, `vibrancy.rs`, `window_presentation.rs`                 | E09, E20      |
 
 The built-in BYOK AI (`modules/ai`, `net`, `ai_sessions`, `secrets`) and command-blocks mode have no target layer:
@@ -138,7 +138,7 @@ Agent CLI in a lut shell → official hook (JSON on stdin)
   → tab badges, notifications and focus, activity panel
 ```
 
-The pieces exist today under Terax names (`terax-cli hook`, `control.rs`, `agent_events.rs`); the frontend reducer
+The pieces exist today under Terax names (`lut-cli hook`, `control.rs`, `agent_events.rs`); the frontend reducer
 (`modules/agents/model/`) is not wired yet (E19-07).
 
 ## Renderer

@@ -3,8 +3,9 @@
 How to build and run lut from a clean checkout. Windows 11 is the primary platform; macOS and Linux follow the
 same steps once their prerequisites are installed.
 
-> The imported code still uses some Terax names (`terax-cli`, `TERAX_*`). The identifier is `dev.lucode.lut` since
-> E02-06; the app package, executable and `productName` are `lut` since E02-07.
+> The identifier is `dev.lucode.lut` (E02-06); the app package, executable and `productName` are `lut` (E02-07); the
+> CLI sidecar is `lut-cli` and the child-process variables are `LUT_*` (E02). Internal crate and module names still say
+> terax until E04-12.
 > Commands below use the names that exist today. They change with the identity epics (E02, E04).
 
 ## Toolchain
@@ -66,14 +67,14 @@ Rust workspace. Later runs are incremental.
 
 ### CLI sidecar prebuild
 
-The app bundles the `terax-cli` binary as a Tauri sidecar (`bundle.externalBin` in `tauri.conf.json`). Tauri
-expects it at `src-tauri/binaries/terax-cli-<target-triple>[.exe]` before it builds the app, so:
+The app bundles the `lut-cli` binary (crate `terax-cli`) as a Tauri sidecar (`bundle.externalBin` in
+`tauri.conf.json`). Tauri expects it at `src-tauri/binaries/lut-cli-<target-triple>[.exe]` before it builds the app, so:
 
 - `pnpm tauri dev` runs `pnpm build:cli:dev && pnpm dev` (`beforeDevCommand`);
 - `pnpm tauri build` runs `pnpm build:cli && pnpm build` (`beforeBuildCommand`).
 
-`scripts/build-cli.mjs` runs `cargo build --locked -p terax-cli` (with `--release` for `build:cli`) for the host
-triple reported by `rustc -vV`, or for `TERAX_CLI_TARGET` / `CARGO_BUILD_TARGET` when set, and copies the result
+`scripts/build-cli.mjs` runs `cargo build --locked -p terax-cli --bin lut-cli` (with `--release` for `build:cli`) for the host
+triple reported by `rustc -vV`, or for `LUT_CLI_TARGET` / `CARGO_BUILD_TARGET` when set, and copies the result
 into `src-tauri/binaries/` (ignored by git). Running the Rust tests or clippy directly does not need it.
 
 ### Ghostty WASM
