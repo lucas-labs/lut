@@ -878,11 +878,33 @@ size: S
 
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace && pnpm test`; the manual checklist above.
 
+### E02-18 — Remove the uncalled fs_grep, fs_glob and git_show_commit commands
+
+```yaml
+id: E02-18
+depends-on: [E01-14]
+refs: [.docs/architecture/current-state.md, .docs/plan/analysis/ide-tools.md]
+covers: [ide-tools/fs-search-index, ide-tools/git-backend-core]
+type: task
+scope: be
+size: S
+```
+
+**Goal:** dead-code cleanup found by the IPC map (E01-07): three registered commands that nothing in the frontend calls. The palette's content search uses `fs_grep_interactive`, which stays.
+
+**Acceptance criteria:**
+
+- [ ] `fs_grep` and `fs_glob` (`src-tauri/src/modules/fs/grep.rs`) and their registrations in `lib.rs` are removed, with `run_grep`, `run_glob` and any helper or type (`GlobHit`, `GlobResponse`) only they use; their cases in `src-tauri/tests/fs_search.rs` go with them. `fs_grep_interactive` and its tests are unchanged.
+- [ ] `git_show_commit` (`src-tauri/src/modules/git/commands.rs`), its registration, `operations::show_commit_diff` if unused, and the unused `git.showCommit` wrapper in `src/modules/git/api.ts` are removed.
+- [ ] `.docs/architecture/current-state.md` no longer lists the three commands.
+
+**Verification:** `cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace`, `cargo clippy --manifest-path src-tauri/Cargo.toml --locked --workspace --all-targets -- -D warnings`, `pnpm check-types` and `pnpm test` pass; `git grep -n -w "fs_grep\|fs_glob\|git_show_commit\|showCommit" src src-tauri` is empty; the palette's content search still returns results.
+
 ### E02-17 — Close-out: identity isolation
 
 ```yaml
 id: E02-17
-depends-on: [E02-01, E02-02, E02-03, E02-04, E02-05, E02-06, E02-07, E02-08, E02-09, E02-10, E02-11, E02-12, E02-13, E02-14, E02-15, E02-16]
+depends-on: [E02-01, E02-02, E02-03, E02-04, E02-05, E02-06, E02-07, E02-08, E02-09, E02-10, E02-11, E02-12, E02-13, E02-14, E02-15, E02-16, E02-18]
 refs: []
 type: closeout
 scope: none
