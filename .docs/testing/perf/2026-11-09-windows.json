@@ -1,0 +1,169 @@
+{
+  "note": "Phase 0 baseline (E01-10 to E01-12). Memory values come from the -MemoryOnly run (private working set); the rest from the full run. See .docs/testing/baseline.md.",
+  "date": "2026-11-09T03:25:42",
+  "machine": "LUCAS-PC",
+  "os": "Microsoft Windows 11 Pro",
+  "cpu": "12th Gen Intel(R) Core(TM) i7-12700K",
+  "gpu": "NVIDIA GeForce GTX 1050 Ti",
+  "commit": "1631260",
+  "sizes": {
+    "appExeMB": 11.54,
+    "cliSidecarMB": 0.32,
+    "distMB": 7.13,
+    "distJsMB": 4.59,
+    "distCssMB": 0.18,
+    "distWasmMB": 1.44,
+    "distOtherMB": 0.92
+  },
+  "startup": {
+    "runs": [
+      {
+        "run": 1,
+        "windowVisibleMs": 530,
+        "shellSpawnedMs": 1180,
+        "settledMs": 1202
+      },
+      {
+        "run": 2,
+        "windowVisibleMs": 481,
+        "shellSpawnedMs": 1098,
+        "settledMs": 1109
+      },
+      {
+        "run": 3,
+        "windowVisibleMs": 476,
+        "shellSpawnedMs": 1134,
+        "settledMs": 2117
+      },
+      {
+        "run": 4,
+        "windowVisibleMs": 480,
+        "shellSpawnedMs": 1092,
+        "settledMs": 2078
+      },
+      {
+        "run": 5,
+        "windowVisibleMs": 482,
+        "shellSpawnedMs": 1081,
+        "settledMs": 2063
+      }
+    ],
+    "windowVisible": {
+      "n": 5,
+      "timeouts": 0,
+      "min": 476,
+      "p50": 481,
+      "p95": 530,
+      "p99": 530,
+      "max": 530
+    },
+    "shellSpawned": {
+      "n": 5,
+      "timeouts": 0,
+      "min": 1081,
+      "p50": 1098,
+      "p95": 1180,
+      "p99": 1180,
+      "max": 1180
+    },
+    "settled": {
+      "n": 5,
+      "timeouts": 0,
+      "min": 1109,
+      "p50": 2063,
+      "p95": 2117,
+      "p99": 2117,
+      "max": 2117
+    }
+  },
+  "cpuIdlePercent": 1.39,
+  "inputLatency": {
+    "n": 194,
+    "timeouts": 6,
+    "min": 13.4,
+    "p50": 36.7,
+    "p95": 68.4,
+    "p99": 71.6,
+    "max": 71.6
+  },
+  "throughput": [
+    {
+      "run": 1,
+      "elapsedMs": 22919,
+      "mbPerSecond": 2.2,
+      "screenUpdatesPerSecond": 36.9
+    },
+    {
+      "run": 2,
+      "elapsedMs": 22851,
+      "mbPerSecond": 2.2,
+      "screenUpdatesPerSecond": 32.3
+    },
+    {
+      "run": 3,
+      "elapsedMs": 23588,
+      "mbPerSecond": 2.1,
+      "screenUpdatesPerSecond": 38.5
+    }
+  ],
+  "cpuBusyHiddenTabPercent": 9.52,
+  "tabSwitch": {
+    "n": 20,
+    "timeouts": 0,
+    "min": 17,
+    "p50": 30,
+    "p95": 40.8,
+    "p99": 62.8,
+    "max": 62.8
+  },
+  "longOutputMB": 250,
+  "memory": {
+    "date": "2026-11-09T04:14:03",
+    "start": {
+      "processes": 9,
+      "shells": 1,
+      "privateWorkingSetMB": 260.5,
+      "appMB": 12.3,
+      "webviewMB": 204.1,
+      "shellsMB": 44.2,
+      "gpuDedicatedMB": 96.8
+    },
+    "afterOutput1Pane": {
+      "processes": 9,
+      "shells": 1,
+      "privateWorkingSetMB": 272.3,
+      "appMB": 13.5,
+      "webviewMB": 211.5,
+      "shellsMB": 47.3,
+      "gpuDedicatedMB": 59.9
+    },
+    "fourPanes": {
+      "processes": 15,
+      "shells": 4,
+      "privateWorkingSetMB": 408.3,
+      "appMB": 13.8,
+      "webviewMB": 214.2,
+      "shellsMB": 180.4,
+      "gpuDedicatedMB": 62.6
+    },
+    "afterLongOutput": {
+      "processes": 17,
+      "shells": 5,
+      "privateWorkingSetMB": 446.1,
+      "appMB": 13.8,
+      "webviewMB": 204.5,
+      "shellsMB": 227.7,
+      "gpuDedicatedMB": 61
+    },
+    "afterClosingTab": {
+      "processes": 17,
+      "shells": 5,
+      "privateWorkingSetMB": 429.6,
+      "appMB": 13.8,
+      "webviewMB": 191.8,
+      "shellsMB": 223.9,
+      "gpuDedicatedMB": 61
+    },
+    "tabClosed": false
+  }
+}

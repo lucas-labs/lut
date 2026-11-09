@@ -164,6 +164,41 @@ rule with pre-existing violations is a warning; the other rules are errors. Coun
 
 The React Compiler warnings (`react-hooks/*`, 105 in total) left after the BYOK AI, blocks and App-split cleanups are resolved by E09-10 (#326).
 
+### Smoke test: zoom shortcuts depend on the keyboard layout
+
+- **Reproduce:** Windows with a Spanish layout. `Ctrl++` (main row or numpad) types `+` into the prompt;
+  `Ctrl+Shift+-` does nothing; `Ctrl+Shift++` on the numpad zooms in; `Ctrl+0` resets. There is no way to zoom out from
+  the keyboard.
+- **Suspected cause:** the defaults in `src/modules/shortcuts/shortcutDefaults.ts` are `Ctrl+=` / `Ctrl+Shift++` (in)
+  and `Ctrl+Shift+-` (out), which match the US layout only.
+- **Fixed by:** E13-12.
+
+### Smoke test: extra line after a `Write-Host` PowerShell prompt
+
+- **Reproduce:** pwsh with a prompt that prints itself with `Write-Host` (pshazz, two lines ending in `$`). In lut the
+  cursor sits one line below the `$`; in Windows Terminal it follows it.
+- **Suspected cause:** `src-tauri/src/modules/pty/scripts/profile.ps1` returns `OSC 133 D/A + OSC 7 + <user prompt> +
+OSC 133 B`, but a `Write-Host` prompt has already printed, so 133;A (prompt start) arrives after the visible prompt and
+  the terminal moves to a fresh line. Read from the code; not reproduced with a fix yet.
+- **Fixed by:** E14-19.
+
+### Smoke test: text less sharp than Windows Terminal
+
+- **Reproduce:** the same font and size in lut and in Windows Terminal at 100% scale; magnified, lut's glyph edges are
+  grayscale, Windows Terminal's have ClearType colour fringes, and lut looks slightly blurry.
+- **Suspected cause:** the renderers rasterize glyphs with single-channel (grayscale) coverage; Windows Terminal uses
+  DirectWrite ClearType (subpixel) antialiasing. Not a regression: it is how the imported renderer works.
+- **Fixed by:** E13-13 (spike, then a decision).
+
+### `pnpm test`: one failure under heavy load, test not identified
+
+- **When:** during the gate check (E01-14), `pnpm test` exited 1 once while `cargo clippy` and `cargo test` were
+  compiling in parallel. The output was not kept, so the failing test is unknown. The next run, on an idle machine,
+  passed: 285 files, 4599 tests.
+- **Suspected cause:** a timing-sensitive test that exceeds its bound when the CPU is saturated, like the Rust
+  `fs::index` case above.
+- **Next step:** if it shows up again (locally or in CI), record the test name here and open an issue.
+
 ## Test registry
 
 ### Frontend: Vitest (`pnpm test`)
@@ -225,7 +260,131 @@ The React Compiler warnings (`react-hooks/*`, 105 in total) left after the BYOK 
 | Renderer, app and IPC labs    | `profile:renderer:*`, `profile:app`, `test:ipc:macos`                 | macOS only |
 | PTY smoke test                | `scripts/pty-smoke/run.py`                                            | macOS only |
 | WebKit memory                 | `scripts/ghostty-webkit-memory.mjs`                                   | macOS only |
+| Windows performance baseline  | `scripts/baseline/measure.ps1` (see Performance)                      | Windows    |
 
 ## Performance
 
-Filled by E01-11 and E01-12.
+Recorded on 2026-11-09 at commit `1631260`, release build (`pnpm tauri build --no-bundle`), on the baseline machine:
+Intel Core i7-12700K, NVIDIA GeForce GTX 1050 Ti, Windows 11 Pro, display at 100%, default settings and clean app data
+for every start. Nothing was optimised. The values are the reference for later regressions; thresholds come later
+(IR-96).
+
+### Method
+
+The app-lab benchmark (`src/bench/`, `src-tauri/src/modules/bench.rs`, `scripts/app-lab/run.py`) is macOS-only: its
+window control is implemented only for macOS (`bench.rs`, `platform::run` returns "implemented for macOS only"
+elsewhere), and `run.py` builds a macOS bundle and samples with `footprint`, `vmmap` and rusage. Porting it is not
+needed for a baseline (E01-10), so Windows uses `scripts/baseline/measure.ps1`, which drives the release app from
+outside:
+
+- it moves the app data dirs (`%APPDATA%` and `%LOCALAPPDATA%` `\app.crynta.terax`) aside and restores them at the end;
+- startup: from `Start-Process` to the main window being visible with a real client area, to a shell process existing
+  in the app's process tree (polled, ±50 ms), and to the window content settling (no change larger than a cursor cell
+  for 1 s);
+- input latency: `SendInput` of a character into the prompt, then screen captures of the prompt row until it changes.
+  Each capture takes about 6 ms, so that is the resolution; values include the compositor, as a user sees it;
+- throughput: `cmd /c type` of a 50 MB text file in pwsh, timed by the shell itself, with the number of screen changes
+  per second in the terminal area meanwhile;
+- memory: private working set (Task Manager's "Memory" column) of the app and every process it started (WebView2,
+  shells, conhost), and GPU dedicated memory from the `GPU Process Memory` counters. The memory values come from a
+  second run with `-MemoryOnly`: the first run summed plain working sets, which count shared pages once per process;
+- CPU: processor time of the whole process tree over 20 s, as a percentage of one logical core;
+- tab switch: `Ctrl+Tab` between two idle tabs until the terminal area changes.
+
+Commands:
+
+```powershell
+pnpm tauri build --no-bundle
+pwsh scripts/baseline/measure.ps1 -Exe src-tauri/target/release/terax.exe -Out results.json
+pwsh scripts/baseline/measure.ps1 -Exe src-tauri/target/release/terax.exe -MemoryOnly -Out memory.json
+```
+
+Do not touch the keyboard or mouse while it runs: it types into the app and reads the screen.
+
+### Sizes
+
+| Artifact                                          | Size          |
+| ------------------------------------------------- | ------------- |
+| `terax.exe` (release, frontend embedded)          | 11.54 MB      |
+| `terax-cli` sidecar (`src-tauri/binaries/`)       | 0.32 MB       |
+| `dist/` total                                     | 7.13 MB       |
+| `dist/` JavaScript                                | 4.59 MB       |
+| `dist/` WebAssembly (Ghostty)                     | 1.44 MB       |
+| `dist/` CSS                                       | 0.18 MB       |
+| `dist/` other (fonts, images, sounds)             | 0.92 MB       |
+| NSIS installer / MSI (E01-03, `pnpm tauri build`) | 5.9 / 7.1 MiB |
+
+A change that grows the executable or `dist/` by more than a few hundred kB should explain why in its PR.
+
+### Startup, input and output
+
+| Metric                                | Value                                              | Runs           |
+| ------------------------------------- | -------------------------------------------------- | -------------- |
+| Window visible                        | 476–530 ms (first run 530 ms)                      | 5              |
+| Shell process started                 | 1081–1180 ms                                       | 5              |
+| Window content settled (prompt drawn) | 1109–2117 ms                                       | 5              |
+| Input latency (key to screen)         | p50 36.7 ms, p95 68.4 ms, p99 71.6 ms, max 71.6 ms | 194 (6 missed) |
+| Output throughput (`type`, 50 MB)     | 2.1–2.2 MB/s (22.9–23.6 s)                         | 3              |
+| Screen updates during that output     | 32–39 per second                                   | 3              |
+| Tab switch (`Ctrl+Tab`, idle tabs)    | p50 30 ms, p95 40.8 ms, max 62.8 ms                | 20             |
+
+In 6 of 200 keystrokes no change was detected within 1 s (a dropped key or a change the capture missed).
+
+### Memory and CPU
+
+| State                                    | Private working set | WebView2 | Shells + conhost | App     | GPU dedicated |
+| ---------------------------------------- | ------------------- | -------- | ---------------- | ------- | ------------- |
+| Started, 1 pane                          | 260.5 MB            | 204.1 MB | 44.2 MB          | 12.3 MB | 96.8 MB       |
+| After 50 MB of output, 1 pane            | 272.3 MB            | 211.5 MB | 47.3 MB          | 13.5 MB | 59.9 MB       |
+| 4 panes (4 pwsh)                         | 408.3 MB            | 214.2 MB | 180.4 MB         | 13.8 MB | 62.6 MB       |
+| Plus a second tab after 250 MB of output | 446.1 MB            | 204.5 MB | 227.7 MB         | 13.8 MB | 61.0 MB       |
+
+| Metric                                 | Value            |
+| -------------------------------------- | ---------------- |
+| CPU, idle, 1 pane                      | 1.4% of one core |
+| CPU, a hidden tab printing every 50 ms | 9.5% of one core |
+
+- Each pwsh pane costs about 45 MB, almost all of it the shell itself.
+- 250 MB of output did not grow WebView2 memory: the scrollback budget holds.
+- Release after closing a tab: not measured. The scripted `Ctrl+Shift+W` did not close the tab in either run (the shell
+  count did not drop), while closing it by hand works and shows no dialog. Closing by hand after 150 MB of output left
+  memory flat within a few MB; the WebView's JavaScript heap is not returned at once.
+
+### Resize, zoom and DPI
+
+Checked by hand during the smoke test: resizing the window, zooming and switching the Windows display scale from 100%
+to 125% showed no reflow errors or rendering artifacts. Zoom shortcuts depend on the keyboard layout (see Known failures).
+
+## Smoke test (Windows 11)
+
+Run by hand on 2026-11-09 with the release build of `1631260` (E01-13).
+
+| Item                                                       | Result                                   |
+| ---------------------------------------------------------- | ---------------------------------------- |
+| pwsh: type, `ls`, `cls`                                    | ✅                                       |
+| WSL (Ubuntu) from the workspace environment selector       | ✅                                       |
+| Splits: right, down, close one pane, the others stay alive | ✅                                       |
+| Tabs: new, switch, reorder, close (no dialog)              | ✅                                       |
+| Memory on closing a tab after long output                  | ✅ (see Performance)                     |
+| Renderer: WebGPU (default) and WebGL (Settings → General)  | ✅                                       |
+| Agent (Claude Code) in a pane, hooks disabled              | ✅                                       |
+| Resize, zoom, display scale 100% → 125%                    | ✅, with the zoom shortcut failure below |
+
+Agents with hooks enabled are not part of this test: they are run by E02-16, once the hook markers are lut's (E02-11).
+
+When lut is started from a Claude Code session, the shells inherit `CLAUDE_CODE_CHILD_SESSION` and Claude Code inside
+them warns that transcript saving is off. That is the inherited environment, not a lut defect; start lut from the
+Explorer or another terminal to avoid it.
+
+## Phase 0 gate (E01-14)
+
+Evaluated on 2026-11-09 at `1631260`.
+
+| Check                 | Result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Baseline executable   | Yes: dev and release builds run on Windows 11; smoke test and performance baseline recorded above.                                                                                                                                                                                                                                                                                                                                                                                             |
+| CI status             | Not verified on GitHub: since the workflow was added (E01-05) every run ends in `startup_failure`, an account billing block unrelated to the repository. The same checks were run locally at this commit: `pnpm lint`, `format:check`, `check-types`, `build`, `knip`, `cargo fmt --check`, `cargo clippy -D warnings` and the CI `cargo test` with its skip list (869 passed) all pass; `pnpm test` passed on an idle machine (4599 tests) after one failure under load (see Known failures). |
+| Undocumented failures | None. Every failure found in Phase 0 is listed under Known failures, with its fixing issue or next step.                                                                                                                                                                                                                                                                                                                                                                                       |
+
+**Gate: passed**, with one pending item: confirming the CI workflow on GitHub once Actions runs again (tracked on #6).
+The Phase 0 deletions (E02-01, E02-02, E02-04, E02-05) and the E05/E06 removals may start.
