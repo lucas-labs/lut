@@ -115,7 +115,7 @@ static CLIENTS: OnceLock<Mutex<ClientCache<reqwest::Client>>> = OnceLock::new();
 static CRYPTO: OnceLock<()> = OnceLock::new();
 
 /// reqwest is built without a bundled provider, so the process needs exactly
-/// one installed default. The updater installs the same `ring` provider.
+/// one installed default.
 fn ensure_crypto_provider() {
     CRYPTO.get_or_init(|| {
         let _ = rustls::crypto::ring::default_provider().install_default();

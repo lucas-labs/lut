@@ -117,7 +117,6 @@ import {
   WindowActivityBridge,
   WindowVibrancyBridge,
 } from "@/modules/theme";
-import { UpdaterDialog } from "@/modules/updater";
 import {
   useWorkspaceEnvStore,
   type WorkspaceEnv,
@@ -1664,8 +1663,6 @@ export default function App() {
             rootPath={explorerRoot ?? home}
             onCreated={(path) => openFileTab(path)}
           />
-
-          <UpdaterDialog />
 
           <CloseDialogs
             tabs={tabs}

@@ -61,11 +61,9 @@ shared_child = "1"
 tauri-plugin-log = "2"
 tauri-plugin-os = "2"
 tauri-plugin-store = "2"
-tauri-plugin-process = "2"
 tauri-plugin-notification = "2"
-# One reqwest for the whole app: tauri-plugin-updater already pulls 0.13 with
-# the platform verifier. `rustls-no-provider` + the explicit ring provider below
-# keep it to a single TLS stack and no aws-lc.
+# One reqwest for the whole app. `rustls-no-provider` + the explicit ring provider
+# below keep it to a single TLS stack and no aws-lc.
 reqwest = { version = "0.13", default-features = false, features = [
 	"rustls-no-provider",
 	"http2",
@@ -138,7 +136,6 @@ gtk = "0.18"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-autostart = "2"
-tauri-plugin-updater = "2"
 tauri-plugin-window-state = "2"
 
 [profile.dev]
