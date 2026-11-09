@@ -1399,21 +1399,20 @@ pwsh, bash and WSL prompts and cwd tracking still work, and old Bash still block
 id: E04-13
 depends-on: [E02-05, E02-06, E02-07, E02-10, E02-11, E02-12, E02-13, E02-14, E02-15, E04-02]
 refs: [13.2:21, 16:26, F0:9, F0:10, .docs/plan/analysis/build-identity.md]
-covers: [13.2:21, 16:26, F0:9, F0:10, identity:1]
+covers: [13.2:21, 16:26, F0:10, identity:1]
 type: task
 scope: none
 size: S
 ```
 
-**Goal:** (Moved from E02-16 so E02 can close; it needs E04-02, because until then the lut installer owns Terax's `OpenInTerax` keys.) Prove the acceptance tests 13.2:21 and 16:26: lut neither reads nor writes Terax data, stores, keychain entries, installer registrations, hooks or variables, and uninstalling lut hooks preserves Terax's. Also run the part of the F0:9 smoke test deferred by E01-13: agents with hooks enabled with consent.
+**Goal:** (Moved from E02-16 so E02 can close; it needs E04-02, because until then the lut installer owns Terax's `OpenInTerax` keys.) Prove the acceptance tests 13.2:21 and 16:26: lut neither reads nor writes Terax data, stores, keychain entries, installer registrations, hooks or variables. Hook install/uninstall is not exercised: E20-15 removes every lut write to agent configs, so lut can never overwrite Terax's hooks (the F0:9 agent check moves to E20-15's manual test).
 
 **Acceptance criteria:**
 
 - [ ] `git grep -n -i` over the class (a) tokens of `.docs/plan/analysis/build-identity.md` (plus `notify;Terax;`, `.terax-tmp-`, `"name": "terax"`, `cache.join("terax")`) shows only intended leftovers (the read-policy deny of `<cache>/terax`, E06-owned block code, internal rename-on-touch names), each listed in the PR.
 - [ ] Keychain: `git grep -n '"terax-ai"' src src-tauri/src` returns no keychain service name (only unrelated test strings, listed in the PR); nothing that runs at startup reads the `terax-ai` service.
 - [ ] Installer: `productName`/`mainBinaryName` are `lut`; installing and uninstalling the lut NSIS bundle leaves Terax's install dir, Start-menu entry, uninstall key and file-association ProgIDs unchanged.
-- [ ] Manual run on Windows with Terax installed: lut creates only its own data/cache dirs, Terax's dirs and `~/.claude`/`~/.codex` Terax entries keep their content, lut hook install/uninstall leaves Terax's hooks intact, and no request goes to Terax infrastructure.
-- [ ] Agents with hooks enabled with consent (F0:9): Claude Code and Codex in lut panes deliver hook events; the before/after of `~/.claude/settings.json` is recorded and differs only in lut's groups.
+- [ ] Manual run on Windows with Terax installed: lut creates only its own data/cache dirs, Terax's dirs and `~/.claude`/`~/.codex` Terax entries keep their content, and no request goes to Terax infrastructure.
 - [ ] Uninstalling lut leaves nothing behind: `NSIS_HOOK_POSTUNINSTALL` also deletes the manufacturer key (`HKCU\Software\lucode\lut` after E04-01) and the `lut Document_backup` values Tauri's file-association macro writes under each `HKCU\Software\Classes\.<ext>` (both left by the E04-02 install test).
 - [ ] Results recorded in the PR and in the Phase 0 baseline report.
 
@@ -6028,7 +6027,7 @@ size: S
 id: E20-15
 depends-on: [E19-02]
 refs: [AGT-007, 9.4, 13.2:21, .docs/plan/analysis/agents.md]
-covers: [AGT-007, agents/hook-installer]
+covers: [AGT-007, agents/hook-installer, F0:9]
 type: task
 scope: be
 size: L
@@ -6047,7 +6046,7 @@ size-exception: the plugins are declarative manifests and hook files; the rest d
 - [ ] User docs per agent: install, update, remove, the agent's own trust/approval step (e.g. Codex `/hooks`), and how to remove lut groups written by earlier lut builds.
 - [ ] `proposal.md` AGT-007 and the issues built on the write path (E20-08, E20-09, E20-10, E20-11) are updated to this model.
 
-**Verification:** `cargo test --locked --workspace` in `src-tauri` and `pnpm test`; manual on Windows: install each plugin from the repository with the agent's own command, run the agent in a lut pane (events arrive) and outside lut (no output, no error), uninstall it; `~/.claude`, `~/.codex`, `~/.gemini` and `~/.pi` are never modified by lut (before/after snapshot).
+**Verification:** `cargo test --locked --workspace` in `src-tauri` and `pnpm test`; manual on Windows: install each plugin from the repository with the agent's own command, run the agent in a lut pane (events arrive) and outside lut (no output, no error), uninstall it; this also runs the F0:9 agent check moved from E04-13; `~/.claude`, `~/.codex`, `~/.gemini` and `~/.pi` are never modified by lut (before/after snapshot).
 
 **Notes:** installing from GitHub needs the public repository (E04-09).
 
