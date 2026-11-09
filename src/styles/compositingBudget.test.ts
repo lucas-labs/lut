@@ -110,7 +110,7 @@ describe("compositing budget", () => {
       "utf8",
     );
     expect(layer).toMatch(
-      /surfaceOwnsLayer\([^)]*\)\s*\?\s*"translateZ\(0\)"/s,
+      /surfaceOwnsLayer\([^)]*\)\s*\?\s*["']translateZ\(0\)["']/s,
     );
   });
 
