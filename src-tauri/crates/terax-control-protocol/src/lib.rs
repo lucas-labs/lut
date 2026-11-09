@@ -3,6 +3,20 @@ use serde_json::Value;
 
 pub mod hook;
 
+/// lut's runtime directory under the user cache dir: the control descriptor, the per-process CLI
+/// launcher and the shell-integration scripts live there. It is the bundle identifier, so it
+/// never collides with the install dir (`%LOCALAPPDATA%\\lut` on Windows, where the cache dir is
+/// `%LOCALAPPDATA%`) nor with Terax's `<cache>/terax`.
+pub const RUNTIME_DIR_NAME: &str = "dev.lucode.lut";
+
+/// `<cache>/dev.lucode.lut`, shared by the app and the CLI so both resolve the same descriptor.
+pub fn runtime_dir(cache: &std::path::Path) -> std::path::PathBuf {
+    cache.join(RUNTIME_DIR_NAME)
+}
+
+/// Terax's runtime directory under the cache dir. lut never writes there; the read policy denies it.
+pub const TERAX_RUNTIME_DIR_NAME: &str = "terax";
+
 pub const PROTOCOL_VERSION: u16 = 1;
 pub const MAX_MESSAGE_BYTES: usize = 64 * 1024;
 pub const METHOD_PING: &str = "ping";

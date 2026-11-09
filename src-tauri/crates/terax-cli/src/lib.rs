@@ -297,7 +297,7 @@ fn load_endpoint() -> Result<ControlDescriptor, CliError> {
         ),
         (None, None) => {
             let path = dirs::cache_dir()
-                .map(|dir| dir.join("terax").join("control.json"))
+                .map(|dir| terax_control_protocol::runtime_dir(&dir).join("control.json"))
                 .ok_or_else(|| {
                     CliError::new(
                         "app_unavailable",
