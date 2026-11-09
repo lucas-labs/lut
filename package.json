@@ -130,7 +130,6 @@
     "knip": "^6.38.0",
     "playwright": "1.62.1",
     "pngjs": "7.0.0",
-    "react-compiler-healthcheck": "^1.0.0",
     "react-scan": "^0.5.7",
     "rollup-plugin-visualizer": "^7.1.1",
     "shadcn": "^4.22.0",

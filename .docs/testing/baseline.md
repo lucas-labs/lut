@@ -76,7 +76,7 @@ How `cargo test` splits up:
 
 - **Error excerpt:** `Unused devDependencies (1): react-compiler-healthcheck  package.json:133:6`.
 - **Suspected cause:** a one-off tool (`npx react-compiler-healthcheck`) kept as a dependency with no script that uses it.
-- **Fixed by:** E01-04, which removes it.
+- **Fixed by:** E01-04 (#5), which removes it. ✅ Fixed: `pnpm knip` exits 0.
 
 ### `cargo clippy -D warnings`: 5 errors
 
