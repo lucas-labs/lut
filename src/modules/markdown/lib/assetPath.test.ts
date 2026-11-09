@@ -1,4 +1,4 @@
-import { checkReadable } from '@/modules/ai/lib/security';
+import { checkReadable } from '@/lib/security/security';
 import { describe, expect, it } from 'vitest';
 import {
   isAllowedLocalImage,
