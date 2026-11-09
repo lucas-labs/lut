@@ -1,23 +1,16 @@
-import { cn } from "@/lib/utils";
-import { Cancel01Icon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import type { ReactNode } from "react";
+import { cn } from '@/lib/utils';
+import { Cancel01Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import type { ReactNode } from 'react';
 
-type ChipTone =
-  | "neutral"
-  | "blue"
-  | "violet"
-  | "emerald"
-  | "sky"
-  | "amber"
-  | "primary";
+type ChipTone = 'neutral' | 'blue' | 'violet' | 'emerald' | 'sky' | 'amber' | 'primary';
 
 // All tones render monochrome (color next to the terminal reads as noise);
 // the tone prop stays so call sites keep their semantics.
 type Tone = { box: string; icon: string };
 
-const BOX = "border-border/40 bg-foreground/[0.03] text-foreground/75";
-const TONE: Tone = { box: BOX, icon: "text-foreground/60" };
+const BOX = 'border-border/40 bg-foreground/[0.03] text-foreground/75';
+const TONE: Tone = { box: BOX, icon: 'text-foreground/60' };
 
 const TONES: Record<ChipTone, Tone> = {
   neutral: TONE,
@@ -42,39 +35,32 @@ type Props = {
 };
 
 export function Chip({
-  tone = "neutral",
+  tone = 'neutral',
   icon,
   iconNode,
   label,
   title,
   onRemove,
-  removeLabel = "Remove",
+  removeLabel = 'Remove',
   children,
 }: Props) {
   return (
     <div
       title={title}
       className={cn(
-        "group inline-flex h-[22px] items-center gap-1.5 rounded-md border text-[11px] leading-none",
-        children ? "px-2" : "px-1.5",
-        "animate-in fade-in-0 zoom-in-95 duration-150",
-        !onRemove && "pointer-events-none select-none",
+        'group inline-flex h-[22px] items-center gap-1.5 rounded-md border text-[11px] leading-none',
+        children ? 'px-2' : 'px-1.5',
+        'animate-in fade-in-0 zoom-in-95 duration-150',
+        !onRemove && 'pointer-events-none select-none',
         TONES[tone].box,
       )}
     >
       {iconNode ??
         (icon && (
-          <HugeiconsIcon
-            icon={icon}
-            size={11}
-            strokeWidth={1.75}
-            className={cn("shrink-0", TONES[tone].icon)}
-          />
+          <HugeiconsIcon icon={icon} size={11} strokeWidth={1.75} className={cn('shrink-0', TONES[tone].icon)} />
         ))}
       {label && <span className="opacity-55">{label}</span>}
-      {children != null && (
-        <span className="max-w-[12rem] truncate font-medium">{children}</span>
-      )}
+      {children != null && <span className="max-w-[12rem] truncate font-medium">{children}</span>}
       {onRemove && (
         <button
           type="button"

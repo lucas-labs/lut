@@ -5,8 +5,8 @@
  * boundaries at every size, odd or even. Only diagonals and arcs are
  * anti-aliased.
  */
-import { flattenCubic, type SpriteMask } from "./SpriteMask";
-import type { SpriteSpec } from "./spriteSpec";
+import { flattenCubic, type SpriteMask } from './SpriteMask';
+import type { SpriteSpec } from './spriteSpec';
 
 const LINE_NONE = 0;
 export const LINE_LIGHT = 1;
@@ -15,35 +15,22 @@ const LINE_DOUBLE = 3;
 
 /** `up | right << 2 | down << 4 | left << 6`, or -1 when drawn another way. */
 const BOX_LINES: readonly number[] = [
-  68, 136, 17, 34, -1, -1, -1, -1, -1, -1, -1, -1, 20, 24, 36, 40, 80, 144, 96,
-  160, 5, 9, 6, 10, 65, 129, 66, 130, 21, 25, 22, 37, 38, 26, 41, 42, 81, 145,
-  82, 97, 98, 146, 161, 162, 84, 148, 88, 152, 100, 164, 104, 168, 69, 133, 73,
-  137, 70, 134, 74, 138, 85, 149, 89, 153, 86, 101, 102, 150, 90, 165, 105, 154,
-  169, 166, 106, 170, -1, -1, -1, -1, 204, 51, 28, 52, 60, 208, 112, 240, 13, 7,
-  15, 193, 67, 195, 29, 55, 63, 209, 115, 243, 220, 116, 252, 205, 71, 207, 221,
-  119, 255, -1, -1, -1, -1, -1, -1, -1, 64, 1, 4, 16, 128, 2, 8, 32, 72, 33,
-  132, 18,
+  68, 136, 17, 34, -1, -1, -1, -1, -1, -1, -1, -1, 20, 24, 36, 40, 80, 144, 96, 160, 5, 9, 6, 10,
+  65, 129, 66, 130, 21, 25, 22, 37, 38, 26, 41, 42, 81, 145, 82, 97, 98, 146, 161, 162, 84, 148, 88,
+  152, 100, 164, 104, 168, 69, 133, 73, 137, 70, 134, 74, 138, 85, 149, 89, 153, 86, 101, 102, 150,
+  90, 165, 105, 154, 169, 166, 106, 170, -1, -1, -1, -1, 204, 51, 28, 52, 60, 208, 112, 240, 13, 7,
+  15, 193, 67, 195, 29, 55, 63, 209, 115, 243, 220, 116, 252, 205, 71, 207, 221, 119, 255, -1, -1,
+  -1, -1, -1, -1, -1, 64, 1, 4, 16, 128, 2, 8, 32, 72, 33, 132, 18,
 ];
 
 export function isBoxDrawing(codepoint: number): boolean {
   return codepoint >= 0x2500 && codepoint <= 0x257f;
 }
 
-export function drawBoxDrawing(
-  mask: SpriteMask,
-  spec: SpriteSpec,
-  codepoint: number,
-): void {
+export function drawBoxDrawing(mask: SpriteMask, spec: SpriteSpec, codepoint: number): void {
   const packed = BOX_LINES[codepoint - 0x2500];
   if (packed >= 0) {
-    drawLines(
-      mask,
-      spec,
-      packed & 3,
-      (packed >> 2) & 3,
-      (packed >> 4) & 3,
-      (packed >> 6) & 3,
-    );
+    drawLines(mask, spec, packed & 3, (packed >> 2) & 3, (packed >> 4) & 3, (packed >> 6) & 3);
     return;
   }
   const light = spec.thickness;
@@ -86,16 +73,16 @@ export function drawBoxDrawing(
       dashVertical(mask, spec, 2, heavy, heavy);
       return;
     case 0x256d:
-      drawArc(mask, spec, "br");
+      drawArc(mask, spec, 'br');
       return;
     case 0x256e:
-      drawArc(mask, spec, "bl");
+      drawArc(mask, spec, 'bl');
       return;
     case 0x256f:
-      drawArc(mask, spec, "tl");
+      drawArc(mask, spec, 'tl');
       return;
     case 0x2570:
-      drawArc(mask, spec, "tr");
+      drawArc(mask, spec, 'tr');
       return;
     case 0x2571:
       diagonalUpperRightToLowerLeft(mask, spec);
@@ -149,34 +136,28 @@ export function drawLines(
   let upBottom: number;
   if (left === LINE_HEAVY || right === LINE_HEAVY) upBottom = hHeavyBottom;
   else if (left !== right || down === up) {
-    upBottom =
-      left === LINE_DOUBLE || right === LINE_DOUBLE
-        ? hDoubleBottom
-        : hLightBottom;
+    upBottom = left === LINE_DOUBLE || right === LINE_DOUBLE ? hDoubleBottom : hLightBottom;
   } else if (left === LINE_NONE && right === LINE_NONE) upBottom = hLightBottom;
   else upBottom = hLightTop;
 
   let downTop: number;
   if (left === LINE_HEAVY || right === LINE_HEAVY) downTop = hHeavyTop;
   else if (left !== right || up === down) {
-    downTop =
-      left === LINE_DOUBLE || right === LINE_DOUBLE ? hDoubleTop : hLightTop;
+    downTop = left === LINE_DOUBLE || right === LINE_DOUBLE ? hDoubleTop : hLightTop;
   } else if (left === LINE_NONE && right === LINE_NONE) downTop = hLightTop;
   else downTop = hLightBottom;
 
   let leftRight: number;
   if (up === LINE_HEAVY || down === LINE_HEAVY) leftRight = vHeavyRight;
   else if (up !== down || left === right) {
-    leftRight =
-      up === LINE_DOUBLE || down === LINE_DOUBLE ? vDoubleRight : vLightRight;
+    leftRight = up === LINE_DOUBLE || down === LINE_DOUBLE ? vDoubleRight : vLightRight;
   } else if (up === LINE_NONE && down === LINE_NONE) leftRight = vLightRight;
   else leftRight = vLightLeft;
 
   let rightLeft: number;
   if (up === LINE_HEAVY || down === LINE_HEAVY) rightLeft = vHeavyLeft;
   else if (up !== down || right === left) {
-    rightLeft =
-      up === LINE_DOUBLE || down === LINE_DOUBLE ? vDoubleLeft : vLightLeft;
+    rightLeft = up === LINE_DOUBLE || down === LINE_DOUBLE ? vDoubleLeft : vLightLeft;
   } else if (up === LINE_NONE && down === LINE_NONE) rightLeft = vLightLeft;
   else rightLeft = vLightRight;
 
@@ -290,10 +271,7 @@ function dashVertical(
  * line so butt caps leave no notch; the mask clips the overshoot, and the
  * neighbour's matching diagonal continues the same straight line.
  */
-export function diagonalUpperRightToLowerLeft(
-  mask: SpriteMask,
-  spec: SpriteSpec,
-): void {
+export function diagonalUpperRightToLowerLeft(mask: SpriteMask, spec: SpriteSpec): void {
   const { width, height } = spec;
   const slopeX = Math.min(1, width / height);
   const slopeY = Math.min(1, height / width);
@@ -306,10 +284,7 @@ export function diagonalUpperRightToLowerLeft(
   );
 }
 
-export function diagonalUpperLeftToLowerRight(
-  mask: SpriteMask,
-  spec: SpriteSpec,
-): void {
+export function diagonalUpperLeftToLowerRight(mask: SpriteMask, spec: SpriteSpec): void {
   const { width, height } = spec;
   const slopeX = Math.min(1, width / height);
   const slopeY = Math.min(1, height / width);
@@ -323,19 +298,15 @@ export function diagonalUpperLeftToLowerRight(
 }
 
 /** Rounded corner: the straight arms of a light junction joined by a curve. */
-function drawArc(
-  mask: SpriteMask,
-  spec: SpriteSpec,
-  corner: "tl" | "tr" | "bl" | "br",
-): void {
+function drawArc(mask: SpriteMask, spec: SpriteSpec, corner: 'tl' | 'tr' | 'bl' | 'br'): void {
   const { width, height, thickness } = spec;
   const centerX = (sub(width, thickness) >> 1) + thickness / 2;
   const centerY = (sub(height, thickness) >> 1) + thickness / 2;
   const radius = Math.min(width, height) / 2;
   // Control points sit a quarter of the radius from the centre.
   const control = 0.25;
-  const horizontal = corner === "tl" || corner === "bl" ? -1 : 1;
-  const vertical = corner === "tl" || corner === "tr" ? -1 : 1;
+  const horizontal = corner === 'tl' || corner === 'bl' ? -1 : 1;
+  const vertical = corner === 'tl' || corner === 'tr' ? -1 : 1;
   const edgeY = vertical < 0 ? 0 : height;
   const edgeX = horizontal < 0 ? 0 : width;
 

@@ -7,9 +7,9 @@ type ResizeModel = {
 
 export type ResizeOutcome =
   /** The grid already has these dimensions. */
-  | "unchanged"
+  | 'unchanged'
   /** The model resized and the PTY was told, in the same call. */
-  | "applied";
+  | 'applied';
 
 export type TerminalResizeSyncOptions = {
   readonly model: ResizeModel;
@@ -36,9 +36,9 @@ export class TerminalResizeSync {
   /** Resizes the grid to `cols` x `rows` and tells the PTY, unless it already has that size. */
   request(cols: number, rows: number): ResizeOutcome {
     const { model } = this.options;
-    if (cols === model.cols && rows === model.rows) return "unchanged";
+    if (cols === model.cols && rows === model.rows) return 'unchanged';
     model.resize(cols, rows);
     this.options.notify(cols, rows);
-    return "applied";
+    return 'applied';
   }
 }

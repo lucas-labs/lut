@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const preferences = vi.hoisted(() => ({
   agentNotifications: true,
@@ -6,24 +6,24 @@ const preferences = vi.hoisted(() => ({
 }));
 const notifications = vi.hoisted(() => ({
   pushNotification: vi.fn(),
-  osNotify: vi.fn(async () => "requested" as const),
+  osNotify: vi.fn(async () => 'requested' as const),
   playSound: vi.fn(),
   showToast: vi.fn(),
 }));
 
-vi.mock("@/modules/settings/preferences", () => ({
+vi.mock('@/modules/settings/preferences', () => ({
   usePreferencesStore: { getState: () => preferences },
 }));
-vi.mock("../components/AgentToast", () => ({
+vi.mock('../components/AgentToast', () => ({
   showAgentToast: notifications.showToast,
 }));
-vi.mock("../store/agentStore", () => ({
+vi.mock('../store/agentStore', () => ({
   useAgentStore: {
     getState: () => ({ pushNotification: notifications.pushNotification }),
   },
 }));
-vi.mock("./notify", () => ({ osNotify: notifications.osNotify }));
-vi.mock("./sound", () => ({
+vi.mock('./notify', () => ({ osNotify: notifications.osNotify }));
+vi.mock('./sound', () => ({
   playAgentNotificationSound: notifications.playSound,
 }));
 
@@ -33,15 +33,15 @@ beforeEach(() => {
   preferences.agentNotificationSound = true;
 });
 
-describe("routeAgentNotification sound preference", () => {
-  it("plays sound after requesting a native notification", async () => {
-    const { routeAgentNotification } = await import("./route");
+describe('routeAgentNotification sound preference', () => {
+  it('plays sound after requesting a native notification', async () => {
+    const { routeAgentNotification } = await import('./route');
 
     routeAgentNotification({
-      source: "terminal",
-      agent: "codex",
-      kind: "attention",
-      title: "Codex needs your input",
+      source: 'terminal',
+      agent: 'codex',
+      kind: 'attention',
+      title: 'Codex needs your input',
       focused: false,
       visible: false,
       allowToast: true,
@@ -54,15 +54,15 @@ describe("routeAgentNotification sound preference", () => {
     expect(notifications.playSound).toHaveBeenCalledOnce();
   });
 
-  it("keeps native notifications silent when sound is disabled", async () => {
+  it('keeps native notifications silent when sound is disabled', async () => {
     preferences.agentNotificationSound = false;
-    const { routeAgentNotification } = await import("./route");
+    const { routeAgentNotification } = await import('./route');
 
     routeAgentNotification({
-      source: "terminal",
-      agent: "codex",
-      kind: "attention",
-      title: "Codex needs your input",
+      source: 'terminal',
+      agent: 'codex',
+      kind: 'attention',
+      title: 'Codex needs your input',
       focused: false,
       visible: false,
       allowToast: true,
@@ -76,15 +76,15 @@ describe("routeAgentNotification sound preference", () => {
     expect(notifications.playSound).not.toHaveBeenCalled();
   });
 
-  it("keeps in-app toasts silent when sound is disabled", async () => {
+  it('keeps in-app toasts silent when sound is disabled', async () => {
     preferences.agentNotificationSound = false;
-    const { routeAgentNotification } = await import("./route");
+    const { routeAgentNotification } = await import('./route');
 
     routeAgentNotification({
-      source: "terminal",
-      agent: "gemini",
-      kind: "attention",
-      title: "Gemini needs your input",
+      source: 'terminal',
+      agent: 'gemini',
+      kind: 'attention',
+      title: 'Gemini needs your input',
       focused: true,
       visible: false,
       allowToast: true,

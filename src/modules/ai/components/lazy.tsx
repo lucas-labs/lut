@@ -1,23 +1,15 @@
-import type { PresenceState } from "@/lib/usePresence";
-import { lazy, Suspense } from "react";
-import type { AgentRunBridgeProps } from "./AgentRunBridge";
-import type { SelectionAskAiProps } from "./SelectionAskAi";
+import type { PresenceState } from '@/lib/usePresence';
+import { lazy, Suspense } from 'react';
+import type { AgentRunBridgeProps } from './AgentRunBridge';
+import type { SelectionAskAiProps } from './SelectionAskAi';
 
-const AgentRunBridgeInner = lazy(() =>
-  import("./AgentRunBridge").then((m) => ({ default: m.AgentRunBridge })),
-);
+const AgentRunBridgeInner = lazy(() => import('./AgentRunBridge').then((m) => ({ default: m.AgentRunBridge })));
 
-const AiMiniWindowInner = lazy(() =>
-  import("./AiMiniWindow").then((m) => ({ default: m.AiMiniWindow })),
-);
+const AiMiniWindowInner = lazy(() => import('./AiMiniWindow').then((m) => ({ default: m.AiMiniWindow })));
 
-const AiInputBarConnectInner = lazy(() =>
-  import("./AiInputBar").then((m) => ({ default: m.AiInputBarConnect })),
-);
+const AiInputBarConnectInner = lazy(() => import('./AiInputBar').then((m) => ({ default: m.AiInputBarConnect })));
 
-const SelectionAskAiInner = lazy(() =>
-  import("./SelectionAskAi").then((m) => ({ default: m.SelectionAskAi })),
-);
+const SelectionAskAiInner = lazy(() => import('./SelectionAskAi').then((m) => ({ default: m.SelectionAskAi })));
 
 export function AgentRunBridge(props: AgentRunBridgeProps) {
   return (

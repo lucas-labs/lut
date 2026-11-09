@@ -28,10 +28,10 @@
  *    into a protected directory.
  */
 
-import pathPolicy from "./pathPolicy.json";
+import pathPolicy from './pathPolicy.json';
 
 const SECRET_BASENAME_PATTERNS = pathPolicy.secretBasenames.map(
-  (pattern) => new RegExp(pattern, "i"),
+  (pattern) => new RegExp(pattern, 'i'),
 );
 const PROTECTED_DIRS = pathPolicy.protectedDirs;
 
@@ -40,34 +40,34 @@ const PROTECTED_DIRS = pathPolicy.protectedDirs;
  * blocked — reading `/etc/hosts` is fine; writing to it isn't.
  */
 const WRITE_DENY_PREFIXES = [
-  "/etc/",
-  "/var/db/",
-  "/var/root/",
-  "/system/", // case-folded from /System/
-  "/library/keychains/",
-  "/library/launchagents/",
-  "/library/launchdaemons/",
-  "/private/etc/",
-  "/private/var/db/",
-  "/usr/bin/",
-  "/usr/sbin/",
-  "/usr/local/bin/",
-  "/bin/",
-  "/sbin/",
-  "/boot/",
+  '/etc/',
+  '/var/db/',
+  '/var/root/',
+  '/system/', // case-folded from /System/
+  '/library/keychains/',
+  '/library/launchagents/',
+  '/library/launchdaemons/',
+  '/private/etc/',
+  '/private/var/db/',
+  '/usr/bin/',
+  '/usr/sbin/',
+  '/usr/local/bin/',
+  '/bin/',
+  '/sbin/',
+  '/boot/',
   // Windows (post drive-strip + lowercase). Note: these block writes to the
   // system drive's Windows / Program Files. Drives are stripped, so any
   // /windows/... etc. matches regardless of drive letter.
-  "/windows/",
-  "/program files/",
-  "/program files (x86)/",
-  "/programdata/",
+  '/windows/',
+  '/program files/',
+  '/program files (x86)/',
+  '/programdata/',
 ];
 
 export type SafetyResult = { ok: true } | { ok: false; reason: string };
 
 function basename(p: string): string {
-  const i = Math.max(p.lastIndexOf("/"), p.lastIndexOf("\\"));
+  const i = Math.max(p.lastIndexOf('/'), p.lastIndexOf('\\'));
   return i >= 0 ? p.slice(i + 1) : p;
 }
 
@@ -86,33 +86,33 @@ function basename(p: string): string {
  *  - drop trailing slash (except for root)
  */
 function comparisonForm(p: string): string {
-  let s = p.replace(/\\/g, "/");
+  let s = p.replace(/\\/g, '/');
   // UNC / extended-length prefix: \\?\C:\... or //?/C:/... → strip up to drive.
-  s = s.replace(/^\/\/\?\//, "/");
+  s = s.replace(/^\/\/\?\//, '/');
   // Drive prefix: C:/foo → /foo. Important: do this BEFORE lowercasing so we
   // don't have to special-case "c:" vs "C:".
-  s = s.replace(/^[a-zA-Z]:/, "");
+  s = s.replace(/^[a-zA-Z]:/, '');
   // Strip NTFS alternate-data-stream syntax from each segment. `name:stream`
   // and `name::$DATA` both read the same underlying file from `name`, so
   // they must compare-equal to `name`.
   s = s
-    .split("/")
+    .split('/')
     .map((seg) => {
-      const colon = seg.indexOf(":");
+      const colon = seg.indexOf(':');
       return colon === -1 ? seg : seg.slice(0, colon);
     })
-    .join("/");
+    .join('/');
   // Strip trailing dots/spaces from each segment (Windows behavior).
   s = s
-    .split("/")
-    .map((seg) => seg.replace(/[.\s]+$/, ""))
-    .join("/");
+    .split('/')
+    .map((seg) => seg.replace(/[.\s]+$/, ''))
+    .join('/');
   // Collapse duplicate slashes (//foo → /foo). Preserve a possible leading
   // single slash.
-  s = s.replace(/\/{2,}/g, "/");
+  s = s.replace(/\/{2,}/g, '/');
   s = s.toLowerCase();
   // Drop trailing slash so "/foo/" and "/foo" compare equal.
-  if (s.length > 1 && s.endsWith("/")) s = s.slice(0, -1);
+  if (s.length > 1 && s.endsWith('/')) s = s.slice(0, -1);
   return s;
 }
 
@@ -125,22 +125,22 @@ function isUnderProtected(cmp: string, dir: string): boolean {
   //   "/users/me/.ssh/config" + "/" → contains "/.ssh/" ✓
   //   "/users/me/.ssh"        + "/" → contains "/.ssh/" ✓
   //   "/users/me/.sshx/file"  + "/" → does not contain "/.ssh/" ✓
-  return (cmp + "/").includes(dir + "/");
+  return (cmp + '/').includes(dir + '/');
 }
 
 function describeProtected(dir: string): string {
   // "/.ssh" -> ".ssh", "/.config/gh" -> ".config/gh"
-  return dir.replace(/^\//, "");
+  return dir.replace(/^\//, '');
 }
 
 export function checkReadable(path: string): SafetyResult {
-  if (typeof path !== "string" || path.length === 0) {
-    return { ok: false, reason: "Refused: empty path." };
+  if (typeof path !== 'string' || path.length === 0) {
+    return { ok: false, reason: 'Refused: empty path.' };
   }
   // Reject NUL and control bytes in paths — these are never legitimate and
   // are a classic truncation/injection vector.
   if (/[\x00-\x1f]/.test(path)) {
-    return { ok: false, reason: "Refused: path contains control bytes." };
+    return { ok: false, reason: 'Refused: path contains control bytes.' };
   }
 
   const base = basename(path);
@@ -173,15 +173,12 @@ export function checkWritable(path: string): SafetyResult {
 
   const cmp = comparisonForm(path);
   // Ensure the comparison surface has a leading separator for prefix matching.
-  const cmpForPrefix = cmp.startsWith("/") ? cmp : `/${cmp}`;
+  const cmpForPrefix = cmp.startsWith('/') ? cmp : `/${cmp}`;
   for (const prefix of WRITE_DENY_PREFIXES) {
-    if (
-      cmpForPrefix.startsWith(prefix) ||
-      `${cmpForPrefix}/`.startsWith(prefix)
-    ) {
+    if (cmpForPrefix.startsWith(prefix) || `${cmpForPrefix}/`.startsWith(prefix)) {
       return {
         ok: false,
-        reason: `Refused: writes under "${prefix.replace(/\/$/, "")}" are not allowed.`,
+        reason: `Refused: writes under "${prefix.replace(/\/$/, '')}" are not allowed.`,
       };
     }
   }
@@ -245,7 +242,7 @@ export async function checkWritableCanonical(
   } catch {
     // Target doesn't exist — canonicalize the parent so we still catch a
     // symlinked parent directory (`./project -> /Users/me/.ssh`).
-    const lastSep = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
+    const lastSep = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
     if (lastSep > 0) {
       const parent = path.slice(0, lastSep);
       const tail = path.slice(lastSep);
@@ -265,7 +262,7 @@ export async function checkWritableCanonical(
 export function checkShellCommand(cmd: string): SafetyResult {
   const c = cmd.trim();
   if (c.length === 0) {
-    return { ok: false, reason: "Refused: empty command." };
+    return { ok: false, reason: 'Refused: empty command.' };
   }
   // Block C0 controls. CR/LF would let a second statement smuggle past the
   // approval UI, which shows the command as one logical line.
@@ -273,7 +270,7 @@ export function checkShellCommand(cmd: string): SafetyResult {
     return {
       ok: false,
       reason:
-        "Refused: command contains control characters (including CR/LF). Commands must be single-line.",
+        'Refused: command contains control characters (including CR/LF). Commands must be single-line.',
     };
   }
   // Block Unicode bidi-override and invisible directional marks. These let an
@@ -283,8 +280,7 @@ export function checkShellCommand(cmd: string): SafetyResult {
   if (/[\u202A-\u202E\u2066-\u2069\u200E\u200F\u061C]/.test(c)) {
     return {
       ok: false,
-      reason:
-        "Refused: command contains Unicode bidirectional override characters.",
+      reason: 'Refused: command contains Unicode bidirectional override characters.',
     };
   }
   // rm -rf / (and variants with quoted /, --no-preserve-root, etc.)
@@ -295,8 +291,7 @@ export function checkShellCommand(cmd: string): SafetyResult {
   ) {
     return {
       ok: false,
-      reason:
-        "Refused: command attempts to recursively delete the filesystem root.",
+      reason: 'Refused: command attempts to recursively delete the filesystem root.',
     };
   }
   // rm -rf ~ / $HOME / ${HOME}, with or without a trailing path — wiping the user's home dir
@@ -307,33 +302,29 @@ export function checkShellCommand(cmd: string): SafetyResult {
   ) {
     return {
       ok: false,
-      reason:
-        "Refused: command attempts to recursively delete the home directory.",
+      reason: 'Refused: command attempts to recursively delete the home directory.',
     };
   }
   if (/--no-preserve-root/.test(c)) {
-    return { ok: false, reason: "Refused: --no-preserve-root is not allowed." };
+    return { ok: false, reason: 'Refused: --no-preserve-root is not allowed.' };
   }
   // dd to a raw disk device
   if (/\bdd\b[^|]*\bof=\/dev\/(disk|sd|nvme|hd)/i.test(c)) {
     return {
       ok: false,
-      reason: "Refused: dd to a block device is not allowed.",
+      reason: 'Refused: dd to a block device is not allowed.',
     };
   }
   // mkfs / fdisk / diskutil eraseDisk / parted
-  if (
-    /\b(mkfs(\.[a-z0-9]+)?|fdisk|parted)\b/.test(c) ||
-    /\bdiskutil\s+erase/i.test(c)
-  ) {
+  if (/\b(mkfs(\.[a-z0-9]+)?|fdisk|parted)\b/.test(c) || /\bdiskutil\s+erase/i.test(c)) {
     return {
       ok: false,
-      reason: "Refused: disk-formatting commands are not allowed.",
+      reason: 'Refused: disk-formatting commands are not allowed.',
     };
   }
   // Fork bomb
   if (/:\s*\(\s*\)\s*\{\s*:\s*\|\s*:\s*&\s*\}\s*;/.test(c)) {
-    return { ok: false, reason: "Refused: fork-bomb pattern detected." };
+    return { ok: false, reason: 'Refused: fork-bomb pattern detected.' };
   }
   // Pipe-to-shell from network. The user already approves the command, but
   // this combo is overwhelmingly malicious-payload-shaped and worth flagging.
@@ -341,7 +332,7 @@ export function checkShellCommand(cmd: string): SafetyResult {
     return {
       ok: false,
       reason:
-        "Refused: piping a network download directly into a shell is blocked. Download first, inspect, then run.",
+        'Refused: piping a network download directly into a shell is blocked. Download first, inspect, then run.',
     };
   }
   return { ok: true };

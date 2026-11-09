@@ -3,19 +3,16 @@ import {
   PtyOutputHub,
   type PtyStreamResponse,
   type PtyStreamTransport,
-} from "@/modules/terminal/lib/PtyOutputHub";
-import {
-  PtyOutputReceiver,
-  type PtyOutputStatus,
-} from "@/modules/terminal/lib/PtyOutputReceiver";
+} from '@/modules/terminal/lib/PtyOutputHub';
+import { PtyOutputReceiver, type PtyOutputStatus } from '@/modules/terminal/lib/PtyOutputReceiver';
 import {
   MAX_ACKS_PER_REQUEST,
   type PtyAck,
   type PtyFrame,
   tokenBytes,
-} from "@/modules/terminal/lib/ptyWire";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { decodeRequest, encodeFrames } from "./ptyWireFixtures";
+} from '@/modules/terminal/lib/ptyWire';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { decodeRequest, encodeFrames } from './ptyWireFixtures';
 
 type Call = {
   acks: PtyAck[];
@@ -28,15 +25,13 @@ type Call = {
 };
 
 class FakeTransport implements PtyStreamTransport {
-  tokens = ["00000000000000aa", "00000000000000bb"];
+  tokens = ['00000000000000aa', '00000000000000bb'];
   opens = 0;
   polls: Call[] = [];
   acks: Call[] = [];
 
   async open() {
-    return tokenBytes(
-      this.tokens[Math.min(this.opens++, this.tokens.length - 1)],
-    );
+    return tokenBytes(this.tokens[Math.min(this.opens++, this.tokens.length - 1)]);
   }
 
   poll(body: Uint8Array, signal: AbortSignal) {
@@ -58,16 +53,15 @@ class FakeTransport implements PtyStreamTransport {
           call.settled = true;
           resolve(response);
         },
-        respond: (frames = [], status = 200) =>
-          call.reply({ status, body: encodeFrames(frames) }),
-        fail: (error = new Error("transport down")) => {
+        respond: (frames = [], status = 200) => call.reply({ status, body: encodeFrames(frames) }),
+        fail: (error = new Error('transport down')) => {
           call.settled = true;
           reject(error);
         },
       };
-      signal?.addEventListener("abort", () => {
+      signal?.addEventListener('abort', () => {
         call.settled = true;
-        reject(new DOMException("aborted", "AbortError"));
+        reject(new DOMException('aborted', 'AbortError'));
       });
       into.push(call);
     });
@@ -100,7 +94,7 @@ function open(
   const parser = vi.fn(parse);
   const status = vi.fn<(status: PtyOutputStatus) => void>();
   const exits: number[] = [];
-  let handle: ReturnType<PtyOutputHub["register"]> | null = null;
+  let handle: ReturnType<PtyOutputHub['register']> | null = null;
   const receiver = new PtyOutputReceiver(
     parser,
     (processed) => handle?.progress(processed),
@@ -111,14 +105,14 @@ function open(
   return { id, receiver, parse: parser, status, exits };
 }
 
-describe("PtyOutputHub", () => {
+describe('PtyOutputHub', () => {
   let transport: FakeTransport;
   let hub: PtyOutputHub;
 
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.spyOn(console, "warn").mockImplementation(() => {});
-    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     transport = new FakeTransport();
     hub = new PtyOutputHub(transport);
   });
@@ -129,10 +123,10 @@ describe("PtyOutputHub", () => {
     vi.restoreAllMocks();
   });
 
-  it("shares one parse budget across cheap frames and terminals", async () => {
+  it('shares one parse budget across cheap frames and terminals', async () => {
     await hub.ensureStream();
     let now = 0;
-    vi.spyOn(performance, "now").mockImplementation(() => now);
+    vi.spyOn(performance, 'now').mockImplementation(() => now);
     const tasks: (() => void)[] = [];
     const parsed: number[] = [];
     const receivers = [1, 2].map((id) => {
@@ -155,7 +149,7 @@ describe("PtyOutputHub", () => {
     await flush();
     transport.held.respond(
       Array.from({ length: 16 }, (_, i) => ({
-        kind: "data" as const,
+        kind: 'data' as const,
         id: (i % 2) + 1,
         offset: Math.floor(i / 2) * 8192,
         bytes: bytes(8192),
@@ -165,10 +159,7 @@ describe("PtyOutputHub", () => {
     expect(now).toBeGreaterThanOrEqual(4);
     expect(now).toBeLessThan(4.75);
     expect(tasks).toHaveLength(2);
-    expect(receivers.map((r) => r.diagnostics().processedBytes)).toEqual([
-      3 * 8192,
-      3 * 8192,
-    ]);
+    expect(receivers.map((r) => r.diagnostics().processedBytes)).toEqual([3 * 8192, 3 * 8192]);
     while (tasks.length) {
       const start = now;
       tasks.shift()?.();
@@ -182,7 +173,7 @@ describe("PtyOutputHub", () => {
     }
   });
 
-  it("opens the stream once and keeps exactly one poll outstanding", async () => {
+  it('opens the stream once and keeps exactly one poll outstanding', async () => {
     await Promise.all([hub.ensureStream(), hub.ensureStream()]);
     await hub.ensureStream();
     expect(transport.opens).toBe(1);
@@ -190,7 +181,7 @@ describe("PtyOutputHub", () => {
     open(hub, 2);
     await flush();
     expect(transport.polls).toHaveLength(1);
-    expect(transport.held.token).toBe("00000000000000aa");
+    expect(transport.held.token).toBe('00000000000000aa');
     // Both terminals announced themselves in the first request.
     expect(transport.held.acks).toEqual([
       { id: 1, bytes: 0 },
@@ -199,7 +190,7 @@ describe("PtyOutputHub", () => {
     expect(transport.acks).toHaveLength(0);
   });
 
-  it("announces a terminal opened while a poll is held with one ack-only request", async () => {
+  it('announces a terminal opened while a poll is held with one ack-only request', async () => {
     await hub.ensureStream();
     open(hub, 1);
     await flush();
@@ -218,36 +209,31 @@ describe("PtyOutputHub", () => {
     expect(transport.acks).toHaveLength(1);
   });
 
-  it("demultiplexes frames to their terminals and validates stream offsets", async () => {
+  it('demultiplexes frames to their terminals and validates stream offsets', async () => {
     await hub.ensureStream();
     const a = open(hub, 1);
     const b = open(hub, 2);
     await flush();
     transport.held.respond([
-      { kind: "data", id: 1, offset: 0, bytes: Uint8Array.of(1, 2) },
-      { kind: "data", id: 2, offset: 0, bytes: Uint8Array.of(9) },
-      { kind: "data", id: 1, offset: 2, bytes: Uint8Array.of(3) },
-      { kind: "data", id: 99, offset: 0, bytes: Uint8Array.of(4) },
+      { kind: 'data', id: 1, offset: 0, bytes: Uint8Array.of(1, 2) },
+      { kind: 'data', id: 2, offset: 0, bytes: Uint8Array.of(9) },
+      { kind: 'data', id: 1, offset: 2, bytes: Uint8Array.of(3) },
+      { kind: 'data', id: 99, offset: 0, bytes: Uint8Array.of(4) },
     ]);
     await flush();
-    expect(a.parse.mock.calls.map(([chunk]) => [...chunk])).toEqual([
-      [1, 2],
-      [3],
-    ]);
+    expect(a.parse.mock.calls.map(([chunk]) => [...chunk])).toEqual([[1, 2], [3]]);
     expect(b.parse.mock.calls.map(([chunk]) => [...chunk])).toEqual([[9]]);
     expect(hub.diagnostics().frames).toBe(4);
   });
 
-  it("issues the next poll before parsing the response", async () => {
+  it('issues the next poll before parsing the response', async () => {
     await hub.ensureStream();
     const seen: number[] = [];
     open(hub, 1, () => {
       seen.push(transport.polls.length);
     });
     await flush();
-    transport.held.respond([
-      { kind: "data", id: 1, offset: 0, bytes: Uint8Array.of(1) },
-    ]);
+    transport.held.respond([{ kind: 'data', id: 1, offset: 0, bytes: Uint8Array.of(1) }]);
     await flush();
     // The second poll was already in flight when the first byte was parsed.
     expect(seen).toEqual([2]);
@@ -260,15 +246,13 @@ describe("PtyOutputHub", () => {
     open(hub, 2);
     await flush();
     transport.held.respond([
-      { kind: "data", id: 1, offset: 0, bytes: bytes(100) },
-      { kind: "data", id: 2, offset: 0, bytes: bytes(10) },
+      { kind: 'data', id: 1, offset: 0, bytes: bytes(100) },
+      { kind: 'data', id: 2, offset: 0, bytes: bytes(10) },
     ]);
     await flush();
     // Small progress waits for a poll instead of costing its own request.
     expect(transport.acks).toHaveLength(0);
-    transport.held.respond([
-      { kind: "data", id: 1, offset: 100, bytes: bytes(50) },
-    ]);
+    transport.held.respond([{ kind: 'data', id: 1, offset: 100, bytes: bytes(50) }]);
     await flush();
     expect(transport.polls).toHaveLength(3);
     // The poll was issued before this response was parsed, so it carries the
@@ -288,18 +272,16 @@ describe("PtyOutputHub", () => {
     expect(transport.acks).toHaveLength(0);
   });
 
-  it("sends an ack-only request only when unsent progress passes half the window", async () => {
+  it('sends an ack-only request only when unsent progress passes half the window', async () => {
     await hub.ensureStream();
     open(hub, 1);
     await flush();
-    transport.held.respond([
-      { kind: "data", id: 1, offset: 0, bytes: bytes(ACK_ONLY_BYTES - 1) },
-    ]);
+    transport.held.respond([{ kind: 'data', id: 1, offset: 0, bytes: bytes(ACK_ONLY_BYTES - 1) }]);
     await flush();
     expect(transport.acks).toHaveLength(0);
     transport.held.respond([
       {
-        kind: "data",
+        kind: 'data',
         id: 1,
         offset: ACK_ONLY_BYTES - 1,
         bytes: bytes(1),
@@ -311,7 +293,7 @@ describe("PtyOutputHub", () => {
     expect(transport.acks).toHaveLength(0);
     transport.held.respond([
       {
-        kind: "data",
+        kind: 'data',
         id: 1,
         offset: ACK_ONLY_BYTES,
         bytes: bytes(ACK_ONLY_BYTES),
@@ -319,12 +301,10 @@ describe("PtyOutputHub", () => {
     ]);
     await flush();
     expect(transport.acks).toHaveLength(1);
-    expect(transport.acks[0].acks).toEqual([
-      { id: 1, bytes: 2 * ACK_ONLY_BYTES },
-    ]);
+    expect(transport.acks[0].acks).toEqual([{ id: 1, bytes: 2 * ACK_ONLY_BYTES }]);
   });
 
-  it("acknowledges as soon as bytes are parsed once native says it is waiting", async () => {
+  it('acknowledges as soon as bytes are parsed once native says it is waiting', async () => {
     await hub.ensureStream();
     let finish!: () => void;
     open(
@@ -336,11 +316,9 @@ describe("PtyOutputHub", () => {
         }),
     );
     await flush();
-    transport.held.respond([
-      { kind: "data", id: 1, offset: 0, bytes: bytes(1000) },
-    ]);
+    transport.held.respond([{ kind: 'data', id: 1, offset: 0, bytes: bytes(1000) }]);
     await flush();
-    transport.held.respond([{ kind: "sync", id: 1 }]);
+    transport.held.respond([{ kind: 'sync', id: 1 }]);
     await flush();
     expect(transport.acks).toHaveLength(0); // nothing parsed yet
     finish();
@@ -349,22 +327,20 @@ describe("PtyOutputHub", () => {
     expect(transport.acks[0].acks).toEqual([{ id: 1, bytes: 1000 }]);
   });
 
-  it("ignores a sync for a terminal whose progress was already sent", async () => {
+  it('ignores a sync for a terminal whose progress was already sent', async () => {
     await hub.ensureStream();
     open(hub, 1);
     await flush();
-    transport.held.respond([
-      { kind: "data", id: 1, offset: 0, bytes: bytes(10) },
-    ]);
+    transport.held.respond([{ kind: 'data', id: 1, offset: 0, bytes: bytes(10) }]);
     await flush();
-    transport.held.respond([{ kind: "sync", id: 1 }]);
+    transport.held.respond([{ kind: 'sync', id: 1 }]);
     await flush();
     // The sync response itself prompted a poll that carries the progress.
     expect(transport.acks).toHaveLength(0);
     expect(transport.held.acks).toEqual([{ id: 1, bytes: 10 }]);
   });
 
-  it("treats an empty response as a keepalive and polls again", async () => {
+  it('treats an empty response as a keepalive and polls again', async () => {
     await hub.ensureStream();
     const a = open(hub, 1);
     await flush();
@@ -375,28 +351,26 @@ describe("PtyOutputHub", () => {
     expect(a.parse).not.toHaveBeenCalled();
   });
 
-  it("delivers the exit code once and stops acknowledging that terminal", async () => {
+  it('delivers the exit code once and stops acknowledging that terminal', async () => {
     await hub.ensureStream();
     const a = open(hub, 1);
     const b = open(hub, 2);
     await flush();
     transport.held.respond([
-      { kind: "data", id: 1, offset: 0, bytes: bytes(5) },
-      { kind: "exit", id: 1, code: 3 },
-      { kind: "data", id: 2, offset: 0, bytes: bytes(5) },
+      { kind: 'data', id: 1, offset: 0, bytes: bytes(5) },
+      { kind: 'exit', id: 1, code: 3 },
+      { kind: 'data', id: 2, offset: 0, bytes: bytes(5) },
     ]);
     await flush();
     expect(a.exits).toEqual([3]);
-    transport.held.respond([
-      { kind: "data", id: 1, offset: 5, bytes: bytes(1) },
-    ]);
+    transport.held.respond([{ kind: 'data', id: 1, offset: 5, bytes: bytes(1) }]);
     await flush();
     expect(a.parse).toHaveBeenCalledTimes(1); // frames after exit are ignored
     expect(transport.held.acks).toEqual([{ id: 2, bytes: 5 }]);
     expect(b.exits).toEqual([]);
   });
 
-  it("stops polling when the last terminal closes and resumes for the next one", async () => {
+  it('stops polling when the last terminal closes and resumes for the next one', async () => {
     await hub.ensureStream();
     open(hub, 1);
     await flush();
@@ -413,34 +387,28 @@ describe("PtyOutputHub", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("never puts more than 64 acknowledgements in one request", async () => {
+  it('never puts more than 64 acknowledgements in one request', async () => {
     await hub.ensureStream();
     for (let id = 1; id <= MAX_ACKS_PER_REQUEST + 6; id++) open(hub, id);
     await flush();
     expect(transport.held.acks).toHaveLength(MAX_ACKS_PER_REQUEST);
     expect(transport.acks).toHaveLength(1);
-    expect(transport.acks[0].acks.map((ack) => ack.id)).toEqual([
-      65, 66, 67, 68, 69, 70,
-    ]);
+    expect(transport.acks[0].acks.map((ack) => ack.id)).toEqual([65, 66, 67, 68, 69, 70]);
   });
 
-  describe("failure handling", () => {
-    it("retries a failed poll with capped backoff, reports it, and resends progress", async () => {
+  describe('failure handling', () => {
+    it('retries a failed poll with capped backoff, reports it, and resends progress', async () => {
       await hub.ensureStream();
       const a = open(hub, 1);
       await flush();
-      transport.held.respond([
-        { kind: "data", id: 1, offset: 0, bytes: bytes(5) },
-      ]);
+      transport.held.respond([{ kind: 'data', id: 1, offset: 0, bytes: bytes(5) }]);
       await flush();
-      transport.held.respond([
-        { kind: "data", id: 1, offset: 5, bytes: bytes(5) },
-      ]);
+      transport.held.respond([{ kind: 'data', id: 1, offset: 5, bytes: bytes(5) }]);
       await flush();
       expect(transport.held.acks).toEqual([{ id: 1, bytes: 5 }]);
       transport.held.fail();
       await flush();
-      expect(a.status).toHaveBeenLastCalledWith("retrying");
+      expect(a.status).toHaveBeenLastCalledWith('retrying');
       await vi.advanceTimersByTimeAsync(49);
       expect(transport.polls).toHaveLength(3);
       await vi.advanceTimersByTimeAsync(1);
@@ -456,15 +424,15 @@ describe("PtyOutputHub", () => {
         transport.held.fail();
         await vi.advanceTimersByTimeAsync(1_000);
       }
-      expect(a.status).toHaveBeenLastCalledWith("stalled");
+      expect(a.status).toHaveBeenLastCalledWith('stalled');
       expect(hub.diagnostics().consecutiveFailures).toBeGreaterThanOrEqual(5);
       transport.held.respond();
       await flush();
-      expect(a.status).toHaveBeenLastCalledWith("running");
+      expect(a.status).toHaveBeenLastCalledWith('running');
       expect(hub.diagnostics().consecutiveFailures).toBe(0);
     });
 
-    it("lets the visible Retry skip the backoff", async () => {
+    it('lets the visible Retry skip the backoff', async () => {
       await hub.ensureStream();
       open(hub, 1);
       await flush();
@@ -476,13 +444,11 @@ describe("PtyOutputHub", () => {
       expect(transport.polls).toHaveLength(2); // the old timer is gone
     });
 
-    it("keeps unconfirmed progress when an ack-only request fails", async () => {
+    it('keeps unconfirmed progress when an ack-only request fails', async () => {
       await hub.ensureStream();
       open(hub, 1);
       await flush();
-      transport.held.respond([
-        { kind: "data", id: 1, offset: 0, bytes: bytes(ACK_ONLY_BYTES) },
-      ]);
+      transport.held.respond([{ kind: 'data', id: 1, offset: 0, bytes: bytes(ACK_ONLY_BYTES) }]);
       await flush();
       expect(transport.acks).toHaveLength(1);
       transport.acks[0].fail();
@@ -490,30 +456,28 @@ describe("PtyOutputHub", () => {
       expect(transport.acks).toHaveLength(1);
       await vi.advanceTimersByTimeAsync(50);
       expect(transport.acks).toHaveLength(2);
-      expect(transport.acks[1].acks).toEqual([
-        { id: 1, bytes: ACK_ONLY_BYTES },
-      ]);
+      expect(transport.acks[1].acks).toEqual([{ id: 1, bytes: ACK_ONLY_BYTES }]);
       transport.acks[1].respond();
       await flush();
       expect(transport.acks).toHaveLength(2);
     });
 
-    it("isolates a stream gap to the terminal that suffered it", async () => {
+    it('isolates a stream gap to the terminal that suffered it', async () => {
       await hub.ensureStream();
       const a = open(hub, 1);
       const b = open(hub, 2);
       await flush();
       transport.held.respond([
-        { kind: "data", id: 1, offset: 77, bytes: bytes(5) },
-        { kind: "data", id: 2, offset: 0, bytes: bytes(8) },
+        { kind: 'data', id: 1, offset: 77, bytes: bytes(5) },
+        { kind: 'data', id: 2, offset: 0, bytes: bytes(8) },
       ]);
       await flush();
-      expect(a.status).toHaveBeenLastCalledWith("failed");
+      expect(a.status).toHaveBeenLastCalledWith('failed');
       expect(a.parse).not.toHaveBeenCalled();
-      expect(b.status).not.toHaveBeenCalledWith("failed");
+      expect(b.status).not.toHaveBeenCalledWith('failed');
       transport.held.respond([
-        { kind: "data", id: 2, offset: 8, bytes: bytes(2) },
-        { kind: "data", id: 1, offset: 82, bytes: bytes(1) },
+        { kind: 'data', id: 2, offset: 8, bytes: bytes(2) },
+        { kind: 'data', id: 1, offset: 82, bytes: bytes(1) },
       ]);
       await flush();
       expect(b.parse).toHaveBeenCalledTimes(2);
@@ -523,22 +487,20 @@ describe("PtyOutputHub", () => {
       expect(transport.held.acks).toEqual([{ id: 2, bytes: 10 }]);
     });
 
-    it("stops acknowledging a terminal whose parser failed without touching the rest", async () => {
+    it('stops acknowledging a terminal whose parser failed without touching the rest', async () => {
       await hub.ensureStream();
       const a = open(hub, 1, () => {
-        throw new Error("parser failed");
+        throw new Error('parser failed');
       });
       const b = open(hub, 2);
       await flush();
       transport.held.respond([
-        { kind: "data", id: 1, offset: 0, bytes: bytes(5) },
-        { kind: "data", id: 2, offset: 0, bytes: bytes(6) },
+        { kind: 'data', id: 1, offset: 0, bytes: bytes(5) },
+        { kind: 'data', id: 2, offset: 0, bytes: bytes(6) },
       ]);
       await flush();
-      expect(a.status).toHaveBeenLastCalledWith("failed");
-      transport.held.respond([
-        { kind: "data", id: 2, offset: 6, bytes: bytes(1) },
-      ]);
+      expect(a.status).toHaveBeenLastCalledWith('failed');
+      transport.held.respond([{ kind: 'data', id: 2, offset: 6, bytes: bytes(1) }]);
       await flush();
       expect(transport.held.acks).toEqual([{ id: 2, bytes: 6 }]);
       transport.held.respond();
@@ -547,73 +509,73 @@ describe("PtyOutputHub", () => {
       expect(b.exits).toEqual([]);
     });
 
-    it("fails only the named terminal on a native failure frame", async () => {
+    it('fails only the named terminal on a native failure frame', async () => {
       await hub.ensureStream();
       const a = open(hub, 1);
       const b = open(hub, 2);
       await flush();
       transport.held.respond([
         {
-          kind: "failed",
+          kind: 'failed',
           id: 1,
-          reason: "invalid output acknowledgement boundary",
+          reason: 'invalid output acknowledgement boundary',
         },
       ]);
       await flush();
-      expect(a.status).toHaveBeenLastCalledWith("failed");
+      expect(a.status).toHaveBeenLastCalledWith('failed');
       expect(b.status).not.toHaveBeenCalled();
       expect(console.error).toHaveBeenCalled();
     });
 
-    it("fails every terminal on a malformed response and keeps the hub reusable", async () => {
+    it('fails every terminal on a malformed response and keeps the hub reusable', async () => {
       await hub.ensureStream();
       const a = open(hub, 1);
       const b = open(hub, 2);
       await flush();
       transport.held.reply({ status: 200, body: Uint8Array.of(1, 2, 3) });
       await flush();
-      expect(a.status).toHaveBeenLastCalledWith("failed");
-      expect(b.status).toHaveBeenLastCalledWith("failed");
+      expect(a.status).toHaveBeenLastCalledWith('failed');
+      expect(b.status).toHaveBeenLastCalledWith('failed');
       expect(transport.polls.filter((call) => !call.settled)).toHaveLength(0);
       // A terminal opened afterwards starts a fresh poll without the dead ones.
       const c = open(hub, 3);
       await flush();
       expect(transport.held.acks).toEqual([{ id: 3, bytes: 0 }]);
-      expect(c.status).not.toHaveBeenCalledWith("failed");
+      expect(c.status).not.toHaveBeenCalledWith('failed');
     });
 
     it.each([403, 410])(
-      "treats %i as a reset stream: fails terminals and reopens on demand",
+      'treats %i as a reset stream: fails terminals and reopens on demand',
       async (status) => {
         await hub.ensureStream();
         const a = open(hub, 1);
         await flush();
         transport.held.reply({ status, body: new Uint8Array(0) });
         await flush();
-        expect(a.status).toHaveBeenLastCalledWith("failed");
+        expect(a.status).toHaveBeenLastCalledWith('failed');
         expect(transport.polls).toHaveLength(1);
         hub.unregister(1);
         await hub.ensureStream();
         expect(transport.opens).toBe(2);
         open(hub, 2);
         await flush();
-        expect(transport.held.token).toBe("00000000000000bb");
+        expect(transport.held.token).toBe('00000000000000bb');
       },
     );
 
-    it("treats a superseded poll as a transient failure", async () => {
+    it('treats a superseded poll as a transient failure', async () => {
       await hub.ensureStream();
       const a = open(hub, 1);
       await flush();
       transport.held.reply({ status: 409, body: new Uint8Array(0) });
       await flush();
-      expect(a.status).toHaveBeenLastCalledWith("retrying");
+      expect(a.status).toHaveBeenLastCalledWith('retrying');
       await vi.advanceTimersByTimeAsync(50);
       expect(transport.polls).toHaveLength(2);
     });
   });
 
-  it("drops everything on dispose without leaving timers behind", async () => {
+  it('drops everything on dispose without leaving timers behind', async () => {
     await hub.ensureStream();
     open(hub, 1);
     await flush();

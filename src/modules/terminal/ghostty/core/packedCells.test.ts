@@ -1,12 +1,8 @@
-import { describe, expect, it } from "vitest";
-import {
-  CELL_STRIDE,
-  PackedCellView,
-  writeNormalizedColor,
-} from "./packedCells";
+import { describe, expect, it } from 'vitest';
+import { CELL_STRIDE, PackedCellView, writeNormalizedColor } from './packedCells';
 
-describe("PackedCellView", () => {
-  it("reads the vendored 16-byte cell ABI without cell objects", () => {
+describe('PackedCellView', () => {
+  it('reads the vendored 16-byte cell ABI without cell objects', () => {
     const bytes = new Uint8Array(CELL_STRIDE);
     new DataView(bytes.buffer).setUint32(0, 0x1f680, true);
     bytes.set([12, 34, 56, 78, 90, 123, 5, 2], 4);
@@ -27,7 +23,7 @@ describe("PackedCellView", () => {
     expect(cells.overline(0)).toBe(false);
   });
 
-  it("writes normalized RGB channels into an existing arena", () => {
+  it('writes normalized RGB channels into an existing arena', () => {
     const arena = new Float32Array(8);
     writeNormalizedColor(arena, 2, [255, 128, 0], 0.5);
     expect(arena[2]).toBe(1);

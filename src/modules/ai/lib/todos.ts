@@ -1,6 +1,6 @@
-import { LazyStore } from "@tauri-apps/plugin-store";
+import { LazyStore } from '@tauri-apps/plugin-store';
 
-type TodoStatus = "pending" | "in_progress" | "completed";
+type TodoStatus = 'pending' | 'in_progress' | 'completed';
 
 export type Todo = {
   id: string;
@@ -9,7 +9,7 @@ export type Todo = {
   status: TodoStatus;
 };
 
-const STORE_PATH = "terax-ai-todos.json";
+const STORE_PATH = 'terax-ai-todos.json';
 const todosKey = (sessionId: string) => `todos:${sessionId}`;
 
 const store = new LazyStore(STORE_PATH, { defaults: {}, autoSave: 200 });
@@ -18,10 +18,7 @@ export async function loadTodos(sessionId: string): Promise<Todo[]> {
   return (await store.get<Todo[]>(todosKey(sessionId))) ?? [];
 }
 
-export async function saveTodos(
-  sessionId: string,
-  todos: Todo[],
-): Promise<void> {
+export async function saveTodos(sessionId: string, todos: Todo[]): Promise<void> {
   await store.set(todosKey(sessionId), todos);
 }
 
@@ -42,10 +39,9 @@ export function newTodoId(): string {
 export function validateTodos(todos: Todo[]): string | null {
   let inProgress = 0;
   for (const t of todos) {
-    if (!t.title.trim()) return "todo title cannot be empty";
-    if (t.status === "in_progress") inProgress++;
+    if (!t.title.trim()) return 'todo title cannot be empty';
+    if (t.status === 'in_progress') inProgress++;
   }
-  if (inProgress > 1)
-    return `only one todo may be in_progress at a time (got ${inProgress})`;
+  if (inProgress > 1) return `only one todo may be in_progress at a time (got ${inProgress})`;
   return null;
 }

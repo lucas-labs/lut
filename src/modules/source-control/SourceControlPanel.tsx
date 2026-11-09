@@ -7,16 +7,16 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
-} from "@/components/ui/context-menu";
+} from '@/components/ui/context-menu';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,28 +25,17 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Spinner } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { IS_MAC } from "@/lib/platform";
-import { cn } from "@/lib/utils";
-import { FileIcon } from "@/modules/explorer/FileIcon";
-import {
-  copyToClipboard,
-  revealInFinder,
-} from "@/modules/explorer/lib/contextActions";
-import {
-  COMPACT_CONTENT,
-  COMPACT_ITEM,
-} from "@/modules/explorer/lib/menuItemClass";
-import { joinPath } from "@/modules/explorer/lib/useFileTree";
-import { git,type GitBranchEntry } from "@/modules/git";
+} from '@/components/ui/dropdown-menu';
+import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { IS_MAC } from '@/lib/platform';
+import { cn } from '@/lib/utils';
+import { FileIcon } from '@/modules/explorer/FileIcon';
+import { copyToClipboard, revealInFinder } from '@/modules/explorer/lib/contextActions';
+import { COMPACT_CONTENT, COMPACT_ITEM } from '@/modules/explorer/lib/menuItemClass';
+import { joinPath } from '@/modules/explorer/lib/useFileTree';
+import { git, type GitBranchEntry } from '@/modules/git';
 import {
   AiContentGenerator02Icon,
   Alert02Icon,
@@ -62,30 +51,14 @@ import {
   Refresh01Icon,
   RemoveSquareIcon,
   Tick02Icon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import {
-  type KeyboardEvent,
-  memo,
-  type ReactNode,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { toast } from "sonner";
-import {
-  repositoryTargetIsPending,
-  type SourceControlRepositoryTarget,
-} from "./repositoryTarget";
-import type { SourceControlSummary } from "./useSourceControl";
-import {
-  type CheckState,
-  type SourceControlFileEntry,
-  useSourceControlPanel,
-} from "./useSourceControlPanel";
+} from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { type KeyboardEvent, memo, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import { repositoryTargetIsPending, type SourceControlRepositoryTarget } from './repositoryTarget';
+import type { SourceControlSummary } from './useSourceControl';
+import { type CheckState, type SourceControlFileEntry, useSourceControlPanel } from './useSourceControlPanel';
 
 type Props = {
   open: boolean;
@@ -94,7 +67,7 @@ type Props = {
   onOpenDiff: (input: {
     path: string;
     repoRoot: string;
-    mode: "+" | "-";
+    mode: '+' | '-';
     originalPath: string | null;
     title?: string;
   }) => void;
@@ -105,7 +78,7 @@ type Props = {
 };
 
 const SOURCE_CONTROL_TOOLTIP_CLASS =
-  "border border-border/70 bg-zinc-950 text-zinc-100 shadow-lg shadow-black/30 dark:border-border/60 dark:bg-zinc-950 dark:text-zinc-100";
+  'border border-border/70 bg-zinc-950 text-zinc-100 shadow-lg shadow-black/30 dark:border-border/60 dark:bg-zinc-950 dark:text-zinc-100';
 
 const ROW_HEIGHTS = {
   banner: 32,
@@ -114,9 +87,9 @@ const ROW_HEIGHTS = {
 } as const;
 
 type RowDescriptor =
-  | { kind: "banner-diverged"; key: string }
-  | { kind: "list-header"; key: string; count: number }
-  | { kind: "entry"; key: string; entry: SourceControlFileEntry };
+  | { kind: 'banner-diverged'; key: string }
+  | { kind: 'list-header'; key: string; count: number }
+  | { kind: 'entry'; key: string; entry: SourceControlFileEntry };
 
 function basename(path: string): string {
   const parts = path.split(/[\\/]/).filter(Boolean);
@@ -124,9 +97,9 @@ function basename(path: string): string {
 }
 
 function dirname(path: string): string {
-  const normalized = path.replace(/\\/g, "/");
-  const index = normalized.lastIndexOf("/");
-  if (index <= 0) return "";
+  const normalized = path.replace(/\\/g, '/');
+  const index = normalized.lastIndexOf('/');
+  if (index <= 0) return '';
   return normalized.slice(0, index);
 }
 
@@ -136,30 +109,30 @@ function entryPathLabel(entry: SourceControlFileEntry): string {
 }
 
 function upstreamBadgeLabel(upstream: string | null | undefined): string {
-  if (!upstream) return "No upstream";
+  if (!upstream) return 'No upstream';
   return upstream;
 }
 
 function statusAccent(code: string): string {
   switch (code) {
-    case "A":
-      return "bg-emerald-500/85";
-    case "U":
-      return "bg-teal-500/85";
-    case "M":
-      return "bg-amber-500/85";
-    case "D":
-      return "bg-rose-500/85";
-    case "R":
-      return "bg-sky-500/85";
+    case 'A':
+      return 'bg-emerald-500/85';
+    case 'U':
+      return 'bg-teal-500/85';
+    case 'M':
+      return 'bg-amber-500/85';
+    case 'D':
+      return 'bg-rose-500/85';
+    case 'R':
+      return 'bg-sky-500/85';
     default:
-      return "bg-muted-foreground/40";
+      return 'bg-muted-foreground/40';
   }
 }
 
-function checkboxValue(state: CheckState): boolean | "indeterminate" {
-  if (state === "checked") return true;
-  if (state === "indeterminate") return "indeterminate";
+function checkboxValue(state: CheckState): boolean | 'indeterminate' {
+  if (state === 'checked') return true;
+  if (state === 'indeterminate') return 'indeterminate';
   return false;
 }
 
@@ -239,14 +212,8 @@ function BranchDropdown({
     [repoRoot, onRefresh],
   );
 
-  const localBranches = useMemo(
-    () => branches.filter((b) => b.kind === "local"),
-    [branches],
-  );
-  const worktrees = useMemo(
-    () => branches.filter((b) => b.kind === "worktree"),
-    [branches],
-  );
+  const localBranches = useMemo(() => branches.filter((b) => b.kind === 'local'), [branches]);
+  const worktrees = useMemo(() => branches.filter((b) => b.kind === 'worktree'), [branches]);
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -265,9 +232,7 @@ function BranchDropdown({
           />
           {displayRepoRoot ? (
             <>
-              <span className="max-w-22 truncate">
-                {basename(displayRepoRoot)}
-              </span>
+              <span className="max-w-22 truncate">{basename(displayRepoRoot)}</span>
               <span className="text-muted-foreground/60">/</span>
             </>
           ) : null}
@@ -280,13 +245,10 @@ function BranchDropdown({
             <DropdownMenuLabel className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/85">
               Repository
             </DropdownMenuLabel>
-            <div
-              className="truncate px-2 pb-1.5 text-[11px] text-muted-foreground"
-              title={displayRepoRoot}
-            >
+            <div className="truncate px-2 pb-1.5 text-[11px] text-muted-foreground" title={displayRepoRoot}>
               {displayRepoRoot}
             </div>
-            {repositoryTarget.mode === "fixed" ? (
+            {repositoryTarget.mode === 'fixed' ? (
               <DropdownMenuItem
                 onSelect={() => {
                   onFollowRepositoryContext();
@@ -306,9 +268,7 @@ function BranchDropdown({
             Loading branches…
           </div>
         ) : error ? (
-          <div className="px-3 py-3 text-[11px] leading-snug text-destructive">
-            {error}
-          </div>
+          <div className="px-3 py-3 text-[11px] leading-snug text-destructive">{error}</div>
         ) : (
           <>
             {localBranches.length > 0 && (
@@ -324,12 +284,7 @@ function BranchDropdown({
                       className="flex cursor-pointer items-center gap-2 text-[12px]"
                     >
                       {b.isHead ? (
-                        <HugeiconsIcon
-                          icon={Tick02Icon}
-                          size={14}
-                          strokeWidth={1.8}
-                          className="shrink-0"
-                        />
+                        <HugeiconsIcon icon={Tick02Icon} size={14} strokeWidth={1.8} className="shrink-0" />
                       ) : (
                         <span className="w-3.5 shrink-0" />
                       )}
@@ -365,9 +320,7 @@ function BranchDropdown({
                       <div className="flex min-w-0 flex-col">
                         <span className="truncate">{b.name}</span>
                         {b.worktreePath && (
-                          <span className="truncate text-[10px] text-muted-foreground">
-                            {b.worktreePath}
-                          </span>
+                          <span className="truncate text-[10px] text-muted-foreground">{b.worktreePath}</span>
                         )}
                       </div>
                     </DropdownMenuItem>
@@ -376,9 +329,7 @@ function BranchDropdown({
               </>
             )}
             {branches.length === 0 && (
-              <div className="px-3 py-3 text-[11px] text-muted-foreground">
-                No branches found.
-              </div>
+              <div className="px-3 py-3 text-[11px] text-muted-foreground">No branches found.</div>
             )}
           </>
         )}
@@ -418,43 +369,39 @@ export const SourceControlPanel = memo(function SourceControlPanel({
     loadedRepoRoot: sourceControl.repo?.repoRoot ?? null,
     isLoading: sourceControl.isLoading,
   });
-  const panelState = fixedTargetPending ? "loading" : scm.panelState;
-  const isRefreshing = panelState === "loading";
+  const panelState = fixedTargetPending ? 'loading' : scm.panelState;
+  const isRefreshing = panelState === 'loading';
   const repoLabel = useMemo(() => {
-    if (fixedTargetPending) return "Loading";
-    if (!scm.status) return "Source Control";
-    return scm.status.isDetached ? "detached" : scm.status.branch;
+    if (fixedTargetPending) return 'Loading';
+    if (!scm.status) return 'Source Control';
+    return scm.status.isDetached ? 'detached' : scm.status.branch;
   }, [fixedTargetPending, scm.status]);
 
-  const commitShortcut = IS_MAC ? "⌘↩" : "Ctrl+Enter";
-  const generateShortcut = IS_MAC ? "⌘G" : "Ctrl+G";
+  const commitShortcut = IS_MAC ? '⌘↩' : 'Ctrl+Enter';
+  const generateShortcut = IS_MAC ? '⌘G' : 'Ctrl+G';
   const canCommit =
-    scm.stagedEntries.length > 0 &&
-    scm.commitMessage.trim().length > 0 &&
-    !fixedTargetPending &&
-    !scm.actionBusy;
+    scm.stagedEntries.length > 0 && scm.commitMessage.trim().length > 0 && !fixedTargetPending && !scm.actionBusy;
   const commitDisabledReason = scm.actionBusy
-    ? "Wait for the current Git action to finish."
+    ? 'Wait for the current Git action to finish.'
     : scm.stagedEntries.length === 0
-      ? "Stage changes to enable commit."
+      ? 'Stage changes to enable commit.'
       : scm.commitMessage.trim().length === 0
-        ? "Enter a commit message to enable commit."
+        ? 'Enter a commit message to enable commit.'
         : null;
   const commitHint = canCommit
     ? `Commit with ${commitShortcut}.`
     : (commitDisabledReason ?? `Commit with ${commitShortcut}.`);
-  const pushHint = scm.pushHint ?? "Push is unavailable right now.";
+  const pushHint = scm.pushHint ?? 'Push is unavailable right now.';
   const pushDisabledReason = fixedTargetPending
-    ? "Wait for the selected repository to finish loading."
+    ? 'Wait for the selected repository to finish loading.'
     : scm.actionBusy
-      ? "Wait for the current Git action to finish."
+      ? 'Wait for the current Git action to finish.'
       : pushHint;
   const stagedCount = scm.stagedEntries.length;
   const changedCount = scm.fileEntries.length;
   const pushStatusLabel = upstreamBadgeLabel(scm.status?.upstream);
   const hasUpstream = !!scm.status?.upstream;
-  const isDiverged =
-    !!scm.status && scm.status.ahead > 0 && scm.status.behind > 0;
+  const isDiverged = !!scm.status && scm.status.ahead > 0 && scm.status.behind > 0;
 
   const canPull =
     hasUpstream &&
@@ -464,37 +411,22 @@ export const SourceControlPanel = memo(function SourceControlPanel({
     !fixedTargetPending &&
     !scm.actionBusy &&
     !sourceControl.busyAction;
-  const canFetch =
-    hasUpstream &&
-    !fixedTargetPending &&
-    !scm.actionBusy &&
-    !sourceControl.busyAction;
+  const canFetch = hasUpstream && !fixedTargetPending && !scm.actionBusy && !sourceControl.busyAction;
 
   const footerFeedback = useMemo(() => {
-    if (scm.actionError)
-      return { tone: "error", message: scm.actionError } as const;
-    if (scm.remoteError)
-      return { tone: "error", message: scm.remoteError } as const;
-    if (scm.actionMessage)
-      return { tone: "success", message: scm.actionMessage } as const;
+    if (scm.actionError) return { tone: 'error', message: scm.actionError } as const;
+    if (scm.remoteError) return { tone: 'error', message: scm.remoteError } as const;
+    if (scm.actionMessage) return { tone: 'success', message: scm.actionMessage } as const;
     return null;
   }, [scm.actionError, scm.actionMessage, scm.remoteError]);
 
   const handleCommitShortcut = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (
-      event.key === "Enter" &&
-      (event.metaKey || event.ctrlKey) &&
-      canCommit
-    ) {
+    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey) && canCommit) {
       event.preventDefault();
       void scm.commit();
       return;
     }
-    if (
-      event.key.toLowerCase() === "g" &&
-      (event.metaKey || event.ctrlKey) &&
-      scm.canGenerateCommitMessage
-    ) {
+    if (event.key.toLowerCase() === 'g' && (event.metaKey || event.ctrlKey) && scm.canGenerateCommitMessage) {
       event.preventDefault();
       void scm.generateCommitMessage();
     }
@@ -514,26 +446,26 @@ export const SourceControlPanel = memo(function SourceControlPanel({
   }, [scm]);
 
   const handleFetch = useCallback(() => {
-    void sourceControl.runRemoteAction("fetch");
+    void sourceControl.runRemoteAction('fetch');
   }, [sourceControl]);
 
   const handlePull = useCallback(() => {
-    void sourceControl.runRemoteAction("pull");
+    void sourceControl.runRemoteAction('pull');
   }, [sourceControl]);
 
   const rows = useMemo<RowDescriptor[]>(() => {
     const result: RowDescriptor[] = [];
     if (isDiverged) {
-      result.push({ kind: "banner-diverged", key: "banner-diverged" });
+      result.push({ kind: 'banner-diverged', key: 'banner-diverged' });
     }
     if (changedCount > 0) {
       result.push({
-        kind: "list-header",
-        key: "list-header",
+        kind: 'list-header',
+        key: 'list-header',
         count: changedCount,
       });
       for (const entry of scm.fileEntries) {
-        result.push({ kind: "entry", key: entry.key, entry });
+        result.push({ kind: 'entry', key: entry.key, entry });
       }
     }
     return result;
@@ -555,7 +487,7 @@ export const SourceControlPanel = memo(function SourceControlPanel({
   const focusableIndices = useMemo(() => {
     const out: number[] = [];
     rows.forEach((row, index) => {
-      if (row.kind === "entry") out.push(index);
+      if (row.kind === 'entry') out.push(index);
     });
     return out;
   }, [rows]);
@@ -565,11 +497,11 @@ export const SourceControlPanel = memo(function SourceControlPanel({
       const row = rows[index];
       if (!row) return ROW_HEIGHTS.entry;
       switch (row.kind) {
-        case "banner-diverged":
+        case 'banner-diverged':
           return ROW_HEIGHTS.banner;
-        case "list-header":
+        case 'list-header':
           return ROW_HEIGHTS.header;
-        case "entry":
+        case 'entry':
           return ROW_HEIGHTS.entry;
       }
     },
@@ -587,19 +519,17 @@ export const SourceControlPanel = memo(function SourceControlPanel({
   const moveFocus = useCallback(
     (direction: 1 | -1) => {
       if (focusableIndices.length === 0) return;
-      const currentIndex =
-        focusedRowKey === null ? -1 : (rowKeyToIndex.get(focusedRowKey) ?? -1);
+      const currentIndex = focusedRowKey === null ? -1 : (rowKeyToIndex.get(focusedRowKey) ?? -1);
       let pos = focusableIndices.findIndex((i) => i === currentIndex);
       if (pos === -1) pos = direction > 0 ? -1 : focusableIndices.length;
       let nextPos = pos + direction;
       if (nextPos < 0) nextPos = 0;
-      if (nextPos > focusableIndices.length - 1)
-        nextPos = focusableIndices.length - 1;
+      if (nextPos > focusableIndices.length - 1) nextPos = focusableIndices.length - 1;
       const targetRowIndex = focusableIndices[nextPos];
       const target = rows[targetRowIndex];
       if (!target) return;
       setFocusedRowKey(target.key);
-      virtualizer.scrollToIndex(targetRowIndex, { align: "auto" });
+      virtualizer.scrollToIndex(targetRowIndex, { align: 'auto' });
     },
     [focusableIndices, focusedRowKey, rowKeyToIndex, rows, virtualizer],
   );
@@ -609,36 +539,31 @@ export const SourceControlPanel = memo(function SourceControlPanel({
     const index = rowKeyToIndex.get(focusedRowKey);
     if (index === undefined) return null;
     const row = rows[index];
-    return row && row.kind === "entry" ? row.entry : null;
+    return row && row.kind === 'entry' ? row.entry : null;
   }, [focusedRowKey, rowKeyToIndex, rows]);
 
   const handlePanelKeyDown = useCallback(
     (event: KeyboardEvent<HTMLDivElement>) => {
       const target = event.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === "TEXTAREA" ||
-          target.tagName === "INPUT" ||
-          target.closest("button"))
-      ) {
+      if (target && (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT' || target.closest('button'))) {
         return;
       }
       const meta = event.metaKey || event.ctrlKey;
-      if (meta && (event.key === "r" || event.key === "R")) {
+      if (meta && (event.key === 'r' || event.key === 'R')) {
         event.preventDefault();
         handleRefresh();
         return;
       }
       switch (event.key) {
-        case "ArrowDown":
+        case 'ArrowDown':
           event.preventDefault();
           moveFocus(1);
           break;
-        case "ArrowUp":
+        case 'ArrowUp':
           event.preventDefault();
           moveFocus(-1);
           break;
-        case "Enter": {
+        case 'Enter': {
           const entry = focusedEntry();
           if (entry) {
             event.preventDefault();
@@ -646,9 +571,9 @@ export const SourceControlPanel = memo(function SourceControlPanel({
           }
           break;
         }
-        case " ":
-        case "s":
-        case "S": {
+        case ' ':
+        case 's':
+        case 'S': {
           if (meta) break;
           const entry = focusedEntry();
           if (entry) {
@@ -657,8 +582,8 @@ export const SourceControlPanel = memo(function SourceControlPanel({
           }
           break;
         }
-        case "d":
-        case "D": {
+        case 'd':
+        case 'D': {
           if (meta) break;
           const entry = focusedEntry();
           if (entry && entry.unstaged) {
@@ -674,8 +599,8 @@ export const SourceControlPanel = memo(function SourceControlPanel({
 
   if (!open) return null;
 
-  const fetchBusy = sourceControl.busyAction === "fetch";
-  const pullBusy = sourceControl.busyAction === "pull";
+  const fetchBusy = sourceControl.busyAction === 'fetch';
+  const pullBusy = sourceControl.busyAction === 'pull';
 
   return (
     <TooltipProvider delayDuration={800} skipDelayDuration={300}>
@@ -683,14 +608,10 @@ export const SourceControlPanel = memo(function SourceControlPanel({
         <header className="flex shrink-0 items-center justify-between gap-2 border-b border-border/50 px-3 pb-2.5 pt-3">
           <div className="flex min-w-0 items-center gap-1.5">
             <BranchDropdown
-              repoRoot={
-                fixedTargetPending ? null : (scm.repo?.repoRoot ?? null)
-              }
+              repoRoot={fixedTargetPending ? null : (scm.repo?.repoRoot ?? null)}
               repoLabel={repoLabel}
               displayRepoRoot={
-                repositoryTarget.mode === "fixed"
-                  ? repositoryTarget.repoRoot
-                  : (scm.repo?.repoRoot ?? null)
+                repositoryTarget.mode === 'fixed' ? repositoryTarget.repoRoot : (scm.repo?.repoRoot ?? null)
               }
               repositoryTarget={repositoryTarget}
               onFollowRepositoryContext={onFollowRepositoryContext}
@@ -701,21 +622,13 @@ export const SourceControlPanel = memo(function SourceControlPanel({
               <div className="flex shrink-0 items-center gap-0.5 text-[10px] font-semibold tabular-nums leading-none text-muted-foreground">
                 {scm.status.ahead > 0 ? (
                   <span className="inline-flex items-center gap-0.5 rounded-md border border-border/60 px-1 py-0.5">
-                    <HugeiconsIcon
-                      icon={ArrowUp01Icon}
-                      size={9}
-                      strokeWidth={2.2}
-                    />
+                    <HugeiconsIcon icon={ArrowUp01Icon} size={9} strokeWidth={2.2} />
                     {scm.status.ahead}
                   </span>
                 ) : null}
                 {scm.status.behind > 0 ? (
                   <span className="inline-flex items-center gap-0.5 rounded-md border border-border/60 px-1 py-0.5">
-                    <HugeiconsIcon
-                      icon={ArrowDown01Icon}
-                      size={9}
-                      strokeWidth={2.2}
-                    />
+                    <HugeiconsIcon icon={ArrowDown01Icon} size={9} strokeWidth={2.2} />
                     {scm.status.behind}
                   </span>
                 ) : null}
@@ -729,7 +642,7 @@ export const SourceControlPanel = memo(function SourceControlPanel({
           </div>
           <div className="flex shrink-0 items-center gap-0.5">
             <IconActionButton
-              label={fetchBusy ? "Fetching…" : "Fetch from remote"}
+              label={fetchBusy ? 'Fetching…' : 'Fetch from remote'}
               disabled={!canFetch}
               onClick={handleFetch}
               side="bottom"
@@ -737,23 +650,19 @@ export const SourceControlPanel = memo(function SourceControlPanel({
               {fetchBusy ? (
                 <Spinner className="size-3" />
               ) : (
-                <HugeiconsIcon
-                  icon={FolderCloudIcon}
-                  size={14}
-                  strokeWidth={1.85}
-                />
+                <HugeiconsIcon icon={FolderCloudIcon} size={14} strokeWidth={1.85} />
               )}
             </IconActionButton>
             <IconActionButton
               label={
                 pullBusy
-                  ? "Pulling…"
+                  ? 'Pulling…'
                   : isDiverged
-                    ? "Branch diverged — resolve in terminal"
+                    ? 'Branch diverged — resolve in terminal'
                     : !hasUpstream
-                      ? "No upstream configured"
+                      ? 'No upstream configured'
                       : (scm.status?.behind ?? 0) === 0
-                        ? "Already up to date"
+                        ? 'Already up to date'
                         : `Pull ${scm.status?.behind ?? 0} commits (fast-forward)`
               }
               disabled={!canPull}
@@ -763,11 +672,7 @@ export const SourceControlPanel = memo(function SourceControlPanel({
               {pullBusy ? (
                 <Spinner className="size-3" />
               ) : (
-                <HugeiconsIcon
-                  icon={Download01Icon}
-                  size={14}
-                  strokeWidth={1.9}
-                />
+                <HugeiconsIcon icon={Download01Icon} size={14} strokeWidth={1.9} />
               )}
             </IconActionButton>
             <IconActionButton
@@ -783,7 +688,7 @@ export const SourceControlPanel = memo(function SourceControlPanel({
                   icon={Refresh01Icon}
                   size={14}
                   strokeWidth={1.9}
-                  className={cn(refreshAnimating && "animate-spin")}
+                  className={cn(refreshAnimating && 'animate-spin')}
                 />
               )}
             </IconActionButton>
@@ -796,12 +701,7 @@ export const SourceControlPanel = memo(function SourceControlPanel({
             onClick={() => onOpenGitGraph()}
             className="group flex shrink-0 cursor-pointer items-center gap-2 border-b border-border/40 px-3 py-2 text-left text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
           >
-            <HugeiconsIcon
-              icon={GitBranchIcon}
-              size={13}
-              strokeWidth={1.85}
-              className="shrink-0"
-            />
+            <HugeiconsIcon icon={GitBranchIcon} size={13} strokeWidth={1.85} className="shrink-0" />
             <span className="flex-1 text-[12px] font-medium">Commit Graph</span>
             <HugeiconsIcon
               icon={ArrowRight01Icon}
@@ -812,21 +712,16 @@ export const SourceControlPanel = memo(function SourceControlPanel({
           </button>
         ) : null}
 
-        {panelState === "loading" ? (
-          <PanelCenter title="Loading repository" />
+        {panelState === 'loading' ? <PanelCenter title="Loading repository" /> : null}
+
+        {panelState === 'no-repo' ? (
+          <PanelCenter title="No repository" body="The active workspace is not inside a Git repository." />
         ) : null}
 
-        {panelState === "no-repo" ? (
-          <PanelCenter
-            title="No repository"
-            body="The active workspace is not inside a Git repository."
-          />
-        ) : null}
-
-        {panelState === "error" ? (
+        {panelState === 'error' ? (
           <PanelCenter
             title="Source control error"
-            body={scm.statusError ?? "Unknown source control error"}
+            body={scm.statusError ?? 'Unknown source control error'}
             action={
               <Button size="sm" onClick={() => void scm.refresh()}>
                 Retry
@@ -835,16 +730,14 @@ export const SourceControlPanel = memo(function SourceControlPanel({
           />
         ) : null}
 
-        {panelState === "ready" && scm.status ? (
+        {panelState === 'ready' && scm.status ? (
           <>
             <div className="relative shrink-0 space-y-2 border-b border-border/40 bg-gradient-to-b from-card/65 to-card/30 px-2.5 pb-2.5 pt-2.5">
               <div
                 className={cn(
-                  "relative rounded-lg border bg-background/95 shadow-sm transition-colors",
-                  scm.commitMessage.length > 0
-                    ? "border-border/70"
-                    : "border-border/45",
-                  "focus-within:border-primary/45 focus-within:shadow-md focus-within:shadow-primary/5",
+                  'relative rounded-lg border bg-background/95 shadow-sm transition-colors',
+                  scm.commitMessage.length > 0 ? 'border-border/70' : 'border-border/45',
+                  'focus-within:border-primary/45 focus-within:shadow-md focus-within:shadow-primary/5',
                 )}
               >
                 <Textarea
@@ -854,7 +747,7 @@ export const SourceControlPanel = memo(function SourceControlPanel({
                   placeholder="Commit message"
                   rows={3}
                   className={cn(
-                    "min-h-[72px] border-border resize-none rounded-lg bg-transparent px-3 pb-7 pt-2.5 text-[12.5px] leading-snug shadow-none placeholder:text-muted-foreground/65 focus-visible:ring-0 focus:border-0",
+                    'min-h-[72px] border-border resize-none rounded-lg bg-transparent px-3 pb-7 pt-2.5 text-[12.5px] leading-snug shadow-none placeholder:text-muted-foreground/65 focus-visible:ring-0 focus:border-0',
                   )}
                 />
                 <div className="pointer-events-none absolute inset-x-3 bottom-1.5 flex items-center justify-between p-1 gap-2 text-[10px] tabular-nums text-muted-foreground/55">
@@ -875,29 +768,19 @@ export const SourceControlPanel = memo(function SourceControlPanel({
                         disabled={!scm.canGenerateCommitMessage}
                         onClick={() => void scm.generateCommitMessage()}
                         className={cn(
-                          "inline-flex size-6 cursor-pointer items-center justify-center rounded-md text-muted-foreground/65 transition-colors",
-                          "hover:bg-foreground/[0.06] hover:text-foreground",
-                          "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted-foreground/65",
+                          'inline-flex size-6 cursor-pointer items-center justify-center rounded-md text-muted-foreground/65 transition-colors',
+                          'hover:bg-foreground/[0.06] hover:text-foreground',
+                          'disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-muted-foreground/65',
                         )}
                       >
-                        {scm.actionBusy === "generate-message" ? (
+                        {scm.actionBusy === 'generate-message' ? (
                           <Spinner className="size-3" />
                         ) : (
-                          <HugeiconsIcon
-                            icon={AiContentGenerator02Icon}
-                            size={14}
-                            strokeWidth={1.75}
-                          />
+                          <HugeiconsIcon icon={AiContentGenerator02Icon} size={14} strokeWidth={1.75} />
                         )}
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent
-                      side="left"
-                      className={cn(
-                        SOURCE_CONTROL_TOOLTIP_CLASS,
-                        "text-[10.5px]",
-                      )}
-                    >
+                    <TooltipContent side="left" className={cn(SOURCE_CONTROL_TOOLTIP_CLASS, 'text-[10.5px]')}>
                       {`${scm.generateCommitMessageHint} (${generateShortcut})`}
                     </TooltipContent>
                   </Tooltip>
@@ -907,22 +790,20 @@ export const SourceControlPanel = memo(function SourceControlPanel({
               <div className="flex min-w-0 items-center gap-1.5 text-[10.5px] text-muted-foreground">
                 <span
                   className={cn(
-                    "size-1.5 shrink-0 rounded-full transition-colors",
+                    'size-1.5 shrink-0 rounded-full transition-colors',
                     canCommit
-                      ? "bg-foreground/80"
+                      ? 'bg-foreground/80'
                       : stagedCount > 0
-                        ? "bg-muted-foreground/60"
-                        : "bg-muted-foreground/30",
+                        ? 'bg-muted-foreground/60'
+                        : 'bg-muted-foreground/30',
                   )}
                 />
                 <span className="truncate font-medium text-foreground/85">
                   {stagedCount === 0
-                    ? "Nothing staged"
-                    : `${stagedCount} ${stagedCount === 1 ? "file" : "files"} staged`}
+                    ? 'Nothing staged'
+                    : `${stagedCount} ${stagedCount === 1 ? 'file' : 'files'} staged`}
                 </span>
-                <span className="ml-auto shrink-0 truncate text-muted-foreground/65">
-                  {pushStatusLabel}
-                </span>
+                <span className="ml-auto shrink-0 truncate text-muted-foreground/65">{pushStatusLabel}</span>
               </div>
 
               <div className="grid w-full grid-cols-2 gap-1.5">
@@ -934,16 +815,10 @@ export const SourceControlPanel = memo(function SourceControlPanel({
                       disabled={!canCommit}
                       onClick={() => void scm.commit()}
                     >
-                      {scm.actionBusy === "commit" ? "Committing…" : "Commit"}
+                      {scm.actionBusy === 'commit' ? 'Committing…' : 'Commit'}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent
-                    side="bottom"
-                    className={cn(
-                      SOURCE_CONTROL_TOOLTIP_CLASS,
-                      "text-[10.5px]",
-                    )}
-                  >
+                  <TooltipContent side="bottom" className={cn(SOURCE_CONTROL_TOOLTIP_CLASS, 'text-[10.5px]')}>
                     {commitHint}
                   </TooltipContent>
                 </Tooltip>
@@ -953,21 +828,13 @@ export const SourceControlPanel = memo(function SourceControlPanel({
                       size="xs"
                       variant="secondary"
                       className="h-7 cursor-pointer text-[11.5px] font-medium disabled:cursor-not-allowed"
-                      disabled={
-                        !scm.canPush || fixedTargetPending || !!scm.actionBusy
-                      }
+                      disabled={!scm.canPush || fixedTargetPending || !!scm.actionBusy}
                       onClick={() => void scm.push()}
                     >
-                      {scm.actionBusy === "push" ? "Pushing…" : "Push"}
+                      {scm.actionBusy === 'push' ? 'Pushing…' : 'Push'}
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent
-                    side="bottom"
-                    className={cn(
-                      SOURCE_CONTROL_TOOLTIP_CLASS,
-                      "max-w-64 text-[10.5px]",
-                    )}
-                  >
+                  <TooltipContent side="bottom" className={cn(SOURCE_CONTROL_TOOLTIP_CLASS, 'max-w-64 text-[10.5px]')}>
                     {pushDisabledReason}
                   </TooltipContent>
                 </Tooltip>
@@ -984,21 +851,16 @@ export const SourceControlPanel = memo(function SourceControlPanel({
                 tabIndex={0}
                 role="listbox"
                 aria-label="Changed files"
-                aria-activedescendant={
-                  focusedRowKey ? `scm-row-${focusedRowKey}` : undefined
-                }
+                aria-activedescendant={focusedRowKey ? `scm-row-${focusedRowKey}` : undefined}
                 onKeyDown={handlePanelKeyDown}
                 className="relative min-h-0 flex-1 outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
               >
-                <div
-                  ref={scrollRef}
-                  className="h-full overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]"
-                >
+                <div ref={scrollRef} className="h-full overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
                   <div
                     style={{
                       height: virtualizer.getTotalSize(),
-                      position: "relative",
-                      width: "100%",
+                      position: 'relative',
+                      width: '100%',
                     }}
                   >
                     {virtualizer.getVirtualItems().map((virtualRow) => {
@@ -1008,10 +870,10 @@ export const SourceControlPanel = memo(function SourceControlPanel({
                         <div
                           key={virtualRow.key}
                           style={{
-                            position: "absolute",
+                            position: 'absolute',
                             top: 0,
                             left: 0,
-                            width: "100%",
+                            width: '100%',
                             height: virtualRow.size,
                             transform: `translateY(${virtualRow.start}px)`,
                           }}
@@ -1051,7 +913,7 @@ export const SourceControlPanel = memo(function SourceControlPanel({
           <AlertDialogHeader>
             <AlertDialogTitle>Discard changes?</AlertDialogTitle>
             <AlertDialogDescription>
-              {scm.pendingDiscard?.scope === "all"
+              {scm.pendingDiscard?.scope === 'all'
                 ? `This will discard ${scm.pendingDiscard.label} and cannot be undone.`
                 : scm.pendingDiscard
                   ? `Discard changes in "${scm.pendingDiscard.label}"? This cannot be undone.`
@@ -1059,12 +921,8 @@ export const SourceControlPanel = memo(function SourceControlPanel({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => scm.cancelPendingDiscard()}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={() => void scm.confirmPendingDiscard()}>
-              Discard
-            </AlertDialogAction>
+            <AlertDialogCancel onClick={() => scm.cancelPendingDiscard()}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void scm.confirmPendingDiscard()}>Discard</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -1072,23 +930,11 @@ export const SourceControlPanel = memo(function SourceControlPanel({
   );
 });
 
-function PanelCenter({
-  title,
-  body,
-  action,
-}: {
-  title: string;
-  body?: string;
-  action?: ReactNode;
-}) {
+function PanelCenter({ title, body, action }: { title: string; body?: string; action?: ReactNode }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
       <div className="text-sm font-medium">{title}</div>
-      {body ? (
-        <div className="max-w-64 text-[11px] leading-relaxed text-muted-foreground">
-          {body}
-        </div>
-      ) : null}
+      {body ? <div className="max-w-64 text-[11px] leading-relaxed text-muted-foreground">{body}</div> : null}
       {action}
     </div>
   );
@@ -1098,15 +944,9 @@ function CleanTreeHint({ repoLabel }: { repoLabel: string }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1.5 px-4 text-center">
       <div className="flex size-8 items-center justify-center rounded-full border border-border/55 text-muted-foreground">
-        <HugeiconsIcon
-          icon={CheckmarkCircle01Icon}
-          size={16}
-          strokeWidth={1.6}
-        />
+        <HugeiconsIcon icon={CheckmarkCircle01Icon} size={16} strokeWidth={1.6} />
       </div>
-      <div className="text-[12px] font-medium text-foreground">
-        Working tree clean
-      </div>
+      <div className="text-[12px] font-medium text-foreground">Working tree clean</div>
       <div className="text-[10.5px] leading-snug text-muted-foreground">
         on <span className="font-mono text-foreground/80">{repoLabel}</span>
       </div>
@@ -1132,11 +972,11 @@ type RowRendererProps = {
 const RowRenderer = memo(function RowRenderer(props: RowRendererProps) {
   const { row } = props;
   switch (row.kind) {
-    case "banner-diverged":
+    case 'banner-diverged':
       return <DivergedBanner />;
-    case "list-header":
+    case 'list-header':
       return <ListHeader {...props} row={row} />;
-    case "entry":
+    case 'entry':
       return <EntryRow {...props} row={row} />;
   }
 });
@@ -1144,16 +984,9 @@ const RowRenderer = memo(function RowRenderer(props: RowRendererProps) {
 function DivergedBanner() {
   return (
     <div className="mx-2 mt-1 flex h-7 items-center gap-1.5 rounded-md border border-border/60 bg-foreground/[0.04] px-2 text-[10.5px] leading-none text-muted-foreground">
-      <HugeiconsIcon
-        icon={Alert02Icon}
-        size={11}
-        strokeWidth={1.9}
-        className="shrink-0"
-      />
+      <HugeiconsIcon icon={Alert02Icon} size={11} strokeWidth={1.9} className="shrink-0" />
       <span className="min-w-0 flex-1 truncate">
-        <span className="font-medium text-foreground/85">
-          Diverged from upstream
-        </span>
+        <span className="font-medium text-foreground/85">Diverged from upstream</span>
         <span className="ml-1 opacity-75">— resolve in terminal</span>
       </span>
     </div>
@@ -1166,13 +999,11 @@ function ListHeader({
   headerCheckState,
   onToggleAll,
 }: RowRendererProps & {
-  row: Extract<RowDescriptor, { kind: "list-header" }>;
+  row: Extract<RowDescriptor, { kind: 'list-header' }>;
 }) {
   return (
     <div className="flex h-7 items-center gap-2 px-3">
-      <span className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/85">
-        Changes
-      </span>
+      <span className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/85">Changes</span>
       <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full border border-border/60 px-1 text-[9.5px] font-semibold tabular-nums text-muted-foreground">
         {row.count}
       </span>
@@ -1202,24 +1033,20 @@ const EntryRow = memo(function EntryRow({
   onDiscardFile,
   onOpenFile,
 }: RowRendererProps & {
-  row: Extract<RowDescriptor, { kind: "entry" }>;
+  row: Extract<RowDescriptor, { kind: 'entry' }>;
 }) {
   const entry = row.entry;
   const isSelected = selectedPath === entry.path;
   const fileName = basename(entry.path);
   const pathLabel = entryPathLabel(entry);
   const showDiscard = entry.unstaged;
-  const isStageBusy =
-    actionBusy === `stage:${entry.path}` ||
-    actionBusy === `unstage:${entry.path}`;
+  const isStageBusy = actionBusy === `stage:${entry.path}` || actionBusy === `unstage:${entry.path}`;
   const isDiscardBusy = actionBusy === `discard:${entry.path}`;
   const disabled = actionBusy !== null;
 
-  const absolutePath = repoRoot
-    ? joinPath(repoRoot.replace(/\\/g, "/"), entry.path.replace(/\\/g, "/"))
-    : null;
-  const isDeleted = entry.statusCode === "D";
-  const revealLabel = IS_MAC ? "Reveal in Finder" : "Reveal in File Manager";
+  const absolutePath = repoRoot ? joinPath(repoRoot.replace(/\\/g, '/'), entry.path.replace(/\\/g, '/')) : null;
+  const isDeleted = entry.statusCode === 'D';
+  const revealLabel = IS_MAC ? 'Reveal in Finder' : 'Reveal in File Manager';
 
   return (
     <ContextMenu>
@@ -1232,21 +1059,15 @@ const EntryRow = memo(function EntryRow({
           aria-selected={isSelected}
           onMouseDown={() => onFocusRow(row.key)}
           className={cn(
-            "group relative flex h-[30px] items-center gap-2 rounded-md pl-2 pr-2 transition-all duration-100",
-            focused
-              ? "bg-accent/60"
-              : isSelected
-                ? "bg-accent/55 text-foreground"
-                : "hover:bg-accent/30",
+            'group relative flex h-[30px] items-center gap-2 rounded-md pl-2 pr-2 transition-all duration-100',
+            focused ? 'bg-accent/60' : isSelected ? 'bg-accent/55 text-foreground' : 'hover:bg-accent/30',
           )}
         >
           <span
             className={cn(
-              "pointer-events-none absolute inset-y-1 left-0 w-[2px] rounded-full transition-opacity",
+              'pointer-events-none absolute inset-y-1 left-0 w-[2px] rounded-full transition-opacity',
               statusAccent(entry.statusCode),
-              isSelected || focused
-                ? "opacity-100"
-                : "opacity-55 group-hover:opacity-95",
+              isSelected || focused ? 'opacity-100' : 'opacity-55 group-hover:opacity-95',
             )}
             aria-hidden
           />
@@ -1262,11 +1083,9 @@ const EntryRow = memo(function EntryRow({
             <div className="flex min-w-0 flex-1 items-baseline gap-1.5 leading-none">
               <span
                 className={cn(
-                  "truncate text-[12px] leading-tight",
-                  isSelected || focused
-                    ? "font-semibold text-foreground"
-                    : "font-medium text-foreground/95",
-                  pathLabel ? "max-w-[58%] shrink-0" : "min-w-0 flex-1",
+                  'truncate text-[12px] leading-tight',
+                  isSelected || focused ? 'font-semibold text-foreground' : 'font-medium text-foreground/95',
+                  pathLabel ? 'max-w-[58%] shrink-0' : 'min-w-0 flex-1',
                 )}
               >
                 {fileName}
@@ -1290,11 +1109,7 @@ const EntryRow = memo(function EntryRow({
                 {isDiscardBusy ? (
                   <Spinner className="size-3" />
                 ) : (
-                  <HugeiconsIcon
-                    icon={RemoveSquareIcon}
-                    size={11}
-                    strokeWidth={1.9}
-                  />
+                  <HugeiconsIcon icon={RemoveSquareIcon} size={11} strokeWidth={1.9} />
                 )}
               </IconActionButton>
             </div>
@@ -1328,10 +1143,7 @@ const EntryRow = memo(function EntryRow({
           Open Diff
         </ContextMenuItem>
         {!isDeleted && onOpenFile && absolutePath ? (
-          <ContextMenuItem
-            className={COMPACT_ITEM}
-            onSelect={() => onOpenFile(absolutePath)}
-          >
+          <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onOpenFile(absolutePath)}>
             Open File
           </ContextMenuItem>
         ) : null}
@@ -1339,12 +1151,8 @@ const EntryRow = memo(function EntryRow({
         <ContextMenuSeparator />
 
         {/* Stage / Unstage */}
-        <ContextMenuItem
-          className={COMPACT_ITEM}
-          disabled={disabled}
-          onSelect={() => void onToggleStageFile(entry)}
-        >
-          {entry.checkState === "checked" ? "Unstage" : "Stage"}
+        <ContextMenuItem className={COMPACT_ITEM} disabled={disabled} onSelect={() => void onToggleStageFile(entry)}>
+          {entry.checkState === 'checked' ? 'Unstage' : 'Stage'}
         </ContextMenuItem>
         {entry.unstaged ? (
           <ContextMenuItem
@@ -1360,17 +1168,11 @@ const EntryRow = memo(function EntryRow({
         <ContextMenuSeparator />
 
         {/* Copy paths */}
-        <ContextMenuItem
-          className={COMPACT_ITEM}
-          onSelect={() => void copyToClipboard(entry.path.replace(/\\/g, "/"))}
-        >
+        <ContextMenuItem className={COMPACT_ITEM} onSelect={() => void copyToClipboard(entry.path.replace(/\\/g, '/'))}>
           Copy Relative Path
         </ContextMenuItem>
         {absolutePath ? (
-          <ContextMenuItem
-            className={COMPACT_ITEM}
-            onSelect={() => void copyToClipboard(absolutePath)}
-          >
+          <ContextMenuItem className={COMPACT_ITEM} onSelect={() => void copyToClipboard(absolutePath)}>
             Copy Absolute Path
           </ContextMenuItem>
         ) : null}
@@ -1379,10 +1181,7 @@ const EntryRow = memo(function EntryRow({
         {!isDeleted && absolutePath ? (
           <>
             <ContextMenuSeparator />
-            <ContextMenuItem
-              className={COMPACT_ITEM}
-              onSelect={() => void revealInFinder(absolutePath)}
-            >
+            <ContextMenuItem className={COMPACT_ITEM} onSelect={() => void revealInFinder(absolutePath)}>
               {revealLabel}
             </ContextMenuItem>
           </>
@@ -1395,13 +1194,13 @@ const EntryRow = memo(function EntryRow({
 function IconActionButton({
   label,
   disabled,
-  side = "left",
+  side = 'left',
   onClick,
   children,
 }: {
   label: string;
   disabled?: boolean;
-  side?: "left" | "top" | "right" | "bottom";
+  side?: 'left' | 'top' | 'right' | 'bottom';
   onClick: () => void;
   children: ReactNode;
 }) {
@@ -1419,21 +1218,14 @@ function IconActionButton({
           {children}
         </Button>
       </TooltipTrigger>
-      <TooltipContent
-        side={side}
-        className={cn(SOURCE_CONTROL_TOOLTIP_CLASS, "text-[10.5px]")}
-      >
+      <TooltipContent side={side} className={cn(SOURCE_CONTROL_TOOLTIP_CLASS, 'text-[10.5px]')}>
         {label}
       </TooltipContent>
     </Tooltip>
   );
 }
 
-function CommitFeedback({
-  feedback,
-}: {
-  feedback: { tone: "error" | "success"; message: string } | null;
-}) {
+function CommitFeedback({ feedback }: { feedback: { tone: 'error' | 'success'; message: string } | null }) {
   const [visibleFeedback, setVisibleFeedback] = useState(feedback);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -1447,9 +1239,7 @@ function CommitFeedback({
     const hideTimer = window.setTimeout(() => setIsVisible(false), 3600);
     const clearTimer = window.setTimeout(() => {
       setVisibleFeedback((current) =>
-        current?.message === feedback.message && current.tone === feedback.tone
-          ? null
-          : current,
+        current?.message === feedback.message && current.tone === feedback.tone ? null : current,
       );
     }, 3900);
     return () => {
@@ -1460,29 +1250,17 @@ function CommitFeedback({
 
   if (!visibleFeedback) return null;
 
-  const isError = visibleFeedback.tone === "error";
+  const isError = visibleFeedback.tone === 'error';
   return (
     <div
       className={cn(
-        "pointer-events-none absolute inset-x-3 top-[calc(100%-0.25rem)] z-20 flex min-w-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] leading-snug shadow-lg shadow-black/15 transition-all duration-200",
-        isVisible ? "translate-y-0 opacity-100" : "-translate-y-1 opacity-0",
-        isError
-          ? "border-destructive/30 bg-card text-destructive"
-          : "border-border/70 bg-card text-muted-foreground",
+        'pointer-events-none absolute inset-x-3 top-[calc(100%-0.25rem)] z-20 flex min-w-0 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[11px] leading-snug shadow-lg shadow-black/15 transition-all duration-200',
+        isVisible ? 'translate-y-0 opacity-100' : '-translate-y-1 opacity-0',
+        isError ? 'border-destructive/30 bg-card text-destructive' : 'border-border/70 bg-card text-muted-foreground',
       )}
     >
-      <span
-        className={cn(
-          "size-1.5 shrink-0 rounded-full",
-          isError ? "bg-destructive" : "bg-foreground/70",
-        )}
-      />
-      <span
-        className={cn(
-          "min-w-0 flex-1 truncate",
-          isError ? "text-destructive" : "text-muted-foreground",
-        )}
-      >
+      <span className={cn('size-1.5 shrink-0 rounded-full', isError ? 'bg-destructive' : 'bg-foreground/70')} />
+      <span className={cn('min-w-0 flex-1 truncate', isError ? 'text-destructive' : 'text-muted-foreground')}>
         {visibleFeedback.message}
       </span>
     </div>

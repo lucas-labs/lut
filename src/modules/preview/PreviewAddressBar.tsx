@@ -1,25 +1,15 @@
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import {
-  ArrowReloadHorizontalIcon,
-  Globe02Icon,
-  LinkSquare02Icon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { openUrl } from "@tauri-apps/plugin-opener";
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from "react";
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { ArrowReloadHorizontalIcon, Globe02Icon, LinkSquare02Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { openUrl } from '@tauri-apps/plugin-opener';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
 type PortPreset = {
   port: number;
@@ -29,22 +19,22 @@ type PortPreset = {
 
 // Curated dev-server ports. Ordered by frontend frequency, then backend.
 const PORT_PRESETS: readonly PortPreset[] = [
-  { port: 5173, label: "Vite", hint: "vite, sveltekit" },
-  { port: 5174, label: "Vite (alt)", hint: "second vite instance" },
-  { port: 3000, label: "Next.js", hint: "next, express, rails" },
-  { port: 3001, label: "Next.js (alt)", hint: "second next instance" },
-  { port: 4173, label: "Vite preview", hint: "vite preview" },
-  { port: 4200, label: "Angular", hint: "angular cli" },
-  { port: 4321, label: "Astro", hint: "astro" },
-  { port: 5500, label: "Live Server", hint: "vscode live server" },
-  { port: 6006, label: "Storybook", hint: "storybook" },
-  { port: 8080, label: "Webpack", hint: "webpack, vue cli" },
-  { port: 8081, label: "Metro", hint: "react native metro" },
-  { port: 8000, label: "Django / FastAPI", hint: "django, fastapi" },
-  { port: 8888, label: "Jupyter", hint: "jupyter notebook" },
-  { port: 5000, label: "Flask", hint: "flask" },
-  { port: 7860, label: "Gradio", hint: "gradio" },
-  { port: 11434, label: "Ollama", hint: "ollama api" },
+  { port: 5173, label: 'Vite', hint: 'vite, sveltekit' },
+  { port: 5174, label: 'Vite (alt)', hint: 'second vite instance' },
+  { port: 3000, label: 'Next.js', hint: 'next, express, rails' },
+  { port: 3001, label: 'Next.js (alt)', hint: 'second next instance' },
+  { port: 4173, label: 'Vite preview', hint: 'vite preview' },
+  { port: 4200, label: 'Angular', hint: 'angular cli' },
+  { port: 4321, label: 'Astro', hint: 'astro' },
+  { port: 5500, label: 'Live Server', hint: 'vscode live server' },
+  { port: 6006, label: 'Storybook', hint: 'storybook' },
+  { port: 8080, label: 'Webpack', hint: 'webpack, vue cli' },
+  { port: 8081, label: 'Metro', hint: 'react native metro' },
+  { port: 8000, label: 'Django / FastAPI', hint: 'django, fastapi' },
+  { port: 8888, label: 'Jupyter', hint: 'jupyter notebook' },
+  { port: 5000, label: 'Flask', hint: 'flask' },
+  { port: 7860, label: 'Gradio', hint: 'gradio' },
+  { port: 11434, label: 'Ollama', hint: 'ollama api' },
 ];
 
 export type PreviewAddressBarHandle = {
@@ -57,60 +47,62 @@ type Props = {
   onReload: () => void;
 };
 
-export const PreviewAddressBar = forwardRef<PreviewAddressBarHandle, Props>(
-  function PreviewAddressBar({ url, onSubmit, onReload }, ref) {
-    const [draft, setDraft] = useState(url);
-    const inputRef = useRef<HTMLInputElement>(null);
+export const PreviewAddressBar = forwardRef<PreviewAddressBarHandle, Props>(function PreviewAddressBar(
+  { url, onSubmit, onReload },
+  ref,
+) {
+  const [draft, setDraft] = useState(url);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-    // Keep draft in sync when the parent updates the URL externally
-    // (AI tool, detected localhost chip, etc.).
-    useEffect(() => {
-      setDraft(url);
-    }, [url]);
+  // Keep draft in sync when the parent updates the URL externally
+  // (AI tool, detected localhost chip, etc.).
+  useEffect(() => {
+    setDraft(url);
+  }, [url]);
 
-    useImperativeHandle(
-      ref,
-      () => ({
-        focus: () => {
-          const el = inputRef.current;
-          if (!el) return;
-          el.focus();
-          el.select();
-        },
-      }),
-      [],
-    );
+  useImperativeHandle(
+    ref,
+    () => ({
+      focus: () => {
+        const el = inputRef.current;
+        if (!el) return;
+        el.focus();
+        el.select();
+      },
+    }),
+    [],
+  );
 
-    const [notice, setNotice] = useState<string | null>(null);
-    const [checkingPort, setCheckingPort] = useState<number | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [checkingPort, setCheckingPort] = useState<number | null>(null);
 
-    const submit = () => {
-      const next = normalizeUrl(draft);
-      if (!next) {
-        setNotice("Enter a URL or pick a port preset.");
-        return;
-      }
-      setNotice(null);
-      if (next !== url) onSubmit(next);
-      else onReload();
-    };
+  const submit = () => {
+    const next = normalizeUrl(draft);
+    if (!next) {
+      setNotice('Enter a URL or pick a port preset.');
+      return;
+    }
+    setNotice(null);
+    if (next !== url) onSubmit(next);
+    else onReload();
+  };
 
-    const tryPort = async (port: number) => {
-      setNotice(null);
-      setCheckingPort(port);
-      const url = `http://localhost:${port}`;
-      const ok = await probeUrl(url);
-      setCheckingPort(null);
-      if (!ok) {
-        setNotice(`No server listening on :${port}.`);
-        return;
-      }
-      setDraft(url);
-      onSubmit(url);
-    };
+  const tryPort = async (port: number) => {
+    setNotice(null);
+    setCheckingPort(port);
+    const url = `http://localhost:${port}`;
+    const ok = await probeUrl(url);
+    setCheckingPort(null);
+    if (!ok) {
+      setNotice(`No server listening on :${port}.`);
+      return;
+    }
+    setDraft(url);
+    onSubmit(url);
+  };
 
-    return (
-      <div className="shrink-0 border-b border-border/60">
+  return (
+    <div className="shrink-0 border-b border-border/60">
       <div className="flex h-9 items-center gap-1 bg-card/40 px-1.5">
         <Button
           type="button"
@@ -120,11 +112,7 @@ export const PreviewAddressBar = forwardRef<PreviewAddressBarHandle, Props>(
           title="Reload"
           className="size-7 shrink-0 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
         >
-          <HugeiconsIcon
-            icon={ArrowReloadHorizontalIcon}
-            size={14}
-            strokeWidth={1.75}
-          />
+          <HugeiconsIcon icon={ArrowReloadHorizontalIcon} size={14} strokeWidth={1.75} />
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -135,18 +123,11 @@ export const PreviewAddressBar = forwardRef<PreviewAddressBarHandle, Props>(
               title="Common dev-server ports"
               className="h-7 shrink-0 gap-1 rounded-md px-1.5 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground"
             >
-              <HugeiconsIcon
-                icon={Globe02Icon}
-                size={13}
-                strokeWidth={1.75}
-              />
+              <HugeiconsIcon icon={Globe02Icon} size={13} strokeWidth={1.75} />
               <span className="hidden sm:inline">Ports</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            className="max-h-80 min-w-56 overflow-y-auto"
-          >
+          <DropdownMenuContent align="start" className="max-h-80 min-w-56 overflow-y-auto">
             {PORT_PRESETS.map((p) => (
               <DropdownMenuItem
                 key={p.port}
@@ -157,7 +138,7 @@ export const PreviewAddressBar = forwardRef<PreviewAddressBarHandle, Props>(
               >
                 <span className="flex-1">{p.label}</span>
                 <span className="text-xs text-muted-foreground">
-                  {checkingPort === p.port ? "checking…" : `:${p.port}`}
+                  {checkingPort === p.port ? 'checking…' : `:${p.port}`}
                 </span>
               </DropdownMenuItem>
             ))}
@@ -173,10 +154,10 @@ export const PreviewAddressBar = forwardRef<PreviewAddressBarHandle, Props>(
             className="h-7 w-full bg-muted/60 px-2 text-xs placeholder:text-muted-foreground/70 focus-visible:ring-0"
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
+              if (e.key === 'Enter') {
                 e.preventDefault();
                 submit();
-              } else if (e.key === "Escape") {
+              } else if (e.key === 'Escape') {
                 e.preventDefault();
                 setDraft(url);
                 inputRef.current?.blur();
@@ -195,11 +176,7 @@ export const PreviewAddressBar = forwardRef<PreviewAddressBarHandle, Props>(
           className="size-7 shrink-0 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
           disabled={!url}
         >
-          <HugeiconsIcon
-            icon={LinkSquare02Icon}
-            size={14}
-            strokeWidth={1.75}
-          />
+          <HugeiconsIcon icon={LinkSquare02Icon} size={14} strokeWidth={1.75} />
         </Button>
       </div>
       {notice ? (
@@ -214,17 +191,16 @@ export const PreviewAddressBar = forwardRef<PreviewAddressBarHandle, Props>(
           </button>
         </div>
       ) : null}
-      </div>
-    );
-  },
-);
+    </div>
+  );
+});
 
 async function probeUrl(url: string): Promise<boolean> {
   try {
     await fetch(url, {
-      method: "GET",
-      mode: "no-cors",
-      cache: "no-store",
+      method: 'GET',
+      mode: 'no-cors',
+      cache: 'no-store',
       signal: AbortSignal.timeout(900),
     });
     return true;

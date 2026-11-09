@@ -1,16 +1,11 @@
-import type {
-  ActiveTerminalLinks,
-  LazyTerminalLinksOptions,
-} from "./LazyTerminalLinks";
-import { cellAtPoint } from "./linkCells";
-import { LinkUnderlineOverlay } from "./LinkUnderlineOverlay";
-import { TerminalLinkInteraction } from "./TerminalLinkInteraction";
-import { ViewportLinkResolver } from "./ViewportLinkResolver";
+import type { ActiveTerminalLinks, LazyTerminalLinksOptions } from './LazyTerminalLinks';
+import { cellAtPoint } from './linkCells';
+import { LinkUnderlineOverlay } from './LinkUnderlineOverlay';
+import { TerminalLinkInteraction } from './TerminalLinkInteraction';
+import { ViewportLinkResolver } from './ViewportLinkResolver';
 
 /** The link machinery behind `LazyTerminalLinks`; imported on first use. */
-export function createTerminalLinks(
-  options: LazyTerminalLinksOptions,
-): ActiveTerminalLinks {
+export function createTerminalLinks(options: LazyTerminalLinksOptions): ActiveTerminalLinks {
   const overlay = new LinkUnderlineOverlay(options.target, options.geometry);
   const resolver = new ViewportLinkResolver(options.model);
   const interaction = new TerminalLinkInteraction({
@@ -35,7 +30,7 @@ export function createTerminalLinks(
     hitAt: (cell) => resolver.at(cell.row, cell.column),
     overlay,
     setPointerCursor: (pointer) => {
-      options.target.style.cursor = pointer ? "pointer" : "text";
+      options.target.style.cursor = pointer ? 'pointer' : 'text';
     },
     onActivate: options.onActivate,
   });

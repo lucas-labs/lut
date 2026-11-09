@@ -31,7 +31,7 @@ export class PackedCellView implements TerminalCellReader {
 
   constructor(readonly bytes: Uint8Array) {
     if (bytes.byteLength % CELL_STRIDE !== 0) {
-      throw new Error("Packed terminal cells must use a 16-byte stride");
+      throw new Error('Packed terminal cells must use a 16-byte stride');
     }
     this.data = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   }
@@ -41,10 +41,7 @@ export class PackedCellView implements TerminalCellReader {
   }
 
   codepoint(index: number): number {
-    return this.data.getUint32(
-      index * CELL_STRIDE + CELL_OFFSET.codepoint,
-      true,
-    );
+    return this.data.getUint32(index * CELL_STRIDE + CELL_OFFSET.codepoint, true);
   }
 
   flags(index: number): number {
@@ -78,11 +75,7 @@ export class PackedCellView implements TerminalCellReader {
 
   foregroundPacked(index: number): number {
     const offset = index * CELL_STRIDE + CELL_OFFSET.foreground;
-    return (
-      (this.bytes[offset] << 16) |
-      (this.bytes[offset + 1] << 8) |
-      this.bytes[offset + 2]
-    );
+    return (this.bytes[offset] << 16) | (this.bytes[offset + 1] << 8) | this.bytes[offset + 2];
   }
 
   background(index: number): Rgb {
@@ -92,11 +85,7 @@ export class PackedCellView implements TerminalCellReader {
 
   backgroundPacked(index: number): number {
     const offset = index * CELL_STRIDE + CELL_OFFSET.background;
-    return (
-      (this.bytes[offset] << 16) |
-      (this.bytes[offset + 1] << 8) |
-      this.bytes[offset + 2]
-    );
+    return (this.bytes[offset] << 16) | (this.bytes[offset + 1] << 8) | this.bytes[offset + 2];
   }
 }
 

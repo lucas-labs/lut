@@ -1,6 +1,6 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
-export type LspSessionStatus = "starting" | "running" | "error";
+export type LspSessionStatus = 'starting' | 'running' | 'error';
 
 type LspRuntimeSession = {
   key: string;
@@ -32,8 +32,7 @@ export const useLspRuntimeStore = create<State>((set) => ({
   detected: {},
   generations: {},
   failed: {},
-  upsertSession: (s) =>
-    set((state) => ({ sessions: { ...state.sessions, [s.key]: s } })),
+  upsertSession: (s) => set((state) => ({ sessions: { ...state.sessions, [s.key]: s } })),
   removeSession: (key, presetId) =>
     set((state) => {
       const sessions = { ...state.sessions };

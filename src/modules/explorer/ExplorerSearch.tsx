@@ -4,29 +4,19 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
-} from "@/components/ui/context-menu";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import { currentWorkspaceEnv } from "@/modules/workspace";
-import {
-  Cancel01Icon,
-  Folder01Icon,
-  Search01Icon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { invoke } from "@tauri-apps/api/core";
-import {
-  forwardRef,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from "react";
-import { FileIcon } from "./FileIcon";
-import { copyToClipboard, revealInFinder } from "./lib/contextActions";
-import { COMPACT_CONTENT, COMPACT_ITEM } from "./lib/menuItemClass";
+} from '@/components/ui/context-menu';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import { currentWorkspaceEnv } from '@/modules/workspace';
+import { Cancel01Icon, Folder01Icon, Search01Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { invoke } from '@tauri-apps/api/core';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { FileIcon } from './FileIcon';
+import { copyToClipboard, revealInFinder } from './lib/contextActions';
+import { COMPACT_CONTENT, COMPACT_ITEM } from './lib/menuItemClass';
 
 type SearchHit = {
   path: string;
@@ -60,21 +50,22 @@ export type ExplorerSearchHandle = {
   isFocused: () => boolean;
 };
 
-export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function ExplorerSearch({
-  rootPath,
-  onOpenFile,
-  open,
-  onRequestClose,
-  onActiveChange,
-  onRevealInTerminal,
-  onOpenInSourceControl,
-  onOpenGitHistory,
-  onAttachToAgent,
-}: Props,
+export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function ExplorerSearch(
+  {
+    rootPath,
+    onOpenFile,
+    open,
+    onRequestClose,
+    onActiveChange,
+    onRevealInTerminal,
+    onOpenInSourceControl,
+    onOpenGitHistory,
+    onAttachToAgent,
+  }: Props,
   ref,
 ) {
   const showHidden = usePreferencesStore((s) => s.showHidden);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchHit[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [searching, setSearching] = useState(false);
@@ -93,7 +84,7 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
     if (open) {
       inputRef.current?.focus();
     } else {
-      setQuery("");
+      setQuery('');
       setResults([]);
       setSelectedIndex(0);
       setSearching(false);
@@ -114,12 +105,12 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
     let alive = true;
     const handle = setTimeout(async () => {
       try {
-        const res = await invoke<SearchResult>("fs_search", {
+        const res = await invoke<SearchResult>('fs_search', {
           root: rootPath,
           query: q,
           limit: 200,
           showHidden,
-          requestKey: "explorer-search",
+          requestKey: 'explorer-search',
           workspace: currentWorkspaceEnv(),
         });
         if (alive) {
@@ -129,7 +120,7 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
         }
       } catch (e) {
         if (alive) {
-          console.error("fs_search failed:", e);
+          console.error('fs_search failed:', e);
           setResults([]);
           setTruncated(false);
           setSelectedIndex(0);
@@ -161,7 +152,7 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
   useEffect(() => {
     if (active && results.length > 0) {
       const el = scrollRef.current?.querySelector(`[data-index="${selectedIndex}"]`);
-      el?.scrollIntoView({ block: "nearest" });
+      el?.scrollIntoView({ block: 'nearest' });
     }
   }, [selectedIndex, results, active]);
 
@@ -172,7 +163,7 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
   };
 
   return (
-    <div className={cn("flex flex-col", active && "min-h-0 flex-1")}>
+    <div className={cn('flex flex-col', active && 'min-h-0 flex-1')}>
       {open ? (
         <div className="relative shrink-0 px-2 py-1.5 animate-in fade-in-0 slide-in-from-top-3 duration-200 ease-out">
           <HugeiconsIcon
@@ -186,24 +177,22 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Escape") {
+              if (e.key === 'Escape') {
                 e.preventDefault();
                 e.stopPropagation();
                 onRequestClose();
                 return;
               }
               if (results.length > 0) {
-                if (e.key === "ArrowDown") {
+                if (e.key === 'ArrowDown') {
                   e.preventDefault();
                   lastKeyboardNavAt.current = Date.now();
                   setSelectedIndex((prev) => (prev + 1) % results.length);
-                } else if (e.key === "ArrowUp") {
+                } else if (e.key === 'ArrowUp') {
                   e.preventDefault();
                   lastKeyboardNavAt.current = Date.now();
-                  setSelectedIndex(
-                    (prev) => (prev - 1 + results.length) % results.length,
-                  );
-                } else if (e.key === "Enter") {
+                  setSelectedIndex((prev) => (prev - 1 + results.length) % results.length);
+                } else if (e.key === 'Enter') {
                   e.preventDefault();
                   handleSelect(results[selectedIndex]);
                 }
@@ -215,7 +204,7 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
           {query ? (
             <button
               type="button"
-              onClick={() => setQuery("")}
+              onClick={() => setQuery('')}
               className="absolute top-1/2 right-3.5 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
               aria-label="Clear search"
             >
@@ -229,13 +218,9 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
         <ScrollArea className="min-h-0 flex-1">
           <div className="py-1" ref={scrollRef}>
             {searching && results.length === 0 ? (
-              <div className="px-3 py-2 text-[11px] text-muted-foreground">
-                Searching…
-              </div>
+              <div className="px-3 py-2 text-[11px] text-muted-foreground">Searching…</div>
             ) : results.length === 0 ? (
-              <div className="px-3 py-2 text-[11px] text-muted-foreground">
-                No matches
-              </div>
+              <div className="px-3 py-2 text-[11px] text-muted-foreground">No matches</div>
             ) : (
               results.map((hit, index) => {
                 const isSelected = index === selectedIndex;
@@ -252,16 +237,13 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
                           }
                         }}
                         className={cn(
-                          "flex w-full items-center gap-1.5 px-2 py-1 text-left text-xs transition-colors",
-                          isSelected ? "bg-accent text-foreground" : "hover:bg-accent/50 text-foreground/80"
+                          'flex w-full items-center gap-1.5 px-2 py-1 text-left text-xs transition-colors',
+                          isSelected ? 'bg-accent text-foreground' : 'hover:bg-accent/50 text-foreground/80',
                         )}
                         title={hit.path}
                       >
                         {!hit.is_dir ? (
-                          <FileIcon
-                            name={hit.name}
-                            className="size-3.5 shrink-0"
-                          />
+                          <FileIcon name={hit.name} className="size-3.5 shrink-0" />
                         ) : (
                           <HugeiconsIcon
                             icon={Folder01Icon}
@@ -271,62 +253,39 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
                           />
                         )}
                         <span className="truncate">{hit.name}</span>
-                        <span className="ml-auto truncate text-[10px] text-muted-foreground">
-                          {hit.rel}
-                        </span>
+                        <span className="ml-auto truncate text-[10px] text-muted-foreground">{hit.rel}</span>
                       </button>
                     </ContextMenuTrigger>
                     <ContextMenuContent className={COMPACT_CONTENT}>
                       {!hit.is_dir && (
-                        <ContextMenuItem
-                          className={COMPACT_ITEM}
-                          onSelect={() => onOpenFile(hit.path)}
-                        >
+                        <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onOpenFile(hit.path)}>
                           Open
                         </ContextMenuItem>
                       )}
                       {hit.is_dir && onRevealInTerminal && (
-                        <ContextMenuItem
-                          className={COMPACT_ITEM}
-                          onSelect={() => onRevealInTerminal(hit.path)}
-                        >
+                        <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onRevealInTerminal(hit.path)}>
                           Open in Terminal
                         </ContextMenuItem>
                       )}
                       {hit.is_dir && onOpenInSourceControl && (
-                        <ContextMenuItem
-                          className={COMPACT_ITEM}
-                          onSelect={() => onOpenInSourceControl(hit.path)}
-                        >
+                        <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onOpenInSourceControl(hit.path)}>
                           Open in Source Control
                         </ContextMenuItem>
                       )}
                       {hit.is_dir && onOpenGitHistory && (
-                        <ContextMenuItem
-                          className={COMPACT_ITEM}
-                          onSelect={() => onOpenGitHistory(hit.path)}
-                        >
+                        <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onOpenGitHistory(hit.path)}>
                           Open Git History
                         </ContextMenuItem>
                       )}
-                      <ContextMenuItem
-                        className={COMPACT_ITEM}
-                        onSelect={() => void revealInFinder(hit.path)}
-                      >
+                      <ContextMenuItem className={COMPACT_ITEM} onSelect={() => void revealInFinder(hit.path)}>
                         Reveal in Finder
                       </ContextMenuItem>
                       <ContextMenuSeparator />
-                      <ContextMenuItem
-                        className={COMPACT_ITEM}
-                        onSelect={() => void copyToClipboard(hit.path)}
-                      >
+                      <ContextMenuItem className={COMPACT_ITEM} onSelect={() => void copyToClipboard(hit.path)}>
                         Copy Path
                       </ContextMenuItem>
                       <ContextMenuSeparator />
-                      <ContextMenuItem
-                        className={COMPACT_ITEM}
-                        onSelect={() => onAttachToAgent?.(hit.path)}
-                      >
+                      <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onAttachToAgent?.(hit.path)}>
                         Attach to Agent
                       </ContextMenuItem>
                     </ContextMenuContent>

@@ -5,15 +5,15 @@ export class DevicePixelRatioMonitor {
 
   start(): void {
     this.stop();
-    if (typeof window.matchMedia !== "function") return;
+    if (typeof window.matchMedia !== 'function') return;
     this.query = window.matchMedia(
       `(resolution: ${Math.max(1, window.devicePixelRatio || 1)}dppx)`,
     );
-    this.query.addEventListener("change", this.handleChange, { once: true });
+    this.query.addEventListener('change', this.handleChange, { once: true });
   }
 
   stop(): void {
-    this.query?.removeEventListener("change", this.handleChange);
+    this.query?.removeEventListener('change', this.handleChange);
     this.query = null;
   }
 

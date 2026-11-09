@@ -1,4 +1,4 @@
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 export const FOCUSED_TERMINAL_FRAME_INTERVAL_MS = 1_000 / 60;
 export const BACKGROUND_TERMINAL_FRAME_INTERVAL_MS = 1_000 / 30;
@@ -14,18 +14,16 @@ export function terminalFrameIntervalMs(
     : BACKGROUND_TERMINAL_FRAME_INTERVAL_MS;
 }
 
-export function bindTerminalWindowFocus(
-  listener: (focused: boolean) => void,
-): () => void {
+export function bindTerminalWindowFocus(listener: (focused: boolean) => void): () => void {
   let disposed = false;
   let unlistenTauri: (() => void) | undefined;
   const handleFocus = (): void => listener(true);
   const handleBlur = (): void => listener(false);
 
-  if (typeof window !== "undefined") {
-    window.addEventListener("focus", handleFocus);
-    window.addEventListener("blur", handleBlur);
-    if ("__TAURI_INTERNALS__" in window) {
+  if (typeof window !== 'undefined') {
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+    if ('__TAURI_INTERNALS__' in window) {
       getCurrentWindow()
         .onFocusChanged(({ payload }) => listener(payload))
         .then((unlisten) => {
@@ -38,17 +36,16 @@ export function bindTerminalWindowFocus(
 
   return () => {
     disposed = true;
-    if (typeof window !== "undefined") {
-      window.removeEventListener("focus", handleFocus);
-      window.removeEventListener("blur", handleBlur);
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
     }
     unlistenTauri?.();
   };
 }
 
 export function terminalWindowFocused(): boolean {
-  return typeof document !== "undefined" &&
-    typeof document.hasFocus === "function"
+  return typeof document !== 'undefined' && typeof document.hasFocus === 'function'
     ? document.hasFocus()
     : true;
 }

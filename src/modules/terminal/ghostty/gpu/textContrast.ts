@@ -7,9 +7,7 @@
  */
 
 /** Windows Terminal's default gamma 1.8 ratios (`dwrite_helpers.hlsl`). */
-export const DWRITE_GAMMA_RATIOS = [
-  0.148054421, -0.89459455, 1.47590804, -0.324668258,
-] as const;
+export const DWRITE_GAMMA_RATIOS = [0.148054421, -0.89459455, 1.47590804, -0.324668258] as const;
 
 export type TextContrast = {
   /** `k` in `a * (k + 1) / (a * k + 1)`, before the lightness multiplier. */
@@ -35,13 +33,11 @@ const FRACTIONAL_DISPLAY_CONTRAST: TextContrast = {
  * 2). Enabled by default the curve made WebGPU text heavier and softer than WebGL on Windows and on
  * 1x displays, so it is a tuning aid, not a default.
  */
-export function textContrastFor(
-  override: string | null | undefined,
-): TextContrast {
+export function textContrastFor(override: string | null | undefined): TextContrast {
   return parseOverride(override) ?? NO_TEXT_CONTRAST;
 }
 
-const TEXT_CONTRAST_STORAGE_KEY = "terax:terminal-text-contrast";
+const TEXT_CONTRAST_STORAGE_KEY = 'terax:terminal-text-contrast';
 
 /** The contrast the user asked for through `localStorage`; both renderers apply it alike. */
 export function currentTextContrast(): TextContrast {
@@ -71,17 +67,15 @@ export function applyTextContrast(
   const [g0, g1, g2, g3] = DWRITE_GAMMA_RATIOS;
   const corrected =
     enhanced +
-    enhanced *
-      (1 - enhanced) *
-      ((g0 * intensity + g1) * enhanced + (g2 * intensity + g3));
+    enhanced * (1 - enhanced) * ((g0 * intensity + g1) * enhanced + (g2 * intensity + g3));
   const mixed = enhanced + (corrected - enhanced) * contrast.alphaCorrection;
   return saturate(mixed);
 }
 
 function parseOverride(value: string | null | undefined): TextContrast | null {
-  if (value === undefined || value === null || value === "") return null;
-  if (value === "off" || value === "0") return NO_TEXT_CONTRAST;
-  if (value === "on") return FRACTIONAL_DISPLAY_CONTRAST;
+  if (value === undefined || value === null || value === '') return null;
+  if (value === 'off' || value === '0') return NO_TEXT_CONTRAST;
+  if (value === 'on') return FRACTIONAL_DISPLAY_CONTRAST;
   const amount = Number(value);
   if (!Number.isFinite(amount) || amount < 0) return null;
   return {

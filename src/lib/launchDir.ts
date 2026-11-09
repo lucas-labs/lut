@@ -1,12 +1,12 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from '@tauri-apps/api/core';
 
 let cached: string | undefined;
 
 export async function initLaunchDir(): Promise<void> {
   const dir =
-    (await invoke<string | null>("get_launch_dir").catch(() => null)) ??
-    (await invoke<string>("workspace_current_dir").catch(() => null));
-  cached = dir ? dir.replace(/\\/g, "/") : undefined;
+    (await invoke<string | null>('get_launch_dir').catch(() => null)) ??
+    (await invoke<string>('workspace_current_dir').catch(() => null));
+  cached = dir ? dir.replace(/\\/g, '/') : undefined;
 }
 
 export function getLaunchDir(): string | undefined {
@@ -19,6 +19,6 @@ export function getLaunchDir(): string | undefined {
  * can't replay them. Returns [] when the app wasn't launched with a file.
  */
 export async function consumeLaunchFiles(): Promise<string[]> {
-  const files = await invoke<string[]>("get_launch_files").catch(() => []);
-  return files.map((f) => f.replace(/\\/g, "/"));
+  const files = await invoke<string[]>('get_launch_files').catch(() => []);
+  return files.map((f) => f.replace(/\\/g, '/'));
 }

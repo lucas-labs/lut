@@ -1,12 +1,9 @@
-import type { TerminalSearchController } from "@/modules/terminal/search/TerminalSearchController";
-import type {
-  GhosttySearchStatus,
-  GhosttyTerminalModelApi,
-} from "../GhosttyTerminalModel";
+import type { TerminalSearchController } from '@/modules/terminal/search/TerminalSearchController';
+import type { GhosttySearchStatus, GhosttyTerminalModelApi } from '../GhosttyTerminalModel';
 
 const SEARCH_STEP_BUDGET = 256;
 
-type Direction = "next" | "previous";
+type Direction = 'next' | 'previous';
 
 export type GhosttySearchSnapshot = {
   readonly query: string;
@@ -21,7 +18,7 @@ type Scheduler = {
 };
 
 export class GhosttySearchEngine implements TerminalSearchController {
-  private query = "";
+  private query = '';
   private status: GhosttySearchStatus = emptyStatus();
   private viewportMask: Uint8Array = new Uint8Array(0);
   private scratchMask: Uint8Array = new Uint8Array(0);
@@ -39,11 +36,11 @@ export class GhosttySearchEngine implements TerminalSearchController {
   ) {}
 
   findNext(query: string): boolean {
-    return this.find(query, "next");
+    return this.find(query, 'next');
   }
 
   findPrevious(query: string): boolean {
-    return this.find(query, "previous");
+    return this.find(query, 'previous');
   }
 
   snapshot(): GhosttySearchSnapshot {
@@ -74,7 +71,7 @@ export class GhosttySearchEngine implements TerminalSearchController {
   clearDecorations(): void {
     if (this.disposed) return;
     this.cancelStep();
-    this.query = "";
+    this.query = '';
     this.pendingDirection = null;
     this.model.clearSearch();
     this.status = emptyStatus();
@@ -115,18 +112,10 @@ export class GhosttySearchEngine implements TerminalSearchController {
   }
 
   matchAt(row: number, column: number): 0 | 1 | 2 {
-    if (
-      row < 0 ||
-      row >= this.model.rows ||
-      column < 0 ||
-      column >= this.model.cols
-    ) {
+    if (row < 0 || row >= this.model.rows || column < 0 || column >= this.model.cols) {
       return 0;
     }
-    return (this.viewportMask[row * this.model.cols + column] ?? 0) as
-      | 0
-      | 1
-      | 2;
+    return (this.viewportMask[row * this.model.cols + column] ?? 0) as 0 | 1 | 2;
   }
 
   dispose(): void {
@@ -154,11 +143,7 @@ export class GhosttySearchEngine implements TerminalSearchController {
   private step(): void {
     if (this.disposed || this.suspended || !this.query) return;
     this.status = this.model.stepSearch(SEARCH_STEP_BUDGET);
-    if (
-      this.status.complete &&
-      this.status.totalMatches > 0 &&
-      this.pendingDirection
-    ) {
+    if (this.status.complete && this.status.totalMatches > 0 && this.pendingDirection) {
       const direction = this.pendingDirection;
       this.pendingDirection = null;
       this.status = this.model.selectSearchMatch(direction);

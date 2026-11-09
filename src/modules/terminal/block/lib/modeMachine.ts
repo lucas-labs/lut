@@ -1,12 +1,11 @@
-type ShellPhase = "prompt" | "running";
+type ShellPhase = 'prompt' | 'running';
 
-export type BlockMode = "prompt" | "running" | "alt" | "plain";
+export type BlockMode = 'prompt' | 'running' | 'alt' | 'plain';
 
-type Osc133Marker = "A" | "B" | "C" | "D";
+type Osc133Marker = 'A' | 'B' | 'C' | 'D';
 
 export type ModeEvent =
-  | { type: "osc133"; marker: Osc133Marker }
-  | { type: "altScreen"; active: boolean };
+  { type: 'osc133'; marker: Osc133Marker } | { type: 'altScreen'; active: boolean };
 
 export type ModeState = {
   phase: ShellPhase;
@@ -14,15 +13,15 @@ export type ModeState = {
 };
 
 export function initialModeState(): ModeState {
-  return { phase: "prompt", altScreen: false };
+  return { phase: 'prompt', altScreen: false };
 }
 
 export function modeOf(state: ModeState): BlockMode {
-  return state.altScreen ? "alt" : state.phase;
+  return state.altScreen ? 'alt' : state.phase;
 }
 
 export function reduceMode(state: ModeState, event: ModeEvent): ModeState {
-  if (event.type === "altScreen") {
+  if (event.type === 'altScreen') {
     if (state.altScreen === event.active) return state;
     return { ...state, altScreen: event.active };
   }
@@ -32,5 +31,5 @@ export function reduceMode(state: ModeState, event: ModeEvent): ModeState {
 }
 
 function phaseForMarker(marker: Osc133Marker): ShellPhase {
-  return marker === "C" ? "running" : "prompt";
+  return marker === 'C' ? 'running' : 'prompt';
 }

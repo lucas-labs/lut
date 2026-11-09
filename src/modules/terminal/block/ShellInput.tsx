@@ -1,9 +1,9 @@
-import { resolveFontFamily } from "@/lib/fonts";
-import { cn } from "@/lib/utils";
-import { useShortcutHint } from "@/modules/shortcuts";
-import { useTheme } from "@/modules/theme";
-import { runScopeHandlers } from "@codemirror/view";
-import { useEffect, useRef } from "react";
+import { resolveFontFamily } from '@/lib/fonts';
+import { cn } from '@/lib/utils';
+import { useShortcutHint } from '@/modules/shortcuts';
+import { useTheme } from '@/modules/theme';
+import { runScopeHandlers } from '@codemirror/view';
+import { useEffect, useRef } from 'react';
 import {
   clearLeafBlockSelection,
   getLeafDraft,
@@ -13,20 +13,11 @@ import {
   setLeafInputFocus,
   setLeafInputKeyDown,
   setLeafInputPaste,
-} from "../lib/terminalSessionApi";
-import { useTerminalFont } from "../lib/useTerminalFont";
-import {
-  historyCommands,
-  historyList,
-  historyRecord,
-  historySuggest,
-} from "./lib/history";
-import type { BlockMode } from "./lib/modeMachine";
-import {
-  createShellEditor,
-  type ShellEditorHandle,
-  shellPlaceholder,
-} from "./lib/shellEditor";
+} from '../lib/terminalSessionApi';
+import { useTerminalFont } from '../lib/useTerminalFont';
+import { historyCommands, historyList, historyRecord, historySuggest } from './lib/history';
+import type { BlockMode } from './lib/modeMachine';
+import { createShellEditor, type ShellEditorHandle, shellPlaceholder } from './lib/shellEditor';
 
 type Props = {
   /** Active leaf the bar is driving; the editor retargets to it. */
@@ -38,14 +29,7 @@ type Props = {
   getCwd: () => string | null;
 };
 
-export default function ShellInput({
-  leafId,
-  mode,
-  focused,
-  onSubmit,
-  onInterrupt,
-  getCwd,
-}: Props) {
+export default function ShellInput({ leafId, mode, focused, onSubmit, onInterrupt, getCwd }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<ShellEditorHandle | null>(null);
   const commandsRef = useRef<string[]>([]);
@@ -53,13 +37,13 @@ export default function ShellInput({
   cbRef.current = { onSubmit, onInterrupt, getCwd };
   const leafIdRef = useRef(leafId);
   leafIdRef.current = leafId;
-  const atPrompt = mode === "prompt";
+  const atPrompt = mode === 'prompt';
   const focusableRef = useRef(false);
   focusableRef.current = focused && atPrompt;
 
   useEffect(() => {
     let alive = true;
-    historyCommands("", 2000).then((cmds) => {
+    historyCommands('', 2000).then((cmds) => {
       if (alive) commandsRef.current = cmds;
     });
     return () => {
@@ -67,16 +51,12 @@ export default function ShellInput({
     };
   }, []);
 
-  const {
-    fontFamily: fontFamilyPref,
-    fontSize,
-    fontWeight,
-  } = useTerminalFont();
+  const { fontFamily: fontFamilyPref, fontSize, fontWeight } = useTerminalFont();
   const { activeTheme, resolvedMode } = useTheme();
   const fontFamily = resolveFontFamily(fontFamilyPref);
   const fontRef = useRef({ fontFamily, fontSize, fontWeight });
   fontRef.current = { fontFamily, fontSize, fontWeight };
-  const placeholder = shellPlaceholder(useShortcutHint("terminal.toggleInput"));
+  const placeholder = shellPlaceholder(useShortcutHint('terminal.toggleInput'));
   const placeholderRef = useRef(placeholder);
   placeholderRef.current = placeholder;
 
@@ -91,8 +71,7 @@ export default function ShellInput({
       placeholderText: placeholderRef.current,
       commandNames: () => commandsRef.current,
       getCwd: () => cbRef.current.getCwd(),
-      onChange: (text) =>
-        setLeafInputActivity(leafIdRef.current, text.length > 0),
+      onChange: (text) => setLeafInputActivity(leafIdRef.current, text.length > 0),
       suggest: historySuggest,
       historyList,
       onSubmit: (text) => {
@@ -133,7 +112,7 @@ export default function ShellInput({
       const view = handleRef.current?.view;
       if (!view) return false;
       view.focus();
-      return runScopeHandlers(view, event, "editor");
+      return runScopeHandlers(view, event, 'editor');
     });
     setLeafInputPaste(leafId, (text) => {
       const view = handleRef.current?.view;
@@ -181,14 +160,11 @@ export default function ShellInput({
     const sel = leafGridSelection(leafId);
     if (!sel) return;
     e.preventDefault();
-    e.clipboardData.setData("text/plain", sel);
+    e.clipboardData.setData('text/plain', sel);
   };
 
   return (
-    <div
-      className={cn("flex items-start gap-2", !atPrompt && "opacity-45")}
-      onCopyCapture={onCopyCapture}
-    >
+    <div className={cn('flex items-start gap-2', !atPrompt && 'opacity-45')} onCopyCapture={onCopyCapture}>
       <span
         className="select-none pt-px text-primary/80"
         style={{

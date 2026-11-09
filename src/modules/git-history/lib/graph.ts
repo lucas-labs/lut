@@ -15,19 +15,19 @@
 // Lane colors are stable per slot index. This keeps the rail readable when
 // you load more pages, since lane indices don't shift retroactively.
 
-import type { GitLogEntry } from "@/modules/git";
+import type { GitLogEntry } from '@/modules/git';
 
 export type LaneColor = string;
 
 export const LANE_COLORS: LaneColor[] = [
-  "#60a5fa", // blue-400
-  "#c084fc", // purple-400
-  "#34d399", // emerald-400
-  "#fbbf24", // amber-400
-  "#f472b6", // pink-400
-  "#22d3ee", // cyan-400
-  "#fb923c", // orange-400
-  "#a3e635", // lime-400
+  '#60a5fa', // blue-400
+  '#c084fc', // purple-400
+  '#34d399', // emerald-400
+  '#fbbf24', // amber-400
+  '#f472b6', // pink-400
+  '#22d3ee', // cyan-400
+  '#fb923c', // orange-400
+  '#a3e635', // lime-400
 ];
 
 export function laneColor(index: number): LaneColor {
@@ -36,11 +36,11 @@ export function laneColor(index: number): LaneColor {
 
 export type GraphEdge =
   // straight passthrough or first-parent vertical
-  | { kind: "straight"; lane: number; color: LaneColor }
+  | { kind: 'straight'; lane: number; color: LaneColor }
   // merge: another lane joins into this commit (top → node)
-  | { kind: "merge"; fromLane: number; toLane: number; color: LaneColor }
+  | { kind: 'merge'; fromLane: number; toLane: number; color: LaneColor }
   // branch: this commit fans out a new lane (node → bottom)
-  | { kind: "branch"; fromLane: number; toLane: number; color: LaneColor };
+  | { kind: 'branch'; fromLane: number; toLane: number; color: LaneColor };
 
 export type GraphRow = {
   sha: string;
@@ -110,17 +110,17 @@ export function layoutGraph(
       if (v === commit.sha && i !== lane) {
         // This lane is merging into the commit at `lane`.
         topEdges.push({
-          kind: "merge",
+          kind: 'merge',
           fromLane: i,
           toLane: lane,
           color: laneColor(i),
         });
       } else if (i === lane && v === commit.sha) {
         // Vertical into node, same lane.
-        topEdges.push({ kind: "straight", lane: i, color: laneColor(i) });
+        topEdges.push({ kind: 'straight', lane: i, color: laneColor(i) });
       } else {
         // Unrelated lane passing through.
-        topEdges.push({ kind: "straight", lane: i, color: laneColor(i) });
+        topEdges.push({ kind: 'straight', lane: i, color: laneColor(i) });
       }
     }
 
@@ -152,7 +152,7 @@ export function layoutGraph(
         }
         if (parentLane !== lane) {
           bottomEdges.push({
-            kind: "branch",
+            kind: 'branch',
             fromLane: lane,
             toLane: parentLane,
             color: laneColor(parentLane),
@@ -165,7 +165,7 @@ export function layoutGraph(
     // bottom from its position. Skip the branch lanes we already recorded.
     const branchTargets = new Set(
       bottomEdges
-        .filter((e): e is Extract<GraphEdge, { kind: "branch" }> => e.kind === "branch")
+        .filter((e): e is Extract<GraphEdge, { kind: 'branch' }> => e.kind === 'branch')
         .map((e) => e.toLane),
     );
     for (let i = 0; i < lanes.length; i++) {
@@ -173,7 +173,7 @@ export function layoutGraph(
       if (v === null) continue;
       if (branchTargets.has(i)) continue;
       // First parent extension on commit's own lane, or unrelated passthrough.
-      bottomEdges.push({ kind: "straight", lane: i, color: laneColor(i) });
+      bottomEdges.push({ kind: 'straight', lane: i, color: laneColor(i) });
     }
 
     const trimmed = trimTrailing(lanes);
@@ -181,11 +181,7 @@ export function layoutGraph(
       lanes.length = trimmed.length;
     }
 
-    const widestLane = Math.max(
-      lanesBefore.length,
-      lanes.length,
-      lane + 1,
-    );
+    const widestLane = Math.max(lanesBefore.length, lanes.length, lane + 1);
 
     rows.push({
       sha: commit.sha,

@@ -1,17 +1,10 @@
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
-import type { TerminalSearchController } from "@/modules/terminal/search/TerminalSearchController";
-import { Fragment, useCallback, useEffect, useRef } from "react";
-import { useTerminalDropStore } from "./lib/dropStore";
-import { firstLeafSlotId, type PaneNode } from "./lib/panes";
-import {
-  beginTerminalResizeInteraction,
-  endTerminalResizeInteraction,
-} from "./lib/terminalResizeInteraction";
-import { TerminalPane, type TerminalPaneHandle } from "./TerminalPane";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import type { TerminalSearchController } from '@/modules/terminal/search/TerminalSearchController';
+import { Fragment, useCallback, useEffect, useRef } from 'react';
+import { useTerminalDropStore } from './lib/dropStore';
+import { firstLeafSlotId, type PaneNode } from './lib/panes';
+import { beginTerminalResizeInteraction, endTerminalResizeInteraction } from './lib/terminalResizeInteraction';
+import { TerminalPane, type TerminalPaneHandle } from './TerminalPane';
 
 type LeafBundle = {
   setRef: (h: TerminalPaneHandle | null) => void;
@@ -31,7 +24,7 @@ type Props = {
 
 export function PaneTreeView(props: Props) {
   const { node } = props;
-  if (node.kind === "leaf") {
+  if (node.kind === 'leaf') {
     const { tabVisible, activeLeafId, blocks, onFocusLeaf, getBundle } = props;
     const focused = node.id === activeLeafId;
     const b = getBundle(node.id);
@@ -65,9 +58,7 @@ export function PaneTreeView(props: Props) {
   }
 
   return (
-    <ResizablePanelGroup
-      orientation={node.dir === "row" ? "horizontal" : "vertical"}
-    >
+    <ResizablePanelGroup orientation={node.dir === 'row' ? 'horizontal' : 'vertical'}>
       {node.children.map((child, i) => {
         const slotId = firstLeafSlotId(child);
         return (
@@ -83,14 +74,7 @@ export function PaneTreeView(props: Props) {
   );
 }
 
-const RESIZE_KEYS = new Set([
-  "ArrowDown",
-  "ArrowLeft",
-  "ArrowRight",
-  "ArrowUp",
-  "End",
-  "Home",
-]);
+const RESIZE_KEYS = new Set(['ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'End', 'Home']);
 
 function TerminalResizableHandle() {
   const interactionToken = useRef<object>({});
@@ -106,11 +90,11 @@ function TerminalResizableHandle() {
     finish();
     beginTerminalResizeInteraction(interactionToken.current);
     const handlePointerEnd = () => finish();
-    window.addEventListener("pointerup", handlePointerEnd, true);
-    window.addEventListener("pointercancel", handlePointerEnd, true);
+    window.addEventListener('pointerup', handlePointerEnd, true);
+    window.addEventListener('pointercancel', handlePointerEnd, true);
     removePointerListeners.current = () => {
-      window.removeEventListener("pointerup", handlePointerEnd, true);
-      window.removeEventListener("pointercancel", handlePointerEnd, true);
+      window.removeEventListener('pointerup', handlePointerEnd, true);
+      window.removeEventListener('pointercancel', handlePointerEnd, true);
     };
   }, [finish]);
 

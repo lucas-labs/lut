@@ -1,19 +1,19 @@
-import { SurfaceFramePacer } from "@/modules/terminal/ghostty/SurfaceFramePacer";
+import { SurfaceFramePacer } from '@/modules/terminal/ghostty/SurfaceFramePacer';
 import {
   subscribeWindowPresentation,
   terminalWindowPresentation,
-} from "@/modules/terminal/ghostty/windowPresentation";
+} from '@/modules/terminal/ghostty/windowPresentation';
 import {
   bindTerminalWindowFocus,
   terminalFrameIntervalMs,
   terminalWindowFocused,
-} from "../renderScheduling";
+} from '../renderScheduling';
 import {
   rendererProfileKey,
   WebGlCellRenderer,
   type WebGlRendererProfile,
-} from "./WebGlCellRenderer";
-import { WebGlPoolExhaustedError } from "./WebGlPoolExhaustedError";
+} from './WebGlCellRenderer';
+import { WebGlPoolExhaustedError } from './WebGlPoolExhaustedError';
 
 /**
  * Live WebGL contexts the pool holds. Chromium and WebKit drop the oldest context of a page
@@ -40,9 +40,7 @@ export type WebGlRuntimeDependencies = {
   readonly setTimer: (callback: () => void, delayMs: number) => number;
   readonly clearTimer: (handle: number) => void;
   readonly bindVisibility: (callback: () => void) => () => void;
-  readonly bindWindowFocus: (
-    callback: (focused: boolean) => void,
-  ) => () => void;
+  readonly bindWindowFocus: (callback: (focused: boolean) => void) => () => void;
 };
 
 type RendererSlot = {
@@ -86,14 +84,10 @@ export class WebGlTerminalRuntime {
   private readonly unbindVisibility: () => void;
   private readonly unbindWindowFocus: () => void;
 
-  constructor(
-    private readonly dependencies: WebGlRuntimeDependencies = browserDependencies(),
-  ) {
+  constructor(private readonly dependencies: WebGlRuntimeDependencies = browserDependencies()) {
     this.windowFocused = dependencies.isWindowFocused();
     this.unbindVisibility = dependencies.bindVisibility(this.handleVisibility);
-    this.unbindWindowFocus = dependencies.bindWindowFocus(
-      this.handleWindowFocus,
-    );
+    this.unbindWindowFocus = dependencies.bindWindowFocus(this.handleWindowFocus);
   }
 
   acquire(
@@ -126,9 +120,7 @@ export class WebGlTerminalRuntime {
     }
 
     const key = rendererProfileKey(profile);
-    let slot = this.slots.find(
-      (candidate) => !candidate.owner && candidate.profileKey === key,
-    );
+    let slot = this.slots.find((candidate) => !candidate.owner && candidate.profileKey === key);
     slot ??= this.slots.find((candidate) => !candidate.owner);
     if (!slot && this.slots.length < MAX_WEBGL_RENDERER_SLOTS) {
       slot = {
@@ -230,10 +222,7 @@ export class WebGlTerminalRuntime {
       atlasBytes,
       cpuBufferBytes,
       windowFocused: this.windowFocused,
-      targetFrameIntervalMs: terminalFrameIntervalMs(
-        this.windowFocused,
-        this.hasFocusedSurface(),
-      ),
+      targetFrameIntervalMs: terminalFrameIntervalMs(this.windowFocused, this.hasFocusedSurface()),
       frameScheduled: this.animationFrame !== null || this.frameTimer !== null,
     };
   }
@@ -262,8 +251,7 @@ export class WebGlTerminalRuntime {
   private readonly handleWindowFocus = (focused: boolean): void => {
     if (this.windowFocused === focused) return;
     this.windowFocused = focused;
-    for (const surface of this.leases.keys())
-      surface.handleWindowFocus?.(focused);
+    for (const surface of this.leases.keys()) surface.handleWindowFocus?.(focused);
     this.cancelScheduledFrame();
     this.requestFrame();
   };
@@ -276,24 +264,16 @@ export class WebGlTerminalRuntime {
     ) {
       return;
     }
-    const plan = this.pacer.plan(
-      this.dirtySurfaces,
-      this.windowFocused,
-      this.dependencies.now(),
-    );
-    if (plan.kind === "idle") return;
+    const plan = this.pacer.plan(this.dirtySurfaces, this.windowFocused, this.dependencies.now());
+    if (plan.kind === 'idle') return;
     const now = this.dependencies.now();
     if (this.frameTimer !== null) {
       // A pane that turns dirty while the page sleeps for a later deadline must not wait for it.
-      if (
-        plan.kind === "wait" &&
-        now + plan.delayMs >= this.frameTimerDueAt - 0.5
-      )
-        return;
+      if (plan.kind === 'wait' && now + plan.delayMs >= this.frameTimerDueAt - 0.5) return;
       this.dependencies.clearTimer(this.frameTimer);
       this.frameTimer = null;
     }
-    if (plan.kind === "wait") {
+    if (plan.kind === 'wait') {
       this.frameTimerDueAt = now + plan.delayMs;
       this.frameTimer = this.dependencies.setTimer(() => {
         this.frameTimer = null;
@@ -301,9 +281,7 @@ export class WebGlTerminalRuntime {
       }, plan.delayMs);
       return;
     }
-    this.animationFrame = this.dependencies.requestFrame((frameAt) =>
-      this.flushFrame(frameAt),
-    );
+    this.animationFrame = this.dependencies.requestFrame((frameAt) => this.flushFrame(frameAt));
   }
 
   private flushFrame(frameAt = this.dependencies.now()): void {
@@ -394,7 +372,7 @@ export class WebGlTerminalRuntime {
   }
 
   private assertLive(): void {
-    if (this.disposed) throw new Error("WebGL terminal runtime is disposed");
+    if (this.disposed) throw new Error('WebGL terminal runtime is disposed');
   }
 }
 

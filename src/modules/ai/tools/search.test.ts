@@ -1,6 +1,6 @@
-import type { ToolExecutionOptions } from "ai";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ToolContext } from "./context";
+import type { ToolExecutionOptions } from 'ai';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ToolContext } from './context';
 
 const nativeMock = vi.hoisted(() => ({
   canonicalize: vi.fn(async (path: string) => path),
@@ -8,21 +8,21 @@ const nativeMock = vi.hoisted(() => ({
   grep: vi.fn(),
 }));
 
-vi.mock("../lib/native", () => ({
+vi.mock('../lib/native', () => ({
   native: nativeMock,
 }));
 
-import { buildSearchTools } from "./search";
+import { buildSearchTools } from './search';
 
 const toolOptions: ToolExecutionOptions = {
-  toolCallId: "tool-call",
+  toolCallId: 'tool-call',
   messages: [],
 };
 
 function makeContext(): ToolContext {
   return {
-    getCwd: () => "/workspace",
-    getWorkspaceRoot: () => "/workspace",
+    getCwd: () => '/workspace',
+    getWorkspaceRoot: () => '/workspace',
     getTerminalContext: () => null,
     isActiveTerminalPrivate: () => false,
     injectIntoActivePty: () => false,
@@ -30,7 +30,7 @@ function makeContext(): ToolContext {
     spawnAgent: () => null,
     readAgentOutput: () => null,
     readCache: new Map(),
-    getSessionId: () => "session",
+    getSessionId: () => 'session',
   };
 }
 
@@ -42,39 +42,39 @@ type GlobToolResult = {
   hits: { path: string; rel: string }[];
 };
 
-describe("AI search tools path safety", () => {
+describe('AI search tools path safety', () => {
   beforeEach(() => {
     nativeMock.canonicalize.mockClear();
     nativeMock.glob.mockReset();
     nativeMock.grep.mockReset();
   });
 
-  it("filters grep hits that read_file would refuse", async () => {
+  it('filters grep hits that read_file would refuse', async () => {
     nativeMock.grep.mockResolvedValue({
       hits: [
         {
-          path: "/workspace/src/app.ts",
-          rel: "workspace/src/app.ts",
+          path: '/workspace/src/app.ts',
+          rel: 'workspace/src/app.ts',
           line: 7,
           text: "const tokenName = 'safe fixture';",
         },
         {
-          path: "/workspace/secrets.json",
-          rel: "workspace/secrets.json",
+          path: '/workspace/secrets.json',
+          rel: 'workspace/secrets.json',
           line: 1,
           text: '{"token":"secret"}',
         },
         {
-          path: "/workspace/server.pem",
-          rel: "workspace/server.pem",
+          path: '/workspace/server.pem',
+          rel: 'workspace/server.pem',
           line: 1,
-          text: "BEGIN PRIVATE KEY",
+          text: 'BEGIN PRIVATE KEY',
         },
         {
-          path: "/etc/passwd",
-          rel: "etc/passwd",
+          path: '/etc/passwd',
+          rel: 'etc/passwd',
           line: 1,
-          text: "root:x:0:0:root:/root:/bin/sh",
+          text: 'root:x:0:0:root:/root:/bin/sh',
         },
       ],
       truncated: false,
@@ -83,53 +83,52 @@ describe("AI search tools path safety", () => {
 
     const tools = buildSearchTools(makeContext());
     const execute = tools.grep.execute;
-    if (!execute) throw new Error("grep tool execute missing");
+    if (!execute) throw new Error('grep tool execute missing');
     const result = (await execute(
-      { pattern: "token|root|PRIVATE KEY", root: "/" },
+      { pattern: 'token|root|PRIVATE KEY', root: '/' },
       toolOptions,
     )) as GrepToolResult;
 
-    expect(result.hits.map((h) => h.path)).toEqual(["/workspace/src/app.ts"]);
-    expect(result.hits.map((h) => h.text)).toEqual([
-      "const tokenName = 'safe fixture';",
-    ]);
+    expect(result.hits.map((h) => h.path)).toEqual(['/workspace/src/app.ts']);
+    expect(result.hits.map((h) => h.text)).toEqual(["const tokenName = 'safe fixture';"]);
   });
 
-  it.each(["界", "\r", "\u2028"])("preserves native line clipping with %s and its omitted-character count", async (character) => {
-    const text = `${character.repeat(160)}…[+999840]`;
-    nativeMock.grep.mockResolvedValue({
-      hits: [{ path: "/workspace/code.ts", rel: "code.ts", line: 1, text }],
-      truncated: false,
-      files_scanned: 1,
-    });
-    const execute = buildSearchTools(makeContext()).grep.execute;
-    if (!execute) throw new Error("grep tool execute missing");
-    const result = (await execute({ pattern: "." }, toolOptions)) as GrepToolResult;
-    expect(result.hits[0].text).toBe(text);
-  });
+  it.each(['界', '\r', '\u2028'])(
+    'preserves native line clipping with %s and its omitted-character count',
+    async (character) => {
+      const text = `${character.repeat(160)}…[+999840]`;
+      nativeMock.grep.mockResolvedValue({
+        hits: [{ path: '/workspace/code.ts', rel: 'code.ts', line: 1, text }],
+        truncated: false,
+        files_scanned: 1,
+      });
+      const execute = buildSearchTools(makeContext()).grep.execute;
+      if (!execute) throw new Error('grep tool execute missing');
+      const result = (await execute({ pattern: '.' }, toolOptions)) as GrepToolResult;
+      expect(result.hits[0].text).toBe(text);
+    },
+  );
 
-  it("filters glob hits that enumerate sensitive paths", async () => {
+  it('filters glob hits that enumerate sensitive paths', async () => {
     nativeMock.glob.mockResolvedValue({
       hits: [
-        { path: "/home/me/project/src/index.ts", rel: "src/index.ts" },
-        { path: "/home/me/project/id_rsa", rel: "id_rsa" },
-        { path: "/home/me/project/.ssh/config", rel: ".ssh/config" },
-        { path: "service-account-prod.json", rel: "service-account-prod.json" },
-        { path: "/etc/passwd", rel: "../../etc/passwd" },
+        { path: '/home/me/project/src/index.ts', rel: 'src/index.ts' },
+        { path: '/home/me/project/id_rsa', rel: 'id_rsa' },
+        { path: '/home/me/project/.ssh/config', rel: '.ssh/config' },
+        { path: 'service-account-prod.json', rel: 'service-account-prod.json' },
+        { path: '/etc/passwd', rel: '../../etc/passwd' },
       ],
       truncated: false,
     });
 
     const tools = buildSearchTools(makeContext());
     const execute = tools.glob.execute;
-    if (!execute) throw new Error("glob tool execute missing");
+    if (!execute) throw new Error('glob tool execute missing');
     const result = (await execute(
-      { pattern: "**/*", root: "/home/me/project" },
+      { pattern: '**/*', root: '/home/me/project' },
       toolOptions,
     )) as GlobToolResult;
 
-    expect(result.hits).toEqual([
-      { path: "/home/me/project/src/index.ts", rel: "src/index.ts" },
-    ]);
+    expect(result.hits).toEqual([{ path: '/home/me/project/src/index.ts', rel: 'src/index.ts' }]);
   });
 });

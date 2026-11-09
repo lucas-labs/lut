@@ -22,18 +22,11 @@ export class PtyResizeDelivery {
   private deliveryCount = 0;
 
   /** `deliver` returns false when there is no PTY to tell. */
-  constructor(
-    private readonly deliver: (cols: number, rows: number) => boolean,
-  ) {}
+  constructor(private readonly deliver: (cols: number, rows: number) => boolean) {}
 
   send(cols: number, rows: number): boolean {
-    if (
-      !Number.isInteger(cols) ||
-      !Number.isInteger(rows) ||
-      cols < 1 ||
-      rows < 1
-    ) {
-      throw new RangeError("PTY resize dimensions must be positive integers");
+    if (!Number.isInteger(cols) || !Number.isInteger(rows) || cols < 1 || rows < 1) {
+      throw new RangeError('PTY resize dimensions must be positive integers');
     }
     this.requestCount += 1;
     if (this.delivered?.cols === cols && this.delivered.rows === rows) {

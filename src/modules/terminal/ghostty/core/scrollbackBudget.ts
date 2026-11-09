@@ -70,10 +70,7 @@ export function allocateScrollbackBytes(
     .map((demand, index) => ({ headroom: demand.request - kept[index], index }))
     .sort((a, b) => a.headroom - b.headroom || a.index - b.index);
   order.forEach(({ headroom, index }, rank) => {
-    const extra = Math.min(
-      headroom,
-      Math.floor(remaining / (order.length - rank)),
-    );
+    const extra = Math.min(headroom, Math.floor(remaining / (order.length - rank)));
     grants[index] += extra;
     remaining -= extra;
   });

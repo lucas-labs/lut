@@ -1,16 +1,16 @@
-import { describe, expect, it } from "vitest";
-import { createAgentNotificationGate } from "./notificationGate";
+import { describe, expect, it } from 'vitest';
+import { createAgentNotificationGate } from './notificationGate';
 
 const TARGET = {
-  source: "terminal",
-  agent: "codex",
-  kind: "attention",
+  source: 'terminal',
+  agent: 'codex',
+  kind: 'attention',
   tabId: 7,
   leafId: 11,
 };
 
-describe("createAgentNotificationGate", () => {
-  it("suppresses an immediate duplicate", () => {
+describe('createAgentNotificationGate', () => {
+  it('suppresses an immediate duplicate', () => {
     const shouldDeliver = createAgentNotificationGate(2_000);
 
     expect(shouldDeliver(TARGET, 1_000)).toBe(true);
@@ -18,22 +18,22 @@ describe("createAgentNotificationGate", () => {
     expect(shouldDeliver(TARGET, 3_000)).toBe(true);
   });
 
-  it("keeps distinct targets and notification kinds independent", () => {
+  it('keeps distinct targets and notification kinds independent', () => {
     const shouldDeliver = createAgentNotificationGate(2_000);
 
     expect(shouldDeliver(TARGET, 1_000)).toBe(true);
     expect(shouldDeliver({ ...TARGET, leafId: 12 }, 1_001)).toBe(true);
-    expect(shouldDeliver({ ...TARGET, kind: "finished" }, 1_002)).toBe(true);
+    expect(shouldDeliver({ ...TARGET, kind: 'finished' }, 1_002)).toBe(true);
   });
 
-  it("recovers when the system clock moves backward", () => {
+  it('recovers when the system clock moves backward', () => {
     const shouldDeliver = createAgentNotificationGate(2_000);
 
     expect(shouldDeliver(TARGET, 5_000)).toBe(true);
     expect(shouldDeliver(TARGET, 4_000)).toBe(true);
   });
 
-  it("bounds retained notification keys", () => {
+  it('bounds retained notification keys', () => {
     const shouldDeliver = createAgentNotificationGate(2_000, 2);
 
     expect(shouldDeliver(TARGET, 1_000)).toBe(true);

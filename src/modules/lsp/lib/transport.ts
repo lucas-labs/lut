@@ -1,6 +1,6 @@
-import { currentWorkspaceEnv } from "@/modules/workspace";
-import { Channel, invoke } from "@tauri-apps/api/core";
-import type { Transport } from "codemirror-languageserver";
+import { currentWorkspaceEnv } from '@/modules/workspace';
+import { Channel, invoke } from '@tauri-apps/api/core';
+import type { Transport } from 'codemirror-languageserver';
 
 export type LspSpawnConfig = {
   command: string;
@@ -17,7 +17,7 @@ export type LspExitInfo = {
 };
 
 type ServerRequest = {
-  jsonrpc: "2.0";
+  jsonrpc: '2.0';
   id: number | string;
   method: string;
   params?: unknown;
@@ -25,11 +25,11 @@ type ServerRequest = {
 
 function isServerRequest(msg: unknown): msg is ServerRequest {
   return (
-    typeof msg === "object" &&
+    typeof msg === 'object' &&
     msg !== null &&
-    "id" in msg &&
+    'id' in msg &&
     (msg as ServerRequest).id != null &&
-    "method" in msg
+    'method' in msg
   );
 }
 
@@ -58,7 +58,7 @@ export class TauriLspTransport implements Transport {
       this.closed = true;
       this.onCloseCb?.();
     };
-    this.sessionId = await invoke<number>("lsp_spawn", {
+    this.sessionId = await invoke<number>('lsp_spawn', {
       command: config.command,
       args: config.args,
       env: config.env ?? null,
@@ -83,19 +83,18 @@ export class TauriLspTransport implements Transport {
     }
     if (!isServerRequest(msg)) return;
     const reply = (body: Record<string, unknown>) =>
-      this.send(JSON.stringify({ jsonrpc: "2.0", id: msg.id, ...body }));
+      this.send(JSON.stringify({ jsonrpc: '2.0', id: msg.id, ...body }));
     switch (msg.method) {
-      case "workspace/configuration": {
-        const items =
-          (msg.params as { items?: unknown[] } | undefined)?.items ?? [];
+      case 'workspace/configuration': {
+        const items = (msg.params as { items?: unknown[] } | undefined)?.items ?? [];
         reply({ result: items.map(() => null) });
         return;
       }
-      case "window/workDoneProgress/create":
-      case "client/registerCapability":
-      case "client/unregisterCapability":
-      case "window/showMessageRequest":
-      case "workspace/workspaceFolders":
+      case 'window/workDoneProgress/create':
+      case 'client/registerCapability':
+      case 'client/unregisterCapability':
+      case 'window/showMessageRequest':
+      case 'workspace/workspaceFolders':
         reply({ result: null });
         return;
       default:
@@ -107,7 +106,7 @@ export class TauriLspTransport implements Transport {
 
   send(message: string): void {
     if (this.sessionId == null || this.closed) return;
-    void invoke("lsp_send", { id: this.sessionId, message }).catch((e) => {
+    void invoke('lsp_send', { id: this.sessionId, message }).catch((e) => {
       this.onErrorCb?.(new Error(String(e)));
     });
   }
@@ -131,9 +130,7 @@ export class TauriLspTransport implements Transport {
   }
 
   close(): void {
-    void this.stop().catch((error) =>
-      console.error("[lsp] shutdown failed", error),
-    );
+    void this.stop().catch((error) => console.error('[lsp] shutdown failed', error));
   }
 
   stop(): Promise<void> {
@@ -143,7 +140,7 @@ export class TauriLspTransport implements Transport {
       this.sessionId = null;
       return Promise.resolve();
     }
-    this.closing = invoke<void>("lsp_kill", { id: this.sessionId }).then(
+    this.closing = invoke<void>('lsp_kill', { id: this.sessionId }).then(
       () => {
         this.sessionId = null;
       },

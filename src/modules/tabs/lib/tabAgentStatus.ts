@@ -2,12 +2,9 @@ import {
   type AgentTabStatus,
   tabAgentStatus,
   type useAgentActivityStore,
-} from "@/modules/terminal/lib/agentActivity";
+} from '@/modules/terminal/lib/agentActivity';
 
-type ActivityState = Pick<
-  ReturnType<typeof useAgentActivityStore.getState>,
-  "phases" | "agents"
->;
+type ActivityState = Pick<ReturnType<typeof useAgentActivityStore.getState>, 'phases' | 'agents'>;
 
 /** Shared result for tabs with no agent state (and for non-terminal tabs). */
 export const NO_AGENT_STATUS: AgentTabStatus = Object.freeze({

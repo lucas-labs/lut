@@ -26,8 +26,7 @@ export function persistDelay(
 ): number {
   const quietDue = now + PERSIST_QUIET_MS;
   const deadline = firstPendingAt + PERSIST_MAX_WAIT_MS;
-  const spacing =
-    lastSavedAt === null ? now : lastSavedAt + PERSIST_MIN_INTERVAL_MS;
+  const spacing = lastSavedAt === null ? now : lastSavedAt + PERSIST_MIN_INTERVAL_MS;
   const due = Math.max(Math.min(quietDue, deadline), spacing);
   return Math.max(0, Math.min(due, deadline) - now);
 }

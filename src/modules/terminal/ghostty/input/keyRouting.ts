@@ -1,11 +1,6 @@
-import { terminalReadlineSequence } from "@/modules/terminal/lib/keymap";
-import {
-  type Key,
-  type KeyAction,
-  type KeyEvent,
-  Mods,
-} from "@terax/ghostty-core/protocol";
-import { baseTextForCode, KEY_MAP, unshiftedCodepoint } from "./keyTable";
+import { terminalReadlineSequence } from '@/modules/terminal/lib/keymap';
+import { type Key, type KeyAction, type KeyEvent, Mods } from '@terax/ghostty-core/protocol';
+import { baseTextForCode, KEY_MAP, unshiftedCodepoint } from './keyTable';
 
 /** Kitty keyboard protocol flag bits (progressive enhancement). */
 export const KITTY_REPORT_EVENT_TYPES = 0x2;
@@ -13,17 +8,17 @@ const KITTY_REPORT_ALL_KEYS = 0x8;
 
 export type KeyboardLike = Pick<
   KeyboardEvent,
-  | "key"
-  | "code"
-  | "keyCode"
-  | "shiftKey"
-  | "ctrlKey"
-  | "altKey"
-  | "metaKey"
-  | "repeat"
-  | "isComposing"
-  | "defaultPrevented"
-  | "getModifierState"
+  | 'key'
+  | 'code'
+  | 'keyCode'
+  | 'shiftKey'
+  | 'ctrlKey'
+  | 'altKey'
+  | 'metaKey'
+  | 'repeat'
+  | 'isComposing'
+  | 'defaultPrevented'
+  | 'getModifierState'
 >;
 
 export type KeyContext = {
@@ -40,25 +35,25 @@ export type KeyContext = {
 
 export type KeyRoute =
   /** Not ours: the webview, the IME or the native menu keeps the event. */
-  | { readonly kind: "ignore" }
-  | { readonly kind: "paste"; readonly forwardKeyWhenEmpty: boolean }
-  | { readonly kind: "copy" }
+  | { readonly kind: 'ignore' }
+  | { readonly kind: 'paste'; readonly forwardKeyWhenEmpty: boolean }
+  | { readonly kind: 'copy' }
   /** Fixed bytes, already in their final form. */
-  | { readonly kind: "bytes"; readonly text: string }
+  | { readonly kind: 'bytes'; readonly text: string }
   /** Typed text; `key` is set when the text is also a key for Kitty reporting. */
   | {
-      readonly kind: "text";
+      readonly kind: 'text';
       readonly text: string;
       readonly key: Key | null;
     }
   /** A key for the encoder; `utf8` overrides the text derived from the event. */
-  | { readonly kind: "key"; readonly key: Key; readonly utf8?: string };
+  | { readonly kind: 'key'; readonly key: Key; readonly utf8?: string };
 
-const IGNORE: KeyRoute = { kind: "ignore" };
-const COPY: KeyRoute = { kind: "copy" };
-const PASTE: KeyRoute = { kind: "paste", forwardKeyWhenEmpty: false };
-const PASTE_OR_KEY: KeyRoute = { kind: "paste", forwardKeyWhenEmpty: true };
-const ESC_CR: KeyRoute = { kind: "bytes", text: "\x1b\r" };
+const IGNORE: KeyRoute = { kind: 'ignore' };
+const COPY: KeyRoute = { kind: 'copy' };
+const PASTE: KeyRoute = { kind: 'paste', forwardKeyWhenEmpty: false };
+const PASTE_OR_KEY: KeyRoute = { kind: 'paste', forwardKeyWhenEmpty: true };
+const ESC_CR: KeyRoute = { kind: 'bytes', text: '\x1b\r' };
 
 /**
  * Chords the encoder escape-codes in every mode, though a legacy application
@@ -66,10 +61,10 @@ const ESC_CR: KeyRoute = { kind: "bytes", text: "\x1b\r" };
  * Escape (vim users type it for Esc) and Ctrl+- is readline's undo.
  */
 const LEGACY_CONTROL: Readonly<Record<string, string>> = {
-  i: "\t",
-  m: "\r",
-  "[": "\x1b",
-  "-": "\x1f",
+  i: '\t',
+  m: '\r',
+  '[': '\x1b',
+  '-': '\x1f',
 };
 
 /**
@@ -90,7 +85,7 @@ const IME_SAFE_KEY =
  * letters between keys.
  */
 function isAltGraph(event: KeyboardLike, ctx: KeyContext): boolean {
-  if (event.getModifierState("AltGraph")) return true;
+  if (event.getModifierState('AltGraph')) return true;
   if (!ctx.isWindows || !event.ctrlKey || !event.altKey) return false;
   const { key } = event;
   if (key.length !== 1 || /^[a-z]$/i.test(key)) return false;
@@ -108,53 +103,43 @@ function isOptionMeta(event: KeyboardLike, ctx: KeyContext): boolean {
  * can commit or edit text (see {@link IME_SAFE_KEY}).
  */
 export function ignoredForIme(event: KeyboardLike, ctx: KeyContext): boolean {
-  if (event.defaultPrevented || ctx.composing() || event.isComposing)
-    return true;
+  if (event.defaultPrevented || ctx.composing() || event.isComposing) return true;
   const { key } = event;
-  if (key === "Process" || key === "Unidentified") return true;
+  if (key === 'Process' || key === 'Unidentified') return true;
   if (isOptionMeta(event, ctx)) return false;
-  if (key === "Dead") return true;
+  if (key === 'Dead') return true;
   if (event.keyCode !== 229) return false;
   // Backspace edits a preedit, but Option/Ctrl/Command+Backspace never does,
   // and neither does a Ctrl or Command chord (Ctrl+Space toggles the IME and
   // Ctrl+Alt is AltGr text, so those stay with it).
-  const wordDelete =
-    key === "Backspace" && (event.altKey || event.ctrlKey || event.metaKey);
-  const chord =
-    (event.ctrlKey || event.metaKey) && !event.altKey && key !== " ";
+  const wordDelete = key === 'Backspace' && (event.altKey || event.ctrlKey || event.metaKey);
+  const chord = (event.ctrlKey || event.metaKey) && !event.altKey && key !== ' ';
   return !IME_SAFE_KEY.test(key) && !wordDelete && !chord;
 }
 
 /** Classifies a key press the IME guard let through. */
-export function routeKeyDown(
-  event: KeyboardLike,
-  ctx: KeyContext,
-  skipCopy = false,
-): KeyRoute {
+export function routeKeyDown(event: KeyboardLike, ctx: KeyContext, skipCopy = false): KeyRoute {
   const { key } = event;
   const optionMeta = isOptionMeta(event, ctx);
 
   const clipboard = clipboardShortcut(event, ctx);
-  if (clipboard === "paste")
-    return ctx.isWindows &&
-      event.ctrlKey &&
-      !event.shiftKey &&
-      isLayoutKey(event, "v")
+  if (clipboard === 'paste')
+    return ctx.isWindows && event.ctrlKey && !event.shiftKey && isLayoutKey(event, 'v')
       ? PASTE_OR_KEY
       : PASTE;
-  if (clipboard === "copy") {
+  if (clipboard === 'copy') {
     if (!skipCopy) return COPY;
     if (ctx.kittyFlags() === 0) return IGNORE;
   }
 
   const readline = terminalReadlineSequence(event, ctx);
-  if (readline) return { kind: "bytes", text: readline };
+  if (readline) return { kind: 'bytes', text: readline };
 
   // Unclaimed Command shortcuts belong to the native menu, even in Kitty mode.
   if (ctx.isMac && event.metaKey) return IGNORE;
 
   if (
-    key === "Enter" &&
+    key === 'Enter' &&
     event.shiftKey &&
     !event.altKey &&
     !event.ctrlKey &&
@@ -163,16 +148,9 @@ export function routeKeyDown(
   )
     return ESC_CR;
 
-  if (
-    event.ctrlKey &&
-    !event.shiftKey &&
-    !event.altKey &&
-    !event.metaKey &&
-    key.length === 1
-  ) {
+  if (event.ctrlKey && !event.shiftKey && !event.altKey && !event.metaKey && key.length === 1) {
     const control = LEGACY_CONTROL[key.toLowerCase()];
-    if (control !== undefined && ctx.kittyFlags() === 0)
-      return { kind: "bytes", text: control };
+    if (control !== undefined && ctx.kittyFlags() === 0) return { kind: 'bytes', text: control };
   }
 
   // xterm sends the control byte for Ctrl+Shift+letter; the encoder's CSI u
@@ -187,7 +165,7 @@ export function routeKeyDown(
     const letter = layoutLetter(event);
     if (letter !== null)
       return {
-        kind: "bytes",
+        kind: 'bytes',
         text: String.fromCharCode(letter.charCodeAt(0) & 0x1f),
       };
   }
@@ -195,8 +173,7 @@ export function routeKeyDown(
   if (optionMeta) {
     const text = baseTextForCode(event.code, event.shiftKey);
     const mapped = KEY_MAP[event.code];
-    if (text !== null && mapped !== undefined)
-      return { kind: "key", key: mapped, utf8: text };
+    if (text !== null && mapped !== undefined) return { kind: 'key', key: mapped, utf8: text };
   }
 
   const printable =
@@ -208,14 +185,14 @@ export function routeKeyDown(
   if (printable) {
     const mapped = KEY_MAP[event.code];
     return {
-      kind: "text",
+      kind: 'text',
       text: key,
       key: !event.altKey && mapped !== undefined ? mapped : null,
     };
   }
 
   const mapped = KEY_MAP[event.code];
-  return mapped === undefined ? IGNORE : { kind: "key", key: mapped };
+  return mapped === undefined ? IGNORE : { kind: 'key', key: mapped };
 }
 
 /**
@@ -234,10 +211,7 @@ export function buildKeyEvent(
   utf8?: string,
 ): KeyEvent {
   const needsBase =
-    event.ctrlKey ||
-    event.altKey ||
-    event.metaKey ||
-    (kittyFlags & KITTY_REPORT_ALL_KEYS) !== 0;
+    event.ctrlKey || event.altKey || event.metaKey || (kittyFlags & KITTY_REPORT_ALL_KEYS) !== 0;
   return {
     action,
     key,
@@ -245,9 +219,7 @@ export function buildKeyEvent(
     utf8: utf8 ?? (event.key.length === 1 ? event.key : undefined),
     unshiftedCodepoint: needsBase
       ? unshiftedCodepoint(
-          utf8 === undefined
-            ? event
-            : { key: utf8, code: event.code, shiftKey: event.shiftKey },
+          utf8 === undefined ? event : { key: utf8, code: event.code, shiftKey: event.shiftKey },
         )
       : 0,
   };
@@ -266,10 +238,9 @@ export function keyModifiers(event: KeyboardLike, kittyFlags: number): Mods {
   if (event.ctrlKey) result |= Mods.CTRL;
   if (event.altKey) result |= Mods.ALT;
   if (event.metaKey) result |= Mods.SUPER;
-  if (kittyFlags !== 0 && (kittyFlags & KITTY_REPORT_ALL_KEYS) === 0)
-    return result;
-  if (event.getModifierState("CapsLock")) result |= Mods.CAPSLOCK;
-  if (event.getModifierState("NumLock")) result |= Mods.NUMLOCK;
+  if (kittyFlags !== 0 && (kittyFlags & KITTY_REPORT_ALL_KEYS) === 0) return result;
+  if (event.getModifierState('CapsLock')) result |= Mods.CAPSLOCK;
+  if (event.getModifierState('NumLock')) result |= Mods.NUMLOCK;
   return result;
 }
 
@@ -282,16 +253,12 @@ export function keyModifiers(event: KeyboardLike, kittyFlags: number): Mods {
 export function canonicalKittyPress(bytes: Uint8Array): Uint8Array {
   const length = bytes.byteLength;
   if (length < 7 || length > 16 || bytes[length - 2] !== 0x31) return bytes;
-  const match = /^\x1b\[(\d+);(\d+):1([A-Z~])$/.exec(
-    String.fromCharCode(...bytes),
-  );
+  const match = /^\x1b\[(\d+);(\d+):1([A-Z~])$/.exec(String.fromCharCode(...bytes));
   if (!match) return bytes;
   const [, key, modifiers, final] = match;
-  const tail = modifiers === "1" ? "" : `;${modifiers}`;
+  const tail = modifiers === '1' ? '' : `;${modifiers}`;
   const text =
-    key === "1" && !tail && final !== "~"
-      ? `\x1b[${final}`
-      : `\x1b[${key}${tail}${final}`;
+    key === '1' && !tail && final !== '~' ? `\x1b[${final}` : `\x1b[${key}${tail}${final}`;
   return Uint8Array.from(text, (character) => character.charCodeAt(0));
 }
 
@@ -301,17 +268,12 @@ export function canonicalKittyPress(bytes: Uint8Array): Uint8Array {
  * Layouts without Latin letters type something else on the key and are matched
  * by position.
  */
-function isLayoutKey(
-  event: Pick<KeyboardEvent, "key" | "code">,
-  letter: string,
-): boolean {
+function isLayoutKey(event: Pick<KeyboardEvent, 'key' | 'code'>, letter: string): boolean {
   return layoutLetter(event) === letter;
 }
 
 /** The Latin letter a key stands for under Ctrl, or null. */
-function layoutLetter(
-  event: Pick<KeyboardEvent, "key" | "code">,
-): string | null {
+function layoutLetter(event: Pick<KeyboardEvent, 'key' | 'code'>): string | null {
   const key = event.key.toLowerCase();
   if (/^[a-z]$/.test(key)) return key;
   if (key.length >= 1 && /^\p{L}$/u.test(key) && /^Key[A-Z]$/.test(event.code))
@@ -319,12 +281,12 @@ function layoutLetter(
   return null;
 }
 
-const isInsert = (event: Pick<KeyboardEvent, "key" | "code">): boolean =>
-  event.key === "Insert" || event.code === "Insert";
+const isInsert = (event: Pick<KeyboardEvent, 'key' | 'code'>): boolean =>
+  event.key === 'Insert' || event.code === 'Insert';
 
 type ClipboardKey = Pick<
   KeyboardEvent,
-  "ctrlKey" | "shiftKey" | "altKey" | "metaKey" | "key" | "code"
+  'ctrlKey' | 'shiftKey' | 'altKey' | 'metaKey' | 'key' | 'code'
 >;
 
 /**
@@ -334,22 +296,16 @@ type ClipboardKey = Pick<
  */
 export function clipboardShortcut(
   event: ClipboardKey,
-  platform: Pick<KeyContext, "isMac" | "isWindows">,
-): "copy" | "paste" | null {
+  platform: Pick<KeyContext, 'isMac' | 'isWindows'>,
+): 'copy' | 'paste' | null {
   const { ctrlKey, shiftKey, altKey, metaKey } = event;
   if (platform.isMac) {
     if (!metaKey || ctrlKey || altKey) return null;
-    return isLayoutKey(event, "v")
-      ? "paste"
-      : isLayoutKey(event, "c")
-        ? "copy"
-        : null;
+    return isLayoutKey(event, 'v') ? 'paste' : isLayoutKey(event, 'c') ? 'copy' : null;
   }
   if (altKey || metaKey) return null;
-  if (isInsert(event))
-    return ctrlKey ? (shiftKey ? null : "copy") : shiftKey ? "paste" : null;
+  if (isInsert(event)) return ctrlKey ? (shiftKey ? null : 'copy') : shiftKey ? 'paste' : null;
   if (!ctrlKey) return null;
-  if (isLayoutKey(event, "v"))
-    return platform.isWindows || shiftKey ? "paste" : null;
-  return shiftKey && isLayoutKey(event, "c") ? "copy" : null;
+  if (isLayoutKey(event, 'v')) return platform.isWindows || shiftKey ? 'paste' : null;
+  return shiftKey && isLayoutKey(event, 'c') ? 'copy' : null;
 }

@@ -1,15 +1,13 @@
-import { useDiagnosticsStore } from "@/modules/editor";
-import { Alert02Icon, CancelCircleIcon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { useDiagnosticsStore } from '@/modules/editor';
+import { Alert02Icon, CancelCircleIcon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
 
 type Props = {
   filePath: string | null;
 };
 
 export function DiagnosticsBadge({ filePath }: Props) {
-  const counts = useDiagnosticsStore((s) =>
-    filePath ? s.byPath[filePath] : undefined,
-  );
+  const counts = useDiagnosticsStore((s) => (filePath ? s.byPath[filePath] : undefined));
   if (!counts || (counts.errors === 0 && counts.warnings === 0)) return null;
 
   return (

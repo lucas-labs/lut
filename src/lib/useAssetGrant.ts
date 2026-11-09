@@ -1,12 +1,12 @@
-import { useWorkspaceEnvStore, workspaceScopeKey } from "@/modules/workspace";
-import { convertFileSrc, invoke } from "@tauri-apps/api/core";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useWorkspaceEnvStore, workspaceScopeKey } from '@/modules/workspace';
+import { convertFileSrc, invoke } from '@tauri-apps/api/core';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 /** A view grants only its displayed file or Markdown image directory. */
 export function useAssetGrant(path: string | null) {
   const workspace = useWorkspaceEnvStore((state) => state.env);
   const [attempt, setAttempt] = useState(0);
-  const key = `${workspaceScopeKey(workspace)}:${path ?? ""}:${attempt}`;
+  const key = `${workspaceScopeKey(workspace)}:${path ?? ''}:${attempt}`;
   const retry = useCallback(() => setAttempt((value) => value + 1), []);
   const [grant, setGrant] = useState<{
     key: string;
@@ -18,8 +18,8 @@ export function useAssetGrant(path: string | null) {
     let disposed = false;
     let token: string | null = null;
     const revoke = (value: string) =>
-      void invoke("asset_revoke", { token: value }).catch(console.error);
-    void invoke<string>("asset_grant", { path, workspace })
+      void invoke('asset_revoke', { token: value }).catch(console.error);
+    void invoke<string>('asset_grant', { path, workspace })
       .then((value) => {
         if (disposed) revoke(value);
         else {

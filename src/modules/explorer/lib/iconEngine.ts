@@ -2,10 +2,10 @@
 // name/extension/language maps. Never import this statically from startup code;
 // `iconResolver.ts` loads it on demand and `src/app/eager-budget.test.ts` +
 // `src/app/dist-budget.test.ts` fail if it lands in either window's startup graph.
-import catppuccinIcons from "@iconify-json/catppuccin/icons.json";
-import { EXT_TO_LANGUAGE_ID } from "./constants";
-import * as fileIconsMod from "./fileIcons";
-import * as folderIconsMod from "./folderIcons";
+import catppuccinIcons from '@iconify-json/catppuccin/icons.json';
+import { EXT_TO_LANGUAGE_ID } from './constants';
+import * as fileIconsMod from './fileIcons';
+import * as folderIconsMod from './folderIcons';
 
 export type IconifySet = {
   icons: Record<string, { body: string }>;
@@ -32,20 +32,20 @@ export type IconEngine = {
   folderIconUrl: (name: string, expanded: boolean) => string;
 };
 
-const DEFAULT_FILE = "file";
-const DEFAULT_FOLDER = "folder";
-const DEFAULT_FOLDER_OPEN = "folder-open";
+const DEFAULT_FILE = 'file';
+const DEFAULT_FOLDER = 'folder';
+const DEFAULT_FOLDER_OPEN = 'folder-open';
 
 // Catppuccin's manifest emits names like `folder_src`/`typescript-react`, but
 // the iconify export normalizes everything to hyphenated slugs.
 function toIconifySlug(name: string): string {
-  return name.replace(/_/g, "-");
+  return name.replace(/_/g, '-');
 }
 
 function extOf(name: string): string {
   const lower = name.toLowerCase();
-  const dot = lower.indexOf(".");
-  if (dot === -1 || dot === lower.length - 1) return "";
+  const dot = lower.indexOf('.');
+  if (dot === -1 || dot === lower.length - 1) return '';
   return lower.slice(dot + 1);
 }
 
@@ -72,7 +72,7 @@ export function createIconEngine(set: IconifySet, maps: IconMaps): IconEngine {
     if (cached !== undefined) return cached || null;
     const svgBody = body(iconName);
     if (!svgBody) {
-      dataUrlCache.set(iconName, "");
+      dataUrlCache.set(iconName, '');
       return null;
     }
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}">${svgBody}</svg>`;
@@ -106,12 +106,12 @@ export function createIconEngine(set: IconifySet, maps: IconMaps): IconEngine {
             if (url) return url;
           }
         }
-        const nextDot = ext.indexOf(".");
+        const nextDot = ext.indexOf('.');
         if (nextDot === -1) break;
         ext = ext.slice(nextDot + 1);
       }
 
-      return dataUrl(DEFAULT_FILE) ?? "";
+      return dataUrl(DEFAULT_FILE) ?? '';
     },
 
     folderIconUrl(name, expanded) {
@@ -121,18 +121,15 @@ export function createIconEngine(set: IconifySet, maps: IconMaps): IconEngine {
         const url = dataUrl(expanded ? `${slug}-open` : slug);
         if (url) return url;
       }
-      return dataUrl(expanded ? DEFAULT_FOLDER_OPEN : DEFAULT_FOLDER) ?? "";
+      return dataUrl(expanded ? DEFAULT_FOLDER_OPEN : DEFAULT_FOLDER) ?? '';
     },
   };
 }
 
-export const iconEngine: IconEngine = createIconEngine(
-  catppuccinIcons as unknown as IconifySet,
-  {
-    fileNames: fileIconsMod.fileNames as Record<string, string>,
-    fileExtensions: fileIconsMod.fileExtensions as Record<string, string>,
-    languageIds: fileIconsMod.languageIds as Record<string, string>,
-    extToLanguageId: EXT_TO_LANGUAGE_ID,
-    folderNames: folderIconsMod.folderNames as Record<string, string>,
-  },
-);
+export const iconEngine: IconEngine = createIconEngine(catppuccinIcons as unknown as IconifySet, {
+  fileNames: fileIconsMod.fileNames as Record<string, string>,
+  fileExtensions: fileIconsMod.fileExtensions as Record<string, string>,
+  languageIds: fileIconsMod.languageIds as Record<string, string>,
+  extToLanguageId: EXT_TO_LANGUAGE_ID,
+  folderNames: folderIconsMod.folderNames as Record<string, string>,
+});

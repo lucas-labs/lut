@@ -3,63 +3,53 @@ import {
   resolveFontFamily,
   subscribeSymbolFonts,
   symbolFontEpoch,
-} from "@/lib/fonts";
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import { useSpaces } from "@/modules/spaces/lib/useSpaces";
-import type { TerminalBackendKind } from "@/modules/terminal/backend/contracts";
+} from '@/lib/fonts';
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import { useSpaces } from '@/modules/spaces/lib/useSpaces';
+import type { TerminalBackendKind } from '@/modules/terminal/backend/contracts';
 import {
   disposeGhosttyBlocks,
   ensureGhosttyBlocks,
   ghosttyBlocks,
-} from "@/modules/terminal/ghostty/ghosttyBlockSessions";
-import { loadSessionRenderer } from "@/modules/terminal/ghostty/loadSessionRenderer";
-import { replaceSessionSurface } from "@/modules/terminal/ghostty/replaceSessionSurface";
-import { initializeSessionGeneration as startSessionInitialization } from "@/modules/terminal/ghostty/sessionInitialization";
-import { LatestClipboardWrite } from "@/modules/terminal/lib/LatestClipboardWrite";
-import { setLeafPresentation } from "@/modules/terminal/lib/ptyPresentation";
-import { PtyResizeDelivery } from "@/modules/terminal/lib/ptyResizeDelivery";
-import { useTerminalFont } from "@/modules/terminal/lib/useTerminalFont";
-import type { TerminalSearchController } from "@/modules/terminal/search/TerminalSearchController";
-import { currentWorkspaceEnv, workspaceScopeKey } from "@/modules/workspace";
-import { invoke } from "@tauri-apps/api/core";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
-import { isAgentActivePty } from "../lib/agentActivity";
-import { openPty, type PtySession } from "../lib/pty-bridge";
-import { writeTerminalClipboard } from "../lib/terminalClipboard";
-import { GhosttySemanticEventRouter } from "./core/GhosttySemanticEventRouter";
-import { getGhosttyCoreRuntime } from "./GhosttyCoreRuntime";
-import type { GhosttyTerminalModelApi } from "./GhosttyTerminalModel";
+} from '@/modules/terminal/ghostty/ghosttyBlockSessions';
+import { loadSessionRenderer } from '@/modules/terminal/ghostty/loadSessionRenderer';
+import { replaceSessionSurface } from '@/modules/terminal/ghostty/replaceSessionSurface';
+import { initializeSessionGeneration as startSessionInitialization } from '@/modules/terminal/ghostty/sessionInitialization';
+import { LatestClipboardWrite } from '@/modules/terminal/lib/LatestClipboardWrite';
+import { setLeafPresentation } from '@/modules/terminal/lib/ptyPresentation';
+import { PtyResizeDelivery } from '@/modules/terminal/lib/ptyResizeDelivery';
+import { useTerminalFont } from '@/modules/terminal/lib/useTerminalFont';
+import type { TerminalSearchController } from '@/modules/terminal/search/TerminalSearchController';
+import { currentWorkspaceEnv, workspaceScopeKey } from '@/modules/workspace';
+import { invoke } from '@tauri-apps/api/core';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { isAgentActivePty } from '../lib/agentActivity';
+import { openPty, type PtySession } from '../lib/pty-bridge';
+import { writeTerminalClipboard } from '../lib/terminalClipboard';
+import { GhosttySemanticEventRouter } from './core/GhosttySemanticEventRouter';
+import { getGhosttyCoreRuntime } from './GhosttyCoreRuntime';
+import type { GhosttyTerminalModelApi } from './GhosttyTerminalModel';
 import {
   fontSpecKey,
   measureTerminalFont,
   readTerminalGpuTheme,
   rgbToInt,
   type TerminalFontSpec,
-} from "./gpu/terminalVisuals";
-import { getWebGpuTerminalRuntime } from "./gpu/WebGpuTerminalRuntime";
-import { WebGpuTerminalSurface } from "./gpu/WebGpuTerminalSurface";
-import { GhosttyInputController } from "./input/GhosttyInputController";
-import {
-  encodeTerminalSubmission,
-  enqueueTerminalInput,
-} from "./input/terminalInputEncoding";
+} from './gpu/terminalVisuals';
+import { getWebGpuTerminalRuntime } from './gpu/WebGpuTerminalRuntime';
+import { WebGpuTerminalSurface } from './gpu/WebGpuTerminalSurface';
+import { GhosttyInputController } from './input/GhosttyInputController';
+import { encodeTerminalSubmission, enqueueTerminalInput } from './input/terminalInputEncoding';
 import type {
   WebGlTerminalSurface,
   WebGlTerminalSurfaceOptions,
-} from "./webgl/WebGlTerminalSurface";
+} from './webgl/WebGlTerminalSurface';
 
 type GhosttyBackend = Extract<TerminalBackendKind, `ghostty-${string}`>;
 type GhosttySurface = WebGpuTerminalSurface | WebGlTerminalSurface;
-type GhosttySurfaceBaseOptions = Omit<WebGlTerminalSurfaceOptions, "onError">;
+type GhosttySurfaceBaseOptions = Omit<WebGlTerminalSurfaceOptions, 'onError'>;
 type GhosttySessionFailure = {
-  kind: "startup" | "renderer";
+  kind: 'startup' | 'renderer';
   message: string;
 };
 
@@ -153,9 +143,7 @@ export function useGhosttyTerminalSession({
   const [model, setModel] = useState<GhosttyTerminalModelApi | null>(null);
   const [error, setError] = useState<GhosttySessionFailure | null>(null);
   const { fontFamily, fontSize, fontWeight } = useTerminalFont();
-  const letterSpacing = usePreferencesStore(
-    (state) => state.terminalLetterSpacing,
-  );
+  const letterSpacing = usePreferencesStore((state) => state.terminalLetterSpacing);
   const zoomLevel = usePreferencesStore((state) => state.zoomLevel);
   const symbols = useSyncExternalStore(subscribeSymbolFonts, symbolFontEpoch);
   const font = useMemo<TerminalFontSpec>(
@@ -176,12 +164,7 @@ export function useGhosttyTerminalSession({
   const initialCwdRef = useRef(initialCwd);
 
   useEffect(() => {
-    const session = ensureSession(
-      leafId,
-      backend,
-      initialCwdRef.current,
-      fontRef.current,
-    );
+    const session = ensureSession(leafId, backend, initialCwdRef.current, fontRef.current);
     if (blocks) ensureGhosttyBlocks(leafId);
     const node = container.current;
     session.container = node;
@@ -261,7 +244,7 @@ export function useGhosttyTerminalSession({
       const expected = sessions.get(leafId);
       const pty = expected?.pty;
       if (!pty) return false;
-      const { writeAtShellPrompt } = await import("../lib/promptInjection");
+      const { writeAtShellPrompt } = await import('../lib/promptInjection');
       const session = sessions.get(leafId);
       if (!session || session !== expected || session.pty !== pty) return false;
       return writeAtShellPrompt(
@@ -293,7 +276,7 @@ export function useGhosttyTerminalSession({
       return;
     }
     void respawnGhosttySession(leafId).catch((error: unknown) =>
-      setError({ kind: "startup", message: toError(error).message }),
+      setError({ kind: 'startup', message: toError(error).message }),
     );
   }, [leafId]);
 
@@ -309,17 +292,7 @@ export function useGhosttyTerminalSession({
       getSelection,
       applyTheme,
     }),
-    [
-      write,
-      writeAtPrompt,
-      focus,
-      getBuffer,
-      getSelection,
-      applyTheme,
-      error,
-      retry,
-      model,
-    ],
+    [write, writeAtPrompt, focus, getBuffer, getSelection, applyTheme, error, retry, model],
   );
 }
 
@@ -334,8 +307,7 @@ function applyThemeToSession(session: GhosttySession): void {
   );
   session.surface.setTheme(theme);
   void session.pty?.setColors(theme).catch(() => {});
-  if (session.surfaceOptions)
-    session.surfaceOptions = { ...session.surfaceOptions, theme };
+  if (session.surfaceOptions) session.surfaceOptions = { ...session.surfaceOptions, theme };
 }
 
 export function hasGhosttySession(leafId: number): boolean {
@@ -351,10 +323,7 @@ export function writeToGhosttySession(leafId: number, data: string): boolean {
 export function submitToGhosttySession(leafId: number, text: string): boolean {
   const session = sessions.get(leafId);
   if (!session || session.shellExited || session.disposed) return false;
-  const data = encodeTerminalSubmission(
-    text,
-    session.model?.modes().bracketedPaste ?? false,
-  );
+  const data = encodeTerminalSubmission(text, session.model?.modes().bracketedPaste ?? false);
   const accepted = enqueueTerminalInput(session, textEncoder.encode(data));
   if (accepted) {
     const blocks = ghosttyBlocks(leafId);
@@ -383,7 +352,7 @@ export function clearGhosttySession(leafId: number): boolean {
 
 export function pasteIntoGhosttySession(leafId: number, text: string): boolean {
   const blocks = ghosttyBlocks(leafId);
-  if (blocks?.getMode() === "prompt" && blocks.paste) {
+  if (blocks?.getMode() === 'prompt' && blocks.paste) {
     blocks.paste(text);
     return true;
   }
@@ -409,18 +378,11 @@ export function ghosttyFocusedLeaf(): number | null {
   return null;
 }
 
-export async function whenGhosttySessionReady(
-  leafId: number,
-): Promise<boolean> {
+export async function whenGhosttySessionReady(leafId: number): Promise<boolean> {
   const session = sessions.get(leafId);
   if (!session) return false;
   await session.initializing;
-  return (
-    !!session.pty &&
-    !!session.model &&
-    !session.startupError &&
-    !session.disposed
-  );
+  return !!session.pty && !!session.model && !session.startupError && !session.disposed;
 }
 
 export function ghosttyPtyIdForLeaf(leafId: number): number | null {
@@ -434,21 +396,15 @@ export function ghosttyLeafIdForPty(ptyId: number): number | null {
   return null;
 }
 
-export async function ghosttyLeafHasForegroundProcess(
-  leafId: number,
-): Promise<boolean> {
+export async function ghosttyLeafHasForegroundProcess(leafId: number): Promise<boolean> {
   const session = sessions.get(leafId);
   if (!session?.pty || session.shellExited) return false;
   try {
-    return await invoke<boolean>("pty_has_foreground_process", {
+    return await invoke<boolean>('pty_has_foreground_process', {
       id: session.pty.id,
     });
   } catch (error) {
-    console.error(
-      "[terax] Ghostty pty_has_foreground_process failed for leaf",
-      leafId,
-      error,
-    );
+    console.error('[terax] Ghostty pty_has_foreground_process failed for leaf', leafId, error);
     return false;
   }
 }
@@ -471,10 +427,7 @@ export function disposeGhosttySession(leafId: number): boolean {
   return true;
 }
 
-async function respawnGhosttySession(
-  leafId: number,
-  cwd?: string,
-): Promise<boolean> {
+async function respawnGhosttySession(leafId: number, cwd?: string): Promise<boolean> {
   const session = sessions.get(leafId);
   if (!session || session.disposed) return false;
   session.generation += 1;
@@ -521,9 +474,7 @@ function ensureSession(
   const existing = sessions.get(leafId);
   if (existing) {
     if (existing.backend !== backend) {
-      throw new Error(
-        `Ghostty backend changed for live leaf ${leafId}; reload is required`,
-      );
+      throw new Error(`Ghostty backend changed for live leaf ${leafId}; reload is required`);
     }
     return existing;
   }
@@ -546,7 +497,7 @@ function ensureSession(
     pty: null,
     ptyResize,
     writer: new BoundedPtyWriter((error) => {
-      console.error("[terax] Ghostty PTY write failed:", error);
+      console.error('[terax] Ghostty PTY write failed:', error);
     }),
     container: null,
     callbacks: {},
@@ -565,11 +516,11 @@ function ensureSession(
     font:
       font ??
       ({
-        family: "monospace",
+        family: 'monospace',
         size: 14,
         lineHeight: 1.2,
         letterSpacing: 0,
-        weight: "400",
+        weight: '400',
       } satisfies TerminalFontSpec),
   };
   sessions.set(leafId, session);
@@ -596,7 +547,7 @@ function initializeSession(session: GhosttySession): Promise<void> {
         session.ptyResize.reset();
       }
       session.startupError = toError(error).message;
-      console.error("[terax] Ghostty session initialization failed:", error);
+      console.error('[terax] Ghostty session initialization failed:', error);
       session.callbacks.onError?.(sessionFailure(session));
     },
   );
@@ -610,7 +561,7 @@ async function initializeSessionGeneration(
   const startup = createStartupTimings();
   session.startup = startup;
   const alive = () => !session.disposed && generation === session.generation;
-  const mark = (key: keyof Omit<GhosttyStartupTimings, "startedAt">) => {
+  const mark = (key: keyof Omit<GhosttyStartupTimings, 'startedAt'>) => {
     if (alive() && startup[key] === null) {
       startup[key] = performance.now() - startup.startedAt;
     }
@@ -625,24 +576,20 @@ async function initializeSessionGeneration(
     if (fontSpecKey(initialFont) !== fontSpecKey(session.font)) {
       metrics = await measureTerminalFont(session.font);
     }
-    mark("fontsReadyMs");
+    mark('fontsReadyMs');
     return metrics;
   })();
-  const corePromise = coreRuntime.preload().then(() => mark("coreReadyMs"));
+  const corePromise = coreRuntime.preload().then(() => mark('coreReadyMs'));
   const webGpuPreload = { error: null as Error | null };
   const rendererPromise =
-    session.backend === "ghostty-webgpu"
+    session.backend === 'ghostty-webgpu'
       ? getWebGpuTerminalRuntime()
           .catch((error: unknown) => {
             webGpuPreload.error = toError(error);
           })
-          .then(() => mark("gpuReadyMs"))
-      : Promise.resolve().then(() => mark("gpuReadyMs"));
-  const [metrics] = await Promise.all([
-    metricsPromise,
-    corePromise,
-    rendererPromise,
-  ]);
+          .then(() => mark('gpuReadyMs'))
+      : Promise.resolve().then(() => mark('gpuReadyMs'));
+  const [metrics] = await Promise.all([metricsPromise, corePromise, rendererPromise]);
   if (!alive()) return;
 
   const semanticEvents = new GhosttySemanticEventRouter({
@@ -655,9 +602,7 @@ async function initializeSessionGeneration(
       oscClipboard.enqueue(text);
     },
     onOverflow: (dropped) => {
-      console.warn(
-        `[terax] Ghostty semantic event queue dropped ${dropped} event(s)`,
-      );
+      console.warn(`[terax] Ghostty semantic event queue dropped ${dropped} event(s)`);
     },
     onPromptEnd: (reportsCommandStart) => {
       session.commandTracked = reportsCommandStart;
@@ -666,7 +611,7 @@ async function initializeSessionGeneration(
       session.promptIntegrated = true;
       session.commandRunning = running;
       session.commandTracked = false;
-      if (!running) mark("firstPromptMs");
+      if (!running) mark('firstPromptMs');
     },
   });
   const model = await coreRuntime.createModel({
@@ -688,7 +633,7 @@ async function initializeSessionGeneration(
       semanticEvents.handle(event);
       ghosttyBlocks(session.leafId)?.controller?.handle(
         event,
-        session.lastCwd ?? session.initialCwd ?? "",
+        session.lastCwd ?? session.initialCwd ?? '',
       );
     },
   });
@@ -696,7 +641,7 @@ async function initializeSessionGeneration(
     model.dispose();
     return;
   }
-  mark("modelReadyMs");
+  mark('modelReadyMs');
   session.model = model;
   session.callbacks.onModel?.(model);
   const blockSession = ghosttyBlocks(session.leafId);
@@ -708,8 +653,7 @@ async function initializeSessionGeneration(
   }
   await blockSession?.attach(model, () => session.surface?.requestFrame());
   if (!alive()) {
-    if (ghosttyBlocks(session.leafId)?.model === model)
-      ghosttyBlocks(session.leafId)?.detach();
+    if (ghosttyBlocks(session.leafId)?.model === model) ghosttyBlocks(session.leafId)?.detach();
     model.dispose();
     return;
   }
@@ -723,7 +667,7 @@ async function initializeSessionGeneration(
     onResize: (cols: number, rows: number) => {
       session.ptyResize.send(cols, rows);
     },
-    onFirstFrame: () => mark("firstFrameMs"),
+    onFirstFrame: () => mark('firstFrameMs'),
     onFrame: () => ghosttyBlocks(session.leafId)?.present(),
     onRequestFocus: () => focusGhosttySession(session.leafId),
     // Opening, confirming and resolving links is only needed on a click.
@@ -735,8 +679,7 @@ async function initializeSessionGeneration(
         session.visible &&
         sessions.get(session.leafId) === session &&
         useSpaces.getState().activeId === space &&
-        workspaceScopeKey(currentWorkspaceEnv()) ===
-          workspaceScopeKey(workspace);
+        workspaceScopeKey(currentWorkspaceEnv()) === workspaceScopeKey(workspace);
       const context = {
         cwd: session.lastCwd ?? session.initialCwd ?? null,
         workspace,
@@ -745,7 +688,7 @@ async function initializeSessionGeneration(
           if (isCurrent()) focusGhosttySession(session.leafId);
         },
       };
-      void import("@/modules/terminal/lib/terminalLinks")
+      void import('@/modules/terminal/lib/terminalLinks')
         .then(({ activateTerminalLink }) => activateTerminalLink(link, context))
         .catch(context.focus);
     },
@@ -755,7 +698,7 @@ async function initializeSessionGeneration(
   const webGpuSurfaceOptions = {
     ...surfaceBaseOptions,
     onError: (error: Error) => {
-      logSurfaceError("ghostty-webgpu", error);
+      logSurfaceError('ghostty-webgpu', error);
       if (webGpuFallbackStarted) return;
       webGpuFallbackStarted = true;
       queueMicrotask(() => {
@@ -764,7 +707,7 @@ async function initializeSessionGeneration(
     },
   };
   let surface: GhosttySurface | null = null;
-  if (session.backend === "ghostty-webgpu" && !webGpuPreload.error) {
+  if (session.backend === 'ghostty-webgpu' && !webGpuPreload.error) {
     try {
       surface = await WebGpuTerminalSurface.create(webGpuSurfaceOptions);
     } catch (error) {
@@ -775,7 +718,7 @@ async function initializeSessionGeneration(
     surface = await loadSessionRenderer(
       session,
       generation,
-      () => import("@/modules/terminal/ghostty/webgl/WebGlTerminalSurface"),
+      () => import('@/modules/terminal/ghostty/webgl/WebGlTerminalSurface'),
       (renderer) =>
         createWebGlFallbackSurface(
           session,
@@ -788,7 +731,7 @@ async function initializeSessionGeneration(
   }
   if (webGpuPreload.error) {
     console.warn(
-      "[terax] WebGPU initialization failed; preserving the Ghostty session with WebGL:",
+      '[terax] WebGPU initialization failed; preserving the Ghostty session with WebGL:',
       webGpuPreload.error.message,
     );
   }
@@ -797,7 +740,7 @@ async function initializeSessionGeneration(
     model.dispose();
     return;
   }
-  mark("surfaceReadyMs");
+  mark('surfaceReadyMs');
   session.surface = surface;
   session.input = createGhosttyInput(session, model, surface);
 
@@ -805,13 +748,9 @@ async function initializeSessionGeneration(
     try {
       attachGhosttySurface(session, surface);
     } catch (error) {
-      if (surface.backend !== "ghostty-webgpu") throw error;
+      if (surface.backend !== 'ghostty-webgpu') throw error;
       try {
-        surface = await replaceGhosttySurface(
-          session,
-          generation,
-          surfaceBaseOptions,
-        );
+        surface = await replaceGhosttySurface(session, generation, surfaceBaseOptions);
       } catch (fallbackError) {
         throw new Error(
           `WebGPU surface attachment failed (${toError(error).message}); WebGL fallback also failed (${toError(fallbackError).message})`,
@@ -820,7 +759,7 @@ async function initializeSessionGeneration(
       if (!surface) return;
       webGpuFallbackStarted = true;
       console.warn(
-        "[terax] WebGPU surface attachment failed; preserved the Ghostty session with WebGL:",
+        '[terax] WebGPU surface attachment failed; preserved the Ghostty session with WebGL:',
         toError(error).message,
       );
     }
@@ -835,7 +774,7 @@ async function initializeSessionGeneration(
     {
       onData: (bytes) => {
         if (!session.disposed && generation === session.generation) {
-          mark("firstOutputMs");
+          mark('firstOutputMs');
           model.write(bytes);
           ghosttyBlocks(session.leafId)?.changed();
         }
@@ -863,7 +802,7 @@ async function initializeSessionGeneration(
     await pty.close();
     return;
   }
-  mark("ptyReadyMs");
+  mark('ptyReadyMs');
   session.pty = pty;
   session.writer.attach(pty);
   if (model.cols !== startCols || model.rows !== startRows) {
@@ -883,7 +822,7 @@ function createGhosttyInput(
 ): GhosttyInputController {
   const insertPromptText = (text: string): boolean => {
     const blocks = ghosttyBlocks(session.leafId);
-    if (blocks?.getMode() !== "prompt" || !blocks.paste) return false;
+    if (blocks?.getMode() !== 'prompt' || !blocks.paste) return false;
     blocks.paste(text);
     return true;
   };
@@ -900,7 +839,7 @@ function createGhosttyInput(
     macOptionAsAlt: () => usePreferencesStore.getState().terminalMacOptionAsAlt,
     onData: (bytes) => {
       if (
-        ghosttyBlocks(session.leafId)?.getMode() === "prompt" &&
+        ghosttyBlocks(session.leafId)?.getMode() === 'prompt' &&
         !(bytes.length === 1 && bytes[0] === 3)
       )
         return;
@@ -908,9 +847,7 @@ function createGhosttyInput(
     },
     onKeyDown: (event) => {
       const blocks = ghosttyBlocks(session.leafId);
-      return (
-        blocks?.getMode() === "prompt" && (blocks.keyDown?.(event) ?? false)
-      );
+      return blocks?.getMode() === 'prompt' && (blocks.keyDown?.(event) ?? false);
     },
     onText: insertPromptText,
     onPaste: insertPromptText,
@@ -929,14 +866,11 @@ export function focusGhosttySession(leafId: number): void {
   if (session) focusSessionSurface(session, session.surface);
 }
 
-function focusSessionSurface(
-  session: GhosttySession,
-  surface: GhosttySurface | null,
-): void {
+function focusSessionSurface(session: GhosttySession, surface: GhosttySurface | null): void {
   const blocks = ghosttyBlocks(session.leafId);
   session.cancelFocusRetry?.();
   session.cancelFocusRetry = null;
-  if (blocks?.getMode() === "prompt" && blocks.focus) {
+  if (blocks?.getMode() === 'prompt' && blocks.focus) {
     blocks.focus();
     return;
   }
@@ -953,7 +887,7 @@ function focusSessionSurface(
     cancelled = true;
     cancel?.();
   };
-  void import("./input/focusRetry").then(({ focusUntilActive }) => {
+  void import('./input/focusRetry').then(({ focusUntilActive }) => {
     if (!cancelled)
       cancel = focusUntilActive(
         input,
@@ -973,18 +907,14 @@ function focusSessionSurface(
   });
 }
 
-function applyBlockInputMode(
-  session: GhosttySession,
-  surface = session.surface,
-): void {
+function applyBlockInputMode(session: GhosttySession, surface = session.surface): void {
   const input = surface?.inputElement();
   const blocks = ghosttyBlocks(session.leafId);
   if (!input || !blocks) return;
-  const prompt = blocks.getMode() === "prompt";
-  const changed =
-    input.getAttribute("data-terax-block-prompt") !== String(prompt);
+  const prompt = blocks.getMode() === 'prompt';
+  const changed = input.getAttribute('data-terax-block-prompt') !== String(prompt);
   if (!changed) return;
-  input.setAttribute("data-terax-block-prompt", String(prompt));
+  input.setAttribute('data-terax-block-prompt', String(prompt));
   surface?.setCursorEnabled(!prompt);
   if (session.visible && session.focused) focusSessionSurface(session, surface);
 }
@@ -1002,9 +932,7 @@ export function ghosttyBlockCellHeight(leafId: number): number {
  * Surface top edge plus cell height. Reads the bounding rect (forces layout),
  * so it is for one-off pointer hit-testing, never for per-frame work.
  */
-export function ghosttyBlockGeometry(
-  leafId: number,
-): { top: number; height: number } | null {
+export function ghosttyBlockGeometry(leafId: number): { top: number; height: number } | null {
   const surface = sessions.get(leafId)?.surface;
   return surface
     ? {
@@ -1014,10 +942,7 @@ export function ghosttyBlockGeometry(
     : null;
 }
 
-function attachGhosttySurface(
-  session: GhosttySession,
-  surface: GhosttySurface,
-): void {
+function attachGhosttySurface(session: GhosttySession, surface: GhosttySurface): void {
   if (!session.container) return;
   surface.attach(session.container);
   surface.setVisible(true);
@@ -1036,11 +961,7 @@ function createWebGlFallbackSurface(
     ...options,
     onError: (error) => {
       queueMicrotask(() => {
-        if (
-          !session.disposed &&
-          generation === session.generation &&
-          session.surface === surface
-        ) {
+        if (!session.disposed && generation === session.generation && session.surface === surface) {
           reportRendererFailure(session, error);
         }
       });
@@ -1059,7 +980,7 @@ async function fallbackWebGpuSurface(
   if (
     session.disposed ||
     generation !== session.generation ||
-    failedSurface?.backend !== "ghostty-webgpu" ||
+    failedSurface?.backend !== 'ghostty-webgpu' ||
     !session.model
   ) {
     return;
@@ -1068,11 +989,7 @@ async function fallbackWebGpuSurface(
   try {
     if (!(await replaceGhosttySurface(session, generation, options))) return;
   } catch (error) {
-    if (
-      session.disposed ||
-      session.generation !== generation ||
-      session.surface !== failedSurface
-    )
+    if (session.disposed || session.generation !== generation || session.surface !== failedSurface)
       return;
     reportRendererFailure(
       session,
@@ -1083,7 +1000,7 @@ async function fallbackWebGpuSurface(
     return;
   }
   console.warn(
-    "[terax] WebGPU renderer failed; preserved the live Ghostty model, PTY, and scrollback with WebGL:",
+    '[terax] WebGPU renderer failed; preserved the live Ghostty model, PTY, and scrollback with WebGL:',
     cause.message,
   );
 }
@@ -1097,7 +1014,7 @@ async function replaceGhosttySurface(
   return loadSessionRenderer(
     session,
     generation,
-    () => import("@/modules/terminal/ghostty/webgl/WebGlTerminalSurface"),
+    () => import('@/modules/terminal/ghostty/webgl/WebGlTerminalSurface'),
     (renderer) => {
       const currentOptions = session.surfaceOptions ?? options;
       const replacement = replaceSessionSurface(
@@ -1110,8 +1027,7 @@ async function replaceGhosttySurface(
             renderer.WebGlTerminalSurface,
           ),
         (surface) => {
-          if (session.visible && session.container)
-            attachGhosttySurface(session, surface);
+          if (session.visible && session.container) attachGhosttySurface(session, surface);
         },
         (surface) => createGhosttyInput(session, currentOptions.model, surface),
       );
@@ -1140,30 +1056,20 @@ async function retryGhosttyRenderer(session: GhosttySession): Promise<void> {
   try {
     await replaceGhosttySurface(session, generation, session.surfaceOptions);
   } catch (error) {
-    if (
-      session.disposed ||
-      session.generation !== generation ||
-      session.surface !== failedSurface
-    )
+    if (session.disposed || session.generation !== generation || session.surface !== failedSurface)
       return;
     reportRendererFailure(session, toError(error));
   }
 }
 
 function sessionFailure(session: GhosttySession): GhosttySessionFailure | null {
-  if (session.startupError)
-    return { kind: "startup", message: session.startupError };
-  if (session.rendererError)
-    return { kind: "renderer", message: session.rendererError };
+  if (session.startupError) return { kind: 'startup', message: session.startupError };
+  if (session.rendererError) return { kind: 'renderer', message: session.rendererError };
   return null;
 }
 
 function logSurfaceError(backend: GhosttyBackend, error: Error): void {
-  console.error(
-    `[terax] ${backend} surface failed:`,
-    error.message,
-    error.stack ?? error,
-  );
+  console.error(`[terax] ${backend} surface failed:`, error.message, error.stack ?? error);
 }
 
 function toError(error: unknown): Error {
@@ -1185,10 +1091,7 @@ function createStartupTimings(): GhosttyStartupTimings {
   };
 }
 
-async function updateSessionFont(
-  session: GhosttySession,
-  font: TerminalFontSpec,
-): Promise<void> {
+async function updateSessionFont(session: GhosttySession, font: TerminalFontSpec): Promise<void> {
   if (fontSpecKey(session.font) === fontSpecKey(font)) return;
   session.font = font;
   if (!session.surface || session.disposed) return;
@@ -1196,17 +1099,12 @@ async function updateSessionFont(
   await ensureMonoFontsLoaded();
   await document.fonts.ready;
   const metrics = await measureTerminalFont(font);
-  if (
-    session.disposed ||
-    !session.surface ||
-    fontSpecKey(session.font) !== fontSpecKey(font)
-  ) {
+  if (session.disposed || !session.surface || fontSpecKey(session.font) !== fontSpecKey(font)) {
     return;
   }
   session.surface.setFontMetrics(metrics);
   ghosttyBlocks(session.leafId)?.changed();
-  if (session.surfaceOptions)
-    session.surfaceOptions = { ...session.surfaceOptions, metrics };
+  if (session.surfaceOptions) session.surfaceOptions = { ...session.surfaceOptions, metrics };
 }
 
 class BoundedPtyWriter {

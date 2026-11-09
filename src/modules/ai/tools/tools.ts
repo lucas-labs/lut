@@ -1,13 +1,13 @@
-import { buildManagedAgentTools } from "./agent";
-import { buildEditTools } from "./edit";
-import { buildFsTools } from "./fs";
-import { buildSearchTools } from "./search";
-import { buildShellTools } from "./shell";
-import { buildSubagentTools } from "./subagent";
-import { buildTerminalTools } from "./terminal";
-import { buildTodoTools } from "./todo";
+import { buildManagedAgentTools } from './agent';
+import { buildEditTools } from './edit';
+import { buildFsTools } from './fs';
+import { buildSearchTools } from './search';
+import { buildShellTools } from './shell';
+import { buildSubagentTools } from './subagent';
+import { buildTerminalTools } from './terminal';
+import { buildTodoTools } from './todo';
 
-export { resolvePath, type ToolContext } from "./context";
+export { resolvePath, type ToolContext } from './context';
 
 /**
  * AI tool definitions.
@@ -28,7 +28,7 @@ export { resolvePath, type ToolContext } from "./context";
  * active terminal's cwd (provided via `getCwd`); it should not invent paths
  * outside that.
  */
-export function buildTools(ctx: import("./context").ToolContext) {
+export function buildTools(ctx: import('./context').ToolContext) {
   return {
     ...buildFsTools(ctx),
     ...buildEditTools(ctx),

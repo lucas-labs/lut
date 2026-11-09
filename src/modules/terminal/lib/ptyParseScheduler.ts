@@ -19,7 +19,7 @@ function post(): void {
 }
 
 export function schedulePtyParse(callback: () => void): () => void {
-  if (typeof MessageChannel === "undefined") {
+  if (typeof MessageChannel === 'undefined') {
     const timer = setTimeout(callback, 0);
     return () => clearTimeout(timer);
   }

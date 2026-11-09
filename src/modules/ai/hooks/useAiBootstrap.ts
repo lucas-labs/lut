@@ -1,16 +1,12 @@
-import { firePendingReviewForSession } from "@/modules/agents/lib/review";
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import { onKeysChanged } from "@/modules/settings/store";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import {
-  getAllCustomEndpointKeys,
-  getAllKeys,
-  hasAnyKey,
-} from "../lib/keyring";
-import { useAgentsStore } from "../store/agentsStore";
-import { useChatStore } from "../store/chatStore";
-import { useSnippetsStore } from "../store/snippetsStore";
+import { firePendingReviewForSession } from '@/modules/agents/lib/review';
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import { onKeysChanged } from '@/modules/settings/store';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { getAllCustomEndpointKeys, getAllKeys, hasAnyKey } from '../lib/keyring';
+import { useAgentsStore } from '../store/agentsStore';
+import { useChatStore } from '../store/chatStore';
+import { useSnippetsStore } from '../store/snippetsStore';
 
 /**
  * Startup wiring for the AI subsystem: loads provider keys (and keeps them in
@@ -39,22 +35,15 @@ export function useAiBootstrap(): {
   const mlxBaseURL = usePreferencesStore((s) => s.mlxBaseURL);
   const ollamaModelId = usePreferencesStore((s) => s.ollamaModelId);
   const ollamaBaseURL = usePreferencesStore((s) => s.ollamaBaseURL);
-  const openaiCompatibleModelId = usePreferencesStore(
-    (s) => s.openaiCompatibleModelId,
-  );
-  const openaiCompatibleBaseURL = usePreferencesStore(
-    (s) => s.openaiCompatibleBaseURL,
-  );
+  const openaiCompatibleModelId = usePreferencesStore((s) => s.openaiCompatibleModelId);
+  const openaiCompatibleBaseURL = usePreferencesStore((s) => s.openaiCompatibleBaseURL);
   const customEndpoints = usePreferencesStore((s) => s.customEndpoints);
   const hasLocalModel =
     (lmstudioBaseURL.trim().length > 0 && lmstudioModelId.trim().length > 0) ||
     (mlxBaseURL.trim().length > 0 && mlxModelId.trim().length > 0) ||
     (ollamaBaseURL.trim().length > 0 && ollamaModelId.trim().length > 0) ||
-    (openaiCompatibleBaseURL.trim().length > 0 &&
-      openaiCompatibleModelId.trim().length > 0) ||
-    customEndpoints.some(
-      (e) => e.baseURL.trim().length > 0 && e.modelId.trim().length > 0,
-    );
+    (openaiCompatibleBaseURL.trim().length > 0 && openaiCompatibleModelId.trim().length > 0) ||
+    customEndpoints.some((e) => e.baseURL.trim().length > 0 && e.modelId.trim().length > 0);
   const hasComposer = hasAnyKey(apiKeys) || hasLocalModel;
 
   const prefsHydrated = usePreferencesStore((s) => s.hydrated);
@@ -71,12 +60,12 @@ export function useAiBootstrap(): {
     const reload = () => {
       loadProviderKeys();
       if (!usePreferencesStore.getState().hydrated) return;
-      void getAllCustomEndpointKeys(
-        usePreferencesStore.getState().customEndpoints,
-      ).then((epKeys) => {
-        if (!alive) return;
-        setCustomEndpointKeys(epKeys);
-      });
+      void getAllCustomEndpointKeys(usePreferencesStore.getState().customEndpoints).then(
+        (epKeys) => {
+          if (!alive) return;
+          setCustomEndpointKeys(epKeys);
+        },
+      );
     };
     loadProviderKeys();
     const unlistenP = onKeysChanged(reload);
@@ -89,9 +78,7 @@ export function useAiBootstrap(): {
   useEffect(() => {
     if (!prefsHydrated) return;
     let alive = true;
-    void getAllCustomEndpointKeys(
-      usePreferencesStore.getState().customEndpoints,
-    ).then((epKeys) => {
+    void getAllCustomEndpointKeys(usePreferencesStore.getState().customEndpoints).then((epKeys) => {
       if (alive) setCustomEndpointKeys(epKeys);
     });
     return () => {
@@ -113,8 +100,8 @@ export function useAiBootstrap(): {
 
   useEffect(() => {
     void hydrateSessions().catch((error: unknown) => {
-      toast.error("Could not load chat history", {
-        id: "chat-history-load",
+      toast.error('Could not load chat history', {
+        id: 'chat-history-load',
         description: String(error),
       });
     });

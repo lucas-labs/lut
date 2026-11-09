@@ -1,7 +1,7 @@
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import { useEffect } from "react";
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import { useEffect } from 'react';
 
-const CSS_VAR = "--editor-font-size";
+const CSS_VAR = '--editor-font-size';
 
 export function useApplyEditorFontSize(): void {
   const fontSize = usePreferencesStore((s) => s.editorFontSize);

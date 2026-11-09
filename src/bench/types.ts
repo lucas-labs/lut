@@ -1,4 +1,4 @@
-import type { Tab } from "@/modules/tabs";
+import type { Tab } from '@/modules/tabs';
 
 /** What the scenario driver may do to the running application: the app's own tab actions. */
 export type BenchAppApi = {
@@ -14,7 +14,7 @@ export type BenchAppApi = {
     title: string,
     instances: 1 | 2 | 3 | 4,
   ) => { tabId: number; leafIds: number[] };
-  splitActivePane: (tabId: number, dir: "row" | "col") => number | null;
+  splitActivePane: (tabId: number, dir: 'row' | 'col') => number | null;
   closeTab: (id: number) => void;
   readBuffer: (leafId: number, maxLines?: number) => string | null;
 };
@@ -22,14 +22,14 @@ export type BenchAppApi = {
 /** One scenario, as written by scripts/app-lab/run.py into TERAX_BENCH_SCENARIO. */
 export type BenchScenario = {
   name:
-    | "tabs"
-    | "resize"
-    | "split-drag"
-    | "occlusion"
-    | "agents-steady"
-    | "idle"
-    | "fs-churn"
-    | "input";
+    | 'tabs'
+    | 'resize'
+    | 'split-drag'
+    | 'occlusion'
+    | 'agents-steady'
+    | 'idle'
+    | 'fs-churn'
+    | 'input';
   /** tabs: "2" (shell + agent) or "4" (shell, agent, agent+shell split, shell). */
   variant?: string;
   /** Shell command that starts the synthetic agent (see scripts/app-lab/agent-sim.mjs). */
@@ -56,7 +56,7 @@ export type BenchScenario = {
   /** Working directories of new shell and agent tabs (the first tab uses the launch directory). */
   cwds?: { shell?: string; agent?: string };
   /** After the idle tail, request a full garbage collection (WebKit's testing SPI, or allocation pressure from the page) and sample again. */
-  gc?: "private" | "alloc";
+  gc?: 'private' | 'alloc';
   /** idle: suspected wakeup source to remove before measuring ("blur" the focused element, "caret-transparent"). */
   probe?: string;
   /** Mitigation probe (see ScenarioRun.startValve): periodic allocation pressure. */

@@ -11,10 +11,7 @@ const MAX_PREFIX = 4000;
 const MAX_SUFFIX = 2000;
 
 export function trimContext(prefix: string, suffix: string) {
-  const p =
-    prefix.length > MAX_PREFIX
-      ? prefix.slice(prefix.length - MAX_PREFIX)
-      : prefix;
+  const p = prefix.length > MAX_PREFIX ? prefix.slice(prefix.length - MAX_PREFIX) : prefix;
   const s = suffix.length > MAX_SUFFIX ? suffix.slice(0, MAX_SUFFIX) : suffix;
   return { prefix: p, suffix: s };
 }
@@ -64,13 +61,9 @@ export function buildUserPrompt(req: CompletionRequest): string {
   if (req.filename) meta.push(`File: ${req.filename}`);
   if (req.language) meta.push(`Language: ${req.language}`);
   if (req.indentUnit) {
-    meta.push(
-      req.indentUnit === "\t"
-        ? "Indent: tabs"
-        : `Indent: ${req.indentUnit.length} spaces`,
-    );
+    meta.push(req.indentUnit === '\t' ? 'Indent: tabs' : `Indent: ${req.indentUnit.length} spaces`);
   }
-  const metaBlock = meta.length ? meta.join("\n") + "\n\n" : "";
+  const metaBlock = meta.length ? meta.join('\n') + '\n\n' : '';
 
   return `${metaBlock}PREFIX:
 <<<

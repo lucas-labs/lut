@@ -1,9 +1,9 @@
-import { CodeIcon, HashtagIcon, TerminalIcon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import type { ReactNode } from "react";
-import type { FileAttachment } from "../lib/composer";
-import type { Snippet } from "../lib/snippets";
-import { Chip } from "./Chip";
+import { CodeIcon, HashtagIcon, TerminalIcon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import type { ReactNode } from 'react';
+import type { FileAttachment } from '../lib/composer';
+import type { Snippet } from '../lib/snippets';
+import { Chip } from './Chip';
 
 type CommandChip = { name: string; label: string; icon: typeof HashtagIcon };
 
@@ -27,8 +27,7 @@ export function ChipsRow({
   onRemoveCommand,
   leading,
 }: Props) {
-  const hasAttachments =
-    files.length > 0 || snippets.length > 0 || commands.length > 0;
+  const hasAttachments = files.length > 0 || snippets.length > 0 || commands.length > 0;
   if (!leading && !hasAttachments) return null;
   return (
     <div className="flex flex-wrap items-center gap-1.5">
@@ -57,15 +56,9 @@ export function ChipsRow({
         </Chip>
       ))}
       {files.map((f) => (
-        <Chip
-          key={f.id}
-          iconNode={fileIcon(f)}
-          onRemove={() => onRemoveFile(f.id)}
-        >
+        <Chip key={f.id} iconNode={fileIcon(f)} onRemove={() => onRemoveFile(f.id)}>
           {f.name}
-          {f.kind === "selection" && f.text ? (
-            <span className="ml-1 opacity-60">· {selLineCount(f.text)}L</span>
-          ) : null}
+          {f.kind === 'selection' && f.text ? <span className="ml-1 opacity-60">· {selLineCount(f.text)}L</span> : null}
         </Chip>
       ))}
     </div>
@@ -73,34 +66,30 @@ export function ChipsRow({
 }
 
 function fileIcon(f: FileAttachment): ReactNode {
-  if (f.kind === "image" && f.url) {
+  if (f.kind === 'image' && f.url) {
     return <img src={f.url} alt="" className="size-4 shrink-0 rounded object-cover" />;
   }
-  if (f.kind === "selection") {
+  if (f.kind === 'selection') {
     return (
       <HugeiconsIcon
-        icon={f.source === "editor" ? CodeIcon : TerminalIcon}
+        icon={f.source === 'editor' ? CodeIcon : TerminalIcon}
         size={11}
         strokeWidth={1.75}
         className="shrink-0 opacity-80"
       />
     );
   }
-  return (
-    <span className="shrink-0 font-mono text-[10px] opacity-70">
-      {extOf(f.name)}
-    </span>
-  );
+  return <span className="shrink-0 font-mono text-[10px] opacity-70">{extOf(f.name)}</span>;
 }
 
 function selLineCount(text: string): number {
   if (!text) return 0;
-  const trimmed = text.replace(/\n+$/, "");
+  const trimmed = text.replace(/\n+$/, '');
   if (!trimmed) return 0;
-  return trimmed.split("\n").length;
+  return trimmed.split('\n').length;
 }
 
 function extOf(name: string): string {
-  const i = name.lastIndexOf(".");
-  return i === -1 ? "FILE" : name.slice(i + 1).toUpperCase();
+  const i = name.lastIndexOf('.');
+  return i === -1 ? 'FILE' : name.slice(i + 1).toUpperCase();
 }

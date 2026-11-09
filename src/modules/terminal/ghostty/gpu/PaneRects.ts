@@ -34,7 +34,7 @@ export type DeviceRect = {
  * `snapOffsetCss`), so a pane edge and the DOM next to it always meet on the same pixel.
  */
 export function canvasOriginDevice(
-  area: Pick<CssRect, "left" | "top">,
+  area: Pick<CssRect, 'left' | 'top'>,
   scale: number,
 ): { readonly x: number; readonly y: number } {
   return {
@@ -50,16 +50,14 @@ export function canvasOriginDevice(
  */
 export function snapPaneRect(
   pane: CssRect,
-  area: Pick<CssRect, "left" | "top">,
+  area: Pick<CssRect, 'left' | 'top'>,
   scale: number,
 ): DeviceRect {
   const origin = canvasOriginDevice(area, scale);
   const x0 = Math.round(finite(pane.left) * scale) - origin.x;
   const y0 = Math.round(finite(pane.top) * scale) - origin.y;
-  const x1 =
-    Math.round((finite(pane.left) + finite(pane.width)) * scale) - origin.x;
-  const y1 =
-    Math.round((finite(pane.top) + finite(pane.height)) * scale) - origin.y;
+  const x1 = Math.round((finite(pane.left) + finite(pane.width)) * scale) - origin.x;
+  const y1 = Math.round((finite(pane.top) + finite(pane.height)) * scale) - origin.y;
   return {
     x: x0,
     y: y0,
@@ -90,10 +88,7 @@ export function clampToCanvas(
   return clipX > 0 || clipY > 0 ? { ...clamped, clipX, clipY } : clamped;
 }
 
-export function deviceRectsEqual(
-  a: DeviceRect | null,
-  b: DeviceRect | null,
-): boolean {
+export function deviceRectsEqual(a: DeviceRect | null, b: DeviceRect | null): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
   return (
@@ -109,12 +104,7 @@ export function deviceRectsEqual(
 export function cssRectsEqual(a: CssRect | null, b: CssRect | null): boolean {
   if (a === b) return true;
   if (!a || !b) return false;
-  return (
-    a.left === b.left &&
-    a.top === b.top &&
-    a.width === b.width &&
-    a.height === b.height
-  );
+  return a.left === b.left && a.top === b.top && a.width === b.width && a.height === b.height;
 }
 
 function finite(value: number): number {

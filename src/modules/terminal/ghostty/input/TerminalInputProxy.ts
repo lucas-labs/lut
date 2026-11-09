@@ -15,16 +15,16 @@
  * selection and is announced by screen readers. Elsewhere (`placeholder:
  * false`) the field stays empty with a collapsed selection, as before.
  */
-export const TERMINAL_INPUT_PLACEHOLDER = " ";
+export const TERMINAL_INPUT_PLACEHOLDER = ' ';
 
 type ProxyInput = Pick<
   HTMLTextAreaElement,
-  | "value"
-  | "selectionStart"
-  | "selectionEnd"
-  | "setSelectionRange"
-  | "addEventListener"
-  | "removeEventListener"
+  | 'value'
+  | 'selectionStart'
+  | 'selectionEnd'
+  | 'setSelectionRange'
+  | 'addEventListener'
+  | 'removeEventListener'
 >;
 
 export type TerminalInputProxyOptions = {
@@ -42,24 +42,22 @@ export class TerminalInputProxy {
     options: TerminalInputProxyOptions = { placeholder: true },
   ) {
     this.placeholder = options.placeholder;
-    for (const [type, listener] of this.listeners())
-      input.addEventListener(type, listener);
+    for (const [type, listener] of this.listeners()) input.addEventListener(type, listener);
     this.arm();
   }
 
   dispose(): void {
-    for (const [type, listener] of this.listeners())
-      this.input.removeEventListener(type, listener);
+    for (const [type, listener] of this.listeners()) this.input.removeEventListener(type, listener);
   }
 
   private listeners(): [string, EventListener][] {
     return [
-      ["compositionstart", this.compositionStart],
-      ["compositionend", this.compositionEnd],
-      ["input", this.settle],
-      ["keyup", this.settle],
-      ["focus", this.settle],
-      ["blur", this.blur],
+      ['compositionstart', this.compositionStart],
+      ['compositionend', this.compositionEnd],
+      ['input', this.settle],
+      ['keyup', this.settle],
+      ['focus', this.settle],
+      ['blur', this.blur],
     ];
   }
 
@@ -68,13 +66,11 @@ export class TerminalInputProxy {
     if (this.composing || this.exposed) return;
     const { input } = this;
     if (!this.placeholder) {
-      if (input.value !== "") input.value = "";
+      if (input.value !== '') input.value = '';
       return;
     }
-    if (input.value !== TERMINAL_INPUT_PLACEHOLDER)
-      input.value = TERMINAL_INPUT_PLACEHOLDER;
-    if (input.selectionStart !== 0 || input.selectionEnd !== 1)
-      input.setSelectionRange(0, 1);
+    if (input.value !== TERMINAL_INPUT_PLACEHOLDER) input.value = TERMINAL_INPUT_PLACEHOLDER;
+    if (input.selectionStart !== 0 || input.selectionEnd !== 1) input.setSelectionRange(0, 1);
   }
 
   /**

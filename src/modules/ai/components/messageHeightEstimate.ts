@@ -23,7 +23,7 @@ function textLines(text: string): number {
   let lines = 0;
   let start = 0;
   for (;;) {
-    const end = text.indexOf("\n", start);
+    const end = text.indexOf('\n', start);
     const length = (end === -1 ? text.length : end) - start;
     lines += Math.max(1, Math.ceil(length / CHARS_PER_LINE));
     if (end === -1) return lines;
@@ -32,10 +32,10 @@ function textLines(text: string): number {
 }
 
 export function estimateMessageHeight(message: EstimableMessage): number {
-  let height = message.role === "user" ? USER_BUBBLE_PADDING_PX : 0;
+  let height = message.role === 'user' ? USER_BUBBLE_PADDING_PX : 0;
   for (const part of message.parts) {
     height +=
-      part.type === "text" && typeof part.text === "string"
+      part.type === 'text' && typeof part.text === 'string'
         ? textLines(part.text) * LINE_PX
         : NON_TEXT_PART_PX;
     height += PART_GAP_PX;

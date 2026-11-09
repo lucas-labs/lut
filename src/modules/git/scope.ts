@@ -1,4 +1,4 @@
-import type { CheckpointEndpoint, DiffSide, GitDiffScope } from "./types";
+import type { CheckpointEndpoint, DiffSide, GitDiffScope } from './types';
 
 const SHORT_SHA = 7;
 
@@ -12,27 +12,25 @@ function checkpointRefLabel(name: string): string {
 }
 
 function endpointLabel(endpoint: CheckpointEndpoint): string {
-  return endpoint.kind === "worktree"
-    ? "working tree"
-    : checkpointRefLabel(endpoint.name);
+  return endpoint.kind === 'worktree' ? 'working tree' : checkpointRefLabel(endpoint.name);
 }
 
 /** Human label for a scope, as shown in the review view's scope picker. */
 export function scopeLabel(scope: GitDiffScope): string {
   switch (scope.kind) {
-    case "uncommitted":
-      return "Uncommitted changes";
-    case "staged":
-      return "Staged changes";
-    case "unstaged":
-      return "Unstaged changes";
-    case "range":
+    case 'uncommitted':
+      return 'Uncommitted changes';
+    case 'staged':
+      return 'Staged changes';
+    case 'unstaged':
+      return 'Unstaged changes';
+    case 'range':
       return `${shortRev(scope.head)} vs ${shortRev(scope.base)}`;
-    case "commit":
+    case 'commit':
       return `Commit ${shortRev(scope.sha)}`;
-    case "checkpoint": {
+    case 'checkpoint': {
       const { from, to } = scope;
-      if (to.kind === "worktree" && from.kind === "ref") {
+      if (to.kind === 'worktree' && from.kind === 'ref') {
         return `Since ${checkpointRefLabel(from.name)}`;
       }
       return `${endpointLabel(from)} to ${endpointLabel(to)}`;
@@ -46,17 +44,16 @@ export function scopeLabel(scope: GitDiffScope): string {
  */
 export function scopeKey(scope: GitDiffScope): string {
   switch (scope.kind) {
-    case "uncommitted":
-    case "staged":
-    case "unstaged":
+    case 'uncommitted':
+    case 'staged':
+    case 'unstaged':
       return scope.kind;
-    case "range":
+    case 'range':
       return `range:${scope.base}...${scope.head}`;
-    case "commit":
+    case 'commit':
       return `commit:${scope.sha}`;
-    case "checkpoint": {
-      const end = (e: CheckpointEndpoint) =>
-        e.kind === "worktree" ? "@worktree" : e.name;
+    case 'checkpoint': {
+      const end = (e: CheckpointEndpoint) => (e.kind === 'worktree' ? '@worktree' : e.name);
       return `checkpoint:${end(scope.from)}..${end(scope.to)}`;
     }
   }
@@ -72,13 +69,13 @@ export function freezeScope(
   scope: GitDiffScope,
   summary: { from: DiffSide; to: DiffSide },
 ): GitDiffScope {
-  if (scope.kind !== "checkpoint") return scope;
+  if (scope.kind !== 'checkpoint') return scope;
   const pin = (end: CheckpointEndpoint, side: DiffSide): CheckpointEndpoint =>
-    end.kind === "worktree" && side.kind === "worktree" && side.tree
-      ? { kind: "worktree", tree: side.tree }
+    end.kind === 'worktree' && side.kind === 'worktree' && side.tree
+      ? { kind: 'worktree', tree: side.tree }
       : end;
   return {
-    kind: "checkpoint",
+    kind: 'checkpoint',
     from: pin(scope.from, summary.from),
     to: pin(scope.to, summary.to),
   };
@@ -94,12 +91,12 @@ export function sameScope(a: GitDiffScope, b: GitDiffScope): boolean {
  */
 export function isLiveScope(scope: GitDiffScope): boolean {
   switch (scope.kind) {
-    case "uncommitted":
-    case "staged":
-    case "unstaged":
+    case 'uncommitted':
+    case 'staged':
+    case 'unstaged':
       return true;
-    case "checkpoint":
-      return scope.from.kind === "worktree" || scope.to.kind === "worktree";
+    case 'checkpoint':
+      return scope.from.kind === 'worktree' || scope.to.kind === 'worktree';
     default:
       return false;
   }
@@ -112,9 +109,9 @@ export function supportsHunkActions(scope: GitDiffScope): {
   revert: boolean;
 } {
   return {
-    stage: scope.kind === "unstaged",
-    unstage: scope.kind === "staged",
-    revert: scope.kind === "unstaged" || scope.kind === "uncommitted",
+    stage: scope.kind === 'unstaged',
+    unstage: scope.kind === 'staged',
+    revert: scope.kind === 'unstaged' || scope.kind === 'uncommitted',
   };
 }
 
@@ -126,22 +123,22 @@ export function checkpointRef(taskId: string, turn: number): string {
 /** "Last agent turn": the previous checkpoint against the working tree. */
 export function sinceCheckpointScope(ref: string): GitDiffScope {
   return {
-    kind: "checkpoint",
-    from: { kind: "ref", name: ref },
-    to: { kind: "worktree" },
+    kind: 'checkpoint',
+    from: { kind: 'ref', name: ref },
+    to: { kind: 'worktree' },
   };
 }
 
 /** "Turn N": checkpoint N-1 against checkpoint N. */
 export function turnScope(fromRef: string, toRef: string): GitDiffScope {
   return {
-    kind: "checkpoint",
-    from: { kind: "ref", name: fromRef },
-    to: { kind: "ref", name: toRef },
+    kind: 'checkpoint',
+    from: { kind: 'ref', name: fromRef },
+    to: { kind: 'ref', name: toRef },
   };
 }
 
 /** "Task vs base branch": three-dot against the base branch. */
-export function taskScope(baseBranch: string, head = "HEAD"): GitDiffScope {
-  return { kind: "range", base: baseBranch, head };
+export function taskScope(baseBranch: string, head = 'HEAD'): GitDiffScope {
+  return { kind: 'range', base: baseBranch, head };
 }

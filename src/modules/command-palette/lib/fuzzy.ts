@@ -8,7 +8,7 @@ const BONUS_EXACT_CASE = 1;
 const MAX_GAP_PENALTY = 3;
 
 function isBoundary(ch: string): boolean {
-  return ch === " " || ch === "-" || ch === "_" || ch === "/" || ch === ".";
+  return ch === ' ' || ch === '-' || ch === '_' || ch === '/' || ch === '.';
 }
 
 function isCamelStart(target: string, i: number): boolean {
@@ -35,8 +35,7 @@ export function fuzzyScore(query: string, target: string): number | null {
     if (ti === 0 || isBoundary(t[ti - 1])) bonus += BONUS_BOUNDARY;
     else if (isCamelStart(target, ti)) bonus += BONUS_CAMEL;
     if (lastMatch === ti - 1) bonus += BONUS_CONSECUTIVE;
-    else if (lastMatch >= 0)
-      bonus -= Math.min(ti - lastMatch - 1, MAX_GAP_PENALTY);
+    else if (lastMatch >= 0) bonus -= Math.min(ti - lastMatch - 1, MAX_GAP_PENALTY);
     if (target[ti] === query[qi]) bonus += BONUS_EXACT_CASE;
 
     score += bonus;

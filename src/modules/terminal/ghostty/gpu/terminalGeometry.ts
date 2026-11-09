@@ -1,5 +1,5 @@
-import type { TerminalSelectionBounds } from "../selection/TerminalSelectionController";
-import type { TerminalFontMetrics } from "./terminalVisuals";
+import type { TerminalSelectionBounds } from '../selection/TerminalSelectionController';
+import type { TerminalFontMetrics } from './terminalVisuals';
 
 const INT32_LIMIT = 0x3fff_ffff;
 
@@ -40,9 +40,7 @@ export const NO_SELECTION: SelectionUniform = {
   right: 0,
 };
 
-export function decorationMetrics(
-  metrics: TerminalFontMetrics,
-): DecorationMetrics {
+export function decorationMetrics(metrics: TerminalFontMetrics): DecorationMetrics {
   return {
     baseline: metrics.deviceBaseline,
     thickness: strokeThickness(metrics.scale, 1),
@@ -57,28 +55,22 @@ export function cursorThickness(scale: number): number {
 
 export function cursorRect(
   cursor: { readonly x: number; readonly y: number },
-  style: "block" | "underline" | "bar",
+  style: 'block' | 'underline' | 'bar',
   metrics: TerminalFontMetrics,
 ): CursorRect {
   const { deviceCellWidth: width, deviceCellHeight: height } = metrics;
-  const thickness = Math.min(
-    cursorThickness(metrics.scale),
-    style === "bar" ? width : height,
-  );
+  const thickness = Math.min(cursorThickness(metrics.scale), style === 'bar' ? width : height);
   const x = cursor.x * width;
   const y = cursor.y * height;
-  if (style === "bar") return { x, y, width: thickness, height };
-  if (style === "underline") {
+  if (style === 'bar') return { x, y, width: thickness, height };
+  if (style === 'underline') {
     return { x, y: y + height - thickness, width, height: thickness };
   }
   return { x, y, width, height };
 }
 
 /** Left glyph overhang tolerated before a differently coloured neighbour clips it. */
-export function leftOverhangPadding(
-  letterSpacing: number,
-  scale: number,
-): number {
+export function leftOverhangPadding(letterSpacing: number, scale: number): number {
   return Math.max(0, Math.floor((letterSpacing * scale) / 2));
 }
 
@@ -108,10 +100,7 @@ export function selectionUniform(
   };
 }
 
-export function selectionUniformEqual(
-  left: SelectionUniform,
-  right: SelectionUniform,
-): boolean {
+export function selectionUniformEqual(left: SelectionUniform, right: SelectionUniform): boolean {
   return (
     left.active === right.active &&
     left.rectangular === right.rectangular &&

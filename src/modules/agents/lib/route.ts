@@ -1,11 +1,11 @@
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import { showAgentToast } from "../components/AgentToast";
-import { useAgentStore } from "../store/agentStore";
-import { resolveAgentNotificationDelivery } from "./delivery";
-import { createAgentNotificationGate } from "./notificationGate";
-import { osNotify } from "./notify";
-import { playAgentNotificationSound } from "./sound";
-import type { AgentSource, NotificationKind } from "./types";
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import { showAgentToast } from '../components/AgentToast';
+import { useAgentStore } from '../store/agentStore';
+import { resolveAgentNotificationDelivery } from './delivery';
+import { createAgentNotificationGate } from './notificationGate';
+import { osNotify } from './notify';
+import { playAgentNotificationSound } from './sound';
+import type { AgentSource, NotificationKind } from './types';
 
 const shouldDeliver = createAgentNotificationGate();
 
@@ -45,23 +45,20 @@ export function routeAgentNotification({
     visible,
     allowToast,
   });
-  if (delivery === "none") return;
+  if (delivery === 'none') return;
   if (!shouldDeliver({ source, agent, kind, tabId, leafId })) return;
 
   useAgentStore.getState().pushNotification({ source, agent, kind, tabId, leafId });
 
-  if (delivery === "native") {
+  if (delivery === 'native') {
     void osNotify(title, body ?? agent).then((result) => {
-      if (
-        result === "requested" &&
-        usePreferencesStore.getState().agentNotificationSound
-      ) {
+      if (result === 'requested' && usePreferencesStore.getState().agentNotificationSound) {
         playAgentNotificationSound();
       }
     });
     return;
   }
-  if (delivery === "toast") {
+  if (delivery === 'toast') {
     if (preferences.agentNotificationSound) playAgentNotificationSound();
     showAgentToast({ agent, title, body, onActivate });
   }

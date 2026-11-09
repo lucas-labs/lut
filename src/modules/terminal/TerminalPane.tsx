@@ -1,23 +1,11 @@
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import type { TerminalSearchController } from "@/modules/terminal/search/TerminalSearchController";
-import { useTheme } from "@/modules/theme";
-import {
-  forwardRef,
-  lazy,
-  memo,
-  Suspense,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-  useState,
-} from "react";
-import type { TerminalBackendKind } from "./backend/contracts";
-import { terminalBackendFor } from "./backend/selection";
-import { ghosttyBlocks } from "./ghostty/ghosttyBlockSessions";
-import {
-  ghosttyBlockGeometry,
-  useGhosttyTerminalSession,
-} from "./ghostty/useGhosttyTerminalSession";
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import type { TerminalSearchController } from '@/modules/terminal/search/TerminalSearchController';
+import { useTheme } from '@/modules/theme';
+import { forwardRef, lazy, memo, Suspense, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import type { TerminalBackendKind } from './backend/contracts';
+import { terminalBackendFor } from './backend/selection';
+import { ghosttyBlocks } from './ghostty/ghosttyBlockSessions';
+import { ghosttyBlockGeometry, useGhosttyTerminalSession } from './ghostty/useGhosttyTerminalSession';
 
 export type TerminalPaneHandle = {
   write: (data: string) => void;
@@ -43,10 +31,8 @@ export type TerminalPaneProps = {
   onCwd?: (leafId: number, cwd: string) => void;
 };
 
-const TerminalAccessibleOutput = lazy(
-  () => import("./ghostty/TerminalAccessibleOutput"),
-);
-const GhosttyBlockOverlay = lazy(() => import("./ghostty/GhosttyBlockOverlay"));
+const TerminalAccessibleOutput = lazy(() => import('./ghostty/TerminalAccessibleOutput'));
+const GhosttyBlockOverlay = lazy(() => import('./ghostty/GhosttyBlockOverlay'));
 
 const GhosttyTerminalPane = memo(
   forwardRef<
@@ -55,22 +41,10 @@ const GhosttyTerminalPane = memo(
       backend: Extract<TerminalBackendKind, `ghostty-${string}`>;
     }
   >(function GhosttyTerminalPane(
-    {
-      leafId,
-      visible,
-      focused = true,
-      initialCwd,
-      blocks = false,
-      onSearchReady,
-      onExit,
-      onCwd,
-      backend,
-    },
+    { leafId, visible, focused = true, initialCwd, blocks = false, onSearchReady, onExit, onCwd, backend },
     ref,
   ) {
-    const screenReader = usePreferencesStore(
-      (state) => state.terminalScreenReader,
-    );
+    const screenReader = usePreferencesStore((state) => state.terminalScreenReader);
     const containerRef = useRef<HTMLDivElement>(null);
     const down = useRef<{ x: number; y: number } | null>(null);
     const { resolvedMode, activeTheme } = useTheme();
@@ -110,8 +84,8 @@ const GhosttyTerminalPane = memo(
       <div
         className="zoom-exempt relative h-full w-full overflow-hidden"
         style={{
-          visibility: visible ? "visible" : "hidden",
-          pointerEvents: visible ? "auto" : "none",
+          visibility: visible ? 'visible' : 'hidden',
+          pointerEvents: visible ? 'auto' : 'none',
         }}
         onPointerDownCapture={
           blocks
@@ -140,21 +114,14 @@ const GhosttyTerminalPane = memo(
                   origin &&
                   geometry &&
                   geometry.height > 0 &&
-                  Math.hypot(
-                    event.clientX - origin.x,
-                    event.clientY - origin.y,
-                  ) <= 4 &&
+                  Math.hypot(event.clientX - origin.x, event.clientY - origin.y) <= 4 &&
                   !state?.model?.trackedSelection?.()
                 ) {
-                  const row = Math.floor(
-                    (event.clientY - geometry.top) / geometry.height,
-                  );
+                  const row = Math.floor((event.clientY - geometry.top) / geometry.height);
                   if (state?.model && row >= 0 && row < state.model.rows)
-                    state.controller?.selectAtLine(
-                      state.model.bufferLineAtViewportRow(row),
-                    );
+                    state.controller?.selectAtLine(state.model.bufferLineAtViewportRow(row));
                 }
-                if (state?.getMode() === "prompt") state.focus?.();
+                if (state?.getMode() === 'prompt') state.focus?.();
               }
             : undefined
         }
@@ -182,25 +149,18 @@ const GhosttyTerminalPane = memo(
             className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background p-6 text-center text-sm"
           >
             <strong>
-              {session.error.kind === "renderer"
-                ? "Unable to display terminal"
-                : "Unable to start terminal"}
+              {session.error.kind === 'renderer' ? 'Unable to display terminal' : 'Unable to start terminal'}
             </strong>
-            <p className="max-w-md break-words text-muted-foreground">
-              {session.error.message}
-            </p>
-            {session.error.kind === "renderer" && (
-              <p className="text-muted-foreground">
-                Your terminal session is preserved. Retry to restore its
-                display.
-              </p>
+            <p className="max-w-md break-words text-muted-foreground">{session.error.message}</p>
+            {session.error.kind === 'renderer' && (
+              <p className="text-muted-foreground">Your terminal session is preserved. Retry to restore its display.</p>
             )}
             <button
               type="button"
               className="rounded-md border px-3 py-1.5 hover:bg-accent focus-visible:outline-2"
               onClick={session.retry}
             >
-              {session.error.kind === "renderer" ? "Retry display" : "Retry"}
+              {session.error.kind === 'renderer' ? 'Retry display' : 'Retry'}
             </button>
           </div>
         )}
@@ -210,12 +170,8 @@ const GhosttyTerminalPane = memo(
 );
 
 export const TerminalPane = memo(
-  forwardRef<TerminalPaneHandle, TerminalPaneProps>(
-    function TerminalPane(props, ref) {
-      const [backend] = useState(() =>
-        terminalBackendFor(usePreferencesStore.getState().terminalRenderer),
-      );
-      return <GhosttyTerminalPane ref={ref} {...props} backend={backend} />;
-    },
-  ),
+  forwardRef<TerminalPaneHandle, TerminalPaneProps>(function TerminalPane(props, ref) {
+    const [backend] = useState(() => terminalBackendFor(usePreferencesStore.getState().terminalRenderer));
+    return <GhosttyTerminalPane ref={ref} {...props} backend={backend} />;
+  }),
 );

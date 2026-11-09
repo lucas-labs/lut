@@ -21,8 +21,7 @@ export function focusUntilActive(
   const run = (): void => {
     if (!canFocus()) return;
     const holder = document.activeElement;
-    if (holder === target || (holder !== null && holder !== document.body))
-      return;
+    if (holder === target || (holder !== null && holder !== document.body)) return;
     focus();
     if (document.activeElement === target || attempt >= delays.length) return;
     timer = setTimeout(() => {

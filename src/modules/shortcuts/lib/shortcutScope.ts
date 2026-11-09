@@ -1,11 +1,11 @@
-import type { ShortcutId } from "@/modules/shortcuts/shortcuts";
+import type { ShortcutId } from '@/modules/shortcuts/shortcuts';
 
 function isPaneSwapShortcut(id: ShortcutId): boolean {
   return (
-    id === "pane.swapLeft" ||
-    id === "pane.swapRight" ||
-    id === "pane.swapUp" ||
-    id === "pane.swapDown"
+    id === 'pane.swapLeft' ||
+    id === 'pane.swapRight' ||
+    id === 'pane.swapUp' ||
+    id === 'pane.swapDown'
   );
 }
 
@@ -13,10 +13,7 @@ export function shouldDisablePaneSwapShortcut(
   id: ShortcutId,
   terminalPaneCount: number | null,
 ): boolean {
-  return (
-    isPaneSwapShortcut(id) &&
-    (terminalPaneCount === null || terminalPaneCount < 2)
-  );
+  return isPaneSwapShortcut(id) && (terminalPaneCount === null || terminalPaneCount < 2);
 }
 
 /**
@@ -26,7 +23,7 @@ export function shouldDisablePaneSwapShortcut(
  * user's plain Ctrl+J (a newline), are left to the shell.
  */
 export function shouldDisableAskSelection(
-  event: Pick<KeyboardEvent, "ctrlKey" | "shiftKey">,
+  event: Pick<KeyboardEvent, 'ctrlKey' | 'shiftKey'>,
   inTerminal: () => boolean,
   hasSelection: () => boolean,
 ): boolean {

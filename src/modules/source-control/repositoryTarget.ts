@@ -1,16 +1,13 @@
-import type { SidebarViewId } from "@/modules/sidebar";
-import type { Tab } from "@/modules/tabs";
+import type { SidebarViewId } from '@/modules/sidebar';
+import type { Tab } from '@/modules/tabs';
 
 export type SourceControlRepositoryTarget =
-  | { mode: "follow-context" }
-  | { mode: "fixed"; repoRoot: string };
+  { mode: 'follow-context' } | { mode: 'fixed'; repoRoot: string };
 
-export type SourceControlRepositoryTargets = Readonly<
-  Record<string, string>
->;
+export type SourceControlRepositoryTargets = Readonly<Record<string, string>>;
 
 const FOLLOW_CONTEXT: SourceControlRepositoryTarget = {
-  mode: "follow-context",
+  mode: 'follow-context',
 };
 
 function targetScopeKey(spaceId: string, workspaceKey: string): string {
@@ -19,10 +16,10 @@ function targetScopeKey(spaceId: string, workspaceKey: string): string {
 
 function dirname(path: string | null): string | null {
   if (!path) return null;
-  const normalized = path.replace(/\\/g, "/");
-  const index = normalized.lastIndexOf("/");
+  const normalized = path.replace(/\\/g, '/');
+  const index = normalized.lastIndexOf('/');
   if (index < 0) return normalized;
-  if (index === 0) return "/";
+  if (index === 0) return '/';
   if (index === 2 && /^[A-Za-z]:\//.test(normalized)) {
     return normalized.slice(0, 3);
   }
@@ -35,9 +32,7 @@ export function repositoryTargetForSpace(
   workspaceKey: string,
 ): SourceControlRepositoryTarget {
   const repoRoot = targets[targetScopeKey(spaceId, workspaceKey)];
-  return repoRoot
-    ? { mode: "fixed", repoRoot }
-    : FOLLOW_CONTEXT;
+  return repoRoot ? { mode: 'fixed', repoRoot } : FOLLOW_CONTEXT;
 }
 
 export function setRepositoryTargetForSpace(
@@ -74,13 +69,13 @@ export function activeRepositoryContextPath({
   explorerRoot: string | null;
   workspaceFallbackPath: string | null;
 }): string | null {
-  if (activeTab?.kind === "terminal") {
+  if (activeTab?.kind === 'terminal') {
     return activeTerminalLeafCwd ?? explorerRoot ?? workspaceFallbackPath;
   }
-  if (activeTab?.kind === "editor") return dirname(activeTab.path);
-  if (activeTab?.kind === "git-diff") return activeTab.repoRoot;
-  if (activeTab?.kind === "git-commit-file") return activeTab.repoRoot;
-  if (activeTab?.kind === "git-history") return activeTab.repoRoot;
+  if (activeTab?.kind === 'editor') return dirname(activeTab.path);
+  if (activeTab?.kind === 'git-diff') return activeTab.repoRoot;
+  if (activeTab?.kind === 'git-commit-file') return activeTab.repoRoot;
+  if (activeTab?.kind === 'git-history') return activeTab.repoRoot;
   return explorerRoot ?? workspaceFallbackPath;
 }
 
@@ -97,12 +92,10 @@ export function sourceControlRepositoryPath({
   hasOpenGitTab: boolean;
   target: SourceControlRepositoryTarget;
 }): string | null {
-  if (sidebarView === "source-control" && target.mode === "fixed") {
+  if (sidebarView === 'source-control' && target.mode === 'fixed') {
     return target.repoRoot;
   }
-  return hasOpenGitTab || sidebarView === "source-control"
-    ? contextPath
-    : badgeContextPath;
+  return hasOpenGitTab || sidebarView === 'source-control' ? contextPath : badgeContextPath;
 }
 
 export function gitGraphRepositoryPath({
@@ -114,7 +107,7 @@ export function gitGraphRepositoryPath({
   sidebarView: SidebarViewId;
   target: SourceControlRepositoryTarget;
 }): string | null {
-  return sidebarView === "source-control" && target.mode === "fixed"
+  return sidebarView === 'source-control' && target.mode === 'fixed'
     ? target.repoRoot
     : contextPath;
 }
@@ -130,7 +123,7 @@ export function repositoryTargetIsPending({
   loadedRepoRoot: string | null;
   isLoading: boolean;
 }): boolean {
-  if (target.mode !== "fixed") return false;
+  if (target.mode !== 'fixed') return false;
   if (loadedContextPath !== target.repoRoot) return true;
   return isLoading && loadedRepoRoot !== target.repoRoot;
 }

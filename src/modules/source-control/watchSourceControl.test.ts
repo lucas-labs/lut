@@ -1,9 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ subscribe: vi.fn() }));
-vi.mock("@/modules/git", () => ({ subscribeGitChanges: mocks.subscribe }));
+vi.mock('@/modules/git', () => ({ subscribeGitChanges: mocks.subscribe }));
 
-import { watchSourceControl } from "./watchSourceControl";
+import { watchSourceControl } from './watchSourceControl';
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -13,7 +13,7 @@ function deferred<T>() {
   return { promise, resolve };
 }
 
-describe("source control watch refresh", () => {
+describe('source control watch refresh', () => {
   let changed: () => void;
   let stop: () => void;
   const release = vi.fn();
@@ -35,10 +35,10 @@ describe("source control watch refresh", () => {
     vi.useRealTimers();
   });
 
-  it("refreshes after registration, coalesces bursts and stays idle without changes", async () => {
-    stop = watchSourceControl("/repo", refresh, () => undefined);
+  it('refreshes after registration, coalesces bursts and stays idle without changes', async () => {
+    stop = watchSourceControl('/repo', refresh, () => undefined);
     await vi.advanceTimersByTimeAsync(200);
-    expect(mocks.subscribe).toHaveBeenCalledWith("/repo", expect.any(Function));
+    expect(mocks.subscribe).toHaveBeenCalledWith('/repo', expect.any(Function));
     expect(refresh).toHaveBeenCalledTimes(1);
     for (let i = 0; i < 100; i++) changed();
     await vi.advanceTimersByTimeAsync(200);
@@ -47,8 +47,8 @@ describe("source control watch refresh", () => {
     expect(refresh).toHaveBeenCalledTimes(2);
   });
 
-  it("does not postpone refresh forever during continuous events", async () => {
-    stop = watchSourceControl("/repo", refresh, () => undefined);
+  it('does not postpone refresh forever during continuous events', async () => {
+    stop = watchSourceControl('/repo', refresh, () => undefined);
     await vi.advanceTimersByTimeAsync(200);
     for (let i = 0; i < 20; i++) {
       changed();
@@ -57,9 +57,9 @@ describe("source control watch refresh", () => {
     expect(refresh).toHaveBeenCalledTimes(6);
   });
 
-  it("waits for an older status request and refreshes once after it", async () => {
+  it('waits for an older status request and refreshes once after it', async () => {
     const old = deferred<void>();
-    stop = watchSourceControl("/repo", refresh, () => old.promise);
+    stop = watchSourceControl('/repo', refresh, () => old.promise);
     await vi.advanceTimersByTimeAsync(200);
     expect(refresh).not.toHaveBeenCalled();
     old.resolve();
@@ -67,10 +67,10 @@ describe("source control watch refresh", () => {
     expect(refresh).toHaveBeenCalledTimes(1);
   });
 
-  it("retains one follow-up when changes arrive during a refresh", async () => {
+  it('retains one follow-up when changes arrive during a refresh', async () => {
     const status = deferred<void>();
     refresh.mockReturnValueOnce(status.promise);
-    stop = watchSourceControl("/repo", refresh, () => undefined);
+    stop = watchSourceControl('/repo', refresh, () => undefined);
     await vi.advanceTimersByTimeAsync(200);
     for (let i = 0; i < 100; i++) changed();
     await vi.advanceTimersByTimeAsync(1000);
@@ -80,8 +80,8 @@ describe("source control watch refresh", () => {
     expect(refresh).toHaveBeenCalledTimes(2);
   });
 
-  it("cancels queued work and releases the watch on hide, context change or unmount", async () => {
-    stop = watchSourceControl("/repo", refresh, () => undefined);
+  it('cancels queued work and releases the watch on hide, context change or unmount', async () => {
+    stop = watchSourceControl('/repo', refresh, () => undefined);
     await vi.advanceTimersByTimeAsync(0);
     stop();
     stop();
@@ -92,10 +92,10 @@ describe("source control watch refresh", () => {
     stop = () => {};
   });
 
-  it("releases a watch that finishes registering after cleanup", async () => {
+  it('releases a watch that finishes registering after cleanup', async () => {
     const registration = deferred<() => void>();
     mocks.subscribe.mockReturnValueOnce(registration.promise);
-    stop = watchSourceControl("/repo", refresh, () => undefined);
+    stop = watchSourceControl('/repo', refresh, () => undefined);
     stop();
     registration.resolve(release);
     await vi.advanceTimersByTimeAsync(1000);
@@ -103,9 +103,9 @@ describe("source control watch refresh", () => {
     expect(refresh).not.toHaveBeenCalled();
   });
 
-  it("does not refresh after disposal while awaiting an older request", async () => {
+  it('does not refresh after disposal while awaiting an older request', async () => {
     const old = deferred<void>();
-    stop = watchSourceControl("/repo", refresh, () => old.promise);
+    stop = watchSourceControl('/repo', refresh, () => old.promise);
     await vi.advanceTimersByTimeAsync(200);
     stop();
     old.resolve();
@@ -113,28 +113,28 @@ describe("source control watch refresh", () => {
     expect(refresh).not.toHaveBeenCalled();
   });
 
-  it("leaves fallback refresh available after watch registration fails", async () => {
-    mocks.subscribe.mockRejectedValueOnce(new Error("watch unavailable"));
-    stop = watchSourceControl("/repo", refresh, () => undefined);
+  it('leaves fallback refresh available after watch registration fails', async () => {
+    mocks.subscribe.mockRejectedValueOnce(new Error('watch unavailable'));
+    stop = watchSourceControl('/repo', refresh, () => undefined);
     await vi.advanceTimersByTimeAsync(1000);
     expect(refresh).not.toHaveBeenCalled();
   });
 
-  it("allows a later event to retry after refresh fails", async () => {
-    refresh.mockRejectedValueOnce(new Error("status failed"));
-    stop = watchSourceControl("/repo", refresh, () => undefined);
+  it('allows a later event to retry after refresh fails', async () => {
+    refresh.mockRejectedValueOnce(new Error('status failed'));
+    stop = watchSourceControl('/repo', refresh, () => undefined);
     await vi.advanceTimersByTimeAsync(200);
     changed();
     await vi.advanceTimersByTimeAsync(200);
     expect(refresh).toHaveBeenCalledTimes(2);
   });
 
-  it("allows a later event after an older request rejects", async () => {
+  it('allows a later event after an older request rejects', async () => {
     const current = vi
       .fn<() => Promise<void> | undefined>()
-      .mockRejectedValueOnce(new Error("old request failed"))
+      .mockRejectedValueOnce(new Error('old request failed'))
       .mockReturnValue(undefined);
-    stop = watchSourceControl("/repo", refresh, current);
+    stop = watchSourceControl('/repo', refresh, current);
     await vi.advanceTimersByTimeAsync(200);
     expect(refresh).not.toHaveBeenCalled();
     changed();

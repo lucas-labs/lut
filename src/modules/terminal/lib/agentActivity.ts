@@ -1,7 +1,7 @@
-import { listen } from "@tauri-apps/api/event";
-import { create } from "zustand";
+import { listen } from '@tauri-apps/api/event';
+import { create } from 'zustand';
 
-export type AgentPhase = "working" | "attention" | "finished" | "idle";
+export type AgentPhase = 'working' | 'attention' | 'finished' | 'idle';
 
 type AgentSignal = {
   id: number;
@@ -37,9 +37,9 @@ export const useAgentActivityStore = create<AgentActivityStore>((set) => ({
     set((s) => {
       let phases: Record<number, AgentPhase> | null = null;
       for (const id of ids) {
-        if (s.phases[id] !== "attention") continue;
+        if (s.phases[id] !== 'attention') continue;
         phases ??= { ...s.phases };
-        phases[id] = "idle";
+        phases[id] = 'idle';
       }
       return phases ? { phases } : s;
     }),
@@ -74,19 +74,17 @@ export function clearAgentActivity(id: number): void {
 
 /** Maps a raw detector signal to the phase it drives, `"exited"` to drop the
  * pty, or `null` to ignore. Pure so the mapping stays unit-testable. */
-export function phaseForSignal(
-  kind: string,
-): Exclude<AgentPhase, "idle"> | "exited" | null {
+export function phaseForSignal(kind: string): Exclude<AgentPhase, 'idle'> | 'exited' | null {
   switch (kind) {
-    case "started":
-    case "working":
-      return "working";
-    case "attention":
-      return "attention";
-    case "finished":
-      return "finished";
-    case "exited":
-      return "exited";
+    case 'started':
+    case 'working':
+      return 'working';
+    case 'attention':
+      return 'attention';
+    case 'finished':
+      return 'finished';
+    case 'exited':
+      return 'exited';
     default:
       return null;
   }
@@ -115,20 +113,20 @@ function applySignal(payload: AgentSignal): void {
   if (action === null) return;
   clearFinishedTimer(id);
   const store = useAgentActivityStore.getState();
-  if (action === "exited") {
+  if (action === 'exited') {
     store.clear(id);
     return;
   }
   // The agent name only rides the `started` signal (incl. self-arm).
   if (agent) store.setAgent(id, agent);
   store.setPhase(id, action);
-  if (action === "finished") {
+  if (action === 'finished') {
     finishedTimers.set(
       id,
       setTimeout(() => {
         finishedTimers.delete(id);
         const s = useAgentActivityStore.getState();
-        if (s.phases[id] === "finished") s.setPhase(id, "idle");
+        if (s.phases[id] === 'finished') s.setPhase(id, 'idle');
       }, FINISHED_TTL_MS),
     );
   }
@@ -138,13 +136,13 @@ function applySignal(payload: AgentSignal): void {
 // reports per-pty lifecycle: started, working, attention, finished, exited.
 export function ensureAgentActivityListener(): Promise<void> {
   if (listenerReady) return listenerReady;
-  listenerReady = listen<AgentSignal>("terax:agent-signal", (e) => {
+  listenerReady = listen<AgentSignal>('terax:agent-signal', (e) => {
     applySignal(e.payload);
     for (const handler of signalHandlers) {
       try {
         handler(e.payload);
       } catch (error) {
-        console.error("[terax] agent signal handler failed:", error);
+        console.error('[terax] agent signal handler failed:', error);
       }
     }
   }).then(
@@ -162,7 +160,7 @@ export function isAgentActivePty(ptyId: number): boolean {
 }
 
 export type AgentTabStatus = {
-  state: "attention" | "working" | "finished" | "idle" | null;
+  state: 'attention' | 'working' | 'finished' | 'idle' | null;
   // The running agent's name when its brand icon should be shown.
   agent: string | null;
 };
@@ -183,12 +181,12 @@ export function tabAgentStatus(
   let idleAgent: string | null = null;
   for (const id of ptyIds) {
     const phase = phases[id];
-    if (phase === "attention") attention = true;
-    else if (phase === "working") {
+    if (phase === 'attention') attention = true;
+    else if (phase === 'working') {
       working = true;
       workingAgent ??= agents[id] ?? null;
-    } else if (phase === "finished") finished = true;
-    else if (phase === "idle") {
+    } else if (phase === 'finished') finished = true;
+    else if (phase === 'idle') {
       const agent = agents[id];
       if (agent) {
         idle = true;
@@ -196,9 +194,9 @@ export function tabAgentStatus(
       }
     }
   }
-  if (attention) return { state: "attention", agent: null };
-  if (working) return { state: "working", agent: workingAgent };
-  if (finished) return { state: "finished", agent: null };
-  if (idle) return { state: "idle", agent: idleAgent };
+  if (attention) return { state: 'attention', agent: null };
+  if (working) return { state: 'working', agent: workingAgent };
+  if (finished) return { state: 'finished', agent: null };
+  if (idle) return { state: 'idle', agent: idleAgent };
   return { state: null, agent: null };
 }

@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 
 type TerminalDropState = {
   targetLeafId: number | null;
@@ -7,6 +7,5 @@ type TerminalDropState = {
 
 export const useTerminalDropStore = create<TerminalDropState>((set) => ({
   targetLeafId: null,
-  setTarget: (leafId) =>
-    set((s) => (s.targetLeafId === leafId ? s : { targetLeafId: leafId })),
+  setTarget: (leafId) => set((s) => (s.targetLeafId === leafId ? s : { targetLeafId: leafId })),
 }));

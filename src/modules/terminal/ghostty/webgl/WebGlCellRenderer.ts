@@ -3,30 +3,20 @@
  * Copyright (c) 2018 The xterm.js authors. MIT licensed.
  */
 
-import type { TerminalDamage } from "@/modules/terminal/backend/contracts";
-import { CellFlags } from "@terax/ghostty-core/protocol";
-import type { Rgb, TerminalCellReader } from "../core/packedCells";
-import type { GhosttyTerminalModelApi } from "../GhosttyTerminalModel";
-import {
-  CanvasBackingStore,
-  type GestureGrowth,
-} from "../gpu/CanvasBackingStore";
-import { blockCursorSpan } from "../gpu/cursorText";
-import {
-  isNeighbourAware,
-  isNonGraphicsSymbol,
-  roomyAt,
-} from "../gpu/GlyphPlacement";
-import type {
-  TerminalFontMetrics,
-  TerminalGpuTheme,
-} from "../gpu/terminalVisuals";
-import { DWRITE_GAMMA_RATIOS, type TextContrast } from "../gpu/textContrast";
+import type { TerminalDamage } from '@/modules/terminal/backend/contracts';
+import { CellFlags } from '@terax/ghostty-core/protocol';
+import type { Rgb, TerminalCellReader } from '../core/packedCells';
+import type { GhosttyTerminalModelApi } from '../GhosttyTerminalModel';
+import { CanvasBackingStore, type GestureGrowth } from '../gpu/CanvasBackingStore';
+import { blockCursorSpan } from '../gpu/cursorText';
+import { isNeighbourAware, isNonGraphicsSymbol, roomyAt } from '../gpu/GlyphPlacement';
+import type { TerminalFontMetrics, TerminalGpuTheme } from '../gpu/terminalVisuals';
+import { DWRITE_GAMMA_RATIOS, type TextContrast } from '../gpu/textContrast';
 import {
   selectionBoundsContain,
   type TerminalSelectionBounds,
-} from "../selection/TerminalSelectionController";
-import { WebGlGlyphAtlas, type WebGlGlyphEntry } from "./WebGlGlyphAtlas";
+} from '../selection/TerminalSelectionController';
+import { WebGlGlyphAtlas, type WebGlGlyphEntry } from './WebGlGlyphAtlas';
 
 const GLYPH_FLOATS = 15;
 const GLYPH_POSITION_OFFSET = 13;
@@ -39,9 +29,7 @@ const CONTEXT_RESTORE_TIMEOUT_MS = 3_000;
 const SEARCH_MATCH_BACKGROUND = 0x515c6a;
 const SEARCH_ACTIVE_MATCH_BACKGROUND = 0xd18616;
 
-const PROJECTION_MATRIX = new Float32Array([
-  2, 0, 0, 0, 0, -2, 0, 0, 0, 0, 1, 0, -1, 1, 0, 1,
-]);
+const PROJECTION_MATRIX = new Float32Array([2, 0, 0, 0, 0, -2, 0, 0, 0, 0, 1, 0, -1, 1, 0, 1]);
 
 export type WebGlRendererProfile = {
   readonly metrics: TerminalFontMetrics;
@@ -115,7 +103,7 @@ type RendererResources = {
 };
 
 export class WebGlCellRenderer {
-  readonly canvas = document.createElement("canvas");
+  readonly canvas = document.createElement('canvas');
 
   private readonly backingStore = new CanvasBackingStore(this.canvas);
   private readonly gl: WebGL2RenderingContext;
@@ -175,26 +163,23 @@ export class WebGlCellRenderer {
   private onContextFailure: ((error: Error) => void) | null = null;
 
   constructor() {
-    this.canvas.className = "block";
-    this.canvas.setAttribute("aria-hidden", "true");
-    const context = this.canvas.getContext("webgl2", {
+    this.canvas.className = 'block';
+    this.canvas.setAttribute('aria-hidden', 'true');
+    const context = this.canvas.getContext('webgl2', {
       alpha: false,
       antialias: false,
       depth: false,
       desynchronized: true,
       failIfMajorPerformanceCaveat: false,
-      powerPreference: "low-power",
+      powerPreference: 'low-power',
       preserveDrawingBuffer: false,
       stencil: false,
     });
-    if (!context) throw new Error("WebGL2 is unavailable in this webview");
+    if (!context) throw new Error('WebGL2 is unavailable in this webview');
     this.gl = context;
     this.resources = this.createResources();
-    this.canvas.addEventListener("webglcontextlost", this.handleContextLost);
-    this.canvas.addEventListener(
-      "webglcontextrestored",
-      this.handleContextRestored,
-    );
+    this.canvas.addEventListener('webglcontextlost', this.handleContextLost);
+    this.canvas.addEventListener('webglcontextrestored', this.handleContextRestored);
   }
 
   configure(
@@ -206,8 +191,7 @@ export class WebGlCellRenderer {
     this.onContextRestored = onContextRestored;
     this.onContextFailure = onContextFailure;
     const fontChanged =
-      !this.profile ||
-      rendererProfileKey(this.profile) !== rendererProfileKey(profile);
+      !this.profile || rendererProfileKey(this.profile) !== rendererProfileKey(profile);
     this.profile = profile;
     if (fontChanged && !this.contextLost) {
       this.atlas?.dispose();
@@ -230,18 +214,11 @@ export class WebGlCellRenderer {
     this.onContextFailure = null;
   }
 
-  resize(
-    cols: number,
-    rows: number,
-    deferCompaction = false,
-    gesture?: GestureGrowth,
-  ): boolean {
+  resize(cols: number, rows: number, deferCompaction = false, gesture?: GestureGrowth): boolean {
     this.assertLive();
-    if (!this.profile) throw new Error("WebGL renderer is not configured");
+    if (!this.profile) throw new Error('WebGL renderer is not configured');
     if (cols * rows > MAX_SURFACE_CELLS) {
-      throw new RangeError(
-        `Terminal surface exceeds ${MAX_SURFACE_CELLS} visible cells`,
-      );
+      throw new RangeError(`Terminal surface exceeds ${MAX_SURFACE_CELLS} visible cells`);
     }
 
     const changed = cols !== this.cols || rows !== this.rows;
@@ -249,17 +226,10 @@ export class WebGlCellRenderer {
     this.rows = rows;
     const width = Math.max(1, cols * this.profile.metrics.deviceCellWidth);
     const height = Math.max(1, rows * this.profile.metrics.deviceCellHeight);
-    const backingStoreChanged = this.backingStore.stage(
-      width,
-      height,
-      this.profile.scale,
-      gesture,
-    );
+    const backingStoreChanged = this.backingStore.stage(width, height, this.profile.scale, gesture);
     if (backingStoreChanged) this.viewportDirty = true;
     if (changed) this.resizeModel(cols, rows);
-    const capacityChanged = deferCompaction
-      ? false
-      : this.compactModelIfNeeded(cols * rows, rows);
+    const capacityChanged = deferCompaction ? false : this.compactModelIfNeeded(cols * rows, rows);
     if (changed || backingStoreChanged || capacityChanged) {
       this.forceFullRedraw = true;
     }
@@ -286,20 +256,12 @@ export class WebGlCellRenderer {
       this.forceFullRedraw = true;
     }
 
-    const damage = this.forceFullRedraw
-      ? { kind: "full" as const }
-      : frame.damage;
-    if (damage.kind !== "none") this.updateModel(frame, damage);
+    const damage = this.forceFullRedraw ? { kind: 'full' as const } : frame.damage;
+    if (damage.kind !== 'none') this.updateModel(frame, damage);
     const cursorChanged = this.updateCursor(frame);
     const blinkChanged =
-      this.hasBlinkingCells &&
-      this.lastTextBlinkVisible !== frame.textBlinkVisible;
-    if (
-      damage.kind === "none" &&
-      !cursorChanged &&
-      !blinkChanged &&
-      !this.forcePresent
-    )
+      this.hasBlinkingCells && this.lastTextBlinkVisible !== frame.textBlinkVisible;
+    if (damage.kind === 'none' && !cursorChanged && !blinkChanged && !this.forcePresent)
       return false;
     this.draw(frame.textBlinkVisible);
     this.forcePresent = false;
@@ -354,11 +316,8 @@ export class WebGlCellRenderer {
         this.rectangleScratch.attributes.byteLength +
         this.cursorVertices.attributes.byteLength +
         this.uploadedCursor.byteLength,
-      gpuBufferBytes:
-        this.glyphGpuCapacity * GLYPH_FLOATS * 4 + this.backgroundGpuBytes,
-      canvasColorBytes: this.disposed
-        ? 0
-        : this.canvas.width * this.canvas.height * 4,
+      gpuBufferBytes: this.glyphGpuCapacity * GLYPH_FLOATS * 4 + this.backgroundGpuBytes,
+      canvasColorBytes: this.disposed ? 0 : this.canvas.width * this.canvas.height * 4,
       frames: this.frameCount,
       uploads: this.uploadCount,
       uploadedGlyphBytes: this.uploadedGlyphBytes,
@@ -375,16 +334,13 @@ export class WebGlCellRenderer {
     if (this.disposed) return;
     this.disposed = true;
     this.clearContextRestoreTimer();
-    this.canvas.removeEventListener("webglcontextlost", this.handleContextLost);
-    this.canvas.removeEventListener(
-      "webglcontextrestored",
-      this.handleContextRestored,
-    );
+    this.canvas.removeEventListener('webglcontextlost', this.handleContextLost);
+    this.canvas.removeEventListener('webglcontextrestored', this.handleContextRestored);
     this.canvas.remove();
     this.atlas?.dispose();
     this.atlas = null;
     this.deleteResources();
-    this.gl.getExtension("WEBGL_lose_context")?.loseContext();
+    this.gl.getExtension('WEBGL_lose_context')?.loseContext();
     this.canvas.width = 1;
     this.canvas.height = 1;
     this.glyphAttributes = new Float32Array(0);
@@ -413,9 +369,7 @@ export class WebGlCellRenderer {
     this.clearContextRestoreTimer();
     this.contextRestoreTimer = window.setTimeout(() => {
       this.contextRestoreTimer = null;
-      this.onContextFailure?.(
-        new Error("WebGL context was not restored within 3 seconds"),
-      );
+      this.onContextFailure?.(new Error('WebGL context was not restored within 3 seconds'));
     }, CONTEXT_RESTORE_TIMEOUT_MS);
   };
 
@@ -429,11 +383,7 @@ export class WebGlCellRenderer {
     this.resources = this.createResources();
     this.uploadedCursorCount = -1;
     if (this.profile) {
-      this.atlas = new WebGlGlyphAtlas(
-        this.gl,
-        this.profile.metrics,
-        this.profile.scale,
-      );
+      this.atlas = new WebGlGlyphAtlas(this.gl, this.profile.metrics, this.profile.scale);
     }
     this.contextRecoveryCount += 1;
     this.viewportDirty = true;
@@ -445,33 +395,27 @@ export class WebGlCellRenderer {
     const cells = frame.model.renderCells();
     const expected = this.cols * this.rows;
     if (cells.length !== expected) {
-      throw new Error(
-        `Ghostty viewport mismatch: expected ${expected}, received ${cells.length}`,
-      );
+      throw new Error(`Ghostty viewport mismatch: expected ${expected}, received ${cells.length}`);
     }
 
-    let ranges =
-      damage.kind === "rows"
-        ? damage.ranges
-        : [{ start: 0, end: this.rows - 1 }];
+    let ranges = damage.kind === 'rows' ? damage.ranges : [{ start: 0, end: this.rows - 1 }];
     if (this.rectangleDirtyRows.length !== this.rows) {
       this.rectangleDirtyRows = new Uint8Array(this.rows);
       this.rectangleRows = new Uint32Array(this.rows + 1);
     }
     let stable = false;
-    let rectanglesChanged = damage.kind === "full";
+    let rectanglesChanged = damage.kind === 'full';
     for (let attempt = 0; attempt < 3 && !stable; attempt += 1) {
       const generation = this.atlas?.generation ?? 0;
       for (const range of ranges) {
         rectanglesChanged =
-          this.buildRows(frame, cells, range.start, range.end) ||
-          rectanglesChanged;
+          this.buildRows(frame, cells, range.start, range.end) || rectanglesChanged;
       }
       stable = generation === this.atlas?.generation;
       if (!stable) ranges = [{ start: 0, end: this.rows - 1 }];
     }
-    if (!stable) throw new Error("Visible glyphs exceed the atlas budget");
-    if (rectanglesChanged) this.buildBackgrounds(damage.kind === "full");
+    if (!stable) throw new Error('Visible glyphs exceed the atlas budget');
+    if (rectanglesChanged) this.buildBackgrounds(damage.kind === 'full');
     this.uploadGlyphs(ranges);
   }
 
@@ -523,10 +467,7 @@ export class WebGlCellRenderer {
         }
         const searchMatch = frame.searchMatchAt(row, column);
         if (searchMatch !== 0) {
-          background =
-            searchMatch === 2
-              ? SEARCH_ACTIVE_MATCH_BACKGROUND
-              : SEARCH_MATCH_BACKGROUND;
+          background = searchMatch === 2 ? SEARCH_ACTIVE_MATCH_BACKGROUND : SEARCH_MATCH_BACKGROUND;
         }
         if (
           frame.selection &&
@@ -539,16 +480,14 @@ export class WebGlCellRenderer {
           );
         }
         const underlineColor = cells.underlineColorPacked(cellIndex);
-        const decoration =
-          cells.underlineStyle(cellIndex) | (cells.overline(cellIndex) ? 8 : 0);
+        const decoration = cells.underlineStyle(cellIndex) | (cells.overline(cellIndex) ? 8 : 0);
         rowRectanglesChanged ||=
           this.backgrounds[cellIndex] !== background ||
           this.decorations[cellIndex] !== decoration ||
           ((this.flags[cellIndex] ^ flags) & CellFlags.STRIKETHROUGH) !== 0 ||
           ((decoration !== 0 || (flags & CellFlags.STRIKETHROUGH) !== 0) &&
             this.foregrounds[cellIndex] !== foreground) ||
-          ((decoration & 7) !== 0 &&
-            this.underlineColors[cellIndex] !== underlineColor);
+          ((decoration & 7) !== 0 && this.underlineColors[cellIndex] !== underlineColor);
         this.backgrounds[cellIndex] = background;
         this.foregrounds[cellIndex] = foreground;
         this.underlineColors[cellIndex] = underlineColor;
@@ -556,15 +495,9 @@ export class WebGlCellRenderer {
         this.decorations[cellIndex] = decoration;
 
         const codepoint = cells.codepoint(cellIndex);
-        if (
-          codepoint !== 0 &&
-          codepoint !== 32 &&
-          (flags & CellFlags.INVISIBLE) === 0
-        ) {
+        if (codepoint !== 0 && codepoint !== 32 && (flags & CellFlags.INVISIBLE) === 0) {
           const grapheme =
-            cells.graphemeLength(cellIndex) > 0
-              ? frame.model.grapheme(row, column)
-              : null;
+            cells.graphemeLength(cellIndex) > 0 ? frame.model.grapheme(row, column) : null;
           const glyph = this.atlas.glyph(
             codepoint,
             grapheme,
@@ -618,9 +551,7 @@ export class WebGlCellRenderer {
     const leftPadding = Math.max(
       0,
       Math.floor(
-        ((this.profile?.metrics.font.letterSpacing ?? 0) *
-          (this.profile?.scale ?? 1)) /
-          2,
+        ((this.profile?.metrics.font.letterSpacing ?? 0) * (this.profile?.scale ?? 1)) / 2,
       ),
     );
     if (clipLeft && offsetX < -leftPadding) {
@@ -639,17 +570,8 @@ export class WebGlCellRenderer {
     this.glyphAttributes[index + 5] = glyph.uvMinY;
     this.glyphAttributes[index + 6] = uvMaxX - uvMinX;
     this.glyphAttributes[index + 7] = glyph.uvMaxY - glyph.uvMinY;
-    writeNormalizedPackedColor(
-      this.glyphAttributes,
-      index + 8,
-      foreground,
-      alpha,
-    );
-    this.glyphAttributes[index + 12] = glyph.intrinsicColor
-      ? 1
-      : glyph.exact
-        ? 2
-        : 0;
+    writeNormalizedPackedColor(this.glyphAttributes, index + 8, foreground, alpha);
+    this.glyphAttributes[index + 12] = glyph.intrinsicColor ? 1 : glyph.exact ? 2 : 0;
   }
 
   private clearGlyph(index: number): void {
@@ -682,10 +604,7 @@ export class WebGlCellRenderer {
           return;
         }
         vertices.attributes.set(
-          this.rectangleScratch.attributes.subarray(
-            0,
-            count * RECTANGLE_FLOATS,
-          ),
+          this.rectangleScratch.attributes.subarray(0, count * RECTANGLE_FLOATS),
           start * RECTANGLE_FLOATS,
         );
         first = Math.min(first, start);
@@ -710,40 +629,23 @@ export class WebGlCellRenderer {
       this.backgroundGpuBytes = required;
       this.uploadedRectangleBytes += required;
     } else if (last > first) {
-      const data = vertices.attributes.subarray(
-        first * RECTANGLE_FLOATS,
-        last * RECTANGLE_FLOATS,
-      );
+      const data = vertices.attributes.subarray(first * RECTANGLE_FLOATS, last * RECTANGLE_FLOATS);
       gl.bufferSubData(gl.ARRAY_BUFFER, first * RECTANGLE_FLOATS * 4, data);
       this.uploadedRectangleBytes += data.byteLength;
     }
   }
 
-  private buildBackgroundRow(
-    row: number,
-    vertices: RectangleVertices,
-    count: number,
-  ): number {
+  private buildBackgroundRow(row: number, vertices: RectangleVertices, count: number): number {
     if (!this.profile) return count;
     const defaultBackground = this.packRgb(this.profile.theme.background);
     let runStart = -1;
     let runColor = defaultBackground;
     for (let column = 0; column <= this.cols; column += 1) {
       const index = row * this.cols + column;
-      const color =
-        column < this.cols ? this.backgrounds[index] : defaultBackground;
+      const color = column < this.cols ? this.backgrounds[index] : defaultBackground;
       if (color === runColor) continue;
       if (runStart >= 0 && runColor !== defaultBackground) {
-        this.writeRectangle(
-          vertices,
-          count++,
-          runStart,
-          row,
-          column - runStart,
-          1,
-          runColor,
-          1,
-        );
+        this.writeRectangle(vertices, count++, runStart, row, column - runStart, 1, runColor, 1);
       }
       runStart = column;
       runColor = color;
@@ -816,19 +718,10 @@ export class WebGlCellRenderer {
     }
 
     const color = this.packRgb(this.profile.theme.cursor);
-    if (cursor.style === "bar") {
+    if (cursor.style === 'bar') {
       this.writeRectangle(vertices, 0, cursor.x, cursor.y, 0.12, 1, color, 1);
-    } else if (cursor.style === "underline") {
-      this.writeRectangle(
-        vertices,
-        0,
-        cursor.x,
-        cursor.y + 0.88,
-        1,
-        0.12,
-        color,
-        1,
-      );
+    } else if (cursor.style === 'underline') {
+      this.writeRectangle(vertices, 0, cursor.x, cursor.y + 0.88, 1, 0.12, color, 1);
     } else {
       const at = cursor.y * this.cols + cursor.x;
       const span = blockCursorSpan(
@@ -837,16 +730,7 @@ export class WebGlCellRenderer {
         this.cols,
         cursor.x > 0 ? this.widths[at - 1] : 1,
       );
-      this.writeRectangle(
-        vertices,
-        0,
-        span.start,
-        cursor.y,
-        span.count,
-        1,
-        color,
-        1,
-      );
+      this.writeRectangle(vertices, 0, span.start, cursor.y, span.count, 1, color, 1);
       this.blockColumn = span.start;
       this.blockRow = cursor.y;
       this.blockCount = span.count;
@@ -870,22 +754,14 @@ export class WebGlCellRenderer {
     return true;
   }
 
-  private uploadGlyphs(
-    ranges: readonly { readonly start: number; readonly end: number }[],
-  ): void {
+  private uploadGlyphs(ranges: readonly { readonly start: number; readonly end: number }[]): void {
     const resources = this.resources;
     if (!resources) return;
     const gl = this.gl;
     gl.bindBuffer(gl.ARRAY_BUFFER, resources.glyphBuffer);
-    const full =
-      ranges.length === 1 &&
-      ranges[0].start === 0 &&
-      ranges[0].end === this.rows - 1;
+    const full = ranges.length === 1 && ranges[0].start === 0 && ranges[0].end === this.rows - 1;
     if (full) {
-      const active = this.glyphAttributes.subarray(
-        0,
-        this.cols * this.rows * GLYPH_FLOATS,
-      );
+      const active = this.glyphAttributes.subarray(0, this.cols * this.rows * GLYPH_FLOATS);
       this.ensureGlyphGpuCapacity();
       gl.bufferSubData(gl.ARRAY_BUFFER, 0, active);
       this.uploadCount += 1;
@@ -903,10 +779,7 @@ export class WebGlCellRenderer {
     this.glyphInstanceCount = this.cols * this.rows;
   }
 
-  private uploadRectangles(
-    vertices: RectangleVertices,
-    buffer: WebGLBuffer | null,
-  ): void {
+  private uploadRectangles(vertices: RectangleVertices, buffer: WebGLBuffer | null): void {
     if (!buffer || vertices.count === 0) return;
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
     this.gl.bufferData(
@@ -925,12 +798,7 @@ export class WebGlCellRenderer {
     const background = profile.theme.background;
     gl.disable(gl.DEPTH_TEST);
     gl.disable(gl.STENCIL_TEST);
-    gl.clearColor(
-      background[0] / 255,
-      background[1] / 255,
-      background[2] / 255,
-      1,
-    );
+    gl.clearColor(background[0] / 255, background[1] / 255, background[2] / 255, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     gl.disable(gl.BLEND);
@@ -939,34 +807,19 @@ export class WebGlCellRenderer {
       resources.backgroundVao,
       this.backgroundVertices.count,
     );
-    this.drawRectangles(
-      resources.colorProgram,
-      resources.cursorVao,
-      this.cursorVertices.count,
-    );
+    this.drawRectangles(resources.colorProgram, resources.cursorVao, this.cursorVertices.count);
 
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     // WebGL method, not a React hook.
     gl.useProgram(resources.glyphProgram.value);
     gl.bindVertexArray(resources.glyphVao);
-    gl.uniformMatrix4fv(
-      resources.glyphProgram.projection,
-      false,
-      PROJECTION_MATRIX,
-    );
-    gl.uniform2f(
-      resources.glyphProgram.resolution,
-      this.canvas.width,
-      this.canvas.height,
-    );
+    gl.uniformMatrix4fv(resources.glyphProgram.projection, false, PROJECTION_MATRIX);
+    gl.uniform2f(resources.glyphProgram.resolution, this.canvas.width, this.canvas.height);
     atlas.bindAndUpload();
     gl.uniform1i(resources.glyphProgram.atlas, 0);
     gl.uniform1i(resources.glyphProgram.colorAtlas, 1);
-    gl.uniform1i(
-      resources.glyphProgram.textBlinkVisible,
-      textBlinkVisible ? 1 : 0,
-    );
+    gl.uniform1i(resources.glyphProgram.textBlinkVisible, textBlinkVisible ? 1 : 0);
     gl.uniform4f(
       resources.glyphProgram.cursor,
       this.blockColumn,
@@ -975,14 +828,8 @@ export class WebGlCellRenderer {
       this.blockCount > 0 ? 1 : 0,
     );
     const text = profile.theme.cursorText;
-    gl.uniform3f(
-      resources.glyphProgram.cursorText,
-      text[0] / 255,
-      text[1] / 255,
-      text[2] / 255,
-    );
-    const { deviceCellWidth: cellWidth, deviceCellHeight: cellHeight } =
-      profile.metrics;
+    gl.uniform3f(resources.glyphProgram.cursorText, text[0] / 255, text[1] / 255, text[2] / 255);
+    const { deviceCellWidth: cellWidth, deviceCellHeight: cellHeight } = profile.metrics;
     gl.uniform4f(
       resources.glyphProgram.cursorBox,
       this.blockColumn * cellWidth,
@@ -997,20 +844,10 @@ export class WebGlCellRenderer {
       profile.contrast.alphaCorrection,
     );
     gl.uniform4fv(resources.glyphProgram.gamma, DWRITE_GAMMA_RATIOS);
-    gl.drawElementsInstanced(
-      gl.TRIANGLE_STRIP,
-      4,
-      gl.UNSIGNED_BYTE,
-      0,
-      this.glyphInstanceCount,
-    );
+    gl.drawElementsInstanced(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 0, this.glyphInstanceCount);
   }
 
-  private drawRectangles(
-    program: Program,
-    vao: WebGLVertexArrayObject,
-    count: number,
-  ): void {
+  private drawRectangles(program: Program, vao: WebGLVertexArrayObject, count: number): void {
     if (count === 0) return;
     const gl = this.gl;
     // WebGL method, not a React hook.
@@ -1073,8 +910,7 @@ export class WebGlCellRenderer {
   private compactModelIfNeeded(cells: number, rows: number): boolean {
     const targetCells = nextWebGlCellCapacity(0, cells);
     const compactCells =
-      this.cellCapacity >= targetCells * 2 &&
-      this.cellCapacity - targetCells >= 4_096;
+      this.cellCapacity >= targetCells * 2 && this.cellCapacity - targetCells >= 4_096;
     const targetRows = nextPowerOfTwo(rows);
     const compactRows = this.rowCapacity >= targetRows * 2;
     if (!compactCells && !compactRows) return false;
@@ -1115,92 +951,33 @@ export class WebGlCellRenderer {
 
   private createResources(): RendererResources {
     const gl = this.gl;
-    const colorProgramValue = createProgram(
-      gl,
-      COLOR_VERTEX_SHADER,
-      COLOR_FRAGMENT_SHADER,
-    );
-    const glyphProgramValue = createProgram(
-      gl,
-      GLYPH_VERTEX_SHADER,
-      GLYPH_FRAGMENT_SHADER,
-    );
-    const colorProjection = requiredUniform(
-      gl,
-      colorProgramValue,
-      "u_projection",
-    );
-    const glyphProjection = requiredUniform(
-      gl,
-      glyphProgramValue,
-      "u_projection",
-    );
-    const glyphResolution = requiredUniform(
-      gl,
-      glyphProgramValue,
-      "u_resolution",
-    );
-    const glyphAtlas = requiredUniform(gl, glyphProgramValue, "u_atlas");
-    const glyphColorAtlas = requiredUniform(
-      gl,
-      glyphProgramValue,
-      "u_color_atlas",
-    );
-    const glyphTextBlinkVisible = requiredUniform(
-      gl,
-      glyphProgramValue,
-      "u_text_blink_visible",
-    );
-    const glyphCursor = requiredUniform(gl, glyphProgramValue, "u_cursor");
-    const glyphCursorText = requiredUniform(
-      gl,
-      glyphProgramValue,
-      "u_cursor_text",
-    );
-    const glyphCursorBox = requiredUniform(
-      gl,
-      glyphProgramValue,
-      "u_cursor_box",
-    );
-    const glyphCells = requiredUniform(gl, glyphProgramValue, "u_cells");
-    const glyphContrast = requiredUniform(gl, glyphProgramValue, "u_contrast");
-    const glyphGamma = requiredUniform(gl, glyphProgramValue, "u_gamma");
+    const colorProgramValue = createProgram(gl, COLOR_VERTEX_SHADER, COLOR_FRAGMENT_SHADER);
+    const glyphProgramValue = createProgram(gl, GLYPH_VERTEX_SHADER, GLYPH_FRAGMENT_SHADER);
+    const colorProjection = requiredUniform(gl, colorProgramValue, 'u_projection');
+    const glyphProjection = requiredUniform(gl, glyphProgramValue, 'u_projection');
+    const glyphResolution = requiredUniform(gl, glyphProgramValue, 'u_resolution');
+    const glyphAtlas = requiredUniform(gl, glyphProgramValue, 'u_atlas');
+    const glyphColorAtlas = requiredUniform(gl, glyphProgramValue, 'u_color_atlas');
+    const glyphTextBlinkVisible = requiredUniform(gl, glyphProgramValue, 'u_text_blink_visible');
+    const glyphCursor = requiredUniform(gl, glyphProgramValue, 'u_cursor');
+    const glyphCursorText = requiredUniform(gl, glyphProgramValue, 'u_cursor_text');
+    const glyphCursorBox = requiredUniform(gl, glyphProgramValue, 'u_cursor_box');
+    const glyphCells = requiredUniform(gl, glyphProgramValue, 'u_cells');
+    const glyphContrast = requiredUniform(gl, glyphProgramValue, 'u_contrast');
+    const glyphGamma = requiredUniform(gl, glyphProgramValue, 'u_gamma');
 
     const backgroundBuffer = requiredBuffer(gl);
     const cursorBuffer = requiredBuffer(gl);
     const glyphBuffer = requiredBuffer(gl);
     const unitQuadBuffer = requiredBuffer(gl);
     gl.bindBuffer(gl.ARRAY_BUFFER, unitQuadBuffer);
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]),
-      gl.STATIC_DRAW,
-    );
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), gl.STATIC_DRAW);
     const elementBuffer = requiredBuffer(gl);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elementBuffer);
-    gl.bufferData(
-      gl.ELEMENT_ARRAY_BUFFER,
-      new Uint8Array([0, 1, 2, 3]),
-      gl.STATIC_DRAW,
-    );
-    const backgroundVao = createRectangleVao(
-      gl,
-      backgroundBuffer,
-      unitQuadBuffer,
-      elementBuffer,
-    );
-    const cursorVao = createRectangleVao(
-      gl,
-      cursorBuffer,
-      unitQuadBuffer,
-      elementBuffer,
-    );
-    const glyphVao = createGlyphVao(
-      gl,
-      glyphBuffer,
-      unitQuadBuffer,
-      elementBuffer,
-    );
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array([0, 1, 2, 3]), gl.STATIC_DRAW);
+    const backgroundVao = createRectangleVao(gl, backgroundBuffer, unitQuadBuffer, elementBuffer);
+    const cursorVao = createRectangleVao(gl, cursorBuffer, unitQuadBuffer, elementBuffer);
+    const glyphVao = createGlyphVao(gl, glyphBuffer, unitQuadBuffer, elementBuffer);
 
     return {
       colorProgram: {
@@ -1227,13 +1004,7 @@ export class WebGlCellRenderer {
       backgroundBuffer,
       cursorBuffer,
       glyphBuffer,
-      buffers: [
-        backgroundBuffer,
-        cursorBuffer,
-        glyphBuffer,
-        unitQuadBuffer,
-        elementBuffer,
-      ],
+      buffers: [backgroundBuffer, cursorBuffer, glyphBuffer, unitQuadBuffer, elementBuffer],
       vaos: [backgroundVao, cursorVao, glyphVao],
       programs: [colorProgramValue, glyphProgramValue],
     };
@@ -1261,18 +1032,14 @@ export class WebGlCellRenderer {
   }
 
   private assertLive(): void {
-    if (this.disposed) throw new Error("WebGL renderer is disposed");
+    if (this.disposed) throw new Error('WebGL renderer is disposed');
   }
 }
 
 /** No glyph is drawn in the cell: empty, a space or invisible text (the WebGPU glyph id 0). */
 function cellIsBlank(cells: TerminalCellReader, index: number): boolean {
   const codepoint = cells.codepoint(index);
-  return (
-    codepoint === 0 ||
-    codepoint === 32 ||
-    (cells.flags(index) & CellFlags.INVISIBLE) !== 0
-  );
+  return codepoint === 0 || codepoint === 32 || (cells.flags(index) & CellFlags.INVISIBLE) !== 0;
 }
 
 function cellIsSymbol(cells: TerminalCellReader, index: number): boolean {
@@ -1296,14 +1063,10 @@ export function rendererProfileKey(profile: WebGlRendererProfile): string {
     profile.metrics.deviceCellHeight,
     profile.metrics.deviceBaseline,
     profile.scale,
-  ].join("|");
+  ].join('|');
 }
 
-export function resetGlyphGrid(
-  attributes: Float32Array,
-  cols: number,
-  rows: number,
-): void {
+export function resetGlyphGrid(attributes: Float32Array, cols: number, rows: number): void {
   const expectedLength = cols * rows * GLYPH_FLOATS;
   if (attributes.length < expectedLength) {
     throw new RangeError(
@@ -1395,7 +1158,7 @@ function createProgram(
   fragmentSource: string,
 ): WebGLProgram {
   const program = gl.createProgram();
-  if (!program) throw new Error("Failed to allocate a WebGL program");
+  if (!program) throw new Error('Failed to allocate a WebGL program');
   const vertex = createShader(gl, gl.VERTEX_SHADER, vertexSource);
   const fragment = createShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
   gl.attachShader(program, vertex);
@@ -1404,24 +1167,20 @@ function createProgram(
   gl.deleteShader(vertex);
   gl.deleteShader(fragment);
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    const detail = gl.getProgramInfoLog(program) || "unknown link error";
+    const detail = gl.getProgramInfoLog(program) || 'unknown link error';
     gl.deleteProgram(program);
     throw new Error(`Failed to link the WebGL terminal program: ${detail}`);
   }
   return program;
 }
 
-function createShader(
-  gl: WebGL2RenderingContext,
-  kind: number,
-  source: string,
-): WebGLShader {
+function createShader(gl: WebGL2RenderingContext, kind: number, source: string): WebGLShader {
   const shader = gl.createShader(kind);
-  if (!shader) throw new Error("Failed to allocate a WebGL shader");
+  if (!shader) throw new Error('Failed to allocate a WebGL shader');
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    const detail = gl.getShaderInfoLog(shader) || "unknown compile error";
+    const detail = gl.getShaderInfoLog(shader) || 'unknown compile error';
     gl.deleteShader(shader);
     throw new Error(`Failed to compile a WebGL terminal shader: ${detail}`);
   }
@@ -1440,15 +1199,13 @@ function requiredUniform(
 
 function requiredBuffer(gl: WebGL2RenderingContext): WebGLBuffer {
   const buffer = gl.createBuffer();
-  if (!buffer) throw new Error("Failed to allocate a WebGL buffer");
+  if (!buffer) throw new Error('Failed to allocate a WebGL buffer');
   return buffer;
 }
 
-function requiredVertexArray(
-  gl: WebGL2RenderingContext,
-): WebGLVertexArrayObject {
+function requiredVertexArray(gl: WebGL2RenderingContext): WebGLVertexArrayObject {
   const vao = gl.createVertexArray();
-  if (!vao) throw new Error("Failed to allocate a WebGL vertex array");
+  if (!vao) throw new Error('Failed to allocate a WebGL vertex array');
   return vao;
 }
 
@@ -1464,23 +1221,16 @@ function writeNormalizedPackedColor(
   target[offset + 3] = alpha;
 }
 
-function blendPackedRgb(
-  background: number,
-  foreground: number,
-  alpha: number,
-): number {
+function blendPackedRgb(background: number, foreground: number, alpha: number): number {
   const amount = Math.max(0, Math.min(1, alpha));
   const inverse = 1 - amount;
   const red = Math.round(
-    ((background >> 16) & 0xff) * inverse +
-      ((foreground >> 16) & 0xff) * amount,
+    ((background >> 16) & 0xff) * inverse + ((foreground >> 16) & 0xff) * amount,
   );
   const green = Math.round(
     ((background >> 8) & 0xff) * inverse + ((foreground >> 8) & 0xff) * amount,
   );
-  const blue = Math.round(
-    (background & 0xff) * inverse + (foreground & 0xff) * amount,
-  );
+  const blue = Math.round((background & 0xff) * inverse + (foreground & 0xff) * amount);
   return (red << 16) | (green << 8) | blue;
 }
 
@@ -1490,17 +1240,12 @@ function nextPowerOfTwo(value: number): number {
   return result;
 }
 
-export function nextWebGlCellCapacity(
-  current: number,
-  required: number,
-): number {
+export function nextWebGlCellCapacity(current: number, required: number): number {
   if (!Number.isInteger(required) || required < 0) {
-    throw new RangeError("WebGL cell capacity must be a non-negative integer");
+    throw new RangeError('WebGL cell capacity must be a non-negative integer');
   }
   if (required > MAX_SURFACE_CELLS) {
-    throw new RangeError(
-      `Terminal surface exceeds ${MAX_SURFACE_CELLS} visible cells`,
-    );
+    throw new RangeError(`Terminal surface exceeds ${MAX_SURFACE_CELLS} visible cells`);
   }
   if (required <= current) return current;
   const target =

@@ -1,12 +1,6 @@
-import { LazyStore } from "@tauri-apps/plugin-store";
+import { LazyStore } from '@tauri-apps/plugin-store';
 
-export type AgentIconId =
-  | "coder"
-  | "architect"
-  | "reviewer"
-  | "security"
-  | "designer"
-  | "spark";
+export type AgentIconId = 'coder' | 'architect' | 'reviewer' | 'security' | 'designer' | 'spark';
 
 export type Agent = {
   id: string;
@@ -19,10 +13,10 @@ export type Agent = {
 
 export const BUILTIN_AGENTS: readonly Agent[] = [
   {
-    id: "builtin:coder",
-    name: "Coder",
-    description: "General-purpose coding assistant. Writes, edits, and runs.",
-    icon: "coder",
+    id: 'builtin:coder',
+    name: 'Coder',
+    description: 'General-purpose coding assistant. Writes, edits, and runs.',
+    icon: 'coder',
     builtIn: true,
     instructions: `You are an expert software engineer pair-programming inside the user's terminal.
 - Read files before editing them. Match existing patterns and naming.
@@ -31,10 +25,10 @@ export const BUILTIN_AGENTS: readonly Agent[] = [
 - Keep responses tight: short prose, code blocks with language fences.`,
   },
   {
-    id: "builtin:architect",
-    name: "Architect",
-    description: "Design and tradeoffs. Plans before code.",
-    icon: "architect",
+    id: 'builtin:architect',
+    name: 'Architect',
+    description: 'Design and tradeoffs. Plans before code.',
+    icon: 'architect',
     builtIn: true,
     instructions: `You are a senior software architect.
 - Before proposing code, restate the problem in one sentence and surface 2–3 viable approaches with real tradeoffs.
@@ -43,10 +37,10 @@ export const BUILTIN_AGENTS: readonly Agent[] = [
 - Output structure: Problem · Options · Recommendation · Risks · Next steps.`,
   },
   {
-    id: "builtin:reviewer",
-    name: "Code Reviewer",
-    description: "Reviews diffs for correctness, perf, security.",
-    icon: "reviewer",
+    id: 'builtin:reviewer',
+    name: 'Code Reviewer',
+    description: 'Reviews diffs for correctness, perf, security.',
+    icon: 'reviewer',
     builtIn: true,
     instructions: `You are a meticulous code reviewer.
 - Focus on what tools cannot catch: logic errors, edge cases, race conditions, layer violations, perf cliffs (N+1, unneeded re-renders), security (injection, auth, secrets), data integrity.
@@ -55,10 +49,10 @@ export const BUILTIN_AGENTS: readonly Agent[] = [
 - Verify each finding against the actual file before reporting it.`,
   },
   {
-    id: "builtin:security",
-    name: "Security",
-    description: "Threat-models changes and flags vulns.",
-    icon: "security",
+    id: 'builtin:security',
+    name: 'Security',
+    description: 'Threat-models changes and flags vulns.',
+    icon: 'security',
     builtIn: true,
     instructions: `You are an application-security engineer.
 - Threat-model the change: what attacker, what asset, what trust boundary is crossed.
@@ -67,10 +61,10 @@ export const BUILTIN_AGENTS: readonly Agent[] = [
 - If the change is benign, say so explicitly — don't fabricate findings.`,
   },
   {
-    id: "builtin:designer",
-    name: "Designer",
-    description: "UI/UX critique and refinement.",
-    icon: "designer",
+    id: 'builtin:designer',
+    name: 'Designer',
+    description: 'UI/UX critique and refinement.',
+    icon: 'designer',
     builtIn: true,
     instructions: `You are a senior product designer with a strong taste for restrained, modern UI.
 - Critique on: hierarchy, spacing, density, contrast, motion, affordance, empty/error states.
@@ -79,9 +73,9 @@ export const BUILTIN_AGENTS: readonly Agent[] = [
   },
 ] as const;
 
-const STORE_PATH = "terax-ai-agents.json";
-const KEY_CUSTOM = "customAgents";
-const KEY_ACTIVE = "activeAgentId";
+const STORE_PATH = 'terax-ai-agents.json';
+const KEY_CUSTOM = 'customAgents';
+const KEY_ACTIVE = 'activeAgentId';
 
 const store = new LazyStore(STORE_PATH, { defaults: {}, autoSave: 200 });
 
@@ -116,10 +110,7 @@ export function newAgentId(): string {
   return `a-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 }
 
-export function findAgent(
-  agents: readonly Agent[],
-  id: string | null | undefined,
-): Agent {
+export function findAgent(agents: readonly Agent[], id: string | null | undefined): Agent {
   if (!id) return BUILTIN_AGENTS[0];
   return agents.find((a) => a.id === id) ?? BUILTIN_AGENTS[0];
 }

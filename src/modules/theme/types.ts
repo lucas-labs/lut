@@ -1,4 +1,4 @@
-export type ThemeMode = "light" | "dark";
+export type ThemeMode = 'light' | 'dark';
 
 export type ThemeColors = Partial<{
   background: string;
@@ -40,8 +40,22 @@ export type TerminalPalette = Partial<{
   fontWeight: string;
   fontSize: number;
   ansi: readonly [
-    string, string, string, string, string, string, string, string,
-    string, string, string, string, string, string, string, string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
+    string,
   ];
 }>;
 
@@ -65,4 +79,4 @@ export type Theme = {
   };
 };
 
-export const DEFAULT_THEME_ID = "terax-default";
+export const DEFAULT_THEME_ID = 'terax-default';

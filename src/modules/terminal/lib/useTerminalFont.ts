@@ -1,6 +1,6 @@
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import { resolveTerminalFont, useTheme } from "@/modules/theme";
-import { useMemo } from "react";
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import { resolveTerminalFont, useTheme } from '@/modules/theme';
+import { useMemo } from 'react';
 
 export function useTerminalFont() {
   const fontFamily = usePreferencesStore((p) => p.terminalFontFamily);
@@ -9,12 +9,7 @@ export function useTerminalFont() {
   const { activeTheme, resolvedMode } = useTheme();
 
   return useMemo(
-    () =>
-      resolveTerminalFont(
-        { fontFamily, fontWeight, fontSize },
-        activeTheme,
-        resolvedMode,
-      ),
+    () => resolveTerminalFont({ fontFamily, fontWeight, fontSize }, activeTheme, resolvedMode),
     [fontFamily, fontWeight, fontSize, activeTheme, resolvedMode],
   );
 }

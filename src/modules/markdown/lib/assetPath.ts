@@ -11,7 +11,7 @@ const URL_SCHEME = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
  */
 export function resolveRelativeAsset(base: string, src: string): string | null {
   const bare = src.trim().split(/[?#]/)[0];
-  if (!bare || bare.startsWith("/") || bare.startsWith("\\")) return null;
+  if (!bare || bare.startsWith('/') || bare.startsWith('\\')) return null;
   if (WINDOWS_DRIVE.test(bare)) return null;
   if (URL_SCHEME.test(bare)) return null;
 
@@ -22,47 +22,47 @@ export function resolveRelativeAsset(base: string, src: string): string | null {
     /* keep the raw text */
   }
 
-  const backslashes = base.includes("\\") && !base.includes("/");
-  const dirEnd = Math.max(base.lastIndexOf("/"), base.lastIndexOf("\\"));
+  const backslashes = base.includes('\\') && !base.includes('/');
+  const dirEnd = Math.max(base.lastIndexOf('/'), base.lastIndexOf('\\'));
   if (dirEnd < 0) return null;
-  const [root, ...stack] = base.slice(0, dirEnd).replace(/\\/g, "/").split("/");
+  const [root, ...stack] = base.slice(0, dirEnd).replace(/\\/g, '/').split('/');
 
-  for (const part of decoded.replace(/\\/g, "/").split("/")) {
-    if (part === "" || part === ".") continue;
-    if (part === "..") stack.pop();
+  for (const part of decoded.replace(/\\/g, '/').split('/')) {
+    if (part === '' || part === '.') continue;
+    if (part === '..') stack.pop();
     else stack.push(part);
   }
-  const joined = [root, ...stack].join("/");
-  return backslashes ? joined.replace(/\//g, "\\") : joined;
+  const joined = [root, ...stack].join('/');
+  return backslashes ? joined.replace(/\//g, '\\') : joined;
 }
 
 const LOCAL_IMAGE_EXTENSIONS: ReadonlySet<string> = new Set([
-  "png",
-  "jpg",
-  "jpeg",
-  "gif",
-  "webp",
-  "avif",
-  "svg",
-  "bmp",
-  "ico",
+  'png',
+  'jpg',
+  'jpeg',
+  'gif',
+  'webp',
+  'avif',
+  'svg',
+  'bmp',
+  'ico',
 ]);
 
 const ASSET_URL = /^(?:asset:|(?:https?:)?\/\/asset\.localhost)/i;
 
 function toPosix(path: string): string {
-  return path.replace(/\\/g, "/");
+  return path.replace(/\\/g, '/');
 }
 
 function dirOf(path: string): string {
   const posix = toPosix(path);
-  const i = posix.lastIndexOf("/");
+  const i = posix.lastIndexOf('/');
   return i <= 0 ? posix.slice(0, i + 1) : posix.slice(0, i);
 }
 
 /** Lexical containment; `abs` must already be normalized (no `..`). */
 export function isInsideRoot(root: string, abs: string): boolean {
-  let r = toPosix(root).replace(/\/+$/, "");
+  let r = toPosix(root).replace(/\/+$/, '');
   let a = toPosix(abs);
   if (/^[a-zA-Z]:/.test(r)) {
     r = r.toLowerCase();
@@ -75,13 +75,8 @@ export function isInsideRoot(root: string, abs: string): boolean {
  * The tree a preview may load images from: the workspace root when the
  * document lives in it, otherwise the document's own folder.
  */
-export function previewBoundary(
-  docPath: string,
-  workspaceRoot: string | null,
-): string {
-  return workspaceRoot && isInsideRoot(workspaceRoot, docPath)
-    ? workspaceRoot
-    : dirOf(docPath);
+export function previewBoundary(docPath: string, workspaceRoot: string | null): string {
+  return workspaceRoot && isInsideRoot(workspaceRoot, docPath) ? workspaceRoot : dirOf(docPath);
 }
 
 export type LocalImagePolicy = {
@@ -95,17 +90,12 @@ export type LocalImagePolicy = {
  * path into an asset URL when it stays under `boundary`, is an image type and
  * is not a secret path. Symlinks are not resolved here.
  */
-export function isAllowedLocalImage(
-  abs: string,
-  policy: LocalImagePolicy,
-): boolean {
-  const name = toPosix(abs).split("/").pop() ?? "";
-  const dot = name.lastIndexOf(".");
-  const ext = dot > 0 ? name.slice(dot + 1).toLowerCase() : "";
+export function isAllowedLocalImage(abs: string, policy: LocalImagePolicy): boolean {
+  const name = toPosix(abs).split('/').pop() ?? '';
+  const dot = name.lastIndexOf('.');
+  const ext = dot > 0 ? name.slice(dot + 1).toLowerCase() : '';
   return (
-    LOCAL_IMAGE_EXTENSIONS.has(ext) &&
-    isInsideRoot(policy.boundary, abs) &&
-    policy.isReadable(abs)
+    LOCAL_IMAGE_EXTENSIONS.has(ext) && isInsideRoot(policy.boundary, abs) && policy.isReadable(abs)
   );
 }
 
@@ -129,9 +119,9 @@ export function rehypeLocalImages(
   policy: LocalImagePolicy,
 ) {
   const rewrite = (node: HastNode): void => {
-    if (node.type === "element" && node.tagName === "img") {
+    if (node.type === 'element' && node.tagName === 'img') {
       const src = node.properties?.src;
-      if (typeof src === "string" && node.properties) {
+      if (typeof src === 'string' && node.properties) {
         const abs = resolveRelativeAsset(basePath, src);
         if (abs) {
           if (isAllowedLocalImage(abs, policy)) {

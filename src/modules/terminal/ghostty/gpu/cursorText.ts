@@ -1,4 +1,4 @@
-import type { Rgb } from "../core/packedCells";
+import type { Rgb } from '../core/packedCells';
 
 /** Smallest contrast ratio at which text on the cursor block stays readable. */
 const MIN_CURSOR_TEXT_CONTRAST = 3;
@@ -9,11 +9,7 @@ const MIN_CURSOR_TEXT_CONTRAST = 3;
  * whichever reads against the cursor. A theme whose accent equals the cursor
  * colour must never make the character vanish.
  */
-export function resolveCursorText(
-  cursor: Rgb,
-  accent: Rgb | null,
-  background: Rgb,
-): Rgb {
+export function resolveCursorText(cursor: Rgb, accent: Rgb | null, background: Rgb): Rgb {
   if (accent && contrastRatio(accent, cursor) >= MIN_CURSOR_TEXT_CONTRAST) {
     return accent;
   }
@@ -22,9 +18,7 @@ export function resolveCursorText(
   }
   const black: Rgb = [0, 0, 0];
   const white: Rgb = [255, 255, 255];
-  return contrastRatio(black, cursor) >= contrastRatio(white, cursor)
-    ? black
-    : white;
+  return contrastRatio(black, cursor) >= contrastRatio(white, cursor) ? black : white;
 }
 
 export function contrastRatio(first: Rgb, second: Rgb): number {

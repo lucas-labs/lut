@@ -1,22 +1,16 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 import {
   compatModelIdForEndpoint,
   type CustomEndpoint,
@@ -35,7 +29,7 @@ import {
   STT_PROVIDER_LABELS,
   type SttProvider,
   WHISPERCPP_DEFAULT_BASE_URL,
-} from "@/modules/ai/config";
+} from '@/modules/ai/config';
 import {
   clearCustomEndpointKey,
   clearKey,
@@ -44,9 +38,9 @@ import {
   getAllKeys,
   setCustomEndpointKey,
   setKey,
-} from "@/modules/ai/lib/keyring";
-import { useChatStore } from "@/modules/ai/store/chatStore";
-import { usePreferencesStore } from "@/modules/settings/preferences";
+} from '@/modules/ai/lib/keyring';
+import { useChatStore } from '@/modules/ai/store/chatStore';
+import { usePreferencesStore } from '@/modules/settings/preferences';
 import {
   type AutocompleteTrigger,
   emitKeysChanged,
@@ -71,8 +65,8 @@ import {
   setRecentModelIds,
   setSttProvider,
   setWhispercppBaseURL,
-} from "@/modules/settings/store";
-import { getBindingTokens, SHORTCUTS } from "@/modules/shortcuts/shortcuts";
+} from '@/modules/settings/store';
+import { getBindingTokens, SHORTCUTS } from '@/modules/shortcuts/shortcuts';
 import {
   Add01Icon,
   ArrowDown01Icon,
@@ -81,15 +75,15 @@ import {
   CheckmarkCircle02Icon,
   ChevronDown,
   Mic01Icon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { invoke } from "@tauri-apps/api/core";
-import { openUrl } from "@tauri-apps/plugin-opener";
-import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
-import { ProviderIcon } from "../components/ProviderIcon";
-import { ProviderKeyCard } from "../components/ProviderKeyCard";
-import { SectionHeader } from "../components/SectionHeader";
+} from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { invoke } from '@tauri-apps/api/core';
+import { openUrl } from '@tauri-apps/plugin-opener';
+import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import { ProviderIcon } from '../components/ProviderIcon';
+import { ProviderKeyCard } from '../components/ProviderKeyCard';
+import { SectionHeader } from '../components/SectionHeader';
 
 type KeysMap = Record<ProviderId, string | null>;
 
@@ -104,40 +98,37 @@ type LocalMeta = {
 
 const LOCAL_META: Partial<Record<ProviderId, LocalMeta>> = {
   lmstudio: {
-    urlPlaceholder: "http://localhost:1234/v1",
-    modelPlaceholder: "qwen2.5-coder-7b-instruct",
-    description:
-      "Run GGUF models via LM Studio's HTTP server (Developer tab → enable).",
+    urlPlaceholder: 'http://localhost:1234/v1',
+    modelPlaceholder: 'qwen2.5-coder-7b-instruct',
+    description: "Run GGUF models via LM Studio's HTTP server (Developer tab → enable).",
     modelHint: (
       <>
-        The model id loaded in LM Studio — see the server's{" "}
-        <span className="font-mono">/v1/models</span> page.
+        The model id loaded in LM Studio — see the server's <span className="font-mono">/v1/models</span> page.
       </>
     ),
   },
   mlx: {
-    urlPlaceholder: "http://127.0.0.1:8080/v1",
-    modelPlaceholder: "mlx-community/Qwen2.5-Coder-7B-Instruct-4bit",
-    description:
-      "Apple-silicon inference via mlx_lm.server (pip install mlx-lm).",
+    urlPlaceholder: 'http://127.0.0.1:8080/v1',
+    modelPlaceholder: 'mlx-community/Qwen2.5-Coder-7B-Instruct-4bit',
+    description: 'Apple-silicon inference via mlx_lm.server (pip install mlx-lm).',
     modelHint: <>The Hugging Face repo path you launched mlx_lm.server with.</>,
   },
   ollama: {
-    urlPlaceholder: "http://localhost:11434/v1",
-    modelPlaceholder: "qwen2.5-coder:7b",
+    urlPlaceholder: 'http://localhost:11434/v1',
+    modelPlaceholder: 'qwen2.5-coder:7b',
     description: "Local models via Ollama's built-in OpenAI-compatible API.",
     modelHint: <>The model name from `ollama list` / `ollama pull`.</>,
   },
-  "openai-compatible": {
-    urlPlaceholder: "https://api.example.com/v1",
-    modelPlaceholder: "gpt-4o, qwen3-max, glm-4.6, …",
-    description: "Any OpenAI-compatible endpoint — vLLM, Z.AI, Fireworks, etc.",
+  'openai-compatible': {
+    urlPlaceholder: 'https://api.example.com/v1',
+    modelPlaceholder: 'gpt-4o, qwen3-max, glm-4.6, …',
+    description: 'Any OpenAI-compatible endpoint — vLLM, Z.AI, Fireworks, etc.',
     modelHint: null,
   },
   openrouter: {
-    urlPlaceholder: "",
-    modelPlaceholder: "anthropic/claude-sonnet-5, openai/gpt-5.6, …",
-    description: "Any model on OpenRouter — type its full provider/model id.",
+    urlPlaceholder: '',
+    modelPlaceholder: 'anthropic/claude-sonnet-5, openai/gpt-5.6, …',
+    description: 'Any model on OpenRouter — type its full provider/model id.',
     modelHint: (
       <>
         Browse ids at <span className="font-mono">openrouter.ai/models</span>.
@@ -147,11 +138,11 @@ const LOCAL_META: Partial<Record<ProviderId, LocalMeta>> = {
 };
 
 function reportCredentialRemovalError(error: unknown): void {
-  toast.error("Could not remove credential", { description: String(error) });
+  toast.error('Could not remove credential', { description: String(error) });
 }
 
 function reportPartialRemovalError(error: unknown): void {
-  toast.error("Credential removed; settings may be incomplete", {
+  toast.error('Credential removed; settings may be incomplete', {
     description: String(error),
   });
 }
@@ -170,9 +161,7 @@ export function ModelsSection() {
   const ollamaModelId = usePreferencesStore((s) => s.ollamaModelId);
   const compatBaseURL = usePreferencesStore((s) => s.openaiCompatibleBaseURL);
   const compatModelId = usePreferencesStore((s) => s.openaiCompatibleModelId);
-  const compatContextLimit = usePreferencesStore(
-    (s) => s.openaiCompatibleContextLimit,
-  );
+  const compatContextLimit = usePreferencesStore((s) => s.openaiCompatibleContextLimit);
   const openrouterModelId = usePreferencesStore((s) => s.openrouterModelId);
   const customEndpoints = usePreferencesStore((s) => s.customEndpoints);
 
@@ -211,21 +200,16 @@ export function ModelsSection() {
   const addCustomEndpoint = async () => {
     const ep: CustomEndpoint = {
       id: crypto.randomUUID().slice(0, 8),
-      name: "",
-      baseURL: "",
-      modelId: "",
+      name: '',
+      baseURL: '',
+      modelId: '',
       contextLimit: 128_000,
     };
     await setCustomEndpoints([...customEndpoints, ep]);
   };
 
-  const updateCustomEndpoint = async (
-    id: string,
-    patch: Partial<CustomEndpoint>,
-  ) => {
-    await setCustomEndpoints(
-      customEndpoints.map((e) => (e.id === id ? { ...e, ...patch } : e)),
-    );
+  const updateCustomEndpoint = async (id: string, patch: Partial<CustomEndpoint>) => {
+    await setCustomEndpoints(customEndpoints.map((e) => (e.id === id ? { ...e, ...patch } : e)));
   };
 
   const removeCustomEndpoint = async (id: string) => {
@@ -240,15 +224,10 @@ export function ModelsSection() {
       // Finish history cleanup before resetting the selection, which can add
       // to recents. A failed write must not prevent removal of the endpoint.
       const deadModelId = compatModelIdForEndpoint(id);
-      const { favoriteModelIds, recentModelIds } =
-        usePreferencesStore.getState();
+      const { favoriteModelIds, recentModelIds } = usePreferencesStore.getState();
       const history = await Promise.allSettled([
         ...(favoriteModelIds.includes(deadModelId)
-          ? [
-              setFavoriteModelIds(
-                favoriteModelIds.filter((m) => m !== deadModelId),
-              ),
-            ]
+          ? [setFavoriteModelIds(favoriteModelIds.filter((m) => m !== deadModelId))]
           : []),
         ...(recentModelIds.includes(deadModelId)
           ? [setRecentModelIds(recentModelIds.filter((m) => m !== deadModelId))]
@@ -257,19 +236,10 @@ export function ModelsSection() {
       const remaining = customEndpoints.filter((e) => e.id !== id);
       const { selectedModelId, setSelectedModelId } = useChatStore.getState();
       if (selectedModelId === deadModelId) {
-        setSelectedModelId(
-          remaining[0]
-            ? compatModelIdForEndpoint(remaining[0].id)
-            : DEFAULT_MODEL_ID,
-        );
+        setSelectedModelId(remaining[0] ? compatModelIdForEndpoint(remaining[0].id) : DEFAULT_MODEL_ID);
       }
-      const cleanup = await Promise.allSettled([
-        setCustomEndpoints(remaining),
-        emitKeysChanged(),
-      ]);
-      const failed = [...history, ...cleanup].find(
-        (result) => result.status === "rejected",
-      );
+      const cleanup = await Promise.allSettled([setCustomEndpoints(remaining), emitKeysChanged()]);
+      const failed = [...history, ...cleanup].find((result) => result.status === 'rejected');
       if (failed) throw failed.reason;
     } catch (error) {
       reportPartialRemovalError(error);
@@ -278,28 +248,28 @@ export function ModelsSection() {
 
   const localConfig = (id: ProviderId): LocalConfig | null => {
     switch (id) {
-      case "lmstudio":
+      case 'lmstudio':
         return {
           baseURL: lmstudioBaseURL,
           modelId: lmstudioModelId,
           setBaseURL: setLmstudioBaseURL,
           setModelId: setLmstudioModelId,
         };
-      case "mlx":
+      case 'mlx':
         return {
           baseURL: mlxBaseURL,
           modelId: mlxModelId,
           setBaseURL: setMlxBaseURL,
           setModelId: setMlxModelId,
         };
-      case "ollama":
+      case 'ollama':
         return {
           baseURL: ollamaBaseURL,
           modelId: ollamaModelId,
           setBaseURL: setOllamaBaseURL,
           setModelId: setOllamaModelId,
         };
-      case "openai-compatible":
+      case 'openai-compatible':
         return {
           baseURL: compatBaseURL,
           modelId: compatModelId,
@@ -308,9 +278,9 @@ export function ModelsSection() {
           contextLimit: compatContextLimit,
           setContextLimit: setOpenaiCompatibleContextLimit,
         };
-      case "openrouter":
+      case 'openrouter':
         return {
-          baseURL: "",
+          baseURL: '',
           modelId: openrouterModelId,
           setBaseURL: async () => {},
           setModelId: setOpenrouterModelId,
@@ -322,12 +292,11 @@ export function ModelsSection() {
   };
 
   const isConfigured = (id: ProviderId): boolean => {
-    if (id === "openrouter") return !!keys?.[id] && !!openrouterModelId.trim();
+    if (id === 'openrouter') return !!keys?.[id] && !!openrouterModelId.trim();
     if (!isLocalProvider(id)) return !!keys?.[id];
     const cfg = localConfig(id);
     if (!cfg) return false;
-    if (id === "openai-compatible")
-      return !!cfg.baseURL.trim() && !!cfg.modelId.trim();
+    if (id === 'openai-compatible') return !!cfg.baseURL.trim() && !!cfg.modelId.trim();
     return !!cfg.modelId.trim();
   };
 
@@ -335,28 +304,22 @@ export function ModelsSection() {
     return <div className="text-[12px] text-muted-foreground">Loading…</div>;
   }
 
-  const configuredIds = new Set(
-    PROVIDERS.filter((p) => isConfigured(p.id)).map((p) => p.id),
-  );
+  const configuredIds = new Set(PROVIDERS.filter((p) => isConfigured(p.id)).map((p) => p.id));
   const visibleIds = new Set<ProviderId>(configuredIds);
   for (const id of adding) visibleIds.add(id);
-  const visibleProviders = PROVIDERS.filter(
-    (p) => p.id !== "openai-compatible" && visibleIds.has(p.id),
-  );
-  const addableProviders = PROVIDERS.filter(
-    (p) => p.id !== "openai-compatible" && !visibleIds.has(p.id),
-  );
+  const visibleProviders = PROVIDERS.filter((p) => p.id !== 'openai-compatible' && visibleIds.has(p.id));
+  const addableProviders = PROVIDERS.filter((p) => p.id !== 'openai-compatible' && !visibleIds.has(p.id));
 
   const removeProvider = async (id: ProviderId) => {
     await onClearKey(id);
     try {
-      if (id === "openrouter") {
-        await setOpenrouterModelId("");
+      if (id === 'openrouter') {
+        await setOpenrouterModelId('');
       } else if (isLocalProvider(id)) {
         const cfg = localConfig(id);
         if (cfg) {
-          await cfg.setModelId("");
-          if (id === "openai-compatible") await cfg.setBaseURL("");
+          await cfg.setModelId('');
+          if (id === 'openai-compatible') await cfg.setBaseURL('');
         }
       }
       setAdding((prev) => {
@@ -392,18 +355,12 @@ export function ModelsSection() {
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <Label>Providers</Label>
-          <AddProviderMenu
-            providers={addableProviders}
-            onAdd={addProvider}
-            onAddCompat={addCustomEndpoint}
-          />
+          <AddProviderMenu providers={addableProviders} onAdd={addProvider} onAddCompat={addCustomEndpoint} />
         </div>
 
         {visibleProviders.length === 0 && customEndpoints.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border/60 bg-card/40 px-4 py-8 text-center">
-            <p className="text-[12px] text-muted-foreground">
-              No providers connected yet.
-            </p>
+            <p className="text-[12px] text-muted-foreground">No providers connected yet.</p>
             <p className="mt-0.5 text-[10.5px] text-muted-foreground/70">
               Click "Add provider" to connect a cloud or local model source.
             </p>
@@ -411,7 +368,7 @@ export function ModelsSection() {
         ) : (
           <div className="flex flex-col gap-2">
             {visibleProviders.map((p) =>
-              p.id === "openrouter" ? (
+              p.id === 'openrouter' ? (
                 <LocalProviderCard
                   key={p.id}
                   provider={p}
@@ -420,12 +377,8 @@ export function ModelsSection() {
                   meta={LOCAL_META[p.id]!}
                   compatKey={keys[p.id]}
                   onSaveKey={(v) => onSaveKey(p.id, v)}
-                  onClearKey={() =>
-                    onClearKey(p.id).catch(reportCredentialRemovalError)
-                  }
-                  onRemove={() =>
-                    removeProvider(p.id).catch(reportCredentialRemovalError)
-                  }
+                  onClearKey={() => onClearKey(p.id).catch(reportCredentialRemovalError)}
+                  onRemove={() => removeProvider(p.id).catch(reportCredentialRemovalError)}
                 />
               ) : isLocalProvider(p.id) ? (
                 <LocalProviderCard
@@ -435,12 +388,8 @@ export function ModelsSection() {
                   config={localConfig(p.id)!}
                   meta={LOCAL_META[p.id]!}
                   onSaveKey={(v) => onSaveKey(p.id, v)}
-                  onClearKey={() =>
-                    onClearKey(p.id).catch(reportCredentialRemovalError)
-                  }
-                  onRemove={() =>
-                    removeProvider(p.id).catch(reportCredentialRemovalError)
-                  }
+                  onClearKey={() => onClearKey(p.id).catch(reportCredentialRemovalError)}
+                  onRemove={() => removeProvider(p.id).catch(reportCredentialRemovalError)}
                 />
               ) : (
                 <ProviderKeyCard
@@ -448,12 +397,8 @@ export function ModelsSection() {
                   provider={p}
                   currentKey={keys[p.id]}
                   onSave={(v) => onSaveKey(p.id, v)}
-                  onClear={() =>
-                    onClearKey(p.id).catch(reportCredentialRemovalError)
-                  }
-                  onRemove={() =>
-                    removeProvider(p.id).catch(reportCredentialRemovalError)
-                  }
+                  onClear={() => onClearKey(p.id).catch(reportCredentialRemovalError)}
+                  onRemove={() => removeProvider(p.id).catch(reportCredentialRemovalError)}
                 />
               ),
             )}
@@ -463,15 +408,9 @@ export function ModelsSection() {
                 endpoint={ep}
                 endpointKey={epKeys[ep.id] ?? null}
                 onSaveKey={(v) => onSaveEndpointKey(ep.id, v)}
-                onClearKey={() =>
-                  onClearEndpointKey(ep.id).catch(reportCredentialRemovalError)
-                }
+                onClearKey={() => onClearEndpointKey(ep.id).catch(reportCredentialRemovalError)}
                 onUpdate={(patch) => updateCustomEndpoint(ep.id, patch)}
-                onRemove={() =>
-                  removeCustomEndpoint(ep.id).catch(
-                    reportCredentialRemovalError,
-                  )
-                }
+                onRemove={() => removeCustomEndpoint(ep.id).catch(reportCredentialRemovalError)}
               />
             ))}
           </div>
@@ -501,18 +440,12 @@ function AddProviderMenu({
   onAddCompat: () => void;
 }) {
   const cloud = providers.filter((p) => !isLocalProvider(p.id));
-  const local = providers.filter(
-    (p) => isLocalProvider(p.id) && p.id !== "openai-compatible",
-  );
+  const local = providers.filter((p) => isLocalProvider(p.id) && p.id !== 'openai-compatible');
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-7 gap-1.5 px-2.5 text-[11px]"
-        >
+        <Button size="sm" variant="outline" className="h-7 gap-1.5 px-2.5 text-[11px]">
           <HugeiconsIcon icon={Add01Icon} size={12} strokeWidth={2} />
           Add provider
         </Button>
@@ -534,10 +467,7 @@ function AddProviderMenu({
         {local.map((p) => (
           <ProviderMenuItem key={p.id} provider={p} onAdd={onAdd} />
         ))}
-        <DropdownMenuItem
-          onSelect={() => onAddCompat()}
-          className="flex items-center gap-2 text-[12px]"
-        >
+        <DropdownMenuItem onSelect={() => onAddCompat()} className="flex items-center gap-2 text-[12px]">
           <ProviderIcon provider="openai-compatible" size={13} />
           <span>OpenAI Compatible</span>
         </DropdownMenuItem>
@@ -546,18 +476,9 @@ function AddProviderMenu({
   );
 }
 
-function ProviderMenuItem({
-  provider,
-  onAdd,
-}: {
-  provider: ProviderInfo;
-  onAdd: (id: ProviderId) => void;
-}) {
+function ProviderMenuItem({ provider, onAdd }: { provider: ProviderInfo; onAdd: (id: ProviderId) => void }) {
   return (
-    <DropdownMenuItem
-      onSelect={() => onAdd(provider.id)}
-      className="flex items-center gap-2 text-[12px]"
-    >
+    <DropdownMenuItem onSelect={() => onAdd(provider.id)} className="flex items-center gap-2 text-[12px]">
       <ProviderIcon provider={provider.id} size={13} />
       <span>{provider.label}</span>
     </DropdownMenuItem>
@@ -580,16 +501,9 @@ function DefaultsBlock({
       <Label>Defaults</Label>
       <div className="flex flex-col gap-2.5 rounded-lg border border-border/60 bg-card/60 px-3 py-2.5">
         <FieldRow label="Chat model">
-          <DefaultModelPicker
-            defaultModel={defaultModel}
-            configuredIds={configuredIds}
-          />
+          <DefaultModelPicker defaultModel={defaultModel} configuredIds={configuredIds} />
         </FieldRow>
-        <AutocompleteRow
-          keys={keys}
-          configuredIds={configuredIds}
-          customEndpoints={customEndpoints}
-        />
+        <AutocompleteRow keys={keys} configuredIds={configuredIds} customEndpoints={customEndpoints} />
       </div>
     </div>
   );
@@ -608,31 +522,16 @@ function DefaultModelPicker({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          disabled={!hasAny}
-          className="h-8 flex-1 justify-between gap-2 px-2.5 text-[11.5px]"
-        >
+        <Button variant="outline" disabled={!hasAny} className="h-8 flex-1 justify-between gap-2 px-2.5 text-[11.5px]">
           <span className="flex items-center gap-2 truncate">
             <ProviderIcon provider={m.provider} size={13} />
             <span className="truncate">{m.label}</span>
             <span className="text-muted-foreground">· {m.hint}</span>
           </span>
-          <HugeiconsIcon
-            icon={ArrowDown01Icon}
-            size={11}
-            strokeWidth={2}
-            className="opacity-70"
-          />
+          <HugeiconsIcon icon={ArrowDown01Icon} size={11} strokeWidth={2} className="opacity-70" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="start"
-        side="bottom"
-        sideOffset={6}
-        collisionPadding={12}
-        className="min-w-70 p-1"
-      >
+      <DropdownMenuContent align="start" side="bottom" sideOffset={6} collisionPadding={12} className="min-w-70 p-1">
         <div className="max-h-72 overflow-y-auto overscroll-contain pr-1">
           {PROVIDERS.filter((p) => configuredIds.has(p.id)).map((p) => {
             const models = MODELS.filter((x) => x.provider === p.id);
@@ -647,16 +546,11 @@ function DefaultModelPicker({
                   <DropdownMenuItem
                     key={mod.id}
                     onSelect={() => void setDefaultModel(mod.id as ModelId)}
-                    className={cn(
-                      "flex items-start gap-2 text-[12px]",
-                      mod.id === defaultModel && "bg-accent/50",
-                    )}
+                    className={cn('flex items-start gap-2 text-[12px]', mod.id === defaultModel && 'bg-accent/50')}
                   >
                     <span className="flex flex-1 flex-col">
                       <span>{mod.label}</span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {mod.description}
-                      </span>
+                      <span className="text-[10px] text-muted-foreground">{mod.description}</span>
                     </span>
                   </DropdownMenuItem>
                 ))}
@@ -685,10 +579,10 @@ function AutocompleteRow({
   const eligible = useMemo(() => getAutocompleteEligibleModels(), []);
   const userShortcuts = usePreferencesStore((s) => s.shortcuts);
   const aiCompleteShortcut = useMemo(() => {
-    const s = SHORTCUTS.find((x) => x.id === "editor.aiComplete");
-    const bindings = userShortcuts["editor.aiComplete"] || s?.defaultBindings;
-    if (!bindings || bindings.length === 0) return "";
-    return getBindingTokens(bindings[0]).join("");
+    const s = SHORTCUTS.find((x) => x.id === 'editor.aiComplete');
+    const bindings = userShortcuts['editor.aiComplete'] || s?.defaultBindings;
+    if (!bindings || bindings.length === 0) return '';
+    return getBindingTokens(bindings[0]).join('');
   }, [userShortcuts]);
 
   // One selectable model per fully-configured OpenAI-compatible endpoint.
@@ -696,19 +590,14 @@ function AutocompleteRow({
     () =>
       customEndpoints
         .filter((e) => e.baseURL.trim() && e.modelId.trim())
-        .map((e) =>
-          getCompatModelInfo(compatModelIdForEndpoint(e.id), customEndpoints),
-        ),
+        .map((e) => getCompatModelInfo(compatModelIdForEndpoint(e.id), customEndpoints)),
     [customEndpoints],
   );
 
   // Fast cloud tiers + configured local providers + named compat endpoints.
   const items = useMemo(() => {
     const local = PROVIDERS.filter(
-      (p) =>
-        isLocalProvider(p.id) &&
-        p.id !== "openai-compatible" &&
-        configuredIds.has(p.id),
+      (p) => isLocalProvider(p.id) && p.id !== 'openai-compatible' && configuredIds.has(p.id),
     ).flatMap((p) => {
       const m = MODELS.find((x) => x.provider === p.id);
       return m ? [m] : [];
@@ -717,7 +606,7 @@ function AutocompleteRow({
   }, [eligible, configuredIds, compatItems]);
 
   const currentModel = useMemo(() => {
-    if (provider === "openai-compatible" && isCompatModelId(modelId)) {
+    if (provider === 'openai-compatible' && isCompatModelId(modelId)) {
       return getCompatModelInfo(modelId, customEndpoints);
     }
     if (isLocalProvider(provider)) {
@@ -733,9 +622,8 @@ function AutocompleteRow({
   const setModel = (id: string, providerId: ProviderId) => {
     void setAutocompleteProvider(providerId);
     // Compat endpoints store their compat- id; other locals use their own field.
-    const keep =
-      providerId === "openai-compatible" || !isLocalProvider(providerId);
-    void setAutocompleteModelId(keep ? id : "");
+    const keep = providerId === 'openai-compatible' || !isLocalProvider(providerId);
+    void setAutocompleteModelId(keep ? id : '');
   };
 
   const grouped = useMemo(() => {
@@ -754,10 +642,7 @@ function AutocompleteRow({
     <>
       <FieldRow label="Autocomplete">
         <div className="flex flex-1 items-center gap-2">
-          <Switch
-            checked={enabled}
-            onCheckedChange={(v) => void setAutocompleteEnabled(v)}
-          />
+          <Switch checked={enabled} onCheckedChange={(v) => void setAutocompleteEnabled(v)} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -768,28 +653,16 @@ function AutocompleteRow({
                 <span className="flex items-center gap-2 truncate">
                   <ProviderIcon provider={currentModel.provider} size={12} />
                   <span className="truncate">{currentModel.label}</span>
-                  <span className="text-muted-foreground">
-                    · {currentModel.hint}
-                  </span>
+                  <span className="text-muted-foreground">· {currentModel.hint}</span>
                 </span>
-                <HugeiconsIcon
-                  icon={ArrowDown01Icon}
-                  size={11}
-                  strokeWidth={2}
-                  className="opacity-70"
-                />
+                <HugeiconsIcon icon={ArrowDown01Icon} size={11} strokeWidth={2} className="opacity-70" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="start"
-              collisionPadding={12}
-              className="max-h-72 min-w-70 overflow-y-auto"
-            >
+            <DropdownMenuContent align="start" collisionPadding={12} className="max-h-72 min-w-70 overflow-y-auto">
               {PROVIDERS.map((p) => {
                 const list = grouped.get(p.id);
                 if (!list || list.length === 0) return null;
-                const pConfigured =
-                  p.id === "openai-compatible" || configuredIds.has(p.id);
+                const pConfigured = p.id === 'openai-compatible' || configuredIds.has(p.id);
                 return (
                   <div key={p.id} className="px-1 pt-1.5 first:pt-1">
                     <div className="mb-0.5 flex items-center gap-1.5 px-2 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
@@ -806,16 +679,11 @@ function AutocompleteRow({
                         key={m.id}
                         disabled={!pConfigured}
                         onSelect={() => pConfigured && setModel(m.id, p.id)}
-                        className={cn(
-                          "text-[11.5px]",
-                          m.id === modelId && "bg-accent/50",
-                        )}
+                        className={cn('text-[11.5px]', m.id === modelId && 'bg-accent/50')}
                       >
                         <span className="flex flex-col">
                           <span>{m.label}</span>
-                          <span className="text-[10px] text-muted-foreground">
-                            {m.description}
-                          </span>
+                          <span className="text-[10px] text-muted-foreground">{m.description}</span>
                         </span>
                       </DropdownMenuItem>
                     ))}
@@ -828,20 +696,13 @@ function AutocompleteRow({
       </FieldRow>
       {enabled ? (
         <FieldRow label="Trigger">
-          <Select
-            value={trigger}
-            onValueChange={(v) =>
-              void setAutocompleteTrigger(v as AutocompleteTrigger)
-            }
-          >
+          <Select value={trigger} onValueChange={(v) => void setAutocompleteTrigger(v as AutocompleteTrigger)}>
             <SelectTrigger className="h-8 w-full text-[11.5px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="auto">Automatic (as you type)</SelectItem>
-              <SelectItem value="manual">
-                Manual ({aiCompleteShortcut || "shortcut"})
-              </SelectItem>
+              <SelectItem value="manual">Manual ({aiCompleteShortcut || 'shortcut'})</SelectItem>
             </SelectContent>
           </Select>
         </FieldRow>
@@ -874,37 +735,26 @@ function LocalProviderCard({
   onClearKey: () => Promise<void>;
   onRemove: () => void;
 }) {
-  const {
-    baseURL,
-    modelId,
-    setBaseURL,
-    setModelId,
-    contextLimit,
-    setContextLimit,
-    noBaseURL,
-  } = config;
+  const { baseURL, modelId, setBaseURL, setModelId, contextLimit, setContextLimit, noBaseURL } = config;
   const [urlDraft, setUrlDraft] = useState(baseURL);
   const [modelDraft, setModelDraft] = useState(modelId);
-  const [contextDraft, setContextDraft] = useState(String(contextLimit ?? ""));
-  const [keyDraft, setKeyDraft] = useState("");
-  const [testStatus, setTestStatus] = useState<
-    "idle" | "testing" | "ok" | "fail"
-  >("idle");
+  const [contextDraft, setContextDraft] = useState(String(contextLimit ?? ''));
+  const [keyDraft, setKeyDraft] = useState('');
+  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
 
   useEffect(() => setUrlDraft(baseURL), [baseURL]);
   useEffect(() => setModelDraft(modelId), [modelId]);
-  useEffect(() => setContextDraft(String(contextLimit ?? "")), [contextLimit]);
+  useEffect(() => setContextDraft(String(contextLimit ?? '')), [contextLimit]);
 
-  const supportsKey =
-    provider.id === "openai-compatible" || provider.id === "openrouter";
+  const supportsKey = provider.id === 'openai-compatible' || provider.id === 'openrouter';
 
   const test = async () => {
-    setTestStatus("testing");
+    setTestStatus('testing');
     try {
-      const status = await invoke<number>("lm_ping", { baseUrl: urlDraft });
-      setTestStatus(status > 0 ? "ok" : "fail");
+      const status = await invoke<number>('lm_ping', { baseUrl: urlDraft });
+      setTestStatus(status > 0 ? 'ok' : 'fail');
     } catch {
-      setTestStatus("fail");
+      setTestStatus('fail');
     }
   };
 
@@ -918,11 +768,7 @@ function LocalProviderCard({
             variant="outline"
             className="ml-1 h-4 gap-1 border-border/60 bg-muted/40 px-1.5 text-[10px] font-normal text-muted-foreground"
           >
-            <HugeiconsIcon
-              icon={CheckmarkCircle02Icon}
-              size={9}
-              strokeWidth={2}
-            />
+            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={9} strokeWidth={2} />
             Connected
           </Badge>
         ) : null}
@@ -932,11 +778,7 @@ function LocalProviderCard({
           className="ml-auto inline-flex items-center gap-0.5 text-[10.5px] text-muted-foreground transition-colors hover:text-foreground"
         >
           Docs
-          <HugeiconsIcon
-            icon={ArrowUpRight01Icon}
-            size={11}
-            strokeWidth={1.75}
-          />
+          <HugeiconsIcon icon={ArrowUpRight01Icon} size={11} strokeWidth={1.75} />
         </button>
         <Button
           size="icon"
@@ -949,9 +791,7 @@ function LocalProviderCard({
         </Button>
       </div>
 
-      <span className="text-[10.5px] leading-relaxed text-muted-foreground">
-        {meta.description}
-      </span>
+      <span className="text-[10.5px] leading-relaxed text-muted-foreground">{meta.description}</span>
 
       <div className="mt-0.5 flex flex-col gap-2.5">
         {noBaseURL ? null : (
@@ -1004,15 +844,13 @@ function LocalProviderCard({
                 onBlur={() => {
                   const v = parseInt(contextDraft);
                   if (Number.isFinite(v) && v >= 1000) void setContextLimit(v);
-                  else setContextDraft(String(contextLimit ?? ""));
+                  else setContextDraft(String(contextLimit ?? ''));
                 }}
                 placeholder="128000"
                 spellCheck={false}
                 className="h-8 w-28 font-mono text-[11.5px]"
               />
-              <span className="text-[10.5px] text-muted-foreground">
-                tokens
-              </span>
+              <span className="text-[10.5px] text-muted-foreground">tokens</span>
             </div>
           </FieldRow>
         ) : null}
@@ -1022,7 +860,7 @@ function LocalProviderCard({
             {compatKey ? (
               <div className="flex flex-1 items-center gap-1.5">
                 <code className="flex-1 truncate rounded bg-muted/40 px-2 py-1 font-mono text-[11px] text-muted-foreground">
-                  {`${compatKey.slice(0, 4)}${"•".repeat(8)}${compatKey.slice(-4)}`}
+                  {`${compatKey.slice(0, 4)}${'•'.repeat(8)}${compatKey.slice(-4)}`}
                 </code>
                 <Button
                   size="icon"
@@ -1031,11 +869,7 @@ function LocalProviderCard({
                   title="Remove key"
                   className="size-7 text-muted-foreground hover:text-destructive"
                 >
-                  <HugeiconsIcon
-                    icon={Cancel01Icon}
-                    size={12}
-                    strokeWidth={1.75}
-                  />
+                  <HugeiconsIcon icon={Cancel01Icon} size={12} strokeWidth={1.75} />
                 </Button>
               </div>
             ) : (
@@ -1054,7 +888,7 @@ function LocalProviderCard({
                     const v = keyDraft.trim();
                     if (!v) return;
                     await onSaveKey(v);
-                    setKeyDraft("");
+                    setKeyDraft('');
                   }}
                   disabled={!keyDraft.trim()}
                   className="h-8 px-3 text-[11px]"
@@ -1069,9 +903,7 @@ function LocalProviderCard({
         <StatusLine status={testStatus} />
 
         {!modelId.trim() && meta.modelHint ? (
-          <p className="text-[10.5px] leading-relaxed text-muted-foreground">
-            {meta.modelHint}
-          </p>
+          <p className="text-[10.5px] leading-relaxed text-muted-foreground">{meta.modelHint}</p>
         ) : null}
       </div>
     </div>
@@ -1097,31 +929,24 @@ function CustomEndpointCard({
   const [nameDraft, setNameDraft] = useState(endpoint.name);
   const [urlDraft, setUrlDraft] = useState(endpoint.baseURL);
   const [modelDraft, setModelDraft] = useState(endpoint.modelId);
-  const [contextDraft, setContextDraft] = useState(
-    String(endpoint.contextLimit ?? ""),
-  );
-  const [keyDraft, setKeyDraft] = useState("");
-  const [testStatus, setTestStatus] = useState<
-    "idle" | "testing" | "ok" | "fail"
-  >("idle");
+  const [contextDraft, setContextDraft] = useState(String(endpoint.contextLimit ?? ''));
+  const [keyDraft, setKeyDraft] = useState('');
+  const [testStatus, setTestStatus] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
 
   useEffect(() => setNameDraft(endpoint.name), [endpoint.name]);
   useEffect(() => setUrlDraft(endpoint.baseURL), [endpoint.baseURL]);
   useEffect(() => setModelDraft(endpoint.modelId), [endpoint.modelId]);
-  useEffect(
-    () => setContextDraft(String(endpoint.contextLimit ?? "")),
-    [endpoint.contextLimit],
-  );
+  useEffect(() => setContextDraft(String(endpoint.contextLimit ?? '')), [endpoint.contextLimit]);
 
   const configured = !!endpoint.baseURL.trim() && !!endpoint.modelId.trim();
 
   const test = async () => {
-    setTestStatus("testing");
+    setTestStatus('testing');
     try {
-      const status = await invoke<number>("lm_ping", { baseUrl: urlDraft });
-      setTestStatus(status > 0 ? "ok" : "fail");
+      const status = await invoke<number>('lm_ping', { baseUrl: urlDraft });
+      setTestStatus(status > 0 ? 'ok' : 'fail');
     } catch {
-      setTestStatus("fail");
+      setTestStatus('fail');
     }
   };
 
@@ -1136,30 +961,19 @@ function CustomEndpointCard({
           icon={ChevronDown}
           size={12}
           strokeWidth={2}
-          className={cn(
-            "shrink-0 text-muted-foreground/60 transition-transform",
-            !expanded && "-rotate-90",
-          )}
+          className={cn('shrink-0 text-muted-foreground/60 transition-transform', !expanded && '-rotate-90')}
         />
         <ProviderIcon provider="openai-compatible" size={15} />
-        <span className="text-[12.5px] font-medium truncate">
-          {endpoint.name || "OpenAI Compatible"}
-        </span>
+        <span className="text-[12.5px] font-medium truncate">{endpoint.name || 'OpenAI Compatible'}</span>
         {endpoint.modelId.trim() && (
-          <span className="text-[10.5px] text-muted-foreground truncate font-mono">
-            {endpoint.modelId}
-          </span>
+          <span className="text-[10.5px] text-muted-foreground truncate font-mono">{endpoint.modelId}</span>
         )}
         {configured ? (
           <Badge
             variant="outline"
             className="ml-1 h-4 gap-1 border-border/60 bg-muted/40 px-1.5 text-[10px] font-normal text-muted-foreground"
           >
-            <HugeiconsIcon
-              icon={CheckmarkCircle02Icon}
-              size={9}
-              strokeWidth={2}
-            />
+            <HugeiconsIcon icon={CheckmarkCircle02Icon} size={9} strokeWidth={2} />
             Connected
           </Badge>
         ) : null}
@@ -1239,17 +1053,14 @@ function CustomEndpointCard({
                 onChange={(e) => setContextDraft(e.target.value)}
                 onBlur={() => {
                   const v = parseInt(contextDraft);
-                  if (Number.isFinite(v) && v >= 1000)
-                    void onUpdate({ contextLimit: v });
-                  else setContextDraft(String(endpoint.contextLimit ?? ""));
+                  if (Number.isFinite(v) && v >= 1000) void onUpdate({ contextLimit: v });
+                  else setContextDraft(String(endpoint.contextLimit ?? ''));
                 }}
                 placeholder="128000"
                 spellCheck={false}
                 className="h-8 w-28 font-mono text-[11.5px]"
               />
-              <span className="text-[10.5px] text-muted-foreground">
-                tokens
-              </span>
+              <span className="text-[10.5px] text-muted-foreground">tokens</span>
             </div>
           </FieldRow>
 
@@ -1257,7 +1068,7 @@ function CustomEndpointCard({
             {endpointKey ? (
               <div className="flex flex-1 items-center gap-1.5">
                 <code className="flex-1 truncate rounded bg-muted/40 px-2 py-1 font-mono text-[11px] text-muted-foreground">
-                  {`${endpointKey.slice(0, 4)}${"•".repeat(8)}${endpointKey.slice(-4)}`}
+                  {`${endpointKey.slice(0, 4)}${'•'.repeat(8)}${endpointKey.slice(-4)}`}
                 </code>
                 <Button
                   size="icon"
@@ -1266,11 +1077,7 @@ function CustomEndpointCard({
                   title="Remove key"
                   className="size-7 text-muted-foreground hover:text-destructive"
                 >
-                  <HugeiconsIcon
-                    icon={Cancel01Icon}
-                    size={12}
-                    strokeWidth={1.75}
-                  />
+                  <HugeiconsIcon icon={Cancel01Icon} size={12} strokeWidth={1.75} />
                 </Button>
               </div>
             ) : (
@@ -1289,7 +1096,7 @@ function CustomEndpointCard({
                     const v = keyDraft.trim();
                     if (!v) return;
                     await onSaveKey(v);
-                    setKeyDraft("");
+                    setKeyDraft('');
                   }}
                   disabled={!keyDraft.trim()}
                   className="h-8 px-3 text-[11px]"
@@ -1307,35 +1114,21 @@ function CustomEndpointCard({
   );
 }
 
-function FieldRow({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+function FieldRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="w-16 shrink-0 text-[11px] tracking-tight text-muted-foreground">
-        {label}
-      </span>
+      <span className="w-16 shrink-0 text-[11px] tracking-tight text-muted-foreground">{label}</span>
       <div className="flex flex-1 items-center">{children}</div>
     </div>
   );
 }
 
-function StatusLine({
-  status,
-}: {
-  status: "idle" | "testing" | "ok" | "fail";
-}) {
-  if (status === "idle") return null;
-  if (status === "testing") {
-    return (
-      <span className="text-[10.5px] text-muted-foreground">Testing…</span>
-    );
+function StatusLine({ status }: { status: 'idle' | 'testing' | 'ok' | 'fail' }) {
+  if (status === 'idle') return null;
+  if (status === 'testing') {
+    return <span className="text-[10.5px] text-muted-foreground">Testing…</span>;
   }
-  if (status === "ok") {
+  if (status === 'ok') {
     return (
       <span className="flex items-center gap-1 text-[10.5px] text-muted-foreground">
         <HugeiconsIcon icon={CheckmarkCircle02Icon} size={11} strokeWidth={2} />
@@ -1343,11 +1136,7 @@ function StatusLine({
       </span>
     );
   }
-  return (
-    <span className="text-[10.5px] text-destructive/80">
-      Could not reach the server.
-    </span>
-  );
+  return <span className="text-[10.5px] text-destructive/80">Could not reach the server.</span>;
 }
 
 function VoiceBlock() {
@@ -1370,17 +1159,9 @@ function VoiceBlock() {
       <FieldRow label="Provider">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              className="h-8 flex-1 justify-between gap-2 px-2.5 text-[11.5px]"
-            >
+            <Button variant="outline" className="h-8 flex-1 justify-between gap-2 px-2.5 text-[11.5px]">
               <span>{STT_PROVIDER_LABELS[sttProvider]}</span>
-              <HugeiconsIcon
-                icon={ArrowDown01Icon}
-                size={11}
-                strokeWidth={2}
-                className="opacity-70"
-              />
+              <HugeiconsIcon icon={ArrowDown01Icon} size={11} strokeWidth={2} className="opacity-70" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="min-w-44 p-1">
@@ -1388,10 +1169,7 @@ function VoiceBlock() {
               <DropdownMenuItem
                 key={p}
                 onSelect={() => void setSttProvider(p)}
-                className={cn(
-                  "flex items-center gap-2 text-[12px]",
-                  p === sttProvider && "bg-accent/50",
-                )}
+                className={cn('flex items-center gap-2 text-[12px]', p === sttProvider && 'bg-accent/50')}
               >
                 <span>{STT_PROVIDER_LABELS[p]}</span>
               </DropdownMenuItem>
@@ -1401,15 +1179,12 @@ function VoiceBlock() {
       </FieldRow>
 
       <p className="text-[10.5px] leading-relaxed text-muted-foreground">
-        {sttProvider === "openai" &&
-          "Uses your official OpenAI API key and the Whisper model for transcription."}
-        {sttProvider === "groq" &&
-          "Uses your official Groq API key and Groq's Whisper endpoint for transcription."}
-        {sttProvider === "whispercpp" &&
-          "Connects to a local Whisper.cpp server for fully offline transcription."}
+        {sttProvider === 'openai' && 'Uses your official OpenAI API key and the Whisper model for transcription.'}
+        {sttProvider === 'groq' && "Uses your official Groq API key and Groq's Whisper endpoint for transcription."}
+        {sttProvider === 'whispercpp' && 'Connects to a local Whisper.cpp server for fully offline transcription.'}
       </p>
 
-      {sttProvider === "groq" && (
+      {sttProvider === 'groq' && (
         <div className="flex flex-col gap-2.5">
           <FieldRow label="Model">
             <Input
@@ -1427,7 +1202,7 @@ function VoiceBlock() {
         </div>
       )}
 
-      {sttProvider === "whispercpp" && (
+      {sttProvider === 'whispercpp' && (
         <div className="flex flex-col gap-2.5">
           <FieldRow label="Base URL">
             <Input
@@ -1449,9 +1224,5 @@ function VoiceBlock() {
 }
 
 function Label({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="text-[11px] font-medium tracking-tight text-muted-foreground">
-      {children}
-    </span>
-  );
+  return <span className="text-[11px] font-medium tracking-tight text-muted-foreground">{children}</span>;
 }

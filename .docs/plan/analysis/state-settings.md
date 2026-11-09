@@ -5,15 +5,15 @@ Scope: `src/modules/spaces`, `src/modules/settings`, `src/modules/theme`, `src/s
 
 ## How it works today
 
-**Persistence base.** Every persisted file uses `@tauri-apps/plugin-store` `LazyStore` with a *relative* path,
+**Persistence base.** Every persisted file uses `@tauri-apps/plugin-store` `LazyStore` with a _relative_ path,
 resolved under the app data dir derived from the bundle identifier `app.crynta.terax` (`src-tauri/tauri.conf.json:5`).
 Three stores live in this area:
 
-| Store | Owner | Write policy |
-|---|---|---|
-| `terax-settings.json` | `src/modules/settings/store.ts:225,394` | autoSave 200 ms + explicit `save()` per setter (`store.ts:402-406`) |
-| `terax-spaces.json` | `src/modules/spaces/lib/store.ts:21,27` | autoSave 500 ms |
-| `terax-custom-themes.json` | `src/modules/theme/customThemes.ts:5,9` | autoSave 200 ms + `save()` |
+| Store                      | Owner                                   | Write policy                                                        |
+| -------------------------- | --------------------------------------- | ------------------------------------------------------------------- |
+| `terax-settings.json`      | `src/modules/settings/store.ts:225,394` | autoSave 200 ms + explicit `save()` per setter (`store.ts:402-406`) |
+| `terax-spaces.json`        | `src/modules/spaces/lib/store.ts:21,27` | autoSave 500 ms                                                     |
+| `terax-custom-themes.json` | `src/modules/theme/customThemes.ts:5,9` | autoSave 200 ms + `save()`                                          |
 
 Plus browser-side storage inside the WebView profile (also keyed by bundle id): localStorage "shadow" keys for
 pre-paint (`ThemeProvider.tsx:47-48`, `preferences.ts:17-18`, read by `settings.html:11`) and an IndexedDB
@@ -23,7 +23,7 @@ pre-paint (`ThemeProvider.tsx:47-48`, `preferences.ts:17-18`, read by `settings.
 **Spaces lifecycle.** `App.tsx:282` calls `useSpacesBoot` once ready: `loadAll()` reads all entries
 (`spaces/lib/store.ts:35-48`). Empty store → creates a `Default` space rooted at launch cwd/home with the
 `defaultWorkspaceEnv` preference (`useSpacesBoot.ts:57-78`). Otherwise every space's `state:<id>` is hydrated into
-*cold* tabs (`serialize.ts:205-236`, `cold: true`), the active space's WSL/local env is adopted
+_cold_ tabs (`serialize.ts:205-236`, `cold: true`), the active space's WSL/local env is adopted
 (`useSpacesBoot.ts:96-97`), a fresh terminal tab is added if the active space is empty (`:100-103`), all leaf cwds
 are authorized in the backend registry (`:105-107`, `workspace.rs:254`), then `replaceTabs` (`:117`). Errors are
 logged and swallowed (`:118-120`). `useSpacePersistence` (`App.tsx:293`) re-serializes tabs grouped by space,
@@ -91,18 +91,21 @@ is **per window (per webview), not per pane**. Imported themes are validated (`v
 ## "terax" mentions
 
 **(a) Phase 0 identity isolation** (persisted/shared names; all also isolated by changing the bundle id in build-identity)
+
 - Store files: `terax-settings.json` (settings/store.ts:225), `terax-spaces.json` (spaces/lib/store.ts:21), `terax-custom-themes.json` (theme/customThemes.ts:5).
 - localStorage keys: `terax-ui-theme-shadow`, `terax-ui-theme-id-shadow` (ThemeProvider.tsx:47-48, settings.html:11), `terax-ui-bg-kind-shadow`, `terax-ui-bg-image-shadow` (preferences.ts:17-18).
 - IndexedDB: `terax-bg-images` (bgImageStore.ts:1).
 - Theme dir under `appConfigDir` (themeFiles.ts:19-21) — not named terax, but shared via bundle id.
 
 **(b) Visual rebranding**
+
 - `Terax — Settings` window title (settings.html:7); About: name, `app.crynta.terax`, repo `crynta/terax-ai`, `terax.app` (AboutSection.tsx:11-12,25,93,106,117).
 - UI strings: LspInstallDialog.tsx:68, AgentsSection.tsx:398, ModelsSection.tsx:380 (removed anyway), GeneralSection.tsx:566,606,662, ThemesSection.tsx:210,216 ("Import .terax-theme").
 - Default theme `terax-default` / "Terax Default" (themes/terax-default.ts:9-11, themes/index.ts:14,20, types.ts:68, settings/store.ts:37) — also persisted as `themeId` value: rename needs a fallback.
 - Theme file extension `.terax-theme` (themeFiles.ts:8) — user-facing format; keep accepting it on import.
 
 **(c) Internal — rename on touch**
+
 - Tauri event names `terax://prefs-changed`, `terax://ai-keys-changed`, `terax://custom-themes-changed`, `terax://theme-edit`, `terax:settings-tab` (app-local, not shared across apps).
 - Log prefixes `[terax]` (useSpacesBoot.ts:119, themeFiles.ts:133,139, useThemeFileEditing.ts:46,51); CSS class `terax-bg-surface` (SurfaceLayer.tsx:104).
 - workspace.rs test temp names and sentinel `__terax_invalid_distro__` (:527,815,823,891,955,1156,1186,1209,1266,1293-1326).
@@ -133,7 +136,7 @@ is **per window (per webview), not per pane**. Imported themes are validated (`v
 Read once at boot (`useSpacesBoot.ts:44`); metadata written immediately on mutation (`useSpaces.ts:69-127`); tab state
 written debounced 3 s and on blur/hide/unload (`useSpacePersistence.ts:7,73-101`). **No versioning or migrations**; the only
 tolerance is per-tab try/catch (`serialize.ts:225-233`). Mapping: a space ≈ a lut project with a root and env (PRJ-001), the
-`state:` entry ≈ a *snapshot of live state*, not a declarative preset (PRJ-013, 6.5:2/3). Missing for lut: ratios (PRJ-006),
+`state:` entry ≈ a _snapshot of live state_, not a declarative preset (PRJ-013, 6.5:2/3). Missing for lut: ratios (PRJ-006),
 profile per pane (PRJ-005), startup commands/states (PRJ-004, PRJ-008), schemaVersion (PRJ-014), stable preset/runtime ids (6.4).
 Session restore (PRJ-016) is partly there already: all spaces' tabs are restored cold and the active space/tab is reopened
 (`useSpacesBoot.ts:87-117`) — lut needs "which projects were open" separate from "which projects exist". Opening other projects
@@ -180,6 +183,7 @@ UI: sections Models, Agents (AI personas), Editor, LSP components, ProviderKeyCa
 ## Draft issues
 
 ### state-settings-D01 — Rename persisted store files and browser storage keys
+
 ```yaml
 id: state-settings-D01
 depends-on: [build-identity-D01?]
@@ -189,9 +193,11 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** No persisted lut state uses a Terax file or key name.
 
 **Acceptance criteria:**
+
 - [ ] `terax-settings.json`, `terax-spaces.json`, `terax-custom-themes.json` renamed to `lut-*` (constants in settings/store.ts:225, spaces/lib/store.ts:21, theme/customThemes.ts:5).
 - [ ] localStorage shadow keys renamed in ThemeProvider.tsx:47-48, preferences.ts:17-18 and settings.html:11 consistently.
 - [ ] IndexedDB name in bgImageStore.ts:1 renamed.
@@ -200,6 +206,7 @@ size: S
 **Verification:** `pnpm test` green; launch app, check app data dir contains only `lut-*` files; `rg -n "terax-(settings|spaces|custom-themes|ui-|bg-images)" src settings.html` returns nothing.
 
 ### state-settings-D02 — Remove AI/editor/LSP settings sections
+
 ```yaml
 id: state-settings-D02
 depends-on: [ai-D01?, ide-tools-D01?]
@@ -209,15 +216,18 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** The settings window only offers terminal-relevant sections.
 
 **Acceptance criteria:**
+
 - [ ] Models, Agents (AI), Editor sections and LSP/provider components deleted with their tests.
 - [ ] `SettingsTab` union and `SettingsApp` TABS no longer list them; deep links to removed tabs fall back to general.
 
 **Verification:** `pnpm typecheck && pnpm test`; open settings, all remaining tabs render.
 
 ### state-settings-D03 — Remove preferences of removed features and editor theme resolution
+
 ```yaml
 id: state-settings-D03
 depends-on: [state-settings-D02]
@@ -227,9 +237,11 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** `Preferences` contains no AI, editor, LSP or explorer keys.
 
 **Acceptance criteria:**
+
 - [ ] Keys at settings/store.ts:233-266,287-294 and their setters/defaults/map entries removed; keys-changed event removed.
 - [ ] `resolveEditorTheme` and `Theme.editorTheme` removed; validateTheme ignores a legacy `editorTheme` field.
 - [ ] Old stored keys are ignored without errors.
@@ -237,6 +249,7 @@ size: M
 **Verification:** `pnpm typecheck && pnpm test`; app boots with a settings file containing removed keys.
 
 ### state-settings-D04 — Settings schema version and corruption recovery
+
 ```yaml
 id: state-settings-D04
 depends-on: [state-settings-D03]
@@ -246,9 +259,11 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** A corrupt or partial settings file never blocks the app and future migrations have a version to key on.
 
 **Acceptance criteria:**
+
 - [ ] Store has `schemaVersion`; loader runs ordered migrations, backs up the previous file before migrating (rollback).
 - [ ] Each key validated (Zod) with fallback to default; invalid values reported once (log/toast hook), not thrown.
 - [ ] Unit tests: corrupt JSON, wrong types, unknown future version (read-only fallback).
@@ -256,6 +271,7 @@ size: M
 **Verification:** `pnpm test`; manual: truncate the settings file, app starts with defaults and keeps a backup.
 
 ### state-settings-D05 — Spike: Project / Preset / RunningWorkspace model and storage
+
 ```yaml
 id: state-settings-D05
 depends-on: []
@@ -265,9 +281,11 @@ type: spike
 scope: none
 size: S
 ```
+
 **Goal:** Decide the versioned schema and owner (TS store vs Rust/Serde) for projects, presets and live snapshots.
 
 **Acceptance criteria:**
+
 - [ ] Written schema with `projectId`, `presetId`, runtime ids, pane tree with ratios, profile ref, cwd, startup command + policy.
 - [ ] Decision on storage owner, file layout, migration strategy, and fate of old spaces data.
 - [ ] Decision recorded in `.docs/` and plan updated.
@@ -275,6 +293,7 @@ size: S
 **Verification:** Document reviewed by the user; plan.md updated with resulting issues.
 
 ### state-settings-D06 — Versioned projects store replacing spaces persistence
+
 ```yaml
 id: state-settings-D06
 depends-on: [state-settings-D05, state-settings-D01]
@@ -284,9 +303,11 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** Project metadata and live snapshots persisted with a schemaVersion and validated on load.
 
 **Acceptance criteria:**
+
 - [ ] New `projects` module (store + Zod schema + migrations) replaces `spaces/lib/store.ts`; spaces state migrated once if present.
 - [ ] Serializer drops IDE tab kinds; corrupt entries skipped and reported, not silently swallowed.
 - [ ] Unit tests for serialize/hydrate round trip and migration (F4:9).
@@ -294,6 +315,7 @@ size: M
 **Verification:** `pnpm test`; restart app keeps tabs/splits/cwd.
 
 ### state-settings-D07 — Persist split ratios and per-pane profile in snapshots
+
 ```yaml
 id: state-settings-D07
 depends-on: [state-settings-D06, terminal-D??]
@@ -303,15 +325,18 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** Restored layouts match topology, ratios, cwd and profile.
 
 **Acceptance criteria:**
+
 - [ ] Split nodes serialize ratios; leaves serialize profile id and cwd.
 - [ ] Missing profile on restore falls back to default with a repairable error (13.2:12).
 
 **Verification:** `pnpm test` round-trip tests; manual resize + restart.
 
 ### state-settings-D08 — Restore last session (open projects + active) at startup
+
 ```yaml
 id: state-settings-D08
 depends-on: [state-settings-D06]
@@ -321,9 +346,11 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** On launch lut reopens the projects that were open and focuses the last active one.
 
 **Acceptance criteria:**
+
 - [ ] Separate persisted "session" record (open project ids, active id, per-project active tab) from the project catalogue.
 - [ ] Restore creates structure without running startup commands (8.4:4), authorizes cwds before spawn.
 - [ ] Integration test of boot restore (F4:9).
@@ -331,6 +358,7 @@ size: M
 **Verification:** `pnpm test`; manual: open 2 projects, quit, relaunch → both open, same active.
 
 ### state-settings-D09 — Preset startup commands with consent
+
 ```yaml
 id: state-settings-D09
 depends-on: [state-settings-D07, terminal-D??]
@@ -340,9 +368,11 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** Presets can run startup commands only after explicit, hash-bound consent per project/preset.
 
 **Acceptance criteria:**
+
 - [ ] Consent stored per preset bound to a hash of commands+cwd+env; changes or imports require re-consent.
 - [ ] Commands run once per start after shell-ready, never via sleep.
 - [ ] Per-pane result with retry / open shell without command.
@@ -350,6 +380,7 @@ size: M
 **Verification:** Unit tests for consent hashing; manual: import preset → nothing runs until approved.
 
 ### state-settings-D10 — Design: settings window and project switcher
+
 ```yaml
 id: state-settings-D10
 depends-on: []
@@ -359,13 +390,16 @@ type: design
 scope: ui
 size: M
 ```
+
 **Goal:** The user designs the settings window, project list/switcher and preset consent prompt.
 
 **Acceptance criteria:**
+
 - [ ] Designs for settings sections (general/terminal, appearance, shortcuts, notifications, about), project switcher, consent dialog.
 - [ ] Decision on background image / vibrancy (F6:5).
 
 ### state-settings-D11 — Implement settings window per design
+
 ```yaml
 id: state-settings-D11
 depends-on: [state-settings-D10, state-settings-D02]
@@ -376,15 +410,18 @@ scope: ui
 size: L
 size-exception: Rewrites several visual sections at once; split per section if the design allows.
 ```
+
 **Goal:** Settings window matches the user's design and edits only lut settings.
 
 **Acceptance criteria:**
+
 - [ ] Old Terax section components replaced; window title/About show lut identity.
 - [ ] Changes propagate live to the main window without remounting sessions (16:24).
 
 **Verification:** `pnpm typecheck && pnpm test`; manual: change font/theme in settings, terminal updates without respawn.
 
 ### state-settings-D12 — Implement project switcher per design
+
 ```yaml
 id: state-settings-D12
 depends-on: [state-settings-D10, state-settings-D06]
@@ -394,15 +431,18 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** Users list, open, rename, reorder and close projects from the app.
 
 **Acceptance criteria:**
+
 - [ ] SpaceSwitcher/SpaceAvatar/InlineRename replaced by the designed component on the projects store.
 - [ ] Opening a project authorizes its root and restores its snapshot.
 
 **Verification:** `pnpm test`; manual open/close/reopen.
 
 ### state-settings-D13 — Per-pane terminal appearance resolver
+
 ```yaml
 id: state-settings-D13
 depends-on: [state-settings-D03, terminal-D??]
@@ -412,15 +452,18 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** A pane's terminal palette and font can come from its profile instead of the window-global CSS vars.
 
 **Acceptance criteria:**
+
 - [ ] Pure `resolveTerminalAppearance(themeId, mode, overrides)` with tests.
 - [ ] Terminal pane consumes it; switching theme updates panes without respawning PTYs.
 
 **Verification:** `pnpm test`; manual: two panes with different profiles show different palettes.
 
 ### state-settings-D14 — Theme files without the built-in editor
+
 ```yaml
 id: state-settings-D14
 depends-on: [state-settings-D01]
@@ -430,15 +473,18 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** Custom themes are imported/exported as files and edited externally.
 
 **Acceptance criteria:**
+
 - [ ] Editing opens the theme file with the OS default app; file changes are re-validated and applied.
 - [ ] Import keeps accepting `.terax-theme` and JSON.
 
 **Verification:** `pnpm test` (themeFiles tests); manual edit round trip.
 
 ### state-settings-D15 — Curated built-in themes and default, surface layer per design
+
 ```yaml
 id: state-settings-D15
 depends-on: [state-settings-D10]
@@ -448,9 +494,11 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** Built-in themes and default reflect the user's design; background surface kept or removed per design.
 
 **Acceptance criteria:**
+
 - [ ] Theme set replaced; persisted `terax-default` id falls back to the new default.
 - [ ] SurfaceLayer/bgImageStore removed or reimplemented as designed.
 

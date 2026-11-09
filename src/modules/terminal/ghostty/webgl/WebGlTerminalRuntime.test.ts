@@ -1,45 +1,36 @@
-import { describe, expect, it, vi } from "vitest";
-import type {
-  TerminalFontMetrics,
-  TerminalGpuTheme,
-} from "../gpu/terminalVisuals";
-import type {
-  WebGlCellRenderer,
-  WebGlRendererProfile,
-} from "./WebGlCellRenderer";
-import { WebGlPoolExhaustedError } from "./WebGlPoolExhaustedError";
+import { describe, expect, it, vi } from 'vitest';
+import type { TerminalFontMetrics, TerminalGpuTheme } from '../gpu/terminalVisuals';
+import type { WebGlCellRenderer, WebGlRendererProfile } from './WebGlCellRenderer';
+import { WebGlPoolExhaustedError } from './WebGlPoolExhaustedError';
 import {
   MAX_WEBGL_RENDERER_SLOTS,
   WEBGL_RENDERER_IDLE_TTL_MS,
   type WebGlRuntimeDependencies,
   type WebGlRuntimeSurface,
   WebGlTerminalRuntime,
-} from "./WebGlTerminalRuntime";
+} from './WebGlTerminalRuntime';
 
-describe("WebGlTerminalRuntime", () => {
-  it.each([true, false])(
-    "retires a failed reconfiguration (idle: %s)",
-    (idle) => {
-      const h = createHarness();
-      const runtime = new WebGlTerminalRuntime(h.dependencies);
-      const surface = createSurface();
-      runtime.acquire(surface, {} as HTMLElement, PROFILE);
-      if (idle) runtime.release(surface);
-      h.renderers[0].configure.mockImplementationOnce(() => {
-        throw new Error("reconfigure failed");
-      });
-      expect(() =>
-        runtime.acquire(surface, {} as HTMLElement, PROFILE),
-      ).toThrow("reconfigure failed");
-      expect(runtime.diagnostics().slotCount).toBe(0);
-      expect(h.renderers[0].dispose).toHaveBeenCalledOnce();
-      runtime.acquire(surface, {} as HTMLElement, PROFILE);
-      expect(h.renderers).toHaveLength(2);
-      runtime.dispose();
-    },
-  );
+describe('WebGlTerminalRuntime', () => {
+  it.each([true, false])('retires a failed reconfiguration (idle: %s)', (idle) => {
+    const h = createHarness();
+    const runtime = new WebGlTerminalRuntime(h.dependencies);
+    const surface = createSurface();
+    runtime.acquire(surface, {} as HTMLElement, PROFILE);
+    if (idle) runtime.release(surface);
+    h.renderers[0].configure.mockImplementationOnce(() => {
+      throw new Error('reconfigure failed');
+    });
+    expect(() => runtime.acquire(surface, {} as HTMLElement, PROFILE)).toThrow(
+      'reconfigure failed',
+    );
+    expect(runtime.diagnostics().slotCount).toBe(0);
+    expect(h.renderers[0].dispose).toHaveBeenCalledOnce();
+    runtime.acquire(surface, {} as HTMLElement, PROFILE);
+    expect(h.renderers).toHaveLength(2);
+    runtime.dispose();
+  });
 
-  it("interrupts an unfocused pacing timer for user input and returns to idle afterward", () => {
+  it('interrupts an unfocused pacing timer for user input and returns to idle afterward', () => {
     const h = createHarness();
     h.windowFocused = false;
     const runtime = new WebGlTerminalRuntime(h.dependencies);
@@ -61,7 +52,7 @@ describe("WebGlTerminalRuntime", () => {
     runtime.dispose();
   });
 
-  it("coalesces surface work into one window-scoped frame", () => {
+  it('coalesces surface work into one window-scoped frame', () => {
     const harness = createHarness();
     const runtime = new WebGlTerminalRuntime(harness.dependencies);
     const surface = createSurface();
@@ -82,7 +73,7 @@ describe("WebGlTerminalRuntime", () => {
     runtime.dispose();
   });
 
-  it("paces sustained focused rendering at 60 frames per second", () => {
+  it('paces sustained focused rendering at 60 frames per second', () => {
     const harness = createHarness();
     const runtime = new WebGlTerminalRuntime(harness.dependencies);
     const surface = createSurface();
@@ -105,13 +96,10 @@ describe("WebGlTerminalRuntime", () => {
     expect(MAX_WEBGL_RENDERER_SLOTS).toBeLessThan(16);
   });
 
-  it("bounds active contexts and retains only one warm idle renderer", () => {
+  it('bounds active contexts and retains only one warm idle renderer', () => {
     const harness = createHarness();
     const runtime = new WebGlTerminalRuntime(harness.dependencies);
-    const surfaces = Array.from(
-      { length: MAX_WEBGL_RENDERER_SLOTS },
-      createSurface,
-    );
+    const surfaces = Array.from({ length: MAX_WEBGL_RENDERER_SLOTS }, createSurface);
     for (const surface of surfaces) {
       runtime.acquire(surface, {} as HTMLElement, PROFILE);
     }
@@ -119,9 +107,9 @@ describe("WebGlTerminalRuntime", () => {
       slotCount: MAX_WEBGL_RENDERER_SLOTS,
       activeSlots: MAX_WEBGL_RENDERER_SLOTS,
     });
-    expect(() =>
-      runtime.acquire(createSurface(), {} as HTMLElement, PROFILE),
-    ).toThrow(WebGlPoolExhaustedError);
+    expect(() => runtime.acquire(createSurface(), {} as HTMLElement, PROFILE)).toThrow(
+      WebGlPoolExhaustedError,
+    );
 
     for (const surface of surfaces) runtime.release(surface);
     harness.advanceTime(WEBGL_RENDERER_IDLE_TTL_MS + 1);
@@ -133,19 +121,16 @@ describe("WebGlTerminalRuntime", () => {
       idleSlots: 1,
     });
     expect(
-      harness.renderers.filter(
-        (renderer) => renderer.dispose.mock.calls.length > 0,
-      ),
+      harness.renderers.filter((renderer) => renderer.dispose.mock.calls.length > 0),
     ).toHaveLength(MAX_WEBGL_RENDERER_SLOTS - 1);
     runtime.dispose();
   });
 
-  it("keeps idle reclamation scheduled when another surface acquires a renderer", () => {
+  it('keeps idle reclamation scheduled when another surface acquires a renderer', () => {
     const h = createHarness();
     const runtime = new WebGlTerminalRuntime(h.dependencies);
     const surfaces = [createSurface(), createSurface(), createSurface()];
-    for (const surface of surfaces)
-      runtime.acquire(surface, {} as HTMLElement, PROFILE);
+    for (const surface of surfaces) runtime.acquire(surface, {} as HTMLElement, PROFILE);
     expect(h.timers).toHaveLength(0);
     runtime.release(surfaces[0]);
     runtime.release(surfaces[1]);
@@ -159,7 +144,7 @@ describe("WebGlTerminalRuntime", () => {
     runtime.dispose();
   });
 
-  it("does not submit frames while the webview is hidden", () => {
+  it('does not submit frames while the webview is hidden', () => {
     const harness = createHarness();
     const runtime = new WebGlTerminalRuntime(harness.dependencies);
     const surface = createSurface();
@@ -178,7 +163,7 @@ describe("WebGlTerminalRuntime", () => {
     runtime.dispose();
   });
 
-  it("cancels a pending frame when its final surface releases", () => {
+  it('cancels a pending frame when its final surface releases', () => {
     const harness = createHarness();
     const runtime = new WebGlTerminalRuntime(harness.dependencies);
     const surface = createSurface();
@@ -191,12 +176,12 @@ describe("WebGlTerminalRuntime", () => {
     runtime.dispose();
   });
 
-  it("rolls back a failed renderer acquisition without poisoning the pool", () => {
+  it('rolls back a failed renderer acquisition without poisoning the pool', () => {
     const harness = createHarness({ failFirstConfigure: true });
     const runtime = new WebGlTerminalRuntime(harness.dependencies);
-    expect(() =>
-      runtime.acquire(createSurface(), {} as HTMLElement, PROFILE),
-    ).toThrow("configure failed");
+    expect(() => runtime.acquire(createSurface(), {} as HTMLElement, PROFILE)).toThrow(
+      'configure failed',
+    );
     expect(runtime.diagnostics()).toMatchObject({
       slotCount: 0,
       activeSlots: 0,
@@ -211,7 +196,7 @@ describe("WebGlTerminalRuntime", () => {
     runtime.dispose();
   });
 
-  it("discards a poisoned renderer before reacquiring a fresh slot", () => {
+  it('discards a poisoned renderer before reacquiring a fresh slot', () => {
     const harness = createHarness();
     const runtime = new WebGlTerminalRuntime(harness.dependencies);
     const surface = createSurface();
@@ -230,7 +215,7 @@ describe("WebGlTerminalRuntime", () => {
     runtime.dispose();
   });
 
-  it("destroys every idle context when the document is hidden", () => {
+  it('destroys every idle context when the document is hidden', () => {
     const harness = createHarness();
     const runtime = new WebGlTerminalRuntime(harness.dependencies);
     const surface = createSurface();
@@ -276,7 +261,7 @@ function createHarness(options: { failFirstConfigure?: boolean } = {}) {
         configure: vi.fn(() => {
           if (options.failFirstConfigure && !failedConfigure) {
             failedConfigure = true;
-            throw new Error("configure failed");
+            throw new Error('configure failed');
           }
         }),
         resetModel: vi.fn(),
@@ -347,14 +332,14 @@ function createHarness(options: { failFirstConfigure?: boolean } = {}) {
     },
     flushFrame(): void {
       const entry = frameCallbacks.entries().next().value;
-      if (!entry) throw new Error("No frame is pending");
+      if (!entry) throw new Error('No frame is pending');
       const [handle, callback] = entry;
       frameCallbacks.delete(handle);
       callback();
     },
     flushTimer(): void {
       const entry = timerCallbacks.entries().next().value;
-      if (!entry) throw new Error("No timer is pending");
+      if (!entry) throw new Error('No timer is pending');
       const [handle, callback] = entry;
       timerCallbacks.delete(handle);
       callback();
@@ -381,11 +366,11 @@ function createSurface(): WebGlRuntimeSurface & {
 
 const METRICS: TerminalFontMetrics = {
   font: {
-    family: "monospace",
+    family: 'monospace',
     size: 14,
     lineHeight: 1.2,
     letterSpacing: 0,
-    weight: "400",
+    weight: '400',
   },
   scale: 1,
   deviceCellWidth: 8,

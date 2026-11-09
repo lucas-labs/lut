@@ -1,7 +1,7 @@
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import { useEffect, useRef } from "react";
-import { type ShortcutId,SHORTCUTS } from "../shortcuts";
-import { resolveShortcut } from "./resolveShortcut";
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import { useEffect, useRef } from 'react';
+import { type ShortcutId, SHORTCUTS } from '../shortcuts';
+import { resolveShortcut } from './resolveShortcut';
 
 type ShortcutHandler = (e: KeyboardEvent) => void;
 export type ShortcutHandlers = Partial<Record<ShortcutId, ShortcutHandler>>;
@@ -34,8 +34,7 @@ export function useGlobalShortcuts(
       e.stopImmediatePropagation();
       handlers[id]?.(e);
     };
-    window.addEventListener("keydown", onKey, { capture: true });
-    return () =>
-      window.removeEventListener("keydown", onKey, { capture: true });
+    window.addEventListener('keydown', onKey, { capture: true });
+    return () => window.removeEventListener('keydown', onKey, { capture: true });
   }, [userShortcuts]);
 }

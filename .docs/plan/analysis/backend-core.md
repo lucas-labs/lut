@@ -105,6 +105,7 @@ shell_session_run, shell_session_close, shell_bg_spawn, shell_bg_logs, shell_bg_
 ## "terax" mentions
 
 **(a) Phase 0 identity isolation (shared with an installed Terax):**
+
 - Integration script dir `~/.cache/terax/shell-integration` (shell_init.rs:449 Unix, :912 Windows) and
   `$HOME/.cache/terax/shell-integration` inside WSL distros (:857), fish file `terax.fish` (:476, :904). Both apps
   write different script versions to the same path with `write_if_changed` → each overwrites the other.
@@ -132,7 +133,7 @@ test-only env `TERAX_FORK_*`, `TERAX_PC`, `TERAX_PROBE`, `TERAX_FAKE_BLE`; harne
 
 - Phase 0 env/marker rename spans three areas (backend-core scripts+launcher, agents CLI+hook installer,
   agent_detect marker); a partial rename silently breaks agent badges.
-- Shared `~/.cache/terax` means lut today *already* rewrites an installed Terax's shell scripts on first PTY.
+- Shared `~/.cache/terax` means lut today _already_ rewrites an installed Terax's shell scripts on first PTY.
 - `sanitize_shell_override` (shell_init.rs:115-129) drops any non-enumerated shell silently → profiles with custom
   executables would fall back to the default shell without an error (bad for PRO-010).
 - On Windows `apply_common` silently falls back to home if cwd is not a dir; the frontend never learns
@@ -157,24 +158,24 @@ test-only env `TERAX_FORK_*`, `TERAX_PC`, `TERAX_PROBE`, `TERAX_FAKE_BLE`; harne
 
 ### 1. Tauri command map (lib.rs:284-428)
 
-| commands | owner area | lut keeps? |
-|---|---|---|
-| pty_open, pty_write, pty_stream_open, pty_set_presentation, pty_set_colors, pty_diagnostics, pty_resize, pty_close, pty_close_all, pty_has_foreground_process, pty_shell_name, pty_session_shell, pty_list_shells | backend-core (consumed by terminal) | yes (pty_open extended) |
-| pty_has_foreground_job | backend-core | no — no frontend caller |
-| fs_* (tree, read/write, stat, canonicalize, mutate, copy, clipboard_paths, watch, search, warm_index, list_files, grep, grep_interactive, glob, read_project_memory), asset_grant/revoke, list_subdirs | ide-tools | mostly no (file tree/editor removed); keep what project picker needs (list_subdirs/fs_stat/canonicalize?) — ide-tools decides |
-| ai_read_file, ai_read_dir, ai_grep, ai_glob | ide-tools/ai | no (ADR-004) |
-| lsp_detect, lsp_host_pid, lsp_resolve_root, lsp_spawn, lsp_send, lsp_kill | ide-tools | no |
-| git_* (status, diff, stage, commit, fetch, pull, push, log, branches, worktrees, checkpoints, watch…), task_* | ide-tools | no / maybe git_resolve_repo for indicators |
-| shell_run_command, shell_session_*, shell_bg_* | backend-core (consumed by ai, editor) | no |
-| wsl_list_distros, wsl_default_distro, wsl_home, workspace_authorize, workspace_current_dir | state-settings | yes (WSL profiles) |
-| control_frontend_ready, control_respond, agent_decisions_ready, agent_decision_respond, agent_enable_hooks, agent_disable_hooks, agent_hooks_plan, agent_hooks_apply, agent_hooks_status | agents | yes |
-| get_launch_dir, get_launch_files | backend-core (lib.rs) / app-shell | launch_dir yes; launch_files only if files open somewhere |
-| open_settings_window | app-shell | redesign (UI) |
-| secrets_get/set/delete/get_all, lm_ping, ai_http_stream/cancel/ack, ai_session_load/save/delete/finish_migration/prune_backup | ai | no (ADR-004) |
-| history_suggest, history_commands, history_record, history_list | backend-core (consumed by terminal) | deferred |
-| window_backdrop_kind, window_set_backdrop | backend-core (consumed by app-shell theme) | deferred to design |
-| window_presentation_state | backend-core (consumed by terminal) | yes |
-| bench_config, bench_window, bench_exit (feature `bench`) | build-identity | keep as dev tooling |
+| commands                                                                                                                                                                                                          | owner area                                 | lut keeps?                                                                                                                    |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| pty_open, pty_write, pty_stream_open, pty_set_presentation, pty_set_colors, pty_diagnostics, pty_resize, pty_close, pty_close_all, pty_has_foreground_process, pty_shell_name, pty_session_shell, pty_list_shells | backend-core (consumed by terminal)        | yes (pty_open extended)                                                                                                       |
+| pty_has_foreground_job                                                                                                                                                                                            | backend-core                               | no — no frontend caller                                                                                                       |
+| fs_* (tree, read/write, stat, canonicalize, mutate, copy, clipboard_paths, watch, search, warm_index, list_files, grep, grep_interactive, glob, read_project_memory), asset_grant/revoke, list_subdirs            | ide-tools                                  | mostly no (file tree/editor removed); keep what project picker needs (list_subdirs/fs_stat/canonicalize?) — ide-tools decides |
+| ai_read_file, ai_read_dir, ai_grep, ai_glob                                                                                                                                                                       | ide-tools/ai                               | no (ADR-004)                                                                                                                  |
+| lsp_detect, lsp_host_pid, lsp_resolve_root, lsp_spawn, lsp_send, lsp_kill                                                                                                                                         | ide-tools                                  | no                                                                                                                            |
+| git_* (status, diff, stage, commit, fetch, pull, push, log, branches, worktrees, checkpoints, watch…), task_*                                                                                                     | ide-tools                                  | no / maybe git_resolve_repo for indicators                                                                                    |
+| shell_run_command, shell_session__, shell_bg__                                                                                                                                                                    | backend-core (consumed by ai, editor)      | no                                                                                                                            |
+| wsl_list_distros, wsl_default_distro, wsl_home, workspace_authorize, workspace_current_dir                                                                                                                        | state-settings                             | yes (WSL profiles)                                                                                                            |
+| control_frontend_ready, control_respond, agent_decisions_ready, agent_decision_respond, agent_enable_hooks, agent_disable_hooks, agent_hooks_plan, agent_hooks_apply, agent_hooks_status                          | agents                                     | yes                                                                                                                           |
+| get_launch_dir, get_launch_files                                                                                                                                                                                  | backend-core (lib.rs) / app-shell          | launch_dir yes; launch_files only if files open somewhere                                                                     |
+| open_settings_window                                                                                                                                                                                              | app-shell                                  | redesign (UI)                                                                                                                 |
+| secrets_get/set/delete/get_all, lm_ping, ai_http_stream/cancel/ack, ai_session_load/save/delete/finish_migration/prune_backup                                                                                     | ai                                         | no (ADR-004)                                                                                                                  |
+| history_suggest, history_commands, history_record, history_list                                                                                                                                                   | backend-core (consumed by terminal)        | deferred                                                                                                                      |
+| window_backdrop_kind, window_set_backdrop                                                                                                                                                                         | backend-core (consumed by app-shell theme) | deferred to design                                                                                                            |
+| window_presentation_state                                                                                                                                                                                         | backend-core (consumed by terminal)        | yes                                                                                                                           |
+| bench_config, bench_window, bench_exit (feature `bench`)                                                                                                                                                          | build-identity                             | keep as dev tooling                                                                                                           |
 
 ### 2. pty_open interface
 
@@ -231,7 +232,7 @@ Windows Job Object with KILL_ON_JOB_CLOSE, `rss.rs` resident memory per pid, `mo
 - Rust unit tests inline: pty (mod.rs:579+ `cfg(all(test, unix))`, session.rs:550+ uses `/bin/sh`, hub/queue/
   wire/gate/protocol/da_filter/agent_detect/presentation pure tests run everywhere), shell_init (Unix+Windows
   launch-spec tests), history/parse, vibrancy, window_presentation. Run: `cargo test --manifest-path
-  src-tauri/Cargo.toml`. Real PTY needed: mod.rs tests, session.rs tests (Unix only).
+src-tauri/Cargo.toml`. Real PTY needed: mod.rs tests, session.rs tests (Unix only).
 - Integration: `src-tauri/tests/shell_background.rs` (`#![cfg(unix)]`, spawns real processes, no PTY).
 - Shell script tests (real shells, no PTY): `bash src-tauri/src/modules/pty/scripts/bashrc.test.bash`,
   `python3 src-tauri/src/modules/pty/scripts/zshrc.test.py`, `fish …/init.test.fish`. Not wired into package.json.
@@ -242,6 +243,7 @@ Windows Job Object with KILL_ON_JOB_CLOSE, `rss.rs` resident memory per pid, `mo
 ## Draft issues
 
 ### backend-core-D01 — Isolate shell-integration install directory from Terax
+
 ```yaml
 id: backend-core-D01
 depends-on: [build-identity-D01?]
@@ -251,9 +253,11 @@ type: task
 scope: be
 size: S
 ```
+
 **Goal:** lut never reads or overwrites Terax's shell-integration scripts.
 
 **Acceptance criteria:**
+
 - [ ] Unix, Windows and WSL integration roots move from `.cache/terax/shell-integration` to a lut-owned dir (shell_init.rs:449,857,912), fish conf.d file renamed from `terax.fish` (:476,:904).
 - [ ] Temp file suffix `.__terax_tmp__` renamed (rename-on-touch).
 - [ ] Unit tests referencing `/cache/terax/...` paths updated.
@@ -261,6 +265,7 @@ size: S
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml shell_init`; open a pwsh and a WSL pane, confirm scripts appear only under the lut dir and `~/.cache/terax` is untouched (mtime).
 
 ### backend-core-D02 — Rename child-process env vars and script guards to lut names
+
 ```yaml
 id: backend-core-D02
 depends-on: [backend-core-D01]
@@ -270,9 +275,11 @@ type: task
 scope: be
 size: M
 ```
+
 **Goal:** lut children never expose or consume `TERAX_*` variables, so Terax tooling cannot attach to lut panes and nested shells keep their own integration.
 
 **Acceptance criteria:**
+
 - [ ] `TERAX_TERMINAL/BLOCKS/CONTROL_ADDR/CONTROL_TOKEN/PANE_ID/CLI/USER_ZDOTDIR` renamed in shell_init.rs and all scripts; `__TERAX_HOOKS_LOADED` guard renamed.
 - [ ] Inherited `TERAX_*` vars are removed from the child env (lut launched from a Terax terminal).
 - [ ] The `terax` shell wrapper function becomes the lut CLI name, coordinated with agents-D?? (CLI reads the new vars).
@@ -283,6 +290,7 @@ size: M
 **Notes:** must land in the same release as the agents CLI rename (agents-D0x?).
 
 ### backend-core-D03 — Replace the Terax hook marker and notify subcommand
+
 ```yaml
 id: backend-core-D03
 depends-on: [agents-D01?]
@@ -292,15 +300,18 @@ type: task
 scope: be
 size: S
 ```
+
 **Goal:** agent markers from Terax hooks are not taken as lut events and vice versa.
 
 **Acceptance criteria:**
+
 - [ ] `TERAX_MARKER` `notify;Terax;` (agent_detect.rs:35) replaced by a lut marker; emitter (`agent::emit_conout_marker`) and argv subcommand `__terax_notify` (lib.rs:170) renamed in the same PR.
 - [ ] Tests `terax_marker_*` renamed and a test proves the old Terax marker is ignored.
 
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml agent_detect`.
 
 ### backend-core-D04 — Remove unused pty_has_foreground_job command
+
 ```yaml
 id: backend-core-D04
 depends-on: []
@@ -310,14 +321,17 @@ type: task
 scope: be
 size: XS
 ```
+
 **Goal:** drop dead IPC surface.
 
 **Acceptance criteria:**
+
 - [ ] `pty_has_foreground_job` (pty/mod.rs:384) and its registration (lib.rs:295) removed; helper code only it used removed.
 
 **Verification:** `cargo check`, `pnpm typecheck`; `rg pty_has_foreground_job` finds nothing.
 
 ### backend-core-D05 — Remove the non-PTY shell execution module
+
 ```yaml
 id: backend-core-D05
 depends-on: [ai-D01?, ide-tools-D01?]
@@ -328,15 +342,18 @@ scope: be
 size: L
 size-exception: mechanical deletion of a whole module (~1000 lines) and its test
 ```
+
 **Goal:** delete `modules/shell/` once AI tools and editor formatting are gone.
 
 **Acceptance criteria:**
+
 - [ ] `src-tauri/src/modules/shell/`, `tests/shell_background.rs`, `ShellState` (lib.rs:265) and the 8 `shell_*` registrations removed.
 - [ ] No frontend reference to `shell_*` commands remains.
 
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml`; `rg "shell_(run_command|session_|bg_)" src src-tauri` empty.
 
 ### backend-core-D06 — Remove ipc_body and the ipc-profile harness
+
 ```yaml
 id: backend-core-D06
 depends-on: [ai-D01?, ide-tools-D01?]
@@ -346,15 +363,18 @@ type: task
 scope: be
 size: S
 ```
+
 **Goal:** delete AI-only IPC helpers and the profiler for removed commands.
 
 **Acceptance criteria:**
+
 - [ ] `modules/ipc_body.rs` and its `mod` line removed (no users left after AI removal).
 - [ ] `scripts/ipc-profile/` removed.
 
 **Verification:** `cargo check --manifest-path src-tauri/Cargo.toml`.
 
 ### backend-core-D07 — Prune app entry after module removals
+
 ```yaml
 id: backend-core-D07
 depends-on: [backend-core-D05, backend-core-D06]
@@ -364,9 +384,11 @@ type: task
 scope: be
 size: S
 ```
+
 **Goal:** `lib.rs` only registers state, plugins and commands lut uses.
 
 **Acceptance criteria:**
+
 - [ ] No leftover `manage(...)`, page-load or `WindowEvent::Destroyed` cleanup for removed modules (lib.rs:220-283,440-460).
 - [ ] Control-server log text and other user-visible "Terax" strings in lib.rs use lut wording.
 - [ ] A command inventory (name → area) is recorded in `.docs/` (F0:12).
@@ -374,6 +396,7 @@ size: S
 **Verification:** `cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings`; app starts, a terminal opens.
 
 ### backend-core-D08 — Launch spec in pty_open: executable and arguments
+
 ```yaml
 id: backend-core-D08
 depends-on: [state-settings-D??]
@@ -383,9 +406,11 @@ type: task
 scope: be
 size: M
 ```
+
 **Goal:** a profile can start any program with arguments, keeping today's shell integration for known shells.
 
 **Acceptance criteria:**
+
 - [ ] `pty_open` accepts an optional `launch { program, args[] }` (serde, camelCase); old `shell` param keeps working.
 - [ ] Known shells (pwsh/powershell/bash/zsh/fish/cmd) still get integration; extra user args are appended safely; unknown programs spawn bare.
 - [ ] The enumerated-shell allowlist (shell_init.rs:115-129) is replaced by the policy decided in Open question 1; a missing program returns a typed error (no silent fallback).
@@ -394,6 +419,7 @@ size: M
 **Verification:** `cargo test shell_init`; open `pwsh -NoLogo` and `python -q` panes from a test profile.
 
 ### backend-core-D09 — Launch spec: environment overrides
+
 ```yaml
 id: backend-core-D09
 depends-on: [backend-core-D08]
@@ -403,9 +429,11 @@ type: task
 scope: be
 size: S
 ```
+
 **Goal:** profiles set/unset env vars without overriding lut's own integration vars.
 
 **Acceptance criteria:**
+
 - [ ] `launch.env` map (value or null to unset) applied after inherited env, before lut-reserved vars; reserved names cannot be overridden.
 - [ ] Applied to WSL via `WSLENV` or `env` prefix (document the chosen mechanism).
 - [ ] Tests.
@@ -413,6 +441,7 @@ size: S
 **Verification:** `cargo test`; a pane with `FOO=bar` prints it in pwsh and WSL.
 
 ### backend-core-D10 — WSL distro and start directory per launch, with typed errors
+
 ```yaml
 id: backend-core-D10
 depends-on: [backend-core-D08]
@@ -422,9 +451,11 @@ type: task
 scope: be
 size: M
 ```
+
 **Goal:** each pane can target a WSL distro and a start dir; failures are reported, not hidden.
 
 **Acceptance criteria:**
+
 - [ ] Launch spec carries `distro` independent of the Space workspace; profile args honoured for WSL (today ignored, shell_init.rs:652-653).
 - [ ] Explicit cwd unusable → fallback per configurable policy (home / profile dir / fail) and the result reports which cwd was used.
 - [ ] Errors are a typed enum (`ExecutableNotFound`, `CwdUnavailable`, `DistroNotInstalled`, `SpawnFailed`) serialized to the frontend.
@@ -432,6 +463,7 @@ size: M
 **Verification:** `cargo test`; open a pane in an uninstalled distro → typed error, no crash; missing `D:\x` cwd → home + flag.
 
 ### backend-core-D11 — Shell discovery for profile seeds (WSL distros, more shells)
+
 ```yaml
 id: backend-core-D11
 depends-on: []
@@ -441,9 +473,11 @@ type: task
 scope: be
 size: S
 ```
+
 **Goal:** `pty_list_shells` returns everything a default profile set needs.
 
 **Acceptance criteria:**
+
 - [ ] Windows: includes each installed WSL distro (via workspace::wsl_list_distros) as an entry with `distro`.
 - [ ] Unix: /etc/shells plus common Homebrew paths; entries deduplicated by canonical path.
 - [ ] Each entry reports `integrated`.
@@ -451,6 +485,7 @@ size: S
 **Verification:** `cargo test shell_init`; on Windows 11 with Ubuntu, the list shows pwsh, Windows PowerShell, cmd, Git Bash (if installed), Ubuntu.
 
 ### backend-core-D12 — Per-PTY shell-ready signal
+
 ```yaml
 id: backend-core-D12
 depends-on: []
@@ -460,15 +495,18 @@ type: task
 scope: be
 size: S
 ```
+
 **Goal:** startup commands wait for the first prompt instead of a sleep.
 
 **Acceptance criteria:**
+
 - [ ] First OSC 133;A (or 133;B) per session emits a `ready` event/flag queryable by pty id; non-integrated shells report `unsupported` immediately.
 - [ ] Timeout handling documented for callers (13.5:8).
 
 **Verification:** `cargo test agent_detect`/session tests; pwsh pane logs ready within the first prompt.
 
 ### backend-core-D13 — Port the PTY smoke harness to Windows and lut identifiers
+
 ```yaml
 id: backend-core-D13
 depends-on: [build-identity-D01?]
@@ -478,9 +516,11 @@ type: task
 scope: be
 size: M
 ```
+
 **Goal:** a reproducible PTY latency/throughput baseline on Windows 11.
 
 **Acceptance criteria:**
+
 - [ ] `run.py` runs on Windows (and still on macOS); temp bundle id uses lut's vendor prefix.
 - [ ] `driver-old.ts` removed; `TERAX_SMOKE_*` env renamed.
 - [ ] Usage documented.
@@ -488,6 +528,7 @@ size: M
 **Verification:** `python scripts/pty-smoke/run.py --fast` on Windows produces a results JSON.
 
 ### backend-core-D14 — Decide history/ suggestions
+
 ```yaml
 id: backend-core-D14
 depends-on: [terminal-D??]
@@ -497,14 +538,17 @@ type: spike
 scope: be
 size: XS
 ```
+
 **Goal:** keep (and add PowerShell PSReadLine history) or remove `history/` with terminal block mode.
 
 **Acceptance criteria:**
+
 - [ ] Decision recorded in plan.md; follow-up issue added (remove module, or add PSReadLine parser).
 
 **Verification:** plan.md updated.
 
 ### backend-core-D15 — Decide window backdrop support after UI design
+
 ```yaml
 id: backend-core-D15
 depends-on: [app-shell-D01?]
@@ -514,9 +558,11 @@ type: spike
 scope: be
 size: XS
 ```
+
 **Goal:** keep or remove `vibrancy.rs` according to the user's design.
 
 **Acceptance criteria:**
+
 - [ ] Design issue states whether lut uses Mica/vibrancy; follow-up issue to remove module and commands, or keep.
 
 **Verification:** plan.md updated.

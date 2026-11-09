@@ -1,49 +1,60 @@
-import type { TerminalPalette,Theme, ThemeColors, ThemeVariant } from "./types";
+import type { TerminalPalette, Theme, ThemeColors, ThemeVariant } from './types';
 
-export type ValidationResult =
-  | { ok: true; theme: Theme }
-  | { ok: false; error: string };
+export type ValidationResult = { ok: true; theme: Theme } | { ok: false; error: string };
 
 const COLOR_KEYS: readonly (keyof ThemeColors)[] = [
-  "background", "foreground",
-  "card", "cardForeground",
-  "popover", "popoverForeground",
-  "primary", "primaryForeground",
-  "secondary", "secondaryForeground",
-  "muted", "mutedForeground",
-  "accent", "accentForeground",
-  "destructive",
-  "border", "input", "ring",
-  "sidebar", "sidebarForeground",
-  "sidebarPrimary", "sidebarPrimaryForeground",
-  "sidebarAccent", "sidebarAccentForeground",
-  "sidebarBorder", "sidebarRing",
-  "radius",
+  'background',
+  'foreground',
+  'card',
+  'cardForeground',
+  'popover',
+  'popoverForeground',
+  'primary',
+  'primaryForeground',
+  'secondary',
+  'secondaryForeground',
+  'muted',
+  'mutedForeground',
+  'accent',
+  'accentForeground',
+  'destructive',
+  'border',
+  'input',
+  'ring',
+  'sidebar',
+  'sidebarForeground',
+  'sidebarPrimary',
+  'sidebarPrimaryForeground',
+  'sidebarAccent',
+  'sidebarAccentForeground',
+  'sidebarBorder',
+  'sidebarRing',
+  'radius',
 ];
 
 const ID_RE = /^[a-z0-9][a-z0-9-]{1,63}$/;
 const TERMINAL_FONT_WEIGHTS = new Set([
-  "normal",
-  "bold",
-  "100",
-  "200",
-  "300",
-  "400",
-  "500",
-  "600",
-  "700",
-  "800",
-  "900",
+  'normal',
+  'bold',
+  '100',
+  '200',
+  '300',
+  '400',
+  '500',
+  '600',
+  '700',
+  '800',
+  '900',
 ]);
 const TERMINAL_FONT_SIZE_MIN = 8;
 const TERMINAL_FONT_SIZE_MAX = 32;
 
 function isObj(v: unknown): v is Record<string, unknown> {
-  return typeof v === "object" && v !== null && !Array.isArray(v);
+  return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
 function isStr(v: unknown): v is string {
-  return typeof v === "string";
+  return typeof v === 'string';
 }
 
 function parseColors(raw: unknown, path: string): ThemeColors | string {
@@ -99,7 +110,7 @@ function parseTerminal(raw: unknown, path: string): TerminalPalette | string {
   }
   if (raw.fontSize !== undefined) {
     if (
-      typeof raw.fontSize !== "number" ||
+      typeof raw.fontSize !== 'number' ||
       !Number.isInteger(raw.fontSize) ||
       raw.fontSize < TERMINAL_FONT_SIZE_MIN ||
       raw.fontSize > TERMINAL_FONT_SIZE_MAX
@@ -115,7 +126,7 @@ function parseTerminal(raw: unknown, path: string): TerminalPalette | string {
     for (let i = 0; i < 16; i++) {
       if (!isStr(raw.ansi[i])) return `${path}.ansi[${i}] must be a string`;
     }
-    out.ansi = raw.ansi as unknown as TerminalPalette["ansi"];
+    out.ansi = raw.ansi as unknown as TerminalPalette['ansi'];
   }
   return out;
 }
@@ -123,34 +134,34 @@ function parseTerminal(raw: unknown, path: string): TerminalPalette | string {
 function parseVariant(raw: unknown, path: string): ThemeVariant | string {
   if (!isObj(raw)) return `${path} must be an object`;
   const colors = parseColors(raw.colors, `${path}.colors`);
-  if (typeof colors === "string") return colors;
+  if (typeof colors === 'string') return colors;
   const terminal = parseTerminal(raw.terminal, `${path}.terminal`);
-  if (typeof terminal === "string") return terminal;
+  if (typeof terminal === 'string') return terminal;
   return { colors, terminal };
 }
 
 export function validateTheme(raw: unknown): ValidationResult {
-  if (!isObj(raw)) return { ok: false, error: "Theme must be a JSON object" };
+  if (!isObj(raw)) return { ok: false, error: 'Theme must be a JSON object' };
   if (!isStr(raw.id) || !ID_RE.test(raw.id)) {
-    return { ok: false, error: "id must be a kebab-case string (a-z, 0-9, -)" };
+    return { ok: false, error: 'id must be a kebab-case string (a-z, 0-9, -)' };
   }
   if (!isStr(raw.name) || raw.name.trim().length === 0) {
-    return { ok: false, error: "name must be a non-empty string" };
+    return { ok: false, error: 'name must be a non-empty string' };
   }
-  if (!isObj(raw.variants)) return { ok: false, error: "variants must be an object" };
-  const variants: Theme["variants"] = {};
+  if (!isObj(raw.variants)) return { ok: false, error: 'variants must be an object' };
+  const variants: Theme['variants'] = {};
   if (raw.variants.light !== undefined) {
-    const v = parseVariant(raw.variants.light, "variants.light");
-    if (typeof v === "string") return { ok: false, error: v };
+    const v = parseVariant(raw.variants.light, 'variants.light');
+    if (typeof v === 'string') return { ok: false, error: v };
     variants.light = v;
   }
   if (raw.variants.dark !== undefined) {
-    const v = parseVariant(raw.variants.dark, "variants.dark");
-    if (typeof v === "string") return { ok: false, error: v };
+    const v = parseVariant(raw.variants.dark, 'variants.dark');
+    if (typeof v === 'string') return { ok: false, error: v };
     variants.dark = v;
   }
   if (!variants.light && !variants.dark) {
-    return { ok: false, error: "variants must contain at least one of: light, dark" };
+    return { ok: false, error: 'variants must contain at least one of: light, dark' };
   }
   const theme: Theme = {
     id: raw.id,
@@ -160,7 +171,7 @@ export function validateTheme(raw: unknown): ValidationResult {
   if (isStr(raw.author)) theme.author = raw.author;
   if (isStr(raw.description)) theme.description = raw.description;
   if (isObj(raw.editorTheme)) {
-    const et: Theme["editorTheme"] = {};
+    const et: Theme['editorTheme'] = {};
     if (isStr(raw.editorTheme.light)) et.light = raw.editorTheme.light;
     if (isStr(raw.editorTheme.dark)) et.dark = raw.editorTheme.dark;
     if (et.light || et.dark) theme.editorTheme = et;

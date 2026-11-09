@@ -3,7 +3,7 @@
 // a file icon (terminal-only, explorer closed) pays nothing for it. Until the
 // engine arrives every lookup returns "" and callers render a same-size blank
 // slot; once it has loaded, lookups are synchronous and subscribers re-render.
-import type { IconEngine } from "./iconEngine";
+import type { IconEngine } from './iconEngine';
 
 let engine: IconEngine | null = null;
 let loading: Promise<void> | null = null;
@@ -12,7 +12,7 @@ const listeners = new Set<() => void>();
 /** Starts (once) loading the icon set. Resolves when icons are synchronous. */
 export function preloadFileIcons(): Promise<void> {
   if (engine) return Promise.resolve();
-  loading ??= import("./iconEngine").then(
+  loading ??= import('./iconEngine').then(
     (mod) => {
       engine = mod.iconEngine;
       loading = null;
@@ -21,7 +21,7 @@ export function preloadFileIcons(): Promise<void> {
     (error: unknown) => {
       // Allow a retry on the next demand instead of caching the failure.
       loading = null;
-      console.warn("[terax] file icons failed to load:", error);
+      console.warn('[terax] file icons failed to load:', error);
     },
   );
   return loading;
@@ -45,9 +45,9 @@ function noop(): void {}
 
 /** Pure read of the current icon URL: "" until the icon set has loaded. */
 export function peekFileIconUrl(name: string): string {
-  return engine ? engine.fileIconUrl(name) : "";
+  return engine ? engine.fileIconUrl(name) : '';
 }
 
 export function peekFolderIconUrl(name: string, expanded: boolean): string {
-  return engine ? engine.folderIconUrl(name, expanded) : "";
+  return engine ? engine.folderIconUrl(name, expanded) : '';
 }

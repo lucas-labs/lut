@@ -1,19 +1,17 @@
-import { currentWorkspaceEnv } from "@/modules/workspace";
-import type { UIMessage } from "@ai-sdk/react";
-import type { CustomEndpoint } from "../config";
-import type { ToolContext } from "../tools/tools";
-import { type AgentUsageDelta,runAgentStream } from "./agent";
-import { formatAiError } from "./errors";
-import type { CustomEndpointKeys,ProviderKeys } from "./keyring";
-import { native } from "./native";
-import { checkReadable } from "./security";
+import { currentWorkspaceEnv } from '@/modules/workspace';
+import type { UIMessage } from '@ai-sdk/react';
+import type { CustomEndpoint } from '../config';
+import type { ToolContext } from '../tools/tools';
+import { type AgentUsageDelta, runAgentStream } from './agent';
+import { formatAiError } from './errors';
+import type { CustomEndpointKeys, ProviderKeys } from './keyring';
+import { native } from './native';
+import { checkReadable } from './security';
 
-async function readTeraxMd(
-  workspaceRoot: string | null,
-): Promise<string | null> {
+async function readTeraxMd(workspaceRoot: string | null): Promise<string | null> {
   if (!workspaceRoot) return null;
   const workspace = { ...currentWorkspaceEnv() };
-  const path = `${workspaceRoot.replace(/\/$/, "")}/TERAX.md`;
+  const path = `${workspaceRoot.replace(/\/$/, '')}/TERAX.md`;
   try {
     const canonical = await native.canonicalize(path, workspace);
     if (!checkReadable(canonical).ok || !checkReadable(path).ok) return null;
@@ -111,28 +109,23 @@ export function createContextAwareTransport(deps: Deps) {
   };
 }
 
-function injectEnvIntoLastUser(
-  messages: UIMessage[],
-  envBlock: string,
-): UIMessage[] {
+function injectEnvIntoLastUser(messages: UIMessage[], envBlock: string): UIMessage[] {
   for (let i = messages.length - 1; i >= 0; i--) {
     const m = messages[i];
-    if (m.role !== "user") continue;
+    if (m.role !== 'user') continue;
     const parts = m.parts as ReadonlyArray<{ type: string; text?: string }>;
     let textIdx = -1;
     for (let j = 0; j < parts.length; j++) {
-      if (parts[j].type === "text") {
+      if (parts[j].type === 'text') {
         textIdx = j;
         break;
       }
     }
     const nextParts =
       textIdx === -1
-        ? [{ type: "text", text: envBlock }, ...parts]
+        ? [{ type: 'text', text: envBlock }, ...parts]
         : parts.map((p, idx) =>
-            idx === textIdx
-              ? { ...p, text: `${envBlock}\n\n${p.text ?? ""}` }
-              : p,
+            idx === textIdx ? { ...p, text: `${envBlock}\n\n${p.text ?? ''}` } : p,
           );
     const out = messages.slice();
     out[i] = { ...m, parts: nextParts } as UIMessage;
@@ -146,7 +139,7 @@ function formatEnvBlock(live: LiveSnapshot): string | null {
   if (live.workspaceRoot) lines.push(`workspace_root: ${live.workspaceRoot}`);
   if (live.cwd) lines.push(`active_terminal_cwd: ${live.cwd}`);
   if (live.activeFile) lines.push(`active_file: ${live.activeFile}`);
-  if (live.terminalPrivate) lines.push("active_terminal_mode: private");
+  if (live.terminalPrivate) lines.push('active_terminal_mode: private');
   if (lines.length === 0) return null;
-  return `<env>\n${lines.join("\n")}\n</env>`;
+  return `<env>\n${lines.join('\n')}\n</env>`;
 }

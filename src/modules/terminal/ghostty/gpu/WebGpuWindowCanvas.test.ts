@@ -1,6 +1,6 @@
-import { resetTerminalResizeGestureForTest } from "@/modules/terminal/lib/terminalResizeGesture";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import type { CssRect } from "./PaneRects";
+import { resetTerminalResizeGestureForTest } from '@/modules/terminal/lib/terminalResizeGesture';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { CssRect } from './PaneRects';
 import {
   findTerminalArea,
   GEOMETRY_CHECK_INTERVAL_MS,
@@ -8,14 +8,14 @@ import {
   WebGpuWindowCanvas,
   type WindowCanvasPane,
   windowFrameNeeded,
-} from "./WebGpuWindowCanvas";
+} from './WebGpuWindowCanvas';
 
 afterEach(() => {
   resetTerminalResizeGestureForTest();
   vi.unstubAllGlobals();
 });
 
-describe("windowFrameNeeded", () => {
+describe('windowFrameNeeded', () => {
   const idle = {
     paneChanged: false,
     dirty: false,
@@ -24,20 +24,20 @@ describe("windowFrameNeeded", () => {
     drawable: 2,
   };
 
-  it("draws nothing, and acquires no texture, when nothing changed", () => {
+  it('draws nothing, and acquires no texture, when nothing changed', () => {
     expect(windowFrameNeeded(idle)).toBe(false);
   });
 
   it.each([
     ["a pane's pixels changed", { paneChanged: true }],
-    ["the window was marked dirty", { dirty: true }],
-    ["the canvas was reallocated and is blank", { reallocated: true }],
-    ["a pane moved or resized", { moved: 1 }],
-  ])("draws when %s", (_name, change) => {
+    ['the window was marked dirty', { dirty: true }],
+    ['the canvas was reallocated and is blank', { reallocated: true }],
+    ['a pane moved or resized', { moved: 1 }],
+  ])('draws when %s', (_name, change) => {
     expect(windowFrameNeeded({ ...idle, ...change })).toBe(true);
   });
 
-  it("never draws when no pane can be drawn", () => {
+  it('never draws when no pane can be drawn', () => {
     expect(
       windowFrameNeeded({
         paneChanged: true,
@@ -50,7 +50,7 @@ describe("windowFrameNeeded", () => {
   });
 });
 
-describe("findTerminalArea", () => {
+describe('findTerminalArea', () => {
   const closest =
     (marked: Record<string, unknown>) =>
     (selector: string): unknown =>
@@ -63,13 +63,13 @@ describe("findTerminalArea", () => {
     const stack = { querySelector: () => layer };
     expect(
       findTerminalArea({
-        closest: closest({ "[data-terminal-area]": ancestor }),
+        closest: closest({ '[data-terminal-area]': ancestor }),
         parentElement: parent,
       } as unknown as HTMLElement),
     ).toBe(ancestor);
     expect(
       findTerminalArea({
-        closest: closest({ "[data-terminal-stack]": stack }),
+        closest: closest({ '[data-terminal-stack]': stack }),
         parentElement: parent,
       } as unknown as HTMLElement),
     ).toBe(layer);
@@ -83,13 +83,13 @@ describe("findTerminalArea", () => {
     expect(findTerminalArea(bare)).toBe(bare);
   });
 
-  it("asks the stack for the layer that is its own child, not any nested one", () => {
+  it('asks the stack for the layer that is its own child, not any nested one', () => {
     const querySelector = vi.fn(() => null);
     findTerminalArea({
-      closest: closest({ "[data-terminal-stack]": { querySelector } }),
+      closest: closest({ '[data-terminal-stack]': { querySelector } }),
       parentElement: null,
     } as unknown as HTMLElement);
-    expect(querySelector).toHaveBeenCalledWith(":scope > [data-terminal-area]");
+    expect(querySelector).toHaveBeenCalledWith(':scope > [data-terminal-area]');
   });
 });
 
@@ -109,7 +109,7 @@ function setup(options: { scale?: number } = {}) {
     getCurrentTexture: vi.fn(() => ({ createView: () => ({}) })),
   };
   const canvases: FakeCanvas[] = [];
-  vi.stubGlobal("document", {
+  vi.stubGlobal('document', {
     createElement: () => {
       const canvas: FakeCanvas = {
         width: 300,
@@ -124,7 +124,7 @@ function setup(options: { scale?: number } = {}) {
     },
   });
   let scale = options.scale ?? 1;
-  vi.stubGlobal("window", {
+  vi.stubGlobal('window', {
     get devicePixelRatio() {
       return scale;
     },
@@ -135,7 +135,7 @@ function setup(options: { scale?: number } = {}) {
   });
   let observed: ((entries: unknown[]) => void) | null = null;
   vi.stubGlobal(
-    "ResizeObserver",
+    'ResizeObserver',
     class {
       constructor(callback: (entries: unknown[]) => void) {
         observed = callback;
@@ -157,7 +157,7 @@ function setup(options: { scale?: number } = {}) {
   const requestFrame = vi.fn();
   const device = { limits: { maxTextureDimension2D: 16384 } } as GPUDevice;
   const canvas = new WebGpuWindowCanvas(
-    { device, format: "bgra8unorm", generation: 1 },
+    { device, format: 'bgra8unorm', generation: 1 },
     { requestFrame },
   );
   canvas.mount(area as unknown as HTMLElement);
@@ -217,9 +217,9 @@ function setup(options: { scale?: number } = {}) {
   };
 }
 
-describe("WebGpuWindowCanvas", () => {
+describe('WebGpuWindowCanvas', () => {
   it.each([1, 1.25, 1.5, 2])(
-    "positions the canvas in layout at DPR %s without a compositing transform",
+    'positions the canvas in layout at DPR %s without a compositing transform',
     (scale) => {
       const t = setup({ scale });
       t.area.rect = { left: 11, top: 21, width: 1001, height: 641 };
@@ -232,30 +232,26 @@ describe("WebGpuWindowCanvas", () => {
       expect((21 + Number.parseFloat(canvas.style.top)) * scale).toBeCloseTo(
         Math.round(21 * scale),
       );
-      expect(Number.parseFloat(canvas.style.width) * scale).toBeCloseTo(
-        canvas.width,
-      );
-      expect(Number.parseFloat(canvas.style.height) * scale).toBeCloseTo(
-        canvas.height,
-      );
+      expect(Number.parseFloat(canvas.style.width) * scale).toBeCloseTo(canvas.width);
+      expect(Number.parseFloat(canvas.style.height) * scale).toBeCloseTo(canvas.height);
       expect(canvas.style.transform).toBeUndefined();
     },
   );
 
-  it("is placed first in its area and sized to it exactly, in device pixels, at the first frame", () => {
+  it('is placed first in its area and sized to it exactly, in device pixels, at the first frame', () => {
     const t = setup({ scale: 2 });
     expect(t.area.insertBefore).toHaveBeenCalledWith(t.canvases[0], null);
     expect(t.canvases[0].style.pointerEvents).toBeUndefined();
     t.canvas.beginFrame();
     expect(t.canvases[0]).toMatchObject({ width: 1600, height: 1200 });
     expect(t.canvases[0].style).toMatchObject({
-      width: "800px",
-      height: "600px",
+      width: '800px',
+      height: '600px',
     });
     expect(t.canvas.diagnostics().reallocations).toBe(1);
   });
 
-  it("computes pane rectangles in device pixels, clamped to the canvas, only when the layout changed", () => {
+  it('computes pane rectangles in device pixels, clamped to the canvas, only when the layout changed', () => {
     const t = setup({ scale: 1.25 });
     const a = t.pane();
     const b = t.pane();
@@ -287,20 +283,20 @@ describe("WebGpuWindowCanvas", () => {
     expect(bindingB.rect()).toEqual({ x: 376, y: 0, width: 624, height: 750 });
   });
 
-  it("puts the canvas on the device pixel grid when the area sits between pixels", () => {
+  it('puts the canvas on the device pixel grid when the area sits between pixels', () => {
     const t = setup({ scale: 1.25 });
     t.area.rect = { left: 100.4, top: 20, width: 700, height: 500 };
     t.resizeArea(700, 500);
-    expect(t.canvases[0].style.left).toBe("0.4px");
-    expect(t.canvases[0].style.top).toBe("0px");
+    expect(t.canvases[0].style.left).toBe('0.4px');
+    expect(t.canvases[0].style.top).toBe('0px');
     expect(t.canvases[0].style.transform).toBeUndefined();
     t.area.rect = { left: 100, top: 20, width: 700, height: 500 };
     t.resizeArea(700, 500);
-    expect(t.canvases[0].style.left).toBe("0px");
-    expect(t.canvases[0].style.top).toBe("0px");
+    expect(t.canvases[0].style.left).toBe('0px');
+    expect(t.canvases[0].style.top).toBe('0px');
   });
 
-  it("never sizes the canvas past what the device allows", () => {
+  it('never sizes the canvas past what the device allows', () => {
     const t = setup();
     (t.canvas as unknown as { device: GPUDevice }).device = {
       limits: { maxTextureDimension2D: 640 },
@@ -310,7 +306,7 @@ describe("WebGpuWindowCanvas", () => {
     expect(t.canvases[0]).toMatchObject({ width: 640, height: 640 });
   });
 
-  it("cuts a pane that reaches past a canvas that has not grown yet", () => {
+  it('cuts a pane that reaches past a canvas that has not grown yet', () => {
     const t = setup();
     const p = t.pane();
     const binding = t.canvas.addPane(
@@ -342,11 +338,10 @@ describe("WebGpuWindowCanvas", () => {
     const result = t.canvas.encode(t.encoder, t.resources);
     expect(result.drawn).toBe(2);
     expect(result.revealed).toEqual([a, b]);
-    const descriptor = (t.encoder.beginRenderPass as ReturnType<typeof vi.fn>)
-      .mock.calls[0][0];
+    const descriptor = (t.encoder.beginRenderPass as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(descriptor.colorAttachments[0]).toMatchObject({
-      loadOp: "clear",
-      storeOp: "store",
+      loadOp: 'clear',
+      storeOp: 'store',
       clearValue: { r: 10 / 255, g: 20 / 255, b: 30 / 255, a: 1 },
     });
     expect(t.pass.setViewport.mock.calls).toEqual([
@@ -361,10 +356,10 @@ describe("WebGpuWindowCanvas", () => {
     expect(t.pass.end).toHaveBeenCalledOnce();
     // A second frame reveals nobody new.
     expect(t.canvas.encode(t.encoder, t.resources).revealed).toEqual([]);
-    expect(t.canvases[0].style.visibility).toBe("visible");
+    expect(t.canvases[0].style.visibility).toBe('visible');
   });
 
-  it("acquires no texture when no pane can be drawn", () => {
+  it('acquires no texture when no pane can be drawn', () => {
     const t = setup();
     const p = t.pane();
     p.drawable.mockReturnValue(false);
@@ -377,7 +372,7 @@ describe("WebGpuWindowCanvas", () => {
     expect(t.encoder.beginRenderPass).not.toHaveBeenCalled();
   });
 
-  it("keeps its allocation across pane changes and hides itself when the last pane leaves", () => {
+  it('keeps its allocation across pane changes and hides itself when the last pane leaves', () => {
     const t = setup();
     const a = t.pane();
     t.canvas
@@ -388,22 +383,16 @@ describe("WebGpuWindowCanvas", () => {
     for (let cycle = 0; cycle < 50; cycle++) {
       t.canvas.removePane(a);
       // The next pane of the switch joins within the delay: the canvas is never toggled.
-      expect(t.canvases[0].style.visibility).toBe("visible");
+      expect(t.canvases[0].style.visibility).toBe('visible');
       const b = t.pane();
       t.canvas
-        .addPane(
-          b,
-          t.host({ left: 0, top: 0, width: 400, height: 600 }) as never,
-        )
+        .addPane(b, t.host({ left: 0, top: 0, width: 400, height: 600 }) as never)
         .setBounds({ left: 0, top: 0, width: 400, height: 600 });
       t.canvas.beginFrame();
       t.canvas.encode(t.encoder, t.resources);
       t.canvas.removePane(b);
       t.canvas
-        .addPane(
-          a,
-          t.host({ left: 0, top: 0, width: 800, height: 600 }) as never,
-        )
+        .addPane(a, t.host({ left: 0, top: 0, width: 800, height: 600 }) as never)
         .setBounds({ left: 0, top: 0, width: 800, height: 600 });
       t.canvas.beginFrame();
       t.canvas.encode(t.encoder, t.resources);
@@ -413,7 +402,7 @@ describe("WebGpuWindowCanvas", () => {
     expect(t.context.unconfigure).not.toHaveBeenCalled();
   });
 
-  it("hides itself only after staying empty for a moment, and not when a pane returns", () => {
+  it('hides itself only after staying empty for a moment, and not when a pane returns', () => {
     vi.useFakeTimers();
     const t = setup();
     const a = t.pane();
@@ -424,20 +413,17 @@ describe("WebGpuWindowCanvas", () => {
     t.canvas.encode(t.encoder, t.resources);
     t.canvas.removePane(a);
     vi.advanceTimersByTime(HIDE_DELAY_MS - 1);
-    expect(t.canvases[0].style.visibility).toBe("visible");
-    t.canvas.addPane(
-      a,
-      t.host({ left: 0, top: 0, width: 800, height: 600 }) as never,
-    );
+    expect(t.canvases[0].style.visibility).toBe('visible');
+    t.canvas.addPane(a, t.host({ left: 0, top: 0, width: 800, height: 600 }) as never);
     vi.advanceTimersByTime(1);
-    expect(t.canvases[0].style.visibility).toBe("visible");
+    expect(t.canvases[0].style.visibility).toBe('visible');
     t.canvas.removePane(a);
     vi.advanceTimersByTime(HIDE_DELAY_MS);
-    expect(t.canvases[0].style.visibility).toBe("hidden");
+    expect(t.canvases[0].style.visibility).toBe('hidden');
     vi.useRealTimers();
   });
 
-  it("follows an area resize with one reallocation per distinct size and reuses nearby sizes", () => {
+  it('follows an area resize with one reallocation per distinct size and reuses nearby sizes', () => {
     const t = setup();
     t.canvas.beginFrame();
     t.resizeArea(1000, 700);
@@ -450,8 +436,8 @@ describe("WebGpuWindowCanvas", () => {
     expect(t.canvas.diagnostics().reallocations).toBe(2);
   });
 
-  describe("geometry check", () => {
-    it("reads no layout until the interval has passed, then finds a pane that moved without resizing", () => {
+  describe('geometry check', () => {
+    it('reads no layout until the interval has passed, then finds a pane that moved without resizing', () => {
       const t = setup();
       const p = t.pane();
       const host = t.host({ left: 0, top: 0, width: 400, height: 600 });
@@ -473,7 +459,7 @@ describe("WebGpuWindowCanvas", () => {
       expect(t.canvas.isDirty).toBe(true);
     });
 
-    it("does nothing when the layout is as the observers left it", () => {
+    it('does nothing when the layout is as the observers left it', () => {
       const t = setup();
       const p = t.pane();
       const host = t.host({ left: 0, top: 0, width: 400, height: 600 });
@@ -486,32 +472,32 @@ describe("WebGpuWindowCanvas", () => {
     });
   });
 
-  it("is reconfigured for a replacement device without being replaced", () => {
+  it('is reconfigured for a replacement device without being replaced', () => {
     const t = setup();
     t.canvas.beginFrame();
     t.canvas.consumeDirty();
     const next = { limits: { maxTextureDimension2D: 8192 } } as GPUDevice;
-    t.canvas.reconfigure({ device: next, format: "bgra8unorm", generation: 2 });
-    t.canvas.reconfigure({ device: next, format: "bgra8unorm", generation: 2 });
+    t.canvas.reconfigure({ device: next, format: 'bgra8unorm', generation: 2 });
+    t.canvas.reconfigure({ device: next, format: 'bgra8unorm', generation: 2 });
     expect(t.context.configure).toHaveBeenCalledTimes(2);
     expect(t.context.unconfigure).not.toHaveBeenCalled();
     expect(t.canvas.diagnostics().reconfigured).toBe(1);
     expect(t.canvas.isDirty).toBe(true);
   });
 
-  it("re-snaps the canvas to the device pixel grid when only the display ratio changes", () => {
+  it('re-snaps the canvas to the device pixel grid when only the display ratio changes', () => {
     const t = setup({ scale: 1.25 });
     t.area.rect = { left: 100.4, top: 20, width: 700, height: 500 };
     t.resizeArea(700, 500);
-    expect(t.canvases[0].style.left).toBe("0.4px");
-    expect(t.canvases[0].style.top).toBe("0px");
+    expect(t.canvases[0].style.left).toBe('0.4px');
+    expect(t.canvases[0].style.top).toBe('0px');
     expect(t.canvases[0].style.transform).toBeUndefined();
     // The window moves to a display with another ratio: the rectangle is the same CSS box, so
     // nothing re-measured it, but the offset that lands it on a device pixel is different.
     t.setScale(1);
     const onResize = (
       (window.addEventListener as ReturnType<typeof vi.fn>).mock.calls.find(
-        ([name]) => name === "resize",
+        ([name]) => name === 'resize',
       ) as [string, () => void]
     )[1];
     onResize();
@@ -521,11 +507,11 @@ describe("WebGpuWindowCanvas", () => {
     t.area.rect = { left: 100, top: 20, width: 700, height: 500 };
     t.setScale(2);
     onResize();
-    expect(t.canvases[0].style.left).toBe("0px");
-    expect(t.canvases[0].style.top).toBe("0px");
+    expect(t.canvases[0].style.left).toBe('0px');
+    expect(t.canvases[0].style.top).toBe('0px');
   });
 
-  it("clips a pane laid out partly left of or above the canvas instead of sliding it in", () => {
+  it('clips a pane laid out partly left of or above the canvas instead of sliding it in', () => {
     const t = setup();
     const p = t.pane();
     const binding = t.canvas.addPane(
@@ -550,7 +536,7 @@ describe("WebGpuWindowCanvas", () => {
     expect(binding.rect()).toEqual({ x: 0, y: 0, width: 100, height: 100 });
   });
 
-  it("reveals every pane again after the canvas was reconfigured for a replacement device", () => {
+  it('reveals every pane again after the canvas was reconfigured for a replacement device', () => {
     const t = setup();
     const a = t.pane();
     t.canvas
@@ -562,14 +548,14 @@ describe("WebGpuWindowCanvas", () => {
     // Reconfiguring clears the canvas and the panes cover it again until it has been redrawn.
     t.canvas.reconfigure({
       device: { limits: { maxTextureDimension2D: 8192 } } as GPUDevice,
-      format: "bgra8unorm",
+      format: 'bgra8unorm',
       generation: 2,
     });
     t.canvas.beginFrame();
     expect(t.canvas.encode(t.encoder, t.resources).revealed).toEqual([a]);
   });
 
-  it("asks for a frame when its area changes", () => {
+  it('asks for a frame when its area changes', () => {
     const t = setup();
     t.requestFrame.mockClear();
     t.resizeArea(900, 600);

@@ -1,14 +1,14 @@
-import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
-import { TeraxGhostty } from "@terax/ghostty-core/adapted";
+import { createHash } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import { TeraxGhostty } from '@terax/ghostty-core/adapted';
 import {
   GhosttyOptimizeMode,
   GhosttyRenderStateDirty,
   OFFICIAL_GHOSTTY_COMMIT,
   OFFICIAL_GHOSTTY_WASM_SHA256,
   OfficialGhostty,
-} from "@terax/ghostty-core/official";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+} from '@terax/ghostty-core/official';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 let ghostty: OfficialGhostty;
 let adaptedGhostty: TeraxGhostty;
@@ -16,41 +16,30 @@ let wasmBytes: ArrayBuffer;
 
 beforeAll(async () => {
   const path = new URL(
-    "../../../../packages/ghostty-core/official/ghostty-vt.wasm",
+    '../../../../packages/ghostty-core/official/ghostty-vt.wasm',
     import.meta.url,
   );
   const file = await readFile(path);
   wasmBytes = Uint8Array.from(file).buffer;
   ghostty = await OfficialGhostty.loadBytes(wasmBytes.slice(0));
   const adaptedPath = new URL(
-    "../../../../packages/ghostty-core/adapted/ghostty-vt.wasm",
+    '../../../../packages/ghostty-core/adapted/ghostty-vt.wasm',
     import.meta.url,
   );
   const adaptedFile = await readFile(adaptedPath);
-  adaptedGhostty = await TeraxGhostty.loadBytes(
-    Uint8Array.from(adaptedFile).buffer,
-  );
+  adaptedGhostty = await TeraxGhostty.loadBytes(Uint8Array.from(adaptedFile).buffer);
 });
 
-describe("official libghostty-vt integration", () => {
-  it.each(["adapted", "official"] as const)(
-    "recovers from %s input allocation failure without reusing freed storage",
+describe('official libghostty-vt integration', () => {
+  it.each(['adapted', 'official'] as const)(
+    'recovers from %s input allocation failure without reusing freed storage',
     (kind) => {
-      const terminal = (
-        kind === "adapted" ? adaptedGhostty : ghostty
-      ).createTerminal(20, 4);
+      const terminal = (kind === 'adapted' ? adaptedGhostty : ghostty).createTerminal(20, 4);
       const state = terminal as unknown as { exports: Record<string, unknown> };
-      const allocateName =
-        kind === "adapted" ? "restty_alloc" : "ghostty_wasm_alloc_u8_array";
-      const freeName =
-        kind === "adapted" ? "restty_free" : "ghostty_wasm_free_u8_array";
-      const originalAllocate = state.exports[allocateName] as (
-        length: number,
-      ) => number;
-      const originalFree = state.exports[freeName] as (
-        pointer: number,
-        length: number,
-      ) => void;
+      const allocateName = kind === 'adapted' ? 'restty_alloc' : 'ghostty_wasm_alloc_u8_array';
+      const freeName = kind === 'adapted' ? 'restty_free' : 'ghostty_wasm_free_u8_array';
+      const originalAllocate = state.exports[allocateName] as (length: number) => number;
+      const originalFree = state.exports[freeName] as (pointer: number, length: number) => void;
       const allocate = vi.fn(originalAllocate);
       const free = vi.fn(originalFree);
       state.exports = {
@@ -58,36 +47,28 @@ describe("official libghostty-vt integration", () => {
         [allocateName]: allocate,
         [freeName]: free,
       };
-      terminal.write(new TextEncoder().encode("first"));
+      terminal.write(new TextEncoder().encode('first'));
       const pointer = allocate.mock.results[0].value;
       allocate.mockReturnValue(0);
       expect(() => terminal.write(new Uint8Array(8192))).toThrow(/allocat/i);
       expect(() => terminal.write(Uint8Array.of(65))).toThrow(/allocat/i);
       expect(free.mock.calls.filter(([p]) => p === pointer)).toHaveLength(1);
       allocate.mockImplementation(originalAllocate);
-      terminal.write(new TextEncoder().encode(" recovered"));
+      terminal.write(new TextEncoder().encode(' recovered'));
       expect(allocate).toHaveBeenCalledTimes(4);
       terminal.dispose();
     },
   );
 
-  it.each(["adapted", "official"] as const)(
-    "can dispose %s immediately after input allocation failure",
+  it.each(['adapted', 'official'] as const)(
+    'can dispose %s immediately after input allocation failure',
     (kind) => {
-      const terminal = (
-        kind === "adapted" ? adaptedGhostty : ghostty
-      ).createTerminal(20, 4);
+      const terminal = (kind === 'adapted' ? adaptedGhostty : ghostty).createTerminal(20, 4);
       const state = terminal as unknown as { exports: Record<string, unknown> };
-      const allocateName =
-        kind === "adapted" ? "restty_alloc" : "ghostty_wasm_alloc_u8_array";
-      const freeName =
-        kind === "adapted" ? "restty_free" : "ghostty_wasm_free_u8_array";
-      const allocate = vi.fn(
-        state.exports[allocateName] as (length: number) => number,
-      );
-      const free = vi.fn(
-        state.exports[freeName] as (pointer: number, length: number) => void,
-      );
+      const allocateName = kind === 'adapted' ? 'restty_alloc' : 'ghostty_wasm_alloc_u8_array';
+      const freeName = kind === 'adapted' ? 'restty_free' : 'ghostty_wasm_free_u8_array';
+      const allocate = vi.fn(state.exports[allocateName] as (length: number) => number);
+      const free = vi.fn(state.exports[freeName] as (pointer: number, length: number) => void);
       state.exports = {
         ...state.exports,
         [allocateName]: allocate,
@@ -102,42 +83,40 @@ describe("official libghostty-vt integration", () => {
     },
   );
 
-  it("pins the audited upstream artifact", () => {
-    expect(OFFICIAL_GHOSTTY_COMMIT).toBe(
-      "cecf81678e47f967b0354acada67e69d229f436b",
+  it('pins the audited upstream artifact', () => {
+    expect(OFFICIAL_GHOSTTY_COMMIT).toBe('cecf81678e47f967b0354acada67e69d229f436b');
+    expect(createHash('sha256').update(Buffer.from(wasmBytes)).digest('hex')).toBe(
+      OFFICIAL_GHOSTTY_WASM_SHA256,
     );
-    expect(
-      createHash("sha256").update(Buffer.from(wasmBytes)).digest("hex"),
-    ).toBe(OFFICIAL_GHOSTTY_WASM_SHA256);
     expect(ghostty.buildInfo).toMatchObject({
       optimize: GhosttyOptimizeMode.ReleaseFast,
-      version: "0.1.0-dev",
+      version: '0.1.0-dev',
     });
   });
 
-  it("routes terminal query replies through one typed WASM callback", () => {
+  it('routes terminal query replies through one typed WASM callback', () => {
     const replies: Uint8Array[] = [];
     const terminal = ghostty.createTerminal(80, 24, {
       onReply: (bytes) => replies.push(bytes),
     });
     try {
-      terminal.write(new TextEncoder().encode("\x1b[c\x1b[5n\x1b[>c\x1b[6n"));
+      terminal.write(new TextEncoder().encode('\x1b[c\x1b[5n\x1b[>c\x1b[6n'));
       expect(new TextDecoder().decode(concat(replies))).toBe(
-        "\x1b[?62;22c\x1b[0n\x1b[>1;0;0c\x1b[1;1R",
+        '\x1b[?62;22c\x1b[0n\x1b[>1;0;0c\x1b[1;1R',
       );
     } finally {
       terminal.dispose();
     }
   });
 
-  it("exposes official bulk raw rows without per-cell WASM calls", () => {
+  it('exposes official bulk raw rows without per-cell WASM calls', () => {
     const terminal = ghostty.createTerminal(12, 4, {
       foreground: [205, 214, 244],
       background: [17, 17, 27],
       cursor: [249, 226, 175],
     });
     try {
-      terminal.write(new TextEncoder().encode("plain \x1b[31mred\x1b[0m"));
+      terminal.write(new TextEncoder().encode('plain \x1b[31mred\x1b[0m'));
       expect(terminal.updateRenderState()).toBe(GhosttyRenderStateDirty.Full);
 
       const rows: Uint32Array[] = [];
@@ -145,8 +124,8 @@ describe("official libghostty-vt integration", () => {
       expect(rows).toHaveLength(4);
       expect(rows[0]).toHaveLength(12 * 2);
 
-      expect(rawCellCodepoint(rows[0], 0)).toBe("p".codePointAt(0));
-      expect(rawCellCodepoint(rows[0], 6)).toBe("r".codePointAt(0));
+      expect(rawCellCodepoint(rows[0], 0)).toBe('p'.codePointAt(0));
+      expect(rawCellCodepoint(rows[0], 6)).toBe('r'.codePointAt(0));
       expect(rawCellStyleId(rows[0], 0)).toBe(0);
       expect(rawCellStyleId(rows[0], 6)).toBeGreaterThan(0);
 
@@ -160,18 +139,16 @@ describe("official libghostty-vt integration", () => {
     }
   });
 
-  it("preserves dirty rows until the renderer commits a frame", () => {
+  it('preserves dirty rows until the renderer commits a frame', () => {
     const terminal = ghostty.createTerminal(20, 4);
     try {
-      terminal.write(new TextEncoder().encode("first frame"));
+      terminal.write(new TextEncoder().encode('first frame'));
       expect(terminal.updateRenderState()).toBe(GhosttyRenderStateDirty.Full);
       terminal.markRenderStateClean();
       expect(terminal.updateRenderState()).toBe(GhosttyRenderStateDirty.None);
 
-      terminal.write(new TextEncoder().encode("\r\nsecond frame"));
-      expect(terminal.updateRenderState()).toBe(
-        GhosttyRenderStateDirty.Partial,
-      );
+      terminal.write(new TextEncoder().encode('\r\nsecond frame'));
+      expect(terminal.updateRenderState()).toBe(GhosttyRenderStateDirty.Partial);
       const dirtyRows: number[] = [];
       terminal.forEachRawRow((row) => {
         if (row.dirty) dirtyRows.push(row.row);
@@ -182,7 +159,7 @@ describe("official libghostty-vt integration", () => {
     }
   });
 
-  it("matches the adapted core across chunked writes and resize reflow", () => {
+  it('matches the adapted core across chunked writes and resize reflow', () => {
     const official = ghostty.createTerminal(17, 5, {
       scrollbackMaxLines: 128,
       scrollbackMaxBytes: 1024 * 1024,
@@ -192,11 +169,11 @@ describe("official libghostty-vt integration", () => {
       maxScrollbackBytes: 1024 * 1024,
     });
     const fixture = new TextEncoder().encode(
-      "alpha λ 日本語🙂\r\n" +
-        "\x1b[31mred\x1b[0m and plain\r\n" +
-        "cursor\x1b[2DXY\r\n" +
-        "erase-me\x1b[4D\x1b[Kdone\r\n" +
-        Array.from({ length: 12 }, (_, index) => `line-${index}\r\n`).join(""),
+      'alpha λ 日本語🙂\r\n' +
+        '\x1b[31mred\x1b[0m and plain\r\n' +
+        'cursor\x1b[2DXY\r\n' +
+        'erase-me\x1b[4D\x1b[Kdone\r\n' +
+        Array.from({ length: 12 }, (_, index) => `line-${index}\r\n`).join(''),
     );
 
     try {
@@ -222,7 +199,7 @@ describe("official libghostty-vt integration", () => {
     }
   });
 
-  it("reuses the shared WASM allocator across terminal lifecycles", () => {
+  it('reuses the shared WASM allocator across terminal lifecycles', () => {
     runLifecycleCycle();
     const warmBytes = ghostty.getMemoryBytes();
     runLifecycleCycle();
@@ -247,7 +224,7 @@ function runLifecycleCycle(): void {
       const output = Array.from(
         { length: 160 },
         (_, line) => `${index}:${line} λ 日本語 emoji🙂 agent output\r\n`,
-      ).join("");
+      ).join('');
       terminal.write(new TextEncoder().encode(output));
       terminal.updateRenderState();
       let rowCount = 0;
@@ -272,8 +249,8 @@ function rawCellStyleId(row: Uint32Array, column: number): number {
 }
 
 function expectEquivalentViewport(
-  official: ReturnType<OfficialGhostty["createTerminal"]>,
-  adapted: ReturnType<TeraxGhostty["createTerminal"]>,
+  official: ReturnType<OfficialGhostty['createTerminal']>,
+  adapted: ReturnType<TeraxGhostty['createTerminal']>,
 ): void {
   official.updateRenderState();
   const officialRows: number[][] = [];
@@ -286,12 +263,7 @@ function expectEquivalentViewport(
   });
   const adaptedState = adapted.updateRenderState();
   const adaptedRows = Array.from({ length: adapted.rows }, (_, row) =>
-    Array.from(
-      adaptedState.codepoints.subarray(
-        row * adapted.cols,
-        (row + 1) * adapted.cols,
-      ),
-    ),
+    Array.from(adaptedState.codepoints.subarray(row * adapted.cols, (row + 1) * adapted.cols)),
   );
 
   expect(officialRows).toEqual(adaptedRows);
@@ -308,9 +280,7 @@ function expectEquivalentViewport(
 }
 
 function concat(chunks: readonly Uint8Array[]): Uint8Array {
-  const result = new Uint8Array(
-    chunks.reduce((total, chunk) => total + chunk.byteLength, 0),
-  );
+  const result = new Uint8Array(chunks.reduce((total, chunk) => total + chunk.byteLength, 0));
   let offset = 0;
   for (const chunk of chunks) {
     result.set(chunk, offset);

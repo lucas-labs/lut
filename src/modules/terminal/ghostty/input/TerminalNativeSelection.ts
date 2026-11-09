@@ -1,7 +1,7 @@
-import type { TerminalInputProxy } from "./TerminalInputProxy";
+import type { TerminalInputProxy } from './TerminalInputProxy';
 
 type Options = {
-  readonly proxy: Pick<TerminalInputProxy, "expose" | "release">;
+  readonly proxy: Pick<TerminalInputProxy, 'expose' | 'release'>;
   readonly input: HTMLTextAreaElement;
   readonly target: HTMLElement;
   readonly getSelection: () => string | null;
@@ -34,19 +34,18 @@ export class TerminalNativeSelection {
   private listeners(): [EventTarget, string, EventListener, boolean][] {
     const { target, input } = this.options;
     return [
-      [target, "pointerdown", this.pointerDown as EventListener, true],
-      [target, "contextmenu", this.contextMenu as EventListener, false],
-      [input, "copy", this.copy as EventListener, false],
-      [input, "cut", this.copy as EventListener, false],
-      [input, "blur", this.reset, false],
+      [target, 'pointerdown', this.pointerDown as EventListener, true],
+      [target, 'contextmenu', this.contextMenu as EventListener, false],
+      [input, 'copy', this.copy as EventListener, false],
+      [input, 'cut', this.copy as EventListener, false],
+      [input, 'blur', this.reset, false],
     ];
   }
 
   private readonly pointerDown = (event: PointerEvent): void => {
     this.reset();
     if (
-      (event.button !== 2 &&
-        !(this.options.isMac && event.button === 0 && event.ctrlKey)) ||
+      (event.button !== 2 && !(this.options.isMac && event.button === 0 && event.ctrlKey)) ||
       (this.options.mouseTracking() && !event.shiftKey)
     )
       return;
@@ -70,13 +69,13 @@ export class TerminalNativeSelection {
     Object.assign(input.style, {
       left: `${Math.max(0, event.clientX - rect.left - 10)}px`,
       top: `${Math.max(0, event.clientY - rect.top - 10)}px`,
-      width: "20px",
-      height: "20px",
-      zIndex: "20",
-      pointerEvents: "auto",
-      userSelect: "text",
+      width: '20px',
+      height: '20px',
+      zIndex: '20',
+      pointerEvents: 'auto',
+      userSelect: 'text',
     });
-    this.options.proxy.expose(this.options.getSelection() ?? "");
+    this.options.proxy.expose(this.options.getSelection() ?? '');
     input.focus({ preventScroll: true });
     input.select();
   }
@@ -87,6 +86,6 @@ export class TerminalNativeSelection {
     event.preventDefault();
     const text = this.options.getSelection();
     if (!text || !event.clipboardData) return;
-    event.clipboardData.setData("text/plain", text);
+    event.clipboardData.setData('text/plain', text);
   };
 }

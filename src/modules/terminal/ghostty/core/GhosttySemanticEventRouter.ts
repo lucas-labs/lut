@@ -1,5 +1,5 @@
-import type { GhosttyTerminalEvent } from "@terax/ghostty-core/protocol";
-import { parseOsc7, parseOsc52Clipboard } from "../../lib/osc-handlers";
+import type { GhosttyTerminalEvent } from '@terax/ghostty-core/protocol';
+import { parseOsc7, parseOsc52Clipboard } from '../../lib/osc-handlers';
 
 export type GhosttySemanticEventCallbacks = {
   readonly onBell?: () => void;
@@ -26,45 +26,45 @@ export class GhosttySemanticEventRouter {
 
   handle(event: GhosttyTerminalEvent): void {
     switch (event.type) {
-      case "bell":
+      case 'bell':
         this.callbacks.onBell?.();
         break;
-      case "title":
+      case 'title':
         this.callbacks.onTitle?.(event.title);
         break;
-      case "pwd": {
+      case 'pwd': {
         if (this.inCommand) break;
         const cwd = parseOsc7(event.uri);
         if (cwd) this.callbacks.onCwd?.(cwd);
         break;
       }
-      case "clipboard": {
+      case 'clipboard': {
         const text = parseOsc52Clipboard(`${event.selection};${event.data}`);
         if (text !== null) this.callbacks.onClipboard?.(text);
         break;
       }
-      case "notification":
+      case 'notification':
         this.callbacks.onNotification?.(event.title, event.body);
         break;
-      case "prompt-start":
+      case 'prompt-start':
         this.inCommand = false;
         this.callbacks.onCommandState?.(false);
         break;
-      case "prompt-continuation":
+      case 'prompt-continuation':
         break;
-      case "prompt-end":
+      case 'prompt-end':
         this.inCommand = true;
         this.callbacks.onPromptEnd?.(event.blockInput !== false);
         break;
-      case "end-of-input":
+      case 'end-of-input':
         this.inCommand = true;
         this.callbacks.onCommandState?.(true);
         break;
-      case "end-of-command":
+      case 'end-of-command':
         this.inCommand = false;
         this.callbacks.onCommandState?.(false);
         break;
-      case "overflow":
+      case 'overflow':
         this.callbacks.onOverflow?.(event.dropped);
         break;
     }

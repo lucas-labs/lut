@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from '@tauri-apps/api/core';
 import {
   type CustomEndpoint,
   getProvider,
@@ -6,7 +6,7 @@ import {
   type ProviderId,
   PROVIDERS,
   providerSupportsKey,
-} from "../config";
+} from '../config';
 
 export type ProviderKeys = Record<ProviderId, string | null>;
 export type CustomEndpointKeys = Record<string, string | null>;
@@ -21,7 +21,7 @@ export const EMPTY_PROVIDER_KEYS: ProviderKeys = {
   deepseek: null,
   mistral: null,
   openrouter: null,
-  "openai-compatible": null,
+  'openai-compatible': null,
   lmstudio: null,
   mlx: null,
   ollama: null,
@@ -30,7 +30,7 @@ export const EMPTY_PROVIDER_KEYS: ProviderKeys = {
 export async function getKey(provider: ProviderId): Promise<string | null> {
   if (!providerSupportsKey(provider)) return null;
   try {
-    const v = await invoke<string | null>("secrets_get", {
+    const v = await invoke<string | null>('secrets_get', {
       service: KEYRING_SERVICE,
       account: getProvider(provider).keyringAccount,
     });
@@ -45,8 +45,8 @@ export async function setKey(provider: ProviderId, key: string): Promise<void> {
     throw new Error(`${provider} does not use an API key`);
   }
   const trimmed = key.trim();
-  if (!trimmed) throw new Error("API key is empty");
-  await invoke("secrets_set", {
+  if (!trimmed) throw new Error('API key is empty');
+  await invoke('secrets_set', {
     service: KEYRING_SERVICE,
     account: getProvider(provider).keyringAccount,
     password: trimmed,
@@ -54,7 +54,7 @@ export async function setKey(provider: ProviderId, key: string): Promise<void> {
 }
 
 async function deleteKey(account: string): Promise<void> {
-  await invoke("secrets_delete", { service: KEYRING_SERVICE, account });
+  await invoke('secrets_delete', { service: KEYRING_SERVICE, account });
 }
 
 export async function clearKey(provider: ProviderId): Promise<void> {
@@ -66,7 +66,7 @@ export async function getAllKeys(): Promise<ProviderKeys> {
   const out = { ...EMPTY_PROVIDER_KEYS };
   const need = PROVIDERS.filter((p) => providerSupportsKey(p.id));
   try {
-    const results = await invoke<(string | null)[]>("secrets_get_all", {
+    const results = await invoke<(string | null)[]>('secrets_get_all', {
       service: KEYRING_SERVICE,
       accounts: need.map((p) => p.keyringAccount),
     });
@@ -76,9 +76,7 @@ export async function getAllKeys(): Promise<ProviderKeys> {
     });
     return out;
   } catch {
-    const entries = await Promise.all(
-      need.map(async (p) => [p.id, await getKey(p.id)] as const),
-    );
+    const entries = await Promise.all(need.map(async (p) => [p.id, await getKey(p.id)] as const));
     for (const [id, v] of entries) out[id] = v;
     return out;
   }
@@ -92,11 +90,9 @@ function compatKeyringAccount(endpointId: string): string {
   return `compat-${endpointId}-api-key`;
 }
 
-export async function getCustomEndpointKey(
-  endpointId: string,
-): Promise<string | null> {
+export async function getCustomEndpointKey(endpointId: string): Promise<string | null> {
   try {
-    const v = await invoke<string | null>("secrets_get", {
+    const v = await invoke<string | null>('secrets_get', {
       service: KEYRING_SERVICE,
       account: compatKeyringAccount(endpointId),
     });
@@ -106,22 +102,17 @@ export async function getCustomEndpointKey(
   }
 }
 
-export async function setCustomEndpointKey(
-  endpointId: string,
-  key: string,
-): Promise<void> {
+export async function setCustomEndpointKey(endpointId: string, key: string): Promise<void> {
   const trimmed = key.trim();
-  if (!trimmed) throw new Error("API key is empty");
-  await invoke("secrets_set", {
+  if (!trimmed) throw new Error('API key is empty');
+  await invoke('secrets_set', {
     service: KEYRING_SERVICE,
     account: compatKeyringAccount(endpointId),
     password: trimmed,
   });
 }
 
-export async function clearCustomEndpointKey(
-  endpointId: string,
-): Promise<void> {
+export async function clearCustomEndpointKey(endpointId: string): Promise<void> {
   await deleteKey(compatKeyringAccount(endpointId));
 }
 
@@ -132,7 +123,7 @@ export async function getAllCustomEndpointKeys(
   const out: CustomEndpointKeys = {};
   try {
     const accounts = endpoints.map((e) => compatKeyringAccount(e.id));
-    const results = await invoke<(string | null)[]>("secrets_get_all", {
+    const results = await invoke<(string | null)[]>('secrets_get_all', {
       service: KEYRING_SERVICE,
       accounts,
     });

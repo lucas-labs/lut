@@ -1,4 +1,4 @@
-type TerminalLinkKind = "osc8" | "url" | "path";
+type TerminalLinkKind = 'osc8' | 'url' | 'path';
 
 export type TerminalTextLink = {
   /** UTF-16 offsets into the scanned text, end exclusive. */
@@ -6,7 +6,7 @@ export type TerminalTextLink = {
   end: number;
   /** The destination for URLs, the matched text for paths. */
   uri: string;
-  kind: "url" | "path";
+  kind: 'url' | 'path';
   path?: string;
   line?: number;
   column?: number;
@@ -39,17 +39,16 @@ const MAX_LINE_NUMBER = 9_999_999;
 
 function urlLinkMatcher(text: string): TerminalTextLink[] {
   const links: TerminalTextLink[] = [];
-  const pattern =
-    /(?:https?:\/\/|mailto:|file:\/\/)[^\s<>"'`\u0000-\u001f\u007f]+/giu;
+  const pattern = /(?:https?:\/\/|mailto:|file:\/\/)[^\s<>"'`\u0000-\u001f\u007f]+/giu;
   for (
     let match = pattern.exec(text);
     match && links.length < MAX_LINKS;
     match = pattern.exec(text)
   ) {
-    let uri = match[0].replace(/[.,;:!?]+$/, "");
+    let uri = match[0].replace(/[.,;:!?]+$/, '');
     const balance = [0, 0, 0];
-    const opens = "([{",
-      closes = ")]}";
+    const opens = '([{',
+      closes = ')]}';
     for (let index = 0; index < uri.length; index++) {
       const open = opens.indexOf(uri[index]);
       const close = closes.indexOf(uri[index]);
@@ -66,15 +65,14 @@ function urlLinkMatcher(text: string): TerminalTextLink[] {
     uri = uri.slice(0, end);
     try {
       const parsed = new URL(uri);
-      const hostless =
-        parsed.protocol === "mailto:" || parsed.protocol === "file:";
+      const hostless = parsed.protocol === 'mailto:' || parsed.protocol === 'file:';
       if (!hostless && !parsed.hostname) continue;
-      if (parsed.protocol === "file:" && parsed.pathname.length <= 1) continue;
+      if (parsed.protocol === 'file:' && parsed.pathname.length <= 1) continue;
       links.push({
         start: match.index,
         end: match.index + uri.length,
         uri,
-        kind: "url",
+        kind: 'url',
       });
     } catch {
       /* Incomplete URLs stay ordinary terminal text. */
@@ -84,23 +82,23 @@ function urlLinkMatcher(text: string): TerminalTextLink[] {
 }
 
 const TLD_LIKE_EXTENSIONS = new Set([
-  "ai",
-  "app",
-  "co",
-  "com",
-  "dev",
-  "edu",
-  "gov",
-  "internal",
-  "io",
-  "lan",
-  "local",
-  "me",
-  "net",
-  "org",
-  "test",
-  "uk",
-  "us",
+  'ai',
+  'app',
+  'co',
+  'com',
+  'dev',
+  'edu',
+  'gov',
+  'internal',
+  'io',
+  'lan',
+  'local',
+  'me',
+  'net',
+  'org',
+  'test',
+  'uk',
+  'us',
 ]);
 
 function pathLinkMatcher(text: string): TerminalTextLink[] {
@@ -122,16 +120,12 @@ function pathLinkMatcher(text: string): TerminalTextLink[] {
   return links;
 }
 
-function pathLinkFromToken(
-  text: string,
-  start: number,
-  tokenEnd: number,
-): TerminalTextLink | null {
+function pathLinkFromToken(text: string, start: number, tokenEnd: number): TerminalTextLink | null {
   let end = tokenEnd;
   while (end > start && /[.,;:!?]/.test(text[end - 1])) end--;
   if (end <= start) return null;
   const token = text.slice(start, end);
-  if (token.includes("://")) return null;
+  if (token.includes('://')) return null;
 
   let path = token;
   let line: number | undefined;
@@ -158,7 +152,7 @@ function pathLinkFromToken(
     start,
     end: linkEnd,
     uri: text.slice(start, linkEnd),
-    kind: "path",
+    kind: 'path',
     path,
     line,
     column,
@@ -189,9 +183,9 @@ function isPathShape(path: string, hasLocation: boolean): boolean {
   if (/^[A-Za-z]:[\\/]./.test(path)) return true;
   if (/^~[\\/]./.test(path)) return true;
   if (/^\.{1,2}[\\/]./.test(path)) return true;
-  if (path.startsWith("/")) {
-    if (path.startsWith("//")) return false;
-    const segments = path.split("/").filter(Boolean);
+  if (path.startsWith('/')) {
+    if (path.startsWith('//')) return false;
+    const segments = path.split('/').filter(Boolean);
     return segments.length >= 2 || hasLocation || hasExtension(path);
   }
   if (/^[-+]/.test(path)) return false;
@@ -236,10 +230,7 @@ function isPathDelimiter(code: number): boolean {
   }
 }
 
-const DEFAULT_LINK_MATCHERS: readonly LinkMatcher[] = [
-  urlLinkMatcher,
-  pathLinkMatcher,
-];
+const DEFAULT_LINK_MATCHERS: readonly LinkMatcher[] = [urlLinkMatcher, pathLinkMatcher];
 
 /** Earlier matchers win an overlap, then the longer span. */
 export function detectTerminalLinks(
@@ -252,10 +243,7 @@ export function detectTerminalLinks(
   });
   if (candidates.length === 0) return [];
   candidates.sort(
-    (a, b) =>
-      a.rank - b.rank ||
-      a.link.start - b.link.start ||
-      b.link.end - a.link.end,
+    (a, b) => a.rank - b.rank || a.link.start - b.link.start || b.link.end - a.link.end,
   );
   const accepted: TerminalTextLink[] = [];
   for (const { link } of candidates) {
@@ -277,11 +265,7 @@ export function cellSpanSegments(
 ): TerminalLinkSegment[] {
   const segments: TerminalLinkSegment[] = [];
   if (cols <= 0 || last < first) return segments;
-  for (
-    let row = Math.floor(first / cols);
-    row <= Math.floor(last / cols);
-    row++
-  ) {
+  for (let row = Math.floor(first / cols); row <= Math.floor(last / cols); row++) {
     const start = Math.max(first, row * cols) - row * cols;
     const end = Math.min(last, row * cols + cols - 1) - row * cols + 1;
     segments.push({ row: rowBase + row, start, end });

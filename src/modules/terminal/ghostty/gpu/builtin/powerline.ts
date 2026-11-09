@@ -4,29 +4,20 @@
  * separator touches the neighbouring cell's background with no gap at any size.
  * Stylised variants are left to the font.
  */
-import {
-  diagonalUpperLeftToLowerRight,
-  diagonalUpperRightToLowerLeft,
-} from "./boxDrawing";
-import { flattenCubic, type SpriteMask } from "./SpriteMask";
-import type { SpriteSpec } from "./spriteSpec";
+import { diagonalUpperLeftToLowerRight, diagonalUpperRightToLowerLeft } from './boxDrawing';
+import { flattenCubic, type SpriteMask } from './SpriteMask';
+import type { SpriteSpec } from './spriteSpec';
 
 export function isPowerline(codepoint: number): boolean {
   return (
-    (codepoint >= 0xe0b0 && codepoint <= 0xe0bf) ||
-    codepoint === 0xe0d2 ||
-    codepoint === 0xe0d4
+    (codepoint >= 0xe0b0 && codepoint <= 0xe0bf) || codepoint === 0xe0d2 || codepoint === 0xe0d4
   );
 }
 
 /** Control-point coefficient that approximates a quarter circle. */
 const ARC = ((Math.SQRT2 - 1) * 4) / 3;
 
-export function drawPowerline(
-  mask: SpriteMask,
-  spec: SpriteSpec,
-  codepoint: number,
-): void {
+export function drawPowerline(mask: SpriteMask, spec: SpriteSpec, codepoint: number): void {
   const { width: w, height: h, thickness } = spec;
   switch (codepoint) {
     case 0xe0b0:

@@ -1,10 +1,10 @@
 import {
   type WindowPresentation,
   WindowPresentationPolicy,
-} from "@/modules/terminal/ghostty/WindowPresentationPolicy";
-import { setNativeLiveResize } from "@/modules/terminal/lib/terminalResizeGesture";
-import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+} from '@/modules/terminal/ghostty/WindowPresentationPolicy';
+import { setNativeLiveResize } from '@/modules/terminal/lib/terminalResizeGesture';
+import { invoke } from '@tauri-apps/api/core';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 type NativePresentation = {
   revision: number;
@@ -24,8 +24,7 @@ let disconnect: (() => void) | null = null;
 
 export function terminalWindowPresentation(): WindowPresentation {
   const state = policy?.snapshot();
-  const visible =
-    typeof document === "undefined" || document.visibilityState === "visible";
+  const visible = typeof document === 'undefined' || document.visibilityState === 'visible';
   if (state && (!state.visible || visible)) return state;
   return { visible, reclaim: false };
 }
@@ -64,10 +63,7 @@ function connect(): void {
     for (const listener of listeners) listener(state);
   });
   const sync = () =>
-    policy?.update(
-      document.visibilityState === "visible" && !native.occluded,
-      native.sleeping,
-    );
+    policy?.update(document.visibilityState === 'visible' && !native.occluded, native.sleeping);
   const accept = (value: NativePresentation) => {
     if (
       disposed ||
@@ -75,9 +71,9 @@ function connect(): void {
       value.revision < 0 ||
       !Number.isSafeInteger(value.revision) ||
       value.revision < native.revision ||
-      typeof value.occluded !== "boolean" ||
-      typeof value.sleeping !== "boolean" ||
-      (value.liveResize !== undefined && typeof value.liveResize !== "boolean")
+      typeof value.occluded !== 'boolean' ||
+      typeof value.sleeping !== 'boolean' ||
+      (value.liveResize !== undefined && typeof value.liveResize !== 'boolean')
     )
       return;
     native = value;
@@ -85,32 +81,27 @@ function connect(): void {
     setNativeLiveResize(value.liveResize === true);
     sync();
   };
-  document.addEventListener("visibilitychange", sync);
+  document.addEventListener('visibilitychange', sync);
   sync();
-  if (typeof window !== "undefined" && "__TAURI_INTERNALS__" in window) {
+  if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
     void getCurrentWindow()
-      .listen<NativePresentation>("terax:window-presentation", ({ payload }) =>
-        accept(payload),
-      )
+      .listen<NativePresentation>('terax:window-presentation', ({ payload }) => accept(payload))
       .then(async (stop) => {
         if (disposed) {
           stop();
           return;
         }
         unlisten = stop;
-        accept(await invoke<NativePresentation>("window_presentation_state"));
+        accept(await invoke<NativePresentation>('window_presentation_state'));
       })
       .catch((error: unknown) => {
         if (!disposed)
-          console.warn(
-            "[terax] Native window presentation tracking unavailable:",
-            error,
-          );
+          console.warn('[terax] Native window presentation tracking unavailable:', error);
       });
   }
   disconnect = () => {
     disposed = true;
-    document.removeEventListener("visibilitychange", sync);
+    document.removeEventListener('visibilitychange', sync);
     unlisten?.();
   };
 }

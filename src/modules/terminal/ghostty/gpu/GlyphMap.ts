@@ -1,4 +1,4 @@
-import { ATLAS_FULL } from "./GlyphAtlas";
+import { ATLAS_FULL } from './GlyphAtlas';
 
 /** Never rasterized in this atlas epoch; queued for rasterization. */
 export const GLYPH_PENDING = 0xffff_ffff;
@@ -76,12 +76,7 @@ export class TerminalGlyphMap {
   }
 
   get pending(): number {
-    return (
-      this.normal.length -
-      this.normalHead +
-      this.urgent.length -
-      this.urgentHead
-    );
+    return this.normal.length - this.normalHead + this.urgent.length - this.urgentHead;
   }
 
   /** Some ids were evicted: cells must be scanned for them as they change. */
@@ -90,9 +85,7 @@ export class TerminalGlyphMap {
   }
 
   get byteSize(): number {
-    return (
-      this.values.byteLength + this.styles.byteLength + this.queued.byteLength
-    );
+    return this.values.byteLength + this.styles.byteLength + this.queued.byteLength;
   }
 
   /** Drops every mapping for a new Ghostty glyph epoch. */
@@ -139,10 +132,7 @@ export class TerminalGlyphMap {
       }
       this.texts[id] = glyph.text;
       this.styles[id] = glyph.style;
-      if (
-        this.values[id] === GLYPH_PENDING &&
-        (this.queued[id] & QUEUED_NORMAL) === 0
-      ) {
+      if (this.values[id] === GLYPH_PENDING && (this.queued[id] & QUEUED_NORMAL) === 0) {
         this.queued[id] |= QUEUED_NORMAL;
         this.normal.push(id);
       }
@@ -178,11 +168,7 @@ export class TerminalGlyphMap {
     ranges: ReadonlyArray<{ readonly start: number; readonly end: number }>,
   ): number {
     if (this.evictedCount === 0) return 0;
-    const words = new Uint32Array(
-      cells.buffer,
-      cells.byteOffset,
-      Math.floor(cells.byteLength / 4),
-    );
+    const words = new Uint32Array(cells.buffer, cells.byteOffset, Math.floor(cells.byteLength / 4));
     let found = 0;
     for (const range of ranges) {
       const first = range.start * cols * 4;
@@ -212,11 +198,7 @@ export class TerminalGlyphMap {
    */
   shedBacklog(cells: Uint8Array, cols: number, rows: number): number {
     if (this.pending <= BACKLOG_THRESHOLD) return 0;
-    const words = new Uint32Array(
-      cells.buffer,
-      cells.byteOffset,
-      Math.floor(cells.byteLength / 4),
-    );
+    const words = new Uint32Array(cells.buffer, cells.byteOffset, Math.floor(cells.byteLength / 4));
     const last = Math.min(words.length, cols * rows * 4);
     if (this.visibleMark.length !== this.values.length) {
       this.visibleMark = new Uint8Array(this.values.length);
@@ -261,19 +243,13 @@ export class TerminalGlyphMap {
    * Rasterizes queued glyphs into `atlas` until the queue is empty, the budget
    * is spent (at least one glyph is always mapped), or the atlas is full.
    */
-  process(
-    atlas: GlyphResolver,
-    budget: RasterBudget,
-    allowanceMs?: number,
-  ): GlyphProcessResult {
+  process(atlas: GlyphResolver, budget: RasterBudget, allowanceMs?: number): GlyphProcessResult {
     let resolved = 0;
     for (;;) {
       const fromUrgent = this.urgentHead < this.urgent.length;
       if (!fromUrgent && this.normalHead >= this.normal.length) break;
       if (resolved > 0 && budget.exhausted(allowanceMs)) break;
-      const id = fromUrgent
-        ? this.urgent[this.urgentHead]
-        : this.normal[this.normalHead];
+      const id = fromUrgent ? this.urgent[this.urgentHead] : this.normal[this.normalHead];
       const text = this.texts[id];
       if (this.values[id] !== GLYPH_PENDING || text === undefined) {
         this.shift(fromUrgent, id);

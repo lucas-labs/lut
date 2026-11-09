@@ -1,5 +1,5 @@
-import { MOD_PROP } from "@/lib/platform";
-import { describe, expect, it } from "vitest";
+import { MOD_PROP } from '@/lib/platform';
+import { describe, expect, it } from 'vitest';
 import {
   buildShortcuts,
   getBindingTokens,
@@ -7,7 +7,7 @@ import {
   matchBinding,
   type Shortcut,
   SHORTCUTS,
-} from "./shortcuts";
+} from './shortcuts';
 
 // These tests run in the vitest node environment, where the Tauri OS plugin is
 // unavailable so `IS_MAC` resolves to false. That makes the non-mac token
@@ -15,8 +15,8 @@ import {
 
 function event(over: Partial<KeyboardEvent>): KeyboardEvent {
   return {
-    key: "",
-    code: "",
+    key: '',
+    code: '',
     ctrlKey: false,
     shiftKey: false,
     altKey: false,
@@ -25,233 +25,199 @@ function event(over: Partial<KeyboardEvent>): KeyboardEvent {
   } as KeyboardEvent;
 }
 
-describe("getBindingTokens", () => {
-  it("returns nothing for an undefined binding", () => {
+describe('getBindingTokens', () => {
+  it('returns nothing for an undefined binding', () => {
     expect(getBindingTokens(undefined)).toEqual([]);
   });
 
-  it("lists modifiers in order, then the key", () => {
-    const binding: KeyBinding = { key: "k", ctrl: true, shift: true };
-    expect(getBindingTokens(binding)).toEqual(["Ctrl", "Shift", "K"]);
+  it('lists modifiers in order, then the key', () => {
+    const binding: KeyBinding = { key: 'k', ctrl: true, shift: true };
+    expect(getBindingTokens(binding)).toEqual(['Ctrl', 'Shift', 'K']);
   });
 
-  it("labels space and arrow keys", () => {
-    expect(getBindingTokens({ key: " ", meta: true })).toEqual([
-      "Win",
-      "Space",
-    ]);
-    expect(getBindingTokens({ key: "ArrowUp", alt: true })).toEqual([
-      "Alt",
-      "↑",
-    ]);
+  it('labels space and arrow keys', () => {
+    expect(getBindingTokens({ key: ' ', meta: true })).toEqual(['Win', 'Space']);
+    expect(getBindingTokens({ key: 'ArrowUp', alt: true })).toEqual(['Alt', '↑']);
   });
 
-  it("uppercases a single-character key", () => {
-    expect(getBindingTokens({ key: "c" })).toEqual(["C"]);
+  it('uppercases a single-character key', () => {
+    expect(getBindingTokens({ key: 'c' })).toEqual(['C']);
   });
 });
 
-describe("matchBinding", () => {
-  it("matches when key and all modifiers agree", () => {
+describe('matchBinding', () => {
+  it('matches when key and all modifiers agree', () => {
     expect(
-      matchBinding(event({ key: "c", ctrlKey: true }), {
-        key: "c",
+      matchBinding(event({ key: 'c', ctrlKey: true }), {
+        key: 'c',
         ctrl: true,
       }),
     ).toBe(true);
   });
 
-  it("matches the key case-insensitively", () => {
+  it('matches the key case-insensitively', () => {
     expect(
-      matchBinding(event({ key: "C", ctrlKey: true }), {
-        key: "c",
+      matchBinding(event({ key: 'C', ctrlKey: true }), {
+        key: 'c',
         ctrl: true,
       }),
     ).toBe(true);
   });
 
-  it("fails when a required modifier is missing", () => {
-    expect(matchBinding(event({ key: "c" }), { key: "c", ctrl: true })).toBe(
-      false,
-    );
+  it('fails when a required modifier is missing', () => {
+    expect(matchBinding(event({ key: 'c' }), { key: 'c', ctrl: true })).toBe(false);
   });
 
-  it("fails when an extra modifier is pressed", () => {
+  it('fails when an extra modifier is pressed', () => {
     expect(
-      matchBinding(event({ key: "c", ctrlKey: true, shiftKey: true }), {
-        key: "c",
+      matchBinding(event({ key: 'c', ctrlKey: true, shiftKey: true }), {
+        key: 'c',
         ctrl: true,
       }),
     ).toBe(false);
   });
 
-  it("falls back to the physical code for alt combinations", () => {
+  it('falls back to the physical code for alt combinations', () => {
     // Alt often rewrites e.key (here to "ç"); the binding still matches via e.code.
     expect(
-      matchBinding(event({ key: "ç", code: "KeyC", altKey: true }), {
-        key: "c",
+      matchBinding(event({ key: 'ç', code: 'KeyC', altKey: true }), {
+        key: 'c',
         alt: true,
       }),
     ).toBe(true);
     expect(
-      matchBinding(event({ key: "ç", code: "KeyD", altKey: true }), {
-        key: "c",
+      matchBinding(event({ key: 'ç', code: 'KeyD', altKey: true }), {
+        key: 'c',
         alt: true,
       }),
     ).toBe(false);
   });
 
-  it("matches recognized shifted punctuation by its logical key", () => {
+  it('matches recognized shifted punctuation by its logical key', () => {
     // The logical ">" names period even when its physical position moves.
     expect(
-      matchBinding(
-        event({ key: ">", code: "Period", shiftKey: true, metaKey: true }),
-        { key: ".", shift: true, meta: true },
-      ),
+      matchBinding(event({ key: '>', code: 'Period', shiftKey: true, metaKey: true }), {
+        key: '.',
+        shift: true,
+        meta: true,
+      }),
     ).toBe(true);
     expect(
-      matchBinding(
-        event({ key: ">", code: "Comma", shiftKey: true, metaKey: true }),
-        { key: ".", shift: true, meta: true },
-      ),
+      matchBinding(event({ key: '>', code: 'Comma', shiftKey: true, metaKey: true }), {
+        key: '.',
+        shift: true,
+        meta: true,
+      }),
     ).toBe(true);
   });
 
-  it("follows a layout that types another letter on the key (Dvorak Ctrl+Shift+C is on KeyI)", () => {
-    const toggleAi = { ctrl: true, shift: true, key: "i" };
+  it('follows a layout that types another letter on the key (Dvorak Ctrl+Shift+C is on KeyI)', () => {
+    const toggleAi = { ctrl: true, shift: true, key: 'i' };
     const dvorakC = event({
-      key: "C",
-      code: "KeyI",
+      key: 'C',
+      code: 'KeyI',
       ctrlKey: true,
       shiftKey: true,
     });
     expect(matchBinding(dvorakC, toggleAi)).toBe(false);
-    expect(matchBinding(dvorakC, { ctrl: true, shift: true, key: "c" })).toBe(
-      true,
-    );
+    expect(matchBinding(dvorakC, { ctrl: true, shift: true, key: 'c' })).toBe(true);
     expect(
-      matchBinding(
-        event({ key: "W", code: "Comma", ctrlKey: true, shiftKey: true }),
-        { ctrl: true, shift: true, key: "," },
-      ),
+      matchBinding(event({ key: 'W', code: 'Comma', ctrlKey: true, shiftKey: true }), {
+        ctrl: true,
+        shift: true,
+        key: ',',
+      }),
     ).toBe(false);
   });
 
-  it("still falls back to the physical key for another script or a dead key", () => {
+  it('still falls back to the physical key for another script or a dead key', () => {
     expect(
-      matchBinding(
-        event({ key: "Ш", code: "KeyI", ctrlKey: true, shiftKey: true }),
-        { ctrl: true, shift: true, key: "i" },
-      ),
+      matchBinding(event({ key: 'Ш', code: 'KeyI', ctrlKey: true, shiftKey: true }), {
+        ctrl: true,
+        shift: true,
+        key: 'i',
+      }),
     ).toBe(true);
     expect(
-      matchBinding(
-        event({ key: "Dead", code: "KeyE", altKey: true, metaKey: true }),
-        { alt: true, meta: true, key: "e" },
-      ),
+      matchBinding(event({ key: 'Dead', code: 'KeyE', altKey: true, metaKey: true }), {
+        alt: true,
+        meta: true,
+        key: 'e',
+      }),
     ).toBe(true);
   });
 
-  it("does not fall back to the physical code without alt or shift", () => {
+  it('does not fall back to the physical code without alt or shift', () => {
     expect(
-      matchBinding(event({ key: "ç", code: "KeyC", metaKey: true }), {
-        key: "c",
+      matchBinding(event({ key: 'ç', code: 'KeyC', metaKey: true }), {
+        key: 'c',
         meta: true,
       }),
     ).toBe(false);
   });
 
-  it("only accepts digit keys for the jump-to-tab shortcut", () => {
-    expect(
-      matchBinding(event({ key: "3" }), { key: "1" }, "tab.selectByIndex"),
-    ).toBe(true);
-    expect(
-      matchBinding(event({ key: "x" }), { key: "1" }, "tab.selectByIndex"),
-    ).toBe(false);
+  it('only accepts digit keys for the jump-to-tab shortcut', () => {
+    expect(matchBinding(event({ key: '3' }), { key: '1' }, 'tab.selectByIndex')).toBe(true);
+    expect(matchBinding(event({ key: 'x' }), { key: '1' }, 'tab.selectByIndex')).toBe(false);
   });
 });
 
-describe("SHORTCUTS registry", () => {
-  it("binds Mod+S to editor.save", () => {
-    const save = SHORTCUTS.find((s) => s.id === "editor.save");
+describe('SHORTCUTS registry', () => {
+  it('binds Mod+S to editor.save', () => {
+    const save = SHORTCUTS.find((s) => s.id === 'editor.save');
     expect(save).toBeDefined();
     expect(save!.defaultBindings).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ key: "s", [MOD_PROP]: true }),
-      ]),
+      expect.arrayContaining([expect.objectContaining({ key: 's', [MOD_PROP]: true })]),
     );
   });
 });
 
-describe("palette shortcuts", () => {
+describe('palette shortcuts', () => {
   const defaults = (list: Shortcut[], id: string) =>
     list.find((s) => s.id === id)?.defaultBindings ?? [];
-  const press = (key: string, over: Partial<KeyboardEvent>) =>
-    event({ key, ...over });
+  const press = (key: string, over: Partial<KeyboardEvent>) => event({ key, ...over });
 
-  it("opens files on Command+P and commands with Shift on macOS", () => {
+  it('opens files on Command+P and commands with Shift on macOS', () => {
     const mac = buildShortcuts(true);
-    const [files] = defaults(mac, "commandPalette.files");
-    const [commands] = defaults(mac, "commandPalette.open");
-    expect(matchBinding(press("p", { metaKey: true }), files)).toBe(true);
-    expect(
-      matchBinding(press("P", { metaKey: true, shiftKey: true }), commands),
-    ).toBe(true);
-    expect(
-      matchBinding(press("p", { metaKey: true, shiftKey: true }), files),
-    ).toBe(false);
+    const [files] = defaults(mac, 'commandPalette.files');
+    const [commands] = defaults(mac, 'commandPalette.open');
+    expect(matchBinding(press('p', { metaKey: true }), files)).toBe(true);
+    expect(matchBinding(press('P', { metaKey: true, shiftKey: true }), commands)).toBe(true);
+    expect(matchBinding(press('p', { metaKey: true, shiftKey: true }), files)).toBe(false);
   });
 
-  it("opens commands on Ctrl+Shift+P and files on Ctrl+Shift+O on Windows and Linux", () => {
+  it('opens commands on Ctrl+Shift+P and files on Ctrl+Shift+O on Windows and Linux', () => {
     const other = buildShortcuts(false);
-    const [files] = defaults(other, "commandPalette.files");
-    const [commands] = defaults(other, "commandPalette.open");
-    expect(
-      matchBinding(press("O", { ctrlKey: true, shiftKey: true }), files),
-    ).toBe(true);
-    expect(
-      matchBinding(press("P", { ctrlKey: true, shiftKey: true }), commands),
-    ).toBe(true);
+    const [files] = defaults(other, 'commandPalette.files');
+    const [commands] = defaults(other, 'commandPalette.open');
+    expect(matchBinding(press('O', { ctrlKey: true, shiftKey: true }), files)).toBe(true);
+    expect(matchBinding(press('P', { ctrlKey: true, shiftKey: true }), commands)).toBe(true);
     // Ctrl+P is readline's previous-history: the palette never takes it.
-    expect(matchBinding(press("p", { ctrlKey: true }), files)).toBe(false);
-    expect(matchBinding(press("p", { ctrlKey: true }), commands)).toBe(false);
+    expect(matchBinding(press('p', { ctrlKey: true }), files)).toBe(false);
+    expect(matchBinding(press('p', { ctrlKey: true }), commands)).toBe(false);
   });
 
-  it("keeps the macOS terminal clear ahead of the palette on the shared key", () => {
+  it('keeps the macOS terminal clear ahead of the palette on the shared key', () => {
     const ids = buildShortcuts(true).map((s) => s.id);
-    expect(ids.indexOf("terminal.clear")).toBeLessThan(
-      ids.indexOf("commandPalette.open"),
-    );
+    expect(ids.indexOf('terminal.clear')).toBeLessThan(ids.indexOf('commandPalette.open'));
   });
 
   it.each([
-    ["macOS", true],
-    ["Windows and Linux", false],
-  ])(
-    "gives no default binding to two shortcuts in the same context (%s)",
-    (_name, isMac) => {
-      const seen = new Map<string, string>();
-      for (const s of buildShortcuts(isMac)) {
-        if (s.id === "tab.selectByIndex") continue;
-        for (const b of s.defaultBindings) {
-          const sig = [
-            b.ctrl,
-            b.shift,
-            b.alt,
-            b.meta,
-            b.key.toLowerCase(),
-          ].join("|");
-          const other = seen.get(sig);
-          // Documented overlaps: ⌘K (clear vs palette) is resolved by scope.
-          if (
-            other &&
-            !(sig.endsWith("|k") && s.id === "commandPalette.open")
-          ) {
-            throw new Error(`${s.id} and ${other} share ${sig}`);
-          }
-          seen.set(sig, s.id);
+    ['macOS', true],
+    ['Windows and Linux', false],
+  ])('gives no default binding to two shortcuts in the same context (%s)', (_name, isMac) => {
+    const seen = new Map<string, string>();
+    for (const s of buildShortcuts(isMac)) {
+      if (s.id === 'tab.selectByIndex') continue;
+      for (const b of s.defaultBindings) {
+        const sig = [b.ctrl, b.shift, b.alt, b.meta, b.key.toLowerCase()].join('|');
+        const other = seen.get(sig);
+        // Documented overlaps: ⌘K (clear vs palette) is resolved by scope.
+        if (other && !(sig.endsWith('|k') && s.id === 'commandPalette.open')) {
+          throw new Error(`${s.id} and ${other} share ${sig}`);
         }
+        seen.set(sig, s.id);
       }
-    },
-  );
+    }
+  });
 });

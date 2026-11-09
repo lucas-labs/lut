@@ -1,6 +1,6 @@
-import type { GhosttyTerminalModelApi } from "@/modules/terminal/ghostty/GhosttyTerminalModel";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { FakeElement, FakeTextArea } from "./fakeTextArea";
+import type { GhosttyTerminalModelApi } from '@/modules/terminal/ghostty/GhosttyTerminalModel';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { FakeElement, FakeTextArea } from './fakeTextArea';
 
 type Failures = { mouse?: number; ime?: number };
 
@@ -8,15 +8,15 @@ type Failures = { mouse?: number; ime?: number };
 async function controllerWith(failures: Failures) {
   const loads = { mouse: 0, ime: 0 };
   vi.resetModules();
-  vi.doMock("./TerminalMouse", async (importOriginal) => {
-    if (++loads.mouse <= (failures.mouse ?? 0)) throw new Error("chunk failed");
+  vi.doMock('./TerminalMouse', async (importOriginal) => {
+    if (++loads.mouse <= (failures.mouse ?? 0)) throw new Error('chunk failed');
     return importOriginal();
   });
-  vi.doMock("./ImeAnchor", async (importOriginal) => {
-    if (++loads.ime <= (failures.ime ?? 0)) throw new Error("chunk failed");
+  vi.doMock('./ImeAnchor', async (importOriginal) => {
+    if (++loads.ime <= (failures.ime ?? 0)) throw new Error('chunk failed');
     return importOriginal();
   });
-  const { GhosttyInputController } = await import("./GhosttyInputController");
+  const { GhosttyInputController } = await import('./GhosttyInputController');
   const pointer = new FakeElement();
   const input = new FakeTextArea();
   const onData = vi.fn<(bytes: Uint8Array) => void>();
@@ -38,7 +38,7 @@ async function controllerWith(failures: Failures) {
       y: 0,
       visible: true,
       blinking: false,
-      style: "block",
+      style: 'block',
     }),
     encodeKey: () => new Uint8Array(0),
     kittyKeyboardFlags: () => 0,
@@ -54,7 +54,7 @@ async function controllerWith(failures: Failures) {
   });
   const wheel = () =>
     pointer.dispatchEvent(
-      Object.assign(new Event("wheel", { cancelable: true }), {
+      Object.assign(new Event('wheel', { cancelable: true }), {
         deltaY: 60,
         deltaMode: 0,
         clientX: 5,
@@ -66,30 +66,28 @@ async function controllerWith(failures: Failures) {
     );
   /** Where the input element sits while composing: the anchor moved it onto the cursor. */
   const composeLeft = () => {
-    input.dispatchEvent(new Event("compositionstart"));
+    input.dispatchEvent(new Event('compositionstart'));
     const left = input.style.left;
-    input.dispatchEvent(
-      Object.assign(new Event("compositionend"), { data: "" }),
-    );
+    input.dispatchEvent(Object.assign(new Event('compositionend'), { data: '' }));
     return left;
   };
   return { controller, onData, wheel, composeLeft, loads };
 }
 
-describe("GhosttyInputController cold modules", () => {
+describe('GhosttyInputController cold modules', () => {
   let warn: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
   });
 
   afterEach(() => {
     warn.mockRestore();
-    vi.doUnmock("./TerminalMouse");
-    vi.doUnmock("./ImeAnchor");
+    vi.doUnmock('./TerminalMouse');
+    vi.doUnmock('./ImeAnchor');
   });
 
-  it("retries a failed load once and then reports the mouse", async () => {
+  it('retries a failed load once and then reports the mouse', async () => {
     const { controller, onData, wheel, loads } = await controllerWith({
       mouse: 1,
     });
@@ -103,7 +101,7 @@ describe("GhosttyInputController cold modules", () => {
     controller.dispose();
   });
 
-  it("warns once when the retry fails too, and never throws", async () => {
+  it('warns once when the retry fails too, and never throws', async () => {
     const { controller, onData, wheel, loads } = await controllerWith({
       mouse: 2,
     });
@@ -114,14 +112,14 @@ describe("GhosttyInputController cold modules", () => {
     controller.dispose();
   });
 
-  it("keeps the IME anchor when the mouse module never loads", async () => {
+  it('keeps the IME anchor when the mouse module never loads', async () => {
     const { controller, composeLeft } = await controllerWith({ mouse: 2 });
     await vi.waitFor(() => expect(warn).toHaveBeenCalledTimes(1));
-    expect(composeLeft()).toBe("30px");
+    expect(composeLeft()).toBe('30px');
     controller.dispose();
   });
 
-  it("keeps the mouse when the IME anchor module never loads", async () => {
+  it('keeps the mouse when the IME anchor module never loads', async () => {
     const { controller, onData, wheel, composeLeft } = await controllerWith({
       ime: 2,
     });
@@ -135,17 +133,17 @@ describe("GhosttyInputController cold modules", () => {
     controller.dispose();
   });
 
-  it("warns once per module that fails", async () => {
+  it('warns once per module that fails', async () => {
     const { controller } = await controllerWith({ mouse: 2, ime: 2 });
     await vi.waitFor(() => expect(warn).toHaveBeenCalledTimes(2));
     expect(warn.mock.calls.map((call: unknown[]) => call[0]).sort()).toEqual([
-      "Terax: IME anchor failed to load",
-      "Terax: mouse reporting failed to load",
+      'Terax: IME anchor failed to load',
+      'Terax: mouse reporting failed to load',
     ]);
     controller.dispose();
   });
 
-  it("neither retries nor warns once the controller is gone", async () => {
+  it('neither retries nor warns once the controller is gone', async () => {
     const { controller, loads } = await controllerWith({ mouse: 2 });
     controller.dispose();
     await vi.waitFor(() => expect(loads.mouse).toBe(1));

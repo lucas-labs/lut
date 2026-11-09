@@ -50,31 +50,17 @@ export class CanvasBackingStore {
     );
   }
 
-  stage(
-    pixelWidth: number,
-    pixelHeight: number,
-    scale: number,
-    gesture?: GestureGrowth,
-  ): boolean {
+  stage(pixelWidth: number, pixelHeight: number, scale: number, gesture?: GestureGrowth): boolean {
     const requiredWidth = positivePixelSize(pixelWidth);
     const requiredHeight = positivePixelSize(pixelHeight);
     const ratio = Number.isFinite(scale) && scale > 0 ? scale : 1;
     let nextTargetWidth = requiredWidth;
     let nextTargetHeight = requiredHeight;
     if (this.presented && gesture) {
-      const grows =
-        requiredWidth > this.targetWidth || requiredHeight > this.targetHeight;
+      const grows = requiredWidth > this.targetWidth || requiredHeight > this.targetHeight;
       const bound = grows ? gesture() : null;
-      nextTargetWidth = gestureDimension(
-        this.targetWidth,
-        requiredWidth,
-        bound?.width,
-      );
-      nextTargetHeight = gestureDimension(
-        this.targetHeight,
-        requiredHeight,
-        bound?.height,
-      );
+      nextTargetWidth = gestureDimension(this.targetWidth, requiredWidth, bound?.width);
+      nextTargetHeight = gestureDimension(this.targetHeight, requiredHeight, bound?.height);
     } else if (this.presented) {
       nextTargetWidth = reusableDimension(this.targetWidth, requiredWidth);
       nextTargetHeight = reusableDimension(this.targetHeight, requiredHeight);
@@ -127,11 +113,7 @@ function reusableDimension(current: number, required: number): number {
 // Inside a gesture the backing only ever grows. When it must, every axis goes to the bound at
 // once: the axes outgrow their backing at different moments, and one allocation per gesture is
 // the point.
-function gestureDimension(
-  current: number,
-  required: number,
-  bound: number | undefined,
-): number {
+function gestureDimension(current: number, required: number, bound: number | undefined): number {
   if (bound === undefined) return current;
   return Math.max(current, required, positivePixelSize(bound));
 }

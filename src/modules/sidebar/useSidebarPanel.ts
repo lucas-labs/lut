@@ -1,41 +1,27 @@
-import {
-  type RefObject,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import type { PanelImperativeHandle } from "react-resizable-panels";
-import type { SidebarViewId } from "./types";
+import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import type { PanelImperativeHandle } from 'react-resizable-panels';
+import type { SidebarViewId } from './types';
 
 const SIDEBAR_DEFAULT_WIDTH = 260;
 export const SIDEBAR_MIN_WIDTH = 220;
 export const SIDEBAR_MAX_WIDTH = 480;
-const SIDEBAR_WIDTH_STORAGE_KEY = "terax.sidebar.width";
-const SIDEBAR_VIEW_STORAGE_KEY = "terax.sidebar.view";
-const SIDEBAR_COLLAPSED_STORAGE_KEY = "terax.sidebar.collapsed";
+const SIDEBAR_WIDTH_STORAGE_KEY = 'terax.sidebar.width';
+const SIDEBAR_VIEW_STORAGE_KEY = 'terax.sidebar.view';
+const SIDEBAR_COLLAPSED_STORAGE_KEY = 'terax.sidebar.collapsed';
 
-export function shouldPersistSidebarWidth(
-  width: number,
-  isUserInteraction: boolean,
-): boolean {
+export function shouldPersistSidebarWidth(width: number, isUserInteraction: boolean): boolean {
   return isUserInteraction && width > 0;
 }
 
 function clampSidebarWidth(width: number): number {
-  return Math.min(
-    SIDEBAR_MAX_WIDTH,
-    Math.max(SIDEBAR_MIN_WIDTH, Math.round(width)),
-  );
+  return Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, Math.round(width)));
 }
 
 function readSidebarWidth(): number {
   try {
     const stored = window.localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY);
     const parsed = stored ? Number.parseInt(stored, 10) : NaN;
-    return Number.isFinite(parsed)
-      ? clampSidebarWidth(parsed)
-      : SIDEBAR_DEFAULT_WIDTH;
+    return Number.isFinite(parsed) ? clampSidebarWidth(parsed) : SIDEBAR_DEFAULT_WIDTH;
   } catch {
     return SIDEBAR_DEFAULT_WIDTH;
   }
@@ -44,16 +30,16 @@ function readSidebarWidth(): number {
 function readSidebarView(): SidebarViewId {
   try {
     const stored = window.localStorage.getItem(SIDEBAR_VIEW_STORAGE_KEY);
-    if (stored === "explorer" || stored === "source-control") return stored;
+    if (stored === 'explorer' || stored === 'source-control') return stored;
   } catch {
     // ignore
   }
-  return "explorer";
+  return 'explorer';
 }
 
 function readSidebarCollapsed(): boolean {
   try {
-    return window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === "1";
+    return window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === '1';
   } catch {
     return false;
   }
@@ -64,22 +50,17 @@ type FocusableExplorer = {
   isFocused: () => boolean;
 };
 
-export function useSidebarPanel(
-  explorerRef: RefObject<FocusableExplorer | null>,
-) {
+export function useSidebarPanel(explorerRef: RefObject<FocusableExplorer | null>) {
   const sidebarRef = useRef<PanelImperativeHandle | null>(null);
   const sidebarWidthRef = useRef(readSidebarWidth());
   const sidebarWidthWriteTimerRef = useRef(0);
   const explorerReturnFocusRef = useRef<HTMLElement | null>(null);
-  const [sidebarView, setSidebarViewState] =
-    useState<SidebarViewId>(readSidebarView);
+  const [sidebarView, setSidebarViewState] = useState<SidebarViewId>(readSidebarView);
   const [initialSidebarCollapsed] = useState(readSidebarCollapsed);
   const collapsedRef = useRef(initialSidebarCollapsed);
   // Mirrors the panel's collapsed state for rendering: what is hidden at 0 px
   // can stop doing background work (fs watchers, git status refreshes).
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(
-    initialSidebarCollapsed,
-  );
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(initialSidebarCollapsed);
 
   const persistSidebarView = useCallback((view: SidebarViewId) => {
     setSidebarViewState(view);
@@ -95,10 +76,7 @@ export function useSidebarPanel(
     collapsedRef.current = collapsed;
     setSidebarCollapsed(collapsed);
     try {
-      window.localStorage.setItem(
-        SIDEBAR_COLLAPSED_STORAGE_KEY,
-        collapsed ? "1" : "0",
-      );
+      window.localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, collapsed ? '1' : '0');
     } catch {
       // storage may fail in private mode
     }
@@ -140,24 +118,21 @@ export function useSidebarPanel(
     [persistSidebarView, sidebarView],
   );
 
-  const persistSidebarWidth = useCallback(
-    (next: number, isUserInteraction: boolean) => {
-      if (!shouldPersistSidebarWidth(next, isUserInteraction)) return;
-      sidebarWidthRef.current = next;
-      if (sidebarWidthWriteTimerRef.current) {
-        window.clearTimeout(sidebarWidthWriteTimerRef.current);
+  const persistSidebarWidth = useCallback((next: number, isUserInteraction: boolean) => {
+    if (!shouldPersistSidebarWidth(next, isUserInteraction)) return;
+    sidebarWidthRef.current = next;
+    if (sidebarWidthWriteTimerRef.current) {
+      window.clearTimeout(sidebarWidthWriteTimerRef.current);
+    }
+    sidebarWidthWriteTimerRef.current = window.setTimeout(() => {
+      sidebarWidthWriteTimerRef.current = 0;
+      try {
+        window.localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(next));
+      } catch {
+        // ignore
       }
-      sidebarWidthWriteTimerRef.current = window.setTimeout(() => {
-        sidebarWidthWriteTimerRef.current = 0;
-        try {
-          window.localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(next));
-        } catch {
-          // ignore
-        }
-      }, 200);
-    },
-    [],
-  );
+    }, 200);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -171,14 +146,12 @@ export function useSidebarPanel(
     const explorer = explorerRef.current;
     const panel = sidebarRef.current;
     const collapsed = panel ? panel.getSize().asPercentage <= 0 : false;
-    if (sidebarView !== "explorer" || collapsed) {
+    if (sidebarView !== 'explorer' || collapsed) {
       if (panel && collapsed) panel.resize(`${sidebarWidthRef.current}px`);
-      if (sidebarView !== "explorer") persistSidebarView("explorer");
+      if (sidebarView !== 'explorer') persistSidebarView('explorer');
       const active = document.activeElement;
       explorerReturnFocusRef.current =
-        active instanceof HTMLElement && active !== document.body
-          ? active
-          : null;
+        active instanceof HTMLElement && active !== document.body ? active : null;
       requestAnimationFrame(() => explorerRef.current?.focus());
       return;
     }

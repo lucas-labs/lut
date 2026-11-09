@@ -1,8 +1,8 @@
-import { loopbackPreviewOrigin } from "@/modules/preview/lib/previewUrl";
-import { tool } from "ai";
-import { z } from "zod";
-import { checkShellCommand } from "../lib/security";
-import type { ToolContext } from "./context";
+import { loopbackPreviewOrigin } from '@/modules/preview/lib/previewUrl';
+import { tool } from 'ai';
+import { z } from 'zod';
+import { checkShellCommand } from '../lib/security';
+import type { ToolContext } from './context';
 
 export function buildTerminalTools(ctx: ToolContext) {
   return {
@@ -10,13 +10,11 @@ export function buildTerminalTools(ctx: ToolContext) {
       description:
         "Propose a single shell command. Renders a card in chat with an 'Insert' button — the command is NOT written to any terminal automatically; only the user's click inserts it at the prompt without executing. Use this when the answer IS a command.",
       inputSchema: z.object({
-        command: z
-          .string()
-          .describe("The shell command. Single line, no trailing newline."),
+        command: z.string().describe('The shell command. Single line, no trailing newline.'),
         explanation: z
           .string()
           .optional()
-          .describe("Optional one-line note shown beside the command."),
+          .describe('Optional one-line note shown beside the command.'),
       }),
       execute: async ({ command, explanation }) => {
         const safety = checkShellCommand(command);
@@ -24,7 +22,7 @@ export function buildTerminalTools(ctx: ToolContext) {
         // Reject control bytes — the user inserts via click, but the rendered
         // command must reflect exactly what will land at the prompt.
         if (/[\n\r\x00\x1b\x07]/.test(command)) {
-          return { error: "command must be a single line without control bytes" };
+          return { error: 'command must be a single line without control bytes' };
         }
         return { command, explanation };
       },
@@ -40,20 +38,20 @@ export function buildTerminalTools(ctx: ToolContext) {
           .min(1)
           .max(2000)
           .optional()
-          .describe("Number of trailing lines to return. Default 80."),
+          .describe('Number of trailing lines to return. Default 80.'),
       }),
       execute: async ({ lines }) => {
         if (ctx.isActiveTerminalPrivate()) {
           return {
             error:
-              "active terminal is in Privacy mode; its buffer is withheld. Ask the user to switch to a regular tab if they want you to see it.",
+              'active terminal is in Privacy mode; its buffer is withheld. Ask the user to switch to a regular tab if they want you to see it.',
           };
         }
         const buffer = ctx.getTerminalContext();
-        if (!buffer) return { output: "", note: "no active terminal" };
+        if (!buffer) return { output: '', note: 'no active terminal' };
         const n = lines ?? 80;
-        const parts = buffer.split("\n");
-        const sliced = parts.length <= n ? buffer : parts.slice(parts.length - n).join("\n");
+        const parts = buffer.split('\n');
+        const sliced = parts.length <= n ? buffer : parts.slice(parts.length - n).join('\n');
         const MAX = 24_000;
         const capped =
           sliced.length > MAX ? `…[truncated]…\n${sliced.slice(sliced.length - MAX)}` : sliced;
@@ -63,12 +61,12 @@ export function buildTerminalTools(ctx: ToolContext) {
 
     open_preview: tool({
       description:
-        "Open a preview tab (in-app iframe) at the given URL — restricted to localhost/loopback addresses for the local dev server. Use this after starting a dev server (e.g. `pnpm dev`, `npm run dev`) to surface the rendered page next to the terminal. To preview external sites, the user should paste the URL into the preview address bar themselves.",
+        'Open a preview tab (in-app iframe) at the given URL — restricted to localhost/loopback addresses for the local dev server. Use this after starting a dev server (e.g. `pnpm dev`, `npm run dev`) to surface the rendered page next to the terminal. To preview external sites, the user should paste the URL into the preview address bar themselves.',
       inputSchema: z.object({
         url: z
           .url()
           .describe(
-            "Full URL to load (e.g. http://localhost:5173). Must include scheme. Only http/https on loopback hosts are accepted.",
+            'Full URL to load (e.g. http://localhost:5173). Must include scheme. Only http/https on loopback hosts are accepted.',
           ),
       }),
       execute: async ({ url }) => {
@@ -76,24 +74,23 @@ export function buildTerminalTools(ctx: ToolContext) {
         try {
           parsed = new URL(url);
         } catch {
-          return { error: "invalid URL", url };
+          return { error: 'invalid URL', url };
         }
-        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-          return { error: "only http/https URLs are allowed", url };
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+          return { error: 'only http/https URLs are allowed', url };
         }
         const isLocal = loopbackPreviewOrigin(url) !== null;
         if (!isLocal) {
           return {
             error:
-              "open_preview is restricted to localhost URLs. Ask the user to paste the external URL into the preview address bar instead.",
+              'open_preview is restricted to localhost URLs. Ask the user to paste the external URL into the preview address bar instead.',
             url,
           };
         }
         const ok = ctx.openPreview(url);
-        if (!ok) return { error: "preview surface unavailable", url };
+        if (!ok) return { error: 'preview surface unavailable', url };
         return { url, ok: true };
       },
     }),
-
   } as const;
 }

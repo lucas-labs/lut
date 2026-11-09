@@ -1,5 +1,5 @@
-import { smoothHooks } from "@/bench/smoothHooks";
-import type { GhosttyTerminalEvent } from "@terax/ghostty-core/protocol";
+import { smoothHooks } from '@/bench/smoothHooks';
+import type { GhosttyTerminalEvent } from '@terax/ghostty-core/protocol';
 
 /**
  * How long a pane keeps showing its previous frame after a resize cleared the prompt, waiting
@@ -67,17 +67,17 @@ export class ResizePromptHold {
 
   observe(event: GhosttyTerminalEvent): void {
     switch (event.type) {
-      case "prompt-start":
+      case 'prompt-start':
         // The redraw begins (or a new prompt): the prompt is not complete until its end.
         this.atPrompt = false;
         return;
-      case "prompt-end":
+      case 'prompt-end':
         this.atPrompt = true;
         this.finish();
         return;
-      case "end-of-input":
-      case "end-of-command":
-      case "screen-cleared":
+      case 'end-of-input':
+      case 'end-of-command':
+      case 'screen-cleared':
         this.atPrompt = false;
         this.finish();
         return;
@@ -97,8 +97,7 @@ export class ResizePromptHold {
     this.clearTimer();
     if (redrawn && this.erasedPrompt) {
       this.erasedPrompt = false;
-      if (__TERAX_BENCH__)
-        smoothHooks()?.cleared(this.benchId, false, performance.now());
+      if (__TERAX_BENCH__) smoothHooks()?.cleared(this.benchId, false, performance.now());
     }
     if (!this.holding) return;
     this.holding = false;

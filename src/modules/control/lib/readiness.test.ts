@@ -1,8 +1,8 @@
-import { describe, expect, it } from "vitest";
-import { createReadinessQueue } from "./readiness";
+import { describe, expect, it } from 'vitest';
+import { createReadinessQueue } from './readiness';
 
-describe("createReadinessQueue", () => {
-  it("preserves readiness update order", async () => {
+describe('createReadinessQueue', () => {
+  it('preserves readiness update order', async () => {
     const release: Array<() => void> = [];
     const started: boolean[] = [];
     const enqueue = createReadinessQueue(
@@ -27,14 +27,14 @@ describe("createReadinessQueue", () => {
     await second;
   });
 
-  it("continues after a failed update", async () => {
+  it('continues after a failed update', async () => {
     const states: boolean[] = [];
     const enqueue = createReadinessQueue(async (ready) => {
       states.push(ready);
-      if (!ready) throw new Error("failed");
+      if (!ready) throw new Error('failed');
     });
 
-    await expect(enqueue(false)).rejects.toThrow("failed");
+    await expect(enqueue(false)).rejects.toThrow('failed');
     await expect(enqueue(true)).resolves.toBeUndefined();
     expect(states).toEqual([false, true]);
   });

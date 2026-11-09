@@ -1,23 +1,23 @@
-import type { GhosttyTerminalModelApi } from "@/modules/terminal/ghostty/GhosttyTerminalModel";
-import { TERMINAL_RIGHT_GUTTER_CSS_PX } from "@/modules/terminal/ghostty/gpu/TerminalFit";
-import type { WebGlCellRenderer } from "@/modules/terminal/ghostty/webgl/WebGlCellRenderer";
-import { WebGlPoolExhaustedError } from "@/modules/terminal/ghostty/webgl/WebGlPoolExhaustedError";
-import { WebGlTerminalSurface } from "@/modules/terminal/ghostty/webgl/WebGlTerminalSurface";
-import type { WindowPresentation } from "@/modules/terminal/ghostty/WindowPresentationPolicy";
+import type { GhosttyTerminalModelApi } from '@/modules/terminal/ghostty/GhosttyTerminalModel';
+import { TERMINAL_RIGHT_GUTTER_CSS_PX } from '@/modules/terminal/ghostty/gpu/TerminalFit';
+import type { WebGlCellRenderer } from '@/modules/terminal/ghostty/webgl/WebGlCellRenderer';
+import { WebGlPoolExhaustedError } from '@/modules/terminal/ghostty/webgl/WebGlPoolExhaustedError';
+import { WebGlTerminalSurface } from '@/modules/terminal/ghostty/webgl/WebGlTerminalSurface';
+import type { WindowPresentation } from '@/modules/terminal/ghostty/WindowPresentationPolicy';
 import {
   beginTerminalResizeInteraction,
   endTerminalResizeInteraction,
-} from "@/modules/terminal/lib/terminalResizeInteraction";
-import { afterEach, describe, expect, it, vi } from "vitest";
+} from '@/modules/terminal/lib/terminalResizeInteraction';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const bridge = vi.hoisted(() => ({
   runtime: {} as unknown,
   visibility: (_state: WindowPresentation) => {},
 }));
-vi.mock("@/modules/terminal/ghostty/webgl/WebGlTerminalRuntime", () => ({
+vi.mock('@/modules/terminal/ghostty/webgl/WebGlTerminalRuntime', () => ({
   getWebGlTerminalRuntime: () => bridge.runtime,
 }));
-vi.mock("@/modules/terminal/ghostty/windowPresentation", () => ({
+vi.mock('@/modules/terminal/ghostty/windowPresentation', () => ({
   terminalWindowPresentation: () => ({ visible: true, reclaim: false }),
   subscribeWindowPresentation: (listener: typeof bridge.visibility) => {
     bridge.visibility = listener;
@@ -32,13 +32,13 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe("WebGL surface renderer ownership", () => {
-  it.each(["theme", "font", "resume", "dpr"] as const)(
-    "clears disposed renderer ownership when %s reconfiguration and recovery both fail",
+describe('WebGL surface renderer ownership', () => {
+  it.each(['theme', 'font', 'resume', 'dpr'] as const)(
+    'clears disposed renderer ownership when %s reconfiguration and recovery both fail',
     (trigger) => {
       const h = harness();
       h.acquire.mockImplementation(() => {
-        throw new Error("configure failed");
+        throw new Error('configure failed');
       });
       const calls = h.renderer.resize.mock.calls.length;
       h.trigger(trigger);
@@ -51,37 +51,33 @@ describe("WebGL surface renderer ownership", () => {
         cellWidth: 10,
       });
       h.resize();
-      expect(
-        h.surface.renderFrame(h.renderer as unknown as WebGlCellRenderer),
-      ).toBe(false);
+      expect(h.surface.renderFrame(h.renderer as unknown as WebGlCellRenderer)).toBe(false);
       expect(h.renderer.resize).toHaveBeenCalledTimes(calls);
       expect(h.renderer.resetModel).not.toHaveBeenCalled();
       expect(vi.getTimerCount()).toBe(0);
     },
   );
 
-  it("replaces a failed renderer once while retaining model and selection", () => {
+  it('replaces a failed renderer once while retaining model and selection', () => {
     const h = harness();
     const replacement = renderer();
     h.acquire.mockImplementationOnce(() => {
-      throw new Error("configure failed");
+      throw new Error('configure failed');
     });
     h.acquire.mockReturnValue(replacement);
-    h.trigger("font");
+    h.trigger('font');
     expect(h.surface.diagnostics().rendererRecoveries).toBe(1);
-    expect(h.surface.getSelection()).toBe("selected output");
+    expect(h.surface.getSelection()).toBe('selected output');
     expect(h.renderer.resetModel).not.toHaveBeenCalled();
     expect(replacement.resize).toHaveBeenCalledOnce();
     expect(replacement.resetModel).toHaveBeenCalledOnce();
-    expect(
-      h.surface.renderFrame(replacement as unknown as WebGlCellRenderer),
-    ).toBe(true);
+    expect(h.surface.renderFrame(replacement as unknown as WebGlCellRenderer)).toBe(true);
     expect(h.onError).not.toHaveBeenCalled();
   });
 });
 
-describe("WebGL surface pool exhaustion", () => {
-  it("shows the error and retry state instead of throwing when no context is free", () => {
+describe('WebGL surface pool exhaustion', () => {
+  it('shows the error and retry state instead of throwing when no context is free', () => {
     const h = harness();
     h.acquire.mockImplementation(() => {
       throw new WebGlPoolExhaustedError(12);
@@ -97,7 +93,7 @@ describe("WebGL surface pool exhaustion", () => {
     expect(h.surface.diagnostics().renderer).toBeNull();
   });
 
-  it("does not throw when a pane that became visible finds the pool full", () => {
+  it('does not throw when a pane that became visible finds the pool full', () => {
     const h = harness();
     h.surface.setVisible(false);
     h.acquire.mockImplementation(() => {
@@ -109,8 +105,8 @@ describe("WebGL surface pool exhaustion", () => {
   });
 });
 
-describe("WebGL surface resizing", () => {
-  it("keeps the model, the PTY and the renderer still during a gesture and applies the final size once", () => {
+describe('WebGL surface resizing', () => {
+  it('keeps the model, the PTY and the renderer still during a gesture and applies the final size once', () => {
     const h = harness();
     h.surface.renderFrame(h.renderer as unknown as WebGlCellRenderer);
     vi.advanceTimersByTime(500);
@@ -140,7 +136,7 @@ describe("WebGL surface resizing", () => {
     expect(h.surface.diagnostics().cols).toBe(cols);
   });
 
-  it("applies a change outside a gesture at once", () => {
+  it('applies a change outside a gesture at once', () => {
     const h = harness();
     h.surface.renderFrame(h.renderer as unknown as WebGlCellRenderer);
     vi.advanceTimersByTime(500);
@@ -157,11 +153,11 @@ describe("WebGL surface resizing", () => {
 
 const METRICS = {
   font: {
-    family: "monospace",
+    family: 'monospace',
     size: 14,
     lineHeight: 1.2,
     letterSpacing: 0,
-    weight: "400",
+    weight: '400',
   },
   scale: 1,
   deviceCellWidth: 8,
@@ -193,11 +189,9 @@ function renderer() {
 
 function measuringContext() {
   const context = {
-    font: "",
+    font: '',
     measureText: () => {
-      const size = Number.parseFloat(
-        /([\d.]+)px/.exec(context.font)?.[1] ?? "14",
-      );
+      const size = Number.parseFloat(/([\d.]+)px/.exec(context.font)?.[1] ?? '14');
       return {
         width: size * 0.6,
         actualBoundingBoxAscent: size * 0.8,
@@ -223,9 +217,9 @@ function harness() {
       getContext: () => measuringContext(),
     });
   const media = new EventTarget();
-  vi.stubGlobal("document", { createElement: element });
+  vi.stubGlobal('document', { createElement: element });
   vi.stubGlobal(
-    "window",
+    'window',
     Object.assign(new EventTarget(), {
       devicePixelRatio: 1,
       setTimeout,
@@ -235,7 +229,7 @@ function harness() {
   );
   let resize = () => {};
   vi.stubGlobal(
-    "ResizeObserver",
+    'ResizeObserver',
     class {
       constructor(callback: (entries: ResizeObserverEntry[]) => void) {
         resize = () => callback([]);
@@ -265,7 +259,7 @@ function harness() {
       focus: { line: 0, column: 10 },
       rectangular: false,
     }),
-    selectionText: () => "selected output",
+    selectionText: () => 'selected output',
     scrollPosition: () => ({ history: 0, offset: 0 }),
     viewportOriginLine: () => 0,
     modes: () => ({ alternateScreen: false }),
@@ -278,7 +272,7 @@ function harness() {
     },
     cursor: () => ({ x: 0, y: 0, visible: true, blinking: false }),
     deferPresentation: () => false,
-    consumeDamage: () => ({ kind: "none" }),
+    consumeDamage: () => ({ kind: 'none' }),
   };
   const onError = vi.fn();
   const onResize = vi.fn();
@@ -287,7 +281,7 @@ function harness() {
     metrics: METRICS,
     theme: THEME,
     cursorBlink: false,
-    cursorStyle: "block",
+    cursorStyle: 'block',
     onResize,
     onError,
   });
@@ -308,22 +302,21 @@ function harness() {
     acquire,
     onError,
     resize: () => resize(),
-    trigger(trigger: "theme" | "font" | "resume" | "dpr") {
-      if (trigger === "theme")
-        surface.setTheme({ ...THEME, background: [1, 2, 3] });
-      if (trigger === "font")
+    trigger(trigger: 'theme' | 'font' | 'resume' | 'dpr') {
+      if (trigger === 'theme') surface.setTheme({ ...THEME, background: [1, 2, 3] });
+      if (trigger === 'font')
         surface.setFontMetrics({
           ...METRICS,
           deviceCellWidth: 9,
           cellWidth: 9,
         });
-      if (trigger === "resume") {
+      if (trigger === 'resume') {
         bridge.visibility({ visible: false, reclaim: false });
         bridge.visibility({ visible: true, reclaim: false });
       }
-      if (trigger === "dpr") {
+      if (trigger === 'dpr') {
         window.devicePixelRatio = 2;
-        media.dispatchEvent(new Event("change"));
+        media.dispatchEvent(new Event('change'));
       }
     },
   };

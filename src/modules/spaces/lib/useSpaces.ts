@@ -1,16 +1,7 @@
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import {
-  parseWorkspaceScopeKey,
-  type WorkspaceEnv,
-} from "@/modules/workspace";
-import { create } from "zustand";
-import {
-  deleteSpaceData,
-  newSpaceId,
-  saveActiveId,
-  saveSpacesList,
-  type SpaceMeta,
-} from "./store";
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import { parseWorkspaceScopeKey, type WorkspaceEnv } from '@/modules/workspace';
+import { create } from 'zustand';
+import { deleteSpaceData, newSpaceId, saveActiveId, saveSpacesList, type SpaceMeta } from './store';
 
 type CreateInput = {
   id?: string;
@@ -56,11 +47,7 @@ export const useSpaces = create<State>((set, get) => ({
       id: input.id ?? newSpaceId(),
       name: input.name,
       root: input.root,
-      env:
-        input.env ??
-        parseWorkspaceScopeKey(
-          usePreferencesStore.getState().defaultWorkspaceEnv,
-        ),
+      env: input.env ?? parseWorkspaceScopeKey(usePreferencesStore.getState().defaultWorkspaceEnv),
       createdAt: now,
       updatedAt: now,
     };

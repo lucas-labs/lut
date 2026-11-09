@@ -97,10 +97,11 @@ claude/codex/gemini (hook config in ~/.claude, ~/.codex, ~/.gemini) or Pi (TS ex
 ## "terax" mentions
 
 **(a) Phase 0 identity isolation (shared with an installed Terax)**
+
 - Env vars: `TERAX_CLI`, `TERAX_PANE_ID`, `TERAX_CONTROL_ADDR`, `TERAX_CONTROL_TOKEN`, `TERAX_TERMINAL`,
   `TERAX_HOOK_TIMEOUT/WAIT/DEBUG` — hook.rs:55-69, lib.rs:107,285-286,327, agent.rs:189-190,278-285,652,706-714
   (and backend-core shell_init.rs/scripts).
-- Hook ownership markers in user configs: `TERAX_CLI` + ` hook ` (agent.rs:333), Gemini `"name": "terax"`
+- Hook ownership markers in user configs: `TERAX_CLI` + `hook` (agent.rs:333), Gemini `"name": "terax"`
   (agent.rs:318), `LEGACY_MARKERS = ["notify;Terax;", "terax;notify", "__terax_notify"]` (agent.rs:255),
   Pi `terax-notifications.ts` / `// terax-pi-notifications-v2` / family `terax-pi-notifications-v` (agent.rs:135-136,184).
 - Control descriptor and launcher: `<cache>/terax/control.json` (control.rs:758, cli lib.rs:300),
@@ -151,17 +152,18 @@ rename with D02).
 **1. Hook installer.** Writes `~/.claude/settings.json`, `~/.codex/hooks.json`, `~/.gemini/settings.json` (JSON, under
 `hooks.<Event>`) and the file `~/.pi/agent/extensions/terax-notifications.ts` (agent.rs:84-136, 492-505). Hook
 command strings (agent.rs:275-287):
+
 - POSIX: `[ -n "$TERAX_CLI" ] && "$TERAX_CLI" hook <agent> <event> || printf '{}'`
 - cmd (Codex/Gemini on Windows): `if defined TERAX_CLI ("%TERAX_CLI%" hook <agent> <event>) else (echo {})`
 - PowerShell (Claude on Windows, with `"shell": "powershell"`): `if ($env:TERAX_CLI) { & $env:TERAX_CLI hook <agent> <event> } else { '{}' }`
 - Gemini groups also get `"name": "terax"` and `"matcher": "*"`; Codex gets `commandWindows`.
-Ownership: `command_is_ours` = contains any of `notify;Terax;`, `terax;notify`, `__terax_notify`, or (`TERAX_CLI` and
-` hook `) (agent.rs:255,331-334); a group is ours only if **every** hook command in it is ours (agent.rs:336-348).
-Uninstall removes only our groups for listed events (agent.rs:379-389) — third-party hooks and mixed groups are
-preserved; invalid JSON is refused (agent.rs:353-360). Pi: install refuses to overwrite a file lacking
-`terax-pi-notifications-v`; uninstall deletes only if it carries it (agent.rs:425-438). Writes are atomic and follow
-symlinks (agent.rs:509-568). There is preview (`agent_hooks_plan`) and stale-check apply (`agent_hooks_apply`), but
-the app calls `agent_enable_hooks` directly (no preview).
+  Ownership: `command_is_ours` = contains any of `notify;Terax;`, `terax;notify`, `__terax_notify`, or (`TERAX_CLI` and
+  `hook`) (agent.rs:255,331-334); a group is ours only if **every** hook command in it is ours (agent.rs:336-348).
+  Uninstall removes only our groups for listed events (agent.rs:379-389) — third-party hooks and mixed groups are
+  preserved; invalid JSON is refused (agent.rs:353-360). Pi: install refuses to overwrite a file lacking
+  `terax-pi-notifications-v`; uninstall deletes only if it carries it (agent.rs:425-438). Writes are atomic and follow
+  symlinks (agent.rs:509-568). There is preview (`agent_hooks_plan`) and stale-check apply (`agent_hooks_apply`), but
+  the app calls `agent_enable_hooks` directly (no preview).
 
 **2. Control server.** Transport: TCP on `127.0.0.1:<ephemeral>` (control.rs:197), newline JSON, 64 KiB, 32
 connections, 7s IO timeout. Auth: global 256-bit token in the descriptor (non-hook methods) and per-pane tokens bound
@@ -188,6 +190,7 @@ when unfocused, toast when focused on another tab (attention only), bell list/ba
 broker. Visual: NotificationBell, AgentToast, AgentLauncherPanel, agentIcon.
 
 **5. AGT status.**
+
 - AGT-001 Claude detection: met (hooks + process detection in backend-core agent_detect).
 - AGT-002 Codex: met for SessionStart/UserPromptSubmit/PermissionRequest/Stop; needs re-verification per version.
 - AGT-003 no API keys: met in the hook path; violated only by managed-agents/review coupling (AI).
@@ -210,6 +213,7 @@ Claude hooks (useAiLiveBridge.ts:131). Removing managed agents and splitting loc
 ## Draft issues
 
 ### agents-D01 — Isolate control env vars and CLI discovery from Terax
+
 ```yaml
 id: agents-D01
 depends-on: []
@@ -219,9 +223,11 @@ type: task
 scope: be
 size: M
 ```
+
 **Goal:** lut panes and lut's CLI never read or export Terax env vars or Terax's control descriptor.
 
 **Acceptance criteria:**
+
 - [ ] `TERAX_CONTROL_ADDR/TOKEN`, `TERAX_PANE_ID`, `TERAX_CLI`, `TERAX_TERMINAL`, `TERAX_HOOK_*` renamed to the lut prefix in the CLI (hook.rs, lib.rs), shell_init.rs and shell scripts (backend-core), agent.rs hook/Pi templates.
 - [ ] Descriptor and launcher dir moved to `<cache>/lut/` (control.rs:755-768, cli lib.rs:300).
 - [ ] lut panes strip any inherited `TERAX_*` control vars (lut started from a Terax pane).
@@ -230,6 +236,7 @@ size: M
 **Verification:** `cargo test -p terax-cli -p terax-control-protocol` and `cargo test` in src-tauri pass; in a lut pane `env | grep -i terax` prints nothing.
 
 ### agents-D02 — Make lut hook markers distinct and never touch Terax hooks
+
 ```yaml
 id: agents-D02
 depends-on: [agents-D01]
@@ -239,16 +246,19 @@ type: task
 scope: be
 size: M
 ```
+
 **Goal:** installing/uninstalling lut hooks preserves Terax's and third-party hooks.
 
 **Acceptance criteria:**
-- [ ] Ownership marker is the lut env var (`LUT_CLI` + ` hook `); Gemini name `lut`; Pi file/family `lut-notifications.ts` / `lut-pi-notifications-v`; temp suffix `.lut-tmp-`.
+
+- [ ] Ownership marker is the lut env var (`LUT_CLI` + `hook`); Gemini name `lut`; Pi file/family `lut-notifications.ts` / `lut-pi-notifications-v`; temp suffix `.lut-tmp-`.
 - [ ] `LEGACY_MARKERS`, `conout_marker`, `emit_conout_marker` and the `__terax_notify` argv branch (backend-core lib.rs:169-180) removed.
 - [ ] Tests: a config with Terax groups (current and legacy markers) plus third-party groups survives lut install+uninstall byte-identical outside lut groups.
 
 **Verification:** `cargo test agent` passes including the new Terax-coexistence tests.
 
 ### agents-D03 — Rename the bundled CLI sidecar binary
+
 ```yaml
 id: agents-D03
 depends-on: [agents-D01, build-identity-D01?]
@@ -258,15 +268,18 @@ type: task
 scope: be
 size: S
 ```
+
 **Goal:** lut ships its own sidecar name and PATH command, not `terax-cli`/`terax`.
 
 **Acceptance criteria:**
+
 - [ ] build-cli.mjs outputs `lut-cli-<triple>` (env `LUT_CLI_TARGET`); `externalBin` updated; `find_bundled_cli` and launcher name (`lut`) updated.
 - [ ] Shell integration functions (profile.ps1, zshrc.zsh, init.fish) expose `lut`, not `terax`.
 
 **Verification:** `pnpm build:cli` produces `src-tauri/binaries/lut-cli-<triple>`; `pnpm tauri build` bundles it; `lut ping` works in a pane.
 
 ### agents-D04 — Stop installing agent hooks without consent
+
 ```yaml
 id: agents-D04
 depends-on: []
@@ -276,9 +289,11 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** no code path writes to `~/.claude`, `~/.codex`, `~/.gemini` or `~/.pi` without explicit user consent.
 
 **Acceptance criteria:**
+
 - [ ] Remove the implicit `agent_enable_hooks` calls in App.tsx:636-645 and NotificationBell.tsx:218 (the ai call useAiLiveBridge.ts:131 goes with ai removal).
 - [ ] Remove `agent_enable_hooks`/`agent_disable_hooks` commands; only plan/apply remain.
 - [ ] Launching an agent without hooks still works (process/OSC signals).
@@ -286,6 +301,7 @@ size: S
 **Verification:** launch Claude from the launcher with no hooks installed: `~/.claude/settings.json` unchanged (checksum); `pnpm test` passes.
 
 ### agents-D05 — Design: hook management (preview, consent, selective uninstall)
+
 ```yaml
 id: agents-D05
 depends-on: []
@@ -295,12 +311,15 @@ type: design
 scope: ui
 size: S
 ```
+
 **Goal:** user designs how lut shows per-agent hook status, the diff preview and install/uninstall.
 
 **Acceptance criteria:**
+
 - [ ] Design covers status per agent, diff view, stale-preview error, uninstall.
 
 ### agents-D06 — Hook management UI with preview/diff and selective uninstall
+
 ```yaml
 id: agents-D06
 depends-on: [agents-D05, agents-D02, agents-D04]
@@ -310,15 +329,18 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** users install/remove lut hooks per agent after reviewing the exact diff.
 
 **Acceptance criteria:**
+
 - [ ] Uses `planAgentHooks`/`applyAgentHooksPlan`; apply refused if file changed since preview, with a re-preview path.
 - [ ] Uninstall per agent; non-lut hooks untouched.
 
 **Verification:** manual: install then uninstall on a settings.json with third-party hooks; file returns to original bytes.
 
 ### agents-D07 — Spike: verify Claude Code and Codex hook events against current docs
+
 ```yaml
 id: agents-D07
 depends-on: []
@@ -328,15 +350,18 @@ type: spike
 scope: be
 size: S
 ```
+
 **Goal:** confirm the event lists in agent.rs:84-131 and adapters in adapt.rs match current official docs.
 
 **Acceptance criteria:**
+
 - [ ] Table of event -> documented fields -> adapter field per CLI version; gaps recorded.
 - [ ] Decision on keeping Gemini/Pi/OpenCode/Grok.
 
 **Verification:** findings committed in `.docs/`; follow-up issues added to plan.md.
 
 ### agents-D08 — Split localAgent out of agentStore
+
 ```yaml
 id: agents-D08
 depends-on: []
@@ -346,15 +371,18 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** CLI agent state no longer carries AI-agent state.
 
 **Acceptance criteria:**
+
 - [ ] `localAgent`/`setLocalAgent` moved to the ai module; agentStore keeps CLI sessions and notifications only.
 - [ ] No behaviour change; tests updated.
 
 **Verification:** `pnpm test` and `pnpm typecheck` pass.
 
 ### agents-D09 — Remove AI-managed agents and review rounds
+
 ```yaml
 id: agents-D09
 depends-on: [ai-D??]
@@ -364,15 +392,18 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** the agents module has no import from `@/modules/ai`.
 
 **Acceptance criteria:**
+
 - [ ] Delete managedAgentsStore.ts, review.ts(+test) and their callers in AgentNotificationsBridge.
 - [ ] `grep -r "modules/ai" src/modules/agents src/modules/control` is empty.
 
 **Verification:** `pnpm test`, `pnpm typecheck`; with no API key configured, Claude hook notifications still arrive.
 
 ### agents-D10 — Agent service driven by the normalized reducer
+
 ```yaml
 id: agents-D10
 depends-on: [agents-D08, agents-D09]
@@ -382,9 +413,11 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** replace AgentNotificationsBridge with a non-visual service: `connectAgentEvents` + process/OSC signals -> `reduceAgents` store keyed by pane, feeding notifications.
 
 **Acceptance criteria:**
+
 - [ ] UI-facing store exposes normalized state only (no provider JSON types).
 - [ ] `Stop` -> response-done, `exited` only on real exit (9.3); notifications fired via `notificationEffect`.
 - [ ] Correct pane when two panes share cwd (16:17).
@@ -392,6 +425,7 @@ size: M
 **Verification:** `pnpm test` incl. new store tests; manual Claude run shows working -> needs-input.
 
 ### agents-D11 — Design: agent status, attention and notification center
+
 ```yaml
 id: agents-D11
 depends-on: []
@@ -401,12 +435,15 @@ type: design
 scope: ui
 size: M
 ```
+
 **Goal:** user designs tab/pane badges, attention highlight, notification list, launcher and collapsed activity view.
 
 **Acceptance criteria:**
+
 - [ ] States of 9.3 each have a visual; degraded (no hooks) state shown (13.2:16).
 
 ### agents-D12 — Implement agent status badges and notification center
+
 ```yaml
 id: agents-D12
 depends-on: [agents-D11, agents-D10]
@@ -416,15 +453,18 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** replace NotificationBell/AgentToast/AgentLauncherPanel/agentIcon with the user's design on the new store.
 
 **Acceptance criteria:**
+
 - [ ] Badges for every normalized state, focus action from a notification, explicit "no hooks" degradation.
 - [ ] Old components deleted.
 
 **Verification:** `pnpm test`; manual run with hooks on and off.
 
 ### agents-D13 — Shortcut: jump to next agent needing attention
+
 ```yaml
 id: agents-D13
 depends-on: [agents-D10]
@@ -434,14 +474,17 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** keyboard action focuses the pane of the next agent needing attention using `nextAttentionAgent`.
 
 **Acceptance criteria:**
+
 - [ ] Cycles by attention order; no-op when none.
 
 **Verification:** unit test of ordering; manual with two waiting agents.
 
 ### agents-D14 — Configurable notification types, sound and privacy
+
 ```yaml
 id: agents-D14
 depends-on: [agents-D10, agents-D11]
@@ -451,15 +494,18 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** per-kind (attention / response-done / error) notification and sound settings; body redaction by default.
 
 **Acceptance criteria:**
+
 - [ ] Preferences migrated from the two booleans; routing honours per-kind settings.
 - [ ] Notification bodies omit prompts/paths unless enabled.
 
 **Verification:** `pnpm test` (route/delivery tests extended).
 
 ### agents-D15 — Robustness tests for the hook pipeline
+
 ```yaml
 id: agents-D15
 depends-on: [agents-D10]
@@ -469,14 +515,17 @@ type: task
 scope: be
 size: M
 ```
+
 **Goal:** tests for out-of-order, duplicate, malformed, late hooks, app close while waiting and missing hooks fallback.
 
 **Acceptance criteria:**
+
 - [ ] Rust tests in agent_events.rs/control.rs and TS reducer tests cover each case.
 
 **Verification:** `cargo test`, `pnpm test`.
 
 ### agents-D16 — Agent activity view (tools, subagents, errors)
+
 ```yaml
 id: agents-D16
 depends-on: [agents-D11, agents-D10, agents-D07]
@@ -486,14 +535,17 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** collapsed-by-default activity view; tool/subagent hooks are installed only when the user enables it.
 
 **Acceptance criteria:**
+
 - [ ] Enabling the view adds the `.off()` events through the preview flow (D06).
 
 **Verification:** manual run with tool events enabled; `pnpm test`.
 
 ### agents-D17 — Spike: statusLine bridge for context/model/usage
+
 ```yaml
 id: agents-D17
 depends-on: []
@@ -503,14 +555,17 @@ type: spike
 scope: be
 size: S
 ```
+
 **Goal:** decide whether a non-destructive statusLine chaining is possible.
 
 **Acceptance criteria:**
+
 - [ ] Findings on coexistence with a user statusLine and available fields.
 
 **Verification:** document in `.docs/`.
 
 ### agents-D18 — Spike: UI approvals with the existing decision broker
+
 ```yaml
 id: agents-D18
 depends-on: [agents-D10]
@@ -520,14 +575,17 @@ type: spike
 scope: be
 size: S
 ```
+
 **Goal:** check the broker against the 9.8 guarantees and decide keep/remove of `agentDecisions.ts`.
 
 **Acceptance criteria:**
+
 - [ ] Gap list vs 9.8:1-7; decision recorded.
 
 **Verification:** document in `.docs/`.
 
 ### agents-D19 — Rebrand user-visible strings in agents/control
+
 ```yaml
 id: agents-D19
 depends-on: [agents-D03]
@@ -537,9 +595,11 @@ type: task
 scope: be
 size: S
 ```
+
 **Goal:** user-visible CLI/control/notification messages say lut.
 
 **Acceptance criteria:**
+
 - [ ] Strings listed in "terax mentions (b)" updated; internal identifiers untouched.
 - [ ] `open` method behaviour re-checked against the editor decision (ide-tools).
 

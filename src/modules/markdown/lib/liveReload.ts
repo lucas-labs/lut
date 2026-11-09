@@ -2,13 +2,10 @@
 // the previewed file, and how a burst of them collapses into one reload.
 
 function normalize(path: string): string {
-  return path.replace(/\\/g, "/");
+  return path.replace(/\\/g, '/');
 }
 
-export function touchesPath(
-  changed: readonly string[],
-  target: string,
-): boolean {
+export function touchesPath(changed: readonly string[], target: string): boolean {
   const want = normalize(target);
   return changed.some((p) => normalize(p) === want);
 }

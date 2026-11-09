@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useTabs } from "./useTabs";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useTabs } from './useTabs';
 
 const scheduler = vi.hoisted(() => ({
   cursor: 0,
@@ -8,22 +8,21 @@ const scheduler = vi.hoisted(() => ({
   dispose: vi.fn(),
 }));
 
-vi.mock("@/modules/terminal/lib/terminalSessionApi", () => ({
+vi.mock('@/modules/terminal/lib/terminalSessionApi', () => ({
   disposeSession: scheduler.dispose,
 }));
-vi.mock("react", async (original) => ({
-  ...(await original<typeof import("react")>()),
+vi.mock('react', async (original) => ({
+  ...(await original<typeof import('react')>()),
   useState: <T>(initial: T | (() => T)) => {
     const index = scheduler.cursor++;
     if (!(index in scheduler.slots))
-      scheduler.slots[index] =
-        typeof initial === "function" ? (initial as () => T)() : initial;
+      scheduler.slots[index] = typeof initial === 'function' ? (initial as () => T)() : initial;
     return [
       scheduler.slots[index],
       (action: T | ((value: T) => T)) => {
         scheduler.pending.push(() => {
           scheduler.slots[index] =
-            typeof action === "function"
+            typeof action === 'function'
               ? (action as (value: T) => T)(scheduler.slots[index] as T)
               : action;
         });
@@ -32,8 +31,7 @@ vi.mock("react", async (original) => ({
   },
   useRef: <T>(initial: T) => {
     const index = scheduler.cursor++;
-    if (!(index in scheduler.slots))
-      scheduler.slots[index] = { current: initial };
+    if (!(index in scheduler.slots)) scheduler.slots[index] = { current: initial };
     return scheduler.slots[index];
   },
   useCallback: <T>(callback: T) => callback,
@@ -55,8 +53,8 @@ beforeEach(() => {
   scheduler.dispose.mockClear();
 });
 
-describe("tab actions before deferred state updates commit", () => {
-  it("keeps a pending new tab when closing its predecessor", () => {
+describe('tab actions before deferred state updates commit', () => {
+  it('keeps a pending new tab when closing its predecessor', () => {
     const tabs = render();
     const created = tabs.newTab();
     tabs.closeTab(1);
@@ -66,7 +64,7 @@ describe("tab actions before deferred state updates commit", () => {
     expect(next.activeId).toBe(created);
   });
 
-  it("keeps unplanned additions during a multi-tab close", () => {
+  it('keeps unplanned additions during a multi-tab close', () => {
     const tabs = render();
     const closing = tabs.newTab();
     const surviving = tabs.newTab();
@@ -75,48 +73,48 @@ describe("tab actions before deferred state updates commit", () => {
     expect(scheduler.dispose).toHaveBeenCalledTimes(1);
   });
 
-  it("returns a split leaf immediately and disposes it once on close", () => {
+  it('returns a split leaf immediately and disposes it once on close', () => {
     const tabs = render();
-    const leaf = tabs.splitActivePane(1, "row");
+    const leaf = tabs.splitActivePane(1, 'row');
     expect(leaf).not.toBeNull();
     tabs.closeActivePane(1);
     expect(scheduler.dispose).toHaveBeenCalledExactlyOnceWith(leaf);
     const tab = render().tabs[0];
-    expect(tab.kind === "terminal" && tab.paneTree).toEqual({
-      kind: "leaf",
+    expect(tab.kind === 'terminal' && tab.paneTree).toEqual({
+      kind: 'leaf',
       id: 2,
     });
   });
 
-  it("cleans pending sessions when resetting the workspace", () => {
+  it('cleans pending sessions when resetting the workspace', () => {
     const tabs = render();
     tabs.newTab();
-    tabs.resetWorkspace("/next");
+    tabs.resetWorkspace('/next');
     expect(scheduler.dispose.mock.calls.map(([id]) => id)).toEqual([2, 4]);
     expect(render().tabs).toHaveLength(1);
   });
 
-  it("disposes a removed split leaf only once across repeated close requests", () => {
+  it('disposes a removed split leaf only once across repeated close requests', () => {
     const tabs = render();
-    const leaf = tabs.splitActivePane(1, "row");
-    if (leaf === null) throw new Error("Expected split leaf");
+    const leaf = tabs.splitActivePane(1, 'row');
+    if (leaf === null) throw new Error('Expected split leaf');
     tabs.closePaneByLeaf(leaf);
     tabs.closePaneByLeaf(leaf);
     expect(scheduler.dispose).toHaveBeenCalledExactlyOnceWith(leaf);
     expect(render().tabs).toHaveLength(1);
   });
 
-  it("removes a space together with its pending terminal additions", () => {
+  it('removes a space together with its pending terminal additions', () => {
     const tabs = render();
     const space = tabs.tabs[0].spaceId;
     tabs.newTab();
-    tabs.removeTabsForSpace(space, "replacement", "/next");
+    tabs.removeTabsForSpace(space, 'replacement', '/next');
     expect(scheduler.dispose.mock.calls.map(([id]) => id)).toEqual([2, 4]);
     const next = render();
     expect(next.tabs).toHaveLength(1);
     expect(next.tabs[0]).toMatchObject({
-      spaceId: "replacement",
-      cwd: "/next",
+      spaceId: 'replacement',
+      cwd: '/next',
     });
   });
 });

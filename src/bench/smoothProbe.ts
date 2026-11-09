@@ -1,4 +1,4 @@
-import { SMOOTH_KEY, type SmoothHooks } from "./smoothHooks";
+import { SMOOTH_KEY, type SmoothHooks } from './smoothHooks';
 
 /**
  * Smoothness probe for the app lab (`split-drag` and `resize` scenarios).
@@ -106,8 +106,7 @@ const EMPTY: Stat = { n: 0, p50: 0, p95: 0, max: 0, mean: 0 };
 function stat(values: Samples): Stat {
   if (values.length === 0) return EMPTY;
   const sorted = [...values].sort((a, b) => a - b);
-  const at = (q: number) =>
-    sorted[Math.min(sorted.length - 1, Math.floor(q * sorted.length))];
+  const at = (q: number) => sorted[Math.min(sorted.length - 1, Math.floor(q * sorted.length))];
   const round = (v: number) => Math.round(v * 100) / 100;
   return {
     n: sorted.length,
@@ -136,14 +135,14 @@ export class SmoothProbe implements SmoothHooks {
   private resizeCosts: Samples = [];
   private holdStarts = new Map<number, number>();
   private holdDurations: Samples = [];
-  private appliesLog: SmoothSummary["applies"] = [];
+  private appliesLog: SmoothSummary['applies'] = [];
   private blankFrames = 0;
   private cursorFrames = 0;
   private cursorClipped = 0;
   private erasedAt = new Map<number, number>();
   private erased = 0;
   private redraw: Samples = [];
-  private reallocs: SmoothSummary["reallocs"] = [];
+  private reallocs: SmoothSummary['reallocs'] = [];
   private raf: Samples = [];
   private rafHandle = 0;
   private lastRaf = 0;
@@ -219,9 +218,7 @@ export class SmoothProbe implements SmoothHooks {
       pane.firstWantAt = null;
       pane.rectAt = null;
       pane.staleSince =
-        pane.wantCols !== pane.haveCols || pane.wantRows !== pane.haveRows
-          ? this.startedAt
-          : null;
+        pane.wantCols !== pane.haveCols || pane.wantRows !== pane.haveRows ? this.startedAt : null;
     }
     this.lastRaf = performance.now();
     const loop = (t: number) => {
@@ -250,8 +247,7 @@ export class SmoothProbe implements SmoothHooks {
     ).length;
     const duration = Math.max(1, end - this.startedAt);
     // A hold still open at the end counts up to the end.
-    for (const started of this.holdStarts.values())
-      this.holdDurations.push(end - started);
+    for (const started of this.holdStarts.values()) this.holdDurations.push(end - started);
     this.holdStarts.clear();
     const refresh = stat(this.raf.filter((v) => v < 50)).p50 || this.refreshMs;
     this.refreshMs = refresh;
@@ -278,10 +274,7 @@ export class SmoothProbe implements SmoothHooks {
       settleMs,
       applies: this.appliesLog,
       gridResizes: resizes,
-      gridResizesMaxPane: Math.max(
-        0,
-        ...[...this.panes.values()].map((pane) => pane.applied),
-      ),
+      gridResizesMaxPane: Math.max(0, ...[...this.panes.values()].map((pane) => pane.applied)),
       cursorFrames: this.cursorFrames,
       cursorClipped: this.cursorClipped,
       gridResizesPerS: Math.round((resizes / seconds / Math.max(1, active)) * 10) / 10,
@@ -289,8 +282,7 @@ export class SmoothProbe implements SmoothHooks {
       holds: this.holdDurations.length,
       frozenMs: Math.round(frozen),
       frozenMaxMs: Math.round(Math.max(0, ...this.holdDurations)),
-      frozenOverFrame: this.holdDurations.filter((v) => v > refresh * 1.05)
-        .length,
+      frozenOverFrame: this.holdDurations.filter((v) => v > refresh * 1.05).length,
       frozenShare: Math.round((frozen / duration) * 1000) / 1000,
       blankFrames: this.blankFrames,
       erasedPrompts: this.erased,
@@ -320,14 +312,12 @@ export class SmoothProbe implements SmoothHooks {
       const key = `${cols}x${rows}`;
       pane.asked.delete(key);
       pane.asked.set(key, t);
-      if (pane.asked.size > 16)
-        pane.asked.delete(pane.asked.keys().next().value as string);
+      if (pane.asked.size > 16) pane.asked.delete(pane.asked.keys().next().value as string);
     }
     const same = cols === pane.haveCols && rows === pane.haveRows;
     if (same) {
       pane.firstWantAt = null;
-      if (pane.staleSince !== null && this.recording)
-        pane.staleMs += t - pane.staleSince;
+      if (pane.staleSince !== null && this.recording) pane.staleMs += t - pane.staleSince;
       pane.staleSince = null;
       return;
     }
@@ -335,14 +325,7 @@ export class SmoothProbe implements SmoothHooks {
     pane.staleSince ??= t;
   }
 
-  have(
-    id: number,
-    t: number,
-    cols: number,
-    rows: number,
-    applied: boolean,
-    costMs: number,
-  ): void {
+  have(id: number, t: number, cols: number, rows: number, applied: boolean, costMs: number): void {
     const pane = this.pane(id);
     pane.haveCols = cols;
     pane.haveRows = rows;
@@ -360,8 +343,7 @@ export class SmoothProbe implements SmoothHooks {
     const same = pane.wantCols === cols && pane.wantRows === rows;
     pane.firstWantAt = same ? null : t;
     if (same) {
-      if (pane.staleSince !== null && this.recording)
-        pane.staleMs += t - pane.staleSince;
+      if (pane.staleSince !== null && this.recording) pane.staleMs += t - pane.staleSince;
       pane.staleSince = null;
     } else pane.staleSince ??= t;
   }

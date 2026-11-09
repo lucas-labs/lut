@@ -1,14 +1,9 @@
-import { USE_CUSTOM_WINDOW_CONTROLS } from "@/lib/platform";
-import { cn } from "@/lib/utils";
-import {
-  Cancel01Icon,
-  Copy01Icon,
-  MinusSignIcon,
-  SquareIcon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useEffect, useState } from "react";
+import { USE_CUSTOM_WINDOW_CONTROLS } from '@/lib/platform';
+import { cn } from '@/lib/utils';
+import { Cancel01Icon, Copy01Icon, MinusSignIcon, SquareIcon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { useEffect, useState } from 'react';
 
 type Props = {
   /** Render only the close button (used by the settings window). */
@@ -44,15 +39,8 @@ export function WindowControls({ closeOnly = false }: Props) {
           <CtlButton ariaLabel="Minimize" onClick={() => void w.minimize()}>
             <HugeiconsIcon icon={MinusSignIcon} size={12} strokeWidth={2} />
           </CtlButton>
-          <CtlButton
-            ariaLabel={maximized ? "Restore" : "Maximize"}
-            onClick={() => void w.toggleMaximize()}
-          >
-            <HugeiconsIcon
-              icon={maximized ? Copy01Icon : SquareIcon}
-              size={12}
-              strokeWidth={2}
-            />
+          <CtlButton ariaLabel={maximized ? 'Restore' : 'Maximize'} onClick={() => void w.toggleMaximize()}>
+            <HugeiconsIcon icon={maximized ? Copy01Icon : SquareIcon} size={12} strokeWidth={2} />
           </CtlButton>
         </>
       )}
@@ -81,10 +69,8 @@ function CtlButton({
       title={ariaLabel}
       onClick={onClick}
       className={cn(
-        "grid size-7 place-items-center rounded-md text-muted-foreground transition-colors",
-        danger
-          ? "hover:bg-destructive/15 hover:text-destructive"
-          : "hover:bg-accent hover:text-foreground",
+        'grid size-7 place-items-center rounded-md text-muted-foreground transition-colors',
+        danger ? 'hover:bg-destructive/15 hover:text-destructive' : 'hover:bg-accent hover:text-foreground',
       )}
     >
       {children}

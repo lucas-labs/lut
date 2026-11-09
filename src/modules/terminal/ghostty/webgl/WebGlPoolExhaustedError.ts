@@ -4,6 +4,6 @@ export class WebGlPoolExhaustedError extends Error {
     super(
       `Too many visible WebGL terminals (${limit}). Close a pane and retry, or choose WebGPU in Settings for new terminals.`,
     );
-    this.name = "WebGlPoolExhaustedError";
+    this.name = 'WebGlPoolExhaustedError';
   }
 }

@@ -11,7 +11,7 @@ import type {
   Provenance,
   ToolInfo,
   WaitingReason,
-} from "./types";
+} from './types';
 
 export const emptyRegistry: AgentRegistry = {};
 
@@ -22,48 +22,48 @@ const MAX_PENDING_PERMISSIONS = 8;
 const MAX_SUBAGENTS = 64;
 
 const NEEDS_YOU: ReadonlySet<AgentState> = new Set([
-  "needs-approval",
-  "needs-input",
-  "error",
-  "done",
+  'needs-approval',
+  'needs-input',
+  'error',
+  'done',
 ]);
 
 /** The agent is mid-run, so tool activity says it is working. */
 const ACTIVE: ReadonlySet<AgentState> = new Set([
-  "starting",
-  "working",
-  "needs-approval",
-  "needs-input",
+  'starting',
+  'working',
+  'needs-approval',
+  'needs-input',
 ]);
 
 /** Hooks that prove an agent is running, even before a process signal. */
 const CREATES: ReadonlySet<HookEventKind> = new Set([
-  "session-start",
-  "prompt",
-  "permission-request",
-  "notification",
-  "stop",
-  "stop-failure",
+  'session-start',
+  'prompt',
+  'permission-request',
+  'notification',
+  'stop',
+  'stop-failure',
 ]);
 
 /** Hooks that start a fresh run in a terminal whose agent already exited. */
 const REVIVES: ReadonlySet<HookEventKind> = new Set([
-  "session-start",
-  "prompt",
-  "permission-request",
-  "stop",
-  "stop-failure",
+  'session-start',
+  'prompt',
+  'permission-request',
+  'stop',
+  'stop-failure',
 ]);
 
 const INFORMATIONAL_NOTIFICATIONS: ReadonlySet<string> = new Set([
-  "auth_success",
-  "elicitation_complete",
-  "elicitation_response",
-  "agent_completed",
-  "quota_auto_resume_fired",
-  "quota_auto_resume_stale",
-  "quota_auto_resume_disabled",
-  "plugin_notification",
+  'auth_success',
+  'elicitation_complete',
+  'elicitation_response',
+  'agent_completed',
+  'quota_auto_resume_fired',
+  'quota_auto_resume_stale',
+  'quota_auto_resume_disabled',
+  'plugin_notification',
 ]);
 
 type Effect = { state: AgentState; reason: WaitingReason };
@@ -71,21 +71,21 @@ type Effect = { state: AgentState; reason: WaitingReason };
 /** What a notification asks of the user, or null when it is only information. */
 export function notificationEffect(type: string | undefined): Effect | null {
   switch (type) {
-    case "permission_prompt":
-    case "ToolPermission":
-      return { state: "needs-approval", reason: "permission" };
-    case "idle_prompt":
-      return { state: "needs-input", reason: "idle" };
-    case "elicitation_dialog":
-    case "elicitation_url_dialog":
-      return { state: "needs-input", reason: "elicitation" };
-    case "agent_needs_input":
-      return { state: "needs-input", reason: "input" };
+    case 'permission_prompt':
+    case 'ToolPermission':
+      return { state: 'needs-approval', reason: 'permission' };
+    case 'idle_prompt':
+      return { state: 'needs-input', reason: 'idle' };
+    case 'elicitation_dialog':
+    case 'elicitation_url_dialog':
+      return { state: 'needs-input', reason: 'elicitation' };
+    case 'agent_needs_input':
+      return { state: 'needs-input', reason: 'input' };
     default:
       if (type !== undefined && INFORMATIONAL_NOTIFICATIONS.has(type)) {
         return null;
       }
-      return { state: "needs-input", reason: "attention" };
+      return { state: 'needs-input', reason: 'attention' };
   }
 }
 
@@ -166,10 +166,7 @@ function toolKey(tool: ToolInfo): string {
 }
 
 /** The running entry a tool end belongs to, matching by id and then by call. */
-function runningKey(
-  running: Readonly<Record<string, CurrentTool>>,
-  tool: ToolInfo,
-): string | null {
+function runningKey(running: Readonly<Record<string, CurrentTool>>, tool: ToolInfo): string | null {
   const direct = toolKey(tool);
   if (direct in running) return direct;
   // Two different known ids are two calls, even with identical input; the call
@@ -193,14 +190,10 @@ function newest<T extends { startedAt: number }>(
   const kept = keys
     .sort((a, b) => (entries[b]?.startedAt ?? 0) - (entries[a]?.startedAt ?? 0))
     .slice(0, limit);
-  return Object.fromEntries(
-    kept.flatMap((key) => (entries[key] ? [[key, entries[key]]] : [])),
-  );
+  return Object.fromEntries(kept.flatMap((key) => (entries[key] ? [[key, entries[key]]] : [])));
 }
 
-function latest(
-  running: Readonly<Record<string, CurrentTool>>,
-): CurrentTool | null {
+function latest(running: Readonly<Record<string, CurrentTool>>): CurrentTool | null {
   let best: CurrentTool | null = null;
   for (const entry of Object.values(running)) {
     if (!best || entry.startedAt >= best.startedAt) best = entry;
@@ -219,32 +212,27 @@ function addPermission(
       : other.requestId === null &&
         other.tool === request.tool &&
         other.inputPreview === request.inputPreview;
-  return [...pending.filter((other) => !same(other)), request].slice(
-    -MAX_PENDING_PERMISSIONS,
-  );
+  return [...pending.filter((other) => !same(other)), request].slice(-MAX_PENDING_PERMISSIONS);
 }
 
 function put(registry: AgentRegistry, agent: Agent): AgentRegistry {
   return { ...registry, [agent.ptyId]: agent };
 }
 
-export function reduceAgents(
-  registry: AgentRegistry,
-  event: AgentModelEvent,
-): AgentRegistry {
+export function reduceAgents(registry: AgentRegistry, event: AgentModelEvent): AgentRegistry {
   switch (event.type) {
-    case "hook":
+    case 'hook':
       return reduceHook(registry, event.event);
-    case "signal":
+    case 'signal':
       return reduceSignal(registry, event.signal, event.at);
-    case "acknowledge": {
+    case 'acknowledge': {
       const agent = registry[event.ptyId];
-      if (!agent || (agent.state !== "done" && agent.state !== "error")) {
+      if (!agent || (agent.state !== 'done' && agent.state !== 'error')) {
         return registry;
       }
-      return put(registry, setState(agent, "idle", null, event.at));
+      return put(registry, setState(agent, 'idle', null, event.at));
     }
-    case "remove": {
+    case 'remove': {
       if (!(event.ptyId in registry)) return registry;
       const next = { ...registry };
       delete next[event.ptyId];
@@ -260,10 +248,10 @@ function reduceSignal(
 ): AgentRegistry {
   const current = registry[signal.id];
   switch (signal.kind) {
-    case "started": {
-      if (current && current.state !== "exited") {
+    case 'started': {
+      if (current && current.state !== 'exited') {
         const name = signal.agent;
-        return name && current.agent === "agent"
+        return name && current.agent === 'agent'
           ? put(registry, { ...current, agent: name })
           : registry;
       }
@@ -272,57 +260,45 @@ function reduceSignal(
         create(
           signal.id,
           current?.paneId ?? null,
-          signal.agent ?? "agent",
-          "process",
-          "starting",
+          signal.agent ?? 'agent',
+          'process',
+          'starting',
           at,
         ),
       );
     }
-    case "exited": {
-      if (!current || current.state === "exited") return registry;
-      const exited = setState(quiet(current), "exited", null, at);
+    case 'exited': {
+      if (!current || current.state === 'exited') return registry;
+      const exited = setState(quiet(current), 'exited', null, at);
       return put(registry, exited);
     }
-    case "working":
-    case "attention":
-    case "finished": {
+    case 'working':
+    case 'attention':
+    case 'finished': {
       // A hooked agent reports its own state; OSC hints would only repeat it.
-      if (!current || current.state === "exited") return registry;
-      if (current.provenance === "hook") return registry;
-      const provenance = strongest(current.provenance, "osc");
+      if (!current || current.state === 'exited') return registry;
+      if (current.provenance === 'hook') return registry;
+      const provenance = strongest(current.provenance, 'osc');
       let next: Agent;
-      if (signal.kind === "working") {
-        next = setState(current, "working", null, at);
-      } else if (signal.kind === "attention") {
-        next = setState(current, "needs-input", "attention", at);
+      if (signal.kind === 'working') {
+        next = setState(current, 'working', null, at);
+      } else if (signal.kind === 'attention') {
+        next = setState(current, 'needs-input', 'attention', at);
       } else {
-        next = setState(quiet(current), "done", null, at);
+        next = setState(quiet(current), 'done', null, at);
       }
       return put(registry, { ...next, provenance });
     }
   }
 }
 
-function reduceHook(
-  registry: AgentRegistry,
-  event: AgentHookEvent,
-): AgentRegistry {
+function reduceHook(registry: AgentRegistry, event: AgentHookEvent): AgentRegistry {
   const existing = registry[event.ptyId];
   let agent: Agent;
-  if (!existing || existing.state === "exited") {
-    const allowed = existing
-      ? REVIVES.has(event.kind)
-      : CREATES.has(event.kind);
+  if (!existing || existing.state === 'exited') {
+    const allowed = existing ? REVIVES.has(event.kind) : CREATES.has(event.kind);
     if (!allowed) return registry;
-    agent = create(
-      event.ptyId,
-      event.paneId,
-      event.agent,
-      "hook",
-      "idle",
-      event.at,
-    );
+    agent = create(event.ptyId, event.paneId, event.agent, 'hook', 'idle', event.at);
   } else {
     agent = existing;
   }
@@ -331,7 +307,7 @@ function reduceHook(
     ...agent,
     paneId: event.paneId,
     agent: event.agent,
-    provenance: "hook",
+    provenance: 'hook',
     sessionId: event.sessionId ?? agent.sessionId,
     transcriptPath: event.transcriptPath ?? agent.transcriptPath,
     cwd: event.cwd ?? agent.cwd,
@@ -343,28 +319,23 @@ function reduceHook(
 function applyHook(agent: Agent, event: AgentHookEvent): Agent {
   const at = event.at;
   switch (event.kind) {
-    case "session-start": {
-      if (event.reason === "compact") return agent;
+    case 'session-start': {
+      if (event.reason === 'compact') return agent;
       const fresh = quiet(agent);
-      return setState(
-        { ...fresh, turn: 0, lastPrompt: null },
-        "idle",
-        null,
-        at,
-      );
+      return setState({ ...fresh, turn: 0, lastPrompt: null }, 'idle', null, at);
     }
-    case "prompt":
+    case 'prompt':
       return setState(
         {
           ...quiet(agent),
           turn: agent.turn + 1,
           lastPrompt: event.message ?? agent.lastPrompt,
         },
-        "working",
+        'working',
         null,
         at,
       );
-    case "tool-start": {
+    case 'tool-start': {
       const tool = event.tool;
       if (!tool || !ACTIVE.has(agent.state)) return agent;
       const entry: CurrentTool = {
@@ -375,20 +346,15 @@ function applyHook(agent: Agent, event: AgentHookEvent): Agent {
       };
       const next: Agent = {
         ...agent,
-        runningTools: newest(
-          { ...agent.runningTools, [toolKey(tool)]: entry },
-          MAX_RUNNING_TOOLS,
-        ),
+        runningTools: newest({ ...agent.runningTools, [toolKey(tool)]: entry }, MAX_RUNNING_TOOLS),
         currentTool: entry,
       };
       // Background hooks race the synchronous permission hook and parallel
       // tools run while another waits, so a start never means an approval was
       // answered.
-      return agent.state === "needs-approval"
-        ? next
-        : setState(next, "working", null, at);
+      return agent.state === 'needs-approval' ? next : setState(next, 'working', null, at);
     }
-    case "tool-end": {
+    case 'tool-end': {
       const tool = event.tool;
       const key = tool ? runningKey(agent.runningTools, tool) : null;
       let runningTools = agent.runningTools;
@@ -403,21 +369,15 @@ function applyHook(agent: Agent, event: AgentHookEvent): Agent {
       };
       const answered = tool
         ? agent.pendingPermissions.findIndex(
-            (pending) =>
-              pending.tool === tool.name &&
-              pending.inputPreview === tool.inputPreview,
+            (pending) => pending.tool === tool.name && pending.inputPreview === tool.inputPreview,
           )
         : -1;
       if (answered === -1) return next;
-      const remaining = agent.pendingPermissions.filter(
-        (_, index) => index !== answered,
-      );
+      const remaining = agent.pendingPermissions.filter((_, index) => index !== answered);
       const settled: Agent = { ...next, pendingPermissions: remaining };
-      return remaining.length === 0
-        ? setState(settled, "working", null, at)
-        : settled;
+      return remaining.length === 0 ? setState(settled, 'working', null, at) : settled;
     }
-    case "permission-request": {
+    case 'permission-request': {
       const permission = event.permission;
       const next: Agent = {
         ...agent,
@@ -432,72 +392,61 @@ function applyHook(agent: Agent, event: AgentHookEvent): Agent {
             })
           : agent.pendingPermissions,
       };
-      return setState(next, "needs-approval", "permission", at);
+      return setState(next, 'needs-approval', 'permission', at);
     }
-    case "permission-resolved": {
+    case 'permission-resolved': {
       const id = event.permission?.requestId;
       const index =
         id === undefined
           ? -1
-          : agent.pendingPermissions.findIndex(
-              (pending) => pending.requestId === id,
-            );
+          : agent.pendingPermissions.findIndex((pending) => pending.requestId === id);
       if (index === -1) return agent;
-      const remaining = agent.pendingPermissions.filter(
-        (_, position) => position !== index,
-      );
+      const remaining = agent.pendingPermissions.filter((_, position) => position !== index);
       const cleared: Agent = { ...agent, pendingPermissions: remaining };
       // The agent dropping the hook means the user answered at its own prompt.
       const outcome = event.permission?.outcome;
-      const answered =
-        outcome === "allow" || outcome === "deny" || outcome === "agent-gone";
+      const answered = outcome === 'allow' || outcome === 'deny' || outcome === 'agent-gone';
       // Other requests of the same terminal keep the approval state alive.
-      return answered && remaining.length === 0
-        ? setState(cleared, "working", null, at)
-        : cleared;
+      return answered && remaining.length === 0 ? setState(cleared, 'working', null, at) : cleared;
     }
-    case "notification": {
+    case 'notification': {
       const withMessage = {
         ...agent,
         lastMessage: event.message ?? agent.lastMessage,
       };
       const effect = notificationEffect(event.notificationType);
       if (!effect) return withMessage;
-      if (effect.state === "needs-approval") {
-        return agent.state === "needs-approval"
+      if (effect.state === 'needs-approval') {
+        return agent.state === 'needs-approval'
           ? withMessage
-          : setState(withMessage, "needs-approval", effect.reason, at);
+          : setState(withMessage, 'needs-approval', effect.reason, at);
       }
       const settled =
-        agent.state === "done" ||
-        agent.state === "error" ||
-        agent.state === "needs-approval";
-      return settled
-        ? withMessage
-        : setState(withMessage, "needs-input", effect.reason, at);
+        agent.state === 'done' || agent.state === 'error' || agent.state === 'needs-approval';
+      return settled ? withMessage : setState(withMessage, 'needs-input', effect.reason, at);
     }
-    case "stop": {
+    case 'stop': {
       const next = {
         ...quiet(agent),
         lastMessage: event.message ?? agent.lastMessage,
       };
-      return event.reason === "aborted"
-        ? setState(next, "idle", null, at)
-        : setState(next, "done", null, at);
+      return event.reason === 'aborted'
+        ? setState(next, 'idle', null, at)
+        : setState(next, 'done', null, at);
     }
-    case "stop-failure":
+    case 'stop-failure':
       return setState(
         {
           ...quiet(agent),
           lastMessage: event.message ?? agent.lastMessage,
         },
-        "error",
-        "error",
+        'error',
+        'error',
         at,
       );
-    case "interrupt":
-      return setState(quiet(agent), "idle", null, at);
-    case "subagent-start": {
+    case 'interrupt':
+      return setState(quiet(agent), 'idle', null, at);
+    case 'subagent-start': {
       const subagent = event.subagent;
       if (!subagent) return agent;
       return {
@@ -508,7 +457,7 @@ function applyHook(agent: Agent, event: AgentHookEvent): Agent {
             [subagent.id]: {
               id: subagent.id,
               type: subagent.type,
-              state: "running",
+              state: 'running',
               startedAt: at,
               endedAt: null,
               message: null,
@@ -518,7 +467,7 @@ function applyHook(agent: Agent, event: AgentHookEvent): Agent {
         ),
       };
     }
-    case "subagent-stop": {
+    case 'subagent-stop': {
       const subagent = event.subagent;
       if (!subagent) return agent;
       const previous = agent.subagents[subagent.id];
@@ -530,7 +479,7 @@ function applyHook(agent: Agent, event: AgentHookEvent): Agent {
             [subagent.id]: {
               id: subagent.id,
               type: subagent.type,
-              state: "done",
+              state: 'done',
               startedAt: previous?.startedAt ?? at,
               endedAt: at,
               message: event.message ?? previous?.message ?? null,
@@ -540,7 +489,7 @@ function applyHook(agent: Agent, event: AgentHookEvent): Agent {
         ),
       };
     }
-    case "session-end":
-      return setState(quiet(agent), "idle", null, at);
+    case 'session-end':
+      return setState(quiet(agent), 'idle', null, at);
   }
 }

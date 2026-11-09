@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { GLYPH_SHADER } from "../gpu/shaders";
-import type { TerminalGpuTheme } from "../gpu/terminalVisuals";
+import { describe, expect, it } from 'vitest';
+import { GLYPH_SHADER } from '../gpu/shaders';
+import type { TerminalGpuTheme } from '../gpu/terminalVisuals';
 import {
   COLOR_FRAGMENT_SHADER,
   COLOR_VERTEX_SHADER,
@@ -10,7 +10,7 @@ import {
   rendererProfileKey,
   resetGlyphGrid,
   type WebGlRendererProfile,
-} from "./WebGlCellRenderer";
+} from './WebGlCellRenderer';
 
 const theme: TerminalGpuTheme = {
   background: [0, 0, 0],
@@ -25,11 +25,11 @@ function profile(scale = 2): WebGlRendererProfile {
   return {
     metrics: {
       font: {
-        family: "JetBrains Mono",
+        family: 'JetBrains Mono',
         size: 14,
         lineHeight: 1.2,
         letterSpacing: 0,
-        weight: "400",
+        weight: '400',
       },
       scale,
       deviceCellWidth: 9 * scale,
@@ -45,8 +45,8 @@ function profile(scale = 2): WebGlRendererProfile {
   };
 }
 
-describe("rendererProfileKey", () => {
-  it("reuses monochrome atlases across terminal color themes", () => {
+describe('rendererProfileKey', () => {
+  it('reuses monochrome atlases across terminal color themes', () => {
     const first = profile();
     const second: WebGlRendererProfile = {
       ...first,
@@ -60,10 +60,8 @@ describe("rendererProfileKey", () => {
     expect(rendererProfileKey(first)).toBe(rendererProfileKey(second));
   });
 
-  it("separates atlases when device scale or font geometry changes", () => {
-    expect(rendererProfileKey(profile(1))).not.toBe(
-      rendererProfileKey(profile(2)),
-    );
+  it('separates atlases when device scale or font geometry changes', () => {
+    expect(rendererProfileKey(profile(1))).not.toBe(rendererProfileKey(profile(2)));
     expect(rendererProfileKey(profile())).not.toBe(
       rendererProfileKey({
         ...profile(),
@@ -77,8 +75,8 @@ describe("rendererProfileKey", () => {
   });
 });
 
-describe("resetGlyphGrid", () => {
-  it("restores every static cell position after renderer reuse", () => {
+describe('resetGlyphGrid', () => {
+  it('restores every static cell position after renderer reuse', () => {
     const attributes = new Float32Array(4 * 15);
     attributes.fill(7);
 
@@ -91,13 +89,11 @@ describe("resetGlyphGrid", () => {
     expect([...attributes.subarray(58, 60)]).toEqual([0.5, 0.5]);
   });
 
-  it("rejects a grid whose retained storage does not match its dimensions", () => {
-    expect(() => resetGlyphGrid(new Float32Array(13), 1, 1)).toThrow(
-      RangeError,
-    );
+  it('rejects a grid whose retained storage does not match its dimensions', () => {
+    expect(() => resetGlyphGrid(new Float32Array(13), 1, 1)).toThrow(RangeError);
   });
 
-  it("accepts retained capacity larger than the active terminal grid", () => {
+  it('accepts retained capacity larger than the active terminal grid', () => {
     const attributes = new Float32Array(8 * 15);
     attributes.fill(7);
 
@@ -109,8 +105,8 @@ describe("resetGlyphGrid", () => {
   });
 });
 
-describe("nextWebGlCellCapacity", () => {
-  it("retains adjacent resize capacity instead of reallocating every step", () => {
+describe('nextWebGlCellCapacity', () => {
+  it('retains adjacent resize capacity instead of reallocating every step', () => {
     const initial = nextWebGlCellCapacity(0, 80 * 24);
     const wider = nextWebGlCellCapacity(initial, 81 * 24);
     const smaller = nextWebGlCellCapacity(wider, 79 * 23);
@@ -120,7 +116,7 @@ describe("nextWebGlCellCapacity", () => {
     expect(smaller).toBe(initial);
   });
 
-  it("grows with bounded headroom and enforces the surface limit", () => {
+  it('grows with bounded headroom and enforces the surface limit', () => {
     const initial = nextWebGlCellCapacity(0, 1_000);
     expect(initial).toBe(1_280);
     expect(nextWebGlCellCapacity(initial, 2_000)).toBe(2_048);
@@ -128,15 +124,11 @@ describe("nextWebGlCellCapacity", () => {
   });
 });
 
-describe("WebGL shaders", () => {
+describe('WebGL shaders', () => {
   const fragments = [COLOR_FRAGMENT_SHADER, GLYPH_FRAGMENT_SHADER];
 
-  it("never lowers fragment precision, which collapses colours on Mesa and WebKitGTK", () => {
-    for (const source of [
-      ...fragments,
-      COLOR_VERTEX_SHADER,
-      GLYPH_VERTEX_SHADER,
-    ]) {
+  it('never lowers fragment precision, which collapses colours on Mesa and WebKitGTK', () => {
+    for (const source of [...fragments, COLOR_VERTEX_SHADER, GLYPH_VERTEX_SHADER]) {
       expect(source).not.toMatch(/\blowp\b/);
       expect(source).not.toMatch(/\bmediump\b/);
     }
@@ -146,12 +138,12 @@ describe("WebGL shaders", () => {
     expect(GLYPH_FRAGMENT_SHADER).toMatch(/precision highp sampler2D;/);
   });
 
-  it("passes the text colour through unquantised and blends it by glyph coverage", () => {
+  it('passes the text colour through unquantised and blends it by glyph coverage', () => {
     expect(GLYPH_FRAGMENT_SHADER).toMatch(/outColor = vec4\(rgb, alpha \* coverage\);/);
     expect(GLYPH_FRAGMENT_SHADER).toMatch(/vec3 rgb = v_color\.rgb;/);
   });
 
-  it("recolours only the ink inside the block, so a roomy glyph keeps its own colour past it", () => {
+  it('recolours only the ink inside the block, so a roomy glyph keeps its own colour past it', () => {
     // The vertex stage only marks the glyphs of the cells the block covers; the fragment stage
     // tests each pixel against the block's box.
     expect(GLYPH_VERTEX_SHADER).toMatch(/uniform vec4 u_cursor;/);
@@ -166,35 +158,33 @@ describe("WebGL shaders", () => {
     expect(GLYPH_FRAGMENT_SHADER).toMatch(/u_resolution\.y - gl_FragCoord\.y/);
   });
 
-  it("keeps a blinking character under the cursor blinking, as the WebGPU shader does", () => {
+  it('keeps a blinking character under the cursor blinking, as the WebGPU shader does', () => {
     // Blink is carried by the sign of the colour alpha, which the fragment stage reads.
     // The blink test runs after the cursor recolour, so it wins over the forced alpha.
-    const recolour = GLYPH_FRAGMENT_SHADER.indexOf("alpha = 1.0;");
+    const recolour = GLYPH_FRAGMENT_SHADER.indexOf('alpha = 1.0;');
     const blink = GLYPH_FRAGMENT_SHADER.indexOf(
-      "if (v_color.a < 0.0 && !u_text_blink_visible) alpha = 0.0;",
+      'if (v_color.a < 0.0 && !u_text_blink_visible) alpha = 0.0;',
     );
     expect(recolour).toBeGreaterThan(0);
     expect(blink).toBeGreaterThan(recolour);
   });
 
-  it("applies the same contrast curve as the WebGPU shader, never to cell-exact or colour glyphs", () => {
+  it('applies the same contrast curve as the WebGPU shader, never to cell-exact or colour glyphs', () => {
     expect(GLYPH_FRAGMENT_SHADER).toMatch(/uniform vec2 u_contrast;/);
     expect(GLYPH_FRAGMENT_SHADER).toMatch(/uniform vec4 u_gamma;/);
     for (const constant of [
-      "vec3(0.30, 0.59, 0.11)",
-      "vec3(0.25, 0.5, 0.25)",
-      "4.0 * (0.75 - lightness)",
+      'vec3(0.30, 0.59, 0.11)',
+      'vec3(0.25, 0.5, 0.25)',
+      '4.0 * (0.75 - lightness)',
     ]) {
       expect(GLYPH_FRAGMENT_SHADER).toContain(constant);
       expect(GLYPH_SHADER).toContain(
-        constant.replace("vec3(", "vec3f(").replace(/\bvec3f\(/, "vec3f("),
+        constant.replace('vec3(', 'vec3f(').replace(/\bvec3f\(/, 'vec3f('),
       );
     }
     expect(GLYPH_FRAGMENT_SHADER).toMatch(
       /v_intrinsic_color < 1\.5 && \(u_contrast\.x > 0\.0 \|\| u_contrast\.y > 0\.0\)/,
     );
-    expect(GLYPH_FRAGMENT_SHADER).toMatch(
-      /v_intrinsic_color > 0\.5 && v_intrinsic_color < 1\.5/,
-    );
+    expect(GLYPH_FRAGMENT_SHADER).toMatch(/v_intrinsic_color > 0\.5 && v_intrinsic_color < 1\.5/);
   });
 });

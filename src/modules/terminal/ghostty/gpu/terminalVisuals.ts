@@ -1,6 +1,6 @@
-import { readTerminalTokens } from "@/styles/tokens";
-import type { Rgb } from "../core/packedCells";
-import { resolveCursorText } from "./cursorText";
+import { readTerminalTokens } from '@/styles/tokens';
+import type { Rgb } from '../core/packedCells';
+import { resolveCursorText } from './cursorText';
 
 export type TerminalFontSpec = {
   readonly family: string;
@@ -56,7 +56,7 @@ let colorContext: CanvasRenderingContext2D | null = null;
 let measureCanvas: HTMLCanvasElement | null = null;
 
 export function devicePixelScale(): number {
-  const ratio = typeof window === "undefined" ? 1 : window.devicePixelRatio;
+  const ratio = typeof window === 'undefined' ? 1 : window.devicePixelRatio;
   return Number.isFinite(ratio) && ratio > 0 ? Math.max(1, ratio) : 1;
 }
 
@@ -70,19 +70,13 @@ export function deriveFontMetrics(
   scale: number,
   raw: RawFontMeasurement,
 ): TerminalFontMetrics {
-  const deviceCellWidth = Math.max(
-    1,
-    ceilDevice(raw.advance + font.letterSpacing * scale),
-  );
+  const deviceCellWidth = Math.max(1, ceilDevice(raw.advance + font.letterSpacing * scale));
   const measuredHeight = ceilDevice(raw.ascent + raw.descent);
   const deviceCellHeight = Math.max(
     measuredHeight + 2,
     ceilDevice(font.size * scale * font.lineHeight),
   );
-  const verticalPadding = Math.max(
-    0,
-    deviceCellHeight - raw.ascent - raw.descent,
-  );
+  const verticalPadding = Math.max(0, deviceCellHeight - raw.ascent - raw.descent);
   const deviceBaseline = ceilDevice(verticalPadding / 2 + raw.ascent);
   return {
     font,
@@ -101,11 +95,11 @@ export function measureTerminalFontSync(
   font: TerminalFontSpec,
   scale = devicePixelScale(),
 ): TerminalFontMetrics {
-  measureCanvas ??= document.createElement("canvas");
-  const context = measureCanvas.getContext("2d");
-  if (!context) throw new Error("Canvas font measurement is unavailable");
+  measureCanvas ??= document.createElement('canvas');
+  const context = measureCanvas.getContext('2d');
+  if (!context) throw new Error('Canvas font measurement is unavailable');
   context.font = fontCss({ ...font, size: font.size * scale }, false, false);
-  const sample = context.measureText("M");
+  const sample = context.measureText('M');
   return deriveFontMetrics(font, scale, {
     advance: sample.width,
     ascent: sample.actualBoundingBoxAscent || font.size * scale * 0.8,
@@ -122,10 +116,7 @@ export async function measureTerminalFont(
 }
 
 /** Metrics for `scale`, reusing `metrics` when it was already measured there. */
-export function metricsForScale(
-  metrics: TerminalFontMetrics,
-  scale: number,
-): TerminalFontMetrics {
+export function metricsForScale(metrics: TerminalFontMetrics, scale: number): TerminalFontMetrics {
   return metrics.scale === scale &&
     Number.isInteger(metrics.deviceCellWidth) &&
     Number.isInteger(metrics.deviceCellHeight)
@@ -134,10 +125,7 @@ export function metricsForScale(
 }
 
 /** Same font, same device cells: nothing downstream needs to react. */
-export function metricsEqual(
-  left: TerminalFontMetrics,
-  right: TerminalFontMetrics,
-): boolean {
+export function metricsEqual(left: TerminalFontMetrics, right: TerminalFontMetrics): boolean {
   return (
     left.scale === right.scale &&
     left.deviceCellWidth === right.deviceCellWidth &&
@@ -155,20 +143,16 @@ export function fontSpecKey(font: TerminalFontSpec): string {
     font.letterSpacing,
     font.weight,
     font.symbols ?? 0,
-  ].join("|");
+  ].join('|');
 }
 
 function ceilDevice(value: number): number {
   return Math.ceil(value - 0.001);
 }
 
-export function fontCss(
-  font: TerminalFontSpec,
-  bold: boolean,
-  italic: boolean,
-): string {
-  const weight = bold ? "700" : font.weight;
-  return `${italic ? "italic " : ""}${weight} ${font.size}px ${font.family}`;
+export function fontCss(font: TerminalFontSpec, bold: boolean, italic: boolean): string {
+  const weight = bold ? '700' : font.weight;
+  return `${italic ? 'italic ' : ''}${weight} ${font.size}px ${font.family}`;
 }
 
 export function readTerminalGpuTheme(): TerminalGpuTheme {
@@ -226,11 +210,11 @@ function cssColorToRgb(value: string): Rgb {
 function cssColorToRgba(
   value: string,
 ): readonly [red: number, green: number, blue: number, alpha: number] {
-  colorCanvas ??= document.createElement("canvas");
+  colorCanvas ??= document.createElement('canvas');
   colorCanvas.width = 1;
   colorCanvas.height = 1;
-  colorContext ??= colorCanvas.getContext("2d", { willReadFrequently: true });
-  if (!colorContext) throw new Error("Canvas color conversion is unavailable");
+  colorContext ??= colorCanvas.getContext('2d', { willReadFrequently: true });
+  if (!colorContext) throw new Error('Canvas color conversion is unavailable');
 
   colorContext.clearRect(0, 0, 1, 1);
   colorContext.fillStyle = value;

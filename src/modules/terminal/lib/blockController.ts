@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
-import type { BlockMode } from "../block/lib/modeMachine";
+import { useEffect, useMemo, useState } from 'react';
+import type { BlockMode } from '../block/lib/modeMachine';
 import {
   getLeafBlockMode,
   interruptLeaf,
   leafCwd,
   submitToLeaf,
   subscribeLeafBlockMode,
-} from "./terminalSessionApi";
+} from './terminalSessionApi';
 
 export type BlockController = {
   blockMode: BlockMode;
@@ -15,17 +15,13 @@ export type BlockController = {
   getCwd: () => string | null;
 };
 
-export function useBlockController(
-  leafId: number | null,
-): BlockController | null {
-  const [blockMode, setBlockMode] = useState<BlockMode>("plain");
+export function useBlockController(leafId: number | null): BlockController | null {
+  const [blockMode, setBlockMode] = useState<BlockMode>('plain');
 
   useEffect(() => {
     if (leafId == null) return;
     setBlockMode(getLeafBlockMode(leafId));
-    return subscribeLeafBlockMode(leafId, () =>
-      setBlockMode(getLeafBlockMode(leafId)),
-    );
+    return subscribeLeafBlockMode(leafId, () => setBlockMode(getLeafBlockMode(leafId)));
   }, [leafId]);
 
   return useMemo(() => {

@@ -1,15 +1,15 @@
 import {
   subscribeWindowPresentation,
   terminalWindowPresentation,
-} from "@/modules/terminal/ghostty/windowPresentation";
-import { terminalResizeInteractionActive } from "@/modules/terminal/lib/terminalResizeInteraction";
-import { afterEach, describe, expect, it, vi } from "vitest";
+} from '@/modules/terminal/ghostty/windowPresentation';
+import { terminalResizeInteractionActive } from '@/modules/terminal/lib/terminalResizeInteraction';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const bridge = vi.hoisted(() => ({ listen: vi.fn(), invoke: vi.fn() }));
-vi.mock("@tauri-apps/api/window", () => ({
+vi.mock('@tauri-apps/api/window', () => ({
   getCurrentWindow: () => ({ listen: bridge.listen }),
 }));
-vi.mock("@tauri-apps/api/core", () => ({ invoke: bridge.invoke }));
+vi.mock('@tauri-apps/api/core', () => ({ invoke: bridge.invoke }));
 const subscriptions: (() => void)[] = [];
 
 afterEach(() => {
@@ -40,10 +40,10 @@ function harness() {
   const addEventListener = vi.fn((_name, callback) => {
     onVisibility = callback;
   });
-  vi.stubGlobal("window", { __TAURI_INTERNALS__: {} });
-  vi.stubGlobal("document", {
+  vi.stubGlobal('window', { __TAURI_INTERNALS__: {} });
+  vi.stubGlobal('document', {
     get visibilityState() {
-      return documentVisible ? "visible" : "hidden";
+      return documentVisible ? 'visible' : 'hidden';
     },
     addEventListener,
     removeEventListener,
@@ -71,8 +71,8 @@ function harness() {
   };
 }
 
-describe("window presentation bridge", () => {
-  it("shares one event subscription and releases it after the last consumer", async () => {
+describe('window presentation bridge', () => {
+  it('shares one event subscription and releases it after the last consumer', async () => {
     const h = harness();
     const first = h.subscribe();
     const second = h.subscribe();
@@ -88,7 +88,7 @@ describe("window presentation bridge", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("ignores stale initial queries and malformed native events", async () => {
+  it('ignores stale initial queries and malformed native events', async () => {
     const h = harness();
     h.subscribe();
     await Promise.resolve();
@@ -99,7 +99,7 @@ describe("window presentation bridge", () => {
       null,
       {},
       { revision: -1 },
-      { revision: 5, occluded: "false", sleeping: false },
+      { revision: 5, occluded: 'false', sleeping: false },
     ])
       h.native(payload);
     expect(terminalWindowPresentation()).toEqual({
@@ -128,7 +128,7 @@ describe("window presentation bridge", () => {
     expect(terminalWindowPresentation().visible).toBe(true);
   });
 
-  it("unsubscribes a native listener that resolves after its consumer closes", async () => {
+  it('unsubscribes a native listener that resolves after its consumer closes', async () => {
     const h = harness();
     const subscriber = h.subscribe();
     subscriber.stop();
@@ -138,7 +138,7 @@ describe("window presentation bridge", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("publishes the native live resize as a resize gesture without touching visibility", async () => {
+  it('publishes the native live resize as a resize gesture without touching visibility', async () => {
     const h = harness();
     const { listener } = h.subscribe();
     await Promise.resolve();
@@ -165,7 +165,7 @@ describe("window presentation bridge", () => {
     expect(terminalResizeInteractionActive()).toBe(false);
   });
 
-  it("ends a native gesture whose end event never arrives when the last consumer leaves", async () => {
+  it('ends a native gesture whose end event never arrives when the last consumer leaves', async () => {
     const h = harness();
     const subscriber = h.subscribe();
     await Promise.resolve();
@@ -183,7 +183,7 @@ describe("window presentation bridge", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("ignores a malformed live resize flag", async () => {
+  it('ignores a malformed live resize flag', async () => {
     const h = harness();
     h.subscribe();
     await Promise.resolve();
@@ -191,7 +191,7 @@ describe("window presentation bridge", () => {
       revision: 1,
       occluded: false,
       sleeping: false,
-      liveResize: "yes",
+      liveResize: 'yes',
     });
     expect(terminalResizeInteractionActive()).toBe(false);
   });

@@ -1,16 +1,9 @@
-import {
-  readBgFastPath,
-  usePreferencesStore,
-} from "@/modules/settings/preferences";
-import { BG_OPACITY_RENDER_FACTOR } from "@/modules/settings/store";
-import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import {
-  renderStillFrame,
-  surfaceFrame,
-  surfaceOwnsLayer,
-} from "./surfaceFrame";
-import { useWindowInactive } from "./WindowActivityBridge";
+import { readBgFastPath, usePreferencesStore } from '@/modules/settings/preferences';
+import { BG_OPACITY_RENDER_FACTOR } from '@/modules/settings/store';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { renderStillFrame, surfaceFrame, surfaceOwnsLayer } from './surfaceFrame';
+import { useWindowInactive } from './WindowActivityBridge';
 
 const OVERLAY_Z = 2147483646;
 const RESIZE_IDLE_MS = 280;
@@ -18,9 +11,7 @@ const FADE_IN_MS = 200;
 
 export function SurfaceLayer() {
   const [fastPath] = useState(readBgFastPath);
-  const storeActive = usePreferencesStore(
-    (s) => s.backgroundKind === "image" && !!s.backgroundImageId,
-  );
+  const storeActive = usePreferencesStore((s) => s.backgroundKind === 'image' && !!s.backgroundImageId);
   const hydrated = usePreferencesStore((s) => s.hydrated);
   const active = hydrated ? storeActive : fastPath.active;
   if (!active) return null;
@@ -33,19 +24,14 @@ function BackgroundImage({ fastImageId }: { fastImageId: string | null }) {
   const imageId = hydrated ? storeImageId : fastImageId;
   const opacity = usePreferencesStore((s) => s.backgroundOpacity);
   const blur = usePreferencesStore((s) => s.backgroundBlur);
-  const [state, setState] = useState<{ url: string; animated: boolean } | null>(
-    null,
-  );
+  const [state, setState] = useState<{ url: string; animated: boolean } | null>(null);
   const [visible, setVisible] = useState(false);
   const lastUrlRef = useRef<string | null>(null);
   const blobRef = useRef<Blob | null>(null);
   const resizing = useWindowResizing(RESIZE_IDLE_MS);
   const docHidden = useDocumentHidden();
   const inactive = useWindowInactive();
-  const still = useStillFrame(
-    state?.animated && inactive ? state.url : null,
-    blobRef,
-  );
+  const still = useStillFrame(state?.animated && inactive ? state.url : null, blobRef);
 
   useEffect(() => {
     if (!imageId) return;
@@ -53,7 +39,7 @@ function BackgroundImage({ fastImageId }: { fastImageId: string | null }) {
     let rafId: number | null = null;
     setVisible(false);
     void (async () => {
-      const { getBgImage } = await import("./bgImageStore");
+      const { getBgImage } = await import('./bgImageStore');
       const blob = await getBgImage(imageId).catch(() => null);
       if (!alive || !blob) return;
       const url = URL.createObjectURL(blob);
@@ -61,8 +47,7 @@ function BackgroundImage({ fastImageId }: { fastImageId: string | null }) {
       lastUrlRef.current = url;
       blobRef.current = blob;
       const t = blob.type.toLowerCase();
-      const animated =
-        t === "image/gif" || t === "image/apng" || t === "image/webp";
+      const animated = t === 'image/gif' || t === 'image/apng' || t === 'image/webp';
       setState({ url, animated });
       rafId = requestAnimationFrame(() => {
         rafId = null;
@@ -84,7 +69,7 @@ function BackgroundImage({ fastImageId }: { fastImageId: string | null }) {
     };
   }, []);
 
-  if (!state || typeof document === "undefined") return null;
+  if (!state || typeof document === 'undefined') return null;
   const { url, animated } = state;
 
   const frame = surfaceFrame({
@@ -95,31 +80,25 @@ function BackgroundImage({ fastImageId }: { fastImageId: string | null }) {
     hasStill: still !== null,
   });
   const blurActive = !animated && blur > 0 && !resizing;
-  const renderedOpacity =
-    visible && frame !== "hidden" ? opacity * BG_OPACITY_RENDER_FACTOR : 0;
+  const renderedOpacity = visible && frame !== 'hidden' ? opacity * BG_OPACITY_RENDER_FACTOR : 0;
 
   return createPortal(
     <div
       aria-hidden
       className="terax-bg-surface"
       style={{
-        position: "fixed",
+        position: 'fixed',
         inset: 0,
         zIndex: OVERLAY_Z,
-        pointerEvents: "none",
-        backgroundImage:
-          frame === "hidden"
-            ? "none"
-            : `url(${frame === "still" && still ? still : url})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
+        pointerEvents: 'none',
+        backgroundImage: frame === 'hidden' ? 'none' : `url(${frame === 'still' && still ? still : url})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
         opacity: renderedOpacity,
         filter: blurActive ? `blur(${blur}px)` : undefined,
         // Own layer only when the blur or the animation needs one (see
         // `surfaceOwnsLayer`); a static image paints into the page.
-        transform: surfaceOwnsLayer({ animated, blurActive, frame })
-          ? "translateZ(0)"
-          : undefined,
+        transform: surfaceOwnsLayer({ animated, blurActive, frame }) ? 'translateZ(0)' : undefined,
         transition: `opacity ${FADE_IN_MS}ms ease-out`,
       }}
     />,
@@ -132,13 +111,8 @@ function BackgroundImage({ fastImageId }: { fastImageId: string | null }) {
  * goes inactive (`sourceUrl` becomes non-null) and cached for that image.
  * Resolves to null until ready, or when the platform cannot decode a frame.
  */
-function useStillFrame(
-  sourceUrl: string | null,
-  blobRef: React.RefObject<Blob | null>,
-): string | null {
-  const [still, setStill] = useState<{ source: string; url: string } | null>(
-    null,
-  );
+function useStillFrame(sourceUrl: string | null, blobRef: React.RefObject<Blob | null>): string | null {
+  const [still, setStill] = useState<{ source: string; url: string } | null>(null);
   const stillRef = useRef(still);
   stillRef.current = still;
 
@@ -184,9 +158,9 @@ function useWindowResizing(idleMs: number): boolean {
         timer = null;
       }, idleMs);
     };
-    window.addEventListener("resize", onResize, { passive: true });
+    window.addEventListener('resize', onResize, { passive: true });
     return () => {
-      window.removeEventListener("resize", onResize);
+      window.removeEventListener('resize', onResize);
       if (timer !== null) window.clearTimeout(timer);
     };
   }, [idleMs]);
@@ -194,13 +168,11 @@ function useWindowResizing(idleMs: number): boolean {
 }
 
 function useDocumentHidden(): boolean {
-  const [hidden, setHidden] = useState(
-    () => typeof document !== "undefined" && document.hidden,
-  );
+  const [hidden, setHidden] = useState(() => typeof document !== 'undefined' && document.hidden);
   useEffect(() => {
     const onChange = () => setHidden(document.hidden);
-    document.addEventListener("visibilitychange", onChange);
-    return () => document.removeEventListener("visibilitychange", onChange);
+    document.addEventListener('visibilitychange', onChange);
+    return () => document.removeEventListener('visibilitychange', onChange);
   }, []);
   return hidden;
 }

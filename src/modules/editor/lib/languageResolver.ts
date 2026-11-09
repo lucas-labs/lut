@@ -1,9 +1,5 @@
-import type { Extension } from "@codemirror/state";
-import {
-  extensionMap,
-  filenameMap,
-  type LanguageDefinition,
-} from "./languageDefinitions";
+import type { Extension } from '@codemirror/state';
+import { extensionMap, filenameMap, type LanguageDefinition } from './languageDefinitions';
 
 export interface LanguageResult {
   ext: Extension;
@@ -20,13 +16,13 @@ function basenameOf(filename: string): string {
 }
 
 function extOf(base: string): string | null {
-  const dot = base.lastIndexOf(".");
+  const dot = base.lastIndexOf('.');
   if (dot === -1 || dot === base.length - 1) return null;
   return base.slice(dot + 1);
 }
 
 function prefixOf(base: string): string | null {
-  const dot = base.indexOf(".", base.startsWith(".") ? 1 : 0);
+  const dot = base.indexOf('.', base.startsWith('.') ? 1 : 0);
   return dot > 0 ? base.slice(0, dot) : null;
 }
 
@@ -56,7 +52,7 @@ function match(base: string): {
 }
 
 export function resolveDisplayName(filename: string | null): string {
-  if (!filename) return "Plain Text";
+  if (!filename) return 'Plain Text';
   const base = basenameOf(filename);
   const { def } = match(base);
   if (def) return def.name;
@@ -67,9 +63,7 @@ export function resolveLanguageSync(filename: string): LanguageResult | null {
   return cache.get(match(basenameOf(filename)).key) ?? null;
 }
 
-export async function resolveLanguage(
-  filename: string,
-): Promise<LanguageResult | null> {
+export async function resolveLanguage(filename: string): Promise<LanguageResult | null> {
   const { key, def } = match(basenameOf(filename));
   const cached = cache.get(key);
   if (cached !== undefined) return cached;
@@ -80,7 +74,7 @@ export async function resolveLanguage(
   const result: LanguageResult = {
     ext: await def.loader(),
     name: def.name,
-    id: def.extensions[0] ?? "",
+    id: def.extensions[0] ?? '',
   };
   cache.set(key, result);
   return result;

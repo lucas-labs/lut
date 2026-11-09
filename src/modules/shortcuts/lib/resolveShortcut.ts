@@ -1,9 +1,4 @@
-import {
-  type KeyBinding,
-  matchBinding,
-  type Shortcut,
-  type ShortcutId,
-} from "../shortcuts";
+import { type KeyBinding, matchBinding, type Shortcut, type ShortcutId } from '../shortcuts';
 
 export type ResolveShortcutOptions = {
   readonly shortcuts: readonly Shortcut[];

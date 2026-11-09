@@ -1,1 +1,1 @@
-export { useControlBridge } from "./useControlBridge";
+export { useControlBridge } from './useControlBridge';

@@ -14,6 +14,7 @@ That is 116 files, about 21.4k lines. Items are listed in `analysis/ai.json`.
   - `fs_write_file` and similar fs commands
 
   Writes and edits go through an approval step (`AiToolApproval`, `PlanDiffReview`, and the `ai-diff` tab kind in `tabs/lib/useTabs.ts:86`). Path access is checked by `lib/security.ts` against `pathPolicy.json`.
+
 - **State.** All state lives in Zustand stores under `store/`:
   - `chatStore`: panel, mini window, live context, approvals
   - `chatRuntime`: `@ai-sdk/react` Chat instances
@@ -70,30 +71,31 @@ That is 116 files, about 21.4k lines. Items are listed in `analysis/ai.json`.
 
 Inbound, from other areas into ai:
 
-| Consumer | file:line | What it uses |
-|---|---|---|
-| app-shell | `src/app/App.tsx:22-33,359-369,557,564,604,1113,1410,1625-1637,1694` | barrel, composer provider, native, chat store |
-| app-shell | `src/app/components/WorkspaceInputBar.tsx:3-6,24` | AiInputBarConnect, Chip, ChipsRow, useComposer, AiComposerInput |
-| app-shell | `src/app/hooks/useAppCloseGuard.ts:2,6` | flushPersist, sessions |
-| app-shell | `src/app/hooks/useWorkspaceSwitcher.ts:3,48,68` | `native.workspaceAuthorize` |
-| spaces | `src/modules/spaces/lib/useSpacesBoot.ts:1,106` | `native.workspaceAuthorize` |
-| explorer | `src/modules/explorer/lib/useGitStatus.ts:1` | native |
-| markdown | `src/modules/markdown/MarkdownPreviewPane.tsx:1-2`, `lib/assetPath.test.ts:2` | MarkdownCode, checkReadable |
-| editor | `src/modules/editor/EditorPane.tsx:1-2`, `lib/autocomplete/provider.ts:7-10` | AI inline autocomplete (config, keyring, buildLanguageModel, `ai`) |
-| source-control | `src/modules/source-control/useSourceControlPanel.ts:8,13,874-875` | AI commit message (chatStore, config, agent, `ai`) |
-| statusbar | `src/modules/statusbar/StatusBar.tsx:6-11` | useChatStore, AgentStatusPill, AiStatusBarControls |
-| terminal | `src/modules/terminal/block/BlockOverlay.tsx:12` | useChatStore |
-| agents | `src/modules/agents/lib/review.ts:1,32` (+ test mocks `review.test.ts:30,37`) | chatStore, chatRuntime |
-| settings | `src/modules/settings/store.ts:8-16` | config constants/types |
-| settings UI | `src/settings/sections/ModelsSection.tsx:38,47,48,904,1121`, `AgentsSection.tsx:12-27`, `components/ProviderIcon.tsx:1`, `ProviderKeyCard.tsx:6`, `ModelsSection.test.tsx:30` | config, keyring, stores, `lm_ping` |
-| shortcuts | `src/modules/shortcuts/shortcutDefaults.ts:62-64,128-130`, `shortcuts.ts:45-46` | ai.* ids |
-| command-palette | `src/modules/command-palette/commands.ts:56-57,288` | toggleAi, askAiSelection |
-| tabs | `src/modules/tabs/lib/useTabs.ts:86,925-960` | `ai-diff` tab kind |
-| tests/build | `src/styles/compositingBudget.test.ts:42,46`, `src/app/dist-budget.test.ts`, `src/app/eager-budget.test.ts`, `vite.config.ts:86-92` | chunk/budget names |
-| backend-core | `src-tauri/src/lib.rs:6,223,261-266,402-414,439`, `src-tauri/src/modules/mod.rs:4,15,19` | registration |
-| fs (Rust) | `src-tauri/src/modules/fs/read_policy.rs:20` | `include_str!` of `src/modules/ai/lib/pathPolicy.json` |
+| Consumer        | file:line                                                                                                                                                                     | What it uses                                                       |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| app-shell       | `src/app/App.tsx:22-33,359-369,557,564,604,1113,1410,1625-1637,1694`                                                                                                          | barrel, composer provider, native, chat store                      |
+| app-shell       | `src/app/components/WorkspaceInputBar.tsx:3-6,24`                                                                                                                             | AiInputBarConnect, Chip, ChipsRow, useComposer, AiComposerInput    |
+| app-shell       | `src/app/hooks/useAppCloseGuard.ts:2,6`                                                                                                                                       | flushPersist, sessions                                             |
+| app-shell       | `src/app/hooks/useWorkspaceSwitcher.ts:3,48,68`                                                                                                                               | `native.workspaceAuthorize`                                        |
+| spaces          | `src/modules/spaces/lib/useSpacesBoot.ts:1,106`                                                                                                                               | `native.workspaceAuthorize`                                        |
+| explorer        | `src/modules/explorer/lib/useGitStatus.ts:1`                                                                                                                                  | native                                                             |
+| markdown        | `src/modules/markdown/MarkdownPreviewPane.tsx:1-2`, `lib/assetPath.test.ts:2`                                                                                                 | MarkdownCode, checkReadable                                        |
+| editor          | `src/modules/editor/EditorPane.tsx:1-2`, `lib/autocomplete/provider.ts:7-10`                                                                                                  | AI inline autocomplete (config, keyring, buildLanguageModel, `ai`) |
+| source-control  | `src/modules/source-control/useSourceControlPanel.ts:8,13,874-875`                                                                                                            | AI commit message (chatStore, config, agent, `ai`)                 |
+| statusbar       | `src/modules/statusbar/StatusBar.tsx:6-11`                                                                                                                                    | useChatStore, AgentStatusPill, AiStatusBarControls                 |
+| terminal        | `src/modules/terminal/block/BlockOverlay.tsx:12`                                                                                                                              | useChatStore                                                       |
+| agents          | `src/modules/agents/lib/review.ts:1,32` (+ test mocks `review.test.ts:30,37`)                                                                                                 | chatStore, chatRuntime                                             |
+| settings        | `src/modules/settings/store.ts:8-16`                                                                                                                                          | config constants/types                                             |
+| settings UI     | `src/settings/sections/ModelsSection.tsx:38,47,48,904,1121`, `AgentsSection.tsx:12-27`, `components/ProviderIcon.tsx:1`, `ProviderKeyCard.tsx:6`, `ModelsSection.test.tsx:30` | config, keyring, stores, `lm_ping`                                 |
+| shortcuts       | `src/modules/shortcuts/shortcutDefaults.ts:62-64,128-130`, `shortcuts.ts:45-46`                                                                                               | ai.* ids                                                           |
+| command-palette | `src/modules/command-palette/commands.ts:56-57,288`                                                                                                                           | toggleAi, askAiSelection                                           |
+| tabs            | `src/modules/tabs/lib/useTabs.ts:86,925-960`                                                                                                                                  | `ai-diff` tab kind                                                 |
+| tests/build     | `src/styles/compositingBudget.test.ts:42,46`, `src/app/dist-budget.test.ts`, `src/app/eager-budget.test.ts`, `vite.config.ts:86-92`                                           | chunk/budget names                                                 |
+| backend-core    | `src-tauri/src/lib.rs:6,223,261-266,402-414,439`, `src-tauri/src/modules/mod.rs:4,15,19`                                                                                      | registration                                                       |
+| fs (Rust)       | `src-tauri/src/modules/fs/read_policy.rs:20`                                                                                                                                  | `include_str!` of `src/modules/ai/lib/pathPolicy.json`             |
 
 Outbound, from ai into other areas:
+
 - `ai-elements/chat-code.tsx` uses `components/ui/button`.
 - `ai-elements/chat-code.tsx:5` imports `useChatStore`, so markdown preview code blocks currently pull in the chat store.
 - fs and shell commands are called through `native.ts`.
@@ -101,17 +103,20 @@ Outbound, from ai into other areas:
 ## "terax" mentions
 
 **(a) Phase 0 identity isolation**
+
 - `config.ts:1` sets `KEYRING_SERVICE = "terax-ai"`. The macOS Keychain and Windows Credential Manager are not scoped by bundle id, so lut reads and writes the same API-key entries as an installed Terax. This must change in Phase 0 (ai-D01).
 - `agent.ts:158-159` sends `HTTP-Referer: https://terax.ai` and `X-Title: Terax` to OpenRouter. This identifies lut as Terax to a third party, which falls under the F0:5 outbound audit (ai-D01).
 - Store files `terax-ai-*.json` (`sessions.ts:13`, `agents.ts:82`, `snippets.ts:12`, `todos.ts:12`, `ai_sessions.rs:33-34`), localStorage `terax-ui-mini-window-geom`, and `secrets.json` all live in the app data dir or webview origin. They become isolated once the bundle id and data dir change (identity area), so no rename is needed here.
 - `pathPolicy.json:51-55` lists Terax's cache/data dirs (`/.cache/terax`, `app.crynta.terax`, …) as protected. After the identity change, lut's own dirs must be added (ai-D03). The fs read policy uses the same file.
 
 **(b) Visual rebranding** (all of it disappears with the removal, so do not rebrand it)
+
 - `AiChat.tsx:219`, `AiComposerInput.tsx:260`, `AiMiniWindow.tsx:543-549`, `SelectionAskAi.tsx:60`: "Ask Terax"-style text and the logo alt text.
 - `LocalAgentNotificationsBridge.tsx:8,66-70`: notification titles.
 - `config.ts:902,953`: system prompt "You are Terax".
 
 **(c) Internal**
+
 - CSS classes `terax-chat-item`, `terax-collapsible-content`, `terax-reveal`, `terax-blink`, `terax-attention-pulse`, `terax-shimmer` (in AiChat, AiComposerInput, AiStatusBarControls, AiToolApproval, shimmer.tsx, tool.tsx).
 - `TERAX_CMD_RE` and `<terax-command>` (`slashCommands.ts:72`, `composer.tsx:247`).
 - The `TERAX.md` project memory (`transport.ts:11-16`, `agent.ts:319`, `slashCommands.ts:34-42`).
@@ -161,6 +166,7 @@ All of these are deleted with the module.
    - `native.workspaceAuthorize` and other non-AI wrappers: move them out (ai-D02).
    - `security.ts` and `pathPolicy.json`: move them out (ai-D03).
    - the markdown code-block renderer (ai-D04).
+
 3. **Removal order.** Each step is one PR; sizes are estimates.
    1. ai-D01, Phase 0: change the keychain service and the OpenRouter headers (~10 lines).
    2. ai-D02: move native wrappers to a platform layer (~150).
@@ -195,6 +201,7 @@ All of these are deleted with the module.
 ## Draft issues
 
 ### ai-D01 — Isolate AI keychain service and outbound identity from Terax
+
 ```yaml
 id: ai-D01
 depends-on: []
@@ -204,9 +211,11 @@ type: task
 scope: be
 size: XS
 ```
+
 **Goal:** lut must not read or write Terax's API keys in the OS keychain, and must not identify itself as Terax to third parties, while the BYOK code still exists.
 
 **Acceptance criteria:**
+
 - [ ] `KEYRING_SERVICE` in `src/modules/ai/config.ts:1` no longer equals `terax-ai` (use a lut-specific value).
 - [ ] `HTTP-Referer: https://terax.ai` and `X-Title: Terax` are removed from `src/modules/ai/lib/agent.ts:158-159`.
 - [ ] The outbound-call audit notes that the AI proxy only fires on explicit user action with a configured key.
@@ -214,6 +223,7 @@ size: XS
 **Verification:** `pnpm test` passes. Grepping `src/modules/ai` for `terax-ai"` and `terax.ai` finds nothing in the runtime code.
 
 ### ai-D02 — Move shared native wrappers out of modules/ai
+
 ```yaml
 id: ai-D02
 depends-on: []
@@ -223,9 +233,11 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** Non-AI code stops importing from `@/modules/ai`.
 
 **Acceptance criteria:**
+
 - [ ] A neutral module (for example `src/lib/native/workspace.ts`) exposes `workspaceAuthorize` and `workspaceCurrentDir`.
 - [ ] `useSpacesBoot.ts`, `useWorkspaceSwitcher.ts`, `App.tsx` and `useGitStatus.ts` import from the neutral module.
 - [ ] `src/modules/ai/lib/native.ts` keeps only AI-only wrappers. No behaviour change.
@@ -233,6 +245,7 @@ size: S
 **Verification:** `pnpm test` and `pnpm typecheck` pass. Spaces restore still authorizes the restored cwds (manual check).
 
 ### ai-D03 — Move sensitive-path policy to a neutral module and protect lut dirs
+
 ```yaml
 id: ai-D03
 depends-on: [identity-D01?]
@@ -242,9 +255,11 @@ type: task
 scope: be
 size: S
 ```
+
 **Goal:** The read policy shared by Rust fs and the markdown preview no longer lives in the AI module, and it protects lut's own data dirs.
 
 **Acceptance criteria:**
+
 - [ ] `security.ts`, its test and `pathPolicy.json` are moved, for example to `src/lib/security/`. The `include_str!` path in `src-tauri/src/modules/fs/read_policy.rs:20` is updated.
 - [ ] Markdown imports are updated.
 - [ ] lut's data and cache directories (from the identity change) are added to the protected list. Terax entries remain.
@@ -252,6 +267,7 @@ size: S
 **Verification:** `pnpm test` and `cargo test -p` for the app crate pass. `security.test.ts` covers a lut control-file path.
 
 ### ai-D04 — Decouple markdown preview code blocks from the AI chat
+
 ```yaml
 id: ai-D04
 depends-on: []
@@ -261,9 +277,11 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** Markdown preview code blocks work without `useChatStore`. Their visual redesign happens later in the markdown area, after a design issue.
 
 **Acceptance criteria:**
+
 - [ ] `markdown-code`, `chat-code`, `chat-code-lezer` and `shimmer` are moved into the markdown module (pure move plus the dependency cut).
 - [ ] No import of `@/modules/ai` remains in them. Chat-only actions (such as "send to chat") are dropped.
 - [ ] No visual change.
@@ -271,6 +289,7 @@ size: S
 **Verification:** `pnpm test` passes, including `markdown-code.test.tsx`. Markdown preview still highlights code (manual check).
 
 ### ai-D05 — Unmount BYOK AI from the app root
+
 ```yaml
 id: ai-D05
 depends-on: [ai-D02, app-shell-D?]
@@ -280,9 +299,11 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** `App.tsx` no longer mounts the BYOK chat: no `AiComposerProvider`, bootstrap, bridges, mini window or selection popup.
 
 **Acceptance criteria:**
+
 - [ ] `AiComposerProvider`, `useAiBootstrap`, `useAiLiveBridge`, `useSelectionAskAi`, `AgentRunBridge`, `LocalAgentNotificationsBridge`, `AiMiniWindow` and `SelectionAskAi` are removed from `App.tsx`.
 - [ ] The `terax:ai-attach-file` dispatch (`App.tsx:575`) and the `flushPersist`/sessions calls in `useAppCloseGuard.ts` are removed.
 - [ ] CLI agent notifications still fire (hook events).
@@ -290,6 +311,7 @@ size: M
 **Verification:** `pnpm test` passes. The app starts, terminals work, and a Claude Code hook event still notifies.
 
 ### ai-D06 — Remove AI entry points from statusbar, input bar, terminal, shortcuts, palette and tabs
+
 ```yaml
 id: ai-D06
 depends-on: [ai-D05]
@@ -299,9 +321,11 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** No UI entry point opens the BYOK AI.
 
 **Acceptance criteria:**
+
 - [ ] `StatusBar.tsx:6-11`, `WorkspaceInputBar.tsx:3-24` and `BlockOverlay.tsx:12` no longer import the ai module.
 - [ ] The `ai.toggle`, `ai.toggleMini` and `ai.askSelection` shortcuts are removed, with their tests.
 - [ ] The palette commands `toggleAi` and `askAiSelection` are removed.
@@ -310,6 +334,7 @@ size: M
 **Verification:** `pnpm test` passes. Grepping `src/modules/{statusbar,terminal,shortcuts,command-palette,tabs}` and `src/app/components` for `modules/ai` finds nothing.
 
 ### ai-D07 — Remove AI provider settings (Models/Agents sections and settings fields)
+
 ```yaml
 id: ai-D07
 depends-on: [ai-D05]
@@ -319,15 +344,18 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** Settings no longer offer API keys, models or AI agents.
 
 **Acceptance criteria:**
+
 - [ ] `ModelsSection`, `ProviderIcon`, `ProviderKeyCard` and the AI parts of `AgentsSection` are removed. Any CLI-agent launch settings in AgentsSection stay.
 - [ ] AI fields are dropped from `src/modules/settings/store.ts`. Old persisted keys are ignored without errors.
 
 **Verification:** `pnpm test` passes. Settings opens with a settings file that still contains old AI keys.
 
 ### ai-D08 — Remove AI from editor autocomplete and source-control commit messages
+
 ```yaml
 id: ai-D08
 depends-on: [ai-D07]
@@ -337,15 +365,18 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** The editor and source-control areas no longer depend on the AI module.
 
 **Acceptance criteria:**
+
 - [ ] The inline AI completion in `EditorPane.tsx` and `editor/lib/autocomplete/*` is removed.
 - [ ] The AI commit-message generation in `useSourceControlPanel.ts:8-13,874-875` is removed.
 
 **Verification:** `pnpm test` passes. Grepping `src` outside `src/modules/ai` for `@/modules/ai` returns only the agents `review.ts` (handled by the agents area) or nothing.
 
 ### ai-D09 — Delete the frontend AI module and chat elements
+
 ```yaml
 id: ai-D09
 depends-on: [ai-D02, ai-D03, ai-D04, ai-D06, ai-D07, ai-D08, agents-D?]
@@ -356,9 +387,11 @@ scope: ui
 size: XL
 size-exception: Mechanical deletion of a whole module (~18k lines) after all call sites are cut. No behaviour change remains in it.
 ```
+
 **Goal:** `src/modules/ai` and the chat-only `src/components/ai-elements` files are gone.
 
 **Acceptance criteria:**
+
 - [ ] No file outside the deleted folders imports them.
 - [ ] `src/modules/agents`, `src/modules/control` and the Rust agent modules are untouched.
 - [ ] `compositingBudget.test.ts` entries for the deleted files are removed.
@@ -366,6 +399,7 @@ size-exception: Mechanical deletion of a whole module (~18k lines) after all cal
 **Verification:** `pnpm typecheck`, `pnpm test` and `pnpm build` pass.
 
 ### ai-D10 — Delete Rust ai_sessions, net and secrets modules
+
 ```yaml
 id: ai-D10
 depends-on: [ai-D09]
@@ -376,9 +410,11 @@ scope: be
 size: L
 size-exception: Mechanical deletion of three self-contained modules (~3.7k lines) plus their registration in lib.rs.
 ```
+
 **Goal:** The backend no longer ships the AI HTTP proxy, AI session storage or the secrets store.
 
 **Acceptance criteria:**
+
 - [ ] The modules are removed from `modules/mod.rs:4,15,19`.
 - [ ] Their state, commands and cleanup hooks are removed from `lib.rs:6,223,261-266,402-414,439`.
 - [ ] The updater still compiles. The rustls provider question is noted for F7.
@@ -386,6 +422,7 @@ size-exception: Mechanical deletion of three self-contained modules (~3.7k lines
 **Verification:** `cargo check`, `cargo test` and `pnpm tauri build` pass. The app starts.
 
 ### ai-D11 — Remove AI dependencies from package.json and Cargo.toml
+
 ```yaml
 id: ai-D11
 depends-on: [ai-D10]
@@ -395,9 +432,11 @@ type: task
 scope: none
 size: S
 ```
+
 **Goal:** No unused AI dependencies remain.
 
 **Acceptance criteria:**
+
 - [ ] npm: `ai`, all `@ai-sdk/*`, `use-stick-to-bottom` and `zod` (if no consumer is left) are removed.
 - [ ] The `vite.config.ts` manualChunks entries and the dist/eager budget test entries for them are removed.
 - [ ] Cargo: `keyring` (both targets), `bytes`, `futures-util`, direct `reqwest` (both entries) and direct `rustls` are removed, each confirmed unused by grep and `cargo check`.
@@ -405,6 +444,7 @@ size: S
 **Verification:** `pnpm install`, `pnpm build`, `pnpm test` and `cargo check` succeed. A bundle analysis shows no AI SDK chunk.
 
 ### ai-D12 — Verify startup and CLI agents with no API key configured
+
 ```yaml
 id: ai-D12
 depends-on: [ai-D11]
@@ -414,9 +454,11 @@ type: task
 scope: none
 size: XS
 ```
+
 **Goal:** Prove the F2 gate for the AI part.
 
 **Acceptance criteria:**
+
 - [ ] On a clean profile with no keys, the app starts, terminals work, and Claude Code/Codex hooks deliver events.
 - [ ] No network request is made to any AI provider (network log).
 

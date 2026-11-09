@@ -1,5 +1,5 @@
-﻿import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { ManagedAgent } from "../store/managedAgentsStore";
+﻿import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ManagedAgent } from '../store/managedAgentsStore';
 
 const managedAgents = vi.hoisted(() => {
   const state = {
@@ -21,33 +21,33 @@ const managedAgents = vi.hoisted(() => {
   return { useManagedAgentsStore, state };
 });
 
-vi.mock("../store/managedAgentsStore", () => managedAgents);
+vi.mock('../store/managedAgentsStore', () => managedAgents);
 
 const chatStore = vi.hoisted(() => ({
-  useChatStore: { getState: () => ({ activeSessionId: "session-1" }) },
+  useChatStore: { getState: () => ({ activeSessionId: 'session-1' }) },
 }));
 
-vi.mock("@/modules/ai/store/chatStore", () => chatStore);
+vi.mock('@/modules/ai/store/chatStore', () => chatStore);
 
 const chatRuntime = vi.hoisted(() => {
   const sendMessage = vi.fn();
   return { getOrCreateChat: vi.fn(() => ({ sendMessage })), sendMessage };
 });
 
-vi.mock("@/modules/ai/store/chatRuntime", () => chatRuntime);
+vi.mock('@/modules/ai/store/chatRuntime', () => chatRuntime);
 
-import { firePendingReviewForSession, maybeTriggerManagedReview } from "./review";
+import { firePendingReviewForSession, maybeTriggerManagedReview } from './review';
 
 function agent(partial: Partial<ManagedAgent>): ManagedAgent {
   return {
     leafId: 7,
     tabId: 1,
-    sessionId: "session-1",
-    task: "fix the flake",
-    cwd: "/repo",
+    sessionId: 'session-1',
+    task: 'fix the flake',
+    cwd: '/repo',
     rounds: 0,
     maxRounds: 3,
-    phase: "working",
+    phase: 'working',
     reviewedAtRound: -1,
     pendingReview: false,
     ...partial,
@@ -71,21 +71,21 @@ function flush() {
   return new Promise((r) => setTimeout(r, 0));
 }
 
-describe("managed agent review gating", () => {
+describe('managed agent review gating', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     managedAgents.state.agents = {};
   });
 
-  it("ignores unknown leaves", () => {
+  it('ignores unknown leaves', () => {
     maybeTriggerManagedReview(7);
 
     expect(managedAgents.state.markReviewed).not.toHaveBeenCalled();
     expect(chatRuntime.sendMessage).not.toHaveBeenCalled();
   });
 
-  it("refuses spent agents before firing anything", async () => {
-    setAgent(agent({ phase: "done" }));
+  it('refuses spent agents before firing anything', async () => {
+    setAgent(agent({ phase: 'done' }));
     maybeTriggerManagedReview(7);
     setAgent(agent({ rounds: 3, maxRounds: 3 }));
     maybeTriggerManagedReview(7);
@@ -97,36 +97,36 @@ describe("managed agent review gating", () => {
     expect(chatRuntime.sendMessage).not.toHaveBeenCalled();
   });
 
-  it("fires an immediate review for the active session", async () => {
+  it('fires an immediate review for the active session', async () => {
     setAgent(agent({}));
     maybeTriggerManagedReview(7);
     const text = await sentDirective();
 
     expect(managedAgents.state.markReviewed).toHaveBeenCalledWith(7);
-    expect(managedAgents.state.setPhase).toHaveBeenCalledWith(7, "reviewing");
-    expect(chatRuntime.getOrCreateChat).toHaveBeenCalledWith("session-1");
-    expect(text).toContain("fix the flake");
-    expect(text).toContain("read_agent_output");
+    expect(managedAgents.state.setPhase).toHaveBeenCalledWith(7, 'reviewing');
+    expect(chatRuntime.getOrCreateChat).toHaveBeenCalledWith('session-1');
+    expect(text).toContain('fix the flake');
+    expect(text).toContain('read_agent_output');
   });
 
-  it("flags the last automatic round in the directive", async () => {
+  it('flags the last automatic round in the directive', async () => {
     setAgent(agent({ rounds: 2, maxRounds: 3 }));
     maybeTriggerManagedReview(7);
     const text = await sentDirective();
 
-    expect(text).toContain("last automatic review round");
+    expect(text).toContain('last automatic review round');
   });
 
-  it("omits the last-round flag when rounds remain", async () => {
+  it('omits the last-round flag when rounds remain', async () => {
     setAgent(agent({ rounds: 0, maxRounds: 3 }));
     maybeTriggerManagedReview(7);
     const text = await sentDirective();
 
-    expect(text).not.toContain("last automatic review round");
+    expect(text).not.toContain('last automatic review round');
   });
 
-  it("queues the review when another session is active", async () => {
-    setAgent(agent({ sessionId: "session-2" }));
+  it('queues the review when another session is active', async () => {
+    setAgent(agent({ sessionId: 'session-2' }));
     maybeTriggerManagedReview(7);
     await flush();
 
@@ -135,26 +135,26 @@ describe("managed agent review gating", () => {
     expect(chatRuntime.sendMessage).not.toHaveBeenCalled();
   });
 
-  it("fires a pending review on session switch", async () => {
-    setAgent(agent({ sessionId: "session-2", pendingReview: true }));
-    firePendingReviewForSession("session-2");
+  it('fires a pending review on session switch', async () => {
+    setAgent(agent({ sessionId: 'session-2', pendingReview: true }));
+    firePendingReviewForSession('session-2');
     const text = await sentDirective();
 
     expect(managedAgents.state.markReviewed).toHaveBeenCalledWith(7);
-    expect(chatRuntime.getOrCreateChat).toHaveBeenCalledWith("session-2");
-    expect(text).toContain("fix the flake");
+    expect(chatRuntime.getOrCreateChat).toHaveBeenCalledWith('session-2');
+    expect(text).toContain('fix the flake');
   });
 
-  it("clears a stale pending flag instead of firing past the round cap", async () => {
+  it('clears a stale pending flag instead of firing past the round cap', async () => {
     setAgent(
       agent({
-        sessionId: "session-2",
+        sessionId: 'session-2',
         pendingReview: true,
         rounds: 3,
         maxRounds: 3,
       }),
     );
-    firePendingReviewForSession("session-2");
+    firePendingReviewForSession('session-2');
     await flush();
 
     expect(managedAgents.state.setPendingReview).toHaveBeenCalledWith(7, false);

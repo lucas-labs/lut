@@ -1,20 +1,20 @@
-import type { TerminalLinkHit } from "./terminalLinks";
+import type { TerminalLinkHit } from './terminalLinks';
 
 export const MAX_LINK_URI_LENGTH = 8192;
 
-export type LinkConfirmReason = "userinfo" | "punycode" | "mismatch" | "scheme";
+export type LinkConfirmReason = 'userinfo' | 'punycode' | 'mismatch' | 'scheme';
 
 export type LinkPlan =
-  | { type: "open-url"; url: string }
+  | { type: 'open-url'; url: string }
   | {
-      type: "confirm-url";
+      type: 'confirm-url';
       url: string;
       reason: LinkConfirmReason;
       destination: string;
     }
-  | { type: "path"; path: string; line?: number; column?: number }
-  | { type: "file-uri"; host: string; path: string }
-  | { type: "block"; reason: "scheme" | "invalid" | "length"; scheme: string };
+  | { type: 'path'; path: string; line?: number; column?: number }
+  | { type: 'file-uri'; host: string; path: string }
+  | { type: 'block'; reason: 'scheme' | 'invalid' | 'length'; scheme: string };
 
 const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/;
 
@@ -25,10 +25,10 @@ const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f]/;
  * caller; everything else is blocked.
  */
 export function planLinkActivation(hit: TerminalLinkHit): LinkPlan {
-  if (hit.kind === "path") {
-    if (!hit.path) return { type: "block", reason: "invalid", scheme: "" };
+  if (hit.kind === 'path') {
+    if (!hit.path) return { type: 'block', reason: 'invalid', scheme: '' };
     return {
-      type: "path",
+      type: 'path',
       path: hit.path,
       line: hit.line,
       column: hit.column,
@@ -37,50 +37,50 @@ export function planLinkActivation(hit: TerminalLinkHit): LinkPlan {
 
   const uri = hit.uri;
   if (uri.length > MAX_LINK_URI_LENGTH) {
-    return { type: "block", reason: "length", scheme: "" };
+    return { type: 'block', reason: 'length', scheme: '' };
   }
   if (CONTROL_CHARACTERS.test(uri)) {
-    return { type: "block", reason: "invalid", scheme: "" };
+    return { type: 'block', reason: 'invalid', scheme: '' };
   }
   let parsed: URL;
   try {
     parsed = new URL(uri);
   } catch {
-    return { type: "block", reason: "invalid", scheme: "" };
+    return { type: 'block', reason: 'invalid', scheme: '' };
   }
   const scheme = parsed.protocol.slice(0, -1).toLowerCase();
 
-  if (scheme === "http" || scheme === "https") {
+  if (scheme === 'http' || scheme === 'https') {
     if (!parsed.hostname) {
-      return { type: "block", reason: "invalid", scheme };
+      return { type: 'block', reason: 'invalid', scheme };
     }
     const url = parsed.href;
     const destination = parsed.host;
     if (parsed.username || parsed.password) {
-      return { type: "confirm-url", url, reason: "userinfo", destination };
+      return { type: 'confirm-url', url, reason: 'userinfo', destination };
     }
-    if (parsed.hostname.split(".").some((label) => label.startsWith("xn--"))) {
-      return { type: "confirm-url", url, reason: "punycode", destination };
+    if (parsed.hostname.split('.').some((label) => label.startsWith('xn--'))) {
+      return { type: 'confirm-url', url, reason: 'punycode', destination };
     }
-    if (hit.kind === "osc8" && !linkTextIsDestination(hit.text, uri, url)) {
-      return { type: "confirm-url", url, reason: "mismatch", destination };
+    if (hit.kind === 'osc8' && !linkTextIsDestination(hit.text, uri, url)) {
+      return { type: 'confirm-url', url, reason: 'mismatch', destination };
     }
-    return { type: "open-url", url };
+    return { type: 'open-url', url };
   }
-  if (scheme === "mailto" || scheme === "tel") {
+  if (scheme === 'mailto' || scheme === 'tel') {
     return {
-      type: "confirm-url",
+      type: 'confirm-url',
       url: parsed.href,
-      reason: "scheme",
+      reason: 'scheme',
       destination: parsed.pathname,
     };
   }
-  if (scheme === "file") {
+  if (scheme === 'file') {
     const local = fileUrlToLocal(parsed);
-    if (!local) return { type: "block", reason: "invalid", scheme };
-    return { type: "file-uri", host: local.host, path: local.path };
+    if (!local) return { type: 'block', reason: 'invalid', scheme };
+    return { type: 'file-uri', host: local.host, path: local.path };
   }
-  return { type: "block", reason: "scheme", scheme };
+  return { type: 'block', reason: 'scheme', scheme };
 }
 
 function fileUrlToLocal(parsed: URL): { host: string; path: string } | null {
@@ -105,15 +105,12 @@ export function isNetworkOrDevicePath(path: string): boolean {
 }
 
 /** An empty or loopback host, or the machine's own name (short or full). */
-export function isLocalFileHost(
-  host: string,
-  localHostname: string | null,
-): boolean {
+export function isLocalFileHost(host: string, localHostname: string | null): boolean {
   const name = host.toLowerCase();
-  if (name === "" || name === "localhost") return true;
+  if (name === '' || name === 'localhost') return true;
   if (!localHostname) return false;
   const local = localHostname.toLowerCase();
-  return name === local || name.split(".")[0] === local.split(".")[0];
+  return name === local || name.split('.')[0] === local.split('.')[0];
 }
 
 const SCHEMED = /^[a-z][a-z0-9+.-]*:\/\//i;
@@ -124,18 +121,12 @@ const SCHEMED = /^[a-z][a-z0-9+.-]*:\/\//i;
  * a confirmation that shows the real destination. Text without a scheme may
  * leave it out ("example.com/a" for https://example.com/a).
  */
-export function linkTextIsDestination(
-  text: string,
-  uri: string,
-  href: string = uri,
-): boolean {
+export function linkTextIsDestination(text: string, uri: string, href: string = uri): boolean {
   const shown = text.trim();
   if (!shown) return false;
   try {
     const destination = new URL(href);
-    const address = new URL(
-      SCHEMED.test(shown) ? shown : `${destination.protocol}//${shown}`,
-    );
+    const address = new URL(SCHEMED.test(shown) ? shown : `${destination.protocol}//${shown}`);
     return address.href === destination.href;
   } catch {
     return false;
@@ -147,10 +138,10 @@ const MAX_DESTINATION_LABEL = 300;
 /** What a hovered link points at, for the preview chip and tooltip. */
 export function linkDestinationLabel(hit: TerminalLinkHit): string {
   const base =
-    hit.kind === "path" && hit.path
-      ? `${hit.path}${hit.line === undefined ? "" : `:${hit.line}${hit.column === undefined ? "" : `:${hit.column}`}`}`
+    hit.kind === 'path' && hit.path
+      ? `${hit.path}${hit.line === undefined ? '' : `:${hit.line}${hit.column === undefined ? '' : `:${hit.column}`}`}`
       : hit.uri;
-  const clean = base.replace(/[\u0000-\u001f\u007f]/g, "");
+  const clean = base.replace(/[\u0000-\u001f\u007f]/g, '');
   return clean.length > MAX_DESTINATION_LABEL
     ? `${clean.slice(0, MAX_DESTINATION_LABEL)}...`
     : clean;
@@ -165,17 +156,13 @@ export type PathContext = {
  * Canonical (forward-slash) absolute path for text found in terminal output,
  * or null when it is relative and no base is known.
  */
-export function resolveLinkPath(
-  raw: string,
-  context: PathContext,
-): string | null {
+export function resolveLinkPath(raw: string, context: PathContext): string | null {
   let path = raw;
-  const windowsCwd =
-    context.cwd !== null && /^(?:[A-Za-z]:|[\\/]{2})/.test(context.cwd);
+  const windowsCwd = context.cwd !== null && /^(?:[A-Za-z]:|[\\/]{2})/.test(context.cwd);
   if (windowsCwd || /^(?:[A-Za-z]:[\\/]|[\\/]{2}|~\\)/.test(path)) {
-    path = path.replace(/\\/g, "/");
+    path = path.replace(/\\/g, '/');
   }
-  if (path.startsWith("~/")) {
+  if (path.startsWith('~/')) {
     if (!context.home) return null;
     path = `${pathBase(context.home)}/${path.slice(2)}`;
   } else if (!isAbsolutePath(path)) {
@@ -187,9 +174,10 @@ export function resolveLinkPath(
 }
 
 function pathBase(base: string): string {
-  return (
-    /^(?:[A-Za-z]:|[\\/]{2})/.test(base) ? base.replace(/\\/g, "/") : base
-  ).replace(/\/+$/, "");
+  return (/^(?:[A-Za-z]:|[\\/]{2})/.test(base) ? base.replace(/\\/g, '/') : base).replace(
+    /\/+$/,
+    '',
+  );
 }
 
 /** Candidates to try in order: git diff headers prefix paths with a/ and b/. */
@@ -199,5 +187,5 @@ export function pathCandidates(raw: string): string[] {
 }
 
 function isAbsolutePath(path: string): boolean {
-  return path.startsWith("/") || /^[A-Za-z]:\//.test(path);
+  return path.startsWith('/') || /^[A-Za-z]:\//.test(path);
 }

@@ -1,14 +1,14 @@
-import { native } from "@/modules/ai/lib/native";
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import type { Tab } from "@/modules/tabs";
-import { DEFAULT_SPACE_ID } from "@/modules/tabs/lib/useTabs";
-import { isLeaf, type PaneNode } from "@/modules/terminal/lib/panes";
-import { parseWorkspaceScopeKey, type WorkspaceEnv } from "@/modules/workspace";
-import { useEffect, useRef } from "react";
-import { activeSpaceEnv, freshTabCwd } from "./activeSpace";
-import { freshTerminalTab, hydrateTabs } from "./serialize";
-import { loadAll, saveActiveId, saveSpacesList,type SpaceMeta } from "./store";
-import { useSpaces } from "./useSpaces";
+import { native } from '@/modules/ai/lib/native';
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import type { Tab } from '@/modules/tabs';
+import { DEFAULT_SPACE_ID } from '@/modules/tabs/lib/useTabs';
+import { isLeaf, type PaneNode } from '@/modules/terminal/lib/panes';
+import { parseWorkspaceScopeKey, type WorkspaceEnv } from '@/modules/workspace';
+import { useEffect, useRef } from 'react';
+import { activeSpaceEnv, freshTabCwd } from './activeSpace';
+import { freshTerminalTab, hydrateTabs } from './serialize';
+import { loadAll, saveActiveId, saveSpacesList, type SpaceMeta } from './store';
+import { useSpaces } from './useSpaces';
 
 type Params = {
   ready: boolean;
@@ -30,7 +30,7 @@ function uniqueCwds(tabs: Tab[]): string[] {
     }
     for (const c of n.children) walk(c);
   };
-  for (const t of tabs) if (t.kind === "terminal") walk(t.paneTree);
+  for (const t of tabs) if (t.kind === 'terminal') walk(t.paneTree);
   return [...set];
 }
 
@@ -63,11 +63,9 @@ export function useSpacesBoot({
             .catch(() => {});
           const meta: SpaceMeta = {
             id: DEFAULT_SPACE_ID,
-            name: "Default",
+            name: 'Default',
             root,
-            env: parseWorkspaceScopeKey(
-              usePreferencesStore.getState().defaultWorkspaceEnv,
-            ),
+            env: parseWorkspaceScopeKey(usePreferencesStore.getState().defaultWorkspaceEnv),
             createdAt: Date.now(),
             updatedAt: Date.now(),
           };
@@ -85,10 +83,7 @@ export function useSpacesBoot({
           restored.push(...hydrateTabs(st.tabs, space.id, allocId));
         }
 
-        const active =
-          activeId && spaces.some((s) => s.id === activeId)
-            ? activeId
-            : spaces[0].id;
+        const active = activeId && spaces.some((s) => s.id === activeId) ? activeId : spaces[0].id;
         setActiveSpaceForNewTabs(active);
 
         // Apply the space's env+home before the fresh-tab fallback and spawns
@@ -102,13 +97,10 @@ export function useSpacesBoot({
           restored.push(freshTerminalTab(active, cwd, allocId));
         }
 
-        await Promise.allSettled(
-          uniqueCwds(restored).map((cwd) => native.workspaceAuthorize(cwd)),
-        );
+        await Promise.allSettled(uniqueCwds(restored).map((cwd) => native.workspaceAuthorize(cwd)));
 
         const initialActiveIndex: Record<string, number> = {};
-        for (const [id, st] of states)
-          initialActiveIndex[id] = st.activeTabIndex;
+        for (const [id, st] of states) initialActiveIndex[id] = st.activeTabIndex;
         useSpaces.getState().hydrate(spaces, active, initialActiveIndex);
 
         const inActive = restored.filter((t) => t.spaceId === active);
@@ -116,7 +108,7 @@ export function useSpacesBoot({
         const activeTab = inActive[idx] ?? inActive[0] ?? restored[0];
         replaceTabs(restored, activeTab.id);
       } catch (e) {
-        console.error("[terax] spaces boot failed:", e);
+        console.error('[terax] spaces boot failed:', e);
       } finally {
         markBooted();
       }

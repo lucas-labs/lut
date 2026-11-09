@@ -1,11 +1,11 @@
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import { setZoomLevel } from "@/modules/settings/store";
-import { useCallback, useEffect, useRef } from "react";
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import { setZoomLevel } from '@/modules/settings/store';
+import { useCallback, useEffect, useRef } from 'react';
 
 const ZOOM_STEP = 0.1;
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 2.0;
-const CSS_VAR = "--app-zoom";
+const CSS_VAR = '--app-zoom';
 
 function clampZoom(z: number): number {
   const rounded = Math.round(z * 100) / 100;

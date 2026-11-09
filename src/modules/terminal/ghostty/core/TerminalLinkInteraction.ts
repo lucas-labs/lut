@@ -1,4 +1,4 @@
-import type { TerminalLinkHit } from "./terminalLinks";
+import type { TerminalLinkHit } from './terminalLinks';
 
 export type LinkCell = { readonly row: number; readonly column: number };
 
@@ -9,12 +9,9 @@ export interface LinkOverlay {
 
 export type TerminalLinkInteractionOptions = {
   readonly target: HTMLElement;
-  readonly keyTarget: Pick<Window, "addEventListener" | "removeEventListener">;
+  readonly keyTarget: Pick<Window, 'addEventListener' | 'removeEventListener'>;
   /** Whether the platform's link modifier (Cmd, or Ctrl elsewhere) is down. */
-  readonly isModifier: (event: {
-    readonly metaKey: boolean;
-    readonly ctrlKey: boolean;
-  }) => boolean;
+  readonly isModifier: (event: { readonly metaKey: boolean; readonly ctrlKey: boolean }) => boolean;
   /** The grid cell under a client point, or null outside the grid. */
   readonly cellAt: (clientX: number, clientY: number) => LinkCell | null;
   /** True when the pointer belongs to something else (scrollbar, mouse-tracking app). */
@@ -54,11 +51,11 @@ export class TerminalLinkInteraction {
 
   constructor(private readonly options: TerminalLinkInteractionOptions) {
     const { target } = options;
-    target.addEventListener("pointermove", this.handleMove);
-    target.addEventListener("pointerdown", this.handleDown);
-    target.addEventListener("pointerup", this.handleUp);
-    target.addEventListener("pointerleave", this.handleLeave);
-    target.addEventListener("pointercancel", this.handleLeave);
+    target.addEventListener('pointermove', this.handleMove);
+    target.addEventListener('pointerdown', this.handleDown);
+    target.addEventListener('pointerup', this.handleUp);
+    target.addEventListener('pointerleave', this.handleLeave);
+    target.addEventListener('pointercancel', this.handleLeave);
   }
 
   /** True while a link is highlighted or could be: the surface skips work otherwise. */
@@ -69,17 +66,17 @@ export class TerminalLinkInteraction {
   /** Takes over an event that happened while this was still loading. */
   ingest(event: Event): void {
     switch (event.type) {
-      case "pointermove":
+      case 'pointermove':
         this.handleMove(event as PointerEvent);
         break;
-      case "pointerdown":
+      case 'pointerdown':
         this.handleDown(event as PointerEvent);
         break;
-      case "pointerup":
+      case 'pointerup':
         this.handleUp(event as PointerEvent);
         break;
-      case "keydown":
-      case "keyup":
+      case 'keydown':
+      case 'keyup':
         this.handleKey(event as KeyboardEvent);
         break;
     }
@@ -107,11 +104,11 @@ export class TerminalLinkInteraction {
     if (this.disposed) return;
     this.disposed = true;
     const { target } = this.options;
-    target.removeEventListener("pointermove", this.handleMove);
-    target.removeEventListener("pointerdown", this.handleDown);
-    target.removeEventListener("pointerup", this.handleUp);
-    target.removeEventListener("pointerleave", this.handleLeave);
-    target.removeEventListener("pointercancel", this.handleLeave);
+    target.removeEventListener('pointermove', this.handleMove);
+    target.removeEventListener('pointerdown', this.handleDown);
+    target.removeEventListener('pointerup', this.handleUp);
+    target.removeEventListener('pointerleave', this.handleLeave);
+    target.removeEventListener('pointercancel', this.handleLeave);
     this.unbindKeys();
     this.pointer = null;
     this.down = null;
@@ -119,14 +116,14 @@ export class TerminalLinkInteraction {
   }
 
   private readonly handleMove = (event: PointerEvent): void => {
-    if (event.pointerType === "touch") return;
+    if (event.pointerType === 'touch') return;
     this.observe(event);
     this.bindKeys();
     this.evaluate();
   };
 
   private readonly handleDown = (event: PointerEvent): void => {
-    if (event.button !== 0 || event.pointerType === "touch") return;
+    if (event.button !== 0 || event.pointerType === 'touch') return;
     this.observe(event);
     this.bindKeys();
     this.down = null;
@@ -191,11 +188,7 @@ export class TerminalLinkInteraction {
 
   private evaluate(force = false): void {
     const pointer = this.pointer;
-    if (
-      !pointer ||
-      !pointer.modifier ||
-      this.options.blocked(pointer.shift, pointer.target)
-    ) {
+    if (!pointer || !pointer.modifier || this.options.blocked(pointer.shift, pointer.target)) {
       this.cellKey = -1;
       this.setHit(null);
       return;
@@ -234,18 +227,18 @@ export class TerminalLinkInteraction {
     if (this.keysBound) return;
     this.keysBound = true;
     const keys = this.options.keyTarget;
-    keys.addEventListener("keydown", this.handleKey);
-    keys.addEventListener("keyup", this.handleKey);
-    keys.addEventListener("blur", this.handleBlur);
+    keys.addEventListener('keydown', this.handleKey);
+    keys.addEventListener('keyup', this.handleKey);
+    keys.addEventListener('blur', this.handleBlur);
   }
 
   private unbindKeys(): void {
     if (!this.keysBound) return;
     this.keysBound = false;
     const keys = this.options.keyTarget;
-    keys.removeEventListener("keydown", this.handleKey);
-    keys.removeEventListener("keyup", this.handleKey);
-    keys.removeEventListener("blur", this.handleBlur);
+    keys.removeEventListener('keydown', this.handleKey);
+    keys.removeEventListener('keyup', this.handleKey);
+    keys.removeEventListener('blur', this.handleBlur);
   }
 }
 
@@ -256,9 +249,7 @@ function defaultSchedule(callback: () => void): void {
 function hitContains(hit: TerminalLinkHit, cell: LinkCell): boolean {
   return hit.segments.some(
     (segment) =>
-      segment.row === cell.row &&
-      cell.column >= segment.start &&
-      cell.column < segment.end,
+      segment.row === cell.row && cell.column >= segment.start && cell.column < segment.end,
   );
 }
 
@@ -278,9 +269,7 @@ function sameHit(a: TerminalLinkHit, b: TerminalLinkHit): boolean {
     a.segments.every((segment, index) => {
       const other = b.segments[index];
       return (
-        segment.row === other.row &&
-        segment.start === other.start &&
-        segment.end === other.end
+        segment.row === other.row && segment.start === other.start && segment.end === other.end
       );
     })
   );

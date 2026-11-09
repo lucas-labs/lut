@@ -1,50 +1,19 @@
-import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverAnchor,
-  PopoverContent,
-} from "@/components/ui/popover";
-import { Spinner } from "@/components/ui/spinner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { FileIcon } from "@/modules/explorer/FileIcon";
-import {
-  git,
-  type GitCommitFileChange,
-  type GitLogEntry,
-} from "@/modules/git";
-import {
-  Copy01Icon,
-  File02Icon,
-  LinkSquare02Icon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { openUrl } from "@tauri-apps/plugin-opener";
-import {
-  memo,
-  type ReactNode,
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { createPortal } from "react-dom";
-import { GraphRail, MAX_VISIBLE_LANES, railWidth } from "./GraphRail";
-import {
-  EMPTY_GRAPH_STATE,
-  type GraphRow,
-  type GraphState,
-  layoutGraph,
-} from "./lib/graph";
-import {
-  commitWebUrl,
-  hostLabel,
-  parseRemoteWebUrl,
-  type RemoteWebInfo,
-} from "./lib/remoteWebUrl";
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
+import { Spinner } from '@/components/ui/spinner';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { FileIcon } from '@/modules/explorer/FileIcon';
+import { git, type GitCommitFileChange, type GitLogEntry } from '@/modules/git';
+import { Copy01Icon, File02Icon, LinkSquare02Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { openUrl } from '@tauri-apps/plugin-opener';
+import { memo, type ReactNode, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { GraphRail, MAX_VISIBLE_LANES, railWidth } from './GraphRail';
+import { EMPTY_GRAPH_STATE, type GraphRow, type GraphState, layoutGraph } from './lib/graph';
+import { commitWebUrl, hostLabel, parseRemoteWebUrl, type RemoteWebInfo } from './lib/remoteWebUrl';
 
 const RAIL_RESERVED_PX = railWidth(MAX_VISIBLE_LANES);
 // rail | sha | subject(capped) | spacer(absorbs slack) | author(hugs) | date | changes
@@ -77,12 +46,10 @@ type Props = {
   onSearchHandle?: (handle: GitHistorySearchHandle | null) => void;
 };
 
-type LoadStatus = "idle" | "initial" | "more" | "error";
+type LoadStatus = 'idle' | 'initial' | 'more' | 'error';
 
 type FilesEntry =
-  | { state: "loading" }
-  | { state: "loaded"; files: GitCommitFileChange[] }
-  | { state: "error"; error: string };
+  { state: 'loading' } | { state: 'loaded'; files: GitCommitFileChange[] } | { state: 'error'; error: string };
 
 function basename(path: string): string {
   const parts = path.split(/[\\/]/).filter(Boolean);
@@ -90,49 +57,49 @@ function basename(path: string): string {
 }
 
 function dirname(path: string): string {
-  const normalized = path.replace(/\\/g, "/");
-  const index = normalized.lastIndexOf("/");
-  if (index <= 0) return "";
+  const normalized = path.replace(/\\/g, '/');
+  const index = normalized.lastIndexOf('/');
+  if (index <= 0) return '';
   return normalized.slice(0, index);
 }
 
 function normalizeError(error: unknown): string {
-  if (typeof error === "string") return error;
-  if (error && typeof error === "object" && "message" in error) {
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object' && 'message' in error) {
     const message = (error as { message?: unknown }).message;
-    if (typeof message === "string") return message;
+    if (typeof message === 'string') return message;
   }
-  return "Unknown error";
+  return 'Unknown error';
 }
 
 function absoluteTime(secs: number): string {
-  if (!secs) return "";
+  if (!secs) return '';
   return new Date(secs * 1000).toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
 function authorInitials(name: string): string {
-  const trimmed = (name ?? "").trim();
-  if (!trimmed) return "?";
+  const trimmed = (name ?? '').trim();
+  if (!trimmed) return '?';
   const parts = trimmed.split(/\s+/);
   if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
   return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
 
 const AUTHOR_TINTS = [
-  "#7aa2f7", // soft blue
-  "#bb9af7", // soft purple
-  "#9ece6a", // soft green
-  "#e0af68", // soft amber
-  "#f7768e", // soft rose
-  "#73daca", // soft teal
-  "#ff9e64", // soft orange
-  "#b4f9f8", // pale cyan
+  '#7aa2f7', // soft blue
+  '#bb9af7', // soft purple
+  '#9ece6a', // soft green
+  '#e0af68', // soft amber
+  '#f7768e', // soft rose
+  '#73daca', // soft teal
+  '#ff9e64', // soft orange
+  '#b4f9f8', // pale cyan
 ];
 
 function authorTint(key: string): string {
@@ -144,15 +111,15 @@ function authorTint(key: string): string {
 }
 
 function compactDate(secs: number): string {
-  if (!secs) return "";
+  if (!secs) return '';
   const d = new Date(secs * 1000);
   const now = new Date();
   const sameYear = d.getFullYear() === now.getFullYear();
-  const month = d.toLocaleString(undefined, { month: "short" });
-  const day = String(d.getDate()).padStart(2, "0");
+  const month = d.toLocaleString(undefined, { month: 'short' });
+  const day = String(d.getDate()).padStart(2, '0');
   if (sameYear) {
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mm = String(d.getMinutes()).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
     return `${month} ${day}  ${hh}:${mm}`;
   }
   return `${month} ${day} ${d.getFullYear()}`;
@@ -160,17 +127,17 @@ function compactDate(secs: number): string {
 
 function statusTone(code: string): string {
   switch (code.toUpperCase()) {
-    case "A":
-      return "text-emerald-600 dark:text-emerald-400";
-    case "M":
-      return "text-amber-600 dark:text-amber-300";
-    case "D":
-      return "text-rose-600 dark:text-rose-400";
-    case "R":
-    case "C":
-      return "text-sky-600 dark:text-sky-300";
+    case 'A':
+      return 'text-emerald-600 dark:text-emerald-400';
+    case 'M':
+      return 'text-amber-600 dark:text-amber-300';
+    case 'D':
+      return 'text-rose-600 dark:text-rose-400';
+    case 'R':
+    case 'C':
+      return 'text-sky-600 dark:text-sky-300';
     default:
-      return "text-muted-foreground";
+      return 'text-muted-foreground';
   }
 }
 
@@ -181,33 +148,27 @@ function highlight(text: string, query: string): ReactNode {
   return (
     <>
       {text.slice(0, idx)}
-      <mark className="rounded-sm bg-primary/25 px-0.5 text-foreground">
-        {text.slice(idx, idx + query.length)}
-      </mark>
+      <mark className="rounded-sm bg-primary/25 px-0.5 text-foreground">{text.slice(idx, idx + query.length)}</mark>
       {text.slice(idx + query.length)}
     </>
   );
 }
 
-export function GitHistoryPane({
-  repoRoot,
-  onOpenCommitFile,
-  onSearchHandle,
-}: Props) {
+export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: Props) {
   const [commits, setCommits] = useState<GitLogEntry[]>([]);
-  const [loadStatus, setLoadStatus] = useState<LoadStatus>("idle");
+  const [loadStatus, setLoadStatus] = useState<LoadStatus>('idle');
   const [error, setError] = useState<string | null>(null);
   const [endReached, setEndReached] = useState(false);
-  const [searchInput, setSearchInput] = useState("");
+  const [searchInput, setSearchInput] = useState('');
   const deferredSearch = useDeferredValue(searchInput.trim());
   // Require at least 2 characters before filtering to avoid noisy single-char
   // matches and pointless full-list scans on every keystroke.
-  const activeSearch = deferredSearch.length >= 2 ? deferredSearch : "";
+  const activeSearch = deferredSearch.length >= 2 ? deferredSearch : '';
 
   useEffect(() => {
     onSearchHandle?.({
       setQuery: (query: string) => setSearchInput(query),
-      clearQuery: () => setSearchInput(""),
+      clearQuery: () => setSearchInput(''),
     });
     return () => onSearchHandle?.(null);
   }, [onSearchHandle]);
@@ -255,8 +216,7 @@ export function GitHistoryPane({
       return { graphByCommit: cache.byCommit, maxLaneCount: 1 };
     }
     const firstSha = commits[0].sha;
-    const canAppend =
-      cache.firstSha === firstSha && commits.length >= cache.len;
+    const canAppend = cache.firstSha === firstSha && commits.length >= cache.len;
     if (!canAppend) {
       const { rows, state } = layoutGraph(commits);
       const byCommit = new Map<string, GraphRow>();
@@ -297,12 +257,7 @@ export function GitHistoryPane({
       const subject = c.subject.toLowerCase();
       const author = c.author.toLowerCase();
       const email = c.authorEmail.toLowerCase();
-      return (
-        subject.includes(q) ||
-        author.includes(q) ||
-        email.includes(q) ||
-        c.shortSha.includes(q)
-      );
+      return subject.includes(q) || author.includes(q) || email.includes(q) || c.shortSha.includes(q);
     });
   }, [commits, activeSearch]);
 
@@ -316,29 +271,29 @@ export function GitHistoryPane({
 
   const loadInitial = useCallback(async () => {
     const requestId = ++requestIdRef.current;
-    setLoadStatus("initial");
+    setLoadStatus('initial');
     setError(null);
     setEndReached(false);
     try {
       const entries = await git.log(repoRoot, { limit: PAGE_SIZE });
       if (requestId !== requestIdRef.current) return;
       setCommits(entries);
-      setLoadStatus("idle");
+      setLoadStatus('idle');
       if (entries.length < PAGE_SIZE) setEndReached(true);
     } catch (err) {
       if (requestId !== requestIdRef.current) return;
       setError(normalizeError(err));
-      setLoadStatus("error");
+      setLoadStatus('error');
     }
   }, [repoRoot]);
 
   const loadMore = useCallback(async () => {
     if (inflightMoreRef.current || endReached) return;
-    if (loadStatus !== "idle") return;
+    if (loadStatus !== 'idle') return;
     const last = commits[commits.length - 1];
     if (!last) return;
     inflightMoreRef.current = true;
-    setLoadStatus("more");
+    setLoadStatus('more');
     try {
       const entries = await git.log(repoRoot, {
         limit: PAGE_SIZE,
@@ -351,10 +306,10 @@ export function GitHistoryPane({
         return merged;
       });
       if (entries.length < PAGE_SIZE) setEndReached(true);
-      setLoadStatus("idle");
+      setLoadStatus('idle');
     } catch (err) {
       setError(normalizeError(err));
-      setLoadStatus("error");
+      setLoadStatus('error');
     } finally {
       inflightMoreRef.current = false;
     }
@@ -401,7 +356,7 @@ export function GitHistoryPane({
   // after a load, keep pulling pages until it does or the end is reached.
   // Scheduled async so we don't fight ongoing state transitions.
   useEffect(() => {
-    if (loadStatus !== "idle") return;
+    if (loadStatus !== 'idle') return;
     if (endReached) return;
     if (activeSearch) return;
     if (commits.length === 0) return;
@@ -427,13 +382,13 @@ export function GitHistoryPane({
       if (filesInflightRef.current.has(sha)) return;
       const cache = filesCacheRef.current;
       const existing = cache.get(sha);
-      if (existing && existing.state !== "error") return;
+      if (existing && existing.state !== 'error') return;
       filesInflightRef.current.add(sha);
-      cache.set(sha, { state: "loading" });
+      cache.set(sha, { state: 'loading' });
       bumpFiles();
       try {
         const files = await git.commitFiles(repoRoot, sha);
-        cache.set(sha, { state: "loaded", files });
+        cache.set(sha, { state: 'loaded', files });
         while (cache.size > FILES_CACHE_LIMIT) {
           const oldest = cache.keys().next().value;
           if (oldest === undefined || oldest === sha) break;
@@ -441,7 +396,7 @@ export function GitHistoryPane({
         }
         bumpFiles();
       } catch (err) {
-        cache.set(sha, { state: "error", error: normalizeError(err) });
+        cache.set(sha, { state: 'error', error: normalizeError(err) });
         bumpFiles();
       } finally {
         filesInflightRef.current.delete(sha);
@@ -507,21 +462,15 @@ export function GitHistoryPane({
   return (
     <TooltipProvider delayDuration={500} skipDelayDuration={200}>
       <div className="flex h-full min-h-0 flex-col bg-background [contain:layout_style]">
-        {loadStatus === "initial" && commits.length === 0 ? (
+        {loadStatus === 'initial' && commits.length === 0 ? (
           <CenterPlaceholder>
             <Spinner className="size-4" />
-            <span className="text-[11.5px] text-muted-foreground">
-              Loading commits…
-            </span>
+            <span className="text-[11.5px] text-muted-foreground">Loading commits…</span>
           </CenterPlaceholder>
-        ) : loadStatus === "error" && commits.length === 0 ? (
+        ) : loadStatus === 'error' && commits.length === 0 ? (
           <CenterPlaceholder>
-            <div className="text-[13px] font-medium">
-              Could not load history
-            </div>
-            <div className="max-w-md text-[11px] leading-relaxed text-muted-foreground">
-              {error ?? "Unknown error"}
-            </div>
+            <div className="text-[13px] font-medium">Could not load history</div>
+            <div className="max-w-md text-[11px] leading-relaxed text-muted-foreground">{error ?? 'Unknown error'}</div>
             <Button size="sm" onClick={handleRefresh}>
               Retry
             </Button>
@@ -558,8 +507,8 @@ export function GitHistoryPane({
               <div
                 style={{
                   height: virtualizer.getTotalSize(),
-                  position: "relative",
-                  width: "100%",
+                  position: 'relative',
+                  width: '100%',
                 }}
               >
                 {virtualizer.getVirtualItems().map((virtualRow) => {
@@ -569,10 +518,10 @@ export function GitHistoryPane({
                     <div
                       key={virtualRow.key}
                       style={{
-                        position: "absolute",
+                        position: 'absolute',
                         top: 0,
                         left: 0,
-                        width: "100%",
+                        width: '100%',
                         height: virtualRow.size,
                         transform: `translateY(${virtualRow.start}px)`,
                       }}
@@ -591,20 +540,18 @@ export function GitHistoryPane({
                 })}
               </div>
 
-              {loadStatus === "more" ? (
+              {loadStatus === 'more' ? (
                 <div className="flex items-center justify-center gap-2 py-3 text-[11px] text-muted-foreground">
                   <Spinner className="size-3" />
                   Loading more…
                 </div>
               ) : null}
               {endReached && !activeSearch ? (
-                <div className="py-3 text-center text-[10.5px] text-muted-foreground/65">
-                  End of history
-                </div>
+                <div className="py-3 text-center text-[10.5px] text-muted-foreground/65">End of history</div>
               ) : null}
-              {loadStatus === "error" && commits.length > 0 ? (
+              {loadStatus === 'error' && commits.length > 0 ? (
                 <div className="flex items-center justify-center gap-2 py-3 text-[11px] text-destructive">
-                  {error ?? "Failed to load more"}
+                  {error ?? 'Failed to load more'}
                   <Button
                     size="xs"
                     variant="ghost"
@@ -625,18 +572,18 @@ export function GitHistoryPane({
             if (!next) closePopover();
           }}
         >
-          {typeof document !== "undefined"
+          {typeof document !== 'undefined'
             ? createPortal(
                 <PopoverAnchor asChild>
                   <div
                     aria-hidden
                     style={{
-                      position: "fixed",
+                      position: 'fixed',
                       top: openAnchor?.top ?? -9999,
                       left: openAnchor?.left ?? -9999,
                       width: openAnchor?.width ?? 0,
                       height: openAnchor?.height ?? 0,
-                      pointerEvents: "none",
+                      pointerEvents: 'none',
                     }}
                   />
                 </PopoverAnchor>,
@@ -677,11 +624,7 @@ export function GitHistoryPane({
 }
 
 function CenterPlaceholder({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
-      {children}
-    </div>
-  );
+  return <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">{children}</div>;
 }
 
 type CommitRowProps = {
@@ -711,30 +654,21 @@ const CommitRow = memo(function CommitRow({
       type="button"
       onClick={(event) => onClick(commit.sha, event)}
       className={cn(
-        "group relative grid h-full w-full cursor-pointer items-center gap-3 border-l-2 border-transparent pr-3 text-left transition-colors",
-        active ? "border-l-primary/70 bg-accent/45" : "hover:bg-accent/25",
+        'group relative grid h-full w-full cursor-pointer items-center gap-3 border-l-2 border-transparent pr-3 text-left transition-colors',
+        active ? 'border-l-primary/70 bg-accent/45' : 'hover:bg-accent/25',
       )}
       style={{ gridTemplateColumns: gridTemplate }}
     >
       <div className="flex items-center justify-start pl-1">
         {graphRow ? (
-          <GraphRail
-            row={graphRow}
-            rowHeight={ROW_HEIGHT}
-            maxLaneCount={maxLaneCount}
-            active={active}
-          />
+          <GraphRail row={graphRow} rowHeight={ROW_HEIGHT} maxLaneCount={maxLaneCount} active={active} />
         ) : null}
       </div>
-      <span className="pl-px font-mono text-[10.5px] tabular-nums text-muted-foreground/80">
-        {commit.shortSha}
-      </span>
+      <span className="pl-px font-mono text-[10.5px] tabular-nums text-muted-foreground/80">{commit.shortSha}</span>
       <span
         className={cn(
-          "min-w-0 truncate text-[12px] leading-tight",
-          active
-            ? "font-semibold text-foreground"
-            : "font-medium text-foreground/95",
+          'min-w-0 truncate text-[12px] leading-tight',
+          active ? 'font-semibold text-foreground' : 'font-medium text-foreground/95',
         )}
       >
         {commit.subject ? (
@@ -756,45 +690,29 @@ const CommitRow = memo(function CommitRow({
         >
           {initials}
         </span>
-        <span className="min-w-0 truncate">
-          {commit.author ? highlight(commit.author, query) : "Unknown"}
-        </span>
+        <span className="min-w-0 truncate">{commit.author ? highlight(commit.author, query) : 'Unknown'}</span>
       </span>
-      <span className="text-right font-mono text-[10.5px] tabular-nums text-muted-foreground/75">
-        {date}
-      </span>
+      <span className="text-right font-mono text-[10.5px] tabular-nums text-muted-foreground/75">{date}</span>
       <span className="flex min-w-0 items-center justify-end gap-1.5 font-mono text-[10px] tabular-nums">
         {commit.filesChanged > 0 ? (
           <span
             className="inline-flex items-center gap-1 text-muted-foreground/75"
-            title={`${commit.filesChanged} ${commit.filesChanged === 1 ? "file" : "files"} changed`}
+            title={`${commit.filesChanged} ${commit.filesChanged === 1 ? 'file' : 'files'} changed`}
           >
-            <HugeiconsIcon
-              icon={File02Icon}
-              size={10.5}
-              strokeWidth={1.7}
-              className="opacity-70"
-            />
+            <HugeiconsIcon icon={File02Icon} size={10.5} strokeWidth={1.7} className="opacity-70" />
             <span className="font-medium">{commit.filesChanged}</span>
           </span>
         ) : null}
         {commit.filesChanged > 0 && totalStat > 0 ? (
-          <span
-            aria-hidden
-            className="size-[3px] shrink-0 rounded-full bg-muted-foreground/30"
-          />
+          <span aria-hidden className="size-[3px] shrink-0 rounded-full bg-muted-foreground/30" />
         ) : null}
         {totalStat > 0 ? (
           <span className="inline-flex items-center gap-1">
             {commit.insertions > 0 ? (
-              <span className="font-semibold text-emerald-600/85 dark:text-emerald-400/85">
-                +{commit.insertions}
-              </span>
+              <span className="font-semibold text-emerald-600/85 dark:text-emerald-400/85">+{commit.insertions}</span>
             ) : null}
             {commit.deletions > 0 ? (
-              <span className="font-semibold text-rose-600/85 dark:text-rose-400/85">
-                −{commit.deletions}
-              </span>
+              <span className="font-semibold text-rose-600/85 dark:text-rose-400/85">−{commit.deletions}</span>
             ) : null}
           </span>
         ) : commit.filesChanged === 0 ? (
@@ -810,21 +728,11 @@ type CommitDetailProps = {
   filesEntry: FilesEntry | null;
   remoteWeb: RemoteWebInfo | null;
   onCopySha: (value: string) => Promise<void> | void;
-  onOpenFile: (
-    commit: GitLogEntry,
-    file: GitCommitFileChange,
-  ) => Promise<void> | void;
+  onOpenFile: (commit: GitLogEntry, file: GitCommitFileChange) => Promise<void> | void;
   onRetryFiles: () => void;
 };
 
-function CommitDetail({
-  commit,
-  filesEntry,
-  remoteWeb,
-  onCopySha,
-  onOpenFile,
-  onRetryFiles,
-}: CommitDetailProps) {
+function CommitDetail({ commit, filesEntry, remoteWeb, onCopySha, onOpenFile, onRetryFiles }: CommitDetailProps) {
   const absolute = absoluteTime(commit.timestampSecs);
   const webUrl = remoteWeb ? commitWebUrl(remoteWeb, commit.sha) : null;
   const [copied, setCopied] = useState(false);
@@ -843,19 +751,15 @@ function CommitDetail({
             {commit.shortSha}
           </span>
           <div className="min-w-0 flex-1 text-[12.5px] font-semibold leading-snug text-foreground">
-            {commit.subject || (
-              <span className="text-muted-foreground">(no subject)</span>
-            )}
+            {commit.subject || <span className="text-muted-foreground">(no subject)</span>}
           </div>
         </div>
         <div className="mt-2 flex min-w-0 items-center gap-1.5 text-[10.5px] text-muted-foreground">
-          <span className="truncate">{commit.author || "Unknown"}</span>
+          <span className="truncate">{commit.author || 'Unknown'}</span>
           {commit.authorEmail ? (
             <>
               <span className="text-muted-foreground/45">·</span>
-              <span className="truncate text-muted-foreground/85">
-                {commit.authorEmail}
-              </span>
+              <span className="truncate text-muted-foreground/85">{commit.authorEmail}</span>
             </>
           ) : null}
           <span className="text-muted-foreground/45">·</span>
@@ -873,7 +777,7 @@ function CommitDetail({
             }}
           >
             <HugeiconsIcon icon={Copy01Icon} size={11} strokeWidth={1.9} />
-            {copied ? "Copied" : "Copy SHA"}
+            {copied ? 'Copied' : 'Copy SHA'}
           </Button>
           {webUrl ? (
             <Button
@@ -882,11 +786,7 @@ function CommitDetail({
               className="h-6 cursor-pointer gap-1.5 px-1.5 text-[11px] text-muted-foreground hover:text-foreground"
               onClick={() => void openUrl(webUrl).catch(console.error)}
             >
-              <HugeiconsIcon
-                icon={LinkSquare02Icon}
-                size={11}
-                strokeWidth={1.9}
-              />
+              <HugeiconsIcon icon={LinkSquare02Icon} size={11} strokeWidth={1.9} />
               {hostLabel(remoteWeb!)}
             </Button>
           ) : null}
@@ -894,12 +794,7 @@ function CommitDetail({
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <CommitFiles
-          commit={commit}
-          filesEntry={filesEntry}
-          onOpenFile={onOpenFile}
-          onRetry={onRetryFiles}
-        />
+        <CommitFiles commit={commit} filesEntry={filesEntry} onOpenFile={onOpenFile} onRetry={onRetryFiles} />
       </div>
     </div>
   );
@@ -913,13 +808,10 @@ function CommitFiles({
 }: {
   commit: GitLogEntry;
   filesEntry: FilesEntry | null;
-  onOpenFile: (
-    commit: GitLogEntry,
-    file: GitCommitFileChange,
-  ) => Promise<void> | void;
+  onOpenFile: (commit: GitLogEntry, file: GitCommitFileChange) => Promise<void> | void;
   onRetry: () => void;
 }) {
-  if (!filesEntry || filesEntry.state === "loading") {
+  if (!filesEntry || filesEntry.state === 'loading') {
     return (
       <div className="flex items-center gap-2 px-3 py-3 text-[11px] text-muted-foreground">
         <Spinner className="size-3" />
@@ -927,27 +819,18 @@ function CommitFiles({
       </div>
     );
   }
-  if (filesEntry.state === "error") {
+  if (filesEntry.state === 'error') {
     return (
       <div className="flex items-center justify-between gap-2 px-3 py-3 text-[11px] text-destructive">
         <span className="truncate">{filesEntry.error}</span>
-        <Button
-          size="xs"
-          variant="ghost"
-          className="h-6 cursor-pointer text-[11px]"
-          onClick={onRetry}
-        >
+        <Button size="xs" variant="ghost" className="h-6 cursor-pointer text-[11px]" onClick={onRetry}>
           Retry
         </Button>
       </div>
     );
   }
   if (filesEntry.files.length === 0) {
-    return (
-      <div className="px-3 py-3 text-[11px] text-muted-foreground">
-        No file changes.
-      </div>
-    );
+    return <div className="px-3 py-3 text-[11px] text-muted-foreground">No file changes.</div>;
   }
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -961,10 +844,7 @@ function CommitFiles({
         <ul className="space-y-px px-1.5 pb-2">
           {filesEntry.files.map((file) => (
             <li key={file.path}>
-              <FileRow
-                file={file}
-                onOpen={() => void onOpenFile(commit, file)}
-              />
+              <FileRow file={file} onOpen={() => void onOpenFile(commit, file)} />
             </li>
           ))}
         </ul>
@@ -973,13 +853,7 @@ function CommitFiles({
   );
 }
 
-const FileRow = memo(function FileRow({
-  file,
-  onOpen,
-}: {
-  file: GitCommitFileChange;
-  onOpen: () => void;
-}) {
+const FileRow = memo(function FileRow({ file, onOpen }: { file: GitCommitFileChange; onOpen: () => void }) {
   const fileName = basename(file.path);
   const dir = dirname(file.path);
   return (
@@ -990,13 +864,9 @@ const FileRow = memo(function FileRow({
     >
       <FileIcon name={fileName} className="size-3.5 shrink-0" />
       <div className="flex min-w-0 flex-1 items-baseline gap-1.5 leading-none">
-        <span className="truncate text-[11.5px] font-medium leading-tight">
-          {fileName}
-        </span>
+        <span className="truncate text-[11.5px] font-medium leading-tight">{fileName}</span>
         {dir ? (
-          <span className="min-w-0 flex-1 truncate text-[10px] leading-tight text-muted-foreground/80">
-            {dir}
-          </span>
+          <span className="min-w-0 flex-1 truncate text-[10px] leading-tight text-muted-foreground/80">{dir}</span>
         ) : null}
       </div>
       <div className="flex shrink-0 items-center gap-1 text-[10px] tabular-nums">
@@ -1004,22 +874,14 @@ const FileRow = memo(function FileRow({
           <span className="text-muted-foreground/70">binary</span>
         ) : (
           <>
-            {file.added > 0 ? (
-              <span className="text-emerald-600 dark:text-emerald-400">
-                +{file.added}
-              </span>
-            ) : null}
-            {file.removed > 0 ? (
-              <span className="text-rose-600 dark:text-rose-400">
-                −{file.removed}
-              </span>
-            ) : null}
+            {file.added > 0 ? <span className="text-emerald-600 dark:text-emerald-400">+{file.added}</span> : null}
+            {file.removed > 0 ? <span className="text-rose-600 dark:text-rose-400">−{file.removed}</span> : null}
           </>
         )}
       </div>
       <span
         className={cn(
-          "inline-flex w-4 shrink-0 justify-center text-[9.5px] font-bold leading-none tabular-nums",
+          'inline-flex w-4 shrink-0 justify-center text-[9.5px] font-bold leading-none tabular-nums',
           statusTone(file.status),
         )}
         title={file.statusLabel}

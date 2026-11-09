@@ -1,12 +1,12 @@
-import { git } from "@/modules/git";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { git } from '@/modules/git';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import {
   clearRepositoryTargetForSpace,
   repositoryTargetForSpace,
   setRepositoryTargetForSpace,
   type SourceControlRepositoryTargets,
-} from "./repositoryTarget";
+} from './repositoryTarget';
 
 type RequestCounter = { current: number };
 
@@ -15,10 +15,7 @@ type Params = {
   workspaceKey: string;
   isContextCurrent: (spaceId: string, workspaceKey: string) => boolean;
   openSourceControl: () => void;
-  openCommitHistoryTab: (input: {
-    repoRoot: string;
-    branch: string | null;
-  }) => void;
+  openCommitHistoryTab: (input: { repoRoot: string; branch: string | null }) => void;
 };
 
 export function useRepositoryTargeting({
@@ -50,22 +47,16 @@ export function useRepositoryTargeting({
       const requestId = ++requestRef.current;
       try {
         const repo = await git.resolveRepo(path);
-        if (
-          requestId !== requestRef.current ||
-          !isContextCurrent(spaceId, workspaceKey)
-        ) {
+        if (requestId !== requestRef.current || !isContextCurrent(spaceId, workspaceKey)) {
           return null;
         }
         if (!repo) {
-          toast.info("No Git repository contains this folder.");
+          toast.info('No Git repository contains this folder.');
         }
         return repo;
       } catch (error) {
-        if (
-          requestId === requestRef.current &&
-          isContextCurrent(spaceId, workspaceKey)
-        ) {
-          toast.error("Could not resolve Git repository", {
+        if (requestId === requestRef.current && isContextCurrent(spaceId, workspaceKey)) {
+          toast.error('Could not resolve Git repository', {
             description: String(error),
           });
         }
@@ -80,12 +71,7 @@ export function useRepositoryTargeting({
       const repo = await resolveRepository(path, sourceControlRequestRef);
       if (!repo) return;
       setTargets((current) =>
-        setRepositoryTargetForSpace(
-          current,
-          spaceId,
-          workspaceKey,
-          repo.repoRoot,
-        ),
+        setRepositoryTargetForSpace(current, spaceId, workspaceKey, repo.repoRoot),
       );
       openSourceControl();
     },
@@ -103,9 +89,7 @@ export function useRepositoryTargeting({
 
   const followActiveContext = useCallback(() => {
     sourceControlRequestRef.current += 1;
-    setTargets((current) =>
-      clearRepositoryTargetForSpace(current, spaceId, workspaceKey),
-    );
+    setTargets((current) => clearRepositoryTargetForSpace(current, spaceId, workspaceKey));
   }, [spaceId, workspaceKey]);
 
   return {

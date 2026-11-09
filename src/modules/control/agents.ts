@@ -1,8 +1,4 @@
-export {
-  type AgentDecision,
-  connectAgentEvents,
-  resolveAgentDecision,
-} from "./lib/agentDecisions";
+export { type AgentDecision, connectAgentEvents, resolveAgentDecision } from './lib/agentDecisions';
 export {
   parseAgentHookEvent,
   parseTerminalNotification,
@@ -11,7 +7,7 @@ export {
   subscribeTerminalNotifications,
   type TerminalNotification,
   type TerminalNotificationKind,
-} from "./lib/agentEvents";
+} from './lib/agentEvents';
 export {
   agentHooksInstalled,
   applyAgentHooksPlan,
@@ -20,4 +16,4 @@ export {
   type HooksAction,
   type HooksPlan,
   planAgentHooks,
-} from "./lib/hooksConfig";
+} from './lib/hooksConfig';

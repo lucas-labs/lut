@@ -81,13 +81,7 @@ export class SpriteMask {
   }
 
   /** Strokes a line segment with butt caps. */
-  line(
-    x0: number,
-    y0: number,
-    x1: number,
-    y1: number,
-    thickness: number,
-  ): void {
+  line(x0: number, y0: number, x1: number, y1: number, thickness: number): void {
     this.stroke([x0, y0, x1, y1], thickness);
   }
 
@@ -180,9 +174,7 @@ export function signedArea(points: Ring): number {
   const count = points.length / 2;
   for (let index = 0; index < count; index += 1) {
     const next = (index + 1) % count;
-    area +=
-      points[index * 2] * points[next * 2 + 1] -
-      points[next * 2] * points[index * 2 + 1];
+    area += points[index * 2] * points[next * 2 + 1] - points[next * 2] * points[index * 2 + 1];
   }
   return area / 2;
 }
@@ -228,11 +220,7 @@ function clipToRectangle(points: Ring, width: number, height: number): Ring {
  * the right side back, with a miter at each interior vertex (bevel past the
  * limit) and square (butt) ends.
  */
-function strokeOutline(
-  points: Ring,
-  thickness: number,
-  inset = 0,
-): number[] | null {
+function strokeOutline(points: Ring, thickness: number, inset = 0): number[] | null {
   const vertices: number[] = [];
   for (let index = 0; index < points.length; index += 2) {
     const count = vertices.length;
@@ -278,14 +266,8 @@ function strokeOutline(
     if (miter <= MITER_LIMIT) {
       const sx = n0x + n1x;
       const sy = n0y + n1y;
-      left.push(
-        x + (sx * leftOffset) / (1 + dot),
-        y + (sy * leftOffset) / (1 + dot),
-      );
-      right.push(
-        x + (sx * rightOffset) / (1 + dot),
-        y + (sy * rightOffset) / (1 + dot),
-      );
+      left.push(x + (sx * leftOffset) / (1 + dot), y + (sy * leftOffset) / (1 + dot));
+      right.push(x + (sx * rightOffset) / (1 + dot), y + (sy * rightOffset) / (1 + dot));
     } else {
       left.push(
         x + n0x * leftOffset,
@@ -328,9 +310,6 @@ export function flattenCubic(
     const b = 3 * u * u * t;
     const c = 3 * u * t * t;
     const d = t * t * t;
-    out.push(
-      a * x0 + b * x1 + c * x2 + d * x3,
-      a * y0 + b * y1 + c * y2 + d * y3,
-    );
+    out.push(a * x0 + b * x1 + c * x2 + d * x3, a * y0 + b * y1 + c * y2 + d * y3);
   }
 }

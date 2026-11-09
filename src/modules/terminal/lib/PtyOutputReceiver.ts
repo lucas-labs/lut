@@ -1,15 +1,12 @@
-import { schedulePtyParse } from "@/modules/terminal/lib/ptyParseScheduler";
-import {
-  PTY_WINDOW_BYTES,
-  PTY_WINDOW_CHUNKS,
-} from "@/modules/terminal/lib/ptyWire";
+import { schedulePtyParse } from '@/modules/terminal/lib/ptyParseScheduler';
+import { PTY_WINDOW_BYTES, PTY_WINDOW_CHUNKS } from '@/modules/terminal/lib/ptyWire';
 
 const PARSE_STALL_MS = 5_000;
 const MAX_PARSE_SLICE_BYTES = 32 * 1024;
 export const PARSE_BUDGET_MS = 4;
 
-export type PtyOutputStatus = "running" | "retrying" | "stalled" | "failed";
-export type PtyTransportStatus = "ok" | "retrying" | "stalled";
+export type PtyOutputStatus = 'running' | 'retrying' | 'stalled' | 'failed';
+export type PtyTransportStatus = 'ok' | 'retrying' | 'stalled';
 
 type Chunk = { bytes: Uint8Array; end: number; offset: number };
 
@@ -35,11 +32,11 @@ export class PtyOutputReceiver {
   private ready = false;
   private failed = false;
   private parseStalled = false;
-  private transport: PtyTransportStatus = "ok";
+  private transport: PtyTransportStatus = 'ok';
   private received = 0;
   private processed = 0;
   private reported = 0;
-  private status: PtyOutputStatus = "running";
+  private status: PtyOutputStatus = 'running';
 
   constructor(
     private readonly parse: (bytes: Uint8Array) => void | Promise<void>,
@@ -68,9 +65,7 @@ export class PtyOutputReceiver {
       this.queue.length >= PTY_WINDOW_CHUNKS ||
       this.received - this.processed + bytes.length > PTY_WINDOW_BYTES
     ) {
-      this.fail(
-        new Error("PTY output exceeded the negotiated transport bounds"),
-      );
+      this.fail(new Error('PTY output exceeded the negotiated transport bounds'));
       return;
     }
     this.received += bytes.length;
@@ -93,8 +88,8 @@ export class PtyOutputReceiver {
     this.parserTimer = null;
     this.cancelYield = null;
     this.queue.length = 0;
-    this.setStatus("failed");
-    console.error("[terax] PTY output delivery paused:", error);
+    this.setStatus('failed');
+    console.error('[terax] PTY output delivery paused:', error);
   }
 
   diagnostics() {
@@ -120,13 +115,7 @@ export class PtyOutputReceiver {
   }
 
   private drain(deadline = performance.now() + PARSE_BUDGET_MS): void {
-    if (
-      this.parsing ||
-      this.disposed ||
-      this.failed ||
-      this.cancelYield !== null
-    )
-      return;
+    if (this.parsing || this.disposed || this.failed || this.cancelYield !== null) return;
     while (this.queue.length > 0) {
       if (performance.now() >= deadline) {
         this.parseYields++;
@@ -141,14 +130,11 @@ export class PtyOutputReceiver {
         return;
       }
       const chunk = this.queue[0];
-      const end = Math.min(
-        chunk.offset + MAX_PARSE_SLICE_BYTES,
-        chunk.bytes.length,
-      );
+      const end = Math.min(chunk.offset + MAX_PARSE_SLICE_BYTES, chunk.bytes.length);
       try {
         this.parseSlices++;
         const parsed = this.parse(chunk.bytes.subarray(chunk.offset, end));
-        if (parsed && typeof parsed.then === "function") {
+        if (parsed && typeof parsed.then === 'function') {
           this.parsing = true;
           this.parserTimer = setTimeout(() => {
             this.parserTimer = null;
@@ -192,40 +178,28 @@ export class PtyOutputReceiver {
   }
 
   private reportProgress(): void {
-    if (
-      !this.ready ||
-      this.disposed ||
-      this.failed ||
-      this.processed <= this.reported
-    )
-      return;
+    if (!this.ready || this.disposed || this.failed || this.processed <= this.reported) return;
     this.reported = this.processed;
     try {
       this.onProgress(this.processed);
     } catch (error) {
-      console.error("[terax] PTY progress report failed:", error);
+      console.error('[terax] PTY progress report failed:', error);
     }
   }
 
   private refreshStatus(): void {
-    if (this.parseStalled || this.transport === "stalled")
-      this.setStatus("stalled");
-    else if (this.transport === "retrying") this.setStatus("retrying");
-    else this.setStatus("running");
+    if (this.parseStalled || this.transport === 'stalled') this.setStatus('stalled');
+    else if (this.transport === 'retrying') this.setStatus('retrying');
+    else this.setStatus('running');
   }
 
   private setStatus(status: PtyOutputStatus): void {
-    if (
-      this.disposed ||
-      (this.failed && status !== "failed") ||
-      this.status === status
-    )
-      return;
+    if (this.disposed || (this.failed && status !== 'failed') || this.status === status) return;
     this.status = status;
     try {
       this.onStatus(status);
     } catch (error) {
-      console.error("[terax] PTY status notification failed:", error);
+      console.error('[terax] PTY status notification failed:', error);
     }
   }
 }

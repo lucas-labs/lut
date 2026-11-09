@@ -1,4 +1,4 @@
-import { Channel, invoke } from "@tauri-apps/api/core";
+import { Channel, invoke } from '@tauri-apps/api/core';
 
 const MAX_REQUEST_BYTES = 64 * 1024 * 1024;
 const STREAM_BUFFER_BYTES = 64 * 1024;
@@ -10,15 +10,11 @@ const ACK_BYTES = 64 * 1024;
 const ACK_PACKETS = 128;
 const decoder = new TextDecoder();
 
-export function createProxyFetch(
-  opts: { allowPrivateNetwork?: boolean } = {},
-): typeof fetch {
-  return (input, init) =>
-    proxyFetchImpl(input, init, opts.allowPrivateNetwork === true);
+export function createProxyFetch(opts: { allowPrivateNetwork?: boolean } = {}): typeof fetch {
+  return (input, init) => proxyFetchImpl(input, init, opts.allowPrivateNetwork === true);
 }
 
-export const proxyFetch: typeof fetch = (input, init) =>
-  proxyFetchImpl(input, init, false);
+export const proxyFetch: typeof fetch = (input, init) => proxyFetchImpl(input, init, false);
 
 async function readBody(request: Request): Promise<Uint8Array> {
   if (!request.body) return new Uint8Array();
@@ -26,7 +22,7 @@ async function readBody(request: Request): Promise<Uint8Array> {
   const cancel = () => {
     void reader.cancel().catch(() => {});
   };
-  request.signal.addEventListener("abort", cancel, { once: true });
+  request.signal.addEventListener('abort', cancel, { once: true });
   const chunks: Uint8Array[] = [];
   let length = 0;
   try {
@@ -38,12 +34,12 @@ async function readBody(request: Request): Promise<Uint8Array> {
       length += next.value.byteLength;
       if (length > MAX_REQUEST_BYTES) {
         cancel();
-        throw new Error("AI request body exceeds 64 MiB");
+        throw new Error('AI request body exceeds 64 MiB');
       }
       chunks.push(next.value);
     }
   } finally {
-    request.signal.removeEventListener("abort", cancel);
+    request.signal.removeEventListener('abort', cancel);
     reader.releaseLock();
   }
   if (chunks.length === 1) return chunks[0];
@@ -65,10 +61,9 @@ async function proxyFetchImpl(
   if (request.signal.aborted) throw makeAbortError();
   const body = await readBody(request);
   if (request.signal.aborted) throw makeAbortError();
-  const requestId = Array.from(
-    crypto.getRandomValues(new Uint32Array(4)),
-    (word) => word.toString(16).padStart(8, "0"),
-  ).join("");
+  const requestId = Array.from(crypto.getRandomValues(new Uint32Array(4)), (word) =>
+    word.toString(16).padStart(8, '0'),
+  ).join('');
 
   return new Promise<Response>((resolve, reject) => {
     let resolved = false;
@@ -81,10 +76,9 @@ async function proxyFetchImpl(
     let ackInFlight = false;
     let controller: ReadableStreamDefaultController<Uint8Array>;
     const channel = new Channel<ArrayBuffer>();
-    const cancelNative = () =>
-      invoke<void>("ai_http_cancel", { requestId }).catch(() => {});
+    const cancelNative = () => invoke<void>('ai_http_cancel', { requestId }).catch(() => {});
     const cleanup = () => {
-      request.signal.removeEventListener("abort", onAbort);
+      request.signal.removeEventListener('abort', onAbort);
       channel.onmessage = () => {};
     };
     const fail = (error: Error, cancel = true) => {
@@ -103,14 +97,13 @@ async function proxyFetchImpl(
         ackInFlight ||
         received <= acknowledged ||
         (controller.desiredSize ?? 0) <= 0 ||
-        (received - acknowledged < ACK_BYTES &&
-          packets - acknowledgedPackets < ACK_PACKETS)
+        (received - acknowledged < ACK_BYTES && packets - acknowledgedPackets < ACK_PACKETS)
       )
         return;
       const bytes = received;
       const count = packets;
       ackInFlight = true;
-      void invoke("ai_http_ack", { requestId, bytes }).then(
+      void invoke('ai_http_ack', { requestId, bytes }).then(
         () => {
           acknowledged = Math.max(acknowledged, bytes);
           acknowledgedPackets = Math.max(acknowledgedPackets, count);
@@ -146,14 +139,12 @@ async function proxyFetchImpl(
         const bytes = packet.subarray(1);
         switch (packet[0]) {
           case 0: {
-            if (resolved) throw new Error("Duplicate AI response headers");
+            if (resolved) throw new Error('Duplicate AI response headers');
             const metadata = JSON.parse(decoder.decode(bytes)) as {
               status: number;
               headers: Record<string, string>;
             };
-            const empty =
-              request.method === "HEAD" ||
-              [204, 205, 304].includes(metadata.status);
+            const empty = request.method === 'HEAD' || [204, 205, 304].includes(metadata.status);
             const response = new Response(empty ? null : stream, {
               status: metadata.status,
               headers: metadata.headers,
@@ -170,29 +161,21 @@ async function proxyFetchImpl(
             break;
           }
           case 1:
-            if (
-              !resolved ||
-              bytes.length === 0 ||
-              bytes.length > STREAM_BUFFER_BYTES
-            )
-              throw new Error("Invalid AI stream chunk");
+            if (!resolved || bytes.length === 0 || bytes.length > STREAM_BUFFER_BYTES)
+              throw new Error('Invalid AI stream chunk');
             received += bytes.length;
             packets += 1;
-            if (!Number.isSafeInteger(received))
-              throw new Error("AI stream byte offset overflow");
+            if (!Number.isSafeInteger(received)) throw new Error('AI stream byte offset overflow');
             if (
-              STREAM_BUFFER_BYTES -
-                (controller.desiredSize ?? 0) +
-                bytes.length >
+              STREAM_BUFFER_BYTES - (controller.desiredSize ?? 0) + bytes.length >
               STREAM_BUFFER_BYTES * 3
             )
-              throw new Error("AI stream exceeded its consumer buffer");
+              throw new Error('AI stream exceeded its consumer buffer');
             controller.enqueue(bytes);
             acknowledge();
             break;
           case 2:
-            if (!resolved)
-              throw new Error("AI stream ended before response headers");
+            if (!resolved) throw new Error('AI stream ended before response headers');
             closed = true;
             cleanup();
             controller.close();
@@ -201,13 +184,13 @@ async function proxyFetchImpl(
             fail(new Error(decoder.decode(bytes)), false);
             break;
           default:
-            throw new Error("Invalid AI stream packet");
+            throw new Error('Invalid AI stream packet');
         }
       } catch (error) {
         fail(asError(error));
       }
     };
-    request.signal.addEventListener("abort", onAbort, { once: true });
+    request.signal.addEventListener('abort', onAbort, { once: true });
     if (request.signal.aborted) {
       onAbort();
       return;
@@ -221,15 +204,14 @@ async function proxyFetchImpl(
       onEvent: channel,
     }).replace(
       /[^\x20-\x7e]/g,
-      (character) =>
-        `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`,
+      (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, '0')}`,
     );
     if (metadata.length > 64 * 1024) {
-      fail(new Error("AI request metadata exceeds 64 KiB"));
+      fail(new Error('AI request metadata exceeds 64 KiB'));
       return;
     }
-    void invoke("ai_http_stream", body, {
-      headers: { "x-terax-ai-request": metadata },
+    void invoke('ai_http_stream', body, {
+      headers: { 'x-terax-ai-request': metadata },
     }).then(
       () => {
         if (cancelled) void cancelNative();
@@ -244,5 +226,5 @@ function asError(error: unknown): Error {
 }
 
 function makeAbortError(): DOMException {
-  return new DOMException("Request aborted", "AbortError");
+  return new DOMException('Request aborted', 'AbortError');
 }

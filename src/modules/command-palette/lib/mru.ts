@@ -1,7 +1,7 @@
 // Non-critical, single-window usage ranking. localStorage keeps it off the
 // preferences store and its IPC change-broadcast path.
 
-const KEY = "terax-palette-mru";
+const KEY = 'terax-palette-mru';
 const MAX_ENTRIES = 120;
 
 type MruMap = Record<string, number>;
@@ -20,9 +20,7 @@ export function recordUse(id: string): void {
   map[id] = Date.now();
   const ids = Object.keys(map);
   if (ids.length > MAX_ENTRIES) {
-    for (const k of ids
-      .sort((a, b) => map[a] - map[b])
-      .slice(0, ids.length - MAX_ENTRIES)) {
+    for (const k of ids.sort((a, b) => map[a] - map[b]).slice(0, ids.length - MAX_ENTRIES)) {
       delete map[k];
     }
   }

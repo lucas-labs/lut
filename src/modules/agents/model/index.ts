@@ -4,13 +4,8 @@ export {
   nextAttentionAgent,
   type SubagentCounts,
   subagentCounts,
-} from "./attention";
-export {
-  emptyRegistry,
-  needsYou,
-  notificationEffect,
-  reduceAgents,
-} from "./reducer";
+} from './attention';
+export { emptyRegistry, needsYou, notificationEffect, reduceAgents } from './reducer';
 export {
   type Agent,
   AGENT_STATES,
@@ -30,4 +25,4 @@ export {
   type SubagentSummary,
   type ToolInfo,
   type WaitingReason,
-} from "./types";
+} from './types';

@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -6,23 +6,17 @@ import {
   ContextMenuSeparator,
   ContextMenuShortcut,
   ContextMenuTrigger,
-} from "@/components/ui/context-menu";
-import { IS_MAC } from "@/lib/platform";
-import { cn } from "@/lib/utils";
-import type { GitStatusSnapshot } from "@/modules/git";
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import { useGlobalShortcuts } from "@/modules/shortcuts";
-import type { TerminalPathDropTarget } from "@/modules/terminal";
-import { useWorkspaceEnvStore } from "@/modules/workspace";
-import {
-  FileAddIcon,
-  Folder01Icon,
-  FolderAddIcon,
-  Refresh01Icon,
-  Search01Icon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { useVirtualizer } from "@tanstack/react-virtual";
+} from '@/components/ui/context-menu';
+import { IS_MAC } from '@/lib/platform';
+import { cn } from '@/lib/utils';
+import type { GitStatusSnapshot } from '@/modules/git';
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import { useGlobalShortcuts } from '@/modules/shortcuts';
+import type { TerminalPathDropTarget } from '@/modules/terminal';
+import { useWorkspaceEnvStore } from '@/modules/workspace';
+import { FileAddIcon, Folder01Icon, FolderAddIcon, Refresh01Icon, Search01Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   forwardRef,
   memo,
@@ -33,34 +27,19 @@ import {
   useMemo,
   useRef,
   useState,
-} from "react";
-import { ExplorerSearch, type ExplorerSearchHandle } from "./ExplorerSearch";
-import { FileIcon, FolderIcon } from "./FileIcon";
-import { InlineInput } from "./InlineInput";
-import {
-  isPasteShortcut,
-  parentDir as parentOf,
-  pasteClipboardFiles,
-  pasteTargetDir,
-} from "./lib/clipboardPaste";
-import {
-  copyToClipboard,
-  relativePath,
-  revealInFinder,
-} from "./lib/contextActions";
-import type { GitStatusCode } from "./lib/gitStatusUtils";
-import { COMPACT_CONTENT, COMPACT_ITEM } from "./lib/menuItemClass";
-import { useExplorerDnd } from "./lib/useExplorerDnd";
-import { useExplorerFileDrop } from "./lib/useExplorerFileDrop";
-import { useFileTree } from "./lib/useFileTree";
-import { useGitStatus } from "./lib/useGitStatus";
-import {
-  EntryRow,
-  PendingRow,
-  type RowActions,
-  type SelectModifiers,
-  StatusRow,
-} from "./TreeRow";
+} from 'react';
+import { ExplorerSearch, type ExplorerSearchHandle } from './ExplorerSearch';
+import { FileIcon, FolderIcon } from './FileIcon';
+import { InlineInput } from './InlineInput';
+import { isPasteShortcut, parentDir as parentOf, pasteClipboardFiles, pasteTargetDir } from './lib/clipboardPaste';
+import { copyToClipboard, relativePath, revealInFinder } from './lib/contextActions';
+import type { GitStatusCode } from './lib/gitStatusUtils';
+import { COMPACT_CONTENT, COMPACT_ITEM } from './lib/menuItemClass';
+import { useExplorerDnd } from './lib/useExplorerDnd';
+import { useExplorerFileDrop } from './lib/useExplorerFileDrop';
+import { useFileTree } from './lib/useFileTree';
+import { useGitStatus } from './lib/useGitStatus';
+import { EntryRow, PendingRow, type RowActions, type SelectModifiers, StatusRow } from './TreeRow';
 
 export type FileExplorerHandle = {
   focus: () => void;
@@ -91,7 +70,7 @@ type Props = {
 
 type Row =
   | {
-      kind: "entry";
+      kind: 'entry';
       key: string;
       path: string;
       name: string;
@@ -102,7 +81,7 @@ type Row =
       gitStatusCode: GitStatusCode | null;
     }
   | {
-      kind: "rename";
+      kind: 'rename';
       key: string;
       path: string;
       name: string;
@@ -111,17 +90,17 @@ type Row =
       gitignored: boolean;
       gitStatusCode: GitStatusCode | null;
     }
-  | { kind: "pending"; key: string; depth: number; pendingKind: "file" | "dir" }
+  | { kind: 'pending'; key: string; depth: number; pendingKind: 'file' | 'dir' }
   | {
-      kind: "status";
+      kind: 'status';
       key: string;
       depth: number;
-      tone: "muted" | "error";
+      tone: 'muted' | 'error';
       message: string;
     };
 
 const ROW_HEIGHT = 24;
-const PASTE_HINT = IS_MAC ? "⌘V" : "Ctrl+V";
+const PASTE_HINT = IS_MAC ? '⌘V' : 'Ctrl+V';
 const OVERSCAN = 8;
 
 function basename(path: string): string {
@@ -139,17 +118,17 @@ function buildRows(
 
   const walk = (parent: string, depth: number, parentIgnored: boolean) => {
     const node = tree.nodes[parent];
-    if (!node || node.status !== "loaded") return;
+    if (!node || node.status !== 'loaded') return;
     for (const entry of node.entries) {
       const path = tree.joinPath(parent, entry.name);
-      const isDir = entry.kind === "dir";
+      const isDir = entry.kind === 'dir';
       const expanded = isDir && tree.expanded.has(path);
       const isRenaming = tree.renaming === path;
       const gitignored = parentIgnored || entry.gitignored;
       const gitStatusCode = gitignored ? null : lookup(path);
       if (isRenaming) {
         rows.push({
-          kind: "rename",
+          kind: 'rename',
           key: `rename:${path}`,
           path,
           name: entry.name,
@@ -161,7 +140,7 @@ function buildRows(
       } else {
         entryIndexByPath.set(path, rows.length);
         rows.push({
-          kind: "entry",
+          kind: 'entry',
           key: path,
           path,
           name: entry.name,
@@ -176,29 +155,29 @@ function buildRows(
         const child = tree.nodes[path];
         if (tree.pendingCreate?.parentPath === path) {
           rows.push({
-            kind: "pending",
+            kind: 'pending',
             key: `pending:${path}`,
             depth: depth + 1,
             pendingKind: tree.pendingCreate.kind,
           });
         }
-        if (child?.status === "loading") {
+        if (child?.status === 'loading') {
           rows.push({
-            kind: "status",
+            kind: 'status',
             key: `loading:${path}`,
             depth: depth + 1,
-            tone: "muted",
-            message: "Loading…",
+            tone: 'muted',
+            message: 'Loading…',
           });
-        } else if (child?.status === "error") {
+        } else if (child?.status === 'error') {
           rows.push({
-            kind: "status",
+            kind: 'status',
             key: `error:${path}`,
             depth: depth + 1,
-            tone: "error",
+            tone: 'error',
             message: child.message,
           });
-        } else if (child?.status === "loaded") {
+        } else if (child?.status === 'loaded') {
           walk(path, depth + 1, gitignored);
         }
       }
@@ -235,14 +214,8 @@ export const FileExplorer = memo(
       active: visible,
     });
     const gitDecorations = usePreferencesStore((s) => s.explorerGitDecorations);
-    const { lookup: lookupGitStatus } = useGitStatus(
-      rootPath,
-      gitDecorations ? gitStatus : null,
-      gitDecorations,
-    );
-    const [selectedPaths, setSelectedPaths] = useState<Set<string>>(
-      () => new Set(),
-    );
+    const { lookup: lookupGitStatus } = useGitStatus(rootPath, gitDecorations ? gitStatus : null, gitDecorations);
+    const [selectedPaths, setSelectedPaths] = useState<Set<string>>(() => new Set());
     const [anchorPath, setAnchorPath] = useState<string | null>(null);
     const workspace = useWorkspaceEnvStore((s) => s.env);
     const pasteBusyRef = useRef(false);
@@ -281,14 +254,7 @@ export const FileExplorer = memo(
       // `tree` is intentionally omitted: its identity changes every render, but
       // the listed fields are the only inputs buildRows actually reads.
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [
-      rootPath,
-      tree.nodes,
-      tree.expanded,
-      tree.renaming,
-      tree.pendingCreate,
-      lookupGitStatus,
-    ]);
+    }, [rootPath, tree.nodes, tree.expanded, tree.renaming, tree.pendingCreate, lookupGitStatus]);
 
     const rowActions = useMemo<RowActions>(
       () => ({
@@ -299,8 +265,7 @@ export const FileExplorer = memo(
       }),
       [tree.toggle, tree.beginRename, tree.commitRename, tree.cancelRename],
     );
-    const renameInProgress =
-      tree.renaming !== null || tree.pendingCreate !== null;
+    const renameInProgress = tree.renaming !== null || tree.pendingCreate !== null;
 
     const [menuTarget, setMenuTarget] = useState<{
       path: string;
@@ -316,7 +281,7 @@ export const FileExplorer = memo(
 
     const entryPaths = useMemo<string[]>(() => {
       const out: string[] = [];
-      for (const row of rows) if (row.kind === "entry") out.push(row.path);
+      for (const row of rows) if (row.kind === 'entry') out.push(row.path);
       return out;
     }, [rows]);
     const entryPathsRef = useRef(entryPaths);
@@ -344,8 +309,7 @@ export const FileExplorer = memo(
             collapseSelectionTo(path);
             return;
           }
-          const [lo, hi] =
-            anchorIdx <= idx ? [anchorIdx, idx] : [idx, anchorIdx];
+          const [lo, hi] = anchorIdx <= idx ? [anchorIdx, idx] : [idx, anchorIdx];
           setSelectedPaths(new Set(paths.slice(lo, hi + 1)));
           if (anchorPathRef.current === null) setAnchorPath(anchor);
           return;
@@ -369,12 +333,12 @@ export const FileExplorer = memo(
       (path: string): boolean | undefined => {
         const idx = entryIndexByPath.get(path);
         const row = idx !== undefined ? rows[idx] : undefined;
-        return row?.kind === "entry" ? row.isDir : undefined;
+        return row?.kind === 'entry' ? row.isDir : undefined;
       },
       [entryIndexByPath, rows],
     );
     const dnd = useExplorerDnd({
-      rootPath: rootPath ?? "",
+      rootPath: rootPath ?? '',
       isDir: isDirAt,
       onMove: tree.movePaths,
       getSelectedPaths,
@@ -390,8 +354,7 @@ export const FileExplorer = memo(
     });
 
     const dropTargetDir = dnd.dropTargetDir ?? fileDrop.externalTargetDir;
-    const rootIsDropTarget =
-      dropTargetDir != null && dropTargetDir === rootPath;
+    const rootIsDropTarget = dropTargetDir != null && dropTargetDir === rootPath;
     useEffect(() => {
       if (!dropTargetDir || dropTargetDir === rootPath) return;
       if (tree.expanded.has(dropTargetDir)) return;
@@ -412,8 +375,7 @@ export const FileExplorer = memo(
             isCurrent,
             refresh: (path) => tree.refresh(path, true),
           });
-          if (isCurrent() && paths.length > 0)
-            setPastedSelection({ scope, paths });
+          if (isCurrent() && paths.length > 0) setPastedSelection({ scope, paths });
         } finally {
           pasteBusyRef.current = false;
         }
@@ -425,9 +387,7 @@ export const FileExplorer = memo(
       if (pastedSelection) {
         setPastedSelection(null);
         if (pastedSelection.scope === pasteScopeRef.current) {
-          const visible = pastedSelection.paths.filter((path) =>
-            entryIndexByPath.has(path),
-          );
+          const visible = pastedSelection.paths.filter((path) => entryIndexByPath.has(path));
           setSelectedPaths(new Set(visible));
           setAnchorPath(visible[visible.length - 1] ?? null);
           return;
@@ -459,29 +419,21 @@ export const FileExplorer = memo(
       (path: string) => {
         const index = entryIndexByPath.get(path);
         if (index === undefined) return;
-        virtualizer.scrollToIndex(index, { align: "auto" });
+        virtualizer.scrollToIndex(index, { align: 'auto' });
       },
       [entryIndexByPath, virtualizer],
     );
 
     const lastSyncedActivePathRef = useRef<string | null>(null);
     useEffect(() => {
-      if (
-        !activeFilePath ||
-        activeFilePath === lastSyncedActivePathRef.current
-      ) {
+      if (!activeFilePath || activeFilePath === lastSyncedActivePathRef.current) {
         return;
       }
       if (!entryIndexByPath.has(activeFilePath)) return;
       lastSyncedActivePathRef.current = activeFilePath;
       collapseSelectionTo(activeFilePath);
       requestAnimationFrame(() => scrollEntryIntoView(activeFilePath));
-    }, [
-      activeFilePath,
-      entryIndexByPath,
-      scrollEntryIntoView,
-      collapseSelectionTo,
-    ]);
+    }, [activeFilePath, entryIndexByPath, scrollEntryIntoView, collapseSelectionTo]);
 
     useImperativeHandle(
       ref,
@@ -509,7 +461,7 @@ export const FileExplorer = memo(
     );
 
     useGlobalShortcuts({
-      "explorer.search": () => {
+      'explorer.search': () => {
         if (searchRef.current?.isFocused()) {
           setIsSearchOpen(false);
           return;
@@ -522,32 +474,19 @@ export const FileExplorer = memo(
     if (!rootPath) {
       return (
         <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
-          <HugeiconsIcon
-            icon={Folder01Icon}
-            size={24}
-            strokeWidth={1.5}
-            className="text-muted-foreground"
-          />
-          <div className="text-xs text-muted-foreground">
-            No current directory
-          </div>
+          <HugeiconsIcon icon={Folder01Icon} size={24} strokeWidth={1.5} className="text-muted-foreground" />
+          <div className="text-xs text-muted-foreground">No current directory</div>
         </div>
       );
     }
 
     const root = tree.nodes[rootPath];
-    const pendingAtRoot =
-      tree.pendingCreate?.parentPath === rootPath ? tree.pendingCreate : null;
+    const pendingAtRoot = tree.pendingCreate?.parentPath === rootPath ? tree.pendingCreate : null;
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
       if (tree.renaming || tree.pendingCreate || isSearchOpen) return;
       const target = e.target as HTMLElement;
-      if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.isContentEditable
-      )
-        return;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
 
       if (isPasteShortcut(e, IS_MAC)) {
         e.preventDefault();
@@ -557,7 +496,7 @@ export const FileExplorer = memo(
 
       if (entryPaths.length === 0) return;
 
-      if (e.key === "Escape" && selectedPaths.size > 1) {
+      if (e.key === 'Escape' && selectedPaths.size > 1) {
         e.preventDefault();
         collapseSelectionTo(anchorPath ?? entryPaths[0]);
         return;
@@ -572,52 +511,52 @@ export const FileExplorer = memo(
       };
 
       switch (e.key) {
-        case "ArrowDown":
+        case 'ArrowDown':
           e.preventDefault();
           move(currentIdx < 0 ? 0 : currentIdx + 1);
           break;
-        case "ArrowUp":
+        case 'ArrowUp':
           e.preventDefault();
           move(currentIdx < 0 ? entryPaths.length - 1 : currentIdx - 1);
           break;
-        case "ArrowRight": {
+        case 'ArrowRight': {
           if (currentIdx < 0) return;
           e.preventDefault();
           const path = entryPaths[currentIdx];
           const idx = entryIndexByPath.get(path);
           if (idx === undefined) break;
           const row = rows[idx];
-          if (row.kind !== "entry") break;
+          if (row.kind !== 'entry') break;
           if (row.isDir) {
             if (!row.isExpanded) tree.toggle(row.path);
             else move(currentIdx + 1);
           }
           break;
         }
-        case "ArrowLeft": {
+        case 'ArrowLeft': {
           if (currentIdx < 0) return;
           e.preventDefault();
           const path = entryPaths[currentIdx];
           const idx = entryIndexByPath.get(path);
           if (idx === undefined) break;
           const row = rows[idx];
-          if (row.kind !== "entry") break;
+          if (row.kind !== 'entry') break;
           if (row.isDir && row.isExpanded) {
             tree.toggle(row.path);
           } else {
-            const parent = row.path.slice(0, row.path.lastIndexOf("/"));
+            const parent = row.path.slice(0, row.path.lastIndexOf('/'));
             if (parent && parent !== rootPath) collapseSelectionTo(parent);
           }
           break;
         }
-        case "Enter": {
+        case 'Enter': {
           if (currentIdx < 0) return;
           e.preventDefault();
           const path = entryPaths[currentIdx];
           const idx = entryIndexByPath.get(path);
           if (idx === undefined) break;
           const row = rows[idx];
-          if (row.kind !== "entry") break;
+          if (row.kind !== 'entry') break;
           if (row.isDir) tree.toggle(row.path);
           else onOpenFile(row.path);
           break;
@@ -627,19 +566,19 @@ export const FileExplorer = memo(
 
     const renderRow = (row: Row) => {
       switch (row.kind) {
-        case "entry":
-        case "rename": {
+        case 'entry':
+        case 'rename': {
           return (
             <EntryRow
               path={row.path}
               name={row.name}
               isDir={row.isDir}
-              isExpanded={row.kind === "entry" ? row.isExpanded : false}
+              isExpanded={row.kind === 'entry' ? row.isExpanded : false}
               depth={row.depth}
               actions={rowActions}
               renameInProgress={renameInProgress}
               isSelected={selectedPaths.has(row.path)}
-              isRenaming={row.kind === "rename"}
+              isRenaming={row.kind === 'rename'}
               isDropTarget={dropTargetDir === row.path}
               multiSelectActive={selectedPaths.size > 1}
               onOpenFile={onOpenFile}
@@ -649,7 +588,7 @@ export const FileExplorer = memo(
             />
           );
         }
-        case "pending":
+        case 'pending':
           return (
             <PendingRow
               depth={row.depth}
@@ -658,35 +597,16 @@ export const FileExplorer = memo(
               onCancel={tree.cancelCreate}
             />
           );
-        case "status":
-          return (
-            <StatusRow
-              depth={row.depth}
-              message={row.message}
-              tone={row.tone}
-            />
-          );
+        case 'status':
+          return <StatusRow depth={row.depth} message={row.message} tone={row.tone} />;
       }
     };
 
     return (
-      <div
-        ref={containerRef}
-        className="flex h-full flex-col outline-none"
-        tabIndex={0}
-        onKeyDown={handleKeyDown}
-      >
+      <div ref={containerRef} className="flex h-full flex-col outline-none" tabIndex={0} onKeyDown={handleKeyDown}>
         <div className="flex h-8 shrink-0 items-center gap-1 border-b border-border/60 px-2">
-          <span
-            className="flex flex-1 items-center truncate text-xs font-medium text-foreground/80"
-            title={rootPath}
-          >
-            <FolderIcon
-              name={basename(rootPath)}
-              height={15}
-              width={15}
-              className="mx-1.5"
-            />
+          <span className="flex flex-1 items-center truncate text-xs font-medium text-foreground/80" title={rootPath}>
+            <FolderIcon name={basename(rootPath)} height={15} width={15} className="mx-1.5" />
             {basename(rootPath)}
           </span>
 
@@ -705,7 +625,7 @@ export const FileExplorer = memo(
             variant="ghost"
             size="icon"
             className="size-6 text-muted-foreground hover:text-foreground"
-            onClick={() => tree.beginCreate(rootPath, "file")}
+            onClick={() => tree.beginCreate(rootPath, 'file')}
             title="New file"
           >
             <HugeiconsIcon icon={FileAddIcon} size={13} strokeWidth={2} />
@@ -714,7 +634,7 @@ export const FileExplorer = memo(
             variant="ghost"
             size="icon"
             className="size-6 text-muted-foreground hover:text-foreground"
-            onClick={() => tree.beginCreate(rootPath, "dir")}
+            onClick={() => tree.beginCreate(rootPath, 'dir')}
             title="New folder"
           >
             <HugeiconsIcon icon={FolderAddIcon} size={13} strokeWidth={2} />
@@ -754,21 +674,17 @@ export const FileExplorer = memo(
                 ref={scrollRef}
                 data-explorer-drop=""
                 className={cn(
-                  "min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]",
-                  rootIsDropTarget &&
-                    "rounded-sm ring-1 ring-inset ring-primary/50",
+                  'min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]',
+                  rootIsDropTarget && 'rounded-sm ring-1 ring-inset ring-primary/50',
                 )}
                 onPointerDown={dnd.onPointerDown}
                 onClickCapture={dnd.onClickCapture}
                 onContextMenuCapture={(e) => {
-                  const el = (e.target as HTMLElement).closest<HTMLElement>(
-                    "[data-fs-path]",
-                  );
-                  const path = el?.getAttribute("data-fs-path") ?? null;
-                  const idx =
-                    path != null ? entryIndexByPath.get(path) : undefined;
+                  const el = (e.target as HTMLElement).closest<HTMLElement>('[data-fs-path]');
+                  const path = el?.getAttribute('data-fs-path') ?? null;
+                  const idx = path != null ? entryIndexByPath.get(path) : undefined;
                   const row = idx !== undefined ? rows[idx] : undefined;
-                  if (row && row.kind === "entry") {
+                  if (row && row.kind === 'entry') {
                     const sel = selectedPathsRef.current;
                     const isBatch = sel.has(row.path) && sel.size > 1;
                     if (!isBatch) collapseSelectionTo(row.path);
@@ -792,43 +708,31 @@ export const FileExplorer = memo(
                     style={{ paddingLeft: 6 }}
                   >
                     <span className="size-3.5 shrink-0" />
-                    {pendingAtRoot.kind === "dir" ? (
-                      <FolderIcon
-                        name=""
-                        className="size-4 shrink-0 opacity-70"
-                      />
+                    {pendingAtRoot.kind === 'dir' ? (
+                      <FolderIcon name="" className="size-4 shrink-0 opacity-70" />
                     ) : (
-                      <FileIcon
-                        name="untitled"
-                        className="size-4 shrink-0 opacity-70"
-                      />
+                      <FileIcon name="untitled" className="size-4 shrink-0 opacity-70" />
                     )}
                     <InlineInput
                       initial=""
-                      placeholder={
-                        pendingAtRoot.kind === "dir" ? "New folder" : "New file"
-                      }
+                      placeholder={pendingAtRoot.kind === 'dir' ? 'New folder' : 'New file'}
                       onCommit={tree.commitCreate}
                       onCancel={tree.cancelCreate}
                     />
                   </div>
                 ) : null}
-                {root?.status === "loading" && (
-                  <div className="px-3 py-2 text-[11px] text-muted-foreground">
-                    Loading…
-                  </div>
+                {root?.status === 'loading' && (
+                  <div className="px-3 py-2 text-[11px] text-muted-foreground">Loading…</div>
                 )}
-                {root?.status === "error" && (
-                  <div className="px-3 py-2 text-[11px] text-destructive">
-                    {root.message}
-                  </div>
+                {root?.status === 'error' && (
+                  <div className="px-3 py-2 text-[11px] text-destructive">{root.message}</div>
                 )}
-                {root?.status === "loaded" ? (
+                {root?.status === 'loaded' ? (
                   <div
                     style={{
                       height: virtualizer.getTotalSize(),
-                      position: "relative",
-                      width: "100%",
+                      position: 'relative',
+                      width: '100%',
                     }}
                   >
                     {virtualizer.getVirtualItems().map((virtualRow) => {
@@ -839,10 +743,10 @@ export const FileExplorer = memo(
                           key={virtualRow.key}
                           data-virtual-row-index={virtualRow.index}
                           style={{
-                            position: "absolute",
+                            position: 'absolute',
                             top: 0,
                             left: 0,
-                            width: "100%",
+                            width: '100%',
                             height: virtualRow.size,
                             transform: `translateY(${virtualRow.start}px)`,
                           }}
@@ -877,60 +781,38 @@ export const FileExplorer = memo(
                     }
                   }}
                 >
-                  {deleteConfirm
-                    ? "Click again to confirm"
-                    : `Delete ${selectedPaths.size} items`}
+                  {deleteConfirm ? 'Click again to confirm' : `Delete ${selectedPaths.size} items`}
                 </ContextMenuItem>
               ) : menuTarget ? (
                 <>
                   {!menuTarget.isDir && (
-                    <ContextMenuItem
-                      className={COMPACT_ITEM}
-                      onSelect={() => onOpenFile(menuTarget.path, true)}
-                    >
+                    <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onOpenFile(menuTarget.path, true)}>
                       Open
                     </ContextMenuItem>
                   )}
                   {menuTarget.isDir && onRevealInTerminal && (
-                    <ContextMenuItem
-                      className={COMPACT_ITEM}
-                      onSelect={() => onRevealInTerminal(menuTarget.path)}
-                    >
+                    <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onRevealInTerminal(menuTarget.path)}>
                       Open in Terminal
                     </ContextMenuItem>
                   )}
                   {menuTarget.isDir && onOpenInSourceControl && (
-                    <ContextMenuItem
-                      className={COMPACT_ITEM}
-                      onSelect={() => onOpenInSourceControl(menuTarget.path)}
-                    >
+                    <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onOpenInSourceControl(menuTarget.path)}>
                       Open in Source Control
                     </ContextMenuItem>
                   )}
                   {menuTarget.isDir && onOpenGitHistory && (
-                    <ContextMenuItem
-                      className={COMPACT_ITEM}
-                      onSelect={() => onOpenGitHistory(menuTarget.path)}
-                    >
+                    <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onOpenGitHistory(menuTarget.path)}>
                       Open Git History
                     </ContextMenuItem>
                   )}
-                  <ContextMenuItem
-                    className={COMPACT_ITEM}
-                    onSelect={() => void revealInFinder(menuTarget.path)}
-                  >
+                  <ContextMenuItem className={COMPACT_ITEM} onSelect={() => void revealInFinder(menuTarget.path)}>
                     Reveal in Finder
                   </ContextMenuItem>
                   <ContextMenuSeparator />
                   <ContextMenuItem
                     className={COMPACT_ITEM}
                     onSelect={() =>
-                      tree.beginCreate(
-                        menuTarget.isDir
-                          ? menuTarget.path
-                          : parentOf(menuTarget.path, rootPath),
-                        "file",
-                      )
+                      tree.beginCreate(menuTarget.isDir ? menuTarget.path : parentOf(menuTarget.path, rootPath), 'file')
                     }
                   >
                     New File
@@ -938,12 +820,7 @@ export const FileExplorer = memo(
                   <ContextMenuItem
                     className={COMPACT_ITEM}
                     onSelect={() =>
-                      tree.beginCreate(
-                        menuTarget.isDir
-                          ? menuTarget.path
-                          : parentOf(menuTarget.path, rootPath),
-                        "dir",
-                      )
+                      tree.beginCreate(menuTarget.isDir ? menuTarget.path : parentOf(menuTarget.path, rootPath), 'dir')
                     }
                   >
                     New Folder
@@ -951,38 +828,24 @@ export const FileExplorer = memo(
                   <ContextMenuItem
                     className={COMPACT_ITEM}
                     onSelect={() =>
-                      void pasteInto(
-                        menuTarget.isDir
-                          ? menuTarget.path
-                          : parentOf(menuTarget.path, rootPath),
-                      )
+                      void pasteInto(menuTarget.isDir ? menuTarget.path : parentOf(menuTarget.path, rootPath))
                     }
                   >
                     Paste
                     <ContextMenuShortcut>{PASTE_HINT}</ContextMenuShortcut>
                   </ContextMenuItem>
                   <ContextMenuSeparator />
-                  <ContextMenuItem
-                    className={COMPACT_ITEM}
-                    onSelect={() => void copyToClipboard(menuTarget.path)}
-                  >
+                  <ContextMenuItem className={COMPACT_ITEM} onSelect={() => void copyToClipboard(menuTarget.path)}>
                     Copy Path
                   </ContextMenuItem>
                   <ContextMenuItem
                     className={COMPACT_ITEM}
-                    onSelect={() =>
-                      void copyToClipboard(
-                        relativePath(rootPath, menuTarget.path),
-                      )
-                    }
+                    onSelect={() => void copyToClipboard(relativePath(rootPath, menuTarget.path))}
                   >
                     Copy Relative Path
                   </ContextMenuItem>
                   <ContextMenuSeparator />
-                  <ContextMenuItem
-                    className={COMPACT_ITEM}
-                    onSelect={() => onAttachToAgent?.(menuTarget.path)}
-                  >
+                  <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onAttachToAgent?.(menuTarget.path)}>
                     Attach to Agent
                   </ContextMenuItem>
                   <ContextMenuSeparator />
@@ -1000,72 +863,45 @@ export const FileExplorer = memo(
                       }
                     }}
                   >
-                    {deleteConfirm ? "Click again to confirm" : "Delete"}
+                    {deleteConfirm ? 'Click again to confirm' : 'Delete'}
                   </ContextMenuItem>
                 </>
               ) : (
                 <>
                   {onRevealInTerminal && (
-                    <ContextMenuItem
-                      className={COMPACT_ITEM}
-                      onSelect={() => onRevealInTerminal(rootPath)}
-                    >
+                    <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onRevealInTerminal(rootPath)}>
                       Open in Terminal
                     </ContextMenuItem>
                   )}
                   {onOpenInSourceControl && (
-                    <ContextMenuItem
-                      className={COMPACT_ITEM}
-                      onSelect={() => onOpenInSourceControl(rootPath)}
-                    >
+                    <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onOpenInSourceControl(rootPath)}>
                       Open in Source Control
                     </ContextMenuItem>
                   )}
                   {onOpenGitHistory && (
-                    <ContextMenuItem
-                      className={COMPACT_ITEM}
-                      onSelect={() => onOpenGitHistory(rootPath)}
-                    >
+                    <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onOpenGitHistory(rootPath)}>
                       Open Git History
                     </ContextMenuItem>
                   )}
-                  <ContextMenuItem
-                    className={COMPACT_ITEM}
-                    onSelect={() => void revealInFinder(rootPath)}
-                  >
+                  <ContextMenuItem className={COMPACT_ITEM} onSelect={() => void revealInFinder(rootPath)}>
                     Reveal in Finder
                   </ContextMenuItem>
                   <ContextMenuSeparator />
-                  <ContextMenuItem
-                    className={COMPACT_ITEM}
-                    onSelect={() => tree.beginCreate(rootPath, "file")}
-                  >
+                  <ContextMenuItem className={COMPACT_ITEM} onSelect={() => tree.beginCreate(rootPath, 'file')}>
                     New File
                   </ContextMenuItem>
-                  <ContextMenuItem
-                    className={COMPACT_ITEM}
-                    onSelect={() => tree.beginCreate(rootPath, "dir")}
-                  >
+                  <ContextMenuItem className={COMPACT_ITEM} onSelect={() => tree.beginCreate(rootPath, 'dir')}>
                     New Folder
                   </ContextMenuItem>
-                  <ContextMenuItem
-                    className={COMPACT_ITEM}
-                    onSelect={() => void pasteInto(rootPath)}
-                  >
+                  <ContextMenuItem className={COMPACT_ITEM} onSelect={() => void pasteInto(rootPath)}>
                     Paste
                     <ContextMenuShortcut>{PASTE_HINT}</ContextMenuShortcut>
                   </ContextMenuItem>
                   <ContextMenuSeparator />
-                  <ContextMenuItem
-                    className={COMPACT_ITEM}
-                    onSelect={() => void copyToClipboard(rootPath)}
-                  >
+                  <ContextMenuItem className={COMPACT_ITEM} onSelect={() => void copyToClipboard(rootPath)}>
                     Copy Path
                   </ContextMenuItem>
-                  <ContextMenuItem
-                    className={COMPACT_ITEM}
-                    onSelect={() => tree.refresh(rootPath)}
-                  >
+                  <ContextMenuItem className={COMPACT_ITEM} onSelect={() => tree.refresh(rootPath)}>
                     Refresh
                   </ContextMenuItem>
                 </>

@@ -1,4 +1,4 @@
-import type { GhosttyTerminalModelApi } from "@/modules/terminal/ghostty/GhosttyTerminalModel";
+import type { GhosttyTerminalModelApi } from '@/modules/terminal/ghostty/GhosttyTerminalModel';
 
 /** Pinned-to-bottom growth moves the thumb at most this often. */
 const PINNED_WRITE_INTERVAL_MS = 100;
@@ -20,9 +20,7 @@ export function isClampedScrollEcho(
   clientHeight: number,
 ): boolean {
   const max = scrollHeight - clientHeight;
-  return (
-    written !== null && written > max + 1 && Math.abs(scrollTop - max) <= 1
-  );
+  return written !== null && written > max + 1 && Math.abs(scrollTop - max) <= 1;
 }
 
 export type ScrollbarClock = {
@@ -61,13 +59,13 @@ export class TerminalScrollbarSync {
   private position: number | null = null;
   private appliedScrollTop = Number.NaN;
   private appliedOffset = -1;
-  private appliedHeight = "";
-  private appliedVisibility = "";
+  private appliedHeight = '';
+  private appliedVisibility = '';
   private lastWriteAt = Number.NEGATIVE_INFINITY;
   private trailingTimer: number | null = null;
   private binding: Binding | null = null;
-  private ariaMax = "";
-  private ariaNow = "";
+  private ariaMax = '';
+  private ariaNow = '';
   private ariaWritten = false;
   private ariaDirty = false;
   private lastAriaAt = Number.NEGATIVE_INFINITY;
@@ -148,7 +146,7 @@ export class TerminalScrollbarSync {
     geometryChanged: boolean,
   ): void {
     const { scrollbar, content, viewportHeight, cellHeight } = binding;
-    const visibility = available ? "visible" : "hidden";
+    const visibility = available ? 'visible' : 'hidden';
     if (visibility !== this.appliedVisibility) {
       scrollbar.style.visibility = visibility;
       this.appliedVisibility = visibility;
@@ -178,9 +176,7 @@ export class TerminalScrollbarSync {
     const pinned = offset === 0 && this.appliedOffset === 0 && !geometryChanged;
     const now = this.clock.now();
     if (pinned && now - this.lastWriteAt < PINNED_WRITE_INTERVAL_MS) {
-      this.scheduleTrailing(
-        PINNED_WRITE_INTERVAL_MS - (now - this.lastWriteAt),
-      );
+      this.scheduleTrailing(PINNED_WRITE_INTERVAL_MS - (now - this.lastWriteAt));
       return;
     }
     this.cancelTrailing();
@@ -217,16 +213,11 @@ export class TerminalScrollbarSync {
   }
 
   private cancelTrailing(): void {
-    if (this.trailingTimer !== null)
-      this.clock.clearTimeout(this.trailingTimer);
+    if (this.trailingTimer !== null) this.clock.clearTimeout(this.trailingTimer);
     this.trailingTimer = null;
   }
 
-  private queueAria(
-    scrollbar: HTMLElement,
-    history: number,
-    offset: number,
-  ): void {
+  private queueAria(scrollbar: HTMLElement, history: number, offset: number): void {
     this.ariaTarget = scrollbar;
     const max = String(history);
     const now = String(history - offset);
@@ -254,9 +245,9 @@ export class TerminalScrollbarSync {
     if (!target || !this.ariaDirty) return;
     this.ariaDirty = false;
     this.lastAriaAt = this.clock.now();
-    if (!this.ariaWritten) target.setAttribute("aria-valuemin", "0");
+    if (!this.ariaWritten) target.setAttribute('aria-valuemin', '0');
     this.ariaWritten = true;
-    target.setAttribute("aria-valuemax", this.ariaMax);
-    target.setAttribute("aria-valuenow", this.ariaNow);
+    target.setAttribute('aria-valuemax', this.ariaMax);
+    target.setAttribute('aria-valuenow', this.ariaNow);
   }
 }

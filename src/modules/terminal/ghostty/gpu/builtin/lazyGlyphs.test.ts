@@ -1,20 +1,20 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 async function fresh() {
   vi.resetModules();
-  const fonts = await import("@/lib/fonts");
-  const glyphs = await import("../BuiltinGlyphs");
-  const lazy = await import("./lazyGlyphs");
+  const fonts = await import('@/lib/fonts');
+  const glyphs = await import('../BuiltinGlyphs');
+  const lazy = await import('./lazyGlyphs');
   return { fonts, glyphs, lazy };
 }
 
 const SPEC = { width: 8, height: 16, thickness: 1 };
 
-describe("lazily loaded builtin glyphs", () => {
+describe('lazily loaded builtin glyphs', () => {
   beforeEach(() => vi.resetModules());
-  afterEach(() => vi.doUnmock("./legacyComputing"));
+  afterEach(() => vi.doUnmock('./legacyComputing'));
 
-  it("claims their ranges without loading anything", async () => {
+  it('claims their ranges without loading anything', async () => {
     const { glyphs, lazy } = await fresh();
     for (const codepoint of [0x25e2, 0x1fb00, 0x1fb70, 0x1cd00]) {
       expect(lazy.isLazyBuiltin(codepoint)).toBe(true);
@@ -26,7 +26,7 @@ describe("lazily loaded builtin glyphs", () => {
     expect(lazy.lazyBuiltinDraw()).toBeNull();
   });
 
-  it("draws nothing while loading, then draws and announces the arrival once", async () => {
+  it('draws nothing while loading, then draws and announces the arrival once', async () => {
     const { fonts, glyphs, lazy } = await fresh();
     const renderer = new glyphs.BuiltinGlyphRenderer(SPEC);
     const epoch = fonts.symbolFontEpoch();
@@ -53,9 +53,9 @@ describe("lazily loaded builtin glyphs", () => {
     expect(notified).toHaveBeenCalledTimes(1);
   });
 
-  it("falls back to the font when the code cannot load", async () => {
-    vi.doMock("./legacyComputing", () => {
-      throw new Error("chunk missing");
+  it('falls back to the font when the code cannot load', async () => {
+    vi.doMock('./legacyComputing', () => {
+      throw new Error('chunk missing');
     });
     const { fonts, glyphs, lazy } = await fresh();
     const renderer = new glyphs.BuiltinGlyphRenderer(SPEC);

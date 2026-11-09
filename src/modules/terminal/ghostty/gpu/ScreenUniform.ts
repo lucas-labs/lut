@@ -6,13 +6,9 @@ import {
   SCREEN_FLAG_TEXT_BLINK_VISIBLE,
   SCREEN_OFFSET,
   SCREEN_UNIFORM_BYTES,
-} from "./shaders";
-import type {
-  CursorRect,
-  DecorationMetrics,
-  SelectionUniform,
-} from "./terminalGeometry";
-import { DWRITE_GAMMA_RATIOS, type TextContrast } from "./textContrast";
+} from './shaders';
+import type { CursorRect, DecorationMetrics, SelectionUniform } from './terminalGeometry';
+import { DWRITE_GAMMA_RATIOS, type TextContrast } from './textContrast';
 
 export type ScreenUniformState = {
   readonly cols: number;

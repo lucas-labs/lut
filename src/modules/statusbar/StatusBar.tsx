@@ -1,21 +1,14 @@
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { useChatStore } from "@/modules/ai";
-import { AgentStatusPill } from "@/modules/ai/components/AgentStatusPill";
-import {
-  AiOpenButton,
-  AiStatusBarControls,
-} from "@/modules/ai/components/AiStatusBarControls";
-import { LspStatusPill } from "@/modules/lsp";
-import type { WorkspaceEnv } from "@/modules/workspace";
-import { IncognitoIcon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { CwdBreadcrumb } from "./CwdBreadcrumb";
-import { DiagnosticsBadge } from "./DiagnosticsBadge";
-import { WorkspaceEnvSelector } from "./WorkspaceEnvSelector";
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useChatStore } from '@/modules/ai';
+import { AgentStatusPill } from '@/modules/ai/components/AgentStatusPill';
+import { AiOpenButton, AiStatusBarControls } from '@/modules/ai/components/AiStatusBarControls';
+import { LspStatusPill } from '@/modules/lsp';
+import type { WorkspaceEnv } from '@/modules/workspace';
+import { IncognitoIcon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { CwdBreadcrumb } from './CwdBreadcrumb';
+import { DiagnosticsBadge } from './DiagnosticsBadge';
+import { WorkspaceEnvSelector } from './WorkspaceEnvSelector';
 
 type Props = {
   cwd: string | null;
@@ -59,23 +52,16 @@ export function StatusBar({
                 <span>Private: hidden from AI</span>
               </span>
             </TooltipTrigger>
-            <TooltipContent
-              side="top"
-              className="max-w-64 text-[11px] leading-relaxed"
-            >
-              AI can't see this terminal's output. Use it for secrets, SSH, or
-              anything you don't want sent to the model.
+            <TooltipContent side="top" className="max-w-64 text-[11px] leading-relaxed">
+              AI can't see this terminal's output. Use it for secrets, SSH, or anything you don't want sent to the
+              model.
             </TooltipContent>
           </Tooltip>
         ) : null}
       </div>
       <div className="flex shrink-0 items-center gap-1.5">
         <AgentStatusPill onClick={onOpenMini} />
-        {panelOpen && hasComposer ? (
-          <AiStatusBarControls />
-        ) : (
-          <AiOpenButton onOpen={onOpenAi} />
-        )}
+        {panelOpen && hasComposer ? <AiStatusBarControls /> : <AiOpenButton onOpen={onOpenAi} />}
       </div>
     </footer>
   );

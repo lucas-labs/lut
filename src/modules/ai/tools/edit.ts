@@ -1,9 +1,9 @@
-import { tool } from "ai";
-import { z } from "zod";
-import { native } from "../lib/native";
-import { checkWritableCanonical } from "../lib/security";
-import { newQueuedEditId, usePlanStore } from "../store/planStore";
-import { resolvePath, type ToolContext } from "./context";
+import { tool } from 'ai';
+import { z } from 'zod';
+import { native } from '../lib/native';
+import { checkWritableCanonical } from '../lib/security';
+import { newQueuedEditId, usePlanStore } from '../store/planStore';
+import { resolvePath, type ToolContext } from './context';
 
 type EditResult =
   | { ok: true; replacements: number; bytesWritten: number; path: string }
@@ -18,14 +18,12 @@ function djb2(s: string): number {
 async function applyEdits(
   abs: string,
   edits: { old_string: string; new_string: string; replace_all?: boolean }[],
-  kind: "edit" | "multi_edit",
+  kind: 'edit' | 'multi_edit',
   readCache: Map<string, { size: number; hash: number }>,
 ): Promise<EditResult> {
   const r = await native.readFile(abs);
-  if (r.kind === "binary")
-    return { error: "binary file refused", path: abs };
-  if (r.kind === "toolarge")
-    return { error: `file too large (${r.size} bytes)`, path: abs };
+  if (r.kind === 'binary') return { error: 'binary file refused', path: abs };
+  if (r.kind === 'toolarge') return { error: `file too large (${r.size} bytes)`, path: abs };
 
   const original = r.content;
   let content = original;
@@ -34,19 +32,18 @@ async function applyEdits(
   for (const e of edits) {
     if (e.old_string === e.new_string) {
       return {
-        error: "old_string and new_string are identical",
+        error: 'old_string and new_string are identical',
         path: abs,
       };
     }
     if (e.old_string.length === 0) {
-      return { error: "old_string cannot be empty", path: abs };
+      return { error: 'old_string cannot be empty', path: abs };
     }
     if (e.replace_all) {
       const before = content;
       content = content.split(e.old_string).join(e.new_string);
       const occurrences =
-        (before.length - content.length) /
-          (e.old_string.length - e.new_string.length || 1) || 0;
+        (before.length - content.length) / (e.old_string.length - e.new_string.length || 1) || 0;
       // Recover count via direct search to avoid divide-by-zero edge cases.
       let n = 0;
       let i = 0;
@@ -74,14 +71,11 @@ async function applyEdits(
       if (second !== -1) {
         return {
           error:
-            "old_string is not unique. Provide more surrounding context, or set replace_all=true.",
+            'old_string is not unique. Provide more surrounding context, or set replace_all=true.',
           path: abs,
         };
       }
-      content =
-        content.slice(0, first) +
-        e.new_string +
-        content.slice(first + e.old_string.length);
+      content = content.slice(0, first) + e.new_string + content.slice(first + e.old_string.length);
       totalReplacements += 1;
     }
   }
@@ -121,13 +115,13 @@ export function buildEditTools(ctx: ToolContext) {
   return {
     edit: tool({
       description:
-        "Replace an exact string in a file. Requires read_file on this path first in the current session — this prevents blind edits. `old_string` must be unique in the file unless `replace_all: true`. Asks for user approval before writing.",
+        'Replace an exact string in a file. Requires read_file on this path first in the current session — this prevents blind edits. `old_string` must be unique in the file unless `replace_all: true`. Asks for user approval before writing.',
       inputSchema: z.object({
         path: z.string(),
         old_string: z
           .string()
-          .describe("Exact substring to replace. Must be unique unless replace_all."),
-        new_string: z.string().describe("Replacement substring."),
+          .describe('Exact substring to replace. Must be unique unless replace_all.'),
+        new_string: z.string().describe('Replacement substring.'),
         replace_all: z.boolean().optional(),
       }),
       needsApproval: true,
@@ -138,17 +132,11 @@ export function buildEditTools(ctx: ToolContext) {
         const abs = safety.canonical;
         if (!ctx.readCache.has(abs)) {
           return {
-            error:
-              "must call read_file on this path first (read-before-edit invariant).",
+            error: 'must call read_file on this path first (read-before-edit invariant).',
             path: abs,
           };
         }
-        return applyEdits(
-          abs,
-          [{ old_string, new_string, replace_all }],
-          "edit",
-          ctx.readCache,
-        );
+        return applyEdits(abs, [{ old_string, new_string, replace_all }], 'edit', ctx.readCache);
       },
     }),
 
@@ -175,12 +163,11 @@ export function buildEditTools(ctx: ToolContext) {
         const abs = safety.canonical;
         if (!ctx.readCache.has(abs)) {
           return {
-            error:
-              "must call read_file on this path first (read-before-edit invariant).",
+            error: 'must call read_file on this path first (read-before-edit invariant).',
             path: abs,
           };
         }
-        return applyEdits(abs, edits, "multi_edit", ctx.readCache);
+        return applyEdits(abs, edits, 'multi_edit', ctx.readCache);
       },
     }),
   } as const;

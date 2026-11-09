@@ -1,9 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-import {
-  installLivePageResize,
-  LIVE_RESIZE_ATTR,
-  LIVE_RESIZE_IDLE_MS,
-} from "./livePageResize";
+import { describe, expect, it, vi } from 'vitest';
+import { installLivePageResize, LIVE_RESIZE_ATTR, LIVE_RESIZE_IDLE_MS } from './livePageResize';
 
 function fakeEnv() {
   const attrs = new Map<string, string>();
@@ -50,15 +46,15 @@ function fakeEnv() {
   };
 }
 
-describe("installLivePageResize", () => {
-  it("is off until the window resizes", () => {
+describe('installLivePageResize', () => {
+  it('is off until the window resizes', () => {
     const env = fakeEnv();
     installLivePageResize(env.sources);
     expect(env.attrs.has(LIVE_RESIZE_ATTR)).toBe(false);
     expect(env.timers.size).toBe(0);
   });
 
-  it("holds the mark across a burst and releases it after the idle gap", () => {
+  it('holds the mark across a burst and releases it after the idle gap', () => {
     const env = fakeEnv();
     installLivePageResize(env.sources);
     for (let step = 0; step < 20; step++) {
@@ -73,7 +69,7 @@ describe("installLivePageResize", () => {
     expect(env.timers.size).toBe(0);
   });
 
-  it("marks again for the next drag", () => {
+  it('marks again for the next drag', () => {
     const env = fakeEnv();
     installLivePageResize(env.sources);
     env.resize();
@@ -83,7 +79,7 @@ describe("installLivePageResize", () => {
     expect(env.attrs.has(LIVE_RESIZE_ATTR)).toBe(true);
   });
 
-  it("clears the mark and the timer when uninstalled mid-drag", () => {
+  it('clears the mark and the timer when uninstalled mid-drag', () => {
     const env = fakeEnv();
     const stop = installLivePageResize(env.sources);
     env.resize();

@@ -1,10 +1,7 @@
-import { cn } from "@/lib/utils";
-import { useShortcutLabel } from "@/modules/shortcuts";
-import { useEffect, useState, useSyncExternalStore } from "react";
-import {
-  blockWatermarkState,
-  type WatermarkState,
-} from "../lib/terminalSessionApi";
+import { cn } from '@/lib/utils';
+import { useShortcutLabel } from '@/modules/shortcuts';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import { blockWatermarkState, type WatermarkState } from '../lib/terminalSessionApi';
 
 type Props = {
   leafId: number;
@@ -12,7 +9,7 @@ type Props = {
 };
 
 const NOOP_SUBSCRIBE = () => () => {};
-const DEAD = (): WatermarkState => "dead";
+const DEAD = (): WatermarkState => 'dead';
 
 // First-run hints over an untouched block terminal. Once the leaf runs a
 // command the component unmounts for good and drops its subscription.
@@ -24,7 +21,7 @@ export function BlockWatermark({ leafId, subscribe }: Props) {
   );
 
   useEffect(() => {
-    if (gone || state !== "dead") return;
+    if (gone || state !== 'dead') return;
     const t = setTimeout(() => setGone(true), 600);
     return () => clearTimeout(t);
   }, [state, gone]);
@@ -35,55 +32,35 @@ export function BlockWatermark({ leafId, subscribe }: Props) {
     <div
       aria-hidden
       className={cn(
-        "pointer-events-none absolute inset-0 z-[5] flex select-none flex-col items-center justify-center gap-8",
-        "transition-[opacity,transform] duration-500 ease-out",
-        state === "visible"
-          ? "translate-y-0 opacity-100"
-          : "translate-y-2 opacity-0",
+        'pointer-events-none absolute inset-0 z-[5] flex select-none flex-col items-center justify-center gap-8',
+        'transition-[opacity,transform] duration-500 ease-out',
+        state === 'visible' ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0',
       )}
     >
-      <img
-        src="/logo.png"
-        alt=""
-        draggable={false}
-        className="size-24 rounded-3xl shadow-lg shadow-black/25"
-      />
+      <img src="/logo.png" alt="" draggable={false} className="size-24 rounded-3xl shadow-lg shadow-black/25" />
       <div className="grid grid-cols-[auto_auto] items-center gap-x-12 gap-y-3 text-[13px]">
         <Hint label="Browse your command history" keys="↑" />
         <Hint label="Autocomplete paths and commands" keys="Tab" />
-        <Hint
-          label="Switch between Shell and AI"
-          shortcut="terminal.toggleInput"
-        />
+        <Hint label="Switch between Shell and AI" shortcut="terminal.toggleInput" />
         <Hint label="Open the AI assistant" shortcut="ai.toggle" />
       </div>
     </div>
   );
 }
 
-function Hint(props: {
-  label: string;
-  keys?: string;
-  shortcut?: Parameters<typeof useShortcutLabel>[0];
-}) {
+function Hint(props: { label: string; keys?: string; shortcut?: Parameters<typeof useShortcutLabel>[0] }) {
   return (
     <>
-      <span className="justify-self-start text-muted-foreground/60">
-        {props.label}
-      </span>
+      <span className="justify-self-start text-muted-foreground/60">{props.label}</span>
       <span className="flex items-center gap-1 justify-self-end">
-        {props.shortcut ? (
-          <ShortcutKeys id={props.shortcut} />
-        ) : (
-          <Key>{props.keys}</Key>
-        )}
+        {props.shortcut ? <ShortcutKeys id={props.shortcut} /> : <Key>{props.keys}</Key>}
       </span>
     </>
   );
 }
 
 function ShortcutKeys({ id }: { id: Parameters<typeof useShortcutLabel>[0] }) {
-  const tokens = useShortcutLabel(id).split(" ");
+  const tokens = useShortcutLabel(id).split(' ');
   return (
     <>
       {tokens.map((t) => (

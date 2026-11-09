@@ -1,9 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-import {
-  excludeNestedSources,
-  executeBatchMove,
-  type FsMoveResult,
-} from "./batchMove";
+import { describe, expect, it, vi } from 'vitest';
+import { excludeNestedSources, executeBatchMove, type FsMoveResult } from './batchMove';
 
 function deps(
   move: (expectedConflict: string | null) => Promise<FsMoveResult>,
@@ -11,7 +7,7 @@ function deps(
 ): Parameters<typeof executeBatchMove>[2] {
   return {
     move: (_item, expectedConflict) => move(expectedConflict),
-    resolveConflict: async () => "replace",
+    resolveConflict: async () => 'replace',
     canReplace: () => true,
     onMoved: () => undefined,
     isCurrent: () => true,
@@ -19,33 +15,32 @@ function deps(
   };
 }
 
-describe("excludeNestedSources", () => {
-  it("keeps unrelated paths whose names merely share a prefix", () => {
-    expect(
-      excludeNestedSources(["/repo/src", "/repo/src-backup/a.ts"]),
-    ).toEqual(["/repo/src", "/repo/src-backup/a.ts"]);
+describe('excludeNestedSources', () => {
+  it('keeps unrelated paths whose names merely share a prefix', () => {
+    expect(excludeNestedSources(['/repo/src', '/repo/src-backup/a.ts'])).toEqual([
+      '/repo/src',
+      '/repo/src-backup/a.ts',
+    ]);
   });
 
-  it("drops descendants at any selected depth", () => {
+  it('drops descendants at any selected depth', () => {
     expect(
       excludeNestedSources([
-        "/repo/src",
-        "/repo/src/a.ts",
-        "/repo/src/deep/b.ts",
-        "/repo/other.ts",
+        '/repo/src',
+        '/repo/src/a.ts',
+        '/repo/src/deep/b.ts',
+        '/repo/other.ts',
       ]),
-    ).toEqual(["/repo/src", "/repo/other.ts"]);
+    ).toEqual(['/repo/src', '/repo/other.ts']);
   });
 
-  it("normalizes Windows descendants before filtering", () => {
-    expect(
-      excludeNestedSources(["C:\\repo\\src", "C:\\repo\\src\\a.ts"]),
-    ).toEqual(["C:/repo/src"]);
+  it('normalizes Windows descendants before filtering', () => {
+    expect(excludeNestedSources(['C:\\repo\\src', 'C:\\repo\\src\\a.ts'])).toEqual(['C:/repo/src']);
   });
 });
 
-describe("executeBatchMove", () => {
-  it("moves items sequentially and reports their final mappings", async () => {
+describe('executeBatchMove', () => {
+  it('moves items sequentially and reports their final mappings', async () => {
     let active = 0;
     let maxActive = 0;
     const move = vi.fn(async () => {
@@ -53,13 +48,13 @@ describe("executeBatchMove", () => {
       maxActive = Math.max(maxActive, active);
       await Promise.resolve();
       active -= 1;
-      return { status: "moved" } as const;
+      return { status: 'moved' } as const;
     });
     const onMoved = vi.fn();
 
     const result = await executeBatchMove(
-      ["/repo/a.ts", "/repo/dest/already.ts", "/repo/b.ts"],
-      "/repo/dest",
+      ['/repo/a.ts', '/repo/dest/already.ts', '/repo/b.ts'],
+      '/repo/dest',
       deps(move, { onMoved }),
     );
 
@@ -68,50 +63,49 @@ describe("executeBatchMove", () => {
     expect(onMoved).toHaveBeenCalledTimes(2);
   });
 
-  it("builds canonical destinations from Windows paths", async () => {
+  it('builds canonical destinations from Windows paths', async () => {
     const onMoved = vi.fn();
     await executeBatchMove(
-      ["C:\\repo\\a.ts"],
-      "C:\\repo\\dest",
-      deps(async () => ({ status: "moved" }), { onMoved }),
+      ['C:\\repo\\a.ts'],
+      'C:\\repo\\dest',
+      deps(async () => ({ status: 'moved' }), { onMoved }),
     );
     expect(onMoved).toHaveBeenCalledWith({
-      from: "C:/repo/a.ts",
-      to: "C:/repo/dest/a.ts",
-      name: "a.ts",
+      from: 'C:/repo/a.ts',
+      to: 'C:/repo/dest/a.ts',
+      name: 'a.ts',
     });
   });
 
-  it("asks only after the backend reports a real filesystem conflict", async () => {
+  it('asks only after the backend reports a real filesystem conflict', async () => {
     const move = vi
       .fn<(expectedConflict: string | null) => Promise<FsMoveResult>>()
       .mockResolvedValueOnce({
-        status: "conflict",
+        status: 'conflict',
         replaceable: true,
-        token: "v1",
+        token: 'v1',
       })
-      .mockResolvedValueOnce({ status: "moved" });
-    const resolveConflict = vi.fn(async () => "replace" as const);
+      .mockResolvedValueOnce({ status: 'moved' });
+    const resolveConflict = vi.fn(async () => 'replace' as const);
 
     const result = await executeBatchMove(
-      ["/repo/Foo.ts"],
-      "/repo/dest",
+      ['/repo/Foo.ts'],
+      '/repo/dest',
       deps(move, { resolveConflict }),
     );
 
-    expect(move.mock.calls).toEqual([[null], ["v1"]]);
+    expect(move.mock.calls).toEqual([[null], ['v1']]);
     expect(resolveConflict).toHaveBeenCalledOnce();
     expect(result.moved).toBe(1);
   });
 
-  it("does not replace a destination with an open editor", async () => {
+  it('does not replace a destination with an open editor', async () => {
     const move = vi.fn(
-      async () =>
-        ({ status: "conflict", replaceable: true, token: "v1" }) as const,
+      async () => ({ status: 'conflict', replaceable: true, token: 'v1' }) as const,
     );
     const result = await executeBatchMove(
-      ["/repo/a.ts"],
-      "/repo/dest",
+      ['/repo/a.ts'],
+      '/repo/dest',
       deps(move, { canReplace: () => false }),
     );
 
@@ -120,20 +114,19 @@ describe("executeBatchMove", () => {
     expect(result.moved).toBe(0);
   });
 
-  it("cancels before replacement when the workspace changes during the prompt", async () => {
+  it('cancels before replacement when the workspace changes during the prompt', async () => {
     let current = true;
     const move = vi.fn(
-      async () =>
-        ({ status: "conflict", replaceable: true, token: "v1" }) as const,
+      async () => ({ status: 'conflict', replaceable: true, token: 'v1' }) as const,
     );
     const resolveConflict = vi.fn(async () => {
       current = false;
-      return "replace" as const;
+      return 'replace' as const;
     });
 
     const result = await executeBatchMove(
-      ["/repo/a.ts"],
-      "/repo/dest",
+      ['/repo/a.ts'],
+      '/repo/dest',
       deps(move, { resolveConflict, isCurrent: () => current }),
     );
 
@@ -141,32 +134,31 @@ describe("executeBatchMove", () => {
     expect(result.moved).toBe(0);
   });
 
-  it("keeps a completed move in the outcome before cancelling the remainder", async () => {
+  it('keeps a completed move in the outcome before cancelling the remainder', async () => {
     let current = true;
     const move = vi.fn(async () => {
       current = false;
-      return { status: "moved" } as const;
+      return { status: 'moved' } as const;
     });
 
     const result = await executeBatchMove(
-      ["/repo/a.ts", "/repo/b.ts"],
-      "/repo/dest",
+      ['/repo/a.ts', '/repo/b.ts'],
+      '/repo/dest',
       deps(move, { isCurrent: () => current }),
     );
 
     expect(result.moved).toBe(1);
   });
 
-  it("skips folder conflicts without offering destructive replacement", async () => {
+  it('skips folder conflicts without offering destructive replacement', async () => {
     const move = vi.fn(
-      async () =>
-        ({ status: "conflict", replaceable: false, token: "folder" }) as const,
+      async () => ({ status: 'conflict', replaceable: false, token: 'folder' }) as const,
     );
-    const resolveConflict = vi.fn(async () => "replace" as const);
+    const resolveConflict = vi.fn(async () => 'replace' as const);
 
     const result = await executeBatchMove(
-      ["/repo/folder"],
-      "/repo/dest",
+      ['/repo/folder'],
+      '/repo/dest',
       deps(move, { resolveConflict }),
     );
 

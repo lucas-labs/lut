@@ -1,13 +1,13 @@
-import { native } from "@/modules/ai/lib/native";
-import type { GitStatusSnapshot } from "@/modules/git";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { native } from '@/modules/ai/lib/native';
+import type { GitStatusSnapshot } from '@/modules/git';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   bubbleUpDirectoryStatuses,
   buildGitStatusMap,
   type GitStatusCode,
   lookupGitStatus,
   normalizePath,
-} from "./gitStatusUtils";
+} from './gitStatusUtils';
 
 const EMPTY = new Map<string, GitStatusCode>();
 
@@ -60,11 +60,7 @@ export function useGitStatus(
     !!repoRoot0 &&
     aliases.some((a) => {
       const t = normalizePath(a);
-      return (
-        t === repoRoot0 ||
-        t.startsWith(`${repoRoot0}/`) ||
-        repoRoot0.startsWith(`${t}/`)
-      );
+      return t === repoRoot0 || t.startsWith(`${repoRoot0}/`) || repoRoot0.startsWith(`${t}/`);
     });
 
   const map = useMemo(() => {

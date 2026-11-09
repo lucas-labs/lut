@@ -6,9 +6,7 @@ const samples = new WeakMap<HTMLCanvasElement, Sample>();
 export function terminalCanvasDiagnostics() {
   const devicePixelRatio = window.devicePixelRatio;
   return Array.from(
-    document.querySelectorAll<HTMLCanvasElement>(
-      "[data-terax-terminal-canvas]",
-    ),
+    document.querySelectorAll<HTMLCanvasElement>('[data-terax-terminal-canvas]'),
     (canvas) => {
       const rect = canvas.getBoundingClientRect();
       const cssSize = { width: rect.width, height: rect.height };
@@ -17,13 +15,7 @@ export function terminalCanvasDiagnostics() {
         width: Math.round(rect.width * devicePixelRatio),
         height: Math.round(rect.height * devicePixelRatio),
       };
-      const key = [
-        devicePixelRatio,
-        rect.x,
-        rect.y,
-        rect.width,
-        rect.height,
-      ].join();
+      const key = [devicePixelRatio, rect.x, rect.y, rect.width, rect.height].join();
       let sample = samples.get(canvas);
       if (sample?.key !== key) {
         sample = { key, size: null, pending: true };
@@ -32,9 +24,7 @@ export function terminalCanvasDiagnostics() {
         const observer = new ResizeObserver(([entry]) => {
           observer.disconnect();
           const box = entry.devicePixelContentBoxSize?.[0];
-          current.size = box
-            ? { width: box.inlineSize, height: box.blockSize }
-            : null;
+          current.size = box ? { width: box.inlineSize, height: box.blockSize } : null;
           current.pending = false;
         });
         // A one-shot content-box observation also reports the device box on Chromium;
@@ -49,10 +39,10 @@ export function terminalCanvasDiagnostics() {
         cssDeviceSize,
         devicePixelContentBoxSize,
         devicePixelContentBoxStatus: sample.pending
-          ? "pending"
+          ? 'pending'
           : sample.size
-            ? "available"
-            : "unsupported",
+            ? 'available'
+            : 'unsupported',
         backingMatchesCss: sameSize(backingSize, cssDeviceSize),
         backingMatchesDevicePixelBox: devicePixelContentBoxSize
           ? sameSize(backingSize, devicePixelContentBoxSize)

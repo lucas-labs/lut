@@ -1,5 +1,5 @@
-import type { ShortcutId } from "@/modules/shortcuts";
-import type { TerminalIcon } from "@hugeicons/core-free-icons";
+import type { ShortcutId } from '@/modules/shortcuts';
+import type { TerminalIcon } from '@hugeicons/core-free-icons';
 
 type PaletteIcon = typeof TerminalIcon;
 
@@ -17,9 +17,9 @@ export type PaletteItem = {
 };
 
 /** What a query without a sigil means. */
-export type PaletteBase = "commands" | "files";
-export type PaletteMode = PaletteBase | "history" | "content" | "help";
-export type PaletteInitialMode = PaletteBase | "content";
+export type PaletteBase = 'commands' | 'files';
+export type PaletteMode = PaletteBase | 'history' | 'content' | 'help';
+export type PaletteInitialMode = PaletteBase | 'content';
 
 /** How to open a file picked in the palette. */
 export type OpenFileTarget = {

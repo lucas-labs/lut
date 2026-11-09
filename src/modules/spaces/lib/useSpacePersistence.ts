@@ -1,8 +1,8 @@
-import type { Tab } from "@/modules/tabs";
-import { useCallback, useEffect, useRef } from "react";
-import { isSerializableTab, serializeTabs } from "./serialize";
-import { saveState } from "./store";
-import { useSpaces } from "./useSpaces";
+import type { Tab } from '@/modules/tabs';
+import { useCallback, useEffect, useRef } from 'react';
+import { isSerializableTab, serializeTabs } from './serialize';
+import { saveState } from './store';
+import { useSpaces } from './useSpaces';
 
 const DEBOUNCE_MS = 3000;
 
@@ -15,12 +15,7 @@ type Params = Snapshot & {
 
 type LastWrite = { json: string; activeTabIndex: number };
 
-export function useSpacePersistence({
-  tabs,
-  activeId,
-  activeSpaceId,
-  enabled,
-}: Params) {
+export function useSpacePersistence({ tabs, activeId, activeSpaceId, enabled }: Params) {
   const last = useRef<Map<string, LastWrite>>(new Map());
   const seeded = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -32,10 +27,8 @@ export function useSpacePersistence({
   // with the correct index rather than clobbering it to 0).
   if (enabled && !seeded.current) {
     seeded.current = true;
-    for (const [id, idx] of Object.entries(
-      useSpaces.getState().initialActiveIndex,
-    )) {
-      last.current.set(id, { json: "", activeTabIndex: idx });
+    for (const [id, idx] of Object.entries(useSpaces.getState().initialActiveIndex)) {
+      last.current.set(id, { json: '', activeTabIndex: idx });
     }
   }
 
@@ -52,17 +45,11 @@ export function useSpacePersistence({
       const prev = last.current.get(spaceId);
       let activeTabIndex = prev?.activeTabIndex ?? 0;
       if (spaceId === snap.activeSpaceId) {
-        const idx = group
-          .filter(isSerializableTab)
-          .findIndex((t) => t.id === snap.activeId);
+        const idx = group.filter(isSerializableTab).findIndex((t) => t.id === snap.activeId);
         if (idx >= 0) activeTabIndex = idx;
       }
       const json = JSON.stringify(serialized);
-      if (
-        prev &&
-        prev.json === json &&
-        prev.activeTabIndex === activeTabIndex
-      ) {
+      if (prev && prev.json === json && prev.activeTabIndex === activeTabIndex) {
         continue;
       }
       last.current.set(spaceId, { json, activeTabIndex });
@@ -86,16 +73,16 @@ export function useSpacePersistence({
   useEffect(() => {
     if (!enabled) return;
     const onHidden = () => {
-      if (document.visibilityState === "hidden") flush(latest.current);
+      if (document.visibilityState === 'hidden') flush(latest.current);
     };
     const onLeave = () => flush(latest.current);
-    document.addEventListener("visibilitychange", onHidden);
-    window.addEventListener("blur", onLeave);
-    window.addEventListener("beforeunload", onLeave);
+    document.addEventListener('visibilitychange', onHidden);
+    window.addEventListener('blur', onLeave);
+    window.addEventListener('beforeunload', onLeave);
     return () => {
-      document.removeEventListener("visibilitychange", onHidden);
-      window.removeEventListener("blur", onLeave);
-      window.removeEventListener("beforeunload", onLeave);
+      document.removeEventListener('visibilitychange', onHidden);
+      window.removeEventListener('blur', onLeave);
+      window.removeEventListener('beforeunload', onLeave);
       flush(latest.current);
     };
   }, [enabled, flush]);

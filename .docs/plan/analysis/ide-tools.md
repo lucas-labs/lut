@@ -35,6 +35,7 @@ and ~80 commands (lib.rs:299-376).
 **Frontend.** Every tool is a lazy tab kind or sidebar view mounted by the app area:
 `WorkspaceSurface.tsx:3-6` mounts `EditorStack`, `AiDiffStack`, `GitDiffStack`, `GitHistoryStack`,
 `MarkdownStack`, `PreviewStack`; `App.tsx:1506` mounts `FileExplorer` and `SourceControlPanel` in the sidebar.
+
 - `editor/` — CodeMirror 6 via `@uiw/react-codemirror`; `useDocument.ts` loads/saves via `fs_read_file`/
   `fs_write_file`, `useEditorFileSync.ts` reloads on `fs:file-written`; language table
   (`languageDefinitions.ts`), external formatter, vim mode, media preview through `asset://`, AI inline
@@ -91,6 +92,7 @@ serialization (`spaces/lib/serialize.ts:25-27`).
 ## Couplings
 
 Into this area (consumers elsewhere):
+
 - app: `App.tsx:41-55` (editor, explorer, git-history, lsp navigator, preview), `App.tsx:73-77` (source-control),
   `App.tsx:1395` (`setLspNavigator`), `App.tsx:1506-1521` (FileExplorer); `WorkspaceSurface.tsx:3-6`;
   `app/components/useGitBranch.ts:1` (`git`); `feature-loading.test.tsx:4-8,17-33`.
@@ -122,6 +124,7 @@ useSourceControlPanel.ts:8,13,874, MarkdownPreviewPane.tsx:2), `read_policy.rs:2
 ## "terax" mentions
 
 (a) **Phase 0 identity isolation**
+
 - `read_policy.rs:15` denies `<cache>/terax` because the control server writes its runtime file there
   (control.rs:757-758). When control moves to lut's dir, the policy must deny lut's dir (and keep Terax's). → ide-tools-D02.
 - Dormant (never invoked by the UI, but reachable over IPC and shared with a Terax install if used):
@@ -155,7 +158,7 @@ fixtures (`ai.rs:443-445`, `file.rs:396,551`, `read_policy.rs:97,145`, `testutil
 - Removing the explorer/editor naively would break kept code: fs core is used by terminal links, path
   completion, CwdBreadcrumb, theme files, workspace/shell/control/agent Rust modules.
 - CodeMirror is **not** editor-only: the terminal block input uses `@codemirror/{state,view,language,commands,
-  autocomplete,legacy-modes}` and `@lezer/highlight` (terminal/block/lib/shellEditor.ts, ShellInput.tsx).
+autocomplete,legacy-modes}` and `@lezer/highlight` (terminal/block/lib/shellEditor.ts, ShellInput.tsx).
 - Terminal file-link opening depends on `lsp/lib/navigator.ts`; deleting LSP without moving it breaks links.
 - Spaces may hold editor/preview/markdown tabs; removing a tab kind needs tolerant deserialization (spaces area).
 - `read_policy` vs. control-server rename ordering (token exposure through `asset://` reads).
@@ -176,6 +179,7 @@ fixtures (`ai.rs:443-445`, `file.rs:396,551`, `read_policy.rs:97,145`, `testutil
 ## Answers
 
 **1. What the proposal decides.**
+
 - General: "No debe convertirse en un editor/IDE con una terminal subordinada" (§1 objective, line 43);
   goal 7: "Mantener funciones de exploración, Git, diff o edición como utilidades secundarias, invocables bajo
   demanda y no como elementos centrales o siempre visibles" (line 53); "Git, explorador, editor o diff
@@ -217,6 +221,7 @@ needed for PRO-012 profile image icons; Spaces/profile icons do not use fs today
 `copy.rs`, `clipboard.rs` (explorer); `search/grep/index/supersede.rs` (palette + AI, pending UX-008 scope).
 
 **4. Removal order (small PRs) and freed dependencies.**
+
 1. ide-tools-D08 move navigator (S, +40/-15) — unblocks LSP removal.
 2. ide-tools-D05 drop dead review/checkpoint frontend models and wrappers (S, ~-900).
 3. ide-tools-D04 delete git agent-task backend + move `git_watch` (XL deletion ~-14k, +60) — frees cargo `toml`
@@ -230,13 +235,14 @@ needed for PRO-012 profile image icons; Spaces/profile icons do not use fs today
    (9 pkgs), `@uiw/codemirror-themes`, `@replit/codemirror-vim`, `@replit/codemirror-lang-svelte`,
    `@codemirror/lang-*` (11), `@codemirror/lint`, `@codemirror/merge`, `@codemirror/search` (check
    `components/ai-elements/chat-code-lezer.ts` first); NOT `@codemirror/{state,view,language,commands,
-   autocomplete,legacy-modes}`/`@lezer/highlight` (terminal input). Removing explorer icons frees
+autocomplete,legacy-modes}`/`@lezer/highlight` (terminal input). Removing explorer icons frees
    `@iconify-json/catppuccin`. Removing fs search frees `grep-regex`, `grep-searcher`, `nucleo-matcher`,
    `globset` (verify), not `ignore` (tree.rs). There is no git2 and no Monaco.
 
 ## Draft issues
 
 ### ide-tools-D01 — Decide which optional IDE tools lut keeps
+
 ```yaml
 id: ide-tools-D01
 depends-on: []
@@ -246,10 +252,12 @@ type: spike
 scope: none
 size: S
 ```
+
 **Goal:** Record a keep/remove decision for editor, LSP, explorer, Git panel, Git history, diff, markdown
 preview, web preview, agent task worktrees and palette file search, so removal/rebuild issues can proceed.
 
 **Acceptance criteria:**
+
 - [ ] One decision per tool with rationale, written to `.docs/` and reflected in `proposal.md` if it changes scope.
 - [ ] For each removed tool, the matching removal issue is confirmed; for each kept tool, a design issue exists.
 - [ ] Dependency list (npm/cargo) freed by each decision is recorded.
@@ -257,6 +265,7 @@ preview, web preview, agent task worktrees and palette file search, so removal/r
 **Verification:** decision document reviewed by the user; `node .docs/plan/tools/validate.mjs` passes after plan update.
 
 ### ide-tools-D02 — Read policy denies lut's control runtime directory
+
 ```yaml
 id: ide-tools-D02
 depends-on: [agents-D01?]
@@ -266,15 +275,18 @@ type: task
 scope: be
 size: S
 ```
+
 **Goal:** The fs read policy must protect lut's control-server runtime file, not only Terax's.
 
 **Acceptance criteria:**
+
 - [ ] `read_policy.rs` denies the runtime directory used by lut's control server (single shared constant/fn with control.rs), and still denies `<cache>/terax`.
 - [ ] Tests cover both directories, including a relocated/aliased cache path.
 
 **Verification:** `cargo test -p terax_lib read_policy` (or the renamed crate) passes; an `asset_grant` on the runtime file is refused.
 
 ### ide-tools-D03 — Remove AI-only fs commands
+
 ```yaml
 id: ide-tools-D03
 depends-on: [ai-D??]
@@ -284,9 +296,11 @@ type: task
 scope: be
 size: M
 ```
+
 **Goal:** Delete `ai_read_file`, `ai_read_dir`, `ai_grep`, `ai_glob`, `fs_read_project_memory` once the AI frontend no longer calls them.
 
 **Acceptance criteria:**
+
 - [ ] `fs/ai.rs` and `fs/project_memory.rs` deleted; commands unregistered from lib.rs.
 - [ ] `readable()` tests from ai.rs:440-452 moved to `read_policy.rs`.
 - [ ] No frontend reference to the removed commands remains.
@@ -294,6 +308,7 @@ size: M
 **Verification:** `cargo test`, `pnpm test`, `pnpm tsc --noEmit` pass; `rg "ai_read_file|fs_read_project_memory" src src-tauri` is empty.
 
 ### ide-tools-D04 — Delete the unwired git agent-task backend
+
 ```yaml
 id: ide-tools-D04
 depends-on: [ide-tools-D01, ide-tools-D05]
@@ -304,9 +319,11 @@ scope: be
 size: XL
 size-exception: mechanical deletion of ~14k lines (checkpoint/worktree/task/review modules and their interdependent test files) with a ~60-line move of git_watch/git_unwatch
 ```
+
 **Goal:** Remove checkpoints, task worktrees, hunk review and branch create/rename commands that no UI calls, eliminating dormant `refs/terax`, `~/.terax` and `TERAX_*` identity.
 
 **Acceptance criteria:**
+
 - [ ] `git_watch`/`git_unwatch` moved from `commands_review.rs` to `commands.rs`, behaviour unchanged.
 - [ ] Listed modules and tests deleted; lib.rs registrations removed; `refs.rs` checkpoint prefix removed if unused.
 - [ ] `tests/git_operations.rs` worktree cases removed or rewritten.
@@ -315,6 +332,7 @@ size-exception: mechanical deletion of ~14k lines (checkpoint/worktree/task/revi
 **Verification:** `cargo test`, `cargo clippy` pass; app starts and the header branch indicator still updates on commit.
 
 ### ide-tools-D05 — Remove dead frontend git review models and wrappers
+
 ```yaml
 id: ide-tools-D05
 depends-on: []
@@ -324,15 +342,18 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** Delete `git/hunks.ts`, `git/scope.ts` and the unused review/worktree/checkpoint/branch wrappers and types in `git/api.ts`/`types.ts`.
 
 **Acceptance criteria:**
+
 - [ ] Files and wrappers removed; `index.ts` re-exports updated.
 - [ ] No consumer outside `src/modules/git` breaks.
 
 **Verification:** `pnpm tsc --noEmit`, `pnpm test`, `pnpm knip` show no new errors.
 
 ### ide-tools-D06 — Remove AI features from the editor
+
 ```yaml
 id: ide-tools-D06
 depends-on: [tabs-D??, ai-D??]
@@ -342,15 +363,18 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** Delete inline AI autocomplete and AI diff panes; the editor no longer reads provider keys.
 
 **Acceptance criteria:**
+
 - [ ] `editor/lib/autocomplete/`, `AiDiffPane/Stack/StackLazy` deleted; `EditorPane.tsx` has no `@/modules/ai` import.
 - [ ] `WorkspaceSurface` and `feature-loading.test.tsx` no longer reference AiDiffStack.
 
 **Verification:** `pnpm tsc --noEmit`, `pnpm test`; open a file in the editor and type with no AI request (network log).
 
 ### ide-tools-D07 — Remove AI commit message generation from source control
+
 ```yaml
 id: ide-tools-D07
 depends-on: [ai-D??]
@@ -360,15 +384,18 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** Source control hooks no longer import chatStore, ai/config or ai/lib/agent.
 
 **Acceptance criteria:**
+
 - [ ] AI commit message code path removed from `useSourceControlPanel.ts` (and its trigger in the panel).
 - [ ] Manual commit flow unchanged.
 
 **Verification:** `pnpm tsc --noEmit`, `pnpm test`; commit from the panel still works.
 
 ### ide-tools-D08 — Move the open-file navigator out of the LSP module
+
 ```yaml
 id: ide-tools-D08
 depends-on: []
@@ -378,15 +405,18 @@ type: task
 scope: ui
 size: S
 ```
+
 **Goal:** Terminal link activation must not depend on the LSP module.
 
 **Acceptance criteria:**
+
 - [ ] `navigator.ts` moved to a neutral module; `App.tsx` and `terminalLinks.ts` (+ test mock) import the new path.
 - [ ] Pure move, no behaviour change.
 
 **Verification:** `pnpm test src/modules/terminal/lib/terminalLinks.test.ts` passes; clicking a file path in the terminal opens it.
 
 ### ide-tools-D09 — Design: optional tool windows/panels
+
 ```yaml
 id: ide-tools-D09
 depends-on: [ide-tools-D01]
@@ -396,13 +426,16 @@ type: design
 scope: ui
 size: M
 ```
+
 **Goal:** The user designs how kept optional tools (editor/diff/Git/explorer…) are opened and presented, and any file iconography.
 
 **Acceptance criteria:**
+
 - [ ] Design covers invocation, placement (ContentTab vs ToolWindow), and visuals for each kept tool.
 - [ ] States that nothing is visible by default (16:23).
 
 ### ide-tools-D10 — Rebuild the Git panel UI on lut's design
+
 ```yaml
 id: ide-tools-D10
 depends-on: [ide-tools-D09, ide-tools-D07]
@@ -413,15 +446,18 @@ scope: ui
 size: L
 size-exception: replaces a 1.5k-line Terax view; may split per design section when the design exists
 ```
+
 **Goal:** Replace `SourceControlPanel.tsx` with the user-designed panel over the existing hooks, or delete it if D01 drops the panel.
 
 **Acceptance criteria:**
+
 - [ ] New view matches the design; Terax panel removed.
 - [ ] Not mounted at startup; opened on demand only.
 
 **Verification:** `pnpm test`; stage/commit/push from the panel on a test repo.
 
 ### ide-tools-D11 — Git history view per decision
+
 ```yaml
 id: ide-tools-D11
 depends-on: [ide-tools-D09]
@@ -431,14 +467,17 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** Rebuild the history view on the new design, or remove the git-history tab kind if D01 drops it.
 
 **Acceptance criteria:**
+
 - [ ] Either new view per design, or `src/modules/git-history/` and its tab kind removed (with tabs area).
 
 **Verification:** `pnpm tsc --noEmit`, `pnpm test`.
 
 ### ide-tools-D12 — Explorer panel per decision
+
 ```yaml
 id: ide-tools-D12
 depends-on: [ide-tools-D09]
@@ -449,15 +488,18 @@ scope: ui
 size: L
 size-exception: replaces a 1.1k-line view; removal variant is mechanical
 ```
+
 **Goal:** Replace the Terax explorer views with the designed optional panel, or remove explorer + `fs/copy.rs`/`clipboard.rs` (keeping `lib/watch.ts` in a neutral module if editor/markdown remain).
 
 **Acceptance criteria:**
+
 - [ ] Explorer is not part of the default sidebar.
 - [ ] Drag-a-path-into-terminal behaviour kept or explicitly dropped per decision.
 
 **Verification:** `pnpm test`, `cargo test`; app starts with no explorer mounted.
 
 ### ide-tools-D13 — Replace Terax file icon theme
+
 ```yaml
 id: ide-tools-D13
 depends-on: [ide-tools-D09, tabs-D??]
@@ -467,14 +509,17 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** Remove the Catppuccin file-icon mapping and `@iconify-json/catppuccin` once tabs/palette no longer need it, or replace it with the designed iconography.
 
 **Acceptance criteria:**
+
 - [ ] No import of `explorer/FileIcon` remains outside kept tools; dependency removed if unused.
 
 **Verification:** `pnpm tsc --noEmit`, `pnpm test`, `pnpm knip`.
 
 ### ide-tools-D14 — Replace editor themes with lut theming
+
 ```yaml
 id: ide-tools-D14
 depends-on: [ide-tools-D09]
@@ -484,15 +529,18 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** Editor (if kept) follows the designed theme; Terax CodeMirror themes and `@uiw/codemirror-theme-*` removed.
 
 **Acceptance criteria:**
+
 - [ ] `cmThemes.ts`, `chromeTheme.ts`, `themes.ts` replaced; `compositingBudget.test.ts` updated.
 - [ ] Unused theme packages removed from package.json.
 
 **Verification:** `pnpm test`, `pnpm build`.
 
 ### ide-tools-D15 — Remove (or rebuild) the in-app web preview
+
 ```yaml
 id: ide-tools-D15
 depends-on: [ide-tools-D01, tabs-D??]
@@ -502,15 +550,18 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** Apply D01's decision on the web preview tab (recommended: remove).
 
 **Acceptance criteria:**
+
 - [ ] If removed: `src/modules/preview/` deleted, `tab.newPreview` shortcut and tab kind gone, `devFramePolicy.test.ts` moved to app tests, ai/tools import resolved.
 - [ ] Spaces with saved preview tabs still load.
 
 **Verification:** `pnpm tsc --noEmit`, `pnpm test`; restore a Space containing a preview tab.
 
 ### ide-tools-D16 — Remove (or rebuild) the markdown preview
+
 ```yaml
 id: ide-tools-D16
 depends-on: [ide-tools-D01, ide-tools-D09]
@@ -520,14 +571,17 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** Apply D01's decision on markdown preview.
 
 **Acceptance criteria:**
+
 - [ ] Either designed view, or `src/modules/markdown/` and its tab kind removed with tolerant Spaces loading.
 
 **Verification:** `pnpm tsc --noEmit`, `pnpm test`.
 
 ### ide-tools-D17 — Remove LSP support
+
 ```yaml
 id: ide-tools-D17
 depends-on: [ide-tools-D01, ide-tools-D08]
@@ -538,15 +592,18 @@ scope: be
 size: L
 size-exception: mechanical deletion of the LSP frontend module, Rust lsp module and their settings/statusbar consumers (~4.5k lines)
 ```
+
 **Goal:** If D01 drops LSP, delete it end to end and free `codemirror-languageserver`.
 
 **Acceptance criteria:**
+
 - [ ] `src/modules/lsp/`, `src-tauri/src/modules/lsp/`, diagnostics store/badge, LspStatusPill, LSP settings groups and `lspActivation` pref removed.
 - [ ] lib.rs state/commands/exit hook removed.
 
 **Verification:** `cargo test`, `pnpm test`, `pnpm knip`; opening a .ts file spawns no language server.
 
 ### ide-tools-D18 — Optional tools load only on demand
+
 ```yaml
 id: ide-tools-D18
 depends-on: [app-D??, ide-tools-D01]
@@ -556,9 +613,11 @@ type: task
 scope: ui
 size: M
 ```
+
 **Goal:** No IDE tool module is loaded or mounted at startup; tools register as optional capabilities.
 
 **Acceptance criteria:**
+
 - [ ] Startup bundle contains no editor/explorer/git/lsp chunk (eager-budget test updated).
 - [ ] Switching tabs with all tools closed mounts none of them.
 

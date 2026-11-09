@@ -1,83 +1,73 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from 'vitest';
 import {
   terminalDeleteSequence,
   type TerminalKeyEvent,
   terminalLineNavigationSequence,
   terminalReadlineSequence,
   terminalWordNavigationSequence,
-} from "./keymap";
+} from './keymap';
 
 const evt = (partial: Partial<TerminalKeyEvent>): TerminalKeyEvent => ({
   altKey: false,
   ctrlKey: false,
   metaKey: false,
-  key: "",
-  code: "",
+  key: '',
+  code: '',
   ...partial,
 });
 
-describe("terminalWordNavigationSequence", () => {
-  it("maps Option+Left to readline word-left", () => {
+describe('terminalWordNavigationSequence', () => {
+  it('maps Option+Left to readline word-left', () => {
     expect(
-      terminalWordNavigationSequence(
-        evt({ altKey: true, key: "ArrowLeft", code: "ArrowLeft" }),
-      ),
-    ).toBe("\x1bb");
+      terminalWordNavigationSequence(evt({ altKey: true, key: 'ArrowLeft', code: 'ArrowLeft' })),
+    ).toBe('\x1bb');
   });
 
-  it("maps Option+Right to readline word-right", () => {
+  it('maps Option+Right to readline word-right', () => {
     expect(
-      terminalWordNavigationSequence(
-        evt({ altKey: true, key: "ArrowRight", code: "ArrowRight" }),
-      ),
-    ).toBe("\x1bf");
+      terminalWordNavigationSequence(evt({ altKey: true, key: 'ArrowRight', code: 'ArrowRight' })),
+    ).toBe('\x1bf');
   });
 
-  it("does not remap plain arrows", () => {
-    expect(
-      terminalWordNavigationSequence(
-        evt({ key: "ArrowLeft", code: "ArrowLeft" }),
-      ),
-    ).toBeNull();
+  it('does not remap plain arrows', () => {
+    expect(terminalWordNavigationSequence(evt({ key: 'ArrowLeft', code: 'ArrowLeft' }))).toBeNull();
   });
 });
 
-describe("terminalLineNavigationSequence", () => {
-  it("maps Cmd+Left to readline line-start on macOS", () => {
+describe('terminalLineNavigationSequence', () => {
+  it('maps Cmd+Left to readline line-start on macOS', () => {
     expect(
-      terminalLineNavigationSequence(
-        evt({ metaKey: true, key: "ArrowLeft", code: "ArrowLeft" }),
-        { isMac: true },
-      ),
-    ).toBe("\x01");
+      terminalLineNavigationSequence(evt({ metaKey: true, key: 'ArrowLeft', code: 'ArrowLeft' }), {
+        isMac: true,
+      }),
+    ).toBe('\x01');
   });
 
-  it("maps Cmd+Right to readline line-end on macOS", () => {
+  it('maps Cmd+Right to readline line-end on macOS', () => {
     expect(
       terminalLineNavigationSequence(
-        evt({ metaKey: true, key: "ArrowRight", code: "ArrowRight" }),
+        evt({ metaKey: true, key: 'ArrowRight', code: 'ArrowRight' }),
         { isMac: true },
       ),
-    ).toBe("\x05");
+    ).toBe('\x05');
   });
 
-  it("does not remap Cmd+Arrow off macOS", () => {
+  it('does not remap Cmd+Arrow off macOS', () => {
     expect(
-      terminalLineNavigationSequence(
-        evt({ metaKey: true, key: "ArrowLeft", code: "ArrowLeft" }),
-        { isMac: false },
-      ),
+      terminalLineNavigationSequence(evt({ metaKey: true, key: 'ArrowLeft', code: 'ArrowLeft' }), {
+        isMac: false,
+      }),
     ).toBeNull();
   });
 
-  it("does not remap Cmd+Option+Arrow (selection-style combos pass through)", () => {
+  it('does not remap Cmd+Option+Arrow (selection-style combos pass through)', () => {
     expect(
       terminalLineNavigationSequence(
         evt({
           metaKey: true,
           altKey: true,
-          key: "ArrowLeft",
-          code: "ArrowLeft",
+          key: 'ArrowLeft',
+          code: 'ArrowLeft',
         }),
         { isMac: true },
       ),
@@ -85,94 +75,74 @@ describe("terminalLineNavigationSequence", () => {
   });
 });
 
-describe("terminalDeleteSequence", () => {
-  it("maps Cmd+Backspace to kill-to-line-start on macOS", () => {
+describe('terminalDeleteSequence', () => {
+  it('maps Cmd+Backspace to kill-to-line-start on macOS', () => {
     expect(
-      terminalDeleteSequence(
-        evt({ metaKey: true, key: "Backspace", code: "Backspace" }),
-        { isMac: true },
-      ),
-    ).toBe("\x15");
+      terminalDeleteSequence(evt({ metaKey: true, key: 'Backspace', code: 'Backspace' }), {
+        isMac: true,
+      }),
+    ).toBe('\x15');
   });
 
-  it("maps Option+Backspace to kill-word-backward on macOS", () => {
+  it('maps Option+Backspace to kill-word-backward on macOS', () => {
     expect(
-      terminalDeleteSequence(
-        evt({ altKey: true, key: "Backspace", code: "Backspace" }),
-        { isMac: true },
-      ),
-    ).toBe("\x17");
+      terminalDeleteSequence(evt({ altKey: true, key: 'Backspace', code: 'Backspace' }), {
+        isMac: true,
+      }),
+    ).toBe('\x17');
   });
 
-  it("maps Ctrl+Backspace to kill-word-backward off macOS", () => {
+  it('maps Ctrl+Backspace to kill-word-backward off macOS', () => {
     expect(
-      terminalDeleteSequence(
-        evt({ ctrlKey: true, key: "Backspace", code: "Backspace" }),
-        { isMac: false },
-      ),
-    ).toBe("\x17");
+      terminalDeleteSequence(evt({ ctrlKey: true, key: 'Backspace', code: 'Backspace' }), {
+        isMac: false,
+      }),
+    ).toBe('\x17');
   });
 
-  it("does not remap Ctrl+Backspace on macOS (reserved for native readline binding)", () => {
+  it('does not remap Ctrl+Backspace on macOS (reserved for native readline binding)', () => {
     expect(
-      terminalDeleteSequence(
-        evt({ ctrlKey: true, key: "Backspace", code: "Backspace" }),
-        { isMac: true },
-      ),
+      terminalDeleteSequence(evt({ ctrlKey: true, key: 'Backspace', code: 'Backspace' }), {
+        isMac: true,
+      }),
     ).toBeNull();
   });
 
-  it("does not remap Cmd+Backspace off macOS", () => {
+  it('does not remap Cmd+Backspace off macOS', () => {
     expect(
-      terminalDeleteSequence(
-        evt({ metaKey: true, key: "Backspace", code: "Backspace" }),
-        { isMac: false },
-      ),
+      terminalDeleteSequence(evt({ metaKey: true, key: 'Backspace', code: 'Backspace' }), {
+        isMac: false,
+      }),
     ).toBeNull();
   });
 
-  it("does not remap plain Backspace", () => {
+  it('does not remap plain Backspace', () => {
     expect(
-      terminalDeleteSequence(evt({ key: "Backspace", code: "Backspace" }), {
+      terminalDeleteSequence(evt({ key: 'Backspace', code: 'Backspace' }), {
         isMac: true,
       }),
     ).toBeNull();
   });
 });
 
-describe("terminalReadlineSequence", () => {
+describe('terminalReadlineSequence', () => {
   const remaps = [
-    [
-      "line navigation",
-      evt({ metaKey: true, key: "ArrowLeft", code: "ArrowLeft" }),
-      "\x01",
-    ],
-    [
-      "word navigation",
-      evt({ altKey: true, key: "ArrowRight", code: "ArrowRight" }),
-      "\x1bf",
-    ],
-    [
-      "deletion",
-      evt({ metaKey: true, key: "Backspace", code: "Backspace" }),
-      "\x15",
-    ],
+    ['line navigation', evt({ metaKey: true, key: 'ArrowLeft', code: 'ArrowLeft' }), '\x01'],
+    ['word navigation', evt({ altKey: true, key: 'ArrowRight', code: 'ArrowRight' }), '\x1bf'],
+    ['deletion', evt({ metaKey: true, key: 'Backspace', code: 'Backspace' }), '\x15'],
   ] as const;
 
-  it.each(remaps)(
-    "applies %s on the normal screen",
-    (_name, event, sequence) => {
-      expect(
-        terminalReadlineSequence(event, {
-          isMac: true,
-          alternateScreen: () => false,
-        }),
-      ).toBe(sequence);
-    },
-  );
+  it.each(remaps)('applies %s on the normal screen', (_name, event, sequence) => {
+    expect(
+      terminalReadlineSequence(event, {
+        isMac: true,
+        alternateScreen: () => false,
+      }),
+    ).toBe(sequence);
+  });
 
   it.each(remaps)(
-    "keeps Command editing and leaves Option motion to the application on the alternate screen (%s)",
+    'keeps Command editing and leaves Option motion to the application on the alternate screen (%s)',
     (_name, event, sequence) => {
       expect(
         terminalReadlineSequence(event, {
@@ -183,28 +153,24 @@ describe("terminalReadlineSequence", () => {
     },
   );
 
-  it("never remaps Ctrl+Backspace on the alternate screen", () => {
+  it('never remaps Ctrl+Backspace on the alternate screen', () => {
     expect(
-      terminalReadlineSequence(
-        evt({ ctrlKey: true, key: "Backspace", code: "Backspace" }),
-        { isMac: false, alternateScreen: () => true },
-      ),
+      terminalReadlineSequence(evt({ ctrlKey: true, key: 'Backspace', code: 'Backspace' }), {
+        isMac: false,
+        alternateScreen: () => true,
+      }),
     ).toBeNull();
   });
 });
 
-describe("Ctrl+Backspace under the Kitty protocol", () => {
-  const event = evt({ ctrlKey: true, key: "Backspace", code: "Backspace" });
+describe('Ctrl+Backspace under the Kitty protocol', () => {
+  const event = evt({ ctrlKey: true, key: 'Backspace', code: 'Backspace' });
   const opts = { isMac: false, alternateScreen: () => false };
 
-  it("kills a word outside the protocol and leaves the key to the encoder inside it", () => {
-    expect(terminalReadlineSequence(event, opts)).toBe("\x17");
-    expect(
-      terminalReadlineSequence(event, { ...opts, kittyFlags: () => 0 }),
-    ).toBe("\x17");
-    expect(
-      terminalReadlineSequence(event, { ...opts, kittyFlags: () => 1 }),
-    ).toBeNull();
+  it('kills a word outside the protocol and leaves the key to the encoder inside it', () => {
+    expect(terminalReadlineSequence(event, opts)).toBe('\x17');
+    expect(terminalReadlineSequence(event, { ...opts, kittyFlags: () => 0 })).toBe('\x17');
+    expect(terminalReadlineSequence(event, { ...opts, kittyFlags: () => 1 })).toBeNull();
   });
 
   it("does not ask the application's mode for keys it never remaps", () => {
@@ -213,7 +179,7 @@ describe("Ctrl+Backspace under the Kitty protocol", () => {
       asked += 1;
       return 1;
     };
-    terminalReadlineSequence(evt({ key: "a", code: "KeyA" }), {
+    terminalReadlineSequence(evt({ key: 'a', code: 'KeyA' }), {
       ...opts,
       kittyFlags,
     });

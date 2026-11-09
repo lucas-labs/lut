@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export type TabSwitcherState = { order: number[]; index: number };
 
@@ -44,19 +44,19 @@ export function useTabSwitcher({ getOrder, onCommit }: Options) {
       if (!e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) commit();
     };
     const onKeyDown = (e: KeyboardEvent) => {
-      if (stateRef.current && e.key === "Escape") {
+      if (stateRef.current && e.key === 'Escape') {
         e.preventDefault();
         e.stopImmediatePropagation();
         cancel();
       }
     };
-    window.addEventListener("keyup", onKeyUp, { capture: true });
-    window.addEventListener("keydown", onKeyDown, { capture: true });
-    window.addEventListener("blur", cancel);
+    window.addEventListener('keyup', onKeyUp, { capture: true });
+    window.addEventListener('keydown', onKeyDown, { capture: true });
+    window.addEventListener('blur', cancel);
     return () => {
-      window.removeEventListener("keyup", onKeyUp, { capture: true });
-      window.removeEventListener("keydown", onKeyDown, { capture: true });
-      window.removeEventListener("blur", cancel);
+      window.removeEventListener('keyup', onKeyUp, { capture: true });
+      window.removeEventListener('keydown', onKeyDown, { capture: true });
+      window.removeEventListener('blur', cancel);
     };
   }, [commit, cancel]);
 

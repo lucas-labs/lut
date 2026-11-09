@@ -1,12 +1,12 @@
-import { readFile } from "node:fs/promises";
-import { TerminalResizeSync } from "@/modules/terminal/lib/terminalResizeSync";
-import { TeraxGhostty } from "@terax/ghostty-core/adapted";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { AdaptedGhosttyTerminalModel } from "./AdaptedGhosttyTerminalModel";
-import { RESIZE_PROMPT_HOLD_MS } from "./core/ResizePromptHold";
+import { readFile } from 'node:fs/promises';
+import { TerminalResizeSync } from '@/modules/terminal/lib/terminalResizeSync';
+import { TeraxGhostty } from '@terax/ghostty-core/adapted';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { AdaptedGhosttyTerminalModel } from './AdaptedGhosttyTerminalModel';
+import { RESIZE_PROMPT_HOLD_MS } from './core/ResizePromptHold';
 
 const encoder = new TextEncoder();
-const PROMPT = "user@host ~ % ";
+const PROMPT = 'user@host ~ % ';
 // What zsh with Terax's OSC 133 integration prints for a prompt: A starts it, B ends it.
 const PROMPT_BYTES = `\x1b]133;A\x07${PROMPT}\x1b]133;B\x07`;
 // What it prints again on SIGWINCH (redraw defaults to on, so Ghostty cleared the old one).
@@ -16,10 +16,7 @@ let core: TeraxGhostty;
 
 beforeAll(async () => {
   const file = await readFile(
-    new URL(
-      "../../../../packages/ghostty-core/adapted/ghostty-vt.wasm",
-      import.meta.url,
-    ),
+    new URL('../../../../packages/ghostty-core/adapted/ghostty-vt.wasm', import.meta.url),
   );
   core = await TeraxGhostty.loadBytes(Uint8Array.from(file).buffer);
 });
@@ -28,25 +25,25 @@ afterEach(() => vi.useRealTimers());
 
 function terminalAtPrompt(cols = 60, rows = 10) {
   const model = new AdaptedGhosttyTerminalModel(core, {
-    backend: "ghostty-webgpu",
+    backend: 'ghostty-webgpu',
     cols,
     rows,
   });
   const write = (text: string) => model.write(encoder.encode(text));
-  write("build output line 1\r\nbuild output line 2\r\n");
+  write('build output line 1\r\nbuild output line 2\r\n');
   write(PROMPT_BYTES);
   return { model, write, screen: () => model.readText(rows) };
 }
 
-describe("prompt visibility while resizing (real Ghostty core)", () => {
-  it("Ghostty clears a redrawable prompt when the model resizes", () => {
+describe('prompt visibility while resizing (real Ghostty core)', () => {
+  it('Ghostty clears a redrawable prompt when the model resizes', () => {
     const { model, screen } = terminalAtPrompt();
     try {
       expect(screen()).toContain(PROMPT.trim());
 
       model.resize(50, 10);
 
-      expect(screen()).toContain("build output line 2");
+      expect(screen()).toContain('build output line 2');
       expect(screen()).not.toContain(PROMPT.trim());
     } finally {
       model.dispose();
@@ -67,7 +64,7 @@ describe("prompt visibility while resizing (real Ghostty core)", () => {
       });
       const shellOutput: string[] = [];
 
-      expect(sync.request(50, 10)).toBe("applied");
+      expect(sync.request(50, 10)).toBe('applied');
       expect(pty).toEqual([[50, 10]]);
       expect(screen()).not.toContain(PROMPT.trim());
 
@@ -80,7 +77,7 @@ describe("prompt visibility while resizing (real Ghostty core)", () => {
     }
   });
 
-  it("a drag costs one resize and one redraw: the prompt is never presented blank", () => {
+  it('a drag costs one resize and one redraw: the prompt is never presented blank', () => {
     vi.useFakeTimers();
     const { model, write, screen } = terminalAtPrompt(80, 10);
     try {
@@ -110,7 +107,7 @@ describe("prompt visibility while resizing (real Ghostty core)", () => {
       expect(model.cols).toBe(80);
 
       // The pointer is released: one synchronized resize.
-      expect(sync.request(52, 10)).toBe("applied");
+      expect(sync.request(52, 10)).toBe('applied');
       frame();
       vi.advanceTimersByTime(5);
       for (const bytes of shellOutput.splice(0)) write(bytes);
@@ -127,7 +124,7 @@ describe("prompt visibility while resizing (real Ghostty core)", () => {
     }
   });
 
-  it("is the old behaviour when the PTY only hears about the drag at the end", () => {
+  it('is the old behaviour when the PTY only hears about the drag at the end', () => {
     const { model, screen } = terminalAtPrompt(80, 10);
     try {
       // Model resizes on every step, no SIGWINCH until release: the prompt stays blank.
@@ -139,20 +136,16 @@ describe("prompt visibility while resizing (real Ghostty core)", () => {
   });
 });
 
-describe("holding presentation while the shell redraws the prompt (real Ghostty core)", () => {
+describe('holding presentation while the shell redraws the prompt (real Ghostty core)', () => {
   /**
    * What a renderer frame would show: nothing while presentation is held (it keeps the frame it
    * drew before), otherwise the model's screen right now.
    */
-  function presented(
-    model: AdaptedGhosttyTerminalModel,
-    rows: number,
-    last: string,
-  ): string {
+  function presented(model: AdaptedGhosttyTerminalModel, rows: number, last: string): string {
     return model.presentationSuppressed() ? last : model.readText(rows);
   }
 
-  it("holds the previous frame from the model resize until the redraw arrives", () => {
+  it('holds the previous frame from the model resize until the redraw arrives', () => {
     const { model, write, screen } = terminalAtPrompt();
     try {
       expect(model.presentationSuppressed()).toBe(false);
@@ -177,7 +170,7 @@ describe("holding presentation while the shell redraws the prompt (real Ghostty 
     }
   });
 
-  it("presents after the deadline when the shell does not answer", () => {
+  it('presents after the deadline when the shell does not answer', () => {
     vi.useFakeTimers();
     const { model, screen } = terminalAtPrompt();
     try {
@@ -195,7 +188,7 @@ describe("holding presentation while the shell redraws the prompt (real Ghostty 
     }
   });
 
-  it("never presents a blank prompt during a one second drag that the shell answers", () => {
+  it('never presents a blank prompt during a one second drag that the shell answers', () => {
     vi.useFakeTimers();
     const rows = 10;
     const { model, write, screen } = terminalAtPrompt(80, rows);
@@ -216,7 +209,7 @@ describe("holding presentation while the shell redraws the prompt (real Ghostty 
       for (let elapsed = 0, cols = 80; elapsed < 1000; elapsed += 4, cols--) {
         const outcome = sync.request(Math.max(20, cols), rows);
         frame();
-        if (outcome === "applied") {
+        if (outcome === 'applied') {
           // The shell answers 8 ms after SIGWINCH; frames keep coming every 4 ms meanwhile.
           vi.advanceTimersByTime(4);
           frame();
@@ -238,16 +231,16 @@ describe("holding presentation while the shell redraws the prompt (real Ghostty 
     }
   });
 
-  it("does not hold while a command is running or in the alternate screen", () => {
+  it('does not hold while a command is running or in the alternate screen', () => {
     const { model, write } = terminalAtPrompt();
     try {
       // The user ran a command: OSC 133 C.
-      write("\x1b]133;C\x07running...\r\n");
+      write('\x1b]133;C\x07running...\r\n');
       model.resize(50, 10);
       expect(model.presentationSuppressed()).toBe(false);
       // Finish it and come back to a prompt, then enter the alternate screen.
       write(`\x1b]133;D;0\x07${PROMPT_BYTES}`);
-      write("\x1b[?1049h");
+      write('\x1b[?1049h');
       model.resize(40, 10);
       expect(model.presentationSuppressed()).toBe(false);
     } finally {
@@ -255,7 +248,7 @@ describe("holding presentation while the shell redraws the prompt (real Ghostty 
     }
   });
 
-  it("does not hold when the size did not change", () => {
+  it('does not hold when the size did not change', () => {
     const { model } = terminalAtPrompt(60, 10);
     try {
       model.resize(60, 10);

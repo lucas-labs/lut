@@ -1,18 +1,7 @@
-import {
-  git,
-  type GitRepoInfo,
-  type GitStatusSnapshot,
-} from "@/modules/git";
-import { useWorkspaceEnvStore, workspaceScopeKey } from "@/modules/workspace";
-import {
-  useCallback,
-  useEffect,
-  useEffectEvent,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { watchSourceControl } from "./watchSourceControl";
+import { git, type GitRepoInfo, type GitStatusSnapshot } from '@/modules/git';
+import { useWorkspaceEnvStore, workspaceScopeKey } from '@/modules/workspace';
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
+import { watchSourceControl } from './watchSourceControl';
 
 const AUTO_FETCH_THROTTLE_MS = 5 * 60_000;
 const AUTO_FETCH_LRU_LIMIT = 16;
@@ -21,17 +10,15 @@ const FOCUS_REFRESH_MIN_INTERVAL_MS = 1500;
 // is still inside the loaded repo (cd-within-repo produces identical status).
 const SC_STATUS_TTL_MS = 2000;
 
-type SourceControlRefreshMode = "auto" | "always" | "never";
-type SourceControlRemoteAction = "fetch" | "pull" | "push";
-type SourceControlRemoteActionMode =
-  | "contextual"
-  | SourceControlRemoteAction;
+type SourceControlRefreshMode = 'auto' | 'always' | 'never';
+type SourceControlRemoteAction = 'fetch' | 'pull' | 'push';
+type SourceControlRemoteActionMode = 'contextual' | SourceControlRemoteAction;
 
 type SourceControlRemoteActionResult = {
   ok: boolean;
   action: SourceControlRemoteAction | null;
   error?: string;
-  blocked?: "diverged" | "missing-upstream" | "no-repo";
+  blocked?: 'diverged' | 'missing-upstream' | 'no-repo';
 };
 
 export type SourceControlSummary = {
@@ -47,12 +34,8 @@ export type SourceControlSummary = {
   localError: string | null;
   busyAction: SourceControlRemoteAction | null;
   lastRemoteError: string | null;
-  applyStatus: (
-    updater: (status: GitStatusSnapshot) => GitStatusSnapshot,
-  ) => void;
-  refresh: (options?: {
-    remote?: SourceControlRefreshMode;
-  }) => Promise<void>;
+  applyStatus: (updater: (status: GitStatusSnapshot) => GitStatusSnapshot) => void;
+  refresh: (options?: { remote?: SourceControlRefreshMode }) => Promise<void>;
   runRemoteAction: (
     mode?: SourceControlRemoteActionMode,
   ) => Promise<SourceControlRemoteActionResult>;
@@ -71,13 +54,7 @@ type SourceControlSummaryState = {
 
 type RefreshableSourceControlState = Pick<
   SourceControlSummaryState,
-  | "contextPath"
-  | "repo"
-  | "status"
-  | "hasRepo"
-  | "isLoading"
-  | "localError"
-  | "lastRemoteError"
+  'contextPath' | 'repo' | 'status' | 'hasRepo' | 'isLoading' | 'localError' | 'lastRemoteError'
 >;
 
 const EMPTY_STATE: SourceControlSummaryState = {
@@ -97,19 +74,16 @@ type InflightRefresh = {
   promise: Promise<void>;
 };
 
-function sourceControlContextKey(
-  workspaceKey: string,
-  contextPath: string | null,
-): string {
-  return `${workspaceKey}\0${contextPath ?? ""}`;
+function sourceControlContextKey(workspaceKey: string, contextPath: string | null): string {
+  return `${workspaceKey}\0${contextPath ?? ''}`;
 }
 
 function normalizedContextPath(path: string): string {
-  const normalized = path.replace(/\\/g, "/");
-  if (normalized === "/" || /^[A-Za-z]:\/$/.test(normalized)) {
+  const normalized = path.replace(/\\/g, '/');
+  if (normalized === '/' || /^[A-Za-z]:\/$/.test(normalized)) {
     return normalized;
   }
-  return normalized.replace(/\/+$/, "");
+  return normalized.replace(/\/+$/, '');
 }
 
 export function repositoryContainsContext(
@@ -121,12 +95,12 @@ export function repositoryContainsContext(
   let context = normalizedContextPath(contextPath);
   const windowsPaths =
     (/^[A-Za-z]:\//.test(root) && /^[A-Za-z]:\//.test(context)) ||
-    (root.startsWith("//") && context.startsWith("//"));
+    (root.startsWith('//') && context.startsWith('//'));
   if (windowsPaths) {
     root = root.toLowerCase();
     context = context.toLowerCase();
   }
-  const prefix = root.endsWith("/") ? root : `${root}/`;
+  const prefix = root.endsWith('/') ? root : `${root}/`;
   return context === root || context.startsWith(prefix);
 }
 
@@ -136,23 +110,22 @@ export function repositoryForContext(
   contextPath: string | null,
 ): string | null {
   if (!contextPath) return null;
-  return loadedContextPath === contextPath ||
-    repositoryContainsContext(repoRoot, contextPath)
+  return loadedContextPath === contextPath || repositoryContainsContext(repoRoot, contextPath)
     ? repoRoot
     : null;
 }
 
 type ContextRefreshPlan =
   /** Disabled: drop everything. */
-  | "reset"
+  | 'reset'
   /** Run `git status` for the new context. */
-  | "refresh"
+  | 'refresh'
   /** Fresh data already covers this context: just record the new path. */
-  | "reuse"
+  | 'reuse'
   /** Nobody is looking and the loaded repo no longer applies: drop it, no git. */
-  | "clear"
+  | 'clear'
   /** Nobody is looking: leave the loaded snapshot alone, no git. */
-  | "keep";
+  | 'keep';
 
 /**
  * What a context change (or a consumer appearing) should do.
@@ -173,26 +146,23 @@ export function planContextRefresh(input: {
   /** Milliseconds since the last completed refresh. */
   ageMs: number;
 }): ContextRefreshPlan {
-  if (!input.enabled) return "reset";
+  if (!input.enabled) return 'reset';
   const sameRepo = repositoryContainsContext(input.repoRoot, input.contextPath);
   if (!input.live) {
-    if (!input.hasRepo && input.repoRoot === null) return "keep";
-    return sameRepo ? "keep" : "clear";
+    if (!input.hasRepo && input.repoRoot === null) return 'keep';
+    return sameRepo ? 'keep' : 'clear';
   }
-  if (
-    !input.isLoading &&
-    input.ageMs < SC_STATUS_TTL_MS &&
-    sameRepo &&
-    input.hasRepo
-  ) {
-    return "reuse";
+  if (!input.isLoading && input.ageMs < SC_STATUS_TTL_MS && sameRepo && input.hasRepo) {
+    return 'reuse';
   }
-  return "refresh";
+  return 'refresh';
 }
 
-export function beginSourceControlRefresh<
-  T extends RefreshableSourceControlState,
->(current: T, contextPath: string, reuseCurrentRepository: boolean): T {
+export function beginSourceControlRefresh<T extends RefreshableSourceControlState>(
+  current: T,
+  contextPath: string,
+  reuseCurrentRepository: boolean,
+): T {
   return {
     ...current,
     contextPath,
@@ -206,22 +176,20 @@ export function beginSourceControlRefresh<
 }
 
 function normalizeError(error: unknown): string {
-  if (typeof error === "string") return error;
-  if (error && typeof error === "object" && "message" in error) {
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object' && 'message' in error) {
     const message = (error as { message?: unknown }).message;
-    if (typeof message === "string") return message;
+    if (typeof message === 'string') return message;
   }
-  return "Unknown source control error";
+  return 'Unknown source control error';
 }
 
-function getContextualAction(
-  status: GitStatusSnapshot | null,
-): SourceControlRemoteAction | null {
+function getContextualAction(status: GitStatusSnapshot | null): SourceControlRemoteAction | null {
   if (!status?.upstream) return null;
   if (status.ahead > 0 && status.behind > 0) return null;
-  if (status.behind > 0) return "pull";
-  if (status.ahead > 0) return "push";
-  return "fetch";
+  if (status.behind > 0) return 'pull';
+  if (status.ahead > 0) return 'push';
+  return 'fetch';
 }
 
 function touchAutoFetch(map: Map<string, number>, key: string): void {
@@ -297,31 +265,24 @@ export function useSourceControl(
     });
   }, [workspaceKey]);
 
-  const applyStatus = useCallback(
-    (updater: (status: GitStatusSnapshot) => GitStatusSnapshot) => {
-      setState((current) => {
-        if (!current.status) return current;
-        const next = updater(current.status);
-        if (next === current.status) return current;
-        return { ...current, status: next };
-      });
-    },
-    [],
-  );
+  const applyStatus = useCallback((updater: (status: GitStatusSnapshot) => GitStatusSnapshot) => {
+    setState((current) => {
+      if (!current.status) return current;
+      const next = updater(current.status);
+      if (next === current.status) return current;
+      return { ...current, status: next };
+    });
+  }, []);
 
   const doRefresh = useCallback(
     async (remoteMode: SourceControlRefreshMode): Promise<void> => {
       const refreshContextKey = contextKey;
-      if (
-        !enabledRef.current ||
-        refreshContextKey !== contextKeyRef.current
-      ) {
+      if (!enabledRef.current || refreshContextKey !== contextKeyRef.current) {
         return;
       }
       const requestId = ++requestIdRef.current;
       const isCurrentRequest = () =>
-        requestId === requestIdRef.current &&
-        refreshContextKey === contextKeyRef.current;
+        requestId === requestIdRef.current && refreshContextKey === contextKeyRef.current;
 
       if (!contextPath) {
         if (!isCurrentRequest()) return;
@@ -345,9 +306,7 @@ export function useSourceControl(
         contextPath,
       );
 
-      setState((current) =>
-        beginSourceControlRefresh(current, contextPath, !!reusableRoot),
-      );
+      setState((current) => beginSourceControlRefresh(current, contextPath, !!reusableRoot));
 
       try {
         let repo: GitRepoInfo | null;
@@ -413,10 +372,9 @@ export function useSourceControl(
         let nextRemoteError = stateRef.current.lastRemoteError;
         const shouldAutoFetch =
           repo.upstream &&
-          remoteMode !== "never" &&
-          (remoteMode === "always" ||
-            Date.now() -
-              (autoFetchByRepoRef.current.get(repo.repoRoot) ?? 0) >=
+          remoteMode !== 'never' &&
+          (remoteMode === 'always' ||
+            Date.now() - (autoFetchByRepoRef.current.get(repo.repoRoot) ?? 0) >=
               AUTO_FETCH_THROTTLE_MS);
 
         if (shouldAutoFetch) {
@@ -463,13 +421,13 @@ export function useSourceControl(
 
   const refresh = useCallback(
     async (options?: { remote?: SourceControlRefreshMode }) => {
-      const remoteMode = options?.remote ?? "never";
+      const remoteMode = options?.remote ?? 'never';
       const inflight = inflightRef.current;
       if (inflight?.contextKey === contextKey) {
         const cur = inflight.mode;
         const upgrade =
-          (cur === "never" && remoteMode !== "never") ||
-          (cur === "auto" && remoteMode === "always");
+          (cur === 'never' && remoteMode !== 'never') ||
+          (cur === 'auto' && remoteMode === 'always');
         if (!upgrade) return inflight.promise;
       }
       const run = doRefresh(remoteMode).finally(() => {
@@ -485,31 +443,30 @@ export function useSourceControl(
 
   const runRemoteAction = useCallback(
     async (
-      mode: SourceControlRemoteActionMode = "contextual",
+      mode: SourceControlRemoteActionMode = 'contextual',
     ): Promise<SourceControlRemoteActionResult> => {
       const { repo, status } = stateRef.current;
       if (!repo || !status) {
-        return { ok: false, action: null, blocked: "no-repo" };
+        return { ok: false, action: null, blocked: 'no-repo' };
       }
       if (!status.upstream) {
-        return { ok: false, action: null, blocked: "missing-upstream" };
+        return { ok: false, action: null, blocked: 'missing-upstream' };
       }
 
-      const action = mode === "contextual" ? getContextualAction(status) : mode;
+      const action = mode === 'contextual' ? getContextualAction(status) : mode;
       if (!action) {
-        return { ok: false, action: null, blocked: "diverged" };
+        return { ok: false, action: null, blocked: 'diverged' };
       }
 
       setState((current) => ({ ...current, busyAction: action }));
       const actionContextKey = contextKeyRef.current;
-      const isCurrentContext = () =>
-        actionContextKey === contextKeyRef.current;
+      const isCurrentContext = () => actionContextKey === contextKeyRef.current;
 
       try {
-        if (action === "fetch") {
+        if (action === 'fetch') {
           await git.fetch(repo.repoRoot);
           touchAutoFetch(autoFetchByRepoRef.current, repo.repoRoot);
-        } else if (action === "pull") {
+        } else if (action === 'pull') {
           await git.fetch(repo.repoRoot);
           touchAutoFetch(autoFetchByRepoRef.current, repo.repoRoot);
           await git.pullFfOnly(repo.repoRoot);
@@ -518,14 +475,14 @@ export function useSourceControl(
         }
         if (isCurrentContext()) {
           setState((current) => ({ ...current, lastRemoteError: null }));
-          await refresh({ remote: "never" });
+          await refresh({ remote: 'never' });
         }
         return { ok: true, action };
       } catch (error) {
         const message = normalizeError(error);
         if (isCurrentContext()) {
           setState((current) => ({ ...current, lastRemoteError: message }));
-          await refresh({ remote: "never" }).catch(() => {});
+          await refresh({ remote: 'never' }).catch(() => {});
         }
         return { ok: false, action, error: message };
       } finally {
@@ -554,15 +511,13 @@ export function useSourceControl(
         ageMs: Date.now() - lastRefreshAtRef.current,
       });
       switch (plan) {
-        case "refresh":
-          void refresh({ remote: "never" });
+        case 'refresh':
+          void refresh({ remote: 'never' });
           return;
-        case "reuse":
-          setState((s) =>
-            s.contextPath === contextPath ? s : { ...s, contextPath },
-          );
+        case 'reuse':
+          setState((s) => (s.contextPath === contextPath ? s : { ...s, contextPath }));
           return;
-        case "clear":
+        case 'clear':
           // Drop any refresh still in flight for the context we just left.
           requestIdRef.current++;
           setState(EMPTY_STATE);
@@ -580,11 +535,11 @@ export function useSourceControl(
       return;
     }
     const idle =
-      typeof window.requestIdleCallback === "function"
+      typeof window.requestIdleCallback === 'function'
         ? window.requestIdleCallback(run, { timeout: 600 })
         : (window.setTimeout(run, 0) as unknown as number);
     return () => {
-      if (typeof window.cancelIdleCallback === "function") {
+      if (typeof window.cancelIdleCallback === 'function') {
         try {
           window.cancelIdleCallback(idle as number);
         } catch {
@@ -596,11 +551,9 @@ export function useSourceControl(
     };
   }, [refresh, contextPath, enabled, live]);
 
-  const refreshWatched = useEffectEvent(() => refresh({ remote: "never" }));
+  const refreshWatched = useEffectEvent(() => refresh({ remote: 'never' }));
   const currentRefresh = useEffectEvent(() =>
-    inflightRef.current?.contextKey === contextKey
-      ? inflightRef.current.promise
-      : undefined,
+    inflightRef.current?.contextKey === contextKey ? inflightRef.current.promise : undefined,
   );
   const watchedRoot = repositoryForContext(
     state.repo?.repoRoot ?? null,
@@ -608,13 +561,7 @@ export function useSourceControl(
     contextPath,
   );
   useEffect(() => {
-    if (
-      !enabled ||
-      !live ||
-      workspaceEnv.kind !== "local" ||
-      !watchedRoot
-    )
-      return;
+    if (!enabled || !live || workspaceEnv.kind !== 'local' || !watchedRoot) return;
     return watchSourceControl(
       watchedRoot,
       () => refreshWatched(),
@@ -631,12 +578,12 @@ export function useSourceControl(
         timer = 0;
         const elapsed = Date.now() - lastRefreshAtRef.current;
         if (elapsed < FOCUS_REFRESH_MIN_INTERVAL_MS) return;
-        void refresh({ remote: "never" });
+        void refresh({ remote: 'never' });
       }, 400);
     };
-    window.addEventListener("focus", onFocus);
+    window.addEventListener('focus', onFocus);
     return () => {
-      window.removeEventListener("focus", onFocus);
+      window.removeEventListener('focus', onFocus);
       if (timer) window.clearTimeout(timer);
     };
   }, [refresh, enabled, live]);

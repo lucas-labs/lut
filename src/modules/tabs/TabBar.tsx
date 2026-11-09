@@ -4,29 +4,22 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
-} from "@/components/ui/context-menu";
+} from '@/components/ui/context-menu';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { cn } from "@/lib/utils";
-import { AgentIcon } from "@/modules/agents/lib/agentIcon";
-import type { AgentLaunchRequest } from "@/modules/agents/lib/launcher";
-import {
-  ALL_LANGUAGES,
-  EXPOSED_LANGUAGES,
-} from "@/modules/editor/lib/languageDefinitions";
-import { resolveDisplayName } from "@/modules/editor/lib/languageResolver";
-import { FileIcon } from "@/modules/explorer/FileIcon";
-import {
-  leafIds,
-  ptyIdForLeaf,
-  useAgentActivityStore,
-} from "@/modules/terminal";
+} from '@/components/ui/dropdown-menu';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
+import { AgentIcon } from '@/modules/agents/lib/agentIcon';
+import type { AgentLaunchRequest } from '@/modules/agents/lib/launcher';
+import { ALL_LANGUAGES, EXPOSED_LANGUAGES } from '@/modules/editor/lib/languageDefinitions';
+import { resolveDisplayName } from '@/modules/editor/lib/languageResolver';
+import { FileIcon } from '@/modules/explorer/FileIcon';
+import { leafIds, ptyIdForLeaf, useAgentActivityStore } from '@/modules/terminal';
 import {
   ArrowRight01Icon,
   Cancel01Icon,
@@ -40,21 +33,14 @@ import {
   Message02Icon,
   PencilEdit02Icon,
   Tick02Icon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  Fragment,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
-import { useShallow } from "zustand/react/shallow";
-import { selectTabAgentStatus } from "./lib/tabAgentStatus";
-import { labelFor } from "./lib/tabLabel";
-import type { EditorTab, Tab, TerminalTab } from "./lib/useTabs";
-import { NewTabMenu } from "./NewTabMenu";
+} from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
+import { selectTabAgentStatus } from './lib/tabAgentStatus';
+import { labelFor } from './lib/tabLabel';
+import type { EditorTab, Tab, TerminalTab } from './lib/useTabs';
+import { NewTabMenu } from './NewTabMenu';
 
 type Props = {
   tabs: Tab[];
@@ -132,15 +118,11 @@ export function TabBar({
   // Single shared pill slides to the active tab instead of each tab toggling
   // its own background. Measured relative to the list (its offsetParent) so it
   // scrolls with the strip for free; transform/width only, no layout on siblings.
-  const [pill, setPill] = useState<{ left: number; width: number } | null>(
-    null,
-  );
+  const [pill, setPill] = useState<{ left: number; width: number } | null>(null);
   const [pillReady, setPillReady] = useState(false);
 
   const measurePill = useCallback(() => {
-    const el = listRef.current?.querySelector<HTMLElement>(
-      '[data-tab-active="true"]',
-    );
+    const el = listRef.current?.querySelector<HTMLElement>('[data-tab-active="true"]');
     setPill(el ? { left: el.offsetLeft, width: el.offsetWidth } : null);
   }, []);
 
@@ -166,9 +148,7 @@ export function TabBar({
   }, [pill, pillReady]);
 
   const gapAtX = (clientX: number) => {
-    const els = Array.from(
-      scrollRef.current?.querySelectorAll<HTMLElement>("[data-tab-id]") ?? [],
-    );
+    const els = Array.from(scrollRef.current?.querySelectorAll<HTMLElement>('[data-tab-id]') ?? []);
     for (let i = 0; i < els.length; i++) {
       const r = els[i].getBoundingClientRect();
       if (clientX < r.left + r.width / 2) return i;
@@ -182,7 +162,7 @@ export function TabBar({
     drag.current = null;
     setDraggingId(null);
     setDropGap(null);
-    document.body.style.userSelect = "";
+    document.body.style.userSelect = '';
   };
 
   // Horizontal wheel scroll without holding shift.
@@ -195,8 +175,8 @@ export function TabBar({
       e.preventDefault();
       el.scrollLeft += e.deltaY;
     };
-    el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
   }, []);
 
   // Keep the active tab visible after selection / open.
@@ -204,7 +184,7 @@ export function TabBar({
     const el = scrollRef.current;
     if (!el) return;
     const active = el.querySelector<HTMLElement>(`[data-tab-id="${activeId}"]`);
-    active?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    active?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }, [activeId]);
 
   return (
@@ -214,14 +194,8 @@ export function TabBar({
       className="min-w-0 shrink overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       <div className="flex w-max items-center gap-0.5">
-        <Tabs
-          value={String(activeId)}
-          onValueChange={(v) => onSelect(Number(v))}
-        >
-          <TabsList
-            ref={listRef}
-            className="relative h-7 w-max gap-0.5 bg-transparent p-0"
-          >
+        <Tabs value={String(activeId)} onValueChange={(v) => onSelect(Number(v))}>
+          <TabsList ref={listRef} className="relative h-7 w-max gap-0.5 bg-transparent p-0">
             <span
               aria-hidden
               className="pointer-events-none absolute left-0 top-1/2 h-7 rounded-md bg-foreground/[0.07] shadow-sm ring-1 ring-inset ring-foreground/[0.05]"
@@ -230,40 +204,34 @@ export function TabBar({
                   ? {
                       width: pill.width,
                       transform: `translate(${pill.left}px, -50%)`,
-                      transitionProperty: pillReady
-                        ? "transform, width"
-                        : "none",
-                      transitionDuration: "var(--dur-base)",
-                      transitionTimingFunction: "var(--ease-premium)",
+                      transitionProperty: pillReady ? 'transform, width' : 'none',
+                      transitionDuration: 'var(--dur-base)',
+                      transitionTimingFunction: 'var(--ease-premium)',
                     }
                   : { opacity: 0 }
               }
             />
             {tabs.map((t, i) => {
-              const isPreview =
-                (t.kind === "editor" || t.kind === "git-diff") && t.preview;
+              const isPreview = (t.kind === 'editor' || t.kind === 'git-diff') && t.preview;
               const isActive = t.id === activeId;
               const isNew = !firstRender && !seen.has(t.id);
 
               const srcIndex = tabs.findIndex((x) => x.id === draggingId);
               const showGap = (gap: number) =>
-                draggingId !== null &&
-                dropGap === gap &&
-                gap !== srcIndex &&
-                gap !== srcIndex + 1;
+                draggingId !== null && dropGap === gap && gap !== srcIndex && gap !== srcIndex + 1;
 
               // While renaming, render a non-button cell so the <input> is not
               // nested inside the trigger <button> (invalid HTML, and WebKit
               // blocks focus/selection on inputs inside buttons).
-              if (editingId === t.id && t.kind === "terminal") {
+              if (editingId === t.id && t.kind === 'terminal') {
                 return (
                   <Fragment key={t.id}>
                     {showGap(i) && <DropIndicator />}
                     <div
                       data-tab-id={t.id}
                       className={cn(
-                        "flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-accent text-xs text-foreground",
-                        compact ? "px-1.5" : "px-2",
+                        'flex h-7 shrink-0 items-center gap-1.5 rounded-md bg-accent text-xs text-foreground',
+                        compact ? 'px-1.5' : 'px-2',
                       )}
                     >
                       <TabIcon tab={t} />
@@ -276,9 +244,7 @@ export function TabBar({
                         onCancel={() => setEditingId(null)}
                       />
                     </div>
-                    {i === tabs.length - 1 && showGap(tabs.length) && (
-                      <DropIndicator />
-                    )}
+                    {i === tabs.length - 1 && showGap(tabs.length) && <DropIndicator />}
                   </Fragment>
                 );
               }
@@ -287,11 +253,10 @@ export function TabBar({
                 <TabsTrigger
                   value={String(t.id)}
                   data-tab-id={t.id}
-                  data-tab-active={isActive ? "true" : undefined}
+                  data-tab-active={isActive ? 'true' : undefined}
                   onPointerDown={(e) => {
                     if (e.button !== 0) return;
-                    if ((e.target as HTMLElement).closest("[data-no-drag]"))
-                      return;
+                    if ((e.target as HTMLElement).closest('[data-no-drag]')) return;
                     drag.current = {
                       pointerId: e.pointerId,
                       startX: e.clientX,
@@ -307,7 +272,7 @@ export function TabBar({
                       if (Math.abs(e.clientX - st.startX) < 4) return;
                       st.active = true;
                       setDraggingId(st.fromId);
-                      document.body.style.userSelect = "none";
+                      document.body.style.userSelect = 'none';
                     }
                     e.preventDefault();
                     setDropGap(gapAtX(e.clientX));
@@ -337,34 +302,22 @@ export function TabBar({
                       e.preventDefault();
                       return;
                     }
-                    if (
-                      e.button === 0 &&
-                      !(e.target as HTMLElement).closest("[data-no-drag]")
-                    ) {
+                    if (e.button === 0 && !(e.target as HTMLElement).closest('[data-no-drag]')) {
                       e.preventDefault();
                     }
                   }}
                   className={cn(
-                    "group relative z-[1] h-7 shrink-0 justify-between gap-1.5 rounded-md bg-transparent text-xs transition-colors data-active:bg-transparent dark:data-active:bg-transparent",
-                    isNew && "terax-tab-in",
+                    'group relative z-[1] h-7 shrink-0 justify-between gap-1.5 rounded-md bg-transparent text-xs transition-colors data-active:bg-transparent dark:data-active:bg-transparent',
+                    isNew && 'terax-tab-in',
                     isActive
-                      ? "text-foreground dark:text-foreground"
-                      : "text-muted-foreground hover:text-foreground/80 dark:text-muted-foreground",
-                    draggingId === t.id && "opacity-50",
-                    compact
-                      ? "px-1.5!"
-                      : tabs.length === 1
-                        ? "px-2!"
-                        : "ps-2! pe-1!",
+                      ? 'text-foreground dark:text-foreground'
+                      : 'text-muted-foreground hover:text-foreground/80 dark:text-muted-foreground',
+                    draggingId === t.id && 'opacity-50',
+                    compact ? 'px-1.5!' : tabs.length === 1 ? 'px-2!' : 'ps-2! pe-1!',
                   )}
                 >
-                  <span
-                    className={cn(
-                      "flex min-w-0 items-center gap-1.5",
-                      compact ? "max-w-48" : "max-w-80",
-                    )}
-                  >
-                    {t.kind === "editor" ? (
+                  <span className={cn('flex min-w-0 items-center gap-1.5', compact ? 'max-w-48' : 'max-w-80')}>
+                    {t.kind === 'editor' ? (
                       <DropdownMenu
                         onOpenChange={(open) => {
                           if (!open) setShowAllLanguages(false);
@@ -402,10 +355,7 @@ export function TabBar({
                             }}
                             className="flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg cursor-default focus:bg-accent focus:text-accent-foreground"
                           >
-                            <FileIcon
-                              name={t.title}
-                              className="size-3.5 shrink-0 object-contain"
-                            />
+                            <FileIcon name={t.title} className="size-3.5 shrink-0 object-contain" />
                             <div className="flex flex-1 flex-col">
                               <span>Auto Detect</span>
                               <span className="text-[10px] text-muted-foreground italic">
@@ -413,10 +363,7 @@ export function TabBar({
                               </span>
                             </div>
                             {!(t as EditorTab).overrideLanguage && (
-                              <HugeiconsIcon
-                                icon={Tick02Icon}
-                                className="size-3.5 text-primary"
-                              />
+                              <HugeiconsIcon icon={Tick02Icon} className="size-3.5 text-primary" />
                             )}
                           </DropdownMenuItem>
                           <DropdownMenuItem
@@ -426,36 +373,20 @@ export function TabBar({
                             }}
                             className="w-full px-2.5 py-1.5 text-left text-xs text-primary/60 hover:text-primary rounded-lg transition-colors hover:bg-accent"
                           >
-                            {showAllLanguages
-                              ? "↑ Fewer languages"
-                              : "↓ All languages"}
+                            {showAllLanguages ? '↑ Fewer languages' : '↓ All languages'}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator className="my-1 border-t border-border/30" />
-                          {(showAllLanguages
-                            ? ALL_LANGUAGES
-                            : EXPOSED_LANGUAGES
-                          ).map((lang) => {
-                            const isSelected =
-                              (t as EditorTab).overrideLanguage === lang.ext;
+                          {(showAllLanguages ? ALL_LANGUAGES : EXPOSED_LANGUAGES).map((lang) => {
+                            const isSelected = (t as EditorTab).overrideLanguage === lang.ext;
                             return (
                               <DropdownMenuItem
                                 key={lang.ext}
-                                onSelect={() =>
-                                  onOverrideLanguage?.(t.id, lang.ext)
-                                }
+                                onSelect={() => onOverrideLanguage?.(t.id, lang.ext)}
                                 className="flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg cursor-default focus:bg-accent focus:text-accent-foreground"
                               >
-                                <FileIcon
-                                  name={`dummy.${lang.ext}`}
-                                  className="size-3.5 shrink-0 object-contain"
-                                />
+                                <FileIcon name={`dummy.${lang.ext}`} className="size-3.5 shrink-0 object-contain" />
                                 <span className="flex-1">{lang.name}</span>
-                                {isSelected && (
-                                  <HugeiconsIcon
-                                    icon={Tick02Icon}
-                                    className="size-3.5 text-primary"
-                                  />
-                                )}
+                                {isSelected && <HugeiconsIcon icon={Tick02Icon} className="size-3.5 text-primary" />}
                               </DropdownMenuItem>
                             );
                           })}
@@ -466,14 +397,9 @@ export function TabBar({
                     )}
                     {/* Preview tabs use italic to signal the transient state,
                         matching the visual convention from VSCode. */}
-                    <span className={cn("truncate", isPreview && "italic")}>
-                      {labelFor(t)}
-                    </span>
-                    {t.kind === "editor" && t.dirty ? (
-                      <span
-                        aria-label="Unsaved changes"
-                        className="size-1.5 shrink-0 rounded-full bg-foreground/70"
-                      />
+                    <span className={cn('truncate', isPreview && 'italic')}>{labelFor(t)}</span>
+                    {t.kind === 'editor' && t.dirty ? (
+                      <span aria-label="Unsaved changes" className="size-1.5 shrink-0 rounded-full bg-foreground/70" />
                     ) : null}
                   </span>
                   {tabs.length > 1 && (
@@ -495,11 +421,7 @@ export function TabBar({
                       }}
                       className="rounded p-0.5 opacity-0 transition-opacity hover:bg-accent hover:opacity-100 group-hover:opacity-60"
                     >
-                      <HugeiconsIcon
-                        icon={Cancel01Icon}
-                        size={11}
-                        strokeWidth={2}
-                      />
+                      <HugeiconsIcon icon={Cancel01Icon} size={11} strokeWidth={2} />
                     </span>
                   )}
                 </TabsTrigger>
@@ -510,21 +432,14 @@ export function TabBar({
               const tabNode = (
                 <ContextMenu>
                   <ContextMenuTrigger asChild>{trigger}</ContextMenuTrigger>
-                  <ContextMenuContent
-                    className="min-w-32 p-1"
-                    onCloseAutoFocus={(e) => e.preventDefault()}
-                  >
-                    {t.kind === "terminal" && (
+                  <ContextMenuContent className="min-w-32 p-1" onCloseAutoFocus={(e) => e.preventDefault()}>
+                    {t.kind === 'terminal' && (
                       <>
                         <ContextMenuItem
                           className="gap-2 rounded-xl px-2.5 py-1.5 text-[13px]"
                           onSelect={() => setEditingId(t.id)}
                         >
-                          <HugeiconsIcon
-                            icon={PencilEdit02Icon}
-                            size={13}
-                            strokeWidth={1.75}
-                          />
+                          <HugeiconsIcon icon={PencilEdit02Icon} size={13} strokeWidth={1.75} />
                           <span className="flex-1">Rename</span>
                         </ContextMenuItem>
                         {tabs.length > 1 && (
@@ -534,11 +449,7 @@ export function TabBar({
                               className="gap-2 rounded-xl px-2.5 py-1.5 text-[13px]"
                               onSelect={() => onClose(t.id)}
                             >
-                              <HugeiconsIcon
-                                icon={Cancel01Icon}
-                                size={13}
-                                strokeWidth={1.75}
-                              />
+                              <HugeiconsIcon icon={Cancel01Icon} size={13} strokeWidth={1.75} />
                               <span className="flex-1">Close</span>
                             </ContextMenuItem>
                           </>
@@ -550,11 +461,7 @@ export function TabBar({
                       disabled={!hasTabsToRight}
                       onSelect={() => onCloseTabsToRight(t.id)}
                     >
-                      <HugeiconsIcon
-                        icon={ArrowRight01Icon}
-                        size={13}
-                        strokeWidth={1.75}
-                      />
+                      <HugeiconsIcon icon={ArrowRight01Icon} size={13} strokeWidth={1.75} />
                       <span className="flex-1">Close tabs to the right</span>
                     </ContextMenuItem>
                     <ContextMenuItem
@@ -562,11 +469,7 @@ export function TabBar({
                       disabled={tabs.length <= 1}
                       onSelect={() => onCloseOtherTabs(t.id)}
                     >
-                      <HugeiconsIcon
-                        icon={CancelCircleIcon}
-                        size={13}
-                        strokeWidth={1.75}
-                      />
+                      <HugeiconsIcon icon={CancelCircleIcon} size={13} strokeWidth={1.75} />
                       <span className="flex-1">Close other tabs</span>
                     </ContextMenuItem>
                   </ContextMenuContent>
@@ -577,9 +480,7 @@ export function TabBar({
                 <Fragment key={t.id}>
                   {showGap(i) && <DropIndicator />}
                   {tabNode}
-                  {i === tabs.length - 1 && showGap(tabs.length) && (
-                    <DropIndicator />
-                  )}
+                  {i === tabs.length - 1 && showGap(tabs.length) && <DropIndicator />}
                 </Fragment>
               );
             })}
@@ -600,12 +501,7 @@ export function TabBar({
 }
 
 function DropIndicator() {
-  return (
-    <span
-      aria-hidden
-      className="my-0.5 w-0.5 shrink-0 self-stretch rounded-full bg-primary"
-    />
-  );
+  return <span aria-hidden className="my-0.5 w-0.5 shrink-0 self-stretch rounded-full bg-primary" />;
 }
 
 /** Live pty ids behind a terminal tab; resolved at read time, not render time. */
@@ -625,109 +521,42 @@ function terminalPtyIds(tab: TerminalTab): number[] {
  * Non-terminal tabs never reach this component and subscribe to nothing.
  */
 function TerminalTabIcon({ tab }: { tab: TerminalTab }) {
-  const agentStatus = useAgentActivityStore(
-    useShallow((s) => selectTabAgentStatus(s, terminalPtyIds(tab))),
-  );
-  if (agentStatus.state === "attention") {
-    return (
-      <HugeiconsIcon
-        icon={Message02Icon}
-        size={14}
-        strokeWidth={2}
-        className="shrink-0"
-      />
-    );
+  const agentStatus = useAgentActivityStore(useShallow((s) => selectTabAgentStatus(s, terminalPtyIds(tab))));
+  if (agentStatus.state === 'attention') {
+    return <HugeiconsIcon icon={Message02Icon} size={14} strokeWidth={2} className="shrink-0" />;
   }
-  if (agentStatus.state === "finished") {
-    return (
-      <HugeiconsIcon
-        icon={CheckmarkCircle01Icon}
-        size={14}
-        strokeWidth={2}
-        className="shrink-0"
-      />
-    );
+  if (agentStatus.state === 'finished') {
+    return <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} strokeWidth={2} className="shrink-0" />;
   }
-  if (
-    (agentStatus.state === "working" || agentStatus.state === "idle") &&
-    agentStatus.agent
-  ) {
-    return (
-      <AgentIcon agent={agentStatus.agent} size={14} className="shrink-0" />
-    );
+  if ((agentStatus.state === 'working' || agentStatus.state === 'idle') && agentStatus.agent) {
+    return <AgentIcon agent={agentStatus.agent} size={14} className="shrink-0" />;
   }
-  return (
-    <HugeiconsIcon
-      icon={ComputerTerminal02Icon}
-      size={14}
-      strokeWidth={2}
-      className="shrink-0"
-    />
-  );
+  return <HugeiconsIcon icon={ComputerTerminal02Icon} size={14} strokeWidth={2} className="shrink-0" />;
 }
 
 export function TabIcon({ tab }: { tab: Tab }) {
-  if (tab.kind === "editor" || tab.kind === "markdown") {
+  if (tab.kind === 'editor' || tab.kind === 'markdown') {
     return (
       <FileIcon
-        name={
-          tab.kind === "editor" && tab.overrideLanguage
-            ? `dummy.${tab.overrideLanguage}`
-            : tab.title
-        }
+        name={tab.kind === 'editor' && tab.overrideLanguage ? `dummy.${tab.overrideLanguage}` : tab.title}
         className="size-3.5 shrink-0 object-contain"
       />
     );
   }
-  if (tab.kind === "preview") {
-    return (
-      <HugeiconsIcon
-        icon={Globe02Icon}
-        size={14}
-        strokeWidth={2}
-        className="shrink-0"
-      />
-    );
+  if (tab.kind === 'preview') {
+    return <HugeiconsIcon icon={Globe02Icon} size={14} strokeWidth={2} className="shrink-0" />;
   }
-  if (tab.kind === "ai-diff") {
-    return (
-      <HugeiconsIcon
-        icon={GitCompareIcon}
-        size={14}
-        strokeWidth={2}
-        className="shrink-0"
-      />
-    );
+  if (tab.kind === 'ai-diff') {
+    return <HugeiconsIcon icon={GitCompareIcon} size={14} strokeWidth={2} className="shrink-0" />;
   }
-  if (tab.kind === "terminal" && tab.private) {
-    return (
-      <HugeiconsIcon
-        icon={IncognitoIcon}
-        size={14}
-        strokeWidth={2}
-        className="shrink-0"
-      />
-    );
+  if (tab.kind === 'terminal' && tab.private) {
+    return <HugeiconsIcon icon={IncognitoIcon} size={14} strokeWidth={2} className="shrink-0" />;
   }
-  if (tab.kind === "git-diff" || tab.kind === "git-commit-file") {
-    return (
-      <HugeiconsIcon
-        icon={GitCompareIcon}
-        size={14}
-        strokeWidth={2}
-        className="shrink-0"
-      />
-    );
+  if (tab.kind === 'git-diff' || tab.kind === 'git-commit-file') {
+    return <HugeiconsIcon icon={GitCompareIcon} size={14} strokeWidth={2} className="shrink-0" />;
   }
-  if (tab.kind === "git-history") {
-    return (
-      <HugeiconsIcon
-        icon={Clock01Icon}
-        size={14}
-        strokeWidth={2}
-        className="shrink-0"
-      />
-    );
+  if (tab.kind === 'git-history') {
+    return <HugeiconsIcon icon={Clock01Icon} size={14} strokeWidth={2} className="shrink-0" />;
   }
   return <TerminalTabIcon tab={tab} />;
 }
@@ -776,13 +605,13 @@ function TabRenameInput({
       defaultValue={initial}
       aria-label="Rename tab"
       className={cn(
-        "w-28 min-w-0 rounded-sm bg-background px-1 text-xs text-foreground",
-        "outline-none ring-1 ring-border focus:ring-ring",
+        'w-28 min-w-0 rounded-sm bg-background px-1 text-xs text-foreground',
+        'outline-none ring-1 ring-border focus:ring-ring',
       )}
       onKeyDown={(e) => {
         e.stopPropagation();
-        if (e.key === "Enter") commit(e.currentTarget.value, true);
-        else if (e.key === "Escape") finish(onCancel);
+        if (e.key === 'Enter') commit(e.currentTarget.value, true);
+        else if (e.key === 'Escape') finish(onCancel);
       }}
       onBlur={(e) => {
         // Switching windows/apps blurs the input; keep the edit open instead

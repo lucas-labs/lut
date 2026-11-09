@@ -1,9 +1,9 @@
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useEffect, useState } from "react";
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { useEffect, useState } from 'react';
 
 export function useWindowFocus(): boolean {
   const [focused, setFocused] = useState(() =>
-    typeof document !== "undefined" ? document.hasFocus() : true,
+    typeof document !== 'undefined' ? document.hasFocus() : true,
   );
 
   useEffect(() => {

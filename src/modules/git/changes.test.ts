@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   listen: vi.fn(),
@@ -7,47 +7,43 @@ const mocks = vi.hoisted(() => ({
   unwatch: vi.fn(),
 }));
 
-vi.mock("@tauri-apps/api/event", () => ({ listen: mocks.listen }));
-vi.mock("./api", () => ({
+vi.mock('@tauri-apps/api/event', () => ({ listen: mocks.listen }));
+vi.mock('./api', () => ({
   git: { watch: mocks.watch, unwatch: mocks.unwatch },
 }));
 
-import {
-  createChangeDispatcher,
-  GIT_CHANGED_EVENT,
-  subscribeGitChanges,
-} from "./changes";
-import type { GitChangedEvent } from "./types";
+import { createChangeDispatcher, GIT_CHANGED_EVENT, subscribeGitChanges } from './changes';
+import type { GitChangedEvent } from './types';
 
-describe("createChangeDispatcher", () => {
-  it("routes an event to the handlers of its repository only", () => {
+describe('createChangeDispatcher', () => {
+  it('routes an event to the handlers of its repository only', () => {
     const dispatcher = createChangeDispatcher();
     const a = vi.fn();
     const b = vi.fn();
-    dispatcher.add("/repo/a", a);
-    dispatcher.add("/repo/b", b);
-    dispatcher.dispatch({ repo: "/repo/a", kinds: ["index"] });
-    expect(a).toHaveBeenCalledWith(["index"]);
+    dispatcher.add('/repo/a', a);
+    dispatcher.add('/repo/b', b);
+    dispatcher.dispatch({ repo: '/repo/a', kinds: ['index'] });
+    expect(a).toHaveBeenCalledWith(['index']);
     expect(b).not.toHaveBeenCalled();
   });
 
-  it("filters kinds per handler and skips handlers with nothing left", () => {
+  it('filters kinds per handler and skips handlers with nothing left', () => {
     const dispatcher = createChangeDispatcher();
     const everything = vi.fn();
     const refsOnly = vi.fn();
-    dispatcher.add("/r", everything);
-    dispatcher.add("/r", refsOnly, { kinds: ["refs", "head"] });
-    dispatcher.dispatch({ repo: "/r", kinds: ["index", "worktree"] });
-    expect(everything).toHaveBeenCalledWith(["index", "worktree"]);
+    dispatcher.add('/r', everything);
+    dispatcher.add('/r', refsOnly, { kinds: ['refs', 'head'] });
+    dispatcher.dispatch({ repo: '/r', kinds: ['index', 'worktree'] });
+    expect(everything).toHaveBeenCalledWith(['index', 'worktree']);
     expect(refsOnly).not.toHaveBeenCalled();
-    dispatcher.dispatch({ repo: "/r", kinds: ["head", "worktree"] });
-    expect(refsOnly).toHaveBeenCalledWith(["head"]);
+    dispatcher.dispatch({ repo: '/r', kinds: ['head', 'worktree'] });
+    expect(refsOnly).toHaveBeenCalledWith(['head']);
   });
 
-  it("forgets a repository when its last handler is removed", () => {
+  it('forgets a repository when its last handler is removed', () => {
     const dispatcher = createChangeDispatcher();
-    const remove1 = dispatcher.add("/r", vi.fn());
-    const remove2 = dispatcher.add("/r", vi.fn());
+    const remove1 = dispatcher.add('/r', vi.fn());
+    const remove2 = dispatcher.add('/r', vi.fn());
     expect(dispatcher.size).toBe(1);
     remove1();
     expect(dispatcher.size).toBe(1);
@@ -56,21 +52,21 @@ describe("createChangeDispatcher", () => {
     expect(dispatcher.size).toBe(0);
   });
 
-  it("lets a handler unsubscribe while being notified", () => {
+  it('lets a handler unsubscribe while being notified', () => {
     const dispatcher = createChangeDispatcher();
     const calls: string[] = [];
-    const remove = dispatcher.add("/r", () => {
-      calls.push("first");
+    const remove = dispatcher.add('/r', () => {
+      calls.push('first');
       remove();
     });
-    dispatcher.add("/r", () => calls.push("second"));
-    dispatcher.dispatch({ repo: "/r", kinds: ["head"] });
-    dispatcher.dispatch({ repo: "/r", kinds: ["head"] });
-    expect(calls).toEqual(["first", "second", "second"]);
+    dispatcher.add('/r', () => calls.push('second'));
+    dispatcher.dispatch({ repo: '/r', kinds: ['head'] });
+    dispatcher.dispatch({ repo: '/r', kinds: ['head'] });
+    expect(calls).toEqual(['first', 'second', 'second']);
   });
 });
 
-describe("subscribeGitChanges", () => {
+describe('subscribeGitChanges', () => {
   let emit: (event: GitChangedEvent) => void;
 
   beforeEach(() => {
@@ -91,30 +87,27 @@ describe("subscribeGitChanges", () => {
     mocks.unwatch.mockResolvedValue(undefined);
   });
 
-  it("watches on the backend, delivers events and releases everything on unsubscribe", async () => {
+  it('watches on the backend, delivers events and releases everything on unsubscribe', async () => {
     const handler = vi.fn();
-    const unsubscribe = await subscribeGitChanges("/repo", handler);
-    expect(mocks.watch).toHaveBeenCalledWith("/repo");
-    expect(mocks.listen).toHaveBeenCalledWith(
-      GIT_CHANGED_EVENT,
-      expect.any(Function),
-    );
+    const unsubscribe = await subscribeGitChanges('/repo', handler);
+    expect(mocks.watch).toHaveBeenCalledWith('/repo');
+    expect(mocks.listen).toHaveBeenCalledWith(GIT_CHANGED_EVENT, expect.any(Function));
 
-    emit({ repo: "/repo", kinds: ["worktree"] });
-    expect(handler).toHaveBeenCalledWith(["worktree"]);
+    emit({ repo: '/repo', kinds: ['worktree'] });
+    expect(handler).toHaveBeenCalledWith(['worktree']);
 
     unsubscribe();
     unsubscribe();
     expect(mocks.unwatch).toHaveBeenCalledTimes(1);
-    expect(mocks.unwatch).toHaveBeenCalledWith("/repo");
+    expect(mocks.unwatch).toHaveBeenCalledWith('/repo');
     await vi.waitFor(() => expect(mocks.unlisten).toHaveBeenCalledTimes(1));
-    emit({ repo: "/repo", kinds: ["worktree"] });
+    emit({ repo: '/repo', kinds: ['worktree'] });
     expect(handler).toHaveBeenCalledTimes(1);
   });
 
-  it("shares one event listener between subscribers and keeps it until the last leaves", async () => {
-    const one = await subscribeGitChanges("/repo", vi.fn());
-    const two = await subscribeGitChanges("/other", vi.fn());
+  it('shares one event listener between subscribers and keeps it until the last leaves', async () => {
+    const one = await subscribeGitChanges('/repo', vi.fn());
+    const two = await subscribeGitChanges('/other', vi.fn());
     expect(mocks.listen).toHaveBeenCalledTimes(1);
     one();
     await Promise.resolve();
@@ -123,81 +116,77 @@ describe("subscribeGitChanges", () => {
     await vi.waitFor(() => expect(mocks.unlisten).toHaveBeenCalledTimes(1));
   });
 
-  it("routes by the repository the backend resolved, not the path asked for", async () => {
+  it('routes by the repository the backend resolved, not the path asked for', async () => {
     mocks.watch.mockResolvedValue({
       watching: true,
-      repo: "/repo",
+      repo: '/repo',
       watchedDirs: 1,
       truncated: false,
       reason: null,
     });
     const handler = vi.fn();
-    const unsubscribe = await subscribeGitChanges("/repo/src/deep", handler);
-    emit({ repo: "/repo", kinds: ["index"] });
-    expect(handler).toHaveBeenCalledWith(["index"]);
+    const unsubscribe = await subscribeGitChanges('/repo/src/deep', handler);
+    emit({ repo: '/repo', kinds: ['index'] });
+    expect(handler).toHaveBeenCalledWith(['index']);
     unsubscribe();
     // Released by the key the backend returned, which needs no repository on disk.
-    expect(mocks.unwatch).toHaveBeenCalledWith("/repo");
+    expect(mocks.unwatch).toHaveBeenCalledWith('/repo');
   });
 
-  it("never releases a watch the backend did not grant", async () => {
-    const other = await subscribeGitChanges("/repo", vi.fn());
+  it('never releases a watch the backend did not grant', async () => {
+    const other = await subscribeGitChanges('/repo', vi.fn());
     mocks.watch.mockResolvedValueOnce({
       watching: false,
-      repo: "/repo",
+      repo: '/repo',
       watchedDirs: 0,
       truncated: false,
-      reason: "wsl-unsupported",
+      reason: 'wsl-unsupported',
     });
     const handler = vi.fn();
-    const refused = await subscribeGitChanges("/repo", handler);
+    const refused = await subscribeGitChanges('/repo', handler);
     refused();
     refused();
     expect(mocks.unwatch).not.toHaveBeenCalled();
-    emit({ repo: "/repo", kinds: ["index"] });
+    emit({ repo: '/repo', kinds: ['index'] });
     expect(handler).not.toHaveBeenCalled();
 
     // The earlier, granted subscription is untouched and still ends normally.
     other();
     expect(mocks.unwatch).toHaveBeenCalledTimes(1);
-    expect(mocks.unwatch).toHaveBeenCalledWith("/repo");
+    expect(mocks.unwatch).toHaveBeenCalledWith('/repo');
   });
 
-  it("releases the shared listener when only refused subscriptions were made", async () => {
+  it('releases the shared listener when only refused subscriptions were made', async () => {
     mocks.watch.mockResolvedValueOnce({
       watching: false,
-      repo: "/repo",
+      repo: '/repo',
       watchedDirs: 0,
       truncated: false,
-      reason: "wsl-unsupported",
+      reason: 'wsl-unsupported',
     });
-    const unsubscribe = await subscribeGitChanges("/repo", vi.fn());
+    const unsubscribe = await subscribeGitChanges('/repo', vi.fn());
     unsubscribe();
     await vi.waitFor(() => expect(mocks.unlisten).toHaveBeenCalledTimes(1));
     expect(mocks.unwatch).not.toHaveBeenCalled();
   });
 
-  it("releases the listener when the backend refuses to watch", async () => {
-    mocks.watch.mockRejectedValue(new Error("not a repository"));
-    await expect(subscribeGitChanges("/nope", vi.fn())).rejects.toThrow(
-      "not a repository",
-    );
+  it('releases the listener when the backend refuses to watch', async () => {
+    mocks.watch.mockRejectedValue(new Error('not a repository'));
+    await expect(subscribeGitChanges('/nope', vi.fn())).rejects.toThrow('not a repository');
     await vi.waitFor(() => expect(mocks.unlisten).toHaveBeenCalledTimes(1));
   });
 
-  it("does not watch when the event listener could not be registered, and retries it next time", async () => {
-    mocks.listen.mockRejectedValueOnce(new Error("listen denied"));
-    await expect(subscribeGitChanges("/repo", vi.fn())).rejects.toThrow(
-      "listen denied",
-    );
+  it('does not watch when the event listener could not be registered, and retries it next time', async () => {
+    mocks.listen.mockRejectedValueOnce(new Error('listen denied'));
+    await expect(subscribeGitChanges('/repo', vi.fn())).rejects.toThrow('listen denied');
     expect(mocks.watch).not.toHaveBeenCalled();
 
     const handler = vi.fn();
-    const unsubscribe = await subscribeGitChanges("/repo", handler);
+    const unsubscribe = await subscribeGitChanges('/repo', handler);
     expect(mocks.listen).toHaveBeenCalledTimes(2);
     expect(mocks.watch).toHaveBeenCalledTimes(1);
-    emit({ repo: "/repo", kinds: ["head"] });
-    expect(handler).toHaveBeenCalledWith(["head"]);
+    emit({ repo: '/repo', kinds: ['head'] });
+    expect(handler).toHaveBeenCalledWith(['head']);
     unsubscribe();
     await vi.waitFor(() => expect(mocks.unlisten).toHaveBeenCalledTimes(1));
   });

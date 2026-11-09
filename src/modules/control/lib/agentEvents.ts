@@ -6,44 +6,42 @@ import type {
   PermissionInfo,
   SubagentInfo,
   ToolInfo,
-} from "@/modules/agents/model";
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+} from '@/modules/agents/model';
+import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 
-export const AGENT_EVENT = "terax:agent-event";
-export const TERMINAL_NOTIFICATION_EVENT = "terax:terminal-notification";
+export const AGENT_EVENT = 'terax:agent-event';
+export const TERMINAL_NOTIFICATION_EVENT = 'terax:terminal-notification';
 
 const KINDS: ReadonlySet<string> = new Set<HookEventKind>([
-  "session-start",
-  "prompt",
-  "tool-start",
-  "tool-end",
-  "permission-request",
-  "permission-resolved",
-  "notification",
-  "stop",
-  "stop-failure",
-  "interrupt",
-  "subagent-start",
-  "subagent-stop",
-  "session-end",
+  'session-start',
+  'prompt',
+  'tool-start',
+  'tool-end',
+  'permission-request',
+  'permission-resolved',
+  'notification',
+  'stop',
+  'stop-failure',
+  'interrupt',
+  'subagent-start',
+  'subagent-stop',
+  'session-end',
 ]);
 
 type Dict = Record<string, unknown>;
 
 function dict(value: unknown): Dict | null {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
     ? (value as Dict)
     : null;
 }
 
 function text(value: unknown): string | undefined {
-  return typeof value === "string" ? value : undefined;
+  return typeof value === 'string' ? value : undefined;
 }
 
 function id(value: unknown): number | null {
-  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0
-    ? value
-    : null;
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : null;
 }
 
 function parseTool(value: unknown): ToolInfo | undefined {
@@ -52,7 +50,7 @@ function parseTool(value: unknown): ToolInfo | undefined {
   if (!tool || name === undefined) return undefined;
   return {
     name,
-    inputPreview: text(tool.inputPreview) ?? "",
+    inputPreview: text(tool.inputPreview) ?? '',
     id: text(tool.id),
     error: tool.error === true ? true : undefined,
   };
@@ -71,7 +69,7 @@ function parsePermission(value: unknown): PermissionInfo | undefined {
   return {
     requestId: text(permission.requestId),
     tool,
-    inputPreview: text(permission.inputPreview) ?? "",
+    inputPreview: text(permission.inputPreview) ?? '',
     suggestions,
     outcome: text(permission.outcome),
   };
@@ -81,8 +79,8 @@ function parseSubagent(value: unknown): SubagentInfo | undefined {
   const subagent = dict(value);
   const subagentId = text(subagent?.id);
   if (!subagent || subagentId === undefined) return undefined;
-  const state = subagent.state === "done" ? "done" : "running";
-  return { id: subagentId, type: text(subagent.type) ?? "agent", state };
+  const state = subagent.state === 'done' ? 'done' : 'running';
+  return { id: subagentId, type: text(subagent.type) ?? 'agent', state };
 }
 
 /** Validates a native `terax:agent-event` payload; null when malformed. */
@@ -93,8 +91,7 @@ export function parseAgentHookEvent(payload: unknown): AgentHookEvent | null {
   const ptyId = id(raw.ptyId);
   const agent = text(raw.agent);
   const kind = text(raw.kind);
-  const at =
-    typeof raw.at === "number" && Number.isFinite(raw.at) ? raw.at : null;
+  const at = typeof raw.at === 'number' && Number.isFinite(raw.at) ? raw.at : null;
   if (
     paneId === null ||
     ptyId === null ||
@@ -123,7 +120,7 @@ export function parseAgentHookEvent(payload: unknown): AgentHookEvent | null {
   };
 }
 
-export type TerminalNotificationKind = "bell" | "osc9" | "osc99" | "osc777";
+export type TerminalNotificationKind = 'bell' | 'osc9' | 'osc99' | 'osc777';
 
 export type TerminalNotification = {
   ptyId: number;
@@ -132,16 +129,9 @@ export type TerminalNotification = {
   kind: TerminalNotificationKind;
 };
 
-const NOTIFICATION_KINDS: ReadonlySet<string> = new Set([
-  "bell",
-  "osc9",
-  "osc99",
-  "osc777",
-]);
+const NOTIFICATION_KINDS: ReadonlySet<string> = new Set(['bell', 'osc9', 'osc99', 'osc777']);
 
-export function parseTerminalNotification(
-  payload: unknown,
-): TerminalNotification | null {
+export function parseTerminalNotification(payload: unknown): TerminalNotification | null {
   const raw = dict(payload);
   const ptyId = id(raw?.ptyId);
   const kind = text(raw?.kind);
@@ -150,7 +140,7 @@ export function parseTerminalNotification(
   return {
     ptyId,
     title: text(raw.title),
-    body: text(raw.body) ?? "",
+    body: text(raw.body) ?? '',
     kind: kind as TerminalNotificationKind,
   };
 }
@@ -165,10 +155,7 @@ type Fanout<T> = {
  * One native listener per event, attached with the first subscriber and
  * released with the last, so unused features hold no IPC subscription.
  */
-function fanout<T>(
-  eventName: string,
-  parse: (payload: unknown) => T | null,
-): Fanout<T> {
+function fanout<T>(eventName: string, parse: (payload: unknown) => T | null): Fanout<T> {
   const handlers = new Set<(value: T) => void>();
   let attached: Promise<UnlistenFn> | null = null;
   let attachResult: Promise<void> = Promise.resolve();
@@ -212,17 +199,14 @@ function fanout<T>(
 }
 
 const agentEvents = fanout(AGENT_EVENT, parseAgentHookEvent);
-const terminalNotifications = fanout(
-  TERMINAL_NOTIFICATION_EVENT,
-  parseTerminalNotification,
-);
+const terminalNotifications = fanout(TERMINAL_NOTIFICATION_EVENT, parseTerminalNotification);
 
 export const subscribeAgentEvents = agentEvents.subscribe;
 export const agentEventsReady = agentEvents.ready;
 export const subscribeTerminalNotifications = terminalNotifications.subscribe;
 
 export function hookEventToModelEvent(event: AgentHookEvent): AgentModelEvent {
-  return { type: "hook", event };
+  return { type: 'hook', event };
 }
 
 /** Adapts a legacy `terax:agent-signal` (process and OSC state) for the model. */
@@ -230,5 +214,5 @@ export function signalToModelEvent(
   signal: AgentSignalEvent,
   at: number = Date.now(),
 ): AgentModelEvent {
-  return { type: "signal", signal, at };
+  return { type: 'signal', signal, at };
 }

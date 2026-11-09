@@ -20,7 +20,7 @@ function position(digits: string): number {
  * typing the position) is dropped so results do not flicker to nothing.
  */
 export function parseFileTarget(term: string): FileTarget {
-  const trimmed = term.trim().replace(/:+$/, "").trim();
+  const trimmed = term.trim().replace(/:+$/, '').trim();
   const m = POSITION_SUFFIX.exec(trimmed);
   if (m) {
     const target: FileTarget = { query: m[1].trim(), line: position(m[2]) };
@@ -72,27 +72,23 @@ export function boostRecent<T extends { path: string; score: number }>(
 }
 
 function toPosix(path: string): string {
-  return path.replace(/\\/g, "/");
+  return path.replace(/\\/g, '/');
 }
 
 /** `path` relative to `root`, or `path` itself when it lies outside. */
 export function relativeTo(root: string, path: string): string {
-  const r = toPosix(root).replace(/\/+$/, "");
+  const r = toPosix(root).replace(/\/+$/, '');
   const p = toPosix(path);
   return r && p.startsWith(`${r}/`) ? p.slice(r.length + 1) : p;
 }
 
 function basename(rel: string): string {
-  const i = rel.lastIndexOf("/");
+  const i = rel.lastIndexOf('/');
   return i < 0 ? rel : rel.slice(i + 1);
 }
 
 /** Recent files as search hits, newest first, for an empty query. */
-export function recentToHits(
-  root: string,
-  recent: readonly string[],
-  limit: number,
-): FileHit[] {
+export function recentToHits(root: string, recent: readonly string[], limit: number): FileHit[] {
   return recent.slice(0, limit).map((path) => {
     const rel = relativeTo(root, path);
     return { path, rel, name: basename(rel), score: 0, indices: [] };
@@ -126,7 +122,7 @@ function segments(chars: string[], marks: ReadonlySet<number>, from: number, to:
 export function pathParts(rel: string, indices: readonly number[]): PathParts {
   const chars = Array.from(rel);
   const marks = new Set(indices);
-  const slash = chars.lastIndexOf("/");
+  const slash = chars.lastIndexOf('/');
   return {
     dir: segments(chars, marks, 0, Math.max(slash, 0)),
     name: segments(chars, marks, slash + 1, chars.length),

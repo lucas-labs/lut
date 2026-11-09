@@ -11,8 +11,6 @@ export class BoundedResourceTrace<T> {
 
   snapshot(): T[] {
     if (this.samples.length < SAMPLE_LIMIT) return this.samples.slice();
-    return this.samples
-      .slice(this.next)
-      .concat(this.samples.slice(0, this.next));
+    return this.samples.slice(this.next).concat(this.samples.slice(0, this.next));
   }
 }

@@ -1,9 +1,5 @@
-import {
-  Language,
-  LanguageDescription,
-  LanguageSupport,
-} from "@codemirror/language";
-import type { Extension } from "@codemirror/state";
+import { Language, LanguageDescription, LanguageSupport } from '@codemirror/language';
+import type { Extension } from '@codemirror/state';
 import {
   Decoration,
   type DecorationSet,
@@ -11,9 +7,9 @@ import {
   MatchDecorator,
   ViewPlugin,
   type ViewUpdate,
-} from "@codemirror/view";
-import { openUrl } from "@tauri-apps/plugin-opener";
-import { LANGUAGES } from "./languageDefinitions";
+} from '@codemirror/view';
+import { openUrl } from '@tauri-apps/plugin-opener';
+import { LANGUAGES } from './languageDefinitions';
 
 // Fence-info strings (```ts, ```python) resolve against the same lazy
 // loaders as file extensions; nothing loads until a fence names it. Lives
@@ -21,20 +17,19 @@ import { LANGUAGES } from "./languageDefinitions";
 let mdCodeLanguages: LanguageDescription[] | null = null;
 export function markdownCodeLanguages(): LanguageDescription[] {
   if (mdCodeLanguages) return mdCodeLanguages;
-  mdCodeLanguages = LANGUAGES.filter(
-    (l) => l.name !== "Markdown" && l.name !== "Terax Theme",
-  ).map((l) =>
-    LanguageDescription.of({
-      name: l.name,
-      alias: l.extensions,
-      extensions: l.extensions,
-      load: async () => {
-        const ext = await l.loader();
-        if (ext instanceof LanguageSupport) return ext;
-        if (ext instanceof Language) return new LanguageSupport(ext);
-        throw new Error(`${l.name} is not usable inside markdown fences`);
-      },
-    }),
+  mdCodeLanguages = LANGUAGES.filter((l) => l.name !== 'Markdown' && l.name !== 'Terax Theme').map(
+    (l) =>
+      LanguageDescription.of({
+        name: l.name,
+        alias: l.extensions,
+        extensions: l.extensions,
+        load: async () => {
+          const ext = await l.loader();
+          if (ext instanceof LanguageSupport) return ext;
+          if (ext instanceof Language) return new LanguageSupport(ext);
+          throw new Error(`${l.name} is not usable inside markdown fences`);
+        },
+      }),
   );
   return mdCodeLanguages;
 }
@@ -44,8 +39,8 @@ const URL_RE = /https?:\/\/[^\s<>"')\]]+[^\s<>"')\].,;:!?]/g;
 const urlMatcher = new MatchDecorator({
   regexp: URL_RE,
   decoration: Decoration.mark({
-    class: "cm-md-url",
-    attributes: { title: "Cmd/Ctrl+Click to open" },
+    class: 'cm-md-url',
+    attributes: { title: 'Cmd/Ctrl+Click to open' },
   }),
 });
 
@@ -98,20 +93,20 @@ const clickHandlers = EditorView.domEventHandlers({
       changes: {
         from: boxPos,
         to: boxPos + 1,
-        insert: m[2] === " " ? "x" : " ",
+        insert: m[2] === ' ' ? 'x' : ' ',
       },
-      userEvent: "input",
+      userEvent: 'input',
     });
     return true;
   },
 });
 
 const mdTheme = EditorView.theme({
-  ".cm-md-url": {
-    color: "var(--primary)",
-    textDecoration: "underline",
-    textUnderlineOffset: "2.5px",
-    textDecorationColor: "color-mix(in srgb, var(--primary) 45%, transparent)",
+  '.cm-md-url': {
+    color: 'var(--primary)',
+    textDecoration: 'underline',
+    textUnderlineOffset: '2.5px',
+    textDecorationColor: 'color-mix(in srgb, var(--primary) 45%, transparent)',
   },
 });
 

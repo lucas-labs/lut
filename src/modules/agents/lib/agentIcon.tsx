@@ -5,19 +5,13 @@ import {
   CodeIcon,
   GoogleGeminiIcon,
   Grok02Icon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
+} from '@hugeicons/core-free-icons';
+import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react';
 
 // Pi mark, from github.com/earendil-works pi-website logo.svg (MIT).
 function PiIcon({ size, className }: { size: number; className?: string }) {
   return (
-    <svg
-      viewBox="0 0 800 800"
-      width={size}
-      height={size}
-      className={className}
-      aria-hidden="true"
-    >
+    <svg viewBox="0 0 800 800" width={size} height={size} className={className} aria-hidden="true">
       <path
         fill="currentColor"
         fillRule="evenodd"
@@ -30,28 +24,19 @@ function PiIcon({ size, className }: { size: number; className?: string }) {
 
 function iconFor(agent: string): IconSvgElement {
   const a = agent.toLowerCase();
-  if (a.includes("claude")) return ClaudeIcon;
-  if (a.includes("gemini")) return GoogleGeminiIcon;
-  if (a.includes("opencode")) return CodeIcon;
-  if (a.includes("grok")) return Grok02Icon;
-  if (a.includes("codex") || a.includes("gpt") || a.includes("openai"))
-    return ChatGptIcon;
+  if (a.includes('claude')) return ClaudeIcon;
+  if (a.includes('gemini')) return GoogleGeminiIcon;
+  if (a.includes('opencode')) return CodeIcon;
+  if (a.includes('grok')) return Grok02Icon;
+  if (a.includes('codex') || a.includes('gpt') || a.includes('openai')) return ChatGptIcon;
   return AiBrowserIcon;
 }
 
-export function AgentIcon({
-  agent,
-  size = 15,
-  className,
-}: {
-  agent: string;
-  size?: number;
-  className?: string;
-}) {
-  if (agent.toLowerCase() === "pi") {
+export function AgentIcon({ agent, size = 15, className }: { agent: string; size?: number; className?: string }) {
+  if (agent.toLowerCase() === 'pi') {
     return <PiIcon size={size} className={className} />;
   }
-  if (agent.toLowerCase().includes("terax")) {
+  if (agent.toLowerCase().includes('terax')) {
     return (
       <img
         src="/logo.png"
@@ -63,12 +48,5 @@ export function AgentIcon({
       />
     );
   }
-  return (
-    <HugeiconsIcon
-      icon={iconFor(agent)}
-      size={size}
-      strokeWidth={1.75}
-      className={className}
-    />
-  );
+  return <HugeiconsIcon icon={iconFor(agent)} size={size} strokeWidth={1.75} className={className} />;
 }

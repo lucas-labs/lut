@@ -134,8 +134,7 @@ export class TerminalQueryFallback {
       return null;
     }
     if (byte >= 0x40 && byte <= 0x7e) {
-      const response =
-        byte === 0x63 ? responseForCandidate(this.candidate) : null;
+      const response = byte === 0x63 ? responseForCandidate(this.candidate) : null;
       this.state = ParserState.Ground;
       return response;
     }
@@ -216,18 +215,13 @@ function nextCandidate(
   if (candidate === DeviceAttributesCandidate.Empty) {
     if (byte === 0x30) return DeviceAttributesCandidate.Zero;
     if (byte === 0x3e) return DeviceAttributesCandidate.GreaterThan;
-  } else if (
-    candidate === DeviceAttributesCandidate.GreaterThan &&
-    byte === 0x30
-  ) {
+  } else if (candidate === DeviceAttributesCandidate.GreaterThan && byte === 0x30) {
     return DeviceAttributesCandidate.GreaterThanZero;
   }
   return DeviceAttributesCandidate.Invalid;
 }
 
-function responseForCandidate(
-  candidate: DeviceAttributesCandidate,
-): Uint8Array | null {
+function responseForCandidate(candidate: DeviceAttributesCandidate): Uint8Array | null {
   if (
     candidate === DeviceAttributesCandidate.Empty ||
     candidate === DeviceAttributesCandidate.Zero

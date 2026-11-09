@@ -1,11 +1,11 @@
-import { currentWorkspaceEnv } from "@/modules/workspace";
-import { invoke } from "@tauri-apps/api/core";
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { FileHit } from "../lib/quickOpen";
+import { currentWorkspaceEnv } from '@/modules/workspace';
+import { invoke } from '@tauri-apps/api/core';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { FileHit } from '../lib/quickOpen';
 
 const LIMIT = 100;
-const REQUEST_KEY = "palette-files";
-const WARM_REQUEST_KEY = "palette-files-warm";
+const REQUEST_KEY = 'palette-files';
+const WARM_REQUEST_KEY = 'palette-files-warm';
 
 type SearchResponse = {
   hits: FileHit[];
@@ -20,7 +20,7 @@ export type FileSearchState = {
   retry: () => void;
 };
 
-type Snapshot = Omit<FileSearchState, "retry">;
+type Snapshot = Omit<FileSearchState, 'retry'>;
 
 const IDLE: Snapshot = { hits: [], loading: false, error: null };
 
@@ -44,7 +44,7 @@ export function useFileSearch(
       if (!root) return;
       const requestId = ++requestIdRef.current;
       setState((s) => ({ ...s, loading: true, error: null }));
-      invoke<SearchResponse>("fs_search", {
+      invoke<SearchResponse>('fs_search', {
         root,
         query: q,
         limit: LIMIT,
@@ -72,9 +72,9 @@ export function useFileSearch(
     if (!enabled || !root || !query) {
       setState(IDLE);
       if (enabled && root) {
-        void invoke("fs_search", {
+        void invoke('fs_search', {
           root,
-          query: "",
+          query: '',
           requestKey: REQUEST_KEY,
         }).catch(() => {});
       }
@@ -96,14 +96,14 @@ export function useFileSearch(
       workspace: currentWorkspaceEnv(),
       requestKey: WARM_REQUEST_KEY,
     };
-    void invoke("fs_warm_index", args).catch(() => {});
+    void invoke('fs_warm_index', args).catch(() => {});
     return () => {
-      void invoke("fs_search", {
+      void invoke('fs_search', {
         root,
-        query: "",
+        query: '',
         requestKey: REQUEST_KEY,
       }).catch(() => {});
-      void invoke("fs_warm_index", { ...args, cancel: true }).catch(() => {});
+      void invoke('fs_warm_index', { ...args, cancel: true }).catch(() => {});
     };
   }, [enabled, root, showHidden]);
 

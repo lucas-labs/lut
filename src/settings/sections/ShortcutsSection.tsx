@@ -7,12 +7,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Kbd, KbdGroup } from "@/components/ui/kbd";
-import { usePreferencesStore } from "@/modules/settings/preferences";
-import { setShortcuts } from "@/modules/settings/store";
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import { setShortcuts } from '@/modules/settings/store';
 import {
   getBindingTokens,
   type KeyBinding,
@@ -20,32 +20,24 @@ import {
   SHORTCUT_GROUPS,
   type ShortcutId,
   SHORTCUTS,
-} from "@/modules/shortcuts/shortcuts";
-import {
-  ArrowTurnBackwardIcon,
-  Delete02Icon,
-  Search01Icon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { useEffect, useMemo, useState } from "react";
-import { SectionHeader } from "../components/SectionHeader";
+} from '@/modules/shortcuts/shortcuts';
+import { ArrowTurnBackwardIcon, Delete02Icon, Search01Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { useEffect, useMemo, useState } from 'react';
+import { SectionHeader } from '../components/SectionHeader';
 
 export function ShortcutsSection() {
   const userShortcuts = usePreferencesStore((s) => s.shortcuts);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [recordingId, setRecordingId] = useState<ShortcutId | null>(null);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
 
   const filteredShortcuts = useMemo(() => {
     // Filter out internal/non-overridable shortcuts like tab.selectByIndex.
-    const base = SHORTCUTS.filter((s) => s.id !== "tab.selectByIndex");
+    const base = SHORTCUTS.filter((s) => s.id !== 'tab.selectByIndex');
     if (!search) return base;
     const lower = search.toLowerCase();
-    return base.filter(
-      (s) =>
-        s.label.toLowerCase().includes(lower) ||
-        s.group.toLowerCase().includes(lower),
-    );
+    return base.filter((s) => s.label.toLowerCase().includes(lower) || s.group.toLowerCase().includes(lower));
   }, [search]);
 
   const onRecord = (id: ShortcutId, binding: KeyBinding) => {
@@ -73,21 +65,14 @@ export function ShortcutsSection() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <SectionHeader
-          title="Shortcuts"
-          description="View and customize keyboard shortcuts."
-        />
+        <SectionHeader title="Shortcuts" description="View and customize keyboard shortcuts." />
         <Button
           variant="outline"
           size="sm"
           className="h-8 gap-1.5 px-2.5 text-[11px]"
           onClick={() => setResetDialogOpen(true)}
         >
-          <HugeiconsIcon
-            icon={ArrowTurnBackwardIcon}
-            size={12}
-            strokeWidth={2}
-          />
+          <HugeiconsIcon icon={ArrowTurnBackwardIcon} size={12} strokeWidth={2} />
           Reset All
         </Button>
       </div>
@@ -114,9 +99,7 @@ export function ShortcutsSection() {
 
           return (
             <div key={group} className="flex flex-col gap-3">
-              <h3 className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
-                {group}
-              </h3>
+              <h3 className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">{group}</h3>
               <div className="flex flex-col divide-y divide-border/40 rounded-lg border border-border/60 bg-card/40 overflow-hidden">
                 {items.map((s) => (
                   <ShortcutRow
@@ -142,8 +125,8 @@ export function ShortcutsSection() {
           <AlertDialogHeader>
             <AlertDialogTitle>Reset all shortcuts?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will revert all your custom keyboard shortcuts to their
-              factory defaults. This action cannot be undone.
+              This will revert all your custom keyboard shortcuts to their factory defaults. This action cannot be
+              undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -180,8 +163,7 @@ function ShortcutRow({
   onReset: () => void;
   userBindings?: KeyBinding[];
 }) {
-  const bindings =
-    userBindings !== undefined ? userBindings : shortcut.defaultBindings;
+  const bindings = userBindings !== undefined ? userBindings : shortcut.defaultBindings;
   const isModified = userBindings !== undefined;
   const hasBindings = bindings && bindings.length > 0;
 
@@ -203,18 +185,13 @@ function ShortcutRow({
               {hasBindings ? (
                 <KbdGroup>
                   {getBindingTokens(bindings[0]).map((t, i) => (
-                    <Kbd
-                      key={i}
-                      className="group-hover:bg-accent group-hover:text-accent-foreground transition-colors"
-                    >
+                    <Kbd key={i} className="group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
                       {t}
                     </Kbd>
                   ))}
                 </KbdGroup>
               ) : (
-                <span className="text-[11px] text-muted-foreground italic">
-                  Unassigned
-                </span>
+                <span className="text-[11px] text-muted-foreground italic">Unassigned</span>
               )}
             </div>
 
@@ -247,13 +224,7 @@ function ShortcutRow({
   );
 }
 
-function Recorder({
-  onRecord,
-  onCancel,
-}: {
-  onRecord: (b: KeyBinding) => void;
-  onCancel: () => void;
-}) {
+function Recorder({ onRecord, onCancel }: { onRecord: (b: KeyBinding) => void; onCancel: () => void }) {
   const [_mods, setMods] = useState({
     ctrl: false,
     shift: false,
@@ -266,12 +237,12 @@ function Recorder({
       e.preventDefault();
       e.stopPropagation();
 
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         onCancel();
         return;
       }
 
-      const isMod = ["Control", "Shift", "Alt", "Meta"].includes(e.key);
+      const isMod = ['Control', 'Shift', 'Alt', 'Meta'].includes(e.key);
       if (isMod) {
         setMods({
           ctrl: e.ctrlKey,
@@ -300,7 +271,7 @@ function Recorder({
     };
 
     const onUp = (e: KeyboardEvent) => {
-      const isMod = ["Control", "Shift", "Alt", "Meta"].includes(e.key);
+      const isMod = ['Control', 'Shift', 'Alt', 'Meta'].includes(e.key);
       if (isMod) {
         setMods({
           ctrl: e.ctrlKey,
@@ -311,11 +282,11 @@ function Recorder({
       }
     };
 
-    window.addEventListener("keydown", onDown, { capture: true });
-    window.addEventListener("keyup", onUp, { capture: true });
+    window.addEventListener('keydown', onDown, { capture: true });
+    window.addEventListener('keyup', onUp, { capture: true });
     return () => {
-      window.removeEventListener("keydown", onDown, { capture: true });
-      window.removeEventListener("keyup", onUp, { capture: true });
+      window.removeEventListener('keydown', onDown, { capture: true });
+      window.removeEventListener('keyup', onUp, { capture: true });
     };
   }, [onRecord, onCancel]);
 

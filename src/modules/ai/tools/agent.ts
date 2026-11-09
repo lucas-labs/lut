@@ -1,8 +1,8 @@
-import { useManagedAgentsStore } from "@/modules/agents/store/managedAgentsStore";
-import { writeToSession } from "@/modules/terminal";
-import { tool } from "ai";
-import { z } from "zod";
-import type { ToolContext } from "./context";
+import { useManagedAgentsStore } from '@/modules/agents/store/managedAgentsStore';
+import { writeToSession } from '@/modules/terminal';
+import { tool } from 'ai';
+import { z } from 'zod';
+import type { ToolContext } from './context';
 
 // Claude Code's TUI treats a trailing CR in the same write chunk as the text
 // as a literal newline, not a submit. Send the Enter as a separate chunk once
@@ -18,40 +18,38 @@ function hasControlChars(s: string): boolean {
 }
 
 function tailLines(text: string, n: number): string {
-  const parts = text.split("\n");
-  return parts.length <= n ? text : parts.slice(parts.length - n).join("\n");
+  const parts = text.split('\n');
+  return parts.length <= n ? text : parts.slice(parts.length - n).join('\n');
 }
 
 export function buildManagedAgentTools(ctx: ToolContext) {
   return {
     spawn_coding_agent: tool({
       description:
-        "Spawn a Claude Code agent in a new terminal tab and give it the prompt. Use this when the user (via /claude-code) wants work delegated and no agent is active yet in this session. Craft a complete, self-contained prompt first; the user approves it before the agent starts. Do not call this if an agent is already active — use send_to_agent instead.",
+        'Spawn a Claude Code agent in a new terminal tab and give it the prompt. Use this when the user (via /claude-code) wants work delegated and no agent is active yet in this session. Craft a complete, self-contained prompt first; the user approves it before the agent starts. Do not call this if an agent is already active — use send_to_agent instead.',
       inputSchema: z.object({
         prompt: z
           .string()
           .min(1)
-          .describe(
-            "The full, self-contained task prompt for the Claude Code agent.",
-          ),
+          .describe('The full, self-contained task prompt for the Claude Code agent.'),
       }),
       needsApproval: true,
       execute: async ({ prompt }) => {
         const sessionId = ctx.getSessionId();
-        if (!sessionId) return { error: "no active chat session" };
+        if (!sessionId) return { error: 'no active chat session' };
         const store = useManagedAgentsStore.getState();
         if (store.getBySessionId(sessionId)) {
           return {
             error:
-              "a Claude Code agent is already active in this session; use send_to_agent to give it more work",
+              'a Claude Code agent is already active in this session; use send_to_agent to give it more work',
           };
         }
         const spawned = ctx.spawnAgent(prompt);
-        if (!spawned) return { error: "could not spawn the agent" };
+        if (!spawned) return { error: 'could not spawn the agent' };
         return {
           ok: true,
           tab_id: spawned.tabId,
-          message: "Claude Code agent spawned. It will start working shortly.",
+          message: 'Claude Code agent spawned. It will start working shortly.',
         };
       },
     }),
@@ -63,9 +61,7 @@ export function buildManagedAgentTools(ctx: ToolContext) {
         instruction: z
           .string()
           .min(1)
-          .describe(
-            "One clear, self-contained instruction for the agent. No control characters.",
-          ),
+          .describe('One clear, self-contained instruction for the agent. No control characters.'),
       }),
       needsApproval: true,
       execute: async ({ instruction }) => {
@@ -75,19 +71,19 @@ export function buildManagedAgentTools(ctx: ToolContext) {
         if (!managed) {
           return {
             error:
-              "no Claude Code agent is active in this session; spawn one with spawn_coding_agent",
+              'no Claude Code agent is active in this session; spawn one with spawn_coding_agent',
           };
         }
-        const oneLine = instruction.replace(/\s*\r?\n\s*/g, " ").trim();
-        if (!oneLine) return { error: "empty instruction" };
+        const oneLine = instruction.replace(/\s*\r?\n\s*/g, ' ').trim();
+        if (!oneLine) return { error: 'empty instruction' };
         if (hasControlChars(oneLine)) {
-          return { error: "instruction contains control characters" };
+          return { error: 'instruction contains control characters' };
         }
         if (!writeToSession(managed.leafId, oneLine)) {
           store.remove(managed.leafId);
-          return { error: "agent terminal is no longer available (closed?)" };
+          return { error: 'agent terminal is no longer available (closed?)' };
         }
-        setTimeout(() => writeToSession(managed.leafId, "\r"), SUBMIT_DELAY_MS);
+        setTimeout(() => writeToSession(managed.leafId, '\r'), SUBMIT_DELAY_MS);
         store.bumpRound(managed.leafId);
         return { ok: true, sent: oneLine, round: store.get(managed.leafId)?.rounds };
       },
@@ -95,7 +91,7 @@ export function buildManagedAgentTools(ctx: ToolContext) {
 
     read_agent_output: tool({
       description:
-        "Inspect the Claude Code agent in this session: whether one is active, its status, and the tail of its terminal output. Call this first when handling a /claude-code request so you know whether to spawn a new agent or follow up with the existing one, and to see what it has done and reported.",
+        'Inspect the Claude Code agent in this session: whether one is active, its status, and the tail of its terminal output. Call this first when handling a /claude-code request so you know whether to spawn a new agent or follow up with the existing one, and to see what it has done and reported.',
       inputSchema: z.object({
         lines: z
           .number()
@@ -103,7 +99,7 @@ export function buildManagedAgentTools(ctx: ToolContext) {
           .min(1)
           .max(400)
           .optional()
-          .describe("Trailing lines of the agent terminal to return. Default 120."),
+          .describe('Trailing lines of the agent terminal to return. Default 120.'),
       }),
       execute: async ({ lines }) => {
         const sessionId = ctx.getSessionId();
@@ -117,7 +113,7 @@ export function buildManagedAgentTools(ctx: ToolContext) {
           phase: managed.phase,
           rounds: managed.rounds,
           max_rounds: managed.maxRounds,
-          output: raw ? tailLines(raw, lines ?? 120) : "",
+          output: raw ? tailLines(raw, lines ?? 120) : '',
         };
       },
     }),

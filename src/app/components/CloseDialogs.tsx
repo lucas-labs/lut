@@ -1,8 +1,5 @@
-import type { CloseManyPending } from "@/app/hooks/tabCloseGuards";
-import {
-  type AppCloseBlocker,
-  canOptOutOfAppClosePrompt,
-} from "@/app/hooks/useAppCloseGuard";
+import type { CloseManyPending } from '@/app/hooks/tabCloseGuards';
+import { type AppCloseBlocker, canOptOutOfAppClosePrompt } from '@/app/hooks/useAppCloseGuard';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -12,12 +9,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { setConfirmCloseRunningTerminal } from "@/modules/settings/store";
-import type { Tab } from "@/modules/tabs";
-import { useId, useState } from "react";
+} from '@/components/ui/alert-dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { setConfirmCloseRunningTerminal } from '@/modules/settings/store';
+import type { Tab } from '@/modules/tabs';
+import { useId, useState } from 'react';
 
 type Props = {
   tabs: Tab[];
@@ -41,37 +38,22 @@ type Props = {
 
 function appCloseMessage(blocker: AppCloseBlocker): string {
   const dirty =
-    blocker.dirtyEditors === 1
-      ? "1 file has unsaved changes"
-      : `${blocker.dirtyEditors} files have unsaved changes`;
+    blocker.dirtyEditors === 1 ? '1 file has unsaved changes' : `${blocker.dirtyEditors} files have unsaved changes`;
   if (blocker.dirtyEditors > 0 && blocker.busyTerminal) {
     return `A process is still running and ${dirty}. Quitting will terminate it and discard the changes.`;
   }
   if (blocker.dirtyEditors > 0) {
     return `${dirty.charAt(0).toUpperCase()}${dirty.slice(1)}. Quitting will discard them.`;
   }
-  return "A process is still running in a terminal. Quitting will terminate it.";
+  return 'A process is still running in a terminal. Quitting will terminate it.';
 }
 
-function OptOutRow({
-  checked,
-  onCheckedChange,
-}: {
-  checked: boolean;
-  onCheckedChange: (value: boolean) => void;
-}) {
+function OptOutRow({ checked, onCheckedChange }: { checked: boolean; onCheckedChange: (value: boolean) => void }) {
   const id = useId();
   return (
     <div className="-mt-3 flex items-center justify-center gap-2 sm:justify-start">
-      <Checkbox
-        id={id}
-        checked={checked}
-        onCheckedChange={(value) => onCheckedChange(value === true)}
-      />
-      <Label
-        htmlFor={id}
-        className="font-normal text-[12px] text-muted-foreground"
-      >
+      <Checkbox id={id} checked={checked} onCheckedChange={(value) => onCheckedChange(value === true)} />
+      <Label htmlFor={id} className="font-normal text-[12px] text-muted-foreground">
         Don't ask again about running processes
       </Label>
     </div>
@@ -82,7 +64,7 @@ async function persistOptOut(): Promise<void> {
   try {
     await setConfirmCloseRunningTerminal(false);
   } catch (e) {
-    console.error("close-confirmation opt-out failed", e);
+    console.error('close-confirmation opt-out failed', e);
   }
 }
 
@@ -91,29 +73,23 @@ function closeManyMessage(pending: CloseManyPending, tabs: Tab[]): string {
   const dirtyCount = dirtyIds.length;
   const busyCount = busyLeafIds.length;
   if (dirtyCount === 1 && busyCount === 0) {
-    const dirty = tabs.find(
-      (tab) => tab.kind === "editor" && dirtyIds.includes(tab.id),
-    );
+    const dirty = tabs.find((tab) => tab.kind === 'editor' && dirtyIds.includes(tab.id));
     return dirty?.title
       ? `"${dirty.title}" has unsaved changes. Close it anyway?`
-      : "1 tab has unsaved changes. Close it anyway?";
+      : '1 tab has unsaved changes. Close it anyway?';
   }
   if (dirtyCount > 0 && busyCount > 0) {
-    const dirty = `${dirtyCount} tab${dirtyCount === 1 ? " has" : "s have"} unsaved changes`;
-    const busy =
-      busyCount === 1
-        ? "a process is running"
-        : `${busyCount} processes are running`;
-    return `${dirty} and ${busy}. Closing will discard the changes and terminate the ${busyCount === 1 ? "process" : "processes"}. Close anyway?`;
+    const dirty = `${dirtyCount} tab${dirtyCount === 1 ? ' has' : 's have'} unsaved changes`;
+    const busy = busyCount === 1 ? 'a process is running' : `${busyCount} processes are running`;
+    return `${dirty} and ${busy}. Closing will discard the changes and terminate the ${busyCount === 1 ? 'process' : 'processes'}. Close anyway?`;
   }
   if (dirtyCount > 0) {
     return `${dirtyCount} tabs have unsaved changes. Closing will discard them. Close anyway?`;
   }
-  const process =
-    busyCount === 1 ? "A process is" : `${busyCount} processes are`;
-  return kind === "right"
-    ? `${process} running in ${busyCount === 1 ? "a tab" : "tabs"} to the right. Closing will terminate ${busyCount === 1 ? "it" : "them"}. Close anyway?`
-    : `${process} running in ${busyCount === 1 ? "another tab" : "other tabs"}. Closing will terminate ${busyCount === 1 ? "it" : "them"}. Close anyway?`;
+  const process = busyCount === 1 ? 'A process is' : `${busyCount} processes are`;
+  return kind === 'right'
+    ? `${process} running in ${busyCount === 1 ? 'a tab' : 'tabs'} to the right. Closing will terminate ${busyCount === 1 ? 'it' : 'them'}. Close anyway?`
+    : `${process} running in ${busyCount === 1 ? 'another tab' : 'other tabs'}. Closing will terminate ${busyCount === 1 ? 'it' : 'them'}. Close anyway?`;
 }
 
 /** Confirmation dialogs for closing dirty editors and terminals with live processes. */
@@ -138,8 +114,7 @@ export function CloseDialogs({
 }: Props) {
   const [optOutTerminalClose, setOptOutTerminalClose] = useState(false);
   const [optOutAppClose, setOptOutAppClose] = useState(false);
-  const appCloseCanOptOut =
-    pendingAppClose !== null && canOptOutOfAppClosePrompt(pendingAppClose);
+  const appCloseCanOptOut = pendingAppClose !== null && canOptOutOfAppClosePrompt(pendingAppClose);
 
   const confirmTerminalClose = () => {
     if (optOutTerminalClose) void persistOptOut();
@@ -167,108 +142,71 @@ export function CloseDialogs({
 
   return (
     <>
-      <AlertDialog
-        open={pendingCloseTab !== null}
-        onOpenChange={(open) => !open && onCancelClose()}
-      >
+      <AlertDialog open={pendingCloseTab !== null} onOpenChange={(open) => !open && onCancelClose()}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
             <AlertDialogDescription>
               {tabs.find((t) => t.id === pendingCloseTab)?.title
-                ? `"${
-                    tabs.find((t) => t.id === pendingCloseTab)?.title
-                  }" has unsaved changes. Close anyway?`
-                : "This file has unsaved changes. Close anyway?"}
+                ? `"${tabs.find((t) => t.id === pendingCloseTab)?.title}" has unsaved changes. Close anyway?`
+                : 'This file has unsaved changes. Close anyway?'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={onCancelClose}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={onConfirmClose}>
-              Close Anyway
-            </AlertDialogAction>
+            <AlertDialogCancel onClick={onCancelClose}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={onConfirmClose}>Close Anyway</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog
-        open={pendingTerminalCloseTab !== null}
-        onOpenChange={(open) => !open && cancelTerminalClose()}
-      >
+      <AlertDialog open={pendingTerminalCloseTab !== null} onOpenChange={(open) => !open && cancelTerminalClose()}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Close Terminal?</AlertDialogTitle>
-            <AlertDialogDescription>
-              A process is running. Closing this tab will terminate it.
-            </AlertDialogDescription>
+            <AlertDialogDescription>A process is running. Closing this tab will terminate it.</AlertDialogDescription>
           </AlertDialogHeader>
-          <OptOutRow
-            checked={optOutTerminalClose}
-            onCheckedChange={setOptOutTerminalClose}
-          />
+          <OptOutRow checked={optOutTerminalClose} onCheckedChange={setOptOutTerminalClose} />
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={cancelTerminalClose}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={confirmTerminalClose}>
-              Close Anyway
-            </AlertDialogAction>
+            <AlertDialogCancel onClick={cancelTerminalClose}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmTerminalClose}>Close Anyway</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog
-        open={pendingDeleteTabs !== null}
-        onOpenChange={(open) => !open && onCancelDeleteClose()}
-      >
+      <AlertDialog open={pendingDeleteTabs !== null} onOpenChange={(open) => !open && onCancelDeleteClose()}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
             <AlertDialogDescription>
               {pendingDeleteTabs?.length === 1
                 ? (() => {
-                    const title = tabs.find(
-                      (t) => t.id === pendingDeleteTabs[0],
-                    )?.title;
+                    const title = tabs.find((t) => t.id === pendingDeleteTabs[0])?.title;
                     return title
                       ? `"${title}" has unsaved changes. The file has been deleted. Close anyway?`
-                      : "This file has unsaved changes. The file has been deleted. Close anyway?";
+                      : 'This file has unsaved changes. The file has been deleted. Close anyway?';
                   })()
                 : `${pendingDeleteTabs?.length ?? 0} files have unsaved changes. They have been deleted. Close all anyway?`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={onCancelDeleteClose}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={onConfirmDeleteClose}>
-              Close Anyway
-            </AlertDialogAction>
+            <AlertDialogCancel onClick={onCancelDeleteClose}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={onConfirmDeleteClose}>Close Anyway</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog
-        open={pendingCloseMany !== null}
-        onOpenChange={(open) => !open && onCancelCloseMany()}
-      >
+      <AlertDialog open={pendingCloseMany !== null} onOpenChange={(open) => !open && onCancelCloseMany()}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {pendingCloseMany?.kind === "right"
-                ? "Close Tabs to the Right"
-                : "Close Other Tabs"}
+              {pendingCloseMany?.kind === 'right' ? 'Close Tabs to the Right' : 'Close Other Tabs'}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {pendingCloseMany ? closeManyMessage(pendingCloseMany, tabs) : ""}
+              {pendingCloseMany ? closeManyMessage(pendingCloseMany, tabs) : ''}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={onCancelCloseMany}>
-              Cancel
-            </AlertDialogCancel>
+            <AlertDialogCancel onClick={onCancelCloseMany}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               disabled={closeManyConfirming}
               onClick={(event) => {
@@ -276,36 +214,22 @@ export function CloseDialogs({
                 onConfirmCloseMany();
               }}
             >
-              {closeManyConfirming ? "Checking..." : "Close Anyway"}
+              {closeManyConfirming ? 'Checking...' : 'Close Anyway'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog
-        open={pendingAppClose !== null}
-        onOpenChange={(open) => !open && cancelAppClose()}
-      >
+      <AlertDialog open={pendingAppClose !== null} onOpenChange={(open) => !open && cancelAppClose()}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Quit Terax?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {pendingAppClose ? appCloseMessage(pendingAppClose) : ""}
-            </AlertDialogDescription>
+            <AlertDialogDescription>{pendingAppClose ? appCloseMessage(pendingAppClose) : ''}</AlertDialogDescription>
           </AlertDialogHeader>
-          {appCloseCanOptOut ? (
-            <OptOutRow
-              checked={optOutAppClose}
-              onCheckedChange={setOptOutAppClose}
-            />
-          ) : null}
+          {appCloseCanOptOut ? <OptOutRow checked={optOutAppClose} onCheckedChange={setOptOutAppClose} /> : null}
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={cancelAppClose}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={() => void confirmAppClose()}>
-              Quit Anyway
-            </AlertDialogAction>
+            <AlertDialogCancel onClick={cancelAppClose}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void confirmAppClose()}>Quit Anyway</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

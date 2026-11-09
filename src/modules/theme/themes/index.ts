@@ -1,20 +1,20 @@
-import { DEFAULT_THEME_ID, type Theme } from "../types";
-import { caffeine } from "./caffeine";
-import { catppuccin } from "./catppuccin";
-import { claude } from "./claude";
-import { dracula } from "./dracula";
-import { everforest } from "./everforest";
-import { gruvbox } from "./gruvbox";
-import { kanagawa } from "./kanagawa";
-import { kanagawaDragon } from "./kanagawa-dragon";
-import { nord } from "./nord";
-import { rosePine } from "./rose-pine";
-import { sage } from "./sage";
-import { solarized } from "./solarized";
-import { teraxDefault } from "./terax-default";
-import { tide } from "./tide";
-import { tokyoNight } from "./tokyo-night";
-import { xcode } from "./xcode";
+import { DEFAULT_THEME_ID, type Theme } from '../types';
+import { caffeine } from './caffeine';
+import { catppuccin } from './catppuccin';
+import { claude } from './claude';
+import { dracula } from './dracula';
+import { everforest } from './everforest';
+import { gruvbox } from './gruvbox';
+import { kanagawa } from './kanagawa';
+import { kanagawaDragon } from './kanagawa-dragon';
+import { nord } from './nord';
+import { rosePine } from './rose-pine';
+import { sage } from './sage';
+import { solarized } from './solarized';
+import { teraxDefault } from './terax-default';
+import { tide } from './tide';
+import { tokyoNight } from './tokyo-night';
+import { xcode } from './xcode';
 
 const BUILTIN: Theme[] = [
   teraxDefault,

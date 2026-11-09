@@ -38,14 +38,8 @@ export function gestureBackingBound(environment: GestureBackingEnvironment): {
   let height = finite(host.height);
   if (environment.windowResized) {
     // An unreadable screen or window size means "no known room to grow".
-    width += room(
-      environment.screenAvailable.width,
-      environment.windowInner.width,
-    );
-    height += room(
-      environment.screenAvailable.height,
-      environment.windowInner.height,
-    );
+    width += room(environment.screenAvailable.width, environment.windowInner.width);
+    height += room(environment.screenAvailable.height, environment.windowInner.height);
   } else {
     const area = environment.area ?? environment.windowInner;
     width = Math.max(width, finite(area.width));
@@ -68,7 +62,7 @@ function room(screenSize: number, windowSize: number): number {
 
 /** The window's inner size; compared between the start of a gesture and the moment it must grow. */
 export function windowInnerSize(): CssSize {
-  return typeof window === "undefined"
+  return typeof window === 'undefined'
     ? { width: 0, height: 0 }
     : { width: window.innerWidth, height: window.innerHeight };
 }
@@ -81,9 +75,9 @@ export function measureGestureBackingEnvironment(
   maxDimension: number,
 ): GestureBackingEnvironment {
   const rect = host.getBoundingClientRect();
-  const area = host.closest?.("[data-terminal-tab]");
+  const area = host.closest?.('[data-terminal-tab]');
   const windowInner = windowInnerSize();
-  const screenInfo = typeof screen === "undefined" ? null : screen;
+  const screenInfo = typeof screen === 'undefined' ? null : screen;
   return {
     host: { width: rect.width, height: rect.height },
     scale,

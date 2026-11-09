@@ -1,11 +1,11 @@
-import { generateText, stepCountIs } from "ai";
-import { getModel, type ModelId } from "../config";
-import { buildLanguageModel } from "../lib/agent";
-import type { ProviderKeys } from "../lib/keyring";
-import type { ToolContext } from "../tools/context";
-import { buildFsTools } from "../tools/fs";
-import { buildSearchTools } from "../tools/search";
-import { SUBAGENTS, type SubagentType } from "./registry";
+import { generateText, stepCountIs } from 'ai';
+import { getModel, type ModelId } from '../config';
+import { buildLanguageModel } from '../lib/agent';
+import type { ProviderKeys } from '../lib/keyring';
+import type { ToolContext } from '../tools/context';
+import { buildFsTools } from '../tools/fs';
+import { buildSearchTools } from '../tools/search';
+import { SUBAGENTS, type SubagentType } from './registry';
 
 const SUBAGENT_MAX_STEPS = 12;
 
@@ -58,7 +58,7 @@ export async function runSubagent({
     model,
     system: def.systemPrompt,
     prompt,
-    tools: tools as Parameters<typeof generateText>[0]["tools"],
+    tools: tools as Parameters<typeof generateText>[0]['tools'],
     stopWhen: stepCountIs(SUBAGENT_MAX_STEPS),
     onStepFinish: (step) => {
       if (!onStep) return;
@@ -68,7 +68,7 @@ export async function runSubagent({
   });
 
   return {
-    summary: result.text || "(no output)",
+    summary: result.text || '(no output)',
     stepCount: result.steps?.length ?? 0,
     durationMs: Date.now() - start,
   };

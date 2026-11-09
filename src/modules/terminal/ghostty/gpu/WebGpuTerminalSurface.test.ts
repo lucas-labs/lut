@@ -1,34 +1,28 @@
-import type { TerminalDamage } from "@/modules/terminal/backend/contracts";
+import type { TerminalDamage } from '@/modules/terminal/backend/contracts';
 import type {
   GhosttyGpuFrame,
   GhosttyTerminalModelApi,
-} from "@/modules/terminal/ghostty/GhosttyTerminalModel";
-import type { DeviceRect } from "@/modules/terminal/ghostty/gpu/PaneRects";
-import {
-  SCREEN_OFFSET,
-  SCREEN_UNIFORM_BYTES,
-} from "@/modules/terminal/ghostty/gpu/shaders";
-import { TERMINAL_RIGHT_GUTTER_CSS_PX } from "@/modules/terminal/ghostty/gpu/TerminalFit";
-import { deriveFontMetrics } from "@/modules/terminal/ghostty/gpu/terminalVisuals";
-import { WebGpuTerminalSurface } from "@/modules/terminal/ghostty/gpu/WebGpuTerminalSurface";
-import { resetTerminalResizeGestureForTest } from "@/modules/terminal/lib/terminalResizeGesture";
+} from '@/modules/terminal/ghostty/GhosttyTerminalModel';
+import type { DeviceRect } from '@/modules/terminal/ghostty/gpu/PaneRects';
+import { SCREEN_OFFSET, SCREEN_UNIFORM_BYTES } from '@/modules/terminal/ghostty/gpu/shaders';
+import { TERMINAL_RIGHT_GUTTER_CSS_PX } from '@/modules/terminal/ghostty/gpu/TerminalFit';
+import { deriveFontMetrics } from '@/modules/terminal/ghostty/gpu/terminalVisuals';
+import { WebGpuTerminalSurface } from '@/modules/terminal/ghostty/gpu/WebGpuTerminalSurface';
+import { resetTerminalResizeGestureForTest } from '@/modules/terminal/lib/terminalResizeGesture';
 import {
   beginTerminalResizeInteraction,
   endTerminalResizeInteraction,
-} from "@/modules/terminal/lib/terminalResizeInteraction";
-import { afterEach, describe, expect, it, vi } from "vitest";
+} from '@/modules/terminal/lib/terminalResizeInteraction';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const bridge = vi.hoisted(() => ({ runtime: {} as unknown, visible: true }));
-vi.mock(
-  "@/modules/terminal/ghostty/gpu/WebGpuTerminalRuntime",
-  async (importOriginal) => ({
-    ...(await importOriginal<
-      typeof import("@/modules/terminal/ghostty/gpu/WebGpuTerminalRuntime")
-    >()),
-    getWebGpuTerminalRuntime: async () => bridge.runtime,
-  }),
-);
-vi.mock("@/modules/terminal/ghostty/windowPresentation", () => ({
+vi.mock('@/modules/terminal/ghostty/gpu/WebGpuTerminalRuntime', async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import('@/modules/terminal/ghostty/gpu/WebGpuTerminalRuntime')
+  >()),
+  getWebGpuTerminalRuntime: async () => bridge.runtime,
+}));
+vi.mock('@/modules/terminal/ghostty/windowPresentation', () => ({
   terminalWindowPresentation: () => ({
     visible: bridge.visible,
     reclaim: false,
@@ -45,8 +39,8 @@ afterEach(() => {
 
 const CELL = 16;
 
-describe("WebGPU surface data path", () => {
-  it("uploads dirty row ranges straight from the borrowed view before any other model call", async () => {
+describe('WebGPU surface data path', () => {
+  it('uploads dirty row ranges straight from the borrowed view before any other model call', async () => {
     const h = await harness();
     expect(h.render()).toBe(true);
     h.writeBuffer.mockClear();
@@ -58,16 +52,8 @@ describe("WebGPU surface data path", () => {
     ]);
     expect(h.render()).toBe(true);
 
-    const uploads = h.writeBuffer.mock.calls.filter(
-      ([buffer]) => buffer === h.lastCellsBuffer(),
-    );
-    expect(
-      uploads.map(([, offset, , dataOffset, size]) => [
-        offset,
-        dataOffset,
-        size,
-      ]),
-    ).toEqual([
+    const uploads = h.writeBuffer.mock.calls.filter(([buffer]) => buffer === h.lastCellsBuffer());
+    expect(uploads.map(([, offset, , dataOffset, size]) => [offset, dataOffset, size])).toEqual([
       [2 * 120 * CELL, 2 * 120 * CELL, 120 * CELL],
       [5 * 120 * CELL, 5 * 120 * CELL, 2 * 120 * CELL],
     ]);
@@ -75,14 +61,11 @@ describe("WebGPU surface data path", () => {
     expect(uploads[0][2]).toBe(h.gpu.cells);
     // Nothing may touch the model between the frame and the uploads that
     // read its borrowed memory.
-    const afterFrame = h.calls.slice(h.calls.indexOf("consumeGpuFrame") + 1);
-    expect(afterFrame.slice(0, 2)).toEqual([
-      "writeBuffer:cells",
-      "writeBuffer:cells",
-    ]);
+    const afterFrame = h.calls.slice(h.calls.indexOf('consumeGpuFrame') + 1);
+    expect(afterFrame.slice(0, 2)).toEqual(['writeBuffer:cells', 'writeBuffer:cells']);
   });
 
-  it("does not upload, draw or touch the DOM for unchanged output", async () => {
+  it('does not upload, draw or touch the DOM for unchanged output', async () => {
     const h = await harness();
     expect(h.render()).toBe(true);
     h.writeBuffer.mockClear();
@@ -97,7 +80,7 @@ describe("WebGPU surface data path", () => {
     expect(h.domWork).not.toHaveBeenCalled();
   });
 
-  it("uploads only the uniform for cursor movement and redraws", async () => {
+  it('uploads only the uniform for cursor movement and redraws', async () => {
     const h = await harness();
     h.render();
     h.writeBuffer.mockClear();
@@ -105,22 +88,20 @@ describe("WebGPU surface data path", () => {
     expect(h.render()).toBe(true);
     expect(h.writeBuffer).toHaveBeenCalledOnce();
     expect(h.writeBuffer.mock.calls[0][0]).toBe(h.lastUniformBuffer());
-    expect((h.writeBuffer.mock.calls[0][2] as Float32Array).byteLength).toBe(
-      SCREEN_UNIFORM_BYTES,
-    );
+    expect((h.writeBuffer.mock.calls[0][2] as Float32Array).byteLength).toBe(SCREEN_UNIFORM_BYTES);
   });
 
-  it("redraws whenever the frame reports damage even if no record changed", async () => {
+  it('redraws whenever the frame reports damage even if no record changed', async () => {
     const h = await harness();
     h.render();
     h.draw.mockClear();
-    h.gpu.damage = { kind: "rows", ranges: [{ start: 3, end: 3 }] };
+    h.gpu.damage = { kind: 'rows', ranges: [{ start: 3, end: 3 }] };
     expect(h.render()).toBe(true);
     h.writeBuffer.mockClear();
     expect(h.render()).toBe(false);
   });
 
-  it("never calls the structure-of-arrays model APIs", async () => {
+  it('never calls the structure-of-arrays model APIs', async () => {
     const h = await harness();
     h.render();
     h.gpu.dirty([{ start: 0, end: 39 }]);
@@ -132,7 +113,7 @@ describe("WebGPU surface data path", () => {
     expect(h.model.consumeDamage).not.toHaveBeenCalled();
   });
 
-  it("asks for a full resync on first use and after resources are recreated", async () => {
+  it('asks for a full resync on first use and after resources are recreated', async () => {
     const h = await harness();
     h.render();
     expect(h.model.consumeGpuFrame).toHaveBeenLastCalledWith({ resync: true });
@@ -150,7 +131,7 @@ describe("WebGPU surface data path", () => {
     expect(h.model.consumeGpuFrame).toHaveBeenLastCalledWith({ resync: true });
   });
 
-  it("encodes one fullscreen triangle and one glyph instance per cell into the window pass", async () => {
+  it('encodes one fullscreen triangle and one glyph instance per cell into the window pass', async () => {
     const h = await harness();
     h.render();
     const stats = h.surface.diagnostics();
@@ -159,20 +140,14 @@ describe("WebGPU surface data path", () => {
     // Viewport and scissor belong to the window canvas; the pane only issues its draws.
     expect(h.pass.setViewport).not.toHaveBeenCalled();
     expect(h.pass.setScissorRect).not.toHaveBeenCalled();
-    expect(h.pass.setPipeline).toHaveBeenNthCalledWith(
-      1,
-      h.resources.backgroundPipeline,
-    );
+    expect(h.pass.setPipeline).toHaveBeenNthCalledWith(1, h.resources.backgroundPipeline);
     expect(h.pass.draw).toHaveBeenNthCalledWith(1, 3);
-    expect(h.pass.setPipeline).toHaveBeenNthCalledWith(
-      2,
-      h.resources.glyphPipeline,
-    );
+    expect(h.pass.setPipeline).toHaveBeenNthCalledWith(2, h.resources.glyphPipeline);
     expect(h.pass.draw).toHaveBeenNthCalledWith(2, 6, stats.cols * stats.rows);
     expect(h.pass.setBindGroup).toHaveBeenCalledOnce();
   });
 
-  it("prepares frames without touching the render pass, and cannot be drawn before its first frame", async () => {
+  it('prepares frames without touching the render pass, and cannot be drawn before its first frame', async () => {
     const h = await harness();
     expect(h.surface.drawable()).toBe(false);
     h.render();
@@ -182,30 +157,28 @@ describe("WebGPU surface data path", () => {
   });
 });
 
-describe("glyph map", () => {
-  it("rasterizes announced glyphs through the atlas and uploads one map range", async () => {
+describe('glyph map', () => {
+  it('rasterizes announced glyphs through the atlas and uploads one map range', async () => {
     const h = await harness();
     h.gpu.announce([
-      { id: 1, style: 0, text: "a" },
-      { id: 2, style: 1, text: "b" },
-      { id: 3, style: 0, text: "😀" },
+      { id: 1, style: 0, text: 'a' },
+      { id: 2, style: 1, text: 'b' },
+      { id: 3, style: 0, text: '😀' },
     ]);
     h.render();
     expect(h.atlas.resolve.mock.calls).toEqual([
-      ["a", 0],
-      ["b", 1],
-      ["😀", 0],
+      ['a', 0],
+      ['b', 1],
+      ['😀', 0],
     ]);
     expect(h.atlas.commit).toHaveBeenCalled();
-    const mapWrite = h.writeBuffer.mock.calls.find(
-      ([buffer]) => buffer === h.lastGlyphMapBuffer(),
-    );
-    if (!mapWrite) throw new Error("glyph map was not uploaded");
+    const mapWrite = h.writeBuffer.mock.calls.find(([buffer]) => buffer === h.lastGlyphMapBuffer());
+    if (!mapWrite) throw new Error('glyph map was not uploaded');
     const entries = (mapWrite[2] as Uint32Array).subarray(1, 4);
     expect([...entries]).toEqual([100, 101, 102]);
   });
 
-  it("stays pending when the raster budget runs out and schedules a follow-up frame", async () => {
+  it('stays pending when the raster budget runs out and schedules a follow-up frame', async () => {
     const h = await harness();
     h.render();
     h.schedule.mockClear();
@@ -228,12 +201,12 @@ describe("glyph map", () => {
     expect(h.schedule).not.toHaveBeenCalled();
   });
 
-  it("allows a larger budget on the first frame", async () => {
+  it('allows a larger budget on the first frame', async () => {
     const h = await harness();
     const allowances: Array<number | undefined> = [];
     h.gpu.announce([
-      { id: 1, style: 0, text: "a" },
-      { id: 2, style: 0, text: "b" },
+      { id: 1, style: 0, text: 'a' },
+      { id: 2, style: 0, text: 'b' },
     ]);
     h.render({
       exhausted: (allowance) => {
@@ -243,8 +216,8 @@ describe("glyph map", () => {
     });
     expect(allowances.every((value) => value === 8)).toBe(true);
     h.gpu.announce([
-      { id: 3, style: 0, text: "c" },
-      { id: 4, style: 0, text: "d" },
+      { id: 3, style: 0, text: 'c' },
+      { id: 4, style: 0, text: 'd' },
     ]);
     allowances.length = 0;
     h.render({
@@ -256,23 +229,23 @@ describe("glyph map", () => {
     expect(allowances.every((value) => value === undefined)).toBe(true);
   });
 
-  it("drops its mapping on a new Ghostty epoch", async () => {
+  it('drops its mapping on a new Ghostty epoch', async () => {
     const h = await harness();
-    h.gpu.announce([{ id: 1, style: 0, text: "a" }]);
+    h.gpu.announce([{ id: 1, style: 0, text: 'a' }]);
     h.render();
     h.atlas.resolve.mockClear();
     h.gpu.epoch += 1;
-    h.gpu.table = [{ id: 1, style: 0, text: "z" }];
-    h.gpu.announce([{ id: 1, style: 0, text: "z" }]);
+    h.gpu.table = [{ id: 1, style: 0, text: 'z' }];
+    h.gpu.announce([{ id: 1, style: 0, text: 'z' }]);
     h.render();
-    expect(h.atlas.resolve).toHaveBeenCalledExactlyOnceWith("z", 0);
+    expect(h.atlas.resolve).toHaveBeenCalledExactlyOnceWith('z', 0);
   });
 
-  it("recovers after an atlas flush by resyncing and mapping only visible glyphs", async () => {
+  it('recovers after an atlas flush by resyncing and mapping only visible glyphs', async () => {
     const h = await harness();
     h.gpu.announce([
-      { id: 1, style: 0, text: "a" },
-      { id: 2, style: 0, text: "b" },
+      { id: 1, style: 0, text: 'a' },
+      { id: 2, style: 0, text: 'b' },
     ]);
     // Only glyph 2 is visible.
     h.gpu.setCell(0, 2);
@@ -284,40 +257,38 @@ describe("glyph map", () => {
     h.atlas.nextIndex = 0;
     h.render();
     expect(h.model.consumeGpuFrame).toHaveBeenLastCalledWith({ resync: true });
-    expect(h.atlas.resolve.mock.calls.map(([text]) => text)).toEqual(["b"]);
+    expect(h.atlas.resolve.mock.calls.map(([text]) => text)).toEqual(['b']);
     expect(h.surface.diagnostics().pendingGlyphs).toBe(0);
   });
 
-  it("rebuilds the bind group when the atlas replaces a texture", async () => {
+  it('rebuilds the bind group when the atlas replaces a texture', async () => {
     const h = await harness();
     h.render();
     h.createBindGroup.mockClear();
     h.atlas.generation += 1;
-    h.gpu.damage = { kind: "rows", ranges: [{ start: 0, end: 0 }] };
+    h.gpu.damage = { kind: 'rows', ranges: [{ start: 0, end: 0 }] };
     expect(h.render()).toBe(true);
     expect(h.createBindGroup).toHaveBeenCalledOnce();
   });
 
-  it("reports a full atlas to its lease without spinning frames", async () => {
+  it('reports a full atlas to its lease without spinning frames', async () => {
     const h = await harness();
     h.render();
     h.schedule.mockClear();
     h.atlas.full = true;
-    h.gpu.announce([{ id: 1, style: 0, text: "a" }]);
+    h.gpu.announce([{ id: 1, style: 0, text: 'a' }]);
     h.render();
     expect(h.lease.requestFlush).toHaveBeenCalledOnce();
     expect(h.schedule).not.toHaveBeenCalled();
   });
 });
 
-describe("search mask", () => {
-  it("exists only while a search highlights cells and uploads only when it changes", async () => {
+describe('search mask', () => {
+  it('exists only while a search highlights cells and uploads only when it changes', async () => {
     const h = await harness();
     h.render();
     const searchBuffers = () =>
-      h.createBuffer.mock.calls.filter(([descriptor]) =>
-        descriptor.label?.includes("search"),
-      );
+      h.createBuffer.mock.calls.filter(([descriptor]) => descriptor.label?.includes('search'));
     expect(searchBuffers()).toHaveLength(0);
 
     h.setMask([1, 1, 0, 0, 2]);
@@ -325,9 +296,9 @@ describe("search mask", () => {
     expect(h.render()).toBe(true);
     expect(searchBuffers()).toHaveLength(1);
     const upload = h.writeBuffer.mock.calls.find(([buffer]) =>
-      (buffer as { label?: string }).label?.includes("search"),
+      (buffer as { label?: string }).label?.includes('search'),
     );
-    if (!upload) throw new Error("search mask was not uploaded");
+    if (!upload) throw new Error('search mask was not uploaded');
     expect((upload[2] as Uint8Array).byteLength).toBe(8);
 
     h.writeBuffer.mockClear();
@@ -341,8 +312,8 @@ describe("search mask", () => {
   });
 });
 
-describe("selection", () => {
-  it("redraws through its uniform when the viewport origin shifts", async () => {
+describe('selection', () => {
+  it('redraws through its uniform when the viewport origin shifts', async () => {
     const h = await harness();
     h.render();
     h.writeBuffer.mockClear();
@@ -353,30 +324,22 @@ describe("selection", () => {
   });
 });
 
-describe("pixel-exact geometry", () => {
+describe('pixel-exact geometry', () => {
   it.each([1, 1.25, 1.5, 1.75, 2, 2.25, 3])(
-    "fits whole device cells and keeps CSS and device cell sizes 1:1 at %s",
+    'fits whole device cells and keeps CSS and device cell sizes 1:1 at %s',
     async (scale) => {
       const h = await harness({ scale });
       h.render();
       const stats = h.surface.diagnostics();
-      expect(h.surface.cellSize().width * scale).toBeCloseTo(
-        stats.deviceCellWidth,
-        9,
-      );
-      expect(h.surface.cellSize().height * scale).toBeCloseTo(
-        stats.deviceCellHeight,
-        9,
-      );
+      expect(h.surface.cellSize().width * scale).toBeCloseTo(stats.deviceCellWidth, 9);
+      expect(h.surface.cellSize().height * scale).toBeCloseTo(stats.deviceCellHeight, 9);
       expect(h.onResize).toHaveBeenCalledWith(stats.cols, stats.rows);
       expect(h.model.setPixelSize).toHaveBeenCalledWith(
         stats.cols * stats.deviceCellWidth,
         stats.rows * stats.deviceCellHeight,
       );
       // The grid fits the host in whole cells.
-      expect(stats.cols * stats.deviceCellWidth).toBeLessThanOrEqual(
-        Math.round(960 * scale),
-      );
+      expect(stats.cols * stats.deviceCellWidth).toBeLessThanOrEqual(Math.round(960 * scale));
     },
   );
 
@@ -399,7 +362,7 @@ describe("pixel-exact geometry", () => {
     expect(h.surface.diagnostics().cols).toBe(before - 1);
   });
 
-  it("tells the window canvas where its host is on every layout change, and packs the rectangle it gets back", async () => {
+  it('tells the window canvas where its host is on every layout change, and packs the rectangle it gets back', async () => {
     const h = await harness({ scale: 1.25 });
     h.render();
     expect(h.setBounds).toHaveBeenLastCalledWith({
@@ -420,20 +383,17 @@ describe("pixel-exact geometry", () => {
     h.paneRect.value = { x: 126, y: 25, width: 875, height: 625 };
     h.writeBuffer.mockClear();
     expect(h.render()).toBe(true);
-    const uniform = h.writeBuffer.mock.calls.find(
-      ([buffer]) => buffer === h.lastUniformBuffer(),
-    );
-    if (!uniform) throw new Error("uniform was not uploaded");
+    const uniform = h.writeBuffer.mock.calls.find(([buffer]) => buffer === h.lastUniformBuffer());
+    if (!uniform) throw new Error('uniform was not uploaded');
     const words = new Uint32Array((uniform[2] as Float32Array).buffer);
     const floats = uniform[2] as Float32Array;
     expect([
       floats[SCREEN_OFFSET.viewportSize / 4],
       floats[SCREEN_OFFSET.viewportSize / 4 + 1],
     ]).toEqual([875, 625]);
-    expect([
-      words[SCREEN_OFFSET.origin / 4],
-      words[SCREEN_OFFSET.origin / 4 + 1],
-    ]).toEqual([126, 25]);
+    expect([words[SCREEN_OFFSET.origin / 4], words[SCREEN_OFFSET.origin / 4 + 1]]).toEqual([
+      126, 25,
+    ]);
   });
 
   it("redraws, without touching the grid, when only the pane's rectangle moved", async () => {
@@ -449,7 +409,7 @@ describe("pixel-exact geometry", () => {
     expect(h.onResize).toHaveBeenCalledTimes(1);
   });
 
-  it("re-measures the font and rebuilds resources when the display ratio changes", async () => {
+  it('re-measures the font and rebuilds resources when the display ratio changes', async () => {
     const h = await harness({ scale: 1 });
     h.render();
     const before = h.surface.diagnostics();
@@ -470,7 +430,7 @@ describe("pixel-exact geometry", () => {
   });
 });
 
-describe("resizing the host", () => {
+describe('resizing the host', () => {
   const ORIGIN = { left: 0, top: 0 };
   const hostSize = (width: number, height = 640) => ({
     width: width + TERMINAL_RIGHT_GUTTER_CSS_PX,
@@ -478,7 +438,7 @@ describe("resizing the host", () => {
     ...ORIGIN,
   });
 
-  it("leaves the model and the PTY alone during a gesture and applies the final size once at its end", async () => {
+  it('leaves the model and the PTY alone during a gesture and applies the final size once at its end', async () => {
     vi.useFakeTimers();
     const h = await harness();
     h.render();
@@ -521,7 +481,7 @@ describe("resizing the host", () => {
     expect(last.cols).toBeLessThan(first.cols);
   });
 
-  it("moves the grid up inside a shorter pane so the cursor row stays visible, only while the gesture lasts", async () => {
+  it('moves the grid up inside a shorter pane so the cursor row stays visible, only while the gesture lasts', async () => {
     vi.useFakeTimers();
     const h = await harness();
     h.render();
@@ -529,13 +489,9 @@ describe("resizing the host", () => {
     const shift = () => {
       h.writeBuffer.mockClear();
       h.render();
-      const upload = h.writeBuffer.mock.calls.find(
-        ([buffer]) => buffer === h.lastUniformBuffer(),
-      );
+      const upload = h.writeBuffer.mock.calls.find(([buffer]) => buffer === h.lastUniformBuffer());
       if (!upload) return null;
-      return new Uint32Array((upload[2] as Float32Array).buffer)[
-        SCREEN_OFFSET.shiftY / 4
-      ];
+      return new Uint32Array((upload[2] as Float32Array).buffer)[SCREEN_OFFSET.shiftY / 4];
     };
     const { rows, deviceCellHeight } = h.surface.diagnostics();
 
@@ -567,7 +523,7 @@ describe("resizing the host", () => {
     expect(shift()).toBe(0);
   });
 
-  it("does not resize at all when the gesture ends at the size it started with", async () => {
+  it('does not resize at all when the gesture ends at the size it started with', async () => {
     vi.useFakeTimers();
     const h = await harness();
     h.render();
@@ -587,7 +543,7 @@ describe("resizing the host", () => {
     expect(h.onResize).not.toHaveBeenCalled();
   });
 
-  it("applies every non-gesture fit immediately and in step with the PTY", async () => {
+  it('applies every non-gesture fit immediately and in step with the PTY', async () => {
     vi.useFakeTimers();
     const h = await harness();
     h.render();
@@ -610,7 +566,7 @@ describe("resizing the host", () => {
     expect(h.surface.diagnostics().cols).toBe(80);
   });
 
-  it("treats a burst of host changes as a gesture and lands the last size when it is quiet", async () => {
+  it('treats a burst of host changes as a gesture and lands the last size when it is quiet', async () => {
     vi.useFakeTimers();
     const h = await harness();
     h.render();
@@ -638,8 +594,8 @@ describe("resizing the host", () => {
   });
 });
 
-describe("WebGPU surface resource lifecycle", () => {
-  it("uploads only the changed row and pauses text blinking in an unfocused window", async () => {
+describe('WebGPU surface resource lifecycle', () => {
+  it('uploads only the changed row and pauses text blinking in an unfocused window', async () => {
     vi.useFakeTimers();
     const h = await harness();
     h.cursor.visible = false;
@@ -649,9 +605,7 @@ describe("WebGPU surface resource lifecycle", () => {
     h.writeBuffer.mockClear();
     expect(h.render()).toBe(true);
     expect(
-      h.writeBuffer.mock.calls.filter(
-        ([buffer]) => buffer === h.lastCellsBuffer(),
-      ),
+      h.writeBuffer.mock.calls.filter(([buffer]) => buffer === h.lastCellsBuffer()),
     ).toHaveLength(1);
     expect(vi.getTimerCount()).toBe(1);
     vi.advanceTimersByTime(600);
@@ -666,7 +620,7 @@ describe("WebGPU surface resource lifecycle", () => {
     expect(vi.getTimerCount()).toBe(1);
   });
 
-  it("arms the text blink timer only while cells blink", async () => {
+  it('arms the text blink timer only while cells blink', async () => {
     vi.useFakeTimers();
     const h = await harness();
     h.cursor.visible = false;
@@ -682,7 +636,7 @@ describe("WebGPU surface resource lifecycle", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it("redraws retained presentation after a short pause without re-uploading cells", async () => {
+  it('redraws retained presentation after a short pause without re-uploading cells', async () => {
     const h = await harness();
     h.render();
     h.model.consumeGpuFrame.mockClear();
@@ -692,13 +646,11 @@ describe("WebGPU surface resource lifecycle", () => {
     expect(h.render()).toBe(true);
     expect(h.model.consumeGpuFrame).toHaveBeenLastCalledWith({ resync: false });
     expect(
-      h.writeBuffer.mock.calls.filter(
-        ([buffer]) => buffer === h.lastCellsBuffer(),
-      ),
+      h.writeBuffer.mock.calls.filter(([buffer]) => buffer === h.lastCellsBuffer()),
     ).toHaveLength(0);
   });
 
-  it("stops cursor timers for an application-hidden cursor and unfocused window", async () => {
+  it('stops cursor timers for an application-hidden cursor and unfocused window', async () => {
     vi.useFakeTimers();
     const h = await harness();
     h.cursor.blinking = true;
@@ -720,44 +672,42 @@ describe("WebGPU surface resource lifecycle", () => {
     expect(vi.getTimerCount()).toBe(1);
   });
 
-  it("prioritizes wheel interaction without scheduling idle or hidden work", async () => {
+  it('prioritizes wheel interaction without scheduling idle or hidden work', async () => {
     const h = await harness();
     h.schedule.mockClear();
-    h.surface.eventTarget().dispatchEvent(new Event("wheel"));
+    h.surface.eventTarget().dispatchEvent(new Event('wheel'));
     expect(h.interact).toHaveBeenCalledWith(h.surface);
     expect(h.schedule).not.toHaveBeenCalled();
     h.visibility(false);
     h.interact.mockClear();
-    h.surface.eventTarget().dispatchEvent(new Event("wheel"));
+    h.surface.eventTarget().dispatchEvent(new Event('wheel'));
     expect(h.interact).not.toHaveBeenCalled();
   });
 
-  it("keeps pane pacing focused when the block command editor takes keyboard focus", async () => {
+  it('keeps pane pacing focused when the block command editor takes keyboard focus', async () => {
     const h = await harness();
     h.surface.setFocused(true);
-    h.surface.inputElement().dispatchEvent(new Event("blur"));
+    h.surface.inputElement().dispatchEvent(new Event('blur'));
     expect(h.surface.isFocused()).toBe(true);
     h.surface.setFocused(false);
     expect(h.surface.isFocused()).toBe(false);
   });
 
-  it("does no DOM or presentation work for hidden output and retains fractional scrollbar positions", async () => {
+  it('does no DOM or presentation work for hidden output and retains fractional scrollbar positions', async () => {
     const h = await harness();
     h.position.history = 100;
     h.position.offset = 50;
     h.visibility(false);
     h.visibility(true);
-    const scrollbar = h.elements.find(
-      (element) => element.getAttribute("role") === "scrollbar",
-    );
-    if (!scrollbar) throw new Error("Missing terminal scrollbar");
+    const scrollbar = h.elements.find((element) => element.getAttribute('role') === 'scrollbar');
+    if (!scrollbar) throw new Error('Missing terminal scrollbar');
     h.position.history += 1;
-    scrollbar.dispatchEvent(new Event("scroll"));
+    scrollbar.dispatchEvent(new Event('scroll'));
     expect(h.model.scrollTo).not.toHaveBeenCalled();
     h.position.history -= 1;
     const line = h.surface.cellSize().height;
     scrollbar.scrollTop = 50 * line + 0.25;
-    scrollbar.dispatchEvent(new Event("scroll"));
+    scrollbar.dispatchEvent(new Event('scroll'));
     expect(h.model.scrollTo).not.toHaveBeenCalled();
     // Resuming synchronizes geometry but must not fight a native fractional scroll.
     h.visibility(false);
@@ -765,7 +715,7 @@ describe("WebGPU surface resource lifecycle", () => {
     h.render();
     expect(scrollbar.scrollTop).toBe(50 * line + 0.25);
     scrollbar.scrollTop = 51 * line;
-    scrollbar.dispatchEvent(new Event("scroll"));
+    scrollbar.dispatchEvent(new Event('scroll'));
     expect(h.model.scrollTo).toHaveBeenLastCalledWith(49);
     h.visibility(false);
     h.domWork.mockClear();
@@ -775,7 +725,7 @@ describe("WebGPU surface resource lifecycle", () => {
     expect(h.schedule).not.toHaveBeenCalled();
   });
 
-  it("does not take the browser clamping its own scroll write for the user scrolling up", async () => {
+  it('does not take the browser clamping its own scroll write for the user scrolling up', async () => {
     // Ghostty prunes whole pages of scrollback, so the history can shrink by hundreds of lines
     // under a bottom-pinned view. The browser clamps the thumb to the shorter content and
     // reports a scroll event for a position the surface did not write; read as a drag, with the
@@ -786,7 +736,7 @@ describe("WebGPU surface resource lifecycle", () => {
     h.position.offset = 0;
     h.render();
     const scrollbar = h.elements.find(
-      (element) => element.getAttribute("role") === "scrollbar",
+      (element) => element.getAttribute('role') === 'scrollbar',
     ) as unknown as {
       scrollTop: number;
       scrollHeight: number;
@@ -800,15 +750,15 @@ describe("WebGPU surface resource lifecycle", () => {
     h.position.history = 495;
     scrollbar.scrollHeight = scrollbar.clientHeight + 494 * line;
     scrollbar.scrollTop = 494 * line;
-    scrollbar.dispatchEvent(new Event("scroll"));
+    scrollbar.dispatchEvent(new Event('scroll'));
     expect(h.model.scrollTo).not.toHaveBeenCalled();
     // A real drag (here to the top) is still honoured.
     scrollbar.scrollTop = 0;
-    scrollbar.dispatchEvent(new Event("scroll"));
+    scrollbar.dispatchEvent(new Event('scroll'));
     expect(h.model.scrollTo).toHaveBeenCalledTimes(1);
   });
 
-  it("reads no layout on presented frames while history grows", async () => {
+  it('reads no layout on presented frames while history grows', async () => {
     const h = await harness();
     h.position.history = 10;
     h.position.offset = 0;
@@ -824,7 +774,7 @@ describe("WebGPU surface resource lifecycle", () => {
     expect(h.rectReads).not.toHaveBeenCalled();
   });
 
-  it("pauses through rapid desktop switches and long occlusion without releasing anything", async () => {
+  it('pauses through rapid desktop switches and long occlusion without releasing anything', async () => {
     const h = await harness();
     h.render();
     const allocated = h.createBuffer.mock.calls.length;
@@ -846,15 +796,15 @@ describe("WebGPU surface resource lifecycle", () => {
       documentSuspended: true,
     });
     expect(h.render()).toBe(false);
-    expect(h.surface.getSelection()).toBe("selected output");
+    expect(h.surface.getSelection()).toBe('selected output');
     h.visibility(true);
     expect(h.createBuffer).toHaveBeenCalledTimes(allocated);
     expect(h.render()).toBe(true);
-    expect(h.surface.getSelection()).toBe("selected output");
+    expect(h.surface.getSelection()).toBe('selected output');
     expect(h.onError).not.toHaveBeenCalled();
   });
 
-  it("keeps its place in the window canvas when the GPU device is lost and rebuilds its buffers for the replacement", async () => {
+  it('keeps its place in the window canvas when the GPU device is lost and rebuilds its buffers for the replacement', async () => {
     const h = await harness();
     h.render();
     h.surface.handleDeviceLoss();
@@ -875,7 +825,7 @@ describe("WebGPU surface resource lifecycle", () => {
     expect(h.onError).not.toHaveBeenCalled();
   });
 
-  it("leaves the window canvas when hidden and rejoins it, without a canvas of its own, when shown", async () => {
+  it('leaves the window canvas when hidden and rejoins it, without a canvas of its own, when shown', async () => {
     const h = await harness();
     h.render();
     expect(h.register).toHaveBeenCalledOnce();
@@ -887,22 +837,22 @@ describe("WebGPU surface resource lifecycle", () => {
     expect(h.register).toHaveBeenLastCalledWith(h.surface, h.host);
   });
 
-  it("keeps its DOM background until the window canvas has shown its first frame", async () => {
+  it('keeps its DOM background until the window canvas has shown its first frame', async () => {
     const h = await harness();
     const root = h.elements.find(
-      (e) => e.getAttribute("data-terax-ghostty-surface") === "webgpu",
+      (e) => e.getAttribute('data-terax-ghostty-surface') === 'webgpu',
     ) as unknown as { style: { backgroundColor: string } };
-    expect(root.style.backgroundColor).toBe("rgb(0 0 0)");
+    expect(root.style.backgroundColor).toBe('rgb(0 0 0)');
     h.render();
-    expect(root.style.backgroundColor).toBe("rgb(0 0 0)");
+    expect(root.style.backgroundColor).toBe('rgb(0 0 0)');
     h.surface.handleCanvasRevealed();
-    expect(root.style.backgroundColor).toBe("transparent");
+    expect(root.style.backgroundColor).toBe('transparent');
     // Leaving the window covers the canvas again until the next first frame.
     h.surface.setVisible(false);
-    expect(root.style.backgroundColor).toBe("rgb(0 0 0)");
+    expect(root.style.backgroundColor).toBe('rgb(0 0 0)');
     h.surface.setVisible(true);
     h.render();
-    expect(root.style.backgroundColor).toBe("rgb(0 0 0)");
+    expect(root.style.backgroundColor).toBe('rgb(0 0 0)');
   });
 
   it("shows the previous frame in the pane's moved rectangle while presentation is held", async () => {
@@ -924,7 +874,7 @@ describe("WebGPU surface resource lifecycle", () => {
     expect(h.writeBuffer).not.toHaveBeenCalled();
   });
 
-  it("defers font changes during occlusion and acquires the current font and DPR on resume", async () => {
+  it('defers font changes during occlusion and acquires the current font and DPR on resume', async () => {
     const h = await harness();
     const allocated = h.createBuffer.mock.calls.length;
     h.visibility(false);
@@ -950,8 +900,8 @@ describe("WebGPU surface resource lifecycle", () => {
   });
 });
 
-describe("shared atlas growth", () => {
-  it("is not drawable once another pane replaced an atlas resource, until it rebinds", async () => {
+describe('shared atlas growth', () => {
+  it('is not drawable once another pane replaced an atlas resource, until it rebinds', async () => {
     const h = await harness();
     h.render();
     expect(h.surface.drawable()).toBe(true);
@@ -971,7 +921,7 @@ describe("shared atlas growth", () => {
     expect(h.createBindGroup).toHaveBeenCalledOnce();
   });
 
-  it("leaves a pane without bindings of its own to its next prepared frame", async () => {
+  it('leaves a pane without bindings of its own to its next prepared frame', async () => {
     const h = await harness();
     h.surface.rebindAtlas(h.resources as never);
     expect(h.createBindGroup).not.toHaveBeenCalled();
@@ -983,33 +933,26 @@ describe("shared atlas growth", () => {
   });
 });
 
-describe("a resize gesture ending in a prompt redraw hold", () => {
+describe('a resize gesture ending in a prompt redraw hold', () => {
   const hostSize = (width: number, height = 640) => ({
     width: width + TERMINAL_RIGHT_GUTTER_CSS_PX,
     height,
     left: 0,
     top: 0,
   });
-  const holdPresentation = (
-    h: Awaited<ReturnType<typeof harness>>,
-    held: boolean,
-  ) => {
+  const holdPresentation = (h: Awaited<ReturnType<typeof harness>>, held: boolean) => {
     h.model.presentationSuppressed = () => held;
     h.model.deferPresentation = () => held;
   };
   const uploadedShift = (h: Awaited<ReturnType<typeof harness>>) => {
     h.writeBuffer.mockClear();
     h.render();
-    const upload = h.writeBuffer.mock.calls.find(
-      ([buffer]) => buffer === h.lastUniformBuffer(),
-    );
+    const upload = h.writeBuffer.mock.calls.find(([buffer]) => buffer === h.lastUniformBuffer());
     if (!upload) return null;
-    return new Uint32Array((upload[2] as Float32Array).buffer)[
-      SCREEN_OFFSET.shiftY / 4
-    ];
+    return new Uint32Array((upload[2] as Float32Array).buffer)[SCREEN_OFFSET.shiftY / 4];
   };
 
-  it("does not replace the cell buffer while presentation is held, so the pane keeps drawing", async () => {
+  it('does not replace the cell buffer while presentation is held, so the pane keeps drawing', async () => {
     vi.useFakeTimers();
     const h = await harness();
     h.render();
@@ -1038,7 +981,7 @@ describe("a resize gesture ending in a prompt redraw hold", () => {
     expect(h.surface.drawable()).toBe(true);
   });
 
-  it("keeps the grid shifted up inside the held frame, clamped to what the rectangle still lacks", async () => {
+  it('keeps the grid shifted up inside the held frame, clamped to what the rectangle still lacks', async () => {
     vi.useFakeTimers();
     const h = await harness();
     h.render();
@@ -1066,7 +1009,7 @@ describe("a resize gesture ending in a prompt redraw hold", () => {
     expect(uploadedShift(h)).toBe(0);
   });
 
-  it("tells hit-testing how far the drawn grid is moved up, in CSS pixels", async () => {
+  it('tells hit-testing how far the drawn grid is moved up, in CSS pixels', async () => {
     vi.useFakeTimers();
     const h = await harness();
     h.render();
@@ -1087,46 +1030,46 @@ describe("a resize gesture ending in a prompt redraw hold", () => {
   });
 });
 
-describe("failure paths", () => {
+describe('failure paths', () => {
   const root = (h: Awaited<ReturnType<typeof harness>>) =>
     h.elements.find(
-      (e) => e.getAttribute("data-terax-ghostty-surface") === "webgpu",
+      (e) => e.getAttribute('data-terax-ghostty-surface') === 'webgpu',
     ) as unknown as { style: { backgroundColor: string } };
 
-  it("covers the canvas with its own background when the runtime fails, until the fallback takes over", async () => {
+  it('covers the canvas with its own background when the runtime fails, until the fallback takes over', async () => {
     const h = await harness();
     h.render();
     h.surface.handleCanvasRevealed();
-    expect(root(h).style.backgroundColor).toBe("transparent");
+    expect(root(h).style.backgroundColor).toBe('transparent');
     // The window canvas is removed with the runtime; a transparent pane would show nothing.
-    const error = new Error("WebGPU validation error");
+    const error = new Error('WebGPU validation error');
     h.surface.handleRuntimeError(error);
-    expect(root(h).style.backgroundColor).toBe("rgb(0 0 0)");
+    expect(root(h).style.backgroundColor).toBe('rgb(0 0 0)');
     expect(h.onError).toHaveBeenCalledWith(error);
   });
 
-  it("covers the canvas while the device is replaced and is revealed again by the first frame after it", async () => {
+  it('covers the canvas while the device is replaced and is revealed again by the first frame after it', async () => {
     const h = await harness();
     h.render();
     h.surface.handleCanvasRevealed();
     // Reconfiguring the canvas for the replacement device clears it.
     h.surface.handleDeviceLoss();
-    expect(root(h).style.backgroundColor).toBe("rgb(0 0 0)");
+    expect(root(h).style.backgroundColor).toBe('rgb(0 0 0)');
     h.resources.generation = 2;
     h.visibility(true);
     h.render();
-    expect(root(h).style.backgroundColor).toBe("rgb(0 0 0)");
+    expect(root(h).style.backgroundColor).toBe('rgb(0 0 0)');
     h.surface.handleCanvasRevealed();
-    expect(root(h).style.backgroundColor).toBe("transparent");
+    expect(root(h).style.backgroundColor).toBe('transparent');
   });
 });
 
 const FONT = {
-  family: "monospace",
+  family: 'monospace',
   size: 14,
   lineHeight: 1.2,
   letterSpacing: 0,
-  weight: "400",
+  weight: '400',
 } as const;
 const METRICS = deriveFontMetrics(FONT, 1, {
   advance: 8,
@@ -1151,8 +1094,7 @@ async function harness(options: { scale?: number } = {}) {
   let scale = options.scale ?? 1;
   bridge.visible = true;
   const destroy = vi.fn();
-  const buffers: Array<{ size: number; label?: string; destroy: () => void }> =
-    [];
+  const buffers: Array<{ size: number; label?: string; destroy: () => void }> = [];
   const createBuffer = vi.fn((descriptor: GPUBufferDescriptor) => {
     const buffer = {
       size: descriptor.size,
@@ -1216,9 +1158,9 @@ async function harness(options: { scale?: number } = {}) {
     return value;
   };
   const measure = () => ({
-    font: "",
+    font: '',
     measureText() {
-      const size = Number.parseFloat(/([\d.]+)px/.exec(this.font)?.[1] ?? "14");
+      const size = Number.parseFloat(/([\d.]+)px/.exec(this.font)?.[1] ?? '14');
       return {
         width: size * (8 / 14),
         actualBoundingBoxAscent: size * (12 / 14),
@@ -1226,14 +1168,14 @@ async function harness(options: { scale?: number } = {}) {
       };
     },
   });
-  vi.stubGlobal("document", {
+  vi.stubGlobal('document', {
     createElement: (tag: string) => {
       const made = element();
       // The pool's canvases and the font measurer share this stub.
-      if (tag === "canvas") {
+      if (tag === 'canvas') {
         Object.assign(made, {
-          tagName: "CANVAS",
-          getContext: (kind: string) => (kind === "2d" ? measuring : null),
+          tagName: 'CANVAS',
+          getContext: (kind: string) => (kind === '2d' ? measuring : null),
         });
       }
       return made;
@@ -1257,11 +1199,11 @@ async function harness(options: { scale?: number } = {}) {
       removeEventListener: vi.fn(),
     }),
   };
-  vi.stubGlobal("window", windowStub);
-  vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0 (Macintosh)" });
+  vi.stubGlobal('window', windowStub);
+  vi.stubGlobal('navigator', { userAgent: 'Mozilla/5.0 (Macintosh)' });
   let observed: ((entries: unknown[]) => void) | null = null;
   vi.stubGlobal(
-    "ResizeObserver",
+    'ResizeObserver',
     class {
       constructor(callback: (entries: unknown[]) => void) {
         observed = callback;
@@ -1270,7 +1212,7 @@ async function harness(options: { scale?: number } = {}) {
       disconnect() {}
     },
   );
-  vi.stubGlobal("GPUBufferUsage", { UNIFORM: 1, COPY_DST: 2, STORAGE: 4 });
+  vi.stubGlobal('GPUBufferUsage', { UNIFORM: 1, COPY_DST: 2, STORAGE: 4 });
 
   const calls: string[] = [];
   const sparseApiCalls: string[] = [];
@@ -1289,9 +1231,7 @@ async function harness(options: { scale?: number } = {}) {
     coverageTextureView: {},
     colorTextureView: {},
     tableBuffer: { size: 16 },
-    resolve: vi.fn((_text: string, _style: number) =>
-      atlas.full ? -1 : nextIndex++,
-    ),
+    resolve: vi.fn((_text: string, _style: number) => (atlas.full ? -1 : nextIndex++)),
     commit: vi.fn(),
   };
   const lease = { atlas, requestFlush: vi.fn(), release: vi.fn() };
@@ -1300,9 +1240,7 @@ async function harness(options: { scale?: number } = {}) {
   const interact = vi.fn();
   const writeBuffer = vi.fn((buffer: unknown, ..._rest: unknown[]) => {
     const label = (buffer as { label?: string }).label;
-    calls.push(
-      `writeBuffer:${label?.includes("cell records") ? "cells" : "other"}`,
-    );
+    calls.push(`writeBuffer:${label?.includes('cell records') ? 'cells' : 'other'}`);
   });
   const createBindGroup = vi.fn(() => ({}));
   const resources = {
@@ -1312,11 +1250,11 @@ async function harness(options: { scale?: number } = {}) {
       queue: { writeBuffer },
     },
     generation: 1,
-    format: "bgra8unorm" as GPUTextureFormat,
+    format: 'bgra8unorm' as GPUTextureFormat,
     bindGroupLayout: {},
     emptyStorage: { size: 16 },
-    backgroundPipeline: { name: "background" },
-    glyphPipeline: { name: "glyph" },
+    backgroundPipeline: { name: 'background' },
+    glyphPipeline: { name: 'glyph' },
   };
   // What the window canvas gives a pane: the rectangle it computed, and a way to report layout.
   const paneRect: { value: DeviceRect | null } = {
@@ -1344,14 +1282,11 @@ async function harness(options: { scale?: number } = {}) {
     resources: () => resources,
   };
   const position = { history: 0, offset: 0 };
-  const cursor = { x: 0, y: 0, visible: true, blinking: false, style: "block" };
+  const cursor = { x: 0, y: 0, visible: true, blinking: false, style: 'block' };
   let damage = () => {};
   let origin = 0;
   const track =
-    <Args extends unknown[], Result>(
-      name: string,
-      fn: (...args: Args) => Result,
-    ) =>
+    <Args extends unknown[], Result>(name: string, fn: (...args: Args) => Result) =>
     (...args: Args): Result => {
       calls.push(name);
       return fn(...args);
@@ -1369,18 +1304,18 @@ async function harness(options: { scale?: number } = {}) {
     get rows() {
       return dims.rows;
     },
-    cursor: track("cursor", () => cursor),
+    cursor: track('cursor', () => cursor),
     presentationSuppressed: () => false,
     deferPresentation: () => false,
     consumeGpuFrame: vi.fn(
-      track("consumeGpuFrame", (frameOptions?: { resync?: boolean }) =>
+      track('consumeGpuFrame', (frameOptions?: { resync?: boolean }) =>
         gpu.consume(dims.cols, dims.rows, frameOptions?.resync === true),
       ),
     ),
-    renderCells: sparse("renderCells"),
-    consumeDamage: sparse("consumeDamage"),
-    viewport: sparse("viewport"),
-    viewportOriginLine: track("viewportOriginLine", () => origin),
+    renderCells: sparse('renderCells'),
+    consumeDamage: sparse('consumeDamage'),
+    viewport: sparse('viewport'),
+    viewportOriginLine: track('viewportOriginLine', () => origin),
     setCursorOptions: vi.fn(),
     revision: () => 0,
     subscribeDamage: (listener: () => void) => {
@@ -1392,8 +1327,8 @@ async function harness(options: { scale?: number } = {}) {
       focus: { line: 0, column: 10 },
       rectangular: false,
     }),
-    selectionText: () => "selected output",
-    scrollPosition: track("scrollPosition", () => position),
+    selectionText: () => 'selected output',
+    scrollPosition: track('scrollPosition', () => position),
     scrollTo: vi.fn((offset: number) => {
       position.offset = offset;
       damage();
@@ -1432,7 +1367,7 @@ async function harness(options: { scale?: number } = {}) {
       palette: [],
     },
     cursorBlink: false,
-    cursorStyle: "block",
+    cursorStyle: 'block',
     onResize,
     onError,
     // Grid changes are rate limited in production; tests that are not about that apply at once.
@@ -1440,10 +1375,8 @@ async function harness(options: { scale?: number } = {}) {
   surfaces.push(surface);
   const mask: { bytes: number[] | null } = { bytes: null };
   const searchController = surface.searchController();
-  vi.spyOn(searchController, "maskRevision", "get").mockImplementation(
-    () => maskRevision,
-  );
-  vi.spyOn(searchController, "viewportMaskBytes").mockImplementation(() =>
+  vi.spyOn(searchController, 'maskRevision', 'get').mockImplementation(() => maskRevision);
+  vi.spyOn(searchController, 'viewportMaskBytes').mockImplementation(() =>
     mask.bytes ? Uint8Array.from(mask.bytes) : null,
   );
   let maskRevision = 0;
@@ -1461,11 +1394,7 @@ async function harness(options: { scale?: number } = {}) {
     pass,
     render: (budget?: { exhausted(allowance?: number): boolean }) =>
       surface.prepareFrame(resources as never, budget),
-    encode: () =>
-      surface.encode(
-        pass as unknown as GPURenderPassEncoder,
-        resources as never,
-      ),
+    encode: () => surface.encode(pass as unknown as GPURenderPassEncoder, resources as never),
     paneRect,
     setBounds,
     register,
@@ -1495,13 +1424,11 @@ async function harness(options: { scale?: number } = {}) {
     set origin(value: number) {
       origin = value;
     },
-    lastCellsBuffer: () => lastBuffer("cell records"),
-    lastUniformBuffer: () => lastBuffer("surface uniform"),
-    lastGlyphMapBuffer: () => lastBuffer("glyph map"),
+    lastCellsBuffer: () => lastBuffer('cell records'),
+    lastUniformBuffer: () => lastBuffer('surface uniform'),
+    lastGlyphMapBuffer: () => lastBuffer('glyph map'),
     lastSearchBuffer: () =>
-      lastBuffer("search mask") as
-        | { destroy: ReturnType<typeof vi.fn> }
-        | undefined,
+      lastBuffer('search mask') as { destroy: ReturnType<typeof vi.fn> } | undefined,
     setMask(bytes: number[] | null) {
       mask.bytes = bytes;
       maskRevision += 1;
@@ -1520,9 +1447,7 @@ async function harness(options: { scale?: number } = {}) {
         left: entry.left,
         top: entry.top,
       });
-      const root = elements.find(
-        (e) => e.getAttribute("data-terax-ghostty-surface") === "webgpu",
-      );
+      const root = elements.find((e) => e.getAttribute('data-terax-ghostty-surface') === 'webgpu');
       if (root) {
         root.getBoundingClientRect = () => ({
           width: entry.width,
@@ -1571,12 +1496,12 @@ function createFrameState(initialCols: number, initialRows: number) {
     table: [],
     announced: [],
     dirtyRanges: [],
-    damage: { kind: "none" },
+    damage: { kind: 'none' },
     blinking: 0,
     cells: new Uint8Array(cols * rows * CELL),
     dirty(ranges) {
       state.dirtyRanges = ranges;
-      state.damage = { kind: "rows", ranges };
+      state.damage = { kind: 'rows', ranges };
     },
     announce(glyphs) {
       for (const glyph of glyphs) {
@@ -1584,7 +1509,7 @@ function createFrameState(initialCols: number, initialRows: number) {
         state.table.push(glyph);
       }
       state.announced.push(...glyphs);
-      state.damage = { kind: "rows", ranges: [{ start: 0, end: 0 }] };
+      state.damage = { kind: 'rows', ranges: [{ start: 0, end: 0 }] };
     },
     setCell(index, glyph) {
       new Uint32Array(state.cells.buffer)[index * 4] = glyph;
@@ -1606,18 +1531,15 @@ function createFrameState(initialCols: number, initialRows: number) {
         epoch: state.epoch,
         fullDamage: full,
         dirtyRanges: full ? [{ start: 0, end: rows - 1 }] : state.dirtyRanges,
-        damage: full ? { kind: "full" } : state.damage,
+        damage: full ? { kind: 'full' } : state.damage,
         cells: state.cells,
         memory: {} as WebAssembly.Memory,
         blinkingCells: state.blinking,
-        glyphCount: state.table.reduce(
-          (max, glyph) => Math.max(max, glyph.id),
-          0,
-        ),
+        glyphCount: state.table.reduce((max, glyph) => Math.max(max, glyph.id), 0),
         newGlyphs: resync ? [...state.table] : [...state.announced],
       };
       state.dirtyRanges = [];
-      state.damage = { kind: "none" };
+      state.damage = { kind: 'none' };
       state.announced = [];
       return frame;
     },

@@ -1,7 +1,7 @@
 export type PaneId = number;
 
-export type SplitDir = "row" | "col";
-export type PaneDirection = "left" | "right" | "up" | "down";
+export type SplitDir = 'row' | 'col';
+export type PaneDirection = 'left' | 'right' | 'up' | 'down';
 export type PaneBounds = {
   id: PaneId;
   left: number;
@@ -11,18 +11,16 @@ export type PaneBounds = {
 };
 
 export type PaneNode =
-  | { kind: "leaf"; id: PaneId; slotId?: PaneId; cwd?: string }
+  | { kind: 'leaf'; id: PaneId; slotId?: PaneId; cwd?: string }
   | {
-      kind: "split";
+      kind: 'split';
       id: PaneId;
       dir: SplitDir;
       children: PaneNode[];
     };
 
-export function isLeaf(
-  n: PaneNode,
-): n is Extract<PaneNode, { kind: "leaf" }> {
-  return n.kind === "leaf";
+export function isLeaf(n: PaneNode): n is Extract<PaneNode, { kind: 'leaf' }> {
+  return n.kind === 'leaf';
 }
 
 export function leafIds(n: PaneNode): PaneId[] {
@@ -44,11 +42,7 @@ export function findLeafCwd(n: PaneNode, id: PaneId): string | undefined {
   return undefined;
 }
 
-export function setLeafCwd(
-  n: PaneNode,
-  id: PaneId,
-  cwd: string,
-): PaneNode {
+export function setLeafCwd(n: PaneNode, id: PaneId, cwd: string): PaneNode {
   if (isLeaf(n)) {
     if (n.id !== id || n.cwd === cwd) return n;
     return { ...n, cwd };
@@ -77,27 +71,21 @@ export function splitLeaf(
   dir: SplitDir,
   newCwd?: string,
 ): PaneNode {
-  if (tree.kind === "split" && tree.dir === dir) {
-    const idx = tree.children.findIndex(
-      (c) => c.kind === "leaf" && c.id === targetId,
-    );
+  if (tree.kind === 'split' && tree.dir === dir) {
+    const idx = tree.children.findIndex((c) => c.kind === 'leaf' && c.id === targetId);
     if (idx >= 0) {
-      const newLeaf: PaneNode = { kind: "leaf", id: newLeafId, cwd: newCwd };
+      const newLeaf: PaneNode = { kind: 'leaf', id: newLeafId, cwd: newCwd };
       return {
         ...tree,
-        children: [
-          ...tree.children.slice(0, idx + 1),
-          newLeaf,
-          ...tree.children.slice(idx + 1),
-        ],
+        children: [...tree.children.slice(0, idx + 1), newLeaf, ...tree.children.slice(idx + 1)],
       };
     }
   }
   if (isLeaf(tree)) {
     if (tree.id !== targetId) return tree;
-    const newLeaf: PaneNode = { kind: "leaf", id: newLeafId, cwd: newCwd };
+    const newLeaf: PaneNode = { kind: 'leaf', id: newLeafId, cwd: newCwd };
     return {
-      kind: "split",
+      kind: 'split',
       id: newSplitId,
       dir,
       children: [tree, newLeaf],
@@ -105,9 +93,7 @@ export function splitLeaf(
   }
   return {
     ...tree,
-    children: tree.children.map((c) =>
-      splitLeaf(c, targetId, newSplitId, newLeafId, dir, newCwd),
-    ),
+    children: tree.children.map((c) => splitLeaf(c, targetId, newSplitId, newLeafId, dir, newCwd)),
   };
 }
 
@@ -115,10 +101,7 @@ export function splitLeaf(
  * Remove a leaf and collapse single-child splits left in its wake. Returns
  * `null` when the entire subtree is gone.
  */
-export function removeLeaf(
-  tree: PaneNode,
-  targetId: PaneId,
-): PaneNode | null {
+export function removeLeaf(tree: PaneNode, targetId: PaneId): PaneNode | null {
   if (isLeaf(tree)) return tree.id === targetId ? null : tree;
   const newChildren: PaneNode[] = [];
   for (const c of tree.children) {
@@ -130,11 +113,7 @@ export function removeLeaf(
   return { ...tree, children: newChildren };
 }
 
-export function nextLeafId(
-  tree: PaneNode,
-  currentId: PaneId,
-  delta: 1 | -1,
-): PaneId {
+export function nextLeafId(tree: PaneNode, currentId: PaneId, delta: 1 | -1): PaneId {
   const ids = leafIds(tree);
   if (ids.length === 0) return currentId;
   const idx = ids.indexOf(currentId);
@@ -146,10 +125,7 @@ export function nextLeafId(
 // next sibling, fall back to the previous. Used to pick the new focus
 // when a pane closes (so focus stays in the same neighborhood instead of
 // snapping to the first pane in the tree).
-export function siblingLeafOf(
-  tree: PaneNode,
-  leafId: PaneId,
-): PaneId | null {
+export function siblingLeafOf(tree: PaneNode, leafId: PaneId): PaneId | null {
   if (isLeaf(tree)) return null;
   for (let i = 0; i < tree.children.length; i++) {
     const c = tree.children[i];
@@ -174,17 +150,11 @@ export function hasLeaf(tree: PaneNode, id: PaneId): boolean {
 
 type PaneRect = { id: PaneId; x: number; y: number; width: number; height: number };
 
-function paneRects(
-  node: PaneNode,
-  x = 0,
-  y = 0,
-  width = 1,
-  height = 1,
-): PaneRect[] {
+function paneRects(node: PaneNode, x = 0, y = 0, width = 1, height = 1): PaneRect[] {
   if (isLeaf(node)) return [{ id: node.id, x, y, width, height }];
   const count = node.children.length;
   return node.children.flatMap((child, index) =>
-    node.dir === "row"
+    node.dir === 'row'
       ? paneRects(child, x + (width * index) / count, y, width / count, height)
       : paneRects(child, x, y + (height * index) / count, width, height / count),
   );
@@ -195,15 +165,12 @@ function directionalTarget(
   active: PaneRect,
   direction: PaneDirection,
 ): PaneId | null {
-  const horizontal = direction === "left" || direction === "right";
-  const forward = direction === "right" || direction === "down";
-  const center = (r: PaneRect) =>
-    horizontal ? r.x + r.width / 2 : r.y + r.height / 2;
-  const crossCenter = (r: PaneRect) =>
-    horizontal ? r.y + r.height / 2 : r.x + r.width / 2;
+  const horizontal = direction === 'left' || direction === 'right';
+  const forward = direction === 'right' || direction === 'down';
+  const center = (r: PaneRect) => (horizontal ? r.x + r.width / 2 : r.y + r.height / 2);
+  const crossCenter = (r: PaneRect) => (horizontal ? r.y + r.height / 2 : r.x + r.width / 2);
   const crossStart = (r: PaneRect) => (horizontal ? r.y : r.x);
-  const crossEnd = (r: PaneRect) =>
-    horizontal ? r.y + r.height : r.x + r.width;
+  const crossEnd = (r: PaneRect) => (horizontal ? r.y + r.height : r.x + r.width);
   const overlaps = (r: PaneRect) =>
     crossStart(r) < crossEnd(active) && crossEnd(r) > crossStart(active);
   const others = rects.filter((r) => r.id !== active.id && overlaps(r));
@@ -214,24 +181,20 @@ function directionalTarget(
   );
   const candidates = ahead.length > 0 ? ahead : others;
   candidates.sort((a, b) => {
-    const axisA = ahead.length > 0
-      ? Math.abs(center(a) - center(active))
-      : forward
-        ? center(a)
-        : -center(a);
-    const axisB = ahead.length > 0
-      ? Math.abs(center(b) - center(active))
-      : forward
-        ? center(b)
-        : -center(b);
-    return axisA - axisB ||
+    const axisA =
+      ahead.length > 0 ? Math.abs(center(a) - center(active)) : forward ? center(a) : -center(a);
+    const axisB =
+      ahead.length > 0 ? Math.abs(center(b) - center(active)) : forward ? center(b) : -center(b);
+    return (
+      axisA - axisB ||
       Math.abs(crossCenter(a) - crossCenter(active)) -
-        Math.abs(crossCenter(b) - crossCenter(active));
+        Math.abs(crossCenter(b) - crossCenter(active))
+    );
   });
   return candidates[0]?.id ?? null;
 }
 
-function findLeaf(node: PaneNode, id: PaneId): Extract<PaneNode, { kind: "leaf" }> | null {
+function findLeaf(node: PaneNode, id: PaneId): Extract<PaneNode, { kind: 'leaf' }> | null {
   if (isLeaf(node)) return node.id === id ? node : null;
   for (const child of node.children) {
     const found = findLeaf(child, id);
@@ -242,8 +205,8 @@ function findLeaf(node: PaneNode, id: PaneId): Extract<PaneNode, { kind: "leaf" 
 
 function swapLeaves(
   node: PaneNode,
-  first: Extract<PaneNode, { kind: "leaf" }>,
-  second: Extract<PaneNode, { kind: "leaf" }>,
+  first: Extract<PaneNode, { kind: 'leaf' }>,
+  second: Extract<PaneNode, { kind: 'leaf' }>,
 ): PaneNode {
   if (isLeaf(node)) {
     const slotId = node.slotId ?? node.id;
