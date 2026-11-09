@@ -47,7 +47,6 @@ export type ShortcutId =
   | 'editor.undo'
   | 'editor.redo'
   | 'editor.save'
-  | 'editor.aiComplete'
   | 'editor.codeComplete';
 
 export type ShortcutGroup =
@@ -280,11 +279,6 @@ const SHORTCUT_META: Omit<Shortcut, 'defaultBindings'>[] = [
   {
     id: 'editor.save',
     label: 'Save file',
-    group: 'Editor',
-  },
-  {
-    id: 'editor.aiComplete',
-    label: 'Trigger AI completion',
     group: 'Editor',
   },
   {

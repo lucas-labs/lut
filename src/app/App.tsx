@@ -455,7 +455,7 @@ export default function App() {
 
   const togglePanelAndFocus = useCallback(() => {
     if (!hasComposer) {
-      void openSettingsWindow('models');
+      void openSettingsWindow();
       return;
     }
     if (panelOpen) {
@@ -471,7 +471,7 @@ export default function App() {
   const handleAttachFileToAgent = useCallback(
     (path: string) => {
       if (!hasComposer) {
-        void openSettingsWindow('models');
+        void openSettingsWindow();
         return;
       }
       // Dispatch a window event the composer listens for. Same pattern as
@@ -485,7 +485,7 @@ export default function App() {
 
   const askFromSelection = useCallback(() => {
     if (!hasComposer) {
-      void openSettingsWindow('models');
+      void openSettingsWindow();
       return;
     }
     const selection = captureActiveSelection();
@@ -801,7 +801,7 @@ export default function App() {
       'ai.toggle': togglePanelAndFocus,
       'ai.toggleMini': () => {
         if (!hasComposer) {
-          void openSettingsWindow('models');
+          void openSettingsWindow();
           return;
         }
         toggleMini();
@@ -824,7 +824,6 @@ export default function App() {
       'editor.save': () => {
         void editorRefs.current.get(activeId)?.save();
       },
-      'editor.aiComplete': () => editorRefs.current.get(activeId)?.triggerAiComplete(),
       'editor.codeComplete': () => editorRefs.current.get(activeId)?.triggerCodeComplete(),
     }),
     [
@@ -860,13 +859,7 @@ export default function App() {
     (id: ShortcutId, e: KeyboardEvent) => {
       const terminalPaneCount = activeTab?.kind === 'terminal' ? leafIds(activeTab.paneTree).length : null;
       if (shouldDisablePaneSwapShortcut(id, terminalPaneCount)) return true;
-      if (
-        id === 'editor.undo' ||
-        id === 'editor.redo' ||
-        id === 'editor.save' ||
-        id === 'editor.aiComplete' ||
-        id === 'editor.codeComplete'
-      ) {
+      if (id === 'editor.undo' || id === 'editor.redo' || id === 'editor.save' || id === 'editor.codeComplete') {
         return activeTab?.kind !== 'editor';
       }
       if (id === 'ai.askSelection') {
