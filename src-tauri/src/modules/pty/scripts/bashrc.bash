@@ -7,8 +7,8 @@
 #   skip it — a fragile DEBUG-trap alternative would clobber the user's own
 #   traps and interact badly with debuggers.
 
-if [ -z "${__TERAX_HOOKS_LOADED-}" ]; then
-  __TERAX_HOOKS_LOADED=1
+if [ -z "${__LUT_HOOKS_LOADED-}" ]; then
+  __LUT_HOOKS_LOADED=1
 
   [ -f /etc/profile ] && source /etc/profile
   [ -f /etc/bashrc ] && source /etc/bashrc
@@ -33,9 +33,9 @@ if [ -z "${__TERAX_HOOKS_LOADED-}" ]; then
     _terax_prompt_end='\[\e]133;B;terax_blocks=0\e\\\]'
   fi
 
-  if [ -n "${TERAX_CLI-}" ] && [ -x "${TERAX_CLI-}" ]; then
-    terax() {
-      command "$TERAX_CLI" "$@"
+  if [ -n "${LUT_CLI-}" ] && [ -x "${LUT_CLI-}" ]; then
+    lut() {
+      command "$LUT_CLI" "$@"
     }
   fi
 

@@ -698,7 +698,7 @@ mod tests {
             let session = spawn_with(host, PtySize::default(), || {
                 let mut command = CommandBuilder::new("wsl.exe");
                 command.env("PATH", directory.path());
-                command.env("TERAX_WSL_LOGIN_SHELL", shell);
+                command.env("LUT_WSL_LOGIN_SHELL", shell);
                 Ok(command)
             })
             .unwrap();

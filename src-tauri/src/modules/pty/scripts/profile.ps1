@@ -3,12 +3,12 @@
 # boundaries. C comes from a PSConsoleHostReadLine wrapper (PowerShell has no
 # preexec hook).
 
-if ($global:__TERAX_HOOKS_LOADED) { return }
-$global:__TERAX_HOOKS_LOADED = $true
+if ($global:__LUT_HOOKS_LOADED) { return }
+$global:__LUT_HOOKS_LOADED = $true
 
-if ($env:TERAX_CLI -and (Test-Path -LiteralPath $env:TERAX_CLI -PathType Leaf)) {
-    function global:terax {
-        & $env:TERAX_CLI @args
+if ($env:LUT_CLI -and (Test-Path -LiteralPath $env:LUT_CLI -PathType Leaf)) {
+    function global:lut {
+        & $env:LUT_CLI @args
     }
 }
 

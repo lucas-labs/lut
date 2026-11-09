@@ -77,10 +77,10 @@ pub fn launched_shell(cmd: &mut CommandBuilder) -> String {
         .unwrap_or_default();
     if program.eq_ignore_ascii_case("wsl.exe") {
         let shell = cmd
-            .get_env("TERAX_WSL_LOGIN_SHELL")
+            .get_env("LUT_WSL_LOGIN_SHELL")
             .map(|s| s.to_string_lossy().into_owned())
             .unwrap_or_default();
-        cmd.env_remove("TERAX_WSL_LOGIN_SHELL");
+        cmd.env_remove("LUT_WSL_LOGIN_SHELL");
         shell
     } else {
         program
@@ -100,9 +100,9 @@ mod launched_shell_tests {
             "/usr/bin/unknown",
         ] {
             let mut cmd = CommandBuilder::new("wsl.exe");
-            cmd.env("TERAX_WSL_LOGIN_SHELL", shell);
+            cmd.env("LUT_WSL_LOGIN_SHELL", shell);
             assert_eq!(launched_shell(&mut cmd), shell);
-            assert!(cmd.get_env("TERAX_WSL_LOGIN_SHELL").is_none());
+            assert!(cmd.get_env("LUT_WSL_LOGIN_SHELL").is_none());
         }
         let mut direct = CommandBuilder::new("powershell.exe");
         assert_eq!(launched_shell(&mut direct), "powershell.exe");
@@ -186,7 +186,14 @@ fn ensure_utf8_locale(cmd: &mut CommandBuilder) {
 fn apply_common(cmd: &mut CommandBuilder, cwd: Option<String>, control: Option<&ShellControlEnv>) {
     cmd.env("TERM", "xterm-256color");
     cmd.env("COLORTERM", "truecolor");
-    cmd.env("TERAX_TERMINAL", "1");
+    cmd.env("LUT_TERMINAL", "1");
+    // A lut started from a Terax pane inherits Terax's control address, token and CLI: never pass
+    // them on, so Terax tooling cannot attach to lut panes.
+    for key in std::env::vars_os().map(|(key, _)| key) {
+        if key.to_string_lossy().starts_with("TERAX_") {
+            cmd.env_remove(key);
+        }
+    }
     let appimage_overrides = workspace::appimage_env_overrides();
     let clean_path = match appimage_overrides.iter().find(|(key, _)| *key == "PATH") {
         Some((_, value)) => value.clone(),
@@ -203,11 +210,11 @@ fn apply_common(cmd: &mut CommandBuilder, cwd: Option<String>, control: Option<&
         }
     }
     if let Some(control) = control {
-        cmd.env("TERAX_CONTROL_ADDR", &control.address);
-        cmd.env("TERAX_CONTROL_TOKEN", &control.token);
-        cmd.env("TERAX_PANE_ID", control.pane_id.to_string());
+        cmd.env("LUT_CONTROL_ADDR", &control.address);
+        cmd.env("LUT_CONTROL_TOKEN", &control.token);
+        cmd.env("LUT_PANE_ID", control.pane_id.to_string());
         if let Some(path) = &control.cli_path {
-            cmd.env("TERAX_CLI", path);
+            cmd.env("LUT_CLI", path);
         }
         if let Some(bin_dir) = &control.cli_bin_dir {
             let paths = std::iter::once(bin_dir.clone()).chain(
@@ -352,7 +359,7 @@ mod unix {
         Ok(cmd)
     }
 
-    /// What the child zsh gets as `TERAX_USER_ZDOTDIR`.
+    /// What the child zsh gets as `LUT_USER_ZDOTDIR`.
     #[derive(Debug, PartialEq, Eq)]
     enum UserZdotdir {
         /// The inherited `ZDOTDIR` is the user's own.
@@ -381,11 +388,11 @@ mod unix {
                         // Guard against Terax-in-Terax :)
                         match user_zdotdir_for(std::env::var("ZDOTDIR").ok().as_deref(), &zdotdir) {
                             UserZdotdir::Set(user) => {
-                                cmd.env("TERAX_USER_ZDOTDIR", user);
+                                cmd.env("LUT_USER_ZDOTDIR", user);
                             }
                             UserZdotdir::Keep => {}
                             UserZdotdir::Clear => {
-                                cmd.env_remove("TERAX_USER_ZDOTDIR");
+                                cmd.env_remove("LUT_USER_ZDOTDIR");
                             }
                         }
                         cmd.env("ZDOTDIR", &zdotdir);
@@ -530,9 +537,12 @@ mod unix {
                 UserZdotdir::Set("/home/me/.config/zsh".into())
             );
             // Launched by a command in another Terax terminal: keep the
-            // TERAX_USER_ZDOTDIR it inherited.
+            // LUT_USER_ZDOTDIR it inherited.
             assert_eq!(
-                user_zdotdir_for(Some("/cache/terax/shell-integration/zsh"), integration),
+                user_zdotdir_for(
+                    Some("/cache/terax/shell-integration/zsh"),
+                    integration
+                ),
                 UserZdotdir::Keep
             );
             assert_eq!(user_zdotdir_for(None, integration), UserZdotdir::Clear);
@@ -542,7 +552,7 @@ mod unix {
         #[test]
         fn zsh_starts_from_the_integration_dir_and_forgets_a_stale_user_zdotdir() {
             let mut cmd = CommandBuilder::new("/bin/zsh");
-            cmd.env("TERAX_USER_ZDOTDIR", "/left/over/from/a/parent/terminal");
+            cmd.env("LUT_USER_ZDOTDIR", "/left/over/from/a/parent/terminal");
             apply_shell_init(&mut cmd, &Shell::Zsh, "/bin/zsh");
             let zdotdir = cmd.get_env("ZDOTDIR").expect("ZDOTDIR is set");
             assert!(Path::new(zdotdir).ends_with("shell-integration/zsh"));
@@ -550,11 +560,11 @@ mod unix {
             match std::env::var("ZDOTDIR") {
                 Ok(user) if !user.is_empty() && Path::new(&user) != Path::new(zdotdir) => {
                     assert_eq!(
-                        cmd.get_env("TERAX_USER_ZDOTDIR"),
+                        cmd.get_env("LUT_USER_ZDOTDIR"),
                         Some(std::ffi::OsStr::new(&user))
                     );
                 }
-                _ => assert_eq!(cmd.get_env("TERAX_USER_ZDOTDIR"), None),
+                _ => assert_eq!(cmd.get_env("LUT_USER_ZDOTDIR"), None),
             }
             for file in [".zshenv", ".zprofile", ".zshrc", ".zlogin"] {
                 assert!(Path::new(zdotdir).join(file).is_file(), "{file}");
@@ -758,13 +768,13 @@ mod windows {
             integration,
         );
         let mut cmd = CommandBuilder::new("wsl.exe");
-        cmd.env("TERAX_WSL_LOGIN_SHELL", &shell_path);
+        cmd.env("LUT_WSL_LOGIN_SHELL", &shell_path);
         for arg in &spec.args {
             cmd.arg(arg);
         }
         cmd.env("TERM", "xterm-256color");
         cmd.env("COLORTERM", "truecolor");
-        cmd.env("TERAX_TERMINAL", "1");
+        cmd.env("LUT_TERMINAL", "1");
         super::ensure_utf8_locale(&mut cmd);
         log::info!("spawning WSL shell: {distro} ({shell_path})");
         Ok(cmd)
@@ -794,7 +804,7 @@ mod windows {
             ) => {
                 args.push("env".to_string());
                 if let Some(user_zdotdir) = user_zdotdir {
-                    args.push(format!("TERAX_USER_ZDOTDIR={user_zdotdir}"));
+                    args.push(format!("LUT_USER_ZDOTDIR={user_zdotdir}"));
                 }
                 args.push(format!("ZDOTDIR={zdotdir}"));
                 args.push(shell_path.to_string());
@@ -1009,7 +1019,7 @@ mod windows {
                 "/usr/bin/zsh",
                 ShellKind::Zsh,
                 WslShellIntegration::Zsh {
-                    zdotdir: "/home/vinicios/.cache/terax/shell-integration/zsh".into(),
+                    zdotdir: "/home/vinicios/.cache/dev.lucode.lut/shell-integration/zsh".into(),
                     user_zdotdir: None,
                 },
             );
@@ -1022,7 +1032,8 @@ mod windows {
                     "/home/vinicios/repo".to_string(),
                     "--exec".to_string(),
                     "env".to_string(),
-                    "ZDOTDIR=/home/vinicios/.cache/terax/shell-integration/zsh".to_string(),
+                    "ZDOTDIR=/home/vinicios/.cache/dev.lucode.lut/shell-integration/zsh"
+                        .to_string(),
                     "/usr/bin/zsh".to_string(),
                     "-l".to_string(),
                 ]
@@ -1037,7 +1048,7 @@ mod windows {
                 "/usr/bin/zsh",
                 ShellKind::Zsh,
                 WslShellIntegration::Zsh {
-                    zdotdir: "/home/vinicios/.cache/terax/shell-integration/zsh".into(),
+                    zdotdir: "/home/vinicios/.cache/dev.lucode.lut/shell-integration/zsh".into(),
                     user_zdotdir: Some("/home/vinicios/.config/zsh".into()),
                 },
             );
@@ -1050,8 +1061,9 @@ mod windows {
                     "/home/vinicios/repo".to_string(),
                     "--exec".to_string(),
                     "env".to_string(),
-                    "TERAX_USER_ZDOTDIR=/home/vinicios/.config/zsh".to_string(),
-                    "ZDOTDIR=/home/vinicios/.cache/terax/shell-integration/zsh".to_string(),
+                    "LUT_USER_ZDOTDIR=/home/vinicios/.config/zsh".to_string(),
+                    "ZDOTDIR=/home/vinicios/.cache/dev.lucode.lut/shell-integration/zsh"
+                        .to_string(),
                     "/usr/bin/zsh".to_string(),
                     "-l".to_string(),
                 ]
@@ -1089,7 +1101,8 @@ mod windows {
                 "/bin/bash",
                 ShellKind::Bash,
                 WslShellIntegration::Bash {
-                    rcfile: "/home/vinicios/.cache/terax/shell-integration/bash/bashrc".into(),
+                    rcfile: "/home/vinicios/.cache/dev.lucode.lut/shell-integration/bash/bashrc"
+                        .into(),
                 },
             );
             assert_eq!(
@@ -1102,7 +1115,8 @@ mod windows {
                     "--exec".to_string(),
                     "/bin/bash".to_string(),
                     "--rcfile".to_string(),
-                    "/home/vinicios/.cache/terax/shell-integration/bash/bashrc".to_string(),
+                    "/home/vinicios/.cache/dev.lucode.lut/shell-integration/bash/bashrc"
+                        .to_string(),
                     "-i".to_string(),
                 ]
             );
@@ -1278,23 +1292,45 @@ mod tests {
         apply_common(&mut command, None, Some(&control));
 
         assert_eq!(
-            command.get_env("TERAX_CONTROL_ADDR"),
+            command.get_env("LUT_CONTROL_ADDR"),
             Some(OsStr::new("127.0.0.1:1234"))
         );
         assert_eq!(
-            command.get_env("TERAX_CONTROL_TOKEN"),
+            command.get_env("LUT_CONTROL_TOKEN"),
             Some(OsStr::new("secret"))
         );
-        assert_eq!(command.get_env("TERAX_PANE_ID"), Some(OsStr::new("42")));
-        assert_eq!(
-            command.get_env("TERAX_CLI"),
-            Some(OsStr::new("/app/terax-cli"))
-        );
+        assert_eq!(command.get_env("LUT_PANE_ID"), Some(OsStr::new("42")));
+        assert_eq!(command.get_env("LUT_CLI"), Some(OsStr::new("/app/terax-cli")));
         assert_eq!(
             command
                 .get_env("PATH")
                 .and_then(|path| std::env::split_paths(path).next()),
             Some(std::path::PathBuf::from("/app/bin"))
         );
+    }
+
+    #[test]
+    fn no_terax_variable_reaches_a_lut_child() {
+        // As if lut were launched from a Terax pane. The name is unique to this test, so setting it
+        // cannot disturb tests running in parallel.
+        std::env::set_var("TERAX_E02_09_INHERITED_PROBE", "terax");
+        let mut command = CommandBuilder::new("shell");
+        let control = ShellControlEnv {
+            address: "127.0.0.1:1234".into(),
+            token: "secret".into(),
+            pane_id: 1,
+            cli_path: Some("/app/terax-cli".into()),
+            cli_bin_dir: Some(std::path::PathBuf::from("/app/bin")),
+        };
+        apply_common(&mut command, None, Some(&control));
+        std::env::remove_var("TERAX_E02_09_INHERITED_PROBE");
+
+        let terax: Vec<_> = command
+            .iter_full_env_as_str()
+            .map(|(key, _)| key)
+            .filter(|key| key.starts_with("TERAX_"))
+            .collect();
+        assert!(terax.is_empty(), "{terax:?}");
+        assert_eq!(command.get_env("LUT_TERMINAL"), Some(OsStr::new("1")));
     }
 }

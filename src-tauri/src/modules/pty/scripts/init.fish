@@ -5,18 +5,18 @@
 # fish_features=no-mark-prompt so these markers aren't emitted twice.
 
 # Installed into conf.d, which every fish session sources; only Terax-spawned
-# shells (TERAX_TERMINAL=1) may get their prompt wrapped.
-if not set -q TERAX_TERMINAL
+# shells (LUT_TERMINAL=1) may get their prompt wrapped.
+if not set -q LUT_TERMINAL
     exit 0
 end
-if set -q __TERAX_HOOKS_LOADED
+if set -q __LUT_HOOKS_LOADED
     exit 0
 end
-set -g __TERAX_HOOKS_LOADED 1
+set -g __LUT_HOOKS_LOADED 1
 
-if set -q TERAX_CLI; and test -x "$TERAX_CLI"
-    function terax
-        command "$TERAX_CLI" $argv
+if set -q LUT_CLI; and test -x "$LUT_CLI"
+    function lut
+        command "$LUT_CLI" $argv
     end
 end
 
@@ -25,7 +25,7 @@ end
 function fish_greeting
 end
 
-set -g __TERAX_HOST (uname -n 2>/dev/null; or echo localhost)
+set -g __LUT_HOST (uname -n 2>/dev/null; or echo localhost)
 
 # URL-encode a path keeping `/` intact so it stays valid inside file://.
 function __terax_urlencode_path
@@ -71,7 +71,7 @@ function __terax_install_prompt
     function fish_prompt
         set -l __terax_status $status
         printf '\e]133;D;%d\e\\' $__terax_status
-        printf '\e]7;file://%s%s\e\\' "$__TERAX_HOST" (__terax_urlencode_path "$PWD")
+        printf '\e]7;file://%s%s\e\\' "$__LUT_HOST" (__terax_urlencode_path "$PWD")
         printf '\e]133;A\e\\'
         __terax_restore_status $__terax_status
         if functions -q __terax_user_prompt
