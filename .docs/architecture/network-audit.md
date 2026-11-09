@@ -27,21 +27,21 @@ left out of the tables; the last section lists what was checked and found absent
 
 These never run inside lut: `@tauri-apps/plugin-opener` hands the URL to the OS, and only on a user click.
 
-| Link                                                  | File:line                                                                                                                    | Target                                    | Decision                                          |
-| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------- |
-| About: repository, website, new issue                 | `src/settings/sections/AboutSection.tsx:10-11,67,78,89,93`                                                                   | `github.com/crynta/terax-ai`, `terax.app` | **Terax services**: replaced with lut's by E04-03 |
-| Links in terminal output, Markdown and external links | `src/modules/terminal/lib/terminalLinks.ts:72`, `src/modules/editor/lib/markdownExtras.ts:83`, `src/lib/external-link.ts:13` | whatever the content links to             | keep; user click                                  |
-| Language server docs                                  | `src/modules/lsp/lib/presets.ts:34-252`, `LspStatusPill.tsx:165`, `src/settings/components/LspInstallDialog.tsx:99`          | each server's documentation               | keep; user click                                  |
-| Commit or file on the remote's website                | `src/modules/git-history/GitHistoryPane.tsx:787` (URL from `lib/remoteWebUrl.ts:58`)                                         | the repository's host                     | keep; user click                                  |
-| Open the preview in the browser                       | `src/modules/preview/PreviewAddressBar.tsx:173`, `PreviewPane.tsx:97`                                                        | the previewed URL                         | keep; user click                                  |
+| Link                                                  | File:line                                                                                                                    | Target                        | Decision                                                      |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------- | ------------------------------------------------------------- |
+| About: repository, new issue                          | `src/settings/sections/AboutSection.tsx:10,66,77,81`                                                                         | `github.com/lucas-labs/lut`   | lut's repository (E04-03); the Terax website link was removed |
+| Links in terminal output, Markdown and external links | `src/modules/terminal/lib/terminalLinks.ts:72`, `src/modules/editor/lib/markdownExtras.ts:83`, `src/lib/external-link.ts:13` | whatever the content links to | keep; user click                                              |
+| Language server docs                                  | `src/modules/lsp/lib/presets.ts:34-252`, `LspStatusPill.tsx:165`, `src/settings/components/LspInstallDialog.tsx:99`          | each server's documentation   | keep; user click                                              |
+| Commit or file on the remote's website                | `src/modules/git-history/GitHistoryPane.tsx:787` (URL from `lib/remoteWebUrl.ts:58`)                                         | the repository's host         | keep; user click                                              |
+| Open the preview in the browser                       | `src/modules/preview/PreviewAddressBar.tsx:173`, `PreviewPane.tsx:97`                                                        | the previewed URL             | keep; user click                                              |
 
 The LSP install dialog (`LspInstallDialog.tsx:38`) only copies an install command to the clipboard; it runs nothing.
 
 ## Checked and absent
 
 - **Terax services:** the updater (E01-02) and the BYOK AI with its `HTTP-Referer: https://terax.ai` / `X-Title: Terax`
-  headers (E05, #358) are gone. `git grep -n "terax.ai" src src-tauri/src` returns nothing. The only Terax URLs left are
-  the About links above (E04-03).
+  headers (E05, #358) are gone. `git grep -n "terax.ai" src src-tauri/src` returns nothing, and the About links point to lut's
+  repository (E04-03).
 - **HTTP clients in Rust:** none in lut's code; `reqwest` is in `Cargo.lock` only as a dependency of `tauri` itself.
 - **Telemetry, analytics, crash reporting:** none (the only "sentry" match is a file-icon rule for `.sentryclirc`).
 - **CDN, remote scripts or fonts:** none. The CSP allows `script-src 'self' 'wasm-unsafe-eval'` and

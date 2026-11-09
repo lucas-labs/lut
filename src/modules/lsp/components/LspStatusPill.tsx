@@ -141,7 +141,7 @@ function InstallPill({ preset }: { preset: LspPreset }) {
       <PopoverContent side="top" align="start" className="w-80 p-3 text-xs [&_button]:cursor-pointer">
         <div className="mb-2 font-medium text-foreground">{preset.name} language server</div>
         <p className="mb-2 text-muted-foreground">
-          Terax found no <code className="text-foreground">{preset.command}</code> on your PATH. Install it, then check
+          lut found no <code className="text-foreground">{preset.command}</code> on your PATH. Install it, then check
           again:
         </p>
         {install ? (

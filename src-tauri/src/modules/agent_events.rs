@@ -423,7 +423,7 @@ fn handle_impl(
         return reject(request, "invalid_params", "unknown agent");
     };
     let Some(pane_id) = request.caller.pane_id else {
-        return reject(request, "unknown_pane", "hook requires a Terax pane");
+        return reject(request, "unknown_pane", "hook requires a lut pane");
     };
     let Some(target) = host.pane(pane_id) else {
         return reject(request, "unknown_pane", "pane has no live terminal");

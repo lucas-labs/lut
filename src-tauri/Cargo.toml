@@ -1,8 +1,8 @@
 [package]
 name = "lut"
 version = "0.9.0"
-description = "Terax — an open-source AI-native terminal emulator"
-authors = ["crynta"]
+description = "lut — a cross-platform terminal built around projects, profiles and CLI coding agents"
+authors = ["lucode"]
 license = "Apache-2.0"
 edition = "2021"
 default-run = "lut"

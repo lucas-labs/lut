@@ -162,13 +162,13 @@ export function ThemesSection() {
               Create
             </Button>
             <Button variant="outline" size="sm" className="h-7 px-2 text-[11px]" onClick={onPickThemeFile}>
-              Import .terax-theme
+              Import .lut-theme
             </Button>
           </div>
           <input
             ref={fileInputRef}
             type="file"
-            accept=".terax-theme,.json,application/json"
+            accept=".lut-theme,.json,application/json"
             className="hidden"
             onChange={(e) => {
               void handleThemeFiles(e.target.files);

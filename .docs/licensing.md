@@ -24,7 +24,7 @@ Terax shipped no `NOTICE` file, so there are no upstream notices to carry over. 
 - **§4(d) NOTICE:** not applicable upstream; lut's own `NOTICE` passes the Terax attribution on to anyone who
   redistributes lut.
 
-The installer's `copyright` and `publisher` fields still say Crynta; they become lucode in E04-01.
+The installer's `copyright` and `publisher` fields are lucode (E04-01).
 
 ## Bundled third-party components
 

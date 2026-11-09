@@ -17,7 +17,7 @@ import { LANGUAGES } from './languageDefinitions';
 let mdCodeLanguages: LanguageDescription[] | null = null;
 export function markdownCodeLanguages(): LanguageDescription[] {
   if (mdCodeLanguages) return mdCodeLanguages;
-  mdCodeLanguages = LANGUAGES.filter((l) => l.name !== 'Markdown' && l.name !== 'Terax Theme').map(
+  mdCodeLanguages = LANGUAGES.filter((l) => l.name !== 'Markdown' && l.name !== 'lut Theme').map(
     (l) =>
       LanguageDescription.of({
         name: l.name,
