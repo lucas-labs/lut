@@ -43,7 +43,7 @@ pub fn decision_output(
             let text = message
                 .as_deref()
                 .map(|message| truncate_str(message, MAX_DENY_MESSAGE))
-                .unwrap_or_else(|| "Denied in Terax".to_string());
+                .unwrap_or_else(|| "Denied in lut".to_string());
             let mut body = json!({ "behavior": "deny", "message": text });
             if agent == AgentName::Claude && *interrupt {
                 body["interrupt"] = json!(true);
@@ -164,7 +164,7 @@ mod tests {
         );
         let decision = &out["hookSpecificOutput"]["decision"];
         assert_eq!(decision["behavior"], "deny");
-        assert_eq!(decision["message"], "Denied in Terax");
+        assert_eq!(decision["message"], "Denied in lut");
         assert!(decision.get("interrupt").is_none());
     }
 

@@ -1289,7 +1289,7 @@ mod tests {
             address: "127.0.0.1:1234".into(),
             token: "secret".into(),
             pane_id: 42,
-            cli_path: Some("/app/terax-cli".into()),
+            cli_path: Some("/app/lut-cli".into()),
             cli_bin_dir: Some(std::path::PathBuf::from("/app/bin")),
         };
         apply_common(&mut command, None, Some(&control));
@@ -1303,7 +1303,7 @@ mod tests {
             Some(OsStr::new("secret"))
         );
         assert_eq!(command.get_env("LUT_PANE_ID"), Some(OsStr::new("42")));
-        assert_eq!(command.get_env("LUT_CLI"), Some(OsStr::new("/app/terax-cli")));
+        assert_eq!(command.get_env("LUT_CLI"), Some(OsStr::new("/app/lut-cli")));
         assert_eq!(
             command
                 .get_env("PATH")
@@ -1322,7 +1322,7 @@ mod tests {
             address: "127.0.0.1:1234".into(),
             token: "secret".into(),
             pane_id: 1,
-            cli_path: Some("/app/terax-cli".into()),
+            cli_path: Some("/app/lut-cli".into()),
             cli_bin_dir: Some(std::path::PathBuf::from("/app/bin")),
         };
         apply_common(&mut command, None, Some(&control));

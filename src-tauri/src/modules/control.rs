@@ -242,7 +242,7 @@ pub fn start(app: tauri::AppHandle, state: ControlState) -> Result<(), String> {
     }
 
     if cli_path.is_none() {
-        log::warn!("bundled terax-cli executable not found; shell alias disabled");
+        log::warn!("bundled lut-cli executable not found; shell alias disabled");
     }
 
     let listener_state = state.clone();
@@ -804,9 +804,9 @@ fn remove_own_descriptor(path: &Path, token: &str) {
 
 fn find_bundled_cli() -> Option<PathBuf> {
     let filename = if cfg!(windows) {
-        "terax-cli.exe"
+        "lut-cli.exe"
     } else {
-        "terax-cli"
+        "lut-cli"
     };
     if let Some(path) = std::env::current_exe()
         .ok()
@@ -819,10 +819,7 @@ fn find_bundled_cli() -> Option<PathBuf> {
     if cfg!(debug_assertions) {
         let binaries = Path::new(env!("CARGO_MANIFEST_DIR")).join("binaries");
         let target = option_env!("TAURI_ENV_TARGET_TRIPLE")?;
-        let candidate = binaries.join(format!(
-            "terax-cli-{target}{}",
-            std::env::consts::EXE_SUFFIX
-        ));
+        let candidate = binaries.join(format!("lut-cli-{target}{}", std::env::consts::EXE_SUFFIX));
         return is_cli_candidate(&candidate).then_some(candidate);
     }
     None
@@ -1106,9 +1103,9 @@ mod tests {
     fn launcher_exposes_the_public_command() {
         let temp = tempfile::tempdir().expect("temp directory");
         let cli = temp.path().join(if cfg!(windows) {
-            "terax-cli.exe"
+            "lut-cli.exe"
         } else {
-            "terax-cli"
+            "lut-cli"
         });
         std::fs::write(&cli, b"cli").expect("write fake CLI");
         let descriptor = temp.path().join("control.json");
