@@ -137,7 +137,6 @@ export type Preferences = {
   editorTheme: EditorThemePref;
   editorFontSize: number;
   customInstructions: string;
-  autostart: boolean;
   restoreWindowState: boolean;
   autocompleteEnabled: boolean;
   autocompleteTrigger: AutocompleteTrigger;
@@ -232,7 +231,6 @@ const KEY_DEFAULT_MODEL = 'defaultModelId';
 const KEY_EDITOR_THEME = 'editorTheme';
 const KEY_EDITOR_FONT_SIZE = 'editorFontSize';
 const KEY_CUSTOM_INSTRUCTIONS = 'customInstructions';
-const KEY_AUTOSTART = 'autostart';
 const KEY_RESTORE_WINDOW = 'restoreWindowState';
 export type AutocompleteTrigger = 'auto' | 'manual';
 
@@ -322,7 +320,6 @@ export const DEFAULT_PREFERENCES: Preferences = {
   editorTheme: EDITOR_THEME_AUTO,
   editorFontSize: EDITOR_FONT_SIZE_DEFAULT,
   customInstructions: '',
-  autostart: false,
   // Off by default: a translucent window keeps the compositor blending the
   // whole frame every present. An explicitly stored choice (either value)
   // always wins; only an absent key falls back to this.
@@ -426,7 +423,6 @@ export async function loadPreferences(): Promise<Preferences> {
     ),
     customInstructions:
       get<string>(KEY_CUSTOM_INSTRUCTIONS) ?? DEFAULT_PREFERENCES.customInstructions,
-    autostart: get<boolean>(KEY_AUTOSTART) ?? DEFAULT_PREFERENCES.autostart,
     restoreWindowState: get<boolean>(KEY_RESTORE_WINDOW) ?? DEFAULT_PREFERENCES.restoreWindowState,
     windowVibrancy: get<boolean>(KEY_WINDOW_VIBRANCY) ?? DEFAULT_PREFERENCES.windowVibrancy,
     autocompleteEnabled:
@@ -607,10 +603,6 @@ export async function setEditorFontSize(value: number): Promise<void> {
 
 export async function setCustomInstructions(value: string): Promise<void> {
   await writePref(KEY_CUSTOM_INSTRUCTIONS, value);
-}
-
-export async function setAutostart(value: boolean): Promise<void> {
-  await writePref(KEY_AUTOSTART, value);
 }
 
 export async function setRestoreWindowState(value: boolean): Promise<void> {
@@ -893,7 +885,6 @@ export async function onPreferencesChange(
     [KEY_EDITOR_THEME]: 'editorTheme',
     [KEY_EDITOR_FONT_SIZE]: 'editorFontSize',
     [KEY_CUSTOM_INSTRUCTIONS]: 'customInstructions',
-    [KEY_AUTOSTART]: 'autostart',
     [KEY_RESTORE_WINDOW]: 'restoreWindowState',
     [KEY_AUTOCOMPLETE_ENABLED]: 'autocompleteEnabled',
     [KEY_AUTOCOMPLETE_TRIGGER]: 'autocompleteTrigger',

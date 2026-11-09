@@ -11,7 +11,6 @@ import {
   coerceTerminalRenderer,
   setAgentNotifications,
   setAgentNotificationSound,
-  setAutostart,
   setConfirmCloseRunningTerminal,
   setDefaultWorkspaceEnv,
   setExplorerGitDecorations,
@@ -38,7 +37,6 @@ import { useTheme } from '@/modules/theme';
 import { ComputerIcon, Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { invoke } from '@tauri-apps/api/core';
-import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart';
 import { useEffect, useState } from 'react';
 import { SectionHeader } from '../components/SectionHeader';
 import { SettingRow } from '../components/SettingRow';
@@ -85,7 +83,6 @@ type NotificationTestState = OsNotificationResult | 'idle' | 'waiting' | 'sendin
 export function GeneralSection() {
   const { mode, setMode } = useTheme();
 
-  const autostart = usePreferencesStore((s) => s.autostart);
   const restoreWindowState = usePreferencesStore((s) => s.restoreWindowState);
   const showHidden = usePreferencesStore((s) => s.showHidden);
   const explorerGitDecorations = usePreferencesStore((s) => s.explorerGitDecorations);
@@ -119,21 +116,6 @@ export function GeneralSection() {
   };
 
   useEffect(() => {
-    let alive = true;
-    void isEnabled()
-      .then((on) => {
-        if (!alive) return;
-        if (on !== usePreferencesStore.getState().autostart) {
-          void setAutostart(on);
-        }
-      })
-      .catch(() => undefined);
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  useEffect(() => {
     void invoke<ShellInfo[]>('pty_list_shells')
       .then(setShells)
       .catch(() => {});
@@ -141,16 +123,6 @@ export function GeneralSection() {
       .then(setWslDistros)
       .catch(() => {});
   }, []);
-
-  const onToggleAutostart = async (next: boolean) => {
-    try {
-      if (next) await enable();
-      else await disable();
-      await setAutostart(next);
-    } catch (e) {
-      console.error('autostart toggle failed', e);
-    }
-  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -473,9 +445,6 @@ export function GeneralSection() {
       <div className="flex flex-col gap-2">
         <Label>Startup</Label>
         <div className="flex flex-col gap-2">
-          <SettingRow title="Launch at login" description="Open Terax automatically when you sign in.">
-            <Switch checked={autostart} onCheckedChange={(v) => void onToggleAutostart(v)} />
-          </SettingRow>
           <SettingRow
             title="Restore window position & size"
             description="Reopen the main window where you left it. Applies on next launch."

@@ -165,7 +165,7 @@ reads `window.__TAURI__`.
 
 1. Handles the `__terax_notify <agent> <event>` argv subcommand (Windows agent hooks), resolves the launch target
    (directory or files from argv) and snapshots the launch cwd (`workspace::init_launch_cwd`).
-2. **Plugins:** clipboard-manager, window-state (without `VISIBLE`), autostart, store, os, notification, log (Info),
+2. **Plugins:** clipboard-manager, window-state (without `VISIBLE`), store, os, notification, log (Info),
    opener; on macOS also the app menu (`modules/app_menu.rs`).
 3. **URI schemes:** `terax-pty` → `pty::stream_protocol` (terminal output, see [Channels](#channels-and-uri-schemes)),
    `asset` → `fs::assets::serve`.
