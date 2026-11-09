@@ -1,9 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "ignore": [
-    "src/components/ui/**",
-    "src/components/ai-elements/**"
-  ],
+  "ignore": ["src/components/ui/**", "src/components/ai-elements/**"],
   "ignoreDependencies": [
     "@tauri-apps/plugin-log",
     "@tauri-apps/plugin-window-state",
@@ -11,18 +8,10 @@
     "@fontsource/jetbrains-mono",
     "@smoke-driver"
   ],
-  "ignoreBinaries": [
-    "footprint",
-    "swiftc",
-    "where"
-  ],
+  "ignoreBinaries": ["footprint", "swiftc", "where"],
   "ignoreIssues": {
-    "src/bench/flags.ts": [
-      "exports"
-    ],
-    "packages/ghostty-core/lib/official/types.ts": [
-      "enumMembers"
-    ]
+    "src/bench/flags.ts": ["exports"],
+    "packages/ghostty-core/lib/official/types.ts": ["enumMembers"]
   },
   "workspaces": {
     ".": {
@@ -30,14 +19,15 @@
         "src/settings/main.tsx",
         "src/modules/agents/model/index.ts",
         "src/modules/control/agents.ts",
+        "src/modules/statusbar/OsIcon.tsx",
+        "src/modules/statusbar/useGitBranch.ts",
+        "src/modules/statusbar/useSystemInfo.ts",
         "src/**/*.test.{ts,tsx}",
         "src/**/*.bench.ts",
         "scripts/**/*.html",
         "scripts/**/*.{ts,mjs}"
       ],
-      "project": [
-        "src/**/*.{ts,tsx,css}"
-      ]
+      "project": ["src/**/*.{ts,tsx,css}"]
     }
   }
 }

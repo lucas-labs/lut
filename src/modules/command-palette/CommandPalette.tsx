@@ -13,12 +13,7 @@ import { FileIcon } from '@/modules/explorer/FileIcon';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { getBindingTokens, type KeyBinding, type ShortcutId, SHORTCUTS } from '@/modules/shortcuts';
 import { listBuiltinThemes, useTheme } from '@/modules/theme';
-import {
-  AlertCircleIcon,
-  ArrowTurnBackwardIcon,
-  CommandIcon,
-  Tick02Icon,
-} from '@hugeicons/core-free-icons';
+import { AlertCircleIcon, ArrowTurnBackwardIcon, CommandIcon, Tick02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { COMMAND_GROUPS } from './commands';

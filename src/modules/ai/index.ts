@@ -1,4 +1,4 @@
-export { AgentRunBridge, AiInputBarConnect, AiMiniWindow, SelectionAskAi } from './components/lazy';
+export { AgentRunBridge, AiMiniWindow, SelectionAskAi } from './components/lazy';
 export { LocalAgentNotificationsBridge } from './components/LocalAgentNotificationsBridge';
 export { useAiBootstrap } from './hooks/useAiBootstrap';
 export { useSelectionAskAi } from './hooks/useSelectionAskAi';
