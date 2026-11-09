@@ -19,10 +19,10 @@
   so every start is from a clean state and the user's data is untouched.
 
 .EXAMPLE
-  pwsh scripts/baseline/measure.ps1 -Exe src-tauri/target/release/terax.exe
+  pwsh scripts/baseline/measure.ps1 -Exe src-tauri/target/release/lut.exe
 
 .EXAMPLE
-  pwsh scripts/baseline/measure.ps1 -Exe src-tauri/target/release/terax.exe -MemoryOnly -Out memory.json
+  pwsh scripts/baseline/measure.ps1 -Exe src-tauri/target/release/lut.exe -MemoryOnly -Out memory.json
 #>
 param(
   [Parameter(Mandatory)] [string] $Exe,

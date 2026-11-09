@@ -3,7 +3,8 @@
 How to build and run lut from a clean checkout. Windows 11 is the primary platform; macOS and Linux follow the
 same steps once their prerequisites are installed.
 
-> The imported code still uses Terax names (`terax`, `terax-cli`, `TERAX_*`); the identifier is `dev.lucode.lut` since E02-06.
+> The imported code still uses some Terax names (`terax-cli`, `TERAX_*`). The identifier is `dev.lucode.lut` since
+> E02-06; the app package, executable and `productName` are `lut` since E02-07.
 > Commands below use the names that exist today. They change with the identity epics (E02, E04).
 
 ## Toolchain
@@ -87,13 +88,19 @@ uses the committed `.wasm` files and does not need Zig.
 ## CI
 
 `.github/workflows/ci.yml` runs on every pull request to `master` and every push to `master`. Changes that only touch
-`.docs/` or Markdown files skip it. It has two jobs on `windows-latest`:
+`.docs/` or Markdown files skip it. Its jobs:
 
-- **frontend:** `pnpm install --frozen-lockfile`, `lint`, `format:check`, `check-types`, `test`, `build`, `knip`;
-- **backend:** builds the CLI sidecar, then runs `cargo fmt --check`, `cargo clippy -D warnings` and `cargo test`.
+- **changes** (Ubuntu): on a pull request, decides which of the others run from the changed files (E01-25). A push
+  to `master` runs all of them.
+- **frontend** (Ubuntu): `pnpm install --frozen-lockfile`, `lint`, `format:check`, `check-types`, `test`, `build`,
+  `knip`.
+- **frontend shell tests** (Windows): the Vitest files with a Windows-only path (`quoteShellPath.test.ts` with
+  PowerShell, `bashPromptHooks.test.ts` with Git Bash).
+- **backend** (Windows): builds the CLI sidecar, then runs `cargo fmt --check`, `cargo clippy -D warnings` and
+  `cargo test`.
 
-The Rust tests in CI are the same command as in the table above. The `terax` lib tests take about a minute
-(`cargo test --manifest-path src-tauri/Cargo.toml -p terax --lib`).
+The Rust tests in CI are the same command as in the table above. The `lut` lib tests take about a minute
+(`cargo test --manifest-path src-tauri/Cargo.toml -p lut --lib`).
 
 ## Platform-specific scripts
 

@@ -801,6 +801,7 @@ size: M
 
 - [ ] `TERAX_CONTROL_ADDR/TOKEN`, `TERAX_PANE_ID`, `TERAX_CLI`, `TERAX_TERMINAL`, `TERAX_USER_ZDOTDIR`, `TERAX_WSL_LOGIN_SHELL`, `TERAX_HOOK_TIMEOUT/WAIT/DEBUG` renamed to `LUT_*` in the CLI (`hook.rs:55-69`, `lib.rs:107,285-286`), `pty/shell_init.rs:195-219`, `pty/session.rs`, all `pty/scripts/*` and the hook/Pi templates in `agent.rs` (`$TERAX_CLI`, `$env:TERAX_CLI`, `process.env.*`); `__TERAX_HOOKS_LOADED` guards renamed.
 - [ ] Inherited `TERAX_*` variables are removed from the child environment (lut launched from a Terax pane).
+- [ ] The `terax` shell functions that wrap the CLI (`bashrc.bash`, `zshrc.zsh`, `init.fish`, `profile.ps1`) become `lut`, matching the `lut` launcher E02-07 puts on each pane's PATH.
 - [ ] `TERAX_BLOCKS` is renamed too unless command-blocks mode is already removed (E06).
 - [ ] A unit test asserts that no exported PTY variable starts with `TERAX_`; script tests (`bashrc.test.bash`, `zshrc.test.py`) updated.
 
@@ -1187,7 +1188,7 @@ size: XS
 
 ```yaml
 id: E04-02
-depends-on: [E04-01]
+depends-on: [E02-07]
 refs: [identity, 13.2:21, .docs/plan/analysis/build-identity.md]
 covers: [build-identity/windows-installer-hooks]
 type: task
