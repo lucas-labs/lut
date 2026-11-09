@@ -1328,6 +1328,14 @@
     "E01-23": {
       "number": 363,
       "id": "I_kwDOVncI8M8AAAABdunYnw"
+    },
+    "E01-24": {
+      "number": 365,
+      "id": "I_kwDOVncI8M8AAAABdvb_TQ"
+    },
+    "E01-25": {
+      "number": 366,
+      "id": "I_kwDOVncI8M8AAAABdvcBjg"
     }
   },
   "edges": [
@@ -2197,7 +2205,11 @@
     "E05-20<-E05-21",
     "E16-11<-E16-12",
     "E01-23<-E01-05",
-    "E01-15<-E01-23"
+    "E01-15<-E01-23",
+    "E01-24<-E01-23",
+    "E01-25<-E01-24",
+    "E01-15<-E01-24",
+    "E01-15<-E01-25"
   ],
   "repoId": "R_kgDOVncI8A",
   "labels": {
