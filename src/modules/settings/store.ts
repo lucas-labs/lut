@@ -232,7 +232,7 @@ const KEY_EDITOR_THEME = 'editorTheme';
 const KEY_EDITOR_FONT_SIZE = 'editorFontSize';
 const KEY_CUSTOM_INSTRUCTIONS = 'customInstructions';
 const KEY_RESTORE_WINDOW = 'restoreWindowState';
-export type AutocompleteTrigger = 'auto' | 'manual';
+type AutocompleteTrigger = 'auto' | 'manual';
 
 const KEY_AUTOCOMPLETE_ENABLED = 'autocompleteEnabled';
 const KEY_AUTOCOMPLETE_TRIGGER = 'autocompleteTrigger';
@@ -584,10 +584,6 @@ export async function setBackgroundBlur(value: number): Promise<void> {
   await writePref(KEY_BG_BLUR, clampBlur(value));
 }
 
-export async function setDefaultModel(value: ModelId): Promise<void> {
-  await writePref(KEY_DEFAULT_MODEL, value);
-}
-
 export async function setEditorTheme(value: EditorThemePref): Promise<void> {
   await writePref(KEY_EDITOR_THEME, value);
 }
@@ -601,91 +597,12 @@ export async function setEditorFontSize(value: number): Promise<void> {
   await writePref(KEY_EDITOR_FONT_SIZE, clampEditorFontSize(value));
 }
 
-export async function setCustomInstructions(value: string): Promise<void> {
-  await writePref(KEY_CUSTOM_INSTRUCTIONS, value);
-}
-
 export async function setRestoreWindowState(value: boolean): Promise<void> {
   await writePref(KEY_RESTORE_WINDOW, value);
 }
 
 export async function setWindowVibrancy(value: boolean): Promise<void> {
   await writePref(KEY_WINDOW_VIBRANCY, value);
-}
-
-export async function setAutocompleteTrigger(value: AutocompleteTrigger): Promise<void> {
-  await writePref(KEY_AUTOCOMPLETE_TRIGGER, value);
-}
-
-export async function setAutocompleteEnabled(value: boolean): Promise<void> {
-  await writePref(KEY_AUTOCOMPLETE_ENABLED, value);
-}
-
-export async function setAutocompleteProvider(value: AutocompleteProviderId): Promise<void> {
-  await writePref(KEY_AUTOCOMPLETE_PROVIDER, value);
-}
-
-export async function setAutocompleteModelId(value: string): Promise<void> {
-  await writePref(KEY_AUTOCOMPLETE_MODEL, value);
-}
-
-export async function setLmstudioBaseURL(value: string): Promise<void> {
-  await writePref(KEY_LMSTUDIO_BASE_URL, value);
-}
-
-export async function setLmstudioModelId(value: string): Promise<void> {
-  await writePref(KEY_LMSTUDIO_MODEL_ID, value);
-}
-
-export async function setMlxBaseURL(value: string): Promise<void> {
-  await writePref(KEY_MLX_BASE_URL, value);
-}
-
-export async function setMlxModelId(value: string): Promise<void> {
-  await writePref(KEY_MLX_MODEL_ID, value);
-}
-
-export async function setOllamaBaseURL(value: string): Promise<void> {
-  await writePref(KEY_OLLAMA_BASE_URL, value);
-}
-
-export async function setOllamaModelId(value: string): Promise<void> {
-  await writePref(KEY_OLLAMA_MODEL_ID, value);
-}
-
-export async function setOpenaiCompatibleBaseURL(value: string): Promise<void> {
-  await writePref(KEY_OPENAI_COMPAT_BASE_URL, value);
-}
-
-export async function setOpenaiCompatibleModelId(value: string): Promise<void> {
-  await writePref(KEY_OPENAI_COMPAT_MODEL_ID, value);
-}
-
-export async function setOpenaiCompatibleContextLimit(value: number): Promise<void> {
-  const clamped = Number.isFinite(value)
-    ? Math.max(1_000, Math.round(value))
-    : DEFAULT_PREFERENCES.openaiCompatibleContextLimit;
-  await writePref(KEY_OPENAI_COMPAT_CONTEXT_LIMIT, clamped);
-}
-
-export async function setCustomEndpoints(value: CustomEndpoint[]): Promise<void> {
-  await writePref(KEY_CUSTOM_ENDPOINTS, value);
-}
-
-export async function setOpenrouterModelId(value: string): Promise<void> {
-  await writePref(KEY_OPENROUTER_MODEL_ID, value);
-}
-
-export async function setSttProvider(value: SttProvider): Promise<void> {
-  await writePref(KEY_STT_PROVIDER, value);
-}
-
-export async function setGroqSttModel(value: string): Promise<void> {
-  await writePref(KEY_GROQ_STT_MODEL, value.trim());
-}
-
-export async function setWhispercppBaseURL(value: string): Promise<void> {
-  await writePref(KEY_WHISPERCPP_BASE_URL, value.trim());
 }
 
 export async function setFavoriteModelIds(value: string[]): Promise<void> {
@@ -959,10 +876,6 @@ export async function onPreferencesChange(
 // API key changes are stored in OS keychain (not the prefs store),
 // so we broadcast via a Tauri event for cross-window listeners.
 const KEYS_CHANGED_EVENT = 'terax://ai-keys-changed';
-
-export async function emitKeysChanged(): Promise<void> {
-  await emit(KEYS_CHANGED_EVENT);
-}
 
 export function onKeysChanged(cb: () => void): Promise<UnlistenFn> {
   return listen(KEYS_CHANGED_EVENT, () => cb());

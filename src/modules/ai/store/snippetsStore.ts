@@ -1,6 +1,6 @@
 import { emit, listen } from '@tauri-apps/api/event';
 import { create } from 'zustand';
-import { loadSnippets, newSnippetId, saveSnippets, type Snippet } from '../lib/snippets';
+import { loadSnippets, saveSnippets, type Snippet } from '../lib/snippets';
 
 const CHANGED_EVENT = 'terax://ai-snippets-changed';
 
@@ -39,5 +39,3 @@ export const useSnippetsStore = create<State>((set, get) => ({
     void saveSnippets(next).then(() => emit(CHANGED_EVENT));
   },
 }));
-
-export { newSnippetId };

@@ -133,7 +133,7 @@ export function AgentSwitcher({ isMiniWindow }: { isMiniWindow?: boolean }) {
         ) : null}
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onSelect={() => void openSettingsWindow('agents')}
+          onSelect={() => void openSettingsWindow()}
           className="gap-2 text-[12px] text-muted-foreground"
         >
           <HugeiconsIcon icon={Settings01Icon} size={12} strokeWidth={1.75} />
@@ -143,5 +143,3 @@ export function AgentSwitcher({ isMiniWindow }: { isMiniWindow?: boolean }) {
     </DropdownMenu>
   );
 }
-
-export { ICONS as AGENT_ICONS };

@@ -4,7 +4,6 @@ import {
   type Agent,
   BUILTIN_AGENTS,
   loadAgents,
-  newAgentId,
   saveActiveAgentId,
   saveCustomAgents,
 } from '../lib/agents';
@@ -69,5 +68,3 @@ export const useAgentsStore = create<AgentsState>((set, get) => ({
     void saveCustomAgents(list).then(broadcast);
   },
 }));
-
-export { newAgentId };

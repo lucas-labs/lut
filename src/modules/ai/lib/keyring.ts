@@ -27,7 +27,7 @@ export const EMPTY_PROVIDER_KEYS: ProviderKeys = {
   ollama: null,
 };
 
-export async function getKey(provider: ProviderId): Promise<string | null> {
+async function getKey(provider: ProviderId): Promise<string | null> {
   if (!providerSupportsKey(provider)) return null;
   try {
     const v = await invoke<string | null>('secrets_get', {
@@ -38,19 +38,6 @@ export async function getKey(provider: ProviderId): Promise<string | null> {
   } catch {
     return null;
   }
-}
-
-export async function setKey(provider: ProviderId, key: string): Promise<void> {
-  if (!providerSupportsKey(provider)) {
-    throw new Error(`${provider} does not use an API key`);
-  }
-  const trimmed = key.trim();
-  if (!trimmed) throw new Error('API key is empty');
-  await invoke('secrets_set', {
-    service: KEYRING_SERVICE,
-    account: getProvider(provider).keyringAccount,
-    password: trimmed,
-  });
 }
 
 async function deleteKey(account: string): Promise<void> {
@@ -90,7 +77,7 @@ function compatKeyringAccount(endpointId: string): string {
   return `compat-${endpointId}-api-key`;
 }
 
-export async function getCustomEndpointKey(endpointId: string): Promise<string | null> {
+async function getCustomEndpointKey(endpointId: string): Promise<string | null> {
   try {
     const v = await invoke<string | null>('secrets_get', {
       service: KEYRING_SERVICE,
@@ -100,16 +87,6 @@ export async function getCustomEndpointKey(endpointId: string): Promise<string |
   } catch {
     return null;
   }
-}
-
-export async function setCustomEndpointKey(endpointId: string, key: string): Promise<void> {
-  const trimmed = key.trim();
-  if (!trimmed) throw new Error('API key is empty');
-  await invoke('secrets_set', {
-    service: KEYRING_SERVICE,
-    account: compatKeyringAccount(endpointId),
-    password: trimmed,
-  });
 }
 
 export async function clearCustomEndpointKey(endpointId: string): Promise<void> {

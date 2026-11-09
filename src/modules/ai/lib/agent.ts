@@ -201,7 +201,7 @@ export async function buildLanguageModel(
   return built;
 }
 
-export type LocalProviderConfig = {
+type LocalProviderConfig = {
   lmstudioBaseURL?: string;
   lmstudioModelId?: string;
   mlxBaseURL?: string;
@@ -215,7 +215,7 @@ export type LocalProviderConfig = {
   customEndpointKeys?: CustomEndpointKeys;
 };
 
-export function buildConfiguredLanguageModel(
+function buildConfiguredLanguageModel(
   modelId: string,
   keys: ProviderKeys,
   local: LocalProviderConfig = {},

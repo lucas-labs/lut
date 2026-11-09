@@ -23,10 +23,6 @@ export async function saveSnippets(list: Snippet[]): Promise<void> {
   await store.save();
 }
 
-export function newSnippetId(): string {
-  return `sn-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
-}
-
 const HANDLE_RE = /^[a-z0-9][a-z0-9-]*$/;
 
 export function normalizeHandle(raw: string): string {

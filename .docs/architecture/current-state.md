@@ -212,13 +212,14 @@ backend, E02-18 removed `fs_grep`, `fs_glob` and `git_show_commit`, and E06-06 r
 The tables below list each one with the frontend files that call it; for the wrapper objects the caller is written as
 `` `git.method` → users ``; `workspaceNative` is in `modules/workspace/native.ts`.
 
-**Commands without a real caller (2):**
+**Commands without a real caller (3):**
 
-| Commands                 | Why                                                   | Removed by |
-| ------------------------ | ----------------------------------------------------- | ---------- |
-| `pty_has_foreground_job` | No caller                                             | E14-11     |
-| `shell_session_close`    | Only `native.shellSessionClose`, which nothing calls  | E05-15     |
-| `wsl_default_distro`     | No caller; kept as an input for WSL profile detection | (E14-06)   |
+| Commands                 | Why                                                        | Removed by |
+| ------------------------ | ---------------------------------------------------------- | ---------- |
+| `pty_has_foreground_job` | No caller                                                  | E14-11     |
+| `lm_ping`                | No caller since E05-11 removed the Models settings section | E05-16     |
+| `shell_session_close`    | Only `native.shellSessionClose`, which nothing calls       | E05-15     |
+| `wsl_default_distro`     | No caller; kept as an input for WSL profile detection      | (E14-06)   |
 
 **Callers the running app never loads:** `agent_decisions_ready` and `agent_decision_respond`
 (`modules/control/lib/agentDecisions.ts`) and `agent_disable_hooks`, `agent_hooks_plan`, `agent_hooks_apply` (only
@@ -379,12 +380,12 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 
 #### net
 
-| Command          | Handler | Frontend caller(s)                    |
-| ---------------- | ------- | ------------------------------------- |
-| `lm_ping`        | `net`   | `settings/sections/ModelsSection.tsx` |
-| `ai_http_stream` | `net`   | `modules/ai/lib/proxyFetch.ts`        |
-| `ai_http_cancel` | `net`   | `modules/ai/lib/proxyFetch.ts`        |
-| `ai_http_ack`    | `net`   | `modules/ai/lib/proxyFetch.ts`        |
+| Command          | Handler | Frontend caller(s)             |
+| ---------------- | ------- | ------------------------------ |
+| `lm_ping`        | `net`   | **no caller**                  |
+| `ai_http_stream` | `net`   | `modules/ai/lib/proxyFetch.ts` |
+| `ai_http_cancel` | `net`   | `modules/ai/lib/proxyFetch.ts` |
+| `ai_http_ack`    | `net`   | `modules/ai/lib/proxyFetch.ts` |
 
 #### ai_sessions
 
@@ -436,14 +437,14 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 
 Emitted with `emit` from `@tauri-apps/api/event` so that the other window (main or settings) reloads its copy:
 
-| Event                           | Emitted and listened in             |
-| ------------------------------- | ----------------------------------- |
-| `terax://prefs-changed`         | `modules/settings/store.ts`         |
-| `terax://ai-keys-changed`       | `modules/settings/store.ts`         |
-| `terax://custom-themes-changed` | `modules/theme/customThemes.ts`     |
-| `terax://theme-edit`            | `modules/theme/themeFiles.ts`       |
-| `terax://ai-agents-changed`     | `modules/ai/store/agentsStore.ts`   |
-| `terax://ai-snippets-changed`   | `modules/ai/store/snippetsStore.ts` |
+| Event                           | Emitted and listened in                                                                         |
+| ------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `terax://prefs-changed`         | `modules/settings/store.ts`                                                                     |
+| `terax://ai-keys-changed`       | `modules/settings/store.ts` (listened only; E05-11 removed the emitter with the Models section) |
+| `terax://custom-themes-changed` | `modules/theme/customThemes.ts`                                                                 |
+| `terax://theme-edit`            | `modules/theme/themeFiles.ts`                                                                   |
+| `terax://ai-agents-changed`     | `modules/ai/store/agentsStore.ts`                                                               |
+| `terax://ai-snippets-changed`   | `modules/ai/store/snippetsStore.ts`                                                             |
 
 ### Channels and URI schemes
 

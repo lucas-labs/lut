@@ -6,22 +6,18 @@ import type { SettingsTab } from '@/modules/settings/openSettingsWindow';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { WindowActivityBridge } from '@/modules/theme';
 import {
-  AiScanIcon,
   InformationCircleIcon,
   KeyboardIcon,
   PaintBoardIcon,
   Settings01Icon,
   SourceCodeIcon,
-  UserMultiple02Icon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { type JSX, useEffect, useState } from 'react';
 import { AboutSection } from './sections/AboutSection';
-import { AgentsSection } from './sections/AgentsSection';
 import { EditorSection } from './sections/EditorSection';
 import { GeneralSection } from './sections/GeneralSection';
-import { ModelsSection } from './sections/ModelsSection';
 import { ShortcutsSection } from './sections/ShortcutsSection';
 import { ThemesSection } from './sections/ThemesSection';
 
@@ -55,13 +51,6 @@ const TABS: {
     icon: KeyboardIcon,
     component: ShortcutsSection,
   },
-  { id: 'models', label: 'Models', icon: AiScanIcon, component: ModelsSection },
-  {
-    id: 'agents',
-    label: 'Agents',
-    icon: UserMultiple02Icon,
-    component: AgentsSection,
-  },
   {
     id: 'about',
     label: 'About',
@@ -70,14 +59,12 @@ const TABS: {
   },
 ];
 
-const VALID_TABS: SettingsTab[] = ['general', 'editor', 'themes', 'shortcuts', 'models', 'agents', 'about'];
+const VALID_TABS: SettingsTab[] = ['general', 'editor', 'themes', 'shortcuts', 'about'];
 
 function readInitialTab(): SettingsTab {
   if (typeof window === 'undefined') return 'general';
   const url = new URL(window.location.href);
   const t = url.searchParams.get('tab');
-  // Back-compat: legacy "ai" / "connections" → "models".
-  if (t === 'ai' || t === 'connections') return 'models';
   if (t && (VALID_TABS as string[]).includes(t)) return t as SettingsTab;
   return 'general';
 }
@@ -93,13 +80,8 @@ export function SettingsApp() {
 
   useEffect(() => {
     const apply = (detail: string) => {
-      if (detail === 'ai' || detail === 'connections') {
-        setActive('models');
-        return;
-      }
-      if ((VALID_TABS as string[]).includes(detail)) {
-        setActive(detail as SettingsTab);
-      }
+      // A removed tab (models, agents) falls back to general.
+      setActive((VALID_TABS as string[]).includes(detail) ? (detail as SettingsTab) : 'general');
     };
     const unlistenPromise = getCurrentWebviewWindow().listen<string>('terax:settings-tab', (e) => apply(e.payload));
     return () => {
