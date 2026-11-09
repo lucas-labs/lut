@@ -6,7 +6,6 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::Once;
 
-use crate::modules::git::utils::plain_path;
 use crate::modules::workspace::{WorkspaceEnv, WorkspaceRegistry};
 
 static ENV: Once = Once::new();
@@ -34,6 +33,21 @@ pub struct TestRepo {
     pub ws: WorkspaceEnv,
 }
 
+/// `path` without its Windows verbatim prefix (`\\?\C:\x` -> `C:\x`); unchanged elsewhere.
+fn plain_path(path: &Path) -> PathBuf {
+    #[cfg(windows)]
+    {
+        let text = path.to_string_lossy();
+        if let Some(rest) = text.strip_prefix(r"\\?\UNC\") {
+            return PathBuf::from(format!(r"\\{rest}"));
+        }
+        if let Some(rest) = text.strip_prefix(r"\\?\") {
+            return PathBuf::from(rest);
+        }
+    }
+    path.to_path_buf()
+}
+
 /// The canonical form of `path` as git prints and accepts it.
 pub fn canonical_plain(path: &Path) -> PathBuf {
     plain_path(&std::fs::canonicalize(path).expect("canonicalize"))
@@ -45,32 +59,6 @@ pub fn scratch() -> (tempfile::TempDir, PathBuf) {
     let dir = tempfile::tempdir().expect("tempdir");
     let path = canonical_plain(dir.path());
     (dir, path)
-}
-
-/// Whether the registry covers `path`. The registry holds canonical paths, as
-/// every product caller canonicalizes first; a test path spelled differently
-/// (forward slashes, 8.3 names) must be canonicalized the same way.
-pub fn authorized(registry: &WorkspaceRegistry, path: &Path) -> bool {
-    // The deepest existing ancestor is canonicalized and the rest re-attached,
-    // so a path that does not exist yet is judged like one that does.
-    let mut tail: Vec<&std::ffi::OsStr> = Vec::new();
-    let mut cursor = path;
-    let mut canonical = loop {
-        if let Ok(found) = std::fs::canonicalize(cursor) {
-            break found;
-        }
-        match (cursor.file_name(), cursor.parent()) {
-            (Some(name), Some(parent)) => {
-                tail.push(name);
-                cursor = parent;
-            }
-            _ => return registry.is_authorized(path),
-        }
-    };
-    for name in tail.iter().rev() {
-        canonical.push(name);
-    }
-    registry.is_authorized(&canonical)
 }
 
 /// `git <args>` in `dir`, with the repository-location variables a hook or a
@@ -146,23 +134,9 @@ impl TestRepo {
         std::fs::write(path, content).expect("write file");
     }
 
-    pub fn read(&self, rel: &str) -> String {
-        String::from_utf8_lossy(&std::fs::read(self.root.join(rel)).expect("read file"))
-            .into_owned()
-    }
-
-    pub fn exists(&self, rel: &str) -> bool {
-        std::fs::symlink_metadata(self.root.join(rel)).is_ok()
-    }
-
     pub fn commit_all(&self, message: &str) -> String {
         self.git(&["add", "-A"]);
         self.git(&["commit", "-q", "-m", message]);
         self.git(&["rev-parse", "HEAD"]).trim().to_string()
-    }
-
-    /// Contents of `path` in the index.
-    pub fn staged(&self, rel: &str) -> String {
-        self.git(&["show", &format!(":{rel}")])
     }
 }

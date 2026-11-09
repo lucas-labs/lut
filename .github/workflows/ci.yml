@@ -57,16 +57,4 @@ jobs:
       - run: node scripts/build-cli.mjs
       - run: cargo fmt --manifest-path src-tauri/Cargo.toml --all --check
       - run: cargo clippy --manifest-path src-tauri/Cargo.toml --locked --workspace --all-targets -- -D warnings
-      # The git agent-task backend's tests are skipped until E02-05 deletes the backend: they are the slow (10-15 min)
-      # and flaky part of the suite. See .docs/testing/baseline.md, "flaky git agent-task test". E02-05 removes
-      # this list.
-      - name: cargo test
-        shell: bash
-        run: |
-          skip=()
-          for m in checkpoint worktree task_worktree task_state project_config commands_tasks commands_review \
-                   review diff patch branch edge_tests feedback_tests followup_tests hardening_tests review_tests \
-                   tasks_tests task_worktree_tests; do
-            skip+=(--skip "modules::git::$m")
-          done
-          cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace -- "${skip[@]}"
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace

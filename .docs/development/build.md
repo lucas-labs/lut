@@ -92,9 +92,8 @@ uses the committed `.wasm` files and does not need Zig.
 - **frontend:** `pnpm install --frozen-lockfile`, `lint`, `format:check`, `check-types`, `test`, `build`, `knip`;
 - **backend:** builds the CLI sidecar, then runs `cargo fmt --check`, `cargo clippy -D warnings` and `cargo test`.
 
-Until E02-05 deletes the git agent-task backend, `cargo test` skips its test modules (see `.docs/testing/baseline.md`).
-To run the same Rust tests locally, copy the `cargo test` step of the workflow. For a quick run of everything except
-the git module, use `cargo test --manifest-path src-tauri/Cargo.toml -p terax --lib -- --skip modules::git` (about 8 s).
+The Rust tests in CI are the same command as in the table above. The `terax` lib tests take about a minute
+(`cargo test --manifest-path src-tauri/Cargo.toml -p terax --lib`).
 
 ## Platform-specific scripts
 
