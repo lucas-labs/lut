@@ -40,7 +40,6 @@ export type CommandPaletteActionContext = {
   explorerRoot: string | null;
   home: string | null;
   openNewTab: () => void;
-  openNewBlock: () => void;
   openNewPrivate: () => void;
   openNewEditor: () => void;
   openNewPreview: () => void;
@@ -138,14 +137,6 @@ export function createCommandItems(ctx: CommandPaletteActionContext): PaletteIte
       icon: TerminalIcon,
       shortcutId: 'tab.new',
       run: ctx.openNewTab,
-    },
-    {
-      id: 'tab.newBlock',
-      title: 'New block terminal',
-      group: 'Tabs',
-      keywords: ['blocks', 'warp', 'command blocks', 'terminal'],
-      icon: DashboardSquare01Icon,
-      run: ctx.openNewBlock,
     },
     {
       id: 'tab.newPrivate',

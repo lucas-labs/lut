@@ -1,11 +1,6 @@
 import {
-  disposeGhosttyBlocks,
-  ghosttyBlocks,
-} from '@/modules/terminal/ghostty/ghosttyBlockSessions';
-import {
   clearGhosttySession,
   disposeGhosttySession,
-  focusGhosttySession,
   ghosttyCwdForLeaf,
   ghosttyFocusedLeaf,
   ghosttyLeafHasForegroundProcess,
@@ -14,12 +9,9 @@ import {
   ghosttySelectionForLeaf,
   hasGhosttySession,
   pasteIntoGhosttySession,
-  submitToGhosttySession,
   whenGhosttySessionReady,
   writeToGhosttySession,
 } from '@/modules/terminal/ghostty/useGhosttyTerminalSession';
-export type { WatermarkState } from '@/modules/terminal/ghostty/ghosttyBlockSessions';
-import type { WatermarkState } from '@/modules/terminal/ghostty/ghosttyBlockSessions';
 import { forgetLeafPresentation } from '@/modules/terminal/lib/ptyPresentation';
 
 export async function whenSessionReady(leafId: number, timeoutMs = 4_000): Promise<void> {
@@ -38,10 +30,6 @@ export function writeToSession(leafId: number, data: string): boolean {
   return writeToGhosttySession(leafId, data);
 }
 
-export function submitToLeaf(leafId: number, text: string): void {
-  submitToGhosttySession(leafId, text);
-}
-
 export function pasteIntoSession(leafId: number, text: string): boolean {
   return pasteIntoGhosttySession(leafId, text);
 }
@@ -50,23 +38,8 @@ export function leafCwd(leafId: number): string | null {
   return ghosttyCwdForLeaf(leafId);
 }
 
-export function navigateFocusedBlocks(direction: -1 | 1): boolean {
-  const leaf = ghosttyFocusedLeaf();
-  return leaf !== null && (ghosttyBlocks(leaf)?.controller?.navigate(direction) ?? false);
-}
-
 export function leafGridSelection(leafId: number): string | null {
   return ghosttySelectionForLeaf(leafId);
-}
-
-export function focusLeafInput(leafId: number): void {
-  const state = ghosttyBlocks(leafId);
-  if (state?.getMode() === 'prompt' && state.focus) state.focus();
-  else focusGhosttySession(leafId);
-}
-
-export function blockWatermarkState(leafId: number): WatermarkState {
-  return ghosttyBlocks(leafId)?.watermark() ?? 'hidden';
 }
 
 export function clearFocusedTerminal(): boolean {
@@ -89,7 +62,6 @@ export async function leafHasForegroundProcess(leafId: number): Promise<boolean>
 
 export function disposeSession(leafId: number): void {
   disposeGhosttySession(leafId);
-  disposeGhosttyBlocks(leafId);
   forgetLeafPresentation(leafId);
 }
 

@@ -1,7 +1,3 @@
-import {
-  ensureGhosttyBlocks,
-  ghosttyBlocks,
-} from '@/modules/terminal/ghostty/ghosttyBlockSessions';
 import * as ghosttySession from '@/modules/terminal/ghostty/useGhosttyTerminalSession';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -16,7 +12,6 @@ import {
 vi.mock('@/modules/terminal/ghostty/useGhosttyTerminalSession', () => ({
   clearGhosttySession: vi.fn(() => false),
   disposeGhosttySession: vi.fn(() => false),
-  focusGhosttySession: vi.fn(),
   ghosttyFocusedLeaf: vi.fn(() => null),
   ghosttyLeafHasForegroundProcess: vi.fn(async () => false),
   ghosttyLeafIdForPty: vi.fn(() => null),
@@ -27,7 +22,6 @@ vi.mock('@/modules/terminal/ghostty/useGhosttyTerminalSession', () => ({
   interruptGhosttySession: vi.fn(() => false),
   pasteIntoGhosttySession: vi.fn(() => false),
   respawnGhosttySession: vi.fn(async () => false),
-  submitToGhosttySession: vi.fn(() => false),
   whenGhosttySessionReady: vi.fn(async () => true),
   writeToGhosttySession: vi.fn(() => false),
 }));
@@ -74,12 +68,6 @@ describe('terminalSessionApi', () => {
     await whenSessionReady(10);
 
     expect(ghosttySession.whenGhosttySessionReady).toHaveBeenCalledWith(10);
-  });
-
-  it('releases precreated block state when a leaf closes before initialization', () => {
-    ensureGhosttyBlocks(12).draft = 'pending input';
-    disposeSession(12);
-    expect(ghosttyBlocks(12)).toBeUndefined();
   });
 
   it('handles a Ghostty session created after the readiness request', async () => {

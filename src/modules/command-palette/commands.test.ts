@@ -24,7 +24,6 @@ function baseContext(over: Partial<CommandPaletteActionContext> = {}): CommandPa
     spaces: [],
     activeSpaceId: null,
     openNewTab: noop,
-    openNewBlock: noop,
     openNewPrivate: noop,
     openNewEditor: noop,
     openNewPreview: noop,

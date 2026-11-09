@@ -10,7 +10,6 @@ export type ShortcutId =
   | 'commandPalette.files'
   | 'commandPalette.content'
   | 'tab.new'
-  | 'tab.newBlock'
   | 'tab.newPrivate'
   | 'tab.newPreview'
   | 'tab.newEditor'
@@ -31,8 +30,6 @@ export type ShortcutId =
   | 'pane.swapDown'
   | 'pane.source'
   | 'terminal.clear'
-  | 'blocks.prev'
-  | 'blocks.next'
   | 'search.focus'
   | 'explorer.search'
   | 'explorer.focus'
@@ -107,11 +104,6 @@ const SHORTCUT_META: Omit<Shortcut, 'defaultBindings'>[] = [
     group: 'Tabs',
   },
   {
-    id: 'tab.newBlock',
-    label: 'New Blocks terminal',
-    group: 'Tabs',
-  },
-  {
     id: 'tab.newPrivate',
     label: 'New private terminal',
     group: 'Tabs',
@@ -175,18 +167,6 @@ const SHORTCUT_META: Omit<Shortcut, 'defaultBindings'>[] = [
     id: 'pane.source',
     label: 'Toggle source panel',
     group: 'Panes',
-  },
-  {
-    id: 'blocks.prev',
-    label: 'Previous command block',
-    group: 'Terminal',
-    allowRepeat: true,
-  },
-  {
-    id: 'blocks.next',
-    label: 'Next command block',
-    group: 'Terminal',
-    allowRepeat: true,
   },
   {
     id: 'tab.next',
