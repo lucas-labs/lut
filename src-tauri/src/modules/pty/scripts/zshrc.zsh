@@ -12,7 +12,7 @@
   # Terax's directory is still ZDOTDIR here (see zshenv.zsh). /etc/zshrc on
   # macOS derives HISTFILE from it, so move that to the user's directory.
   _terax_zdotdir="${ZDOTDIR-}"
-  _terax_user_zdotdir="${TERAX_USER_ZDOTDIR:-${HOME-}}"
+  _terax_user_zdotdir="${LUT_USER_ZDOTDIR:-${HOME-}}"
   if [[ -n "${HISTFILE-}" && "${HISTFILE-}" == "$_terax_zdotdir"/* ]]; then
     HISTFILE="$_terax_user_zdotdir/${HISTFILE:t}"
   fi
@@ -23,36 +23,36 @@
 _terax_zshrc_setup() {
   emulate -L zsh
 
-  if [[ -n "${TERAX_CLI-}" && -x "${TERAX_CLI-}" ]]; then
-    terax() {
-      command "$TERAX_CLI" "$@"
+  if [[ -n "${LUT_CLI-}" && -x "${LUT_CLI-}" ]]; then
+    lut() {
+      command "$LUT_CLI" "$@"
     }
   fi
 
   # Re-source guard within a single shell (e.g. user runs `source $ZDOTDIR/.zshrc`).
   # This is NOT exported, so each nested zsh installs its own hooks — desired,
   # since every interactive shell needs its own prompt integration.
-  if [[ -n "${__TERAX_HOOKS_LOADED-}" ]]; then
+  if [[ -n "${__LUT_HOOKS_LOADED-}" ]]; then
     # Sourced again while a command runs: leave ZDOTDIR as it was found.
     if [[ -n "$_terax_zdotdir" ]]; then export ZDOTDIR="$_terax_zdotdir"; else unset ZDOTDIR; fi
     return 0
   fi
-  __TERAX_HOOKS_LOADED=1
+  __LUT_HOOKS_LOADED=1
   autoload -Uz add-zsh-hook 2>/dev/null
 
   # ZDOTDIR has two faces. While a command runs it is exported as Terax's
   # directory, so a shell that command starts (exec zsh, a nested zsh, zsh -l)
   # reads the integration scripts again; at the prompt, in hooks and in widgets
   # it is the user's own value (or unset), so code that reads $ZDOTDIR lazily
-  # finds their files. TERAX_USER_ZDOTDIR carries the user's value to children.
+  # finds their files. LUT_USER_ZDOTDIR carries the user's value to children.
   _terax_zd_integration="$_terax_zdotdir"
-  if [[ -n "${TERAX_USER_ZDOTDIR-}" || "${ZDOTDIR-}" != "$_terax_user_zdotdir" ]]; then
+  if [[ -n "${LUT_USER_ZDOTDIR-}" || "${ZDOTDIR-}" != "$_terax_user_zdotdir" ]]; then
     _terax_zd_has_user=1
     _terax_zd_user="${ZDOTDIR:-$_terax_user_zdotdir}"
-    export TERAX_USER_ZDOTDIR="$_terax_zd_user"
+    export LUT_USER_ZDOTDIR="$_terax_zd_user"
   else
     _terax_zd_has_user=
-    unset TERAX_USER_ZDOTDIR
+    unset LUT_USER_ZDOTDIR
   fi
 
   _terax_zdotdir_prompt() {

@@ -12,7 +12,12 @@ struct PathPolicy {
 
 pub(super) fn readable(path: &Path) -> Result<(), String> {
     if let Some(cache) = dirs::cache_dir() {
-        deny_runtime_directory(path, &cache.join("terax"))?;
+        // lut's own control token and launcher, and Terax's: neither is readable from lut.
+        deny_runtime_directory(path, &terax_control_protocol::runtime_dir(&cache))?;
+        deny_runtime_directory(
+            path,
+            &cache.join(terax_control_protocol::TERAX_RUNTIME_DIR_NAME),
+        )?;
     }
     static POLICY: OnceLock<(regex::RegexSet, Vec<String>)> = OnceLock::new();
     let (patterns, directories) = POLICY.get_or_init(|| {
@@ -91,9 +96,32 @@ mod tests {
     use super::*;
 
     #[test]
+    fn lut_and_terax_runtime_directories_are_denied() {
+        let Some(cache) = dirs::cache_dir() else {
+            return;
+        };
+        let lut = terax_control_protocol::runtime_dir(&cache);
+        let terax = cache.join(terax_control_protocol::TERAX_RUNTIME_DIR_NAME);
+        assert_eq!(lut.file_name().unwrap(), "dev.lucode.lut");
+        for dir in [&lut, &terax] {
+            assert!(
+                readable(&dir.join("control.json")).is_err(),
+                "{}",
+                dir.display()
+            );
+            assert!(
+                readable(&dir.join("run").join("1").join("bin")).is_err(),
+                "{}",
+                dir.display()
+            );
+        }
+        assert!(readable(&cache.join("unrelated-app").join("state.txt")).is_ok());
+    }
+
+    #[test]
     fn relocated_runtime_credentials_are_protected() {
         let tmp = tempfile::tempdir().unwrap();
-        let relocated = tmp.path().join("custom-cache").join("terax");
+        let relocated = terax_control_protocol::runtime_dir(&tmp.path().join("custom-cache"));
         std::fs::create_dir_all(&relocated).unwrap();
         let actual = std::fs::canonicalize(&relocated).unwrap();
         assert!(deny_runtime_directory(&actual.join("control.json"), &relocated).is_err());
@@ -141,7 +169,7 @@ mod tests {
             .path()
             .join("authorized-project")
             .join("application-state");
-        let alias = tmp.path().join("relocated-cache").join("terax");
+        let alias = terax_control_protocol::runtime_dir(&tmp.path().join("relocated-cache"));
         std::fs::create_dir_all(&target).unwrap();
         std::fs::create_dir_all(alias.parent().unwrap()).unwrap();
         std::fs::write(target.join("control.json"), "SYNTHETIC_CREDENTIAL").unwrap();
@@ -190,6 +218,9 @@ mod tests {
             "/Users/me/Library/Caches/terax/control.json",
             "/home/me/.cache/terax/control.json",
             "C:/Users/me/AppData/Local/terax/control.json",
+            "/Users/me/Library/Caches/dev.lucode.lut/control.json",
+            "/home/me/.cache/dev.lucode.lut/control.json",
+            "C:/Users/me/AppData/Local/dev.lucode.lut/control.json",
             "//wsl.localhost/Ubuntu/home/me/.ssh/id_rsa",
         ] {
             assert!(readable(Path::new(path)).is_err(), "{path}");

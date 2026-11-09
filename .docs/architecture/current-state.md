@@ -28,13 +28,13 @@ To re-check after a change: `git grep -n "generate_handler" src-tauri/src` gives
 
 ## Processes and windows
 
-| Piece            | Entry                                                       | Notes                                                                                                         |
-| ---------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| App process      | `src-tauri/src/main.rs` → `lib.rs::run()`                   | Tauri 2; a 2-worker tokio runtime for async commands (`modules/runtime.rs`).                                  |
-| Main window      | label `main`, `index.html` → `src/main.tsx` → `app/App.tsx` | Declared in `tauri.conf.json`, starts hidden; the frontend shows it after the first paint.                    |
-| Settings window  | label `settings`, `settings.html` → `src/settings/main.tsx` | Created on demand by `open_settings_window`; a child of `main`.                                               |
-| CLI sidecar      | `src-tauri/crates/terax-cli`                                | Bundled as `terax-cli`; talks to the app over the control server (see [Control protocol](#control-protocol)). |
-| Control protocol | `src-tauri/crates/terax-control-protocol`                   | Shared request/response and hook types between the app and the CLI.                                           |
+| Piece            | Entry                                                       | Notes                                                                                                       |
+| ---------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| App process      | `src-tauri/src/main.rs` → `lib.rs::run()`                   | Tauri 2; a 2-worker tokio runtime for async commands (`modules/runtime.rs`).                                |
+| Main window      | label `main`, `index.html` → `src/main.tsx` → `app/App.tsx` | Declared in `tauri.conf.json`, starts hidden; the frontend shows it after the first paint.                  |
+| Settings window  | label `settings`, `settings.html` → `src/settings/main.tsx` | Created on demand by `open_settings_window`; a child of `main`.                                             |
+| CLI sidecar      | `src-tauri/crates/terax-cli`                                | Bundled as `lut-cli`; talks to the app over the control server (see [Control protocol](#control-protocol)). |
+| Control protocol | `src-tauri/crates/terax-control-protocol`                   | Shared request/response and hook types between the app and the CLI.                                         |
 
 `stats.html` at the repository root is not a window: it is the optional bundle report of `ANALYZE=true pnpm build`
 (ignored by git).
@@ -100,8 +100,8 @@ live in a module-level map keyed by leaf id (`modules/terminal/ghostty/useGhostt
 
 ### Persisted state
 
-- **Tauri store files** (`@tauri-apps/plugin-store`, `LazyStore`): `terax-settings.json` (`modules/settings/store.ts`),
-  `terax-spaces.json` (`modules/spaces/lib/store.ts`), `terax-custom-themes.json` (`modules/theme/customThemes.ts`).
+- **Tauri store files** (`@tauri-apps/plugin-store`, `LazyStore`): `lut-settings.json` (`modules/settings/store.ts`),
+  `lut-spaces.json` (`modules/spaces/lib/store.ts`), `lut-custom-themes.json` (`modules/theme/customThemes.ts`).
 - **localStorage:** `terax-ui-theme-shadow` (read by `index.html` and `settings.html` before first paint, written by
   `modules/theme/ThemeProvider.tsx`), `terax-ui-theme-id-shadow` (`ThemeProvider.tsx`), `terax-ui-bg-kind-shadow`,
   `terax-ui-bg-image-shadow`
@@ -149,7 +149,7 @@ reads `window.__TAURI__`.
 
 ### Boot (`lib.rs::run()`)
 
-1. Handles the `__terax_notify <agent> <event>` argv subcommand (Windows agent hooks), resolves the launch target
+1. Handles the `__lut_notify <agent> <event>` argv subcommand (Windows agent hooks), resolves the launch target
    (directory or files from argv) and snapshots the launch cwd (`workspace::init_launch_cwd`).
 2. **Plugins:** clipboard-manager, window-state (without `VISIBLE`), store, os, notification, log (Info),
    opener; on macOS also the app menu (`modules/app_menu.rs`).
@@ -397,11 +397,11 @@ Emitted with `emit` from `@tauri-apps/api/event` so that the other window (main 
 
 ### Control protocol
 
-`control::start` binds `127.0.0.1` on a random port with a random token and writes a descriptor to the cache dir. The
-CLI (`terax-cli`) connects with JSON lines. Methods (`terax-control-protocol`): `ping`, `capabilities`, `identify`,
+`control::start` binds `127.0.0.1` on a random port with a random token and writes a descriptor to `<cache>/dev.lucode.lut/control.json`
+(E02-08). The CLI (`lut-cli`, crate `terax-cli`) connects with JSON lines. Methods (`terax-control-protocol`): `ping`, `capabilities`, `identify`,
 `open` and `hook`. `identify` and `open` are forwarded to the main window as `terax:control-request` and answered with
 `control_respond`; `hook` is handled by `agent_events.rs` with per-pane tokens exported to each shell
-(`TERAX_CONTROL_ADDR`, `TERAX_CONTROL_TOKEN`, `TERAX_PANE_ID`, `TERAX_CLI`). Details: `.docs/plan/analysis/agents.md`.
+(`LUT_CONTROL_ADDR`, `LUT_CONTROL_TOKEN`, `LUT_PANE_ID`, `LUT_CLI`; inherited `TERAX_*` variables are dropped). Details: `.docs/plan/analysis/agents.md`.
 
 ## Corrections to the area analyses
 

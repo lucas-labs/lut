@@ -47,7 +47,7 @@ function requireArtifact(path, label) {
 }
 
 const target =
-  process.env.TERAX_CLI_TARGET?.trim() ||
+  process.env.LUT_CLI_TARGET?.trim() ||
   process.env.CARGO_BUILD_TARGET?.trim() ||
   hostTriple();
 const cargoArgs = [
@@ -58,7 +58,7 @@ const cargoArgs = [
   "--package",
   "terax-cli",
   "--bin",
-  "terax-cli",
+  "lut-cli",
   "--target",
   target,
 ];
@@ -73,12 +73,12 @@ const source = join(
   "target",
   target,
   profile,
-  `terax-cli${extension}`,
+  `lut-cli${extension}`,
 );
 const destination = join(
   tauriDir,
   "binaries",
-  `terax-cli-${target}${extension}`,
+  `lut-cli-${target}${extension}`,
 );
 requireArtifact(source, "Built CLI artifact");
 mkdirSync(dirname(destination), { recursive: true });

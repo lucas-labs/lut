@@ -104,7 +104,7 @@ fn run(args: Vec<OsString>) -> Result<(), CliError> {
         }
         Action::Request { method, params } => {
             let endpoint = load_endpoint()?;
-            let caller = env::var("TERAX_PANE_ID")
+            let caller = env::var("LUT_PANE_ID")
                 .ok()
                 .and_then(|value| value.parse::<u32>().ok());
             let request = ControlRequest {
@@ -282,8 +282,8 @@ fn usage_error(message: impl Into<String>) -> CliError {
 }
 
 fn load_endpoint() -> Result<ControlDescriptor, CliError> {
-    let env_address = env::var("TERAX_CONTROL_ADDR").ok();
-    let env_token = env::var("TERAX_CONTROL_TOKEN").ok();
+    let env_address = env::var("LUT_CONTROL_ADDR").ok();
+    let env_token = env::var("LUT_CONTROL_TOKEN").ok();
     let (descriptor, require_live_process) = match (env_address, env_token) {
         (Some(address), Some(token)) => (
             ControlDescriptor {
@@ -297,7 +297,7 @@ fn load_endpoint() -> Result<ControlDescriptor, CliError> {
         ),
         (None, None) => {
             let path = dirs::cache_dir()
-                .map(|dir| dir.join("terax").join("control.json"))
+                .map(|dir| terax_control_protocol::runtime_dir(&dir).join("control.json"))
                 .ok_or_else(|| {
                     CliError::new(
                         "app_unavailable",
@@ -324,7 +324,7 @@ fn load_endpoint() -> Result<ControlDescriptor, CliError> {
         _ => {
             return Err(CliError::new(
                 "invalid_environment",
-                "TERAX_CONTROL_ADDR and TERAX_CONTROL_TOKEN must be set together",
+                "LUT_CONTROL_ADDR and LUT_CONTROL_TOKEN must be set together",
                 EXIT_PROTOCOL,
             ));
         }

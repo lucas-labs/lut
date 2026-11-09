@@ -593,7 +593,7 @@ refs: [identity, ADR-008, F0, 13.2:21, 16:26, .docs/plan/analysis/build-identity
 
 lut never shares data, hooks, env vars, control server, cache dirs or updater with a Terax installation. Removes the
 updater and autostart plugins, the Nix and CodeRabbit configs and the unwired git agent-task backend, and moves every
-shared identifier to lut's names (`dev.lucode.lut`, `lut`, `lut-cli`, `LUT_`, `<cache>/lut`).
+shared identifier to lut's names (`dev.lucode.lut`, `lut`, `lut-cli`, `LUT_`, `<cache>/dev.lucode.lut`).
 
 ### E02-01 — Remove the autostart plugin
 
@@ -776,12 +776,12 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] One shared function returns lut's runtime dir `<cache>/lut`; `control.rs:755-768` writes the descriptor there and the launcher dir becomes `<cache>/lut/run/<pid>/bin` (`control.rs:910-943`).
-- [ ] The CLI fallback (`crates/terax-cli/src/lib.rs:300`) reads `<cache>/lut/control.json`.
-- [ ] `src-tauri/src/modules/fs/read_policy.rs:15` denies `<cache>/lut` and still denies `<cache>/terax`; tests cover both, including an aliased/relocated cache path.
+- [ ] One shared function returns lut's runtime dir `<cache>/dev.lucode.lut` (owner decision: the bundle identifier, because `<cache>/lut` is `%LOCALAPPDATA%\lut` on Windows, the NSIS install dir); `control.rs:755-768` writes the descriptor there and the launcher dir becomes `<cache>/dev.lucode.lut/run/<pid>/bin` (`control.rs:910-943`).
+- [ ] The CLI fallback (`crates/terax-cli/src/lib.rs:300`) reads `<cache>/dev.lucode.lut/control.json`.
+- [ ] `src-tauri/src/modules/fs/read_policy.rs:15` denies `<cache>/dev.lucode.lut` and still denies `<cache>/terax`; tests cover both, including an aliased/relocated cache path.
 - [ ] Nothing in lut writes under `<cache>/terax`.
 
-**Verification:** `cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace`; with lut running, `<cache>/lut/control.json` exists and `<cache>/terax/control.json` (if any) is unchanged; an `asset_grant` on the descriptor is refused.
+**Verification:** `cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace`; with lut running, `<cache>/dev.lucode.lut/control.json` exists and `<cache>/terax/control.json` (if any) is unchanged; an `asset_grant` on the descriptor is refused.
 
 ### E02-09 — Rename child-process and CLI env vars from TERAX_ to LUT_
 
@@ -823,7 +823,7 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] Unix, Windows and WSL integration roots move from `~/.cache/terax/shell-integration` to `<cache>/lut/shell-integration` (`shell_init.rs:449,857,912`); fish conf.d file `terax.fish` renamed `lut.fish` (`:476,:904`); temp suffix `.__terax_tmp__` renamed.
+- [ ] Unix, Windows and WSL integration roots move from `~/.cache/terax/shell-integration` to `<cache>/dev.lucode.lut/shell-integration` (`shell_init.rs:449,857,912`); fish conf.d file `terax.fish` renamed `lut.fish` (`:476,:904`); temp suffix `.__terax_tmp__` renamed.
 - [ ] Unit tests with `/cache/terax/...` paths updated.
 
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml shell_init`; open a pwsh and a WSL pane: scripts exist only under the lut dir and `~/.cache/terax` is untouched (mtime).

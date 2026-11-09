@@ -23,7 +23,7 @@ tracked=(
 git -C "$repo" diff HEAD -- "${tracked[@]}" | (cd "$dest" && patch -p1 --quiet)
 # The CLI sidecar is git-ignored but release builds require it.
 mkdir -p "$dest/src-tauri/binaries"
-cp "$repo"/src-tauri/binaries/terax-cli-* "$dest/src-tauri/binaries/"
+cp "$repo"/src-tauri/binaries/lut-cli-* "$dest/src-tauri/binaries/"
 # Untracked app-lab files.
 mkdir -p "$dest/src/bench" "$dest/scripts/app-lab"
 cp "$repo"/src/bench/* "$dest/src/bench/"

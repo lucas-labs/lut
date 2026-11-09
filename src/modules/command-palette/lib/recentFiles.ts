@@ -1,7 +1,7 @@
 // Files opened through the palette, newest first, kept per project root.
 // localStorage keeps it off the preferences store and its IPC broadcast path.
 
-const KEY = 'terax-palette-recent-files';
+const KEY = 'lut-palette-recent-files';
 export const MAX_RECENT_FILES = 12;
 const MAX_RECENT_ROOTS = 24;
 

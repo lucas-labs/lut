@@ -50,6 +50,8 @@
     "/appdata/roaming/gcloud",
     "/library/caches/terax",
     "/.cache/terax",
+    "/library/caches/dev.lucode.lut",
+    "/.cache/dev.lucode.lut",
     "/appdata/local/terax",
     "/appdata/local/dev.lucode.lut",
     "/.local/share/dev.lucode.lut"

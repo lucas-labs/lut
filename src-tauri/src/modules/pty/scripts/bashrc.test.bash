@@ -5,7 +5,7 @@ set -uo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 rcfile="$script_dir/bashrc.bash"
 failures=0
-unset TERAX_CLI __TERAX_HOOKS_LOADED
+unset LUT_CLI __LUT_HOOKS_LOADED
 
 check() {
   local label="$1" expected="$2" actual="$3"
