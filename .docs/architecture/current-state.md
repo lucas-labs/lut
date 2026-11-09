@@ -210,16 +210,15 @@ reads `window.__TAURI__`.
 
 ### Commands
 
-118 commands are registered (3 of them only with the `bench` feature; E02-05 removed the 22 of the git agent-task backend). The tables below list each one with the
-frontend files that call it; for the wrapper objects the caller is written as `` `git.method` → users ``.
+115 commands are registered (3 of them only with the `bench` feature). E02-05 removed the 22 of the git agent-task
+backend and E02-18 removed `fs_grep`, `fs_glob` and `git_show_commit`. The tables below list each one with the frontend
+files that call it; for the wrapper objects the caller is written as `` `git.method` → users ``.
 
-**Commands without a real caller (5):**
+**Commands without a real caller (2):**
 
 | Commands                 | Why                                                   | Removed by |
 | ------------------------ | ----------------------------------------------------- | ---------- |
 | `pty_has_foreground_job` | No caller                                             | E14-11     |
-| `fs_grep`, `fs_glob`     | No caller (the palette uses `fs_grep_interactive`)    | E02-18     |
-| `git_show_commit`        | Only `git.showCommit`, which nothing calls            | E02-18     |
 | `shell_session_close`    | Only `native.shellSessionClose`, which nothing calls  | E05-15     |
 | `wsl_default_distro`     | No caller; kept as an input for WSL profile detection | (E14-06)   |
 
@@ -278,9 +277,7 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 | `fs_search`              | `fs::search`         | `modules/command-palette/hooks/useFileSearch.ts`, `modules/explorer/ExplorerSearch.tsx`                                                                                                                                                                               |
 | `fs_warm_index`          | `fs::search`         | `modules/command-palette/hooks/useFileSearch.ts`                                                                                                                                                                                                                      |
 | `fs_list_files`          | `fs::search`         | `modules/ai/hooks/useWorkspaceFiles.ts`                                                                                                                                                                                                                               |
-| `fs_grep`                | `fs::grep`           | **no caller**                                                                                                                                                                                                                                                         |
 | `fs_grep_interactive`    | `fs::grep`           | `modules/command-palette/hooks/useContentSearch.ts`                                                                                                                                                                                                                   |
-| `fs_glob`                | `fs::grep`           | **no caller**                                                                                                                                                                                                                                                         |
 
 #### lsp
 
@@ -310,7 +307,6 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 | `git_pull_ff_only`     | `git::commands` | `git.pullFfOnly` → `modules/source-control/useSourceControl.ts`                                                                                               |
 | `git_push`             | `git::commands` | `git.push` → `modules/source-control/useSourceControl.ts`                                                                                                     |
 | `git_log`              | `git::commands` | `git.log` → `modules/git-history/GitHistoryPane.tsx`                                                                                                          |
-| `git_show_commit`      | `git::commands` | `git.showCommit` → **unused wrapper**                                                                                                                         |
 | `git_commit_files`     | `git::commands` | `git.commitFiles` → `modules/git-history/GitHistoryPane.tsx`                                                                                                  |
 | `git_commit_file_diff` | `git::commands` | `git.commitFileDiff` → `modules/editor/lib/diffCache.ts`                                                                                                      |
 | `git_remote_url`       | `git::commands` | `git.remoteUrl` → `modules/git-history/GitHistoryPane.tsx`                                                                                                    |

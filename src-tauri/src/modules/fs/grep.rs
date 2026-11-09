@@ -2,7 +2,7 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
-use globset::{Glob, GlobSet, GlobSetBuilder};
+use globset::GlobSet;
 use grep_regex::{RegexMatcher, RegexMatcherBuilder};
 use grep_searcher::sinks::UTF8;
 use grep_searcher::{BinaryDetection, SearcherBuilder};
@@ -40,19 +40,6 @@ pub struct GrepResponse {
     pub files_scanned: usize,
     /// Stopped early because a newer query replaced this one.
     pub cancelled: bool,
-}
-
-fn build_globset(patterns: &[String]) -> Result<Option<GlobSet>, String> {
-    if patterns.is_empty() {
-        return Ok(None);
-    }
-    let mut b = GlobSetBuilder::new();
-    for p in patterns {
-        let g = Glob::new(p).map_err(|e| format!("bad glob {p:?}: {e}"))?;
-        b.add(g);
-    }
-    let set = b.build().map_err(|e| format!("globset build: {e}"))?;
-    Ok(Some(set))
 }
 
 fn escape_literal(s: &str) -> String {
@@ -173,67 +160,6 @@ fn search_tree(
     }
 }
 
-#[tauri::command]
-pub async fn fs_grep(
-    pattern: String,
-    root: String,
-    glob: Option<Vec<String>>,
-    case_insensitive: Option<bool>,
-    max_results: Option<usize>,
-    workspace: Option<WorkspaceEnv>,
-) -> Result<GrepResponse, String> {
-    blocking(move || {
-        run_grep(
-            pattern,
-            root,
-            glob,
-            case_insensitive,
-            max_results,
-            workspace,
-        )
-    })
-    .await
-}
-
-pub fn run_grep(
-    pattern: String,
-    root: String,
-    glob: Option<Vec<String>>,
-    case_insensitive: Option<bool>,
-    max_results: Option<usize>,
-    workspace: Option<WorkspaceEnv>,
-) -> Result<GrepResponse, String> {
-    if pattern.is_empty() {
-        return Err("empty pattern".into());
-    }
-    let workspace = WorkspaceEnv::from_option(workspace);
-    let root_path = resolve_path(&root, &workspace);
-    if !root_path.is_dir() {
-        return Err(format!("not a directory: {root}"));
-    }
-    let cap = max_results
-        .unwrap_or(DEFAULT_MAX_RESULTS)
-        .clamp(1, HARD_MAX_RESULTS);
-
-    let matcher = RegexMatcherBuilder::new()
-        .case_insensitive(case_insensitive.unwrap_or(false))
-        .line_terminator(Some(b'\n'))
-        .build(&pattern)
-        .map_err(|e| format!("bad regex: {e}"))?;
-
-    let globs = build_globset(glob.as_deref().unwrap_or(&[]))?;
-
-    Ok(search_tree(
-        &root_path,
-        &root,
-        &workspace,
-        &matcher,
-        &globs,
-        cap,
-        &|| false,
-    ))
-}
-
 /// Interactive content search for the command palette. Treats the query as a
 /// literal (smart-case), and self-cancels when a newer query arrives. The
 /// generation is bumped when the command is dispatched, so the previous walk
@@ -295,74 +221,6 @@ pub struct GlobHit {
 pub struct GlobResponse {
     pub hits: Vec<GlobHit>,
     pub truncated: bool,
-}
-
-#[tauri::command]
-pub async fn fs_glob(
-    pattern: String,
-    root: String,
-    max_results: Option<usize>,
-    workspace: Option<WorkspaceEnv>,
-) -> Result<GlobResponse, String> {
-    blocking(move || run_glob(pattern, root, max_results, workspace)).await
-}
-
-pub fn run_glob(
-    pattern: String,
-    root: String,
-    max_results: Option<usize>,
-    workspace: Option<WorkspaceEnv>,
-) -> Result<GlobResponse, String> {
-    if pattern.is_empty() {
-        return Err("empty pattern".into());
-    }
-    let workspace = WorkspaceEnv::from_option(workspace);
-    let root_path = resolve_path(&root, &workspace);
-    if !root_path.is_dir() {
-        return Err(format!("not a directory: {root}"));
-    }
-    let cap = max_results.unwrap_or(500).clamp(1, HARD_MAX_RESULTS);
-
-    let glob = Glob::new(&pattern).map_err(|e| format!("bad glob: {e}"))?;
-    let mut gb = GlobSetBuilder::new();
-    gb.add(glob);
-    let set = gb.build().map_err(|e| format!("globset build: {e}"))?;
-
-    let walker = WalkBuilder::new(&root_path)
-        .hidden(true)
-        .git_ignore(true)
-        .git_global(true)
-        .git_exclude(true)
-        .ignore(true)
-        .parents(true)
-        .follow_links(false)
-        .build();
-
-    let mut hits: Vec<GlobHit> = Vec::new();
-    let mut truncated = false;
-    for dent in walker.flatten() {
-        if hits.len() >= cap {
-            truncated = true;
-            break;
-        }
-        if !dent.file_type().map(|t| t.is_file()).unwrap_or(false) {
-            continue;
-        }
-        let path = dent.path();
-        let rel = match path.strip_prefix(&root_path) {
-            Ok(r) => to_canon(r),
-            Err(_) => continue,
-        };
-        if !set.is_match(&rel) {
-            continue;
-        }
-        hits.push(GlobHit {
-            path: display_path(path, &root_path, &root, &workspace),
-            rel,
-        });
-    }
-
-    Ok(GlobResponse { hits, truncated })
 }
 
 #[cfg(test)]

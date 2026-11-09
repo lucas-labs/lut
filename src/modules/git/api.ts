@@ -93,12 +93,6 @@ export const git = {
       beforeSha: options?.beforeSha ?? null,
       workspace: currentWorkspaceEnv(),
     }),
-  showCommit: (repoRoot: string, sha: string) =>
-    invoke<GitDiffResult>('git_show_commit', {
-      repoRoot,
-      sha,
-      workspace: currentWorkspaceEnv(),
-    }),
   commitFiles: (repoRoot: string, sha: string) =>
     invoke<GitCommitFileChange[]>('git_commit_files', {
       repoRoot,

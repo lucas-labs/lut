@@ -380,38 +380,6 @@ fn panel_snapshot_outside_repo_is_empty() {
 }
 
 #[test]
-fn show_commit_diff_returns_patch_for_known_sha() {
-    if skip_if_no_git() {
-        return;
-    }
-    let fx = GitRepoFixture::new();
-    fx.write_file("a.txt", "alpha\n");
-    fx.run_git(&["add", "a.txt"]);
-    fx.run_git(&["commit", "-q", "-m", "seed"]);
-
-    let entries = operations::log(&fx.registry, &fx.repo_str(), 10, None, &fx.workspace).unwrap();
-    let sha = &entries[0].sha;
-
-    let diff = operations::show_commit_diff(&fx.registry, &fx.repo_str(), sha, &fx.workspace)
-        .expect("show_commit_diff");
-    assert!(diff.diff_text.contains("a.txt"));
-    assert!(diff.diff_text.contains("+alpha"));
-}
-
-#[test]
-fn show_commit_diff_rejects_invalid_sha() {
-    if skip_if_no_git() {
-        return;
-    }
-    let fx = GitRepoFixture::new();
-    match operations::show_commit_diff(&fx.registry, &fx.repo_str(), "not-a-sha", &fx.workspace) {
-        Err(GitError::CommandFailed { .. }) => {}
-        Err(other) => panic!("expected CommandFailed, got {other}"),
-        Ok(_) => panic!("expected error for invalid sha"),
-    }
-}
-
-#[test]
 fn log_paginates_with_before_sha_cursor() {
     if skip_if_no_git() {
         return;
@@ -681,7 +649,6 @@ fn passive_inspection_never_runs_repository_helpers() {
     for staged in [false, true] {
         operations::diff(&fx.registry, &fx.repo_str(), None, staged, &fx.workspace).unwrap();
     }
-    operations::show_commit_diff(&fx.registry, &fx.repo_str(), sha.trim(), &fx.workspace).unwrap();
     operations::commit_file_diff(
         &fx.registry,
         &fx.repo_str(),
