@@ -226,7 +226,7 @@ OSC 133 B`, but a `Write-Host` prompt has already printed, so 133;A (prompt star
 | Test                                                       | Condition                                                                    | On this machine                 |
 | ---------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------- |
 | `terminal/ghostty/bashPromptHooks.test.ts` (7 tests)       | needs Git Bash, found from `git --exec-path` or `git` on PATH (E01-20, #323) | ✅ runs: Git Bash found on `D:` |
-| `terminal/ghostty/shellBlockCompatibility.test.ts` (1)     | skipped on `win32`                                                           | skipped                         |
+| `terminal/ghostty/bashCommandStart.test.ts` (1)            | skipped on `win32` (E06-05 renamed it from `shellBlockCompatibility`)        | skipped                         |
 | `terminal/lib/quoteShellPath.test.ts`, fish round trip (1) | needs `fish`                                                                 | skipped                         |
 | `terminal/block/lib/pathComplete.shell.test.ts`            | one suite per shell among bash, zsh, pwsh, powershell that starts            | runs for the shells found       |
 
