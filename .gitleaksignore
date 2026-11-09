@@ -1,0 +1,7 @@
+# Test fixtures flagged by gitleaks (generic-api-key), not secrets. Triaged in E04-07.
+093da9d4d057302dd7f60891e2d4a57b1fe81099:src/modules/ai/lib/redact.test.ts:generic-api-key:7
+093da9d4d057302dd7f60891e2d4a57b1fe81099:src/modules/terminal/lib/ptyWire.test.ts:generic-api-key:23
+611f9e36feb27702f03d5c3d3b8ea34a2854aecf:src/modules/ai/lib/redact.test.ts:generic-api-key:7
+611f9e36feb27702f03d5c3d3b8ea34a2854aecf:src/modules/terminal/lib/ptyWire.test.ts:generic-api-key:25
+a5b43f9edd79a4ebbc8639983d84de5d1f893c66:src/modules/ai/lib/redact.test.ts:generic-api-key:7
+a5b43f9edd79a4ebbc8639983d84de5d1f893c66:src/modules/terminal/lib/ptyWire.test.ts:generic-api-key:23
