@@ -93,7 +93,7 @@ pub fn run(
 ) {
     let output = deliver(args, environment, stdin).unwrap_or_else(|reason| {
         if environment.is_some_and(|environment| environment.debug) {
-            eprintln!("terax hook: {reason}");
+            eprintln!("lut hook: {reason}");
         }
         NO_DECISION_OUTPUT.to_string()
     });
@@ -106,7 +106,7 @@ fn deliver(
     environment: Option<&HookEnvironment>,
     stdin: Box<dyn Read + Send>,
 ) -> Result<String, String> {
-    let environment = environment.ok_or("not inside a Terax pane")?;
+    let environment = environment.ok_or("not inside a lut pane")?;
     let (agent, event) = parse_args(args)?;
 
     let original = read_payload(stdin);
@@ -148,7 +148,7 @@ fn deliver(
         let reason = response
             .error
             .map_or_else(|| "rejected".to_string(), |error| error.code);
-        return Err(format!("Terax rejected the hook: {reason}"));
+        return Err(format!("lut rejected the hook: {reason}"));
     }
     let result: HookResult = serde_json::from_value(response.result.unwrap_or(Value::Null))
         .map_err(|error| format!("unreadable hook result: {error}"))?;
