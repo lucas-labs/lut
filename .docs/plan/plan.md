@@ -1399,21 +1399,20 @@ pwsh, bash and WSL prompts and cwd tracking still work, and old Bash still block
 id: E04-13
 depends-on: [E02-05, E02-06, E02-07, E02-10, E02-11, E02-12, E02-13, E02-14, E02-15, E04-02]
 refs: [13.2:21, 16:26, F0:9, F0:10, .docs/plan/analysis/build-identity.md]
-covers: [13.2:21, 16:26, F0:9, F0:10, identity:1]
+covers: [13.2:21, 16:26, F0:10, identity:1]
 type: task
 scope: none
 size: S
 ```
 
-**Goal:** (Moved from E02-16 so E02 can close; it needs E04-02, because until then the lut installer owns Terax's `OpenInTerax` keys.) Prove the acceptance tests 13.2:21 and 16:26: lut neither reads nor writes Terax data, stores, keychain entries, installer registrations, hooks or variables, and uninstalling lut hooks preserves Terax's. Also run the part of the F0:9 smoke test deferred by E01-13: agents with hooks enabled with consent.
+**Goal:** (Moved from E02-16 so E02 can close; it needs E04-02, because until then the lut installer owns Terax's `OpenInTerax` keys.) Prove the acceptance tests 13.2:21 and 16:26: lut neither reads nor writes Terax data, stores, keychain entries, installer registrations, hooks or variables. Hook install/uninstall is not exercised: E20-15 removes every lut write to agent configs, so lut can never overwrite Terax's hooks (the F0:9 agent check moves to E20-15's manual test).
 
 **Acceptance criteria:**
 
 - [ ] `git grep -n -i` over the class (a) tokens of `.docs/plan/analysis/build-identity.md` (plus `notify;Terax;`, `.terax-tmp-`, `"name": "terax"`, `cache.join("terax")`) shows only intended leftovers (the read-policy deny of `<cache>/terax`, E06-owned block code, internal rename-on-touch names), each listed in the PR.
 - [ ] Keychain: `git grep -n '"terax-ai"' src src-tauri/src` returns no keychain service name (only unrelated test strings, listed in the PR); nothing that runs at startup reads the `terax-ai` service.
 - [ ] Installer: `productName`/`mainBinaryName` are `lut`; installing and uninstalling the lut NSIS bundle leaves Terax's install dir, Start-menu entry, uninstall key and file-association ProgIDs unchanged.
-- [ ] Manual run on Windows with Terax installed: lut creates only its own data/cache dirs, Terax's dirs and `~/.claude`/`~/.codex` Terax entries keep their content, lut hook install/uninstall leaves Terax's hooks intact, and no request goes to Terax infrastructure.
-- [ ] Agents with hooks enabled with consent (F0:9): Claude Code and Codex in lut panes deliver hook events; the before/after of `~/.claude/settings.json` is recorded and differs only in lut's groups.
+- [ ] Manual run on Windows with Terax installed: lut creates only its own data/cache dirs, Terax's dirs and `~/.claude`/`~/.codex` Terax entries keep their content, and no request goes to Terax infrastructure.
 - [ ] Uninstalling lut leaves nothing behind: `NSIS_HOOK_POSTUNINSTALL` also deletes the manufacturer key (`HKCU\Software\lucode\lut` after E04-01) and the `lut Document_backup` values Tauri's file-association macro writes under each `HKCU\Software\Classes\.<ext>` (both left by the E04-02 install test).
 - [ ] Results recorded in the PR and in the Phase 0 baseline report.
 
@@ -6022,11 +6021,42 @@ size: S
 
 **Verification:** `pnpm test`; manual with two agents in one project.
 
+### E20-15 — Ship agent hooks as plugins the user installs by hand
+
+```yaml
+id: E20-15
+depends-on: [E19-02]
+refs: [AGT-007, 9.4, 13.2:21, .docs/plan/analysis/agents.md]
+covers: [AGT-007, agents/hook-installer, F0:9]
+type: task
+scope: be
+size: L
+size-exception: the plugins are declarative manifests and hook files; the rest deletes the write path
+```
+
+**Goal:** lut never writes, edits or deletes files of other programs (`~/.claude`, `~/.codex`, `~/.gemini`, `~/.pi`). Its hooks ship as plugins (Claude Code plugin, Codex plugin, Gemini CLI extension, Pi package, or whatever each agent documents) kept in this repository; the user installs and removes them by hand with the agent's own commands.
+
+**Acceptance criteria:**
+
+- [ ] One plugin per supported agent under a single directory of this repository, with the manifests each agent needs to install it from GitHub (e.g. `.claude-plugin/marketplace.json`, `.agents/plugins/marketplace.json`); events follow the E19-02 table (documented events only).
+- [ ] The hook commands keep today's contract: run `lut-cli` through `LUT_CLI` inside lut panes and print `{}` outside lut, so an installed plugin is inert outside lut and after lut is uninstalled. One hook file works on Windows, macOS and Linux.
+- [ ] Agents without a documented plugin/extension mechanism get a documented snippet the user pastes by hand.
+- [ ] lut's write path is removed: `agent_enable_hooks`, `agent_disable_hooks`, `agent_hooks_plan`, `agent_hooks_apply`, the Pi extension writer and their callers (new-tab launcher, notification bell). Nothing in lut opens agent config files for writing; a test or grep in CI guards it.
+- [ ] lut learns that a plugin is installed from the events it sends (e.g. `SessionStart` carries the plugin version), not by reading agent configs; with no events, the agent runs in the degraded "no hooks" state of E19-09 and lut shows where the install instructions are.
+- [ ] User docs per agent: install, update, remove, the agent's own trust/approval step (e.g. Codex `/hooks`), and how to remove lut groups written by earlier lut builds.
+- [ ] `proposal.md` AGT-007 and the issues built on the write path (E20-08, E20-09, E20-10, E20-11) are updated to this model.
+
+**Verification:** `cargo test --locked --workspace` in `src-tauri` and `pnpm test`; manual on Windows: install each plugin from the repository with the agent's own command, run the agent in a lut pane (events arrive) and outside lut (no output, no error), uninstall it; this also runs the F0:9 agent check moved from E04-13; `~/.claude`, `~/.codex`, `~/.gemini` and `~/.pi` are never modified by lut (before/after snapshot).
+
+**Notes:** installing from GitHub needs the public repository (E04-09).
+
+**Out of scope:** lut plugins (AGT-014); the statusLine bridge of E21.
+
 ### E20-14 — Close-out: Agents UX
 
 ```yaml
 id: E20-14
-depends-on: [E20-01, E20-02, E20-03, E20-04, E20-05, E20-06, E20-07, E20-08, E20-09, E20-10, E20-11, E20-12, E20-13]
+depends-on: [E20-01, E20-02, E20-03, E20-04, E20-05, E20-06, E20-07, E20-08, E20-09, E20-10, E20-11, E20-12, E20-13, E20-15]
 refs: []
 covers: []
 type: closeout
