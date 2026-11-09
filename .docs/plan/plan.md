@@ -1976,7 +1976,7 @@ size-exception: Mechanical deletion of whole modules (block/, GhosttyBlocks*, gh
 
 ```yaml
 id: E06-05
-depends-on: [E06-03, E02-09]
+depends-on: [E06-03]
 refs: [.docs/plan/analysis/backend-core.md, .docs/plan/analysis/terminal.md]
 covers: [terminal/blocks-logic]
 type: task
