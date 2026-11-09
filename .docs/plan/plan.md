@@ -1165,6 +1165,7 @@ size: S
 - [ ] `tauri.conf.json` window `title`, **`src-tauri/tauri.windows.conf.json:14` `title`** (it overrides `tauri.conf.json` on Windows), `index.html`/`settings.html` titles and `useWindowTitle` APP_NAME read "lut".
 - [ ] `src/app/components/CloseDialogs.tsx`, `src/modules/agents/components/NotificationBell.tsx`, `src/modules/lsp/components/LspStatusPill.tsx`, `src/settings/components/LspInstallDialog.tsx` and the About section (`AboutSection.tsx`) say lut; About links point to the lut repository.
 - [ ] BYOK AI user-visible texts say lut (decision 25): "Ask Terax anything" (`AiComposerInput.tsx:260`), `AiMiniWindow.tsx:546`, "Terax finished" / "Terax needs your approval" (`LocalAgentNotificationsBridge.tsx:66-70`) and any other visible AI string found by the grep below. Files already deleted by E05 (no order between E04 and E05) are skipped.
+- [ ] AI texts left after E05: the About tagline "Open-source AI-native terminal emulator" (`AboutSection.tsx`) and the `AI` shortcut group (`shortcuts.ts`), which only holds `agent.focusAttention`, are replaced.
 - [ ] The updater UI is already deleted (E01-02) and is not touched.
 
 **Verification:** `pnpm check-types && pnpm test`; `git grep -n "Terax" -- src src-tauri/*.conf.json index.html settings.html` returns only internal identifiers (listed in the PR); manual on Windows: the window title reads lut.
@@ -1756,7 +1757,7 @@ size: S
 
 ```yaml
 id: E05-19
-depends-on: [E05-18]
+depends-on: [E05-18, E05-21]
 refs: [F2:gate, 13.2:17, 16:16, AGT-003, F2:8]
 covers: [F2:8, F2:gate, 13.2:17, 16:16, AGT-003]
 type: task
@@ -1776,11 +1777,34 @@ size: XS
 
 **Verification:** `pnpm test`, `pnpm build`, `pnpm size`, `pnpm check:dist`, `cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace`; manual test on Windows 11 with the result recorded in the PR.
 
+### E05-21 — Restore preference loading in the main window
+
+```yaml
+id: E05-21
+depends-on: [E05-06]
+refs: [F2:gate, .docs/testing/phase2-gate.md]
+covers: [F2:gate]
+type: task
+scope: ui
+size: XS
+```
+
+**Goal:** The main window loads the saved preferences and follows changes made in Settings again. E05-06 removed
+`useAiBootstrap`, which was the only place that loaded them when saved Spaces exist; the Phase 2 gate found it.
+
+**Acceptance criteria:**
+
+- [ ] `App.tsx` loads the preference store on mount (`usePreferencesStore` `init`), so with saved Spaces a new tab honours `terminalShell` and the other terminal preferences.
+- [ ] A change made in Settings reaches the open main window without a reload.
+- [ ] UI text left over from the AI is updated: the notification bell's empty state and the workspace environment description; the palette's unused `AI` group is removed.
+
+**Verification:** `pnpm check-types` and `pnpm test` pass; manual: with saved Spaces, change the shell in Settings and open a new tab.
+
 ### E05-20 — Close-out: BYOK AI removal
 
 ```yaml
 id: E05-20
-depends-on: [E05-01, E05-02, E05-03, E05-04, E05-05, E05-06, E05-07, E05-08, E05-09, E05-10, E05-11, E05-12, E05-13, E05-14, E05-15, E05-16, E05-17, E05-18, E05-19]
+depends-on: [E05-01, E05-02, E05-03, E05-04, E05-05, E05-06, E05-07, E05-08, E05-09, E05-10, E05-11, E05-12, E05-13, E05-14, E05-15, E05-16, E05-17, E05-18, E05-19, E05-21]
 refs: [ADR-004, 9.9]
 covers: []
 type: closeout
@@ -4699,11 +4723,36 @@ size: XS
 
 **Verification:** `pnpm test`; `cargo test --manifest-path src-tauri/Cargo.toml workspace`.
 
+### E16-12 — Restore each space's active tab when switching to it
+
+```yaml
+id: E16-12
+depends-on: []
+refs: [PRJ-002, .docs/testing/phase2-gate.md]
+covers: [PRJ-002]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** Switching to a space shows the tab that was active in it, instead of its last tab. Found by the Phase 2 gate;
+it predates E05. At startup only the active space's saved `activeTabIndex` is applied (`useSpacesBoot.ts`); the
+others are kept for persistence only, and the space-switch effect in `App.tsx` falls back to the space's last tab.
+
+**Acceptance criteria:**
+
+- [ ] Each space remembers its active tab during the session; switching back to it selects that tab.
+- [ ] After a restart, the first switch to a space that was not active selects the tab saved in its `activeTabIndex`.
+- [ ] A cross-space jump that sets the active tab explicitly (e.g. from an agent notification) still wins.
+- [ ] Tests cover the switch with a remembered tab, a saved index and a closed remembered tab.
+
+**Verification:** `pnpm test`; manual: two spaces, a non-last tab active in each, restart and switch between them.
+
 ### E16-11 — Close-out: projects model and persistence
 
 ```yaml
 id: E16-11
-depends-on: [E16-01, E16-02, E16-03, E16-04, E16-05, E16-06, E16-07, E16-08, E16-09, E16-10]
+depends-on: [E16-01, E16-02, E16-03, E16-04, E16-05, E16-06, E16-07, E16-08, E16-09, E16-10, E16-12]
 refs: [F4]
 covers: []
 type: closeout

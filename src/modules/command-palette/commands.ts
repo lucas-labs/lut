@@ -29,7 +29,6 @@ export const COMMAND_GROUPS = [
   'Git',
   'Search',
   'View',
-  'AI',
 ] as const;
 
 export type CommandPaletteActionContext = {
