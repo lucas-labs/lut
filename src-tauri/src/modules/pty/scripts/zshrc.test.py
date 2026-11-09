@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Shell integration tests for the zsh scripts. Run: python3 zshrc.test.py
 
-Drives a real zsh in a pty the way Terax spawns it (ZDOTDIR pointing at a copy
+Drives a real zsh in a pty the way lut spawns it (ZDOTDIR pointing at a copy
 of these scripts) and checks the OSC 7 / OSC 133 stream and the ZDOTDIR
 hand-off.
 """
@@ -25,7 +25,7 @@ if ZSH is None:
     sys.exit(0)
 
 OSC = re.compile(rb"\x1b\](\d+)(?:;([^\x07\x1b]*))?(?:\x07|\x1b\\)")
-TIMEOUT = float(os.environ.get("TERAX_ZSH_TEST_TIMEOUT", "8"))
+TIMEOUT = float(os.environ.get("LUT_ZSH_TEST_TIMEOUT", "8"))
 failures = 0
 current = None
 
@@ -52,7 +52,7 @@ def describe_environment():
     for path in ("/etc/zsh/zshenv", "/etc/zsh/zprofile", "/etc/zsh/zshrc", "/etc/zsh/zlogin", "/etc/zshenv", "/etc/zshrc"):
         if os.path.exists(path):
             print(f"# global {path} ({os.path.getsize(path)} bytes)")
-            if os.environ.get("TERAX_ZSH_TEST_DEBUG"):
+            if os.environ.get("LUT_ZSH_TEST_DEBUG"):
                 with open(path, errors="replace") as handle:
                     print(handle.read())
 
@@ -62,7 +62,7 @@ class Session:
         global current
         current = self
         self.dumped = False
-        self.tmp = tempfile.mkdtemp(prefix="terax-zsh-test-")
+        self.tmp = tempfile.mkdtemp(prefix="lut-zsh-test-")
         self.home = os.path.join(self.tmp, "home")
         self.zdotdir = os.path.join(self.tmp, "integration")
         os.makedirs(self.home)
@@ -83,7 +83,7 @@ class Session:
         # stops at an "insecure directories" question on a machine whose fpath
         # has a group-writable directory (a CI runner, a container). That
         # question swallows the first typed character of every shell, with or
-        # without Terax, so the tests keep it out of the way.
+        # without lut, so the tests keep it out of the way.
         user_dirs = [self.home]
         if env and "LUT_USER_ZDOTDIR" in env:
             user_dirs.append(env["LUT_USER_ZDOTDIR"].replace("@HOME@", self.home))
@@ -227,8 +227,8 @@ check("exactly one prompt end per prompt", s.marks().count("133:A") == s.marks()
 s.close()
 
 # Another plugin that hooks line-init through add-zle-hook-widget installs the
-# shared dispatcher before Terax does. That dispatcher being there says nothing
-# about Terax's own hook, so the prompt end of a late-rebuilt prompt must still
+# shared dispatcher before lut does. That dispatcher being there says nothing
+# about lut's own hook, so the prompt end of a late-rebuilt prompt must still
 # come, and the plugin's hook must keep running.
 shared_dispatcher = late + """
 autoload -Uz add-zle-hook-widget
@@ -239,7 +239,7 @@ s = Session({".zshrc": shared_dispatcher})
 s.run("true")
 s.run("true")
 texts = prompt_text_between_a_and_b(s)
-check("a shared line-init dispatcher does not keep Terax's hook out", len(texts) >= 3 and all("late> " in text for text in texts), texts)
+check("a shared line-init dispatcher does not keep lut's hook out", len(texts) >= 3 and all("late> " in text for text in texts), texts)
 check("the plugin's own line-init hook still runs", s.out.count(b"PLUGIN_LINE_INIT_RAN") >= 3, s.out.count(b"PLUGIN_LINE_INIT_RAN"))
 s.close()
 
@@ -263,7 +263,7 @@ s.close()
 # --- ZDOTDIR ----------------------------------------------------------------
 # ZDOTDIR has two faces: at the prompt and in hooks it is the user's own (the
 # user's rc registers a precmd hook that records it), while a running command
-# sees Terax's directory exported so a shell it starts is integrated again.
+# sees lut's directory exported so a shell it starts is integrated again.
 hook = "_probe() { PROBE_ZD=${ZDOTDIR-unset} }\nprecmd_functions+=(_probe)\n"
 probe = (
     'print -r -- "RESULT:ZD=${PROBE_ZD-none}:"; print -r -- "RESULT:LOADED=${A_LOADED-no}:"; '
@@ -295,7 +295,7 @@ check("hooks and the prompt see the user's ZDOTDIR", s.result("ZD") == user_dir,
 check("an ordinary command sees the user's ZDOTDIR, in the shell and in its environment", s.result("ENVZD") == user_dir and s.result("CMDZD") == user_dir, (s.result("ENVZD"), s.result("CMDZD")))
 # `vim $ZDOTDIR/.zshrc`, `source $ZDOTDIR/.zshrc` and `cd $ZDOTDIR` expand
 # $ZDOTDIR after preexec ran, so they must find the user's directory.
-s.run('print -r -- "RESULT:WRAPPED=$(grep -c terax-shell-integration $ZDOTDIR/.zshrc):"')
+s.run('print -r -- "RESULT:WRAPPED=$(grep -c lut-shell-integration $ZDOTDIR/.zshrc):"')
 check("`$ZDOTDIR/.zshrc` typed by the user is their file, not the wrapper", s.result("WRAPPED") == "0", s.result("WRAPPED"))
 s.run('cd $ZDOTDIR; print -r -- "RESULT:PWD=$PWD:"')
 check("`cd $ZDOTDIR` goes to the user's directory", (s.result("PWD") or "").endswith(".config/zsh"), s.result("PWD"))
@@ -368,7 +368,7 @@ for label, user_zdotdir in (("with a user ZDOTDIR", True), ("without a user ZDOT
     check(f"{label}: the user's .zshenv ran once per shell", envs == 5, envs)
     s.close()
 
-# Only a command line that starts a zsh gets Terax's directory exported; a zsh
+# Only a command line that starts a zsh gets lut's directory exported; a zsh
 # started that way reports the ZDOTDIR it was given, the other lines report what
 # an ordinary command sees.
 READ = "$(command env | sed -n 's/^ZDOTDIR=//p')"
@@ -380,10 +380,10 @@ for label, user_zdotdir in (("with a user ZDOTDIR", True), ("without a user ZDOT
     else:
         s = Session({".zshrc": rc})
         ordinary = ""
-    # An interactive child that is given Terax's directory loads the integration,
-    # which defines _terax_precmd; one that is not reads the user's files.
+    # An interactive child that is given lut's directory loads the integration,
+    # which defines _lut_precmd; one that is not reads the user's files.
     def child(n):
-        return "-ic 'print -r -- \"RESULT:S%d=${+functions[_terax_precmd]}:\"'" % n
+        return "-ic 'print -r -- \"RESULT:S%d=${+functions[_lut_precmd]}:\"'" % n
 
     starts = {
         "zsh": f"zsh {child(1)}",
@@ -418,7 +418,7 @@ for label, user_zdotdir in (("with a user ZDOTDIR", True), ("without a user ZDOT
         check(f"{label}: `{name}` leaves the user's ZDOTDIR alone", got == ordinary, got)
 
     # A script or `zsh -c` reads nothing but .zshenv, so it must not keep
-    # Terax's directory for its whole run.
+    # lut's directory for its whole run.
     with open(os.path.join(s.home, "probe.zsh"), "w") as handle:
         handle.write('print -r -- "RESULT:SCRIPT=${ZDOTDIR-unset}:"\n')
     s.run("zsh $HOME/probe.zsh")
@@ -440,8 +440,8 @@ for label, user_zdotdir in (("with a user ZDOTDIR", True), ("without a user ZDOT
     ]
     table = "typeset -a Y N; Y=(" + " ".join("'" + item + "'" for item in yes) + "); "
     table += "N=(" + " ".join("'" + item + "'" for item in no) + "); "
-    table += 'n=0; for l in "${Y[@]}"; do (( n++ )); _terax_starts_zsh "$l"; print -r -- "YES$n=$?"; done; '
-    table += 'n=0; for l in "${N[@]}"; do (( n++ )); _terax_starts_zsh "$l"; print -r -- "NO$n=$?"; done'
+    table += 'n=0; for l in "${Y[@]}"; do (( n++ )); _lut_starts_zsh "$l"; print -r -- "YES$n=$?"; done; '
+    table += 'n=0; for l in "${N[@]}"; do (( n++ )); _lut_starts_zsh "$l"; print -r -- "NO$n=$?"; done'
     s.run(table)
     text = s.out.decode("utf-8", "replace")
     said_yes = {int(n): code for n, code in re.findall(r"\bYES(\d+)=(\d)", text)}
@@ -454,7 +454,7 @@ for label, user_zdotdir in (("with a user ZDOTDIR", True), ("without a user ZDOT
     # nothing noticeable.
     # The best of several samples: one scheduler stall on a shared runner must
     # not fail a check that guards a 263 ms regression.
-    s.run('zmodload zsh/datetime; for shape in a b c; do case $shape in a) big=${(pl:200000::echo zsh; :)};; b) big=${(pl:200000::lorem ipsum :)};; c) big=${(pl:200000::ls\n zsh:)};; esac; best=1e9; for try in 1 2 3 4 5 6 7 8; do t0=$EPOCHREALTIME; _terax_starts_zsh "$big"; t1=$EPOCHREALTIME; took=$(( (t1 - t0) * 1000 )); (( took < best )) && best=$took; done; print -r -- "RESULT:PERF$shape=$best:"; done')
+    s.run('zmodload zsh/datetime; for shape in a b c; do case $shape in a) big=${(pl:200000::echo zsh; :)};; b) big=${(pl:200000::lorem ipsum :)};; c) big=${(pl:200000::ls\n zsh:)};; esac; best=1e9; for try in 1 2 3 4 5 6 7 8; do t0=$EPOCHREALTIME; _lut_starts_zsh "$big"; t1=$EPOCHREALTIME; took=$(( (t1 - t0) * 1000 )); (( took < best )) && best=$took; done; print -r -- "RESULT:PERF$shape=$best:"; done')
     for shape in "a", "b", "c":
         value = s.result(f"PERF{shape}")
         took = f"{float(value):.3f} ms" if value is not None else "?"

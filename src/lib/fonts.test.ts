@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { resolveFontFamily } from './fonts';
 
 const FALLBACK =
-  '"JetBrains Mono", "Symbols Nerd Font Mono", "Symbols Nerd Font", "Terax Terminal Symbols", "Terax Terminal Symbols MDI", SFMono-Regular, Menlo, monospace';
+  '"JetBrains Mono", "Symbols Nerd Font Mono", "Symbols Nerd Font", "lut Terminal Symbols", "lut Terminal Symbols MDI", SFMono-Regular, Menlo, monospace';
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -94,7 +94,7 @@ describe('terminal font availability', () => {
     await first;
     expect(load).toHaveBeenCalledWith('400 14px "JetBrains Mono"');
     expect(load).toHaveBeenCalledWith('700 14px "JetBrains Mono"');
-    expect(load).toHaveBeenCalledWith('400 14px "Terax Terminal Symbols"', '\ue0a0\ue718');
+    expect(load).toHaveBeenCalledWith('400 14px "lut Terminal Symbols"', '\ue0a0\ue718');
     expect(load).toHaveBeenCalledTimes(3);
   });
 
@@ -111,7 +111,7 @@ describe('terminal font availability', () => {
   it('waits for the symbol font before allowing canvas rasterization', async () => {
     let resolveSymbols: () => void = () => undefined;
     const load = vi.fn((font: string) =>
-      font.includes('Terax Terminal Symbols')
+      font.includes('lut Terminal Symbols')
         ? new Promise<void>((resolve) => {
             resolveSymbols = resolve;
           })
@@ -131,7 +131,7 @@ describe('terminal font availability', () => {
 
   it('allows rasterization if the symbol font cannot be loaded', async () => {
     const load = vi.fn((font: string) =>
-      font.includes('Terax Terminal Symbols')
+      font.includes('lut Terminal Symbols')
         ? Promise.reject(new Error('Font unavailable'))
         : Promise.resolve([]),
     );
@@ -158,7 +158,7 @@ describe('Material Design icon face', () => {
     expect(fonts.extendedSymbolsPending()).toBe(true);
     expect(fonts.extendedSymbolsPending()).toBe(true);
     expect(load).toHaveBeenCalledTimes(1);
-    expect(load).toHaveBeenCalledWith('400 14px "Terax Terminal Symbols MDI"', '\u{f024b}');
+    expect(load).toHaveBeenCalledWith('400 14px "lut Terminal Symbols MDI"', '\u{f024b}');
     expect(fonts.symbolFontEpoch()).toBe(0);
 
     finish();
@@ -228,9 +228,9 @@ describe('resolveFontFamily', () => {
 
   it('keeps the bundled symbol faces ahead of every system fallback', () => {
     const chain = resolveFontFamily('Hack Nerd Font');
-    const symbols = chain.indexOf('"Terax Terminal Symbols"');
+    const symbols = chain.indexOf('"lut Terminal Symbols"');
     expect(symbols).toBeGreaterThan(chain.indexOf('"JetBrains Mono"'));
-    expect(chain.indexOf('"Terax Terminal Symbols MDI"')).toBeGreaterThan(symbols);
+    expect(chain.indexOf('"lut Terminal Symbols MDI"')).toBeGreaterThan(symbols);
     expect(chain.indexOf('SFMono-Regular')).toBeGreaterThan(symbols);
     expect(chain.endsWith('monospace')).toBe(true);
   });

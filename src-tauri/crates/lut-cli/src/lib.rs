@@ -7,12 +7,12 @@ use std::process::ExitCode;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use serde_json::{json, Value};
-use terax_control_protocol::{
+use lut_control_protocol::{
     CallerContext, ControlDescriptor, ControlRequest, ControlResponse, OpenParams,
     MAX_MESSAGE_BYTES, METHOD_CAPABILITIES, METHOD_IDENTIFY, METHOD_OPEN, METHOD_PING,
     PROTOCOL_VERSION, SERVER_RESPONSE_ID,
 };
+use serde_json::{json, Value};
 
 pub mod hook;
 
@@ -118,7 +118,7 @@ fn run(args: Vec<OsString>) -> Result<(), CliError> {
             let response = send_request(&endpoint.address, &request, DEFAULT_TIMEOUTS)?;
             if !response.ok {
                 let error = response.error.unwrap_or_else(|| {
-                    terax_control_protocol::ControlError::new(
+                    lut_control_protocol::ControlError::new(
                         "request_failed",
                         "lut rejected the request",
                     )
@@ -297,7 +297,7 @@ fn load_endpoint() -> Result<ControlDescriptor, CliError> {
         ),
         (None, None) => {
             let path = dirs::cache_dir()
-                .map(|dir| terax_control_protocol::runtime_dir(&dir).join("control.json"))
+                .map(|dir| lut_control_protocol::runtime_dir(&dir).join("control.json"))
                 .ok_or_else(|| {
                     CliError::new(
                         "app_unavailable",

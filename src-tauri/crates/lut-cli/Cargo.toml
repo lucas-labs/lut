@@ -1,12 +1,12 @@
 [package]
-name = "terax-cli"
+name = "lut-cli"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 publish = false
 
 [lib]
-name = "terax_cli"
+name = "lut_cli"
 path = "src/lib.rs"
 
 [[bin]]
@@ -16,7 +16,7 @@ path = "src/main.rs"
 [dependencies]
 dirs = "7"
 serde_json = "1"
-terax-control-protocol = { path = "../terax-control-protocol" }
+lut-control-protocol = { path = "../lut-control-protocol" }
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

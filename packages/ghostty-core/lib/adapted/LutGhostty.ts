@@ -1,18 +1,18 @@
 import type {
-  TeraxGhosttyGpuRenderState,
-  TeraxGhosttyLine,
-  TeraxGhosttyLoadOptions,
-  TeraxGhosttyKeyEvent,
-  TeraxGhosttyMemoryStats,
-  TeraxGhosttyRenderBase,
-  TeraxGhosttyRenderFormat,
-  TeraxGhosttyRenderState,
-  TeraxGhosttySearchStatus,
-  TeraxGhosttySearchViewportSpan,
-  TeraxGhosttySelection,
-  TeraxGhosttyTerminalOptions,
-  TeraxGhosttyTerminalResourceStats,
-  TeraxGhosttyWasmExports,
+  LutGhosttyGpuRenderState,
+  LutGhosttyLine,
+  LutGhosttyLoadOptions,
+  LutGhosttyKeyEvent,
+  LutGhosttyMemoryStats,
+  LutGhosttyRenderBase,
+  LutGhosttyRenderFormat,
+  LutGhosttyRenderState,
+  LutGhosttySearchStatus,
+  LutGhosttySearchViewportSpan,
+  LutGhosttySelection,
+  LutGhosttyTerminalOptions,
+  LutGhosttyTerminalResourceStats,
+  LutGhosttyWasmExports,
   TypedArray,
   TypedArrayConstructor,
   ViewCacheEntry,
@@ -27,10 +27,10 @@ export const ADAPTED_GHOSTTY_COMMIT =
 export const ADAPTED_RESTTY_COMMIT =
   "7700b14a7643ba9240818209ef1e0aa90d83ad77";
 export const ADAPTED_GHOSTTY_WASM_SHA256 =
-  "32b630675916b3122c2c187c640191e90ae848ee9f196ec5fe091681560c1f11";
+  "a51cd05050968edc2ddeafe70c630badfbf35c55edd101b032c17e4c0190113c";
 
 export const ADAPTED_GHOSTTY_SCALAR_WASM_SHA256 =
-  "3749923e6d7c9ad8f1919f0072073843d9792dcd41d6628b42f208b1f733aa13";
+  "910ec0b1dd380e1a56b8dbe2476c6edd69f9c5c43fcca506ac30d5460118ddd9";
 
 let wasmSimdAvailable: boolean | undefined;
 
@@ -216,21 +216,21 @@ type RenderViewCache = {
  * returns its scrollback to the operating system. Instantiating the compiled
  * module is synchronous and takes about a millisecond or less.
  */
-export class TeraxGhostty {
-  private readonly live = new Set<TeraxGhosttyInstance>();
+export class LutGhostty {
+  private readonly live = new Set<LutGhosttyInstance>();
   private created = 0;
   private reclaimBytes = 0;
   private reclaimTimer: ReturnType<typeof setTimeout> | null = null;
 
   private constructor(
     private readonly module: WebAssembly.Module,
-    private readonly options: TeraxGhosttyLoadOptions,
+    private readonly options: LutGhosttyLoadOptions,
   ) {}
 
   static async load(
     wasmPath?: string,
-    options: TeraxGhosttyLoadOptions = {},
-  ): Promise<TeraxGhostty> {
+    options: LutGhosttyLoadOptions = {},
+  ): Promise<LutGhostty> {
     const path =
       wasmPath ?? (supportsWasmSimd()
         ? new URL("../../adapted/ghostty-vt.wasm", import.meta.url).href
@@ -249,20 +249,20 @@ export class TeraxGhostty {
     } catch {
       module = await compileBytes(await fallback.arrayBuffer());
     }
-    return TeraxGhostty.fromModule(module, options);
+    return LutGhostty.fromModule(module, options);
   }
 
   static async loadBytes(
     bytes: ArrayBuffer,
-    options: TeraxGhosttyLoadOptions = {},
-  ): Promise<TeraxGhostty> {
-    return TeraxGhostty.fromModule(await compileBytes(bytes), options);
+    options: LutGhosttyLoadOptions = {},
+  ): Promise<LutGhostty> {
+    return LutGhostty.fromModule(await compileBytes(bytes), options);
   }
 
   static fromModule(
     module: WebAssembly.Module,
-    options: TeraxGhosttyLoadOptions = {},
-  ): TeraxGhostty {
+    options: LutGhosttyLoadOptions = {},
+  ): LutGhostty {
     const available = new Set(
       WebAssembly.Module.exports(module).map((entry) => entry.name),
     );
@@ -271,7 +271,7 @@ export class TeraxGhostty {
         throw new Error(`Missing adapted Ghostty WASM export: ${name}`);
       }
     }
-    return new TeraxGhostty(module, options);
+    return new LutGhostty(module, options);
   }
 
   /** The shared compiled module that every instance is created from. */
@@ -283,16 +283,16 @@ export class TeraxGhostty {
    * A fresh instance with its own linear memory and no terminal. Dispose it to
    * drop the memory; terminals created on it share that memory.
    */
-  instantiate(): TeraxGhosttyInstance {
+  instantiate(): LutGhosttyInstance {
     const holder: MemoryHolder = { current: null };
     const instantiate = this.options.instantiate ?? defaultInstantiate;
     const raw = instantiate(this.module, createImports(holder, this.options));
-    const exports = raw.exports as TeraxGhosttyWasmExports;
+    const exports = raw.exports as LutGhosttyWasmExports;
     if (!(exports.memory instanceof WebAssembly.Memory)) {
       throw new Error("Adapted Ghostty WASM does not export its memory");
     }
     holder.current = exports.memory;
-    const instance = new TeraxGhosttyInstance(this, exports, holder);
+    const instance = new LutGhosttyInstance(this, exports, holder);
     this.live.add(instance);
     this.created += 1;
     return instance;
@@ -305,12 +305,12 @@ export class TeraxGhostty {
   createTerminal(
     cols: number,
     rows: number,
-    options: TeraxGhosttyTerminalOptions = {},
-  ): TeraxGhosttyTerminal {
+    options: LutGhosttyTerminalOptions = {},
+  ): LutGhosttyTerminal {
     validateDimensions(cols, rows);
     const instance = this.instantiate();
     try {
-      return new TeraxGhosttyTerminal(instance, cols, rows, options, true);
+      return new LutGhosttyTerminal(instance, cols, rows, options, true);
     } catch (error) {
       instance.dispose();
       throw error;
@@ -324,7 +324,7 @@ export class TeraxGhostty {
     return total;
   }
 
-  memoryStats(): TeraxGhosttyMemoryStats {
+  memoryStats(): LutGhosttyMemoryStats {
     const instanceBytes: number[] = [];
     let totalBytes = 0;
     for (const instance of this.live) {
@@ -340,8 +340,8 @@ export class TeraxGhostty {
     };
   }
 
-  /** @internal Called by `TeraxGhosttyInstance.dispose`. */
-  releaseInstance(instance: TeraxGhosttyInstance, bytes: number): void {
+  /** @internal Called by `LutGhosttyInstance.dispose`. */
+  releaseInstance(instance: LutGhosttyInstance, bytes: number): void {
     this.live.delete(instance);
     this.scheduleReclaim(bytes);
   }
@@ -370,15 +370,15 @@ type MemoryHolder = { current: WebAssembly.Memory | null };
  * One WebAssembly instance and its linear memory. Dropping every reference to
  * a disposed instance lets the engine free the memory.
  */
-export class TeraxGhosttyInstance {
-  private liveExports: TeraxGhosttyWasmExports | null;
-  private owner: TeraxGhostty | null;
+export class LutGhosttyInstance {
+  private liveExports: LutGhosttyWasmExports | null;
+  private owner: LutGhostty | null;
   private holder: MemoryHolder | null;
-  private readonly terminals = new Set<TeraxGhosttyTerminal>();
+  private readonly terminals = new Set<LutGhosttyTerminal>();
 
   constructor(
-    owner: TeraxGhostty,
-    exports: TeraxGhosttyWasmExports,
+    owner: LutGhostty,
+    exports: LutGhosttyWasmExports,
     holder: MemoryHolder,
   ) {
     this.owner = owner;
@@ -390,7 +390,7 @@ export class TeraxGhosttyInstance {
     return this.liveExports === null;
   }
 
-  get exports(): TeraxGhosttyWasmExports {
+  get exports(): LutGhosttyWasmExports {
     if (!this.liveExports) {
       throw new Error("Adapted Ghostty instance has been disposed");
     }
@@ -406,18 +406,18 @@ export class TeraxGhosttyInstance {
   createTerminal(
     cols: number,
     rows: number,
-    options: TeraxGhosttyTerminalOptions = {},
-  ): TeraxGhosttyTerminal {
-    return new TeraxGhosttyTerminal(this, cols, rows, options, false);
+    options: LutGhosttyTerminalOptions = {},
+  ): LutGhosttyTerminal {
+    return new LutGhosttyTerminal(this, cols, rows, options, false);
   }
 
   /** @internal */
-  register(terminal: TeraxGhosttyTerminal): void {
+  register(terminal: LutGhosttyTerminal): void {
     this.terminals.add(terminal);
   }
 
   /** @internal */
-  forget(terminal: TeraxGhosttyTerminal): void {
+  forget(terminal: LutGhosttyTerminal): void {
     this.terminals.delete(terminal);
   }
 
@@ -442,24 +442,24 @@ export class TeraxGhosttyInstance {
   }
 }
 
-export class TeraxGhosttyTerminal {
+export class LutGhosttyTerminal {
   private readonly cache: RenderViewCache = createRenderViewCache();
   private readonly handle: number;
-  private exports: TeraxGhosttyWasmExports;
+  private exports: LutGhosttyWasmExports;
   private memory: WebAssembly.Memory;
-  private instance: TeraxGhosttyInstance;
+  private instance: LutGhosttyInstance;
   private readonly ownsInstance: boolean;
   private inputPointer = 0;
   private inputCapacity = 0;
   private readonly textEncoder = new TextEncoder();
-  private format: TeraxGhosttyRenderFormat = "soa";
+  private format: LutGhosttyRenderFormat = "soa";
   private disposed = false;
 
   constructor(
-    instance: TeraxGhosttyInstance,
+    instance: LutGhosttyInstance,
     cols: number,
     rows: number,
-    options: TeraxGhosttyTerminalOptions,
+    options: LutGhosttyTerminalOptions,
     ownsInstance: boolean,
   ) {
     validateDimensions(cols, rows);
@@ -594,7 +594,7 @@ export class TeraxGhosttyTerminal {
   }
 
   /** The cell format written by the next update. New terminals use `"soa"`. */
-  get renderFormat(): TeraxGhosttyRenderFormat {
+  get renderFormat(): LutGhosttyRenderFormat {
     return this.format;
   }
 
@@ -603,7 +603,7 @@ export class TeraxGhosttyTerminal {
    * buffers, invalidates every borrowed view and forces full damage on the
    * next update (and a new glyph epoch when leaving the GPU format).
    */
-  setRenderFormat(format: TeraxGhosttyRenderFormat): void {
+  setRenderFormat(format: LutGhosttyRenderFormat): void {
     this.assertLive();
     if (format === this.format) return;
     checkResult(
@@ -616,7 +616,7 @@ export class TeraxGhosttyTerminal {
     this.format = format;
   }
 
-  updateRenderState(): TeraxGhosttyRenderState {
+  updateRenderState(): LutGhosttyRenderState {
     this.assertLive();
     this.assertFormat("soa", "updateRenderState");
     checkResult(
@@ -631,7 +631,7 @@ export class TeraxGhosttyTerminal {
    * (see `gpuCells.ts`), exact per-row dirtiness and interned glyph ids. The
    * terminal must be in the `"gpu"` format (`setRenderFormat`).
    */
-  updateGpuRenderState(): TeraxGhosttyGpuRenderState {
+  updateGpuRenderState(): LutGhosttyGpuRenderState {
     this.assertLive();
     this.assertFormat("gpu", "updateGpuRenderState");
     checkResult(
@@ -689,7 +689,7 @@ export class TeraxGhosttyTerminal {
    * straight from the screen: the viewport and the render state are left
    * untouched, in either render format. Lines past the end are omitted.
    */
-  readLines(firstLine: number, lastLine: number): TeraxGhosttyLine[] {
+  readLines(firstLine: number, lastLine: number): LutGhosttyLine[] {
     this.assertLive();
     if (
       !Number.isSafeInteger(firstLine) ||
@@ -700,7 +700,7 @@ export class TeraxGhosttyTerminal {
       return [];
     }
     const cols = this.cols;
-    const lines: TeraxGhosttyLine[] = [];
+    const lines: LutGhosttyLine[] = [];
     const total = this.scrollbar().total;
     const last = Math.min(lastLine, total - 1);
     for (let first = firstLine; first <= last; first += LINE_CHUNK_LINES) {
@@ -739,7 +739,7 @@ export class TeraxGhosttyTerminal {
     );
   }
 
-  resourceStats(): TeraxGhosttyTerminalResourceStats {
+  resourceStats(): LutGhosttyTerminalResourceStats {
     this.assertLive();
     return {
       cellCapacity: this.exports.restty_cell_capacity(this.handle),
@@ -930,7 +930,7 @@ export class TeraxGhosttyTerminal {
     );
   }
 
-  encodeKey(event: TeraxGhosttyKeyEvent): Uint8Array {
+  encodeKey(event: LutGhosttyKeyEvent): Uint8Array {
     this.assertLive();
     const utf8 = event.utf8 ? this.textEncoder.encode(event.utf8) : emptyBytes;
     if (utf8.byteLength > 0) {
@@ -962,7 +962,7 @@ export class TeraxGhosttyTerminal {
     return new Uint8Array(this.memory.buffer, pointer, length).slice();
   }
 
-  setSearchQuery(query: string): TeraxGhosttySearchStatus {
+  setSearchQuery(query: string): LutGhosttySearchStatus {
     this.assertLive();
     const bytes = this.textEncoder.encode(query);
     if (bytes.byteLength === 0) {
@@ -994,7 +994,7 @@ export class TeraxGhosttyTerminal {
     checkResult(this.exports.restty_search_clear(this.handle), "clear search");
   }
 
-  stepSearch(budget = 256): TeraxGhosttySearchStatus {
+  stepSearch(budget = 256): LutGhosttySearchStatus {
     this.assertLive();
     checkResult(
       this.exports.restty_search_step(
@@ -1006,7 +1006,7 @@ export class TeraxGhosttyTerminal {
     return this.searchStatus();
   }
 
-  selectSearchMatch(direction: "next" | "previous"): TeraxGhosttySearchStatus {
+  selectSearchMatch(direction: "next" | "previous"): LutGhosttySearchStatus {
     this.assertLive();
     const result =
       direction === "next"
@@ -1016,7 +1016,7 @@ export class TeraxGhosttyTerminal {
     return this.searchStatus();
   }
 
-  searchStatus(): TeraxGhosttySearchStatus {
+  searchStatus(): LutGhosttySearchStatus {
     this.assertLive();
     const pointer = this.exports.restty_search_status_ptr(this.handle);
     validateRange(this.memory.buffer, pointer, SEARCH_STATUS_BYTES);
@@ -1035,7 +1035,7 @@ export class TeraxGhosttyTerminal {
     };
   }
 
-  searchViewportMatches(): TeraxGhosttySearchViewportSpan[] {
+  searchViewportMatches(): LutGhosttySearchViewportSpan[] {
     this.assertLive();
     const count = this.exports.restty_search_viewport_match_count(this.handle);
     if (count === 0) return [];
@@ -1050,7 +1050,7 @@ export class TeraxGhosttyTerminal {
       pointer,
       count * SEARCH_VIEWPORT_SPAN_BYTES,
     );
-    const matches = new Array<TeraxGhosttySearchViewportSpan>(count);
+    const matches = new Array<LutGhosttySearchViewportSpan>(count);
     for (let index = 0; index < count; index += 1) {
       const offset = index * SEARCH_VIEWPORT_SPAN_BYTES;
       matches[index] = {
@@ -1076,7 +1076,7 @@ export class TeraxGhosttyTerminal {
     };
   }
 
-  setSelection(selection: TeraxGhosttySelection | null): void {
+  setSelection(selection: LutGhosttySelection | null): void {
     this.assertLive();
     if (!selection) {
       checkResult(
@@ -1098,7 +1098,7 @@ export class TeraxGhosttyTerminal {
     );
   }
 
-  selection(): TeraxGhosttySelection | null {
+  selection(): LutGhosttySelection | null {
     this.assertLive();
     if (this.exports.restty_selection_active(this.handle) === 0) return null;
     return {
@@ -1178,7 +1178,7 @@ export class TeraxGhosttyTerminal {
   }
 
   graphemeAt(
-    state: TeraxGhosttyRenderState,
+    state: LutGhosttyRenderState,
     cellIndex: number,
   ): string {
     const index = validateCellIndex(state, cellIndex);
@@ -1198,7 +1198,7 @@ export class TeraxGhosttyTerminal {
   }
 
   hyperlinkAt(
-    state: TeraxGhosttyRenderBase,
+    state: LutGhosttyRenderBase,
     cellIndex: number,
   ): string | null {
     const linkId = state.linkIds[validateCellIndex(state, cellIndex)];
@@ -1249,7 +1249,7 @@ export class TeraxGhosttyTerminal {
     this.instance = null as never;
   }
 
-  private readRenderState(): TeraxGhosttyRenderState {
+  private readRenderState(): LutGhosttyRenderState {
     const rows = this.exports.restty_rows(this.handle);
     const cols = this.exports.restty_cols(this.handle);
     validateDimensions(cols, rows);
@@ -1408,7 +1408,7 @@ export class TeraxGhosttyTerminal {
    * to refresh borrowed views after another terminal grew the shared WASM
    * memory (which detaches every earlier `ArrayBuffer`).
    */
-  readGpuRenderState(): TeraxGhosttyGpuRenderState {
+  readGpuRenderState(): LutGhosttyGpuRenderState {
     this.assertLive();
     this.assertFormat("gpu", "readGpuRenderState");
     const rows = this.exports.restty_rows(this.handle);
@@ -1499,7 +1499,7 @@ export class TeraxGhosttyTerminal {
   }
 
   private assertFormat(
-    expected: TeraxGhosttyRenderFormat,
+    expected: LutGhosttyRenderFormat,
     operation: string,
   ): void {
     if (this.format !== expected) {
@@ -1616,7 +1616,7 @@ function detachMemoryViews(memory: WebAssembly.Memory): void {
 
 function createImports(
   holder: MemoryHolder,
-  options: TeraxGhosttyLoadOptions,
+  options: LutGhosttyLoadOptions,
 ): WebAssembly.Imports {
   return {
     env: {
@@ -1741,7 +1741,7 @@ function decodeCursorStyle(value: number): "block" | "underline" | "bar" {
 }
 
 function validateCellIndex(
-  state: TeraxGhosttyRenderBase,
+  state: LutGhosttyRenderBase,
   cellIndex: number,
 ): number {
   if (
@@ -1757,7 +1757,7 @@ function validateCellIndex(
 function decodeLines(
   words: Uint32Array,
   cols: number,
-  into: TeraxGhosttyLine[],
+  into: LutGhosttyLine[],
 ): void {
   let index = 0;
   while (index < words.length) {

@@ -56,7 +56,7 @@ const cargoArgs = [
   "--manifest-path",
   join(tauriDir, "Cargo.toml"),
   "--package",
-  "terax-cli",
+  "lut-cli",
   "--bin",
   "lut-cli",
   "--target",

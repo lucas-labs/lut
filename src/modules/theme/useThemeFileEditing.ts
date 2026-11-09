@@ -41,12 +41,12 @@ export function useThemeFileEditing({ tabsRef, openFileTab }: Params) {
             if (res.kind !== 'text' || typeof res.content !== 'string') return;
             const parsed = parseThemeFile(res.content);
             if (!parsed.ok) {
-              console.warn('[terax] theme not applied:', parsed.error);
+              console.warn('[lut] theme not applied:', parsed.error);
               return;
             }
             await saveCustomTheme(parsed.theme);
           } catch (e) {
-            console.warn('[terax] theme ingest failed:', e);
+            console.warn('[lut] theme ingest failed:', e);
           }
         })();
       },

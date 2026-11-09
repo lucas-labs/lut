@@ -368,7 +368,7 @@ export async function ghosttyLeafHasForegroundProcess(leafId: number): Promise<b
       id: session.pty.id,
     });
   } catch (error) {
-    console.error('[terax] Ghostty pty_has_foreground_process failed for leaf', leafId, error);
+    console.error('[lut] Ghostty pty_has_foreground_process failed for leaf', leafId, error);
     return false;
   }
 }
@@ -459,7 +459,7 @@ function ensureSession(
     pty: null,
     ptyResize,
     writer: new BoundedPtyWriter((error) => {
-      console.error('[terax] Ghostty PTY write failed:', error);
+      console.error('[lut] Ghostty PTY write failed:', error);
     }),
     container: null,
     callbacks: {},
@@ -508,7 +508,7 @@ function initializeSession(session: GhosttySession): Promise<void> {
         session.ptyResize.reset();
       }
       session.startupError = toError(error).message;
-      console.error('[terax] Ghostty session initialization failed:', error);
+      console.error('[lut] Ghostty session initialization failed:', error);
       session.callbacks.onError?.(sessionFailure(session));
     },
   );
@@ -563,7 +563,7 @@ async function initializeSessionGeneration(
       oscClipboard.enqueue(text);
     },
     onOverflow: (dropped) => {
-      console.warn(`[terax] Ghostty semantic event queue dropped ${dropped} event(s)`);
+      console.warn(`[lut] Ghostty semantic event queue dropped ${dropped} event(s)`);
     },
     onPromptEnd: (reportsCommandStart) => {
       session.commandTracked = reportsCommandStart;
@@ -671,7 +671,7 @@ async function initializeSessionGeneration(
   }
   if (webGpuPreload.error) {
     console.warn(
-      '[terax] WebGPU initialization failed; preserving the Ghostty session with WebGL:',
+      '[lut] WebGPU initialization failed; preserving the Ghostty session with WebGL:',
       webGpuPreload.error.message,
     );
   }
@@ -699,7 +699,7 @@ async function initializeSessionGeneration(
       if (!surface) return;
       webGpuFallbackStarted = true;
       console.warn(
-        '[terax] WebGPU surface attachment failed; preserved the Ghostty session with WebGL:',
+        '[lut] WebGPU surface attachment failed; preserved the Ghostty session with WebGL:',
         toError(error).message,
       );
     }
@@ -880,7 +880,7 @@ async function fallbackWebGpuSurface(
     return;
   }
   console.warn(
-    '[terax] WebGPU renderer failed; preserved the live Ghostty model, PTY, and scrollback with WebGL:',
+    '[lut] WebGPU renderer failed; preserved the live Ghostty model, PTY, and scrollback with WebGL:',
     cause.message,
   );
 }
@@ -949,7 +949,7 @@ function sessionFailure(session: GhosttySession): GhosttySessionFailure | null {
 }
 
 function logSurfaceError(backend: GhosttyBackend, error: Error): void {
-  console.error(`[terax] ${backend} surface failed:`, error.message, error.stack ?? error);
+  console.error(`[lut] ${backend} surface failed:`, error.message, error.stack ?? error);
 }
 
 function toError(error: unknown): Error {

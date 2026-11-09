@@ -1,12 +1,12 @@
 //! Real-application benchmark support ("app lab"). Compiled only with `--features bench`.
 //!
-//! The scenario driver (`src/bench`, compiled into the frontend only when `TERAX_BENCH=1`) runs
+//! The scenario driver (`src/bench`, compiled into the frontend only when `LUT_BENCH=1`) runs
 //! inside the real UI and asks this module for what a page cannot know: the exact WebKit
 //! helper process ids that belong to this webview, window state, and native window actions
 //! (stepped live resizes, order out/front, miniaturize). Nothing here exists in a normal build.
 //!
 //! Safety: a bench binary refuses to start under the product identifier, so it can never run
-//! against the profile of an installed Terax. The orchestrator (`scripts/app-lab/run.py`)
+//! against the profile of an installed lut. The orchestrator (`scripts/app-lab/run.py`)
 //! gives every run its own identifier and `HOME`.
 
 use serde::{Deserialize, Serialize};
@@ -23,7 +23,7 @@ const PRODUCT_IDENTIFIER: &str = "dev.lucode.lut";
 pub fn guard(app: &AppHandle) -> Result<(), String> {
     guard_environment(
         &app.config().identifier,
-        std::env::var("TERAX_BENCH_ISOLATED").ok().as_deref(),
+        std::env::var("LUT_BENCH_ISOLATED").ok().as_deref(),
     )
 }
 
@@ -36,7 +36,7 @@ fn guard_environment(identifier: &str, isolated: Option<&str>) -> Result<(), Str
     }
     if isolated != Some("1") {
         return Err(
-            "bench build requires TERAX_BENCH_ISOLATED=1 (set by scripts/app-lab/run.py together \
+            "bench build requires LUT_BENCH_ISOLATED=1 (set by scripts/app-lab/run.py together \
              with an isolated HOME)"
                 .to_string(),
         );
@@ -58,7 +58,7 @@ fn parse_scenario(raw: Option<&str>) -> Result<Option<Value>, String> {
         None => Ok(None),
         Some(text) => serde_json::from_str(text)
             .map(Some)
-            .map_err(|error| format!("TERAX_BENCH_SCENARIO is not valid JSON: {error}")),
+            .map_err(|error| format!("LUT_BENCH_SCENARIO is not valid JSON: {error}")),
     }
 }
 
@@ -66,8 +66,8 @@ fn parse_scenario(raw: Option<&str>) -> Result<Option<Value>, String> {
 pub fn bench_config(app: AppHandle) -> Result<BenchConfig, String> {
     guard(&app)?;
     Ok(BenchConfig {
-        scenario: parse_scenario(std::env::var("TERAX_BENCH_SCENARIO").ok().as_deref())?,
-        report_url: std::env::var("TERAX_BENCH_REPORT_URL").ok(),
+        scenario: parse_scenario(std::env::var("LUT_BENCH_SCENARIO").ok().as_deref())?,
+        report_url: std::env::var("LUT_BENCH_REPORT_URL").ok(),
         identifier: app.config().identifier.clone(),
     })
 }

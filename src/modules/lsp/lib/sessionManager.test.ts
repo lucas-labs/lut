@@ -42,7 +42,7 @@ vi.mock('./transport', () => ({
   },
 }));
 vi.mock('./client', () => ({
-  TeraxLspClient: class {
+  LutLspClient: class {
     static hostPid = 1;
     constructor(config: { onClose: () => void }) {
       mocks.exits.push(config.onClose);
@@ -81,7 +81,7 @@ describe('LSP session capacity', () => {
     mocks.exits = [];
     mocks.prefs.lspActivation = { test: 'enabled' };
     mocks.hostPid.mockResolvedValue(1);
-    (await import('./client')).TeraxLspClient.hostPid = 1;
+    (await import('./client')).LutLspClient.hostPid = 1;
     mocks.start.mockResolvedValue(undefined);
     mocks.close.mockResolvedValue(undefined);
     mocks.shutdown.mockResolvedValue(undefined);
@@ -108,7 +108,7 @@ describe('LSP session capacity', () => {
 
   it('reacquires after disable and re-enable during host lookup', async () => {
     const host = deferred();
-    (await import('./client')).TeraxLspClient.hostPid = null;
+    (await import('./client')).LutLspClient.hostPid = null;
     mocks.hostPid.mockReturnValue(host.promise);
     const { acquireDocExtension } = await import('./sessionManager');
     const { useLspRuntimeStore } = await import('./runtimeStore');

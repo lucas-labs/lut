@@ -48,7 +48,7 @@ case "$1" in
   empty) PROMPT_COMMAND=() ;;
   single) PROMPT_COMMAND=('first') ;;
   sparse) PROMPT_COMMAND=([0]='first' [3]='second') ;;
-  registered) PROMPT_COMMAND=('first' '_terax_precmd' 'second') ;;
+  registered) PROMPT_COMMAND=('first' '_lut_precmd' 'second') ;;
 esac
 `;
     // From bash 5.1 every element of an array runs; before that only element 0.
@@ -62,23 +62,23 @@ case "$(declare -p PROMPT_COMMAND)" in
   'declare -a'*)
     if [ -n "$elements" ]; then
       actual=$(for hook in "\${PROMPT_COMMAND[@]}"; do eval "$hook"; done)
-      test "\${PROMPT_COMMAND[\${#PROMPT_COMMAND[@]}-1]}" = _terax_finish_prompt || exit 11
-      test "\${PROMPT_COMMAND[0]}" = _terax_precmd -o "$1" = registered || exit 12
+      test "\${PROMPT_COMMAND[\${#PROMPT_COMMAND[@]}-1]}" = _lut_finish_prompt || exit 11
+      test "\${PROMPT_COMMAND[0]}" = _lut_precmd -o "$1" = registered || exit 12
     else
       actual=$(eval "\${PROMPT_COMMAND[0]}")
     fi
     ;;
   *)
     test "$1" = scalar || exit 13
-    test "$PROMPT_COMMAND" = "_terax_precmd;first;second"$'\\n'"_terax_finish_prompt" || exit 14
+    test "$PROMPT_COMMAND" = "_lut_precmd;first;second"$'\\n'"_lut_finish_prompt" || exit 14
     actual=$(eval "$PROMPT_COMMAND")
     ;;
 esac
 all="\${PROMPT_COMMAND[*]}"
-stripped="\${all//_terax_precmd/}"
-want=13
+stripped="\${all//_lut_precmd/}"
+want=11
 # Before 5.1 a hook parked in element 1 never ran, so element 0 gets its own.
-if [ "$1" = registered ] && [ -z "$elements" ]; then want=26; fi
+if [ "$1" = registered ] && [ -z "$elements" ]; then want=22; fi
 test "$(( \${#all} - \${#stripped} ))" = "$want" || exit 15
 case "$actual" in *']7;file://'*']133;A'*) ;; *) exit 16 ;; esac
 if [ "$1" != empty ]; then

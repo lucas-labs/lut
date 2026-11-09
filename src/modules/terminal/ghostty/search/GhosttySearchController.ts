@@ -125,7 +125,7 @@ export class GhosttySearchController implements TerminalSearchController {
       },
       (error) => {
         this.loading = false;
-        console.error('[terax] terminal search failed to load', error);
+        console.error('[lut] terminal search failed to load', error);
       },
     );
   }

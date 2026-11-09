@@ -6,15 +6,15 @@ describe('GhosttySemanticEventRouter', () => {
     const onCwd = vi.fn();
     const router = new GhosttySemanticEventRouter({ onCwd });
 
-    router.handle({ type: 'pwd', uri: 'file://localhost/Users/terax' });
+    router.handle({ type: 'pwd', uri: 'file://localhost/Users/lut' });
     router.handle({ type: 'prompt-end' });
     router.handle({ type: 'pwd', uri: 'file://attacker/tmp/ignored' });
     router.handle({ type: 'end-of-command', exitCode: 0 });
-    router.handle({ type: 'pwd', uri: 'file://localhost/Users/terax/src' });
+    router.handle({ type: 'pwd', uri: 'file://localhost/Users/lut/src' });
 
     expect(onCwd).toHaveBeenCalledTimes(2);
-    expect(onCwd).toHaveBeenNthCalledWith(1, '/Users/terax');
-    expect(onCwd).toHaveBeenNthCalledWith(2, '/Users/terax/src');
+    expect(onCwd).toHaveBeenNthCalledWith(1, '/Users/lut');
+    expect(onCwd).toHaveBeenNthCalledWith(2, '/Users/lut/src');
   });
 
   it('tracks command execution separately from prompt input', () => {
@@ -68,7 +68,7 @@ describe('GhosttySemanticEventRouter', () => {
     const onPromptEnd = vi.fn();
     const router = new GhosttySemanticEventRouter({ onPromptEnd });
     router.handle({ type: 'prompt-end' });
-    // Bash before 4.4 marks its prompts with terax_blocks=0 and has no PS0.
+    // Bash before 4.4 marks its prompts with lut_blocks=0 and has no PS0.
     router.handle({ type: 'prompt-end', blockInput: false });
     expect(onPromptEnd.mock.calls).toEqual([[true], [false]]);
   });

@@ -130,7 +130,7 @@ export function CommandPalette({
     setBase(initialMode === 'files' ? 'files' : 'commands');
     setPage('root');
     const handle = window.setTimeout(() => {
-      document.getElementById('terax-command-palette-input')?.focus();
+      document.getElementById('lut-command-palette-input')?.focus();
     }, 0);
     return () => window.clearTimeout(handle);
   }, [open, initialMode]);
@@ -238,7 +238,7 @@ export function CommandPalette({
     >
       <Command shouldFilter={false} loop value={value} onValueChange={setValue} onKeyDown={onKeyDown}>
         <CommandInput
-          id="terax-command-palette-input"
+          id="lut-command-palette-input"
           value={query}
           onValueChange={setQuery}
           placeholder={placeholder}

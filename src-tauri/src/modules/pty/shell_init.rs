@@ -17,8 +17,7 @@ const ZLOGIN_SCRIPT: &str = include_str!("scripts/zlogin.zsh");
 const ZSHRC_SCRIPT: &str = include_str!("scripts/zshrc.zsh");
 #[cfg(windows)]
 const FISH_INIT_SCRIPT: &str = include_str!("scripts/init.fish");
-const FISH_REINSTALL_PROMPT: &str =
-    "functions -q __terax_install_prompt; and __terax_install_prompt";
+const FISH_REINSTALL_PROMPT: &str = "functions -q __lut_install_prompt; and __lut_install_prompt";
 
 #[cfg(windows)]
 fn bashrc_script() -> &'static str {
@@ -147,7 +146,7 @@ pub fn detect_shell_name() -> String {
 pub struct ShellInfo {
     pub name: String,
     pub path: String,
-    /// True when Terax injects OSC 7/133 integration for this shell (cwd
+    /// True when lut injects OSC 7/133 integration for this shell (cwd
     /// tracking, agent detection). Others spawn bare.
     pub integrated: bool,
 }
@@ -364,7 +363,7 @@ mod unix {
     enum UserZdotdir {
         /// The inherited `ZDOTDIR` is the user's own.
         Set(String),
-        /// This app was started from a zsh that Terax integrated: `ZDOTDIR` is
+        /// This app was started from a zsh that lut integrated: `ZDOTDIR` is
         /// the integration directory and the inherited variable still names
         /// the user's.
         Keep,
@@ -385,7 +384,7 @@ mod unix {
             Shell::Zsh => {
                 match prepare_zdotdir() {
                     Ok(zdotdir) => {
-                        // Guard against Terax-in-Terax :)
+                        // Guard against lut-in-lut :)
                         match user_zdotdir_for(std::env::var("ZDOTDIR").ok().as_deref(), &zdotdir) {
                             UserZdotdir::Set(user) => {
                                 cmd.env("LUT_USER_ZDOTDIR", user);
@@ -444,7 +443,7 @@ mod unix {
     fn integration_root() -> Result<PathBuf, String> {
         // lut's runtime dir, never Terax's `~/.cache/terax` (E02-10).
         let cache = dirs::cache_dir().ok_or_else(|| "could not resolve cache dir".to_string())?;
-        let root = terax_control_protocol::runtime_dir(&cache).join("shell-integration");
+        let root = lut_control_protocol::runtime_dir(&cache).join("shell-integration");
         fs::create_dir_all(&root).map_err(|e| format!("create {}: {e}", root.display()))?;
         Ok(root)
     }
@@ -531,13 +530,13 @@ mod unix {
         }
 
         #[test]
-        fn the_users_zdotdir_survives_a_terax_started_from_an_integrated_zsh() {
+        fn the_users_zdotdir_survives_a_lut_started_from_an_integrated_zsh() {
             let integration = Path::new("/cache/dev.lucode.lut/shell-integration/zsh");
             assert_eq!(
                 user_zdotdir_for(Some("/home/me/.config/zsh"), integration),
                 UserZdotdir::Set("/home/me/.config/zsh".into())
             );
-            // Launched by a command in another Terax terminal: keep the
+            // Launched by a command in another lut terminal: keep the
             // LUT_USER_ZDOTDIR it inherited.
             assert_eq!(
                 user_zdotdir_for(
@@ -856,7 +855,7 @@ mod windows {
         let linux_dir = format!(
             "{}/.cache/{}/shell-integration/{shell}",
             home.trim_end_matches('/'),
-            terax_control_protocol::RUNTIME_DIR_NAME
+            lut_control_protocol::RUNTIME_DIR_NAME
         );
         let unc_dir = crate::modules::workspace::wsl_path_to_unc(distro, &linux_dir);
         fs::create_dir_all(&unc_dir).map_err(|e| format!("create {}: {e}", unc_dir.display()))?;
@@ -911,7 +910,7 @@ mod windows {
     fn integration_root() -> Result<PathBuf, String> {
         // lut's runtime dir, never Terax's `~/.cache/terax` (E02-10).
         let cache = dirs::cache_dir().ok_or_else(|| "could not resolve cache dir".to_string())?;
-        let root = terax_control_protocol::runtime_dir(&cache).join("shell-integration");
+        let root = lut_control_protocol::runtime_dir(&cache).join("shell-integration");
         fs::create_dir_all(&root).map_err(|e| format!("create {}: {e}", root.display()))?;
         Ok(root)
     }

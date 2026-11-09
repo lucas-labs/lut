@@ -6,7 +6,7 @@ import type { Theme } from './types';
 import { validateTheme, type ValidationResult } from './validateTheme';
 
 const THEME_FILE_EXT = '.lut-theme';
-const THEME_EDIT_EVENT = 'terax://theme-edit';
+const THEME_EDIT_EVENT = 'lut://theme-edit';
 
 export type ThemeEditRequest = { action: 'create' } | { action: 'edit'; id: string };
 
@@ -128,13 +128,13 @@ export async function handOffThemeEdit(
   try {
     await emitRequest(req);
   } catch (error) {
-    console.error('[terax] theme edit request failed:', error);
+    console.error('[lut] theme edit request failed:', error);
     return false;
   }
   try {
     await closeWindow();
   } catch (error) {
-    console.error('[terax] could not close settings window:', error);
+    console.error('[lut] could not close settings window:', error);
   }
   return true;
 }

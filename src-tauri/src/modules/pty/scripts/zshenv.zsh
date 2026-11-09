@@ -1,6 +1,6 @@
-# terax-shell-integration (zshenv)
+# lut-shell-integration (zshenv)
 #
-# Terax points ZDOTDIR at its integration directory so zsh reads these wrappers
+# lut points ZDOTDIR at its integration directory so zsh reads these wrappers
 # first. The user's files are sourced with ZDOTDIR switched back to their own
 # directory, so `$ZDOTDIR/conf.d/*.zsh` style loaders resolve where they expect.
 # A ZDOTDIR the user's .zshenv sets itself is remembered in LUT_USER_ZDOTDIR,
@@ -10,22 +10,22 @@
 # which propagates through the rest of init and ultimately into the first
 # prompt's `%?` (rendering robbyrussell's `➜` red on a clean shell start).
 {
-  _terax_zdotdir="$ZDOTDIR"
-  _terax_assigned="${LUT_USER_ZDOTDIR:-$HOME}"
-  ZDOTDIR="$_terax_assigned"
-  [ -f "$_terax_assigned/.zshenv" ] && source "$_terax_assigned/.zshenv"
-  if [[ "${ZDOTDIR-}" != "$_terax_assigned" || -n "${LUT_USER_ZDOTDIR-}" ]]; then
+  _lut_zdotdir="$ZDOTDIR"
+  _lut_assigned="${LUT_USER_ZDOTDIR:-$HOME}"
+  ZDOTDIR="$_lut_assigned"
+  [ -f "$_lut_assigned/.zshenv" ] && source "$_lut_assigned/.zshenv"
+  if [[ "${ZDOTDIR-}" != "$_lut_assigned" || -n "${LUT_USER_ZDOTDIR-}" ]]; then
     export LUT_USER_ZDOTDIR="${ZDOTDIR:-$HOME}"
   fi
   # An interactive shell goes on to our .zprofile and .zshrc; a script or
   # `zsh -c` reads nothing else, so it keeps the user's own ZDOTDIR.
   if [[ -o interactive ]]; then
-    ZDOTDIR="$_terax_zdotdir"
+    ZDOTDIR="$_lut_zdotdir"
   elif [[ -n "${LUT_USER_ZDOTDIR-}" ]]; then
     ZDOTDIR="$LUT_USER_ZDOTDIR"
   else
     unset ZDOTDIR
   fi
-  unset _terax_zdotdir _terax_assigned
+  unset _lut_zdotdir _lut_assigned
 }
 :

@@ -1,4 +1,4 @@
-import type { GhosttyTerminalEvent } from '@terax/ghostty-core/protocol';
+import type { GhosttyTerminalEvent } from '@lut/ghostty-core/protocol';
 
 /** How long a prompt may be held while its end marker has been seen before. */
 export const PROMPT_PRESENTATION_WATCHDOG_MS = 1_000;

@@ -20,8 +20,8 @@ describe('Ghostty artifact selection', () => {
       }),
     );
     vi.stubGlobal('fetch', fetch);
-    const { TeraxGhostty } = await import('@terax/ghostty-core/adapted');
-    const ghostty = await TeraxGhostty.load();
+    const { LutGhostty } = await import('@lut/ghostty-core/adapted');
+    const ghostty = await LutGhostty.load();
     expect(fetch).toHaveBeenCalledExactlyOnceWith(expect.stringContaining(filename));
     const terminal = ghostty.createTerminal(40, 4);
     try {
@@ -48,8 +48,8 @@ describe('Ghostty artifact selection', () => {
         .fn()
         .mockImplementation(async () => new Response(await artifact(), { headers }));
       vi.stubGlobal('fetch', fetch);
-      const { TeraxGhostty } = await import('@terax/ghostty-core/adapted');
-      return { fetch, ghostty: await TeraxGhostty.load() };
+      const { LutGhostty } = await import('@lut/ghostty-core/adapted');
+      return { fetch, ghostty: await LutGhostty.load() };
     }
 
     it('fetches and compiles once however many terminals follow', async () => {
@@ -83,19 +83,19 @@ describe('Ghostty artifact selection', () => {
 
     it('rejects an empty artifact and a module without the bridge exports', async () => {
       vi.resetModules();
-      const { TeraxGhostty } = await import('@terax/ghostty-core/adapted');
-      await expect(TeraxGhostty.loadBytes(new ArrayBuffer(0))).rejects.toThrow('empty');
+      const { LutGhostty } = await import('@lut/ghostty-core/adapted');
+      await expect(LutGhostty.loadBytes(new ArrayBuffer(0))).rejects.toThrow('empty');
       const bare = await WebAssembly.compile(Uint8Array.of(0, 0x61, 0x73, 0x6d, 1, 0, 0, 0));
-      expect(() => TeraxGhostty.fromModule(bare)).toThrow('Missing adapted Ghostty WASM export');
+      expect(() => LutGhostty.fromModule(bare)).toThrow('Missing adapted Ghostty WASM export');
     });
 
     it('gives each instance its own log import that stops reading memory once disposed', async () => {
       vi.resetModules();
-      const { TeraxGhostty } = await import('@terax/ghostty-core/adapted');
+      const { LutGhostty } = await import('@lut/ghostty-core/adapted');
       const module = await WebAssembly.compile(await artifact());
       const imports: WebAssembly.Imports[] = [];
       const log = vi.fn();
-      const ghostty = TeraxGhostty.fromModule(module, {
+      const ghostty = LutGhostty.fromModule(module, {
         log,
         instantiate: (compiled, supplied) => {
           imports.push(supplied);

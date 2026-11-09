@@ -4,16 +4,16 @@ import { expect, it } from 'vitest';
 
 const FACES = [
   {
-    file: 'terax-terminal-symbols.woff2',
-    family: 'Terax Terminal Symbols',
+    file: 'lut-terminal-symbols.woff2',
+    family: 'lut Terminal Symbols',
     range: 'U+E000-F8FF',
     sha256: '08107a419bbbc0d24ea11fdbae136bc7fa1943a0fc2b3495975a8b3082428081',
     // The face every terminal loads: small enough to be part of first paint.
     maxBytes: 400_000,
   },
   {
-    file: 'terax-terminal-symbols-mdi.woff2',
-    family: 'Terax Terminal Symbols MDI',
+    file: 'lut-terminal-symbols-mdi.woff2',
+    family: 'lut Terminal Symbols MDI',
     range: 'U+F0000-FFFFD',
     sha256: '987533dfb02fd9f769dc199ffbf5f2bea02b9a102883eaa795fbebfacc10f4ac',
     maxBytes: 400_000,

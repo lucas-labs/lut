@@ -4,7 +4,7 @@
 #
 #   export-tree.sh DEST [REV]        REV defaults to HEAD
 #
-# The overlay is only the app-lab files: the bench feature in src-tauri, the TERAX_BENCH define,
+# The overlay is only the app-lab files: the bench feature in src-tauri, the LUT_BENCH define,
 # the three bench hooks in App.tsx / main.tsx and src/bench + scripts/app-lab. Everything is
 # read-only on the repository (git archive / git diff); DEST must not exist yet.
 set -eu

@@ -36,7 +36,7 @@ export function AgentIcon({ agent, size = 15, className }: { agent: string; size
   if (agent.toLowerCase() === 'pi') {
     return <PiIcon size={size} className={className} />;
   }
-  if (agent.toLowerCase().includes('terax')) {
+  if (agent.toLowerCase().includes('lut')) {
     return (
       <img
         src="/logo.png"

@@ -1,17 +1,17 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import { TeraxGhostty } from '@terax/ghostty-core/adapted';
+import { LutGhostty } from '@lut/ghostty-core/adapted';
 import {
   GhosttyOptimizeMode,
   GhosttyRenderStateDirty,
   OFFICIAL_GHOSTTY_COMMIT,
   OFFICIAL_GHOSTTY_WASM_SHA256,
   OfficialGhostty,
-} from '@terax/ghostty-core/official';
+} from '@lut/ghostty-core/official';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 let ghostty: OfficialGhostty;
-let adaptedGhostty: TeraxGhostty;
+let adaptedGhostty: LutGhostty;
 let wasmBytes: ArrayBuffer;
 
 beforeAll(async () => {
@@ -27,7 +27,7 @@ beforeAll(async () => {
     import.meta.url,
   );
   const adaptedFile = await readFile(adaptedPath);
-  adaptedGhostty = await TeraxGhostty.loadBytes(Uint8Array.from(adaptedFile).buffer);
+  adaptedGhostty = await LutGhostty.loadBytes(Uint8Array.from(adaptedFile).buffer);
 });
 
 describe('official libghostty-vt integration', () => {
@@ -250,7 +250,7 @@ function rawCellStyleId(row: Uint32Array, column: number): number {
 
 function expectEquivalentViewport(
   official: ReturnType<OfficialGhostty['createTerminal']>,
-  adapted: ReturnType<TeraxGhostty['createTerminal']>,
+  adapted: ReturnType<LutGhostty['createTerminal']>,
 ): void {
   official.updateRenderState();
   const officialRows: number[][] = [];

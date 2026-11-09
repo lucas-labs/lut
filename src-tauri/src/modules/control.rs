@@ -8,18 +8,18 @@ use std::sync::{Arc, Condvar, Mutex, OnceLock};
 use std::thread;
 use std::time::{Duration, SystemTime};
 
-use serde_json::{json, Value};
-use tauri::{Emitter, Manager};
-use terax_control_protocol::{
+use lut_control_protocol::{
     ControlDescriptor, ControlRequest, ControlResponse, FrontendRequest, FrontendResponse,
     OpenParams, MAX_MESSAGE_BYTES, METHODS, METHOD_CAPABILITIES, METHOD_HOOK, METHOD_IDENTIFY,
     METHOD_OPEN, METHOD_PING, PROTOCOL_VERSION, SERVER_RESPONSE_ID,
 };
+use serde_json::{json, Value};
+use tauri::{Emitter, Manager};
 
 use crate::modules::agent_events::{self, AgentHost, HookState, TauriAgentHost};
 use crate::modules::{fs, workspace};
 
-const CONTROL_EVENT: &str = "terax:control-request";
+const CONTROL_EVENT: &str = "lut:control-request";
 const FRONTEND_TIMEOUT: Duration = Duration::from_secs(5);
 const IO_TIMEOUT: Duration = Duration::from_secs(7);
 const MAX_PENDING_REQUESTS: usize = 32;
@@ -207,7 +207,7 @@ pub fn start(app: tauri::AppHandle, state: ControlState) -> Result<(), String> {
         match prepare_cli_launcher(&descriptor_path, cli_path) {
             Ok(dir) => Some(dir),
             Err(error) => {
-                log::warn!("could not prepare terax CLI launcher: {error}");
+                log::warn!("could not prepare lut CLI launcher: {error}");
                 None
             }
         }
@@ -247,7 +247,7 @@ pub fn start(app: tauri::AppHandle, state: ControlState) -> Result<(), String> {
 
     let listener_state = state.clone();
     if let Err(error) = thread::Builder::new()
-        .name("terax-control-listener".into())
+        .name("lut-control-listener".into())
         .stack_size(LISTENER_STACK_BYTES)
         .spawn(move || accept_loop(listener, app, listener_state))
     {
@@ -287,7 +287,7 @@ fn accept_loop(listener: TcpListener, app: tauri::AppHandle, state: ControlState
         let app = app.clone();
         let request_state = state.clone();
         if let Err(error) = thread::Builder::new()
-            .name("terax-control-request".into())
+            .name("lut-control-request".into())
             .stack_size(REQUEST_STACK_BYTES)
             .spawn(move || {
                 let _guard = ConnectionGuard(request_state.clone());
@@ -673,10 +673,7 @@ fn forward_to_frontend(
         }
         Ok(response) => {
             let error = response.error.unwrap_or_else(|| {
-                terax_control_protocol::ControlError::new(
-                    "frontend_error",
-                    "frontend request failed",
-                )
+                lut_control_protocol::ControlError::new("frontend_error", "frontend request failed")
             });
             ControlResponse::failure(id, error.code, error.message)
         }
@@ -753,7 +750,7 @@ fn generate_token() -> Result<String, String> {
 fn descriptor_path() -> Result<PathBuf, String> {
     let cache =
         dirs::cache_dir().ok_or_else(|| "could not resolve user cache directory".to_string())?;
-    let dir = terax_control_protocol::runtime_dir(&cache);
+    let dir = lut_control_protocol::runtime_dir(&cache);
     std::fs::create_dir_all(&dir)
         .map_err(|error| format!("create control directory {}: {error}", dir.display()))?;
     #[cfg(unix)]
@@ -1139,11 +1136,11 @@ mod tests {
     mod hook_end_to_end {
         use super::*;
         use crate::modules::agent_events::test_host::FakeHost;
+        use lut_cli::hook::{run, HookEnvironment};
+        use lut_control_protocol::hook::{HookDecision, HookKind};
         use serde_json::json;
         use std::ffi::OsString;
         use std::sync::Arc;
-        use terax_cli::hook::{run, HookEnvironment};
-        use terax_control_protocol::hook::{HookDecision, HookKind};
 
         const TOKEN: &str = "a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90";
 
@@ -1229,7 +1226,7 @@ mod tests {
                 token: TOKEN.into(),
                 method: METHOD_HOOK.into(),
                 params: json!({}),
-                caller: terax_control_protocol::CallerContext { pane_id: Some(3) },
+                caller: lut_control_protocol::CallerContext { pane_id: Some(3) },
             };
             assert!(authenticate(&request, &server.state, server.host.as_ref()).is_err());
         }
@@ -1243,7 +1240,7 @@ mod tests {
                 token: server.token.clone(),
                 method: METHOD_HOOK.into(),
                 params: json!({}),
-                caller: terax_control_protocol::CallerContext { pane_id: Some(3) },
+                caller: lut_control_protocol::CallerContext { pane_id: Some(3) },
             };
             request.caller.pane_id = Some(4);
             assert!(authenticate(&request, &server.state, server.host.as_ref()).is_err());
@@ -1296,7 +1293,7 @@ mod tests {
                 token: server.token.clone(),
                 method: METHOD_OPEN.into(),
                 params: json!({}),
-                caller: terax_control_protocol::CallerContext { pane_id: Some(3) },
+                caller: lut_control_protocol::CallerContext { pane_id: Some(3) },
             };
             for method in [
                 METHOD_OPEN,
@@ -1330,7 +1327,7 @@ mod tests {
                     token: env.token.clone(),
                     method: METHOD_PING.into(),
                     params: json!({}),
-                    caller: terax_control_protocol::CallerContext { pane_id: Some(3) },
+                    caller: lut_control_protocol::CallerContext { pane_id: Some(3) },
                 };
                 let (began_tx, began_rx) = mpsc::channel();
                 let (done_tx, done_rx) = mpsc::channel();
@@ -1363,7 +1360,7 @@ mod tests {
                 token: server.token.clone(),
                 method: METHOD_HOOK.into(),
                 params: json!({"agent":"claude", "event":"PermissionRequest", "payload":{}, "wait_secs":1}),
-                caller: terax_control_protocol::CallerContext { pane_id: Some(3) },
+                caller: lut_control_protocol::CallerContext { pane_id: Some(3) },
             };
             let pty = authenticate(&request, &server.state, server.host.as_ref())
                 .unwrap()

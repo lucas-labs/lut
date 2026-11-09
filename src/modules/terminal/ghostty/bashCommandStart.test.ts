@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { expect, it } from 'vitest';
 
 // Bash 4.4+ reports that a command started through PS0. Older Bash (macOS ships
-// 3.2) cannot, so its prompt end carries `terax_blocks=0` and the host never
+// 3.2) cannot, so its prompt end carries `lut_blocks=0` and the host never
 // types a command on the user's behalf into it (see promptInjection.ts).
 it.skipIf(process.platform === 'win32')('tells the host whether Bash reports command start', () => {
   const script = fileURLToPath(
@@ -22,12 +22,12 @@ PS1='test> '
 eval "$PROMPT_COMMAND" >/dev/null
 if (( BASH_VERSINFO[0] > 4 || BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 4 )); then
   case "$PS0" in *'133;C'*) ;; *) exit 11 ;; esac
-  case "$PS1" in *'terax_blocks=0'*) exit 12 ;; esac
+  case "$PS1" in *'lut_blocks=0'*) exit 12 ;; esac
 else
-  case "$PS1" in *'test> '*'terax_blocks=0'*) ;; *) exit 13 ;; esac
+  case "$PS1" in *'test> '*'lut_blocks=0'*) ;; *) exit 13 ;; esac
 fi
 `,
-      'terax-test',
+      'lut-test',
       script,
     ],
     {

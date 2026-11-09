@@ -133,10 +133,10 @@ describe('event fan-out', () => {
     const offB = mod.subscribeAgentEvents(b);
     await mod.agentEventsReady();
     expect(native.listen).toHaveBeenCalledTimes(1);
-    expect(native.listen).toHaveBeenCalledWith('terax:agent-event', expect.any(Function));
+    expect(native.listen).toHaveBeenCalledWith('lut:agent-event', expect.any(Function));
 
-    native.handlers.get('terax:agent-event')?.({ payload: valid });
-    native.handlers.get('terax:agent-event')?.({ payload: { bogus: true } });
+    native.handlers.get('lut:agent-event')?.({ payload: valid });
+    native.handlers.get('lut:agent-event')?.({ payload: { bogus: true } });
     expect(a).toHaveBeenCalledTimes(1);
     expect(b).toHaveBeenCalledTimes(1);
 
@@ -160,7 +160,7 @@ describe('event fan-out', () => {
     });
     mod.subscribeAgentEvents(good);
     await mod.agentEventsReady();
-    native.handlers.get('terax:agent-event')?.({ payload: valid });
+    native.handlers.get('lut:agent-event')?.({ payload: valid });
     expect(good).toHaveBeenCalledTimes(1);
     expect(spy).toHaveBeenCalled();
     spy.mockRestore();
@@ -184,8 +184,8 @@ describe('event fan-out', () => {
     const handler = vi.fn();
     mod.subscribeTerminalNotifications(handler);
     await Promise.resolve();
-    expect(native.listen).toHaveBeenCalledWith('terax:terminal-notification', expect.any(Function));
-    native.handlers.get('terax:terminal-notification')?.({
+    expect(native.listen).toHaveBeenCalledWith('lut:terminal-notification', expect.any(Function));
+    native.handlers.get('lut:terminal-notification')?.({
       payload: { ptyId: 1, kind: 'bell' },
     });
     expect(handler).toHaveBeenCalledWith(

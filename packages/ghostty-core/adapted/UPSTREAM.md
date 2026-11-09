@@ -1,6 +1,9 @@
-# Terax Ghostty WASM adaptation
+# lut Ghostty WASM adaptation
 
-This is the production-candidate terminal core for the pooled Terax renderer
+> Terax made this adaptation; lut imported it with the rest of Terax's source (see `NOTICE`). "lut" below
+> names the imported code.
+
+This is the production-candidate terminal core for the pooled lut renderer
 architecture. It adapts the mature bulk render-state bridge from Restty
 without importing Restty's application runtime, PTY transport, perpetual
 per-terminal frame loop, or per-pane GPU lifecycle.
@@ -11,12 +14,12 @@ per-terminal frame loop, or per-pane GPU lifecycle.
 - Restty commit: `7700b14a7643ba9240818209ef1e0aa90d83ad77`
 - Zig: `0.16.0`
 - Optimization: `ReleaseFast`, WebAssembly SIMD and scalar variants
-- SIMD artifact size: `755971` bytes
+- SIMD artifact size: `755975` bytes
 - Scalar artifact size: `753894` bytes
-- SIMD SHA-256: `32b630675916b3122c2c187c640191e90ae848ee9f196ec5fe091681560c1f11`
-- Scalar SHA-256: `3749923e6d7c9ad8f1919f0072073843d9792dcd41d6628b42f208b1f733aa13`
+- SIMD SHA-256: `a51cd05050968edc2ddeafe70c630badfbf35c55edd101b032c17e4c0190113c`
+- Scalar SHA-256: `910ec0b1dd380e1a56b8dbe2476c6edd69f9c5c43fcca506ac30d5460118ddd9`
 
-Terax-specific changes include:
+lut-specific changes include:
 
 - rebasing the bridge onto the pinned current Ghostty API;
 - Ghostty `TinyIo`, avoiding the binary and runtime overhead of threaded I/O;
@@ -37,7 +40,7 @@ Terax-specific changes include:
 - native mode, size, color, visibility, and version query replies;
 - generated upstream Ghostty XTGETTCAP responses and native DECRQSS replies;
 - synchronized-output state for damage suppression with bounded recovery;
-- one WebAssembly instance (one linear memory) per Terax model, all created
+- one WebAssembly instance (one linear memory) per lut model, all created
   from a single compiled module; disposing the model drops the instance, which
   is the only way WebAssembly memory is ever returned to the operating system;
 - Ghostty's module-global exact-page WASM pool, avoiding geometric page-pool
@@ -92,7 +95,7 @@ Terax-specific changes include:
   colors, text blink, graphemes, and wide-cell state;
 - a raw `.wasm` asset instead of a multi-megabyte JavaScript string literal.
 
-The bridge deliberately stays below Terax's model/surface boundary. Terax
+The bridge deliberately stays below lut's model/surface boundary. lut
 retains renderer pooling, hidden-tab renderer release, damage-driven frame
 scheduling, shell integration, semantic routing, and fallback selection.
 
@@ -138,9 +141,9 @@ about 0.4 microseconds to a write plus render-state update.
 ## October 14 upstream update
 
 Both artifacts use the exact `main` revision above (141 commits after the
-previous `7ec9e26a` pin). Terax continues to use its adapted bulk bridge; it does
+previous `7ec9e26a` pin). lut continues to use its adapted bulk bridge; it does
 not consume the mutable official nightly binary as a drop-in ABI. Upstream
-changes that matter to Terax:
+changes that matter to lut:
 
 - use-after-free when scrollback pruning frees the page holding the cursor
   (ghostty-org/ghostty#14686), which long-running agent sessions that prune
@@ -150,7 +153,7 @@ changes that matter to Terax:
 - DECXCPR (`CSI ? 6 n`, answered `CSI ? row;col;1 R`) and `CSI 19 t`
   (`CSI 9;rows;cols t`) were added to upstream's device-status and size-report
   enums. The bridge's exhaustive switches required matching replies in
-  `terax.zig`; no other bridge behavior changed.
+  `lut.zig`; no other bridge behavior changed.
 
 Linear memory is unchanged from the previous pin: 20 blank 120x40 models use
 10.4375 MiB, and the block-enabled stress workload plateaus at 68.1875 MiB for
@@ -159,7 +162,7 @@ both variants with zero plateau growth. Artifacts grew by 4,099 (SIMD) and 4,172
 saving. Native canvas reuse and row-staging measurements are recorded separately
 in `docs/architecture/ghostty-resource-efficiency.md`.
 
-The GPU cell-record format (`TERAX_SOAK_FORMAT=gpu`, `TERAX_PROFILE_FORMAT=gpu`)
+The GPU cell-record format (`LUT_SOAK_FORMAT=gpu`, `LUT_PROFILE_FORMAT=gpu`)
 keeps the blank allocation and plateaus 786,432 bytes lower (67.4375 MiB) with
 zero plateau growth. The format added about 16 KiB to each artifact.
 
@@ -167,12 +170,12 @@ zero plateau growth. The format added about 16 KiB to each artifact.
 
 The September 7 pin includes upstream page allocation, default-palette sharing
 and fixed terminal allocation reductions. There is no tagged stable standalone
-libghostty WASM release in the inspected release list; Terax still builds its
+libghostty WASM release in the inspected release list; lut still builds its
 adapted bridge from an exact source revision, rather than consuming the nightly
 artifact or treating Ghostty's application version as a stable library ABI.
 
 The update alone saved only one 64 KiB WASM page across 20 blank 120x40 models.
-With Terax's lazy presentation arrays, the identical workload uses 10,878,976
+With lut's lazy presentation arrays, the identical workload uses 10,878,976
 bytes instead of 16,187,392 bytes at `0e3fae9`, a 5,308,416-byte reduction.
 Isolated per-artifact row-edit, scrolling and OSC microbenchmarks were within
 roughly 2% of baseline; this is not evidence of an application CPU speedup.
@@ -193,11 +196,16 @@ From `packages/ghostty-core/adapted/wasm` (add `-Dwasm-stack-kib=N` to change th
 
 ```sh
 zig build -Dtarget=wasm32-freestanding -Doptimize=ReleaseFast
-cp zig-out/bin/terax-ghostty-vt.wasm ../ghostty-vt.wasm
+cp zig-out/bin/lut-ghostty-vt.wasm ../ghostty-vt.wasm
 zig build -Dtarget=wasm32-freestanding -Doptimize=ReleaseFast -Dwasm-simd=false
-cp zig-out/bin/terax-ghostty-vt.wasm ../ghostty-vt-scalar.wasm
+cp zig-out/bin/lut-ghostty-vt.wasm ../ghostty-vt-scalar.wasm
 shasum -a 256 ../ghostty-vt.wasm ../ghostty-vt-scalar.wasm
 ```
+
+The current artifacts were rebuilt on Windows 11 with the official Zig 0.16.0 build (E04-12, which renamed the
+source to `lut.zig` and the old-Bash prompt-end option to `lut_blocks=0`). Before the rename the same toolchain
+reproduced the scalar artifact byte for byte; the SIMD one came out 8 bytes larger than Terax's, built from the same
+source with a different Zig build.
 
 `build.zig.zon` pins both the Ghostty archive URL and Zig package hash. A
 checksum change must be reviewed together with the source revision and the

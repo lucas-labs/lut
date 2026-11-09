@@ -4,7 +4,7 @@
  */
 
 import { extendedSymbolsPending } from '@/lib/fonts';
-import { CellFlags } from '@terax/ghostty-core/protocol';
+import { CellFlags } from '@lut/ghostty-core/protocol';
 import {
   builtinGlyphPending,
   BuiltinGlyphRenderer,

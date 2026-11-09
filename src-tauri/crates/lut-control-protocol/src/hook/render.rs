@@ -9,7 +9,7 @@ pub const NO_DECISION_OUTPUT: &str = "{}";
 
 const MAX_DENY_MESSAGE: usize = 1000;
 
-/// Whether Terax can answer this agent event with a permission decision.
+/// Whether lut can answer this agent event with a permission decision.
 pub fn is_decision_event(agent: AgentName, event: &str) -> bool {
     matches!(
         (agent, event),

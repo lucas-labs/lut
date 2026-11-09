@@ -2,10 +2,10 @@ import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 const original = fetch;
-declare const __TERAX_IPC_BASE_URL__: string;
-declare const __TERAX_IPC_TREE__: string;
-const base = __TERAX_IPC_BASE_URL__;
-const tree = __TERAX_IPC_TREE__;
+declare const __LUT_IPC_BASE_URL__: string;
+declare const __LUT_IPC_TREE__: string;
+const base = __LUT_IPC_BASE_URL__;
+const tree = __LUT_IPC_TREE__;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 type Json = Record<string, unknown>;

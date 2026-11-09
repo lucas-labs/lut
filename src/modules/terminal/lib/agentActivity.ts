@@ -95,7 +95,7 @@ const signalHandlers = new Set<AgentSignalHandler>();
 
 /**
  * Subscribes to every raw detector signal through the single shared native
- * `terax:agent-signal` listener (the activity store has already applied the
+ * `lut:agent-signal` listener (the activity store has already applied the
  * signal when handlers run). One listener serves the tab icons and the
  * notification bridge instead of one IPC subscription each.
  */
@@ -136,13 +136,13 @@ function applySignal(payload: AgentSignal): void {
 // reports per-pty lifecycle: started, working, attention, finished, exited.
 export function ensureAgentActivityListener(): Promise<void> {
   if (listenerReady) return listenerReady;
-  listenerReady = listen<AgentSignal>('terax:agent-signal', (e) => {
+  listenerReady = listen<AgentSignal>('lut:agent-signal', (e) => {
     applySignal(e.payload);
     for (const handler of signalHandlers) {
       try {
         handler(e.payload);
       } catch (error) {
-        console.error('[terax] agent signal handler failed:', error);
+        console.error('[lut] agent signal handler failed:', error);
       }
     }
   }).then(

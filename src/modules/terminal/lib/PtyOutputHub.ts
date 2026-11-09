@@ -398,7 +398,7 @@ export class PtyOutputHub {
           try {
             entry.onExit(frame.code);
           } catch (error) {
-            console.error('[terax] PTY exit handler failed:', error);
+            console.error('[lut] PTY exit handler failed:', error);
           }
           break;
         case 'failed':
@@ -454,7 +454,7 @@ export class PtyOutputHub {
     if (this.disposed) return;
     this.failures += 1;
     this.stats.failures += 1;
-    if (this.failures === 1) console.warn('[terax] PTY stream request failed:', error);
+    if (this.failures === 1) console.warn('[lut] PTY stream request failed:', error);
     this.setTransport(this.failures >= STALL_AFTER_FAILURES ? 'stalled' : 'retrying');
     if (this.retryTimer !== null || this.entries.size === 0) return;
     this.retryTimer = setTimeout(

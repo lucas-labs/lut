@@ -1,24 +1,24 @@
 import { readFile } from 'node:fs/promises';
 import { TerminalResizeSync } from '@/modules/terminal/lib/terminalResizeSync';
-import { TeraxGhostty } from '@terax/ghostty-core/adapted';
+import { LutGhostty } from '@lut/ghostty-core/adapted';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { AdaptedGhosttyTerminalModel } from './AdaptedGhosttyTerminalModel';
 import { RESIZE_PROMPT_HOLD_MS } from './core/ResizePromptHold';
 
 const encoder = new TextEncoder();
 const PROMPT = 'user@host ~ % ';
-// What zsh with Terax's OSC 133 integration prints for a prompt: A starts it, B ends it.
+// What zsh with lut's OSC 133 integration prints for a prompt: A starts it, B ends it.
 const PROMPT_BYTES = `\x1b]133;A\x07${PROMPT}\x1b]133;B\x07`;
 // What it prints again on SIGWINCH (redraw defaults to on, so Ghostty cleared the old one).
 const REDRAW_BYTES = `\r\x1b[0J${PROMPT_BYTES}`;
 
-let core: TeraxGhostty;
+let core: LutGhostty;
 
 beforeAll(async () => {
   const file = await readFile(
     new URL('../../../../packages/ghostty-core/adapted/ghostty-vt.wasm', import.meta.url),
   );
-  core = await TeraxGhostty.loadBytes(Uint8Array.from(file).buffer);
+  core = await LutGhostty.loadBytes(Uint8Array.from(file).buffer);
 });
 
 afterEach(() => vi.useRealTimers());

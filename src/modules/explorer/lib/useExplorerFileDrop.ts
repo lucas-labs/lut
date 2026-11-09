@@ -95,7 +95,7 @@ export function useExplorerFileDrop({ rootPath, enabled = true, isDir, onCopied 
         if (disposed) fn();
         else unlisten = fn;
       })
-      .catch((err) => console.error('[terax] explorer drop listen failed:', err));
+      .catch((err) => console.error('[lut] explorer drop listen failed:', err));
 
     return () => {
       disposed = true;

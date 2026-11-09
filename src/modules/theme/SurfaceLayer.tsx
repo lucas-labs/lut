@@ -85,7 +85,7 @@ function BackgroundImage({ fastImageId }: { fastImageId: string | null }) {
   return createPortal(
     <div
       aria-hidden
-      className="terax-bg-surface"
+      className="lut-bg-surface"
       style={{
         position: 'fixed',
         inset: 0,

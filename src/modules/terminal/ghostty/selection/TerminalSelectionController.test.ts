@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { AdaptedGhosttyTerminalModel } from '@/modules/terminal/ghostty/AdaptedGhosttyTerminalModel';
-import { TeraxGhostty } from '@terax/ghostty-core/adapted';
+import { LutGhostty } from '@lut/ghostty-core/adapted';
 import { describe, expect, it, vi } from 'vitest';
 import type { GhosttyTerminalModelApi, TerminalBufferSelection } from '../GhosttyTerminalModel';
 import {
@@ -59,7 +59,7 @@ describe('terminal selection pointer ownership', () => {
     const bytes = await readFile(
       new URL('../../../../../packages/ghostty-core/adapted/ghostty-vt.wasm', import.meta.url),
     );
-    const core = await TeraxGhostty.loadBytes(Uint8Array.from(bytes).buffer);
+    const core = await LutGhostty.loadBytes(Uint8Array.from(bytes).buffer);
     const model = new AdaptedGhosttyTerminalModel(core, {
       backend: 'ghostty-webgpu',
       cols: 120,
@@ -102,7 +102,7 @@ describe('terminal selection pointer ownership', () => {
     const bytes = await readFile(
       new URL('../../../../../packages/ghostty-core/adapted/ghostty-vt.wasm', import.meta.url),
     );
-    const core = await TeraxGhostty.loadBytes(Uint8Array.from(bytes).buffer);
+    const core = await LutGhostty.loadBytes(Uint8Array.from(bytes).buffer);
     const model = new AdaptedGhosttyTerminalModel(core, {
       backend: 'ghostty-webgpu',
       cols: 80,
@@ -139,7 +139,7 @@ describe('terminal selection pointer ownership', () => {
     const bytes = await readFile(
       new URL('../../../../../packages/ghostty-core/adapted/ghostty-vt.wasm', import.meta.url),
     );
-    const core = await TeraxGhostty.loadBytes(Uint8Array.from(bytes).buffer);
+    const core = await LutGhostty.loadBytes(Uint8Array.from(bytes).buffer);
     const model = new AdaptedGhosttyTerminalModel(core, {
       backend: 'ghostty-webgpu',
       cols: 80,

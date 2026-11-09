@@ -15,13 +15,13 @@ left out of the tables; the last section lists what was checked and found absent
 
 | Call                                    | File:line                                                                         | Target                                                 | Started by                                                          | Decision                                                           |
 | --------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| PTY output stream                       | `src/modules/terminal/lib/pty-bridge.ts:29`                                       | `terax-pty://` custom protocol, served in process      | every terminal                                                      | keep; local only (protocol name renamed by E04-12)                 |
+| PTY output stream                       | `src/modules/terminal/lib/pty-bridge.ts:29`                                       | `lut-pty://` custom protocol, served in process        | every terminal                                                      | keep; local only (protocol name renamed by E04-12)                 |
 | Notification sound                      | `src/modules/agents/lib/sound.ts:7`                                               | `/notification.mp3`, a bundled asset                   | agent notification                                                  | keep; local only                                                   |
 | Web preview reachability probe          | `src/modules/preview/PreviewAddressBar.tsx:200`                                   | the URL the user typed (`no-cors` GET, 900 ms timeout) | user, in the preview address bar                                    | keep; user-initiated                                               |
 | Web preview page                        | `src/modules/preview/PreviewPane.tsx` (iframe, CSP `frame-src http: https:`)      | the URL the user typed                                 | user                                                                | keep; user-initiated                                               |
 | `git fetch` / `pull --ff-only` / `push` | `src-tauri/src/modules/git/commands.rs:159,172,185` → `operations.rs:972,988,474` | the repository's own remotes, through the user's `git` | user, buttons in source control (`useSourceControl.ts:467`)         | keep; user-initiated                                               |
 | Automatic `git fetch` on refresh        | `src/modules/source-control/useSourceControl.ts:382`                              | the repository's remotes                               | nobody: every caller passes `remote: 'never'`, the default (`:424`) | keep; dormant, no automatic network call                           |
-| Bench report                            | `src/bench/driver.ts:98`, `early.ts:66`, `report.ts:27,40`                        | the lab orchestrator on `localhost`                    | bench builds only (`TERAX_BENCH=1`)                                 | keep; stripped from product builds (`src/app/dist-budget.test.ts`) |
+| Bench report                            | `src/bench/driver.ts:98`, `early.ts:66`, `report.ts:27,40`                        | the lab orchestrator on `localhost`                    | bench builds only (`LUT_BENCH=1`)                                   | keep; stripped from product builds (`src/app/dist-budget.test.ts`) |
 
 ## Links opened in the system browser
 
@@ -39,7 +39,7 @@ The LSP install dialog (`LspInstallDialog.tsx:38`) only copies an install comman
 
 ## Checked and absent
 
-- **Terax services:** the updater (E01-02) and the BYOK AI with its `HTTP-Referer: https://terax.ai` / `X-Title: Terax`
+- **Terax services:** the updater (E01-02) and the BYOK AI with its `HTTP-Referer: https://terax.ai` / `X-Title: lut`
   headers (E05, #358) are gone. `git grep -n "terax.ai" src src-tauri/src` returns nothing, and the About links point to lut's
   repository (E04-03).
 - **HTTP clients in Rust:** none in lut's code; `reqwest` is in `Cargo.lock` only as a dependency of `tauri` itself.

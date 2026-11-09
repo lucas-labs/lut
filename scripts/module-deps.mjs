@@ -141,11 +141,11 @@ export function analyse() {
     }
   }
 
-  // Events by name (Tauri events and DOM custom events with a terax/fs prefix).
+  // Events by name (Tauri events and DOM custom events with a lut/fs prefix).
   const events = new Map(modules.map((m) => [m, new Set()]));
   for (const f of files)
-    for (const m of code.get(f).matchAll(/['"]((?:terax:|terax:\/\/|fs:)[\w-]+)['"]/g))
-      if (!/^terax:terminal-(diagnostics|gc-mirror|text-contrast)$/.test(m[1]))
+    for (const m of code.get(f).matchAll(/['"]((?:lut:|lut:\/\/|fs:)[\w-]+)['"]/g))
+      if (!/^lut:terminal-(diagnostics|gc-mirror|text-contrast)$/.test(m[1]))
         events.get(moduleOf(f)).add(m[1]);
 
   // Owned state: zustand stores, plugin-store files and localStorage keys.
@@ -158,7 +158,7 @@ export function analyse() {
     if (/LazyStore/.test(t))
       for (const m of t.matchAll(/'([\w-]+\.json)'/g)) s.add(`\`${m[1]}\` (store file)`);
     if (/localStorage/.test(t))
-      for (const m of t.matchAll(/'(terax[-.:][\w.:-]+)'/g)) s.add(`\`${m[1]}\` (localStorage)`);
+      for (const m of t.matchAll(/'(lut[-.:][\w.:-]+)'/g)) s.add(`\`${m[1]}\` (localStorage)`);
   }
 
   // Public API: what each module's index re-exports or declares.

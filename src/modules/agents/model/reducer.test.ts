@@ -273,7 +273,7 @@ describe('permission requests', () => {
     expect(agentOf(after).state).toBe('needs-approval');
   });
 
-  it('records a request Terax cannot answer without an id', () => {
+  it('records a request lut cannot answer without an id', () => {
     const registry = run(hook('prompt'), hook('permission-request', { permission: permission() }));
     expect(agentOf(registry).pendingPermissions[0]?.requestId).toBeNull();
   });

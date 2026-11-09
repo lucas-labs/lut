@@ -2343,6 +2343,8 @@ dependencies = [
  "ignore",
  "libc",
  "log",
+ "lut-cli",
+ "lut-control-protocol",
  "memchr",
  "notify",
  "nucleo-matcher",
@@ -2366,13 +2368,31 @@ dependencies = [
  "tauri-plugin-store",
  "tauri-plugin-window-state",
  "tempfile",
- "terax-cli",
- "terax-control-protocol",
  "tokio",
  "wasmparser",
  "which",
  "window-vibrancy 0.6.0",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "lut-cli"
+version = "0.9.0"
+dependencies = [
+ "dirs",
+ "libc",
+ "lut-control-protocol",
+ "serde_json",
+ "tempfile",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "lut-control-protocol"
+version = "0.9.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -4499,26 +4519,6 @@ checksum = "c4790fc369d5a530f4b544b094e31388b9b3a37c0f4652ade4505945f5660d24"
 dependencies = [
  "new_debug_unreachable",
  "utf-8",
-]
-
-[[package]]
-name = "terax-cli"
-version = "0.9.0"
-dependencies = [
- "dirs",
- "libc",
- "serde_json",
- "tempfile",
- "terax-control-protocol",
- "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "terax-control-protocol"
-version = "0.9.0"
-dependencies = [
- "serde",
- "serde_json",
 ]
 
 [[package]]

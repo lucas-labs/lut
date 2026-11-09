@@ -181,7 +181,7 @@ export class WebGpuWindowCanvas {
   ) {
     const canvas = document.createElement('canvas');
     canvas.setAttribute('aria-hidden', 'true');
-    canvas.setAttribute('data-terax-terminal-canvas', '');
+    canvas.setAttribute('data-lut-terminal-canvas', '');
     canvas.style.cssText =
       'position:absolute;left:0;top:0;display:block;pointer-events:none;visibility:hidden;';
     const context = canvas.getContext('webgpu');
@@ -263,7 +263,7 @@ export class WebGpuWindowCanvas {
     return {
       setBounds: (bounds) => {
         if (!this.panes.has(pane) || cssRectsEqual(state.css, bounds)) return;
-        if (__TERAX_BENCH__ && pane.benchId !== undefined)
+        if (__LUT_BENCH__ && pane.benchId !== undefined)
           smoothHooks()?.rect(pane.benchId, performance.now());
         state.css = bounds;
         this.layoutStale = true;
@@ -323,10 +323,10 @@ export class WebGpuWindowCanvas {
    * and recomputes every pane's device rectangle. Reads no DOM.
    */
   beginFrame(): WindowFrameStart {
-    const benchStart = __TERAX_BENCH__ ? performance.now() : 0;
+    const benchStart = __LUT_BENCH__ ? performance.now() : 0;
     const reallocated = this.backing.commit();
     if (reallocated) {
-      if (__TERAX_BENCH__) {
+      if (__LUT_BENCH__) {
         const now = performance.now();
         smoothHooks()?.realloc(
           now,
@@ -351,7 +351,7 @@ export class WebGpuWindowCanvas {
             ? clampToCanvas(snapPaneRect(state.css, area, this.scale), size.width, size.height)
             : null;
         if (deviceRectsEqual(next, state.rect)) {
-          if (__TERAX_BENCH__ && pane.benchId !== undefined) smoothHooks()?.unchanged(pane.benchId);
+          if (__LUT_BENCH__ && pane.benchId !== undefined) smoothHooks()?.unchanged(pane.benchId);
           continue;
         }
         state.rect = next;
@@ -390,7 +390,7 @@ export class WebGpuWindowCanvas {
     }
     if (!clear) return { drawn: 0, revealed: [] };
     const pass = encoder.beginRenderPass({
-      label: 'Terax terminal window pass',
+      label: 'lut terminal window pass',
       colorAttachments: [
         {
           view: this.context.getCurrentTexture().createView(),
@@ -412,7 +412,7 @@ export class WebGpuWindowCanvas {
       }
     }
     pass.end();
-    if (__TERAX_BENCH__) {
+    if (__LUT_BENCH__) {
       const now = performance.now();
       for (const [pane] of drawable)
         if (pane.benchId !== undefined) smoothHooks()?.drawn(pane.benchId, now);

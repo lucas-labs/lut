@@ -120,7 +120,7 @@ importers:
       '@tauri-apps/plugin-window-state':
         specifier: ~2.5.0
         version: 2.5.0
-      '@terax/ghostty-core':
+      '@lut/ghostty-core':
         specifier: workspace:*
         version: link:packages/ghostty-core
       '@uiw/codemirror-theme-atomone':

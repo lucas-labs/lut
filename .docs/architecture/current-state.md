@@ -33,8 +33,8 @@ To re-check after a change: `git grep -n "generate_handler" src-tauri/src` gives
 | App process      | `src-tauri/src/main.rs` → `lib.rs::run()`                   | Tauri 2; a 2-worker tokio runtime for async commands (`modules/runtime.rs`).                                |
 | Main window      | label `main`, `index.html` → `src/main.tsx` → `app/App.tsx` | Declared in `tauri.conf.json`, starts hidden; the frontend shows it after the first paint.                  |
 | Settings window  | label `settings`, `settings.html` → `src/settings/main.tsx` | Created on demand by `open_settings_window`; a child of `main`.                                             |
-| CLI sidecar      | `src-tauri/crates/terax-cli`                                | Bundled as `lut-cli`; talks to the app over the control server (see [Control protocol](#control-protocol)). |
-| Control protocol | `src-tauri/crates/terax-control-protocol`                   | Shared request/response and hook types between the app and the CLI.                                         |
+| CLI sidecar      | `src-tauri/crates/lut-cli`                                  | Bundled as `lut-cli`; talks to the app over the control server (see [Control protocol](#control-protocol)). |
+| Control protocol | `src-tauri/crates/lut-control-protocol`                     | Shared request/response and hook types between the app and the CLI.                                         |
 
 `stats.html` at the repository root is not a window: it is the optional bundle report of `ANALYZE=true pnpm build`
 (ignored by git).
@@ -45,14 +45,14 @@ To re-check after a change: `git grep -n "generate_handler" src-tauri/src` gives
 
 | Path              | Role                                                                                                                                                                                                                                                         |
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `main.tsx`        | Global CSS, borderless chrome flag, optional bench driver (`__TERAX_BENCH__`), `invoke('pty_close_all')` to reap orphaned PTYs, launch dir seed, renders `<App/>`, shows the window.                                                                         |
+| `main.tsx`        | Global CSS, borderless chrome flag, optional bench driver (`__LUT_BENCH__`), `invoke('pty_close_all')` to reap orphaned PTYs, launch dir seed, renders `<App/>`, shows the window.                                                                           |
 | `app/App.tsx`     | The single coordinator (1484 lines): tab model via `useTabs`, spaces, every shortcut handler, agent launch flow, control bridge, LSP navigator, open-file listener, layout (header, sidebar, workspace surface, status bar, command palette, close dialogs). |
 | `app/components/` | `WorkspaceSurface` (the central area), `CloseDialogs`.                                                                                                                                                                                                       |
 | `app/hooks/`      | Close guards (`useAppCloseGuard`, `useTabCloseGuards`, `tabCloseGuards`) and `useWorkspaceSwitcher`.                                                                                                                                                         |
 | `settings/`       | The settings window app (`SettingsApp.tsx`, `sections/`, `components/`).                                                                                                                                                                                     |
 | `lib/`            | Shared helpers: `utils` (`cn`), `platform`, `fonts`, `launchDir`, `useAssetGrant`, `shellQuote`, `homeRelativePath`, `external-link`, `usePresence`, `useZoom`.                                                                                              |
 | `components/`     | `WindowControls.tsx` and shadcn primitives (`ui/`); `ui/` is excluded from lint and format.                                                                                                                                                                  |
-| `bench/`          | The in-app benchmark driver, loaded only when built with `TERAX_BENCH` (`__TERAX_BENCH__`).                                                                                                                                                                  |
+| `bench/`          | The in-app benchmark driver, loaded only when built with `LUT_BENCH` (`__LUT_BENCH__`).                                                                                                                                                                      |
 
 ### Feature modules (`src/modules/`)
 
@@ -89,7 +89,7 @@ Sizes count non-test `.ts`/`.tsx` files; tests are the `*.test.*` files in the m
 | `usePreferencesStore`   | `modules/settings/preferences.ts`        | User preferences, mirrored from the settings store |
 | `useSpaces`             | `modules/spaces/lib/useSpaces.ts`        | Spaces and the active space                        |
 | `useWorkspaceEnvStore`  | `modules/workspace/env.ts`               | Current workspace environment (local / WSL)        |
-| `useAgentActivityStore` | `modules/terminal/lib/agentActivity.ts`  | Per-pane agent activity from `terax:agent-signal`  |
+| `useAgentActivityStore` | `modules/terminal/lib/agentActivity.ts`  | Per-pane agent activity from `lut:agent-signal`    |
 | `useTerminalDropStore`  | `modules/terminal/lib/dropStore.ts`      | File-drop target over terminal panes               |
 | `useAgentStore`         | `modules/agents/store/agentStore.ts`     | CLI agent sessions per pane and notifications      |
 | `useDiagnosticsStore`   | `modules/editor/lib/diagnosticsStore.ts` | LSP diagnostics per file                           |
@@ -102,13 +102,13 @@ live in a module-level map keyed by leaf id (`modules/terminal/ghostty/useGhostt
 
 - **Tauri store files** (`@tauri-apps/plugin-store`, `LazyStore`): `lut-settings.json` (`modules/settings/store.ts`),
   `lut-spaces.json` (`modules/spaces/lib/store.ts`), `lut-custom-themes.json` (`modules/theme/customThemes.ts`).
-- **localStorage:** `terax-ui-theme-shadow` (read by `index.html` and `settings.html` before first paint, written by
-  `modules/theme/ThemeProvider.tsx`), `terax-ui-theme-id-shadow` (`ThemeProvider.tsx`), `terax-ui-bg-kind-shadow`,
-  `terax-ui-bg-image-shadow`
-  (`modules/settings/preferences.ts`), `terax.sidebar.width|view|collapsed` (`modules/sidebar/useSidebarPanel.ts`),
-  `terax-palette-mru`, `terax-palette-recent-files` (`modules/command-palette/lib/`), `terax.experimental.terminal-backend`
-  (`modules/terminal/backend/selection.ts`), and the diagnostics flags `terax:terminal-diagnostics`,
-  `terax:terminal-gc-mirror`, `terax:terminal-text-contrast`.
+- **localStorage:** `lut-ui-theme-shadow` (read by `index.html` and `settings.html` before first paint, written by
+  `modules/theme/ThemeProvider.tsx`), `lut-ui-theme-id-shadow` (`ThemeProvider.tsx`), `lut-ui-bg-kind-shadow`,
+  `lut-ui-bg-image-shadow`
+  (`modules/settings/preferences.ts`), `lut.sidebar.width|view|collapsed` (`modules/sidebar/useSidebarPanel.ts`),
+  `lut-palette-mru`, `lut-palette-recent-files` (`modules/command-palette/lib/`), `lut.experimental.terminal-backend`
+  (`modules/terminal/backend/selection.ts`), and the diagnostics flags `lut:terminal-diagnostics`,
+  `lut:terminal-gc-mirror`, `lut:terminal-text-contrast`.
 - **Backend files:** the control descriptor and CLI launcher under the cache dir (`modules/control.rs`), shell-integration scripts under the
   cache dir (`modules/pty/shell_init.rs`). E02 moves all of them to lut names.
 
@@ -116,13 +116,13 @@ live in a module-level map keyed by leaf id (`modules/terminal/ghostty/useGhostt
 
 **Window globals** (set on `window`):
 
-| Global                                                   | Set in                                              | Purpose                                 |
-| -------------------------------------------------------- | --------------------------------------------------- | --------------------------------------- |
-| `__teraxTerm`, `__teraxTermSnapshot`, `__teraxTermTrace` | `modules/terminal/lib/terminalDiagnostics.ts`       | Terminal diagnostics from the devtools  |
-| `__TERAX_TERMINAL_RESIZE_INTERACTION__`                  | `modules/terminal/lib/terminalResizeInteraction.ts` | Resize-drag state, kept on `globalThis` |
-| `__teraxBenchConfig`, `__teraxSmooth`                    | `bench/early.ts`, `bench/smoothHooks.ts`            | Bench builds only                       |
+| Global                                             | Set in                                              | Purpose                                 |
+| -------------------------------------------------- | --------------------------------------------------- | --------------------------------------- |
+| `__lutTerm`, `__lutTermSnapshot`, `__lutTermTrace` | `modules/terminal/lib/terminalDiagnostics.ts`       | Terminal diagnostics from the devtools  |
+| `__LUT_TERMINAL_RESIZE_INTERACTION__`              | `modules/terminal/lib/terminalResizeInteraction.ts` | Resize-drag state, kept on `globalThis` |
+| `__lutBenchConfig`, `__lutSmooth`                  | `bench/early.ts`, `bench/smoothHooks.ts`            | Bench builds only                       |
 
-Build-time constants: `__TERAX_BENCH__` (`vite-env.d.ts`, set by Vite from `TERAX_BENCH`). `modules/preview/PreviewPane.tsx`
+Build-time constants: `__LUT_BENCH__` (`vite-env.d.ts`, set by Vite from `LUT_BENCH`). `modules/preview/PreviewPane.tsx`
 reads `window.__TAURI__`.
 
 **DOM listeners on `window`/`document`**, all added inside hooks or components with cleanup (none at module scope):
@@ -138,7 +138,7 @@ reads `window.__TAURI__`.
 | `resize`                                              | `modules/theme/livePageResize.ts`, `modules/theme/SurfaceLayer.tsx`                                                                          |
 | `pointermove`/`pointerup`/`pointercancel`, drags      | `modules/explorer/lib/useExplorerDnd.ts`, `modules/terminal/PaneTreeView.tsx`                                                                |
 
-**DOM custom events:** none since E05-06 removed `terax:ai-attach-file`.
+**DOM custom events:** none since E05-06 removed `lut:ai-attach-file`.
 
 **Tauri window hooks:** `onCloseRequested` (`app/hooks/useAppCloseGuard.ts`), `onResized`
 (`components/WindowControls.tsx`), `onFocusChanged` (`modules/agents/lib/useWindowFocus.ts`,
@@ -153,7 +153,7 @@ reads `window.__TAURI__`.
    (directory or files from argv) and snapshots the launch cwd (`workspace::init_launch_cwd`).
 2. **Plugins:** clipboard-manager, window-state (without `VISIBLE`), store, os, notification, log (Info),
    opener; on macOS also the app menu (`modules/app_menu.rs`).
-3. **URI schemes:** `terax-pty` → `pty::stream_protocol` (terminal output, see [Channels](#channels-and-uri-schemes)),
+3. **URI schemes:** `lut-pty` → `pty::stream_protocol` (terminal output, see [Channels](#channels-and-uri-schemes)),
    `asset` → `fs::assets::serve`.
 4. **Page load** (`Started`): revokes the webview's asset grants, resets its PTY streams and
    marks its agent-decision UI as not ready.
@@ -163,28 +163,28 @@ reads `window.__TAURI__`.
    `Supersede`, `FileIndexState`, `WorkspaceRegistry` (bootstrapped, launch dir authorized), `LaunchDir`, `LaunchFiles`.
 7. **Run events:** on `WindowEvent::Destroyed` the window's asset grants and PTYs are released; on `Exit`
    the LSP servers are killed and the control server shut down; on macOS `Opened` (Open With) the files are stored
-   and `terax:open-file` is emitted.
+   and `lut:open-file` is emitted.
 
 ### Rust modules (`src-tauri/src/modules/`)
 
-| Module                   | Role                                                                                                                                                  | Files | Lines  |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------ |
-| `git/`                   | Git CLI wrapper for the panel, history and watcher.                                                                                                   | 14    | 5 731  |
-| `pty/`                   | PTY sessions (portable-pty, ConPTY on Windows), output hub and `terax-pty` transport, shell launch and integration scripts, agent detection from OSC. | 16    | 10 905 |
-| `fs/`                    | File tree, read/write, mutations, copy, clipboard paths, watcher, search index, grep, assets, read policy.                                            | 17    | 7 964  |
-| `control.rs`             | Loopback TCP control server for the CLI: descriptor, per-pane tokens, request routing.                                                                | 1     | 1 533  |
-| `agent_events.rs`        | Server side of `terax hook`: validation, normalization, rate limit, decision broker, events to the frontend.                                          | 1     | 1 388  |
-| `agent.rs`               | Agent hook installer (Claude, Codex, Gemini, Pi): plan/apply/status.                                                                                  | 1     | 1 358  |
-| `workspace.rs`           | Workspace registry (authorized roots), launch cwd, WSL distros and homes.                                                                             | 1     | 1 350  |
-| `lsp/`                   | Language-server processes and JSON-RPC framing.                                                                                                       | 4     | 1 070  |
-| `agent_json.rs`          | Format-preserving edits of agents' JSON settings files.                                                                                               | 1     | 910    |
-| `shell/`                 | One-shot non-PTY commands (the editor's external formatters).                                                                                         | 1     | 210    |
-| `bench.rs`               | App benchmark support (feature `bench`).                                                                                                              | 1     | 779    |
-| `proc/`                  | Child-output capture, Windows Job Objects, RSS, `hide_console`.                                                                                       | 4     | 525    |
-| `vibrancy.rs`            | Window backdrop (Mica, NSVisualEffectView).                                                                                                           | 1     | 320    |
-| `window_presentation.rs` | Live-resize and occlusion state for the renderers.                                                                                                    | 1     | 287    |
-| `runtime.rs`             | The async runtime behind commands.                                                                                                                    | 1     | 124    |
-| `app_menu.rs`            | macOS menu with a guarded Quit.                                                                                                                       | 1     | 83     |
+| Module                   | Role                                                                                                                                                | Files | Lines  |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------ |
+| `git/`                   | Git CLI wrapper for the panel, history and watcher.                                                                                                 | 14    | 5 731  |
+| `pty/`                   | PTY sessions (portable-pty, ConPTY on Windows), output hub and `lut-pty` transport, shell launch and integration scripts, agent detection from OSC. | 16    | 10 905 |
+| `fs/`                    | File tree, read/write, mutations, copy, clipboard paths, watcher, search index, grep, assets, read policy.                                          | 17    | 7 964  |
+| `control.rs`             | Loopback TCP control server for the CLI: descriptor, per-pane tokens, request routing.                                                              | 1     | 1 533  |
+| `agent_events.rs`        | Server side of `lut hook`: validation, normalization, rate limit, decision broker, events to the frontend.                                          | 1     | 1 388  |
+| `agent.rs`               | Agent hook installer (Claude, Codex, Gemini, Pi): plan/apply/status.                                                                                | 1     | 1 358  |
+| `workspace.rs`           | Workspace registry (authorized roots), launch cwd, WSL distros and homes.                                                                           | 1     | 1 350  |
+| `lsp/`                   | Language-server processes and JSON-RPC framing.                                                                                                     | 4     | 1 070  |
+| `agent_json.rs`          | Format-preserving edits of agents' JSON settings files.                                                                                             | 1     | 910    |
+| `shell/`                 | One-shot non-PTY commands (the editor's external formatters).                                                                                       | 1     | 210    |
+| `bench.rs`               | App benchmark support (feature `bench`).                                                                                                            | 1     | 779    |
+| `proc/`                  | Child-output capture, Windows Job Objects, RSS, `hide_console`.                                                                                     | 4     | 525    |
+| `vibrancy.rs`            | Window backdrop (Mica, NSVisualEffectView).                                                                                                         | 1     | 320    |
+| `window_presentation.rs` | Live-resize and occlusion state for the renderers.                                                                                                  | 1     | 287    |
+| `runtime.rs`             | The async runtime behind commands.                                                                                                                  | 1     | 124    |
+| `app_menu.rs`            | macOS menu with a guarded Quit.                                                                                                                     | 1     | 83     |
 
 ## IPC surface
 
@@ -361,34 +361,34 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 
 ### Events (backend → frontend)
 
-| Event                         | Emitted by                                                                     | Listened in                                                                                                              |
-| ----------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| `terax:open-file`             | `lib.rs` (macOS Open With), to all windows                                     | `app/App.tsx`                                                                                                            |
-| `terax:settings-tab`          | `lib.rs::open_settings_window`, to `settings`                                  | `settings/SettingsApp.tsx`                                                                                               |
-| `terax:control-request`       | `modules/control.rs`, to `main` (CLI `identify` and `open`)                    | `modules/control/useControlBridge.ts`                                                                                    |
-| `terax:agent-signal`          | `modules/pty/session.rs` (OSC detection) and `modules/agent_events.rs` (hooks) | `modules/terminal/lib/agentActivity.ts`                                                                                  |
-| `terax:agent-event`           | `modules/agent_events.rs`, to the window that owns the pane                    | `modules/control/lib/agentEvents.ts`, not loaded by the app (see above)                                                  |
-| `terax:terminal-notification` | `modules/pty/session.rs` (BEL, OSC 9/99/777)                                   | `modules/control/lib/agentEvents.ts`, not loaded by the app (E20-01)                                                     |
-| `terax:git-changed`           | `modules/git/watch.rs`                                                         | `modules/git/changes.ts`                                                                                                 |
-| `fs:changed`                  | `modules/fs/watch.rs`                                                          | `modules/explorer/lib/watch.ts`                                                                                          |
-| `fs:file-written`             | `modules/fs/file.rs` (`fs_write_file`)                                         | `modules/editor/useEditorFileSync.ts`, `modules/markdown/useMarkdownDocument.ts`, `modules/theme/useThemeFileEditing.ts` |
-| `terax:window-presentation`   | `modules/window_presentation.rs`                                               | `modules/terminal/ghostty/windowPresentation.ts`                                                                         |
+| Event                       | Emitted by                                                                     | Listened in                                                                                                              |
+| --------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `lut:open-file`             | `lib.rs` (macOS Open With), to all windows                                     | `app/App.tsx`                                                                                                            |
+| `lut:settings-tab`          | `lib.rs::open_settings_window`, to `settings`                                  | `settings/SettingsApp.tsx`                                                                                               |
+| `lut:control-request`       | `modules/control.rs`, to `main` (CLI `identify` and `open`)                    | `modules/control/useControlBridge.ts`                                                                                    |
+| `lut:agent-signal`          | `modules/pty/session.rs` (OSC detection) and `modules/agent_events.rs` (hooks) | `modules/terminal/lib/agentActivity.ts`                                                                                  |
+| `lut:agent-event`           | `modules/agent_events.rs`, to the window that owns the pane                    | `modules/control/lib/agentEvents.ts`, not loaded by the app (see above)                                                  |
+| `lut:terminal-notification` | `modules/pty/session.rs` (BEL, OSC 9/99/777)                                   | `modules/control/lib/agentEvents.ts`, not loaded by the app (E20-01)                                                     |
+| `lut:git-changed`           | `modules/git/watch.rs`                                                         | `modules/git/changes.ts`                                                                                                 |
+| `fs:changed`                | `modules/fs/watch.rs`                                                          | `modules/explorer/lib/watch.ts`                                                                                          |
+| `fs:file-written`           | `modules/fs/file.rs` (`fs_write_file`)                                         | `modules/editor/useEditorFileSync.ts`, `modules/markdown/useMarkdownDocument.ts`, `modules/theme/useThemeFileEditing.ts` |
+| `lut:window-presentation`   | `modules/window_presentation.rs`                                               | `modules/terminal/ghostty/windowPresentation.ts`                                                                         |
 
 ### Events between windows (frontend → frontend)
 
 Emitted with `emit` from `@tauri-apps/api/event` so that the other window (main or settings) reloads its copy:
 
-| Event                           | Emitted and listened in         |
-| ------------------------------- | ------------------------------- |
-| `terax://prefs-changed`         | `modules/settings/store.ts`     |
-| `terax://custom-themes-changed` | `modules/theme/customThemes.ts` |
-| `terax://theme-edit`            | `modules/theme/themeFiles.ts`   |
+| Event                         | Emitted and listened in         |
+| ----------------------------- | ------------------------------- |
+| `lut://prefs-changed`         | `modules/settings/store.ts`     |
+| `lut://custom-themes-changed` | `modules/theme/customThemes.ts` |
+| `lut://theme-edit`            | `modules/theme/themeFiles.ts`   |
 
 ### Channels and URI schemes
 
-- **`terax-pty` scheme** (`modules/pty/protocol.rs`, `gate.rs`, `hub.rs`, `wire.rs`): all terminal output. Each webview
-  gets a token from `pty_stream_open` and keeps one long-poll `POST terax-pty://localhost/poll` open
-  (`http://terax-pty.localhost/poll` on Windows) from `modules/terminal/lib/pty-bridge.ts`. Requests are checked for
+- **`lut-pty` scheme** (`modules/pty/protocol.rs`, `gate.rs`, `hub.rs`, `wire.rs`): all terminal output. Each webview
+  gets a token from `pty_stream_open` and keeps one long-poll `POST lut-pty://localhost/poll` open
+  (`http://lut-pty.localhost/poll` on Windows) from `modules/terminal/lib/pty-bridge.ts`. Requests are checked for
   route, `Origin`, size, framing and token; flow control is by acknowledged parsed bytes. Input goes the other way
   through `pty_write` with a raw body.
 - **`asset` scheme** (`modules/fs/assets.rs`): serves files granted with `asset_grant` (images in the editor and Markdown previews), revoked
@@ -398,8 +398,8 @@ Emitted with `emit` from `@tauri-apps/api/event` so that the other window (main 
 ### Control protocol
 
 `control::start` binds `127.0.0.1` on a random port with a random token and writes a descriptor to `<cache>/dev.lucode.lut/control.json`
-(E02-08). The CLI (`lut-cli`, crate `terax-cli`) connects with JSON lines. Methods (`terax-control-protocol`): `ping`, `capabilities`, `identify`,
-`open` and `hook`. `identify` and `open` are forwarded to the main window as `terax:control-request` and answered with
+(E02-08). The CLI (`lut-cli`, crate `lut-cli`) connects with JSON lines. Methods (`lut-control-protocol`): `ping`, `capabilities`, `identify`,
+`open` and `hook`. `identify` and `open` are forwarded to the main window as `lut:control-request` and answered with
 `control_respond`; `hook` is handled by `agent_events.rs` with per-pane tokens exported to each shell
 (`LUT_CONTROL_ADDR`, `LUT_CONTROL_TOKEN`, `LUT_PANE_ID`, `LUT_CLI`; inherited `TERAX_*` variables are dropped). Details: `.docs/plan/analysis/agents.md`.
 
