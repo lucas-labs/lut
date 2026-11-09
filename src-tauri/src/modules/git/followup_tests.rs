@@ -5,11 +5,13 @@
 use std::path::{Path, PathBuf};
 
 use crate::modules::git::checkpoint::{self, RestoreRefusal};
+#[cfg(unix)]
 use crate::modules::git::process::run_git;
 use crate::modules::git::review::{ApplyMode, ApplySelection, GitDiffScope, HunkSelection};
 use crate::modules::git::review_tests::{apply, file_diff, numbered};
 use crate::modules::git::testutil::{scratch, TestRepo};
 use crate::modules::git::worktree::{self, RemoveBlocker, WorktreeAddRequest, WorktreeBranch};
+#[cfg(unix)]
 use crate::modules::workspace::WorkspaceEnv;
 
 fn one(id: &str) -> ApplySelection {

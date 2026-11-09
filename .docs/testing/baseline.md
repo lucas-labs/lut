@@ -91,7 +91,7 @@ How `cargo test` splits up:
 
 The first four are in the git agent-task backend, which E02 removes (decision 23).
 
-**Fixed by:** E01-19, so the CI gate (E01-05) is green before E02.
+**Fixed by:** E01-19 (#322), so the CI gate (E01-05) is green before E02. ✅ Fixed: `cargo clippy --all-targets -- -D warnings` exits 0 on Windows. The four test-only items are gated with `#[cfg(unix)]` (plus `SystemTime` in `feedback_tests.rs`, which became unused on Windows with them), and `workspace.rs` uses `as_chunks::<2>()`.
 
 ### `cargo fmt --check`: 15 files
 
@@ -116,6 +116,16 @@ Most of the hunks (28 of 55) are in `src/modules/pty/agent_detect.rs`. The rest:
 - **Suspected cause:** the test gives index B 2 s to finish, and the rest of the suite (the git agent-task tests above all)
   loads the machine enough to exceed it.
 - **Fixed by:** E01-21 (#329).
+
+### `cargo test`: flaky git agent-task test
+
+- **Test:** `modules::git::edge_tests::checkpoints_taken_while_an_agent_writes_stay_valid_and_report_their_consistency`.
+- **Error excerpt:** `panicked at src\modules\git\edge_tests.rs:338:86` (`checkpoint::create(...).unwrap()` on an error).
+- **When:** it failed once in a full `cargo test --workspace` run during E01-19, a change that does not touch it. All other
+  tests passed.
+- **Suspected cause:** the test creates checkpoints while another thread keeps writing and deleting files, and on Windows
+  this can hit a locked file.
+- **Fixed by:** E02-05 (#22), which deletes the whole git agent-task backend (decision 23).
 
 ### `pnpm lint`: warnings, not failures
 
