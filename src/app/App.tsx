@@ -25,7 +25,6 @@ import {
   useSelectionAskAi,
 } from '@/modules/ai';
 import { AiComposerProvider } from '@/modules/ai/lib/composer';
-import { native } from '@/modules/ai/lib/native';
 import {
   CommandPalette,
   createCommandItems,
@@ -88,7 +87,7 @@ import {
   WindowActivityBridge,
   WindowVibrancyBridge,
 } from '@/modules/theme';
-import { useWorkspaceEnvStore, type WorkspaceEnv, workspaceScopeKey } from '@/modules/workspace';
+import { useWorkspaceEnvStore, type WorkspaceEnv, workspaceNative, workspaceScopeKey } from '@/modules/workspace';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -937,7 +936,7 @@ export default function App() {
       setLeafCwd(leafId, cwd);
       if (cwd && !authorizedCwds.current.has(cwd)) {
         authorizedCwds.current.add(cwd);
-        native.workspaceAuthorize(cwd).catch(() => {
+        workspaceNative.workspaceAuthorize(cwd).catch(() => {
           authorizedCwds.current.delete(cwd);
         });
       }

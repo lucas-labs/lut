@@ -1,5 +1,5 @@
-import { native } from '@/modules/ai/lib/native';
 import type { GitStatusSnapshot } from '@/modules/git';
+import { workspaceNative } from '@/modules/workspace';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   bubbleUpDirectoryStatuses,
@@ -28,7 +28,7 @@ export function useGitStatus(
       return;
     }
     const req = ++reqRef.current;
-    void native
+    void workspaceNative
       .canonicalize(workspaceRoot)
       .then((c) => {
         if (req === reqRef.current) setCanonicalRoot(c);
