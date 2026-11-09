@@ -664,41 +664,6 @@ pub fn log(
     Ok(entries)
 }
 
-pub fn show_commit_diff(
-    registry: &WorkspaceRegistry,
-    repo_root: &str,
-    sha: &str,
-    workspace: &WorkspaceEnv,
-) -> Result<GitDiffResult> {
-    let repo_root = authorized_repo_root(registry, repo_root, workspace)?;
-    ensure_git_available(&repo_root.workspace)?;
-    if !sha_is_safe(sha) {
-        return Err(GitError::command("git show", "invalid commit identifier"));
-    }
-    let output = run_git(
-        &repo_root.workspace,
-        Some(&repo_root.git_path),
-        [
-            OsStr::new("show"),
-            OsStr::new("--no-color"),
-            OsStr::new("--no-ext-diff"),
-            OsStr::new("--patch-with-stat"),
-            OsStr::new(sha),
-            OsStr::new("--"),
-        ],
-        DEFAULT_TIMEOUT_SECS,
-    )?;
-    ensure_success(&output, "git show failed")?;
-    let diff_text = match String::from_utf8(output.stdout) {
-        Ok(text) => text,
-        Err(e) => String::from_utf8_lossy(&e.into_bytes()).into_owned(),
-    };
-    Ok(GitDiffResult {
-        diff_text,
-        truncated: output.truncated,
-    })
-}
-
 fn parse_shortstat(tail: &str) -> (u32, u32, u32) {
     // Looks for a line like " 5 files changed, 12 insertions(+), 3 deletions(-)"
     for line in tail.lines() {

@@ -219,20 +219,6 @@ pub async fn git_log(
 }
 
 #[tauri::command]
-pub async fn git_show_commit(
-    repo_root: String,
-    sha: String,
-    workspace: Option<WorkspaceEnv>,
-    app: AppHandle,
-) -> Result<GitDiffResult, String> {
-    let workspace = WorkspaceEnv::from_option(workspace);
-    blocking(app, move |r| {
-        operations::show_commit_diff(r, &repo_root, &sha, &workspace).map_err(Into::into)
-    })
-    .await
-}
-
-#[tauri::command]
 pub async fn git_commit_files(
     repo_root: String,
     sha: String,
