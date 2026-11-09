@@ -14,3 +14,5 @@ export function formatDroppedPaths(
 ): string {
   return `${paths.map((path) => quoteShellPath(path, windows)).join(' ')} `;
 }
+
+// E01-25 filter check: this draft PR is closed without merging.
