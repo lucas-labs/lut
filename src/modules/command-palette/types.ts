@@ -18,7 +18,7 @@ export type PaletteItem = {
 
 /** What a query without a sigil means. */
 export type PaletteBase = 'commands' | 'files';
-export type PaletteMode = PaletteBase | 'history' | 'content' | 'help';
+export type PaletteMode = PaletteBase | 'content' | 'help';
 export type PaletteInitialMode = PaletteBase | 'content';
 
 /** How to open a file picked in the palette. */
