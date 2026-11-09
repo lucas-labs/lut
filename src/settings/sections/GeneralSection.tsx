@@ -410,7 +410,7 @@ export function GeneralSection() {
         <Label>Agents</Label>
         <SettingRow
           title="Coding agent notifications"
-          description="Alert when a coding agent needs your input or finishes. Native notification when Terax is unfocused, in-app otherwise."
+          description="Alert when a coding agent needs your input or finishes. Native notification when lut is unfocused, in-app otherwise."
         >
           <div className="flex items-center gap-2">
             <Button
@@ -487,7 +487,7 @@ function notificationTestTitle(status: NotificationTestState): string {
     case 'denied':
       return 'Notifications are disabled by the system';
     case 'failed':
-      return 'Terax could not request a native notification';
+      return 'lut could not request a native notification';
     default:
       return 'Send a native test notification after two seconds';
   }

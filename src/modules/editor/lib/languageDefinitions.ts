@@ -341,8 +341,8 @@ export const LANGUAGES: LanguageDefinition[] = [
       defineLanguage(import('@codemirror/legacy-modes/mode/protobuf').then((m) => m.protobuf)),
   },
   {
-    name: 'Terax Theme',
-    extensions: ['terax-theme'],
+    name: 'lut Theme',
+    extensions: ['lut-theme'],
     loader: async () => {
       const [{ json }, { colorSwatches }] = await Promise.all([
         import('@codemirror/lang-json'),

@@ -129,7 +129,7 @@ export function useControlBridge({
           }
           const tabId = onOpen({ ...open, spaceId: context.space_id });
           if (tabId === null) {
-            throw new RequestError('open_failed', 'Terax could not create an editor tab');
+            throw new RequestError('open_failed', 'lut could not create an editor tab');
           }
           await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
           await respond(request.id, {

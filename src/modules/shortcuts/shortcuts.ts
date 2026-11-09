@@ -47,7 +47,7 @@ export type ShortcutId =
   | 'editor.codeComplete';
 
 export type ShortcutGroup =
-  'General' | 'Tabs' | 'Spaces' | 'Panes' | 'Terminal' | 'Search' | 'AI' | 'View' | 'Editor';
+  'General' | 'Tabs' | 'Spaces' | 'Panes' | 'Terminal' | 'Search' | 'Agents' | 'View' | 'Editor';
 
 export type KeyBinding = {
   key: string;
@@ -209,7 +209,7 @@ const SHORTCUT_META: Omit<Shortcut, 'defaultBindings'>[] = [
   {
     id: 'agent.focusAttention',
     label: 'Jump to agent needing attention',
-    group: 'AI',
+    group: 'Agents',
   },
   {
     id: 'sidebar.toggle',
@@ -287,7 +287,7 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
   'Terminal',
   'View',
   'Search',
-  'AI',
+  'Agents',
   'Editor',
 ];
 

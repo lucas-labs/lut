@@ -223,7 +223,7 @@ export function CloseDialogs({
       <AlertDialog open={pendingAppClose !== null} onOpenChange={(open) => !open && cancelAppClose()}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Quit Terax?</AlertDialogTitle>
+            <AlertDialogTitle>Quit lut?</AlertDialogTitle>
             <AlertDialogDescription>{pendingAppClose ? appCloseMessage(pendingAppClose) : ''}</AlertDialogDescription>
           </AlertDialogHeader>
           {appCloseCanOptOut ? <OptOutRow checked={optOutAppClose} onCheckedChange={setOptOutAppClose} /> : null}
