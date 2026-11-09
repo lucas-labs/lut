@@ -105,7 +105,17 @@ Most of the hunks (28 of 55) are in `src/modules/pty/agent_detect.rs`. The rest:
 
 **Suspected cause:** `cargo fmt` is not checked upstream either (CONTRIBUTING asks for it, but nothing enforces it).
 
-**Fixed by:** E01-18.
+**Fixed by:** E01-18 (#321). ✅ Fixed: `cargo fmt --check` exits 0.
+
+### `cargo test`: flaky `fs::index` test
+
+- **Test:** `modules::fs::index::tests::unrelated_cold_roots_build_without_waiting_for_each_other`.
+- **Error excerpt:** `panicked at src\modules\fs\index.rs:516:13: B must finish while A is paused`.
+- **When:** it failed once in a full `cargo test --workspace` run during E01-18, a formatting-only change to other files.
+  It passed 5 of 5 times on its own and in the next full run. It did not fail in the E01-03 baseline run.
+- **Suspected cause:** the test gives index B 2 s to finish, and the rest of the suite (the git agent-task tests above all)
+  loads the machine enough to exceed it.
+- **Fixed by:** E01-21 (#329).
 
 ### `pnpm lint`: warnings, not failures
 
