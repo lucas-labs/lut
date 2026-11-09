@@ -1349,7 +1349,7 @@ size: S
 
 ```yaml
 id: E05-02
-depends-on: [E02-08]
+depends-on: []
 refs: [14.1:4, .docs/plan/analysis/ai.md]
 covers: [ai/path-policy]
 type: task
@@ -1633,6 +1633,7 @@ size: M
 - [ ] `src-tauri/src/modules/fs/ai.rs` and `fs/project_memory.rs` are deleted, with their registrations (`lib.rs:302-305,308`).
 - [ ] The read-policy tests in `fs/ai.rs:440-452` move to `fs/read_policy.rs` and still pass.
 - [ ] Commands used by kept tools (explorer, editor, palette search) are unchanged.
+- [ ] `fs_list_files` (`fs::search`, `run_list_files`), left without a caller when E05-13 deleted the AI file picker, is removed; `scripts/ipc-profile/smoke.ts` keeps the main thread busy with `fs_search` alone.
 
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace` and `pnpm test` pass; `rg "ai_(read_file|read_dir|grep|glob)|project_memory" src src-tauri` is empty.
 
@@ -1687,7 +1688,7 @@ size-exception: Mechanical deletion of four self-contained modules (~3.8k lines)
 
 ```yaml
 id: E05-17
-depends-on: [E05-16]
+depends-on: [E05-13]
 refs: [.docs/plan/analysis/backend-core.md]
 covers: [backend-core/ipc-profile]
 type: task

@@ -4,15 +4,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { CheckmarkCircle01Icon, CopyIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { createContext, memo, useContext, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { highlight, type HighlightedNode, isHighlightable } from './chat-code-lezer';
-import { Shimmer } from './shimmer';
-
-// True while the parent message is still streaming from the model. We hide
-// fenced-code contents during this phase: parsing partial code is wasted
-// work and a flashing skeleton is calmer UI than text that grows char-by-char.
-const StreamingCtx = createContext(false);
-export const ChatStreamingProvider = StreamingCtx.Provider;
 
 const POSIX_SHELL = new Set(['bash', 'sh', 'zsh', 'shell', 'console', 'shellscript']);
 const WINDOWS_SHELL = new Set(['powershell', 'pwsh', 'ps1', 'ps', 'cmd', 'bat', 'batch']);
@@ -37,27 +30,13 @@ export type ChatCodeBlockProps = {
 };
 
 export function ChatCodeBlock({ code, lang }: ChatCodeBlockProps) {
-  const streaming = useContext(StreamingCtx);
   const label = normalizeLangLabel(lang ?? '');
-
-  if (streaming) {
-    return <GeneratingPlaceholder label={label} />;
-  }
 
   if (SHELL_LANGS.has(label)) {
     return <CommandCard code={code} lang={label} />;
   }
 
   return <FinalizedCodeBlock code={code} lang={label} />;
-}
-
-function GeneratingPlaceholder({ label }: { label: string }) {
-  return (
-    <div className="not-prose my-2 flex items-center gap-2 rounded-lg border border-border/50 bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground">
-      <span className="inline-block size-1.5 animate-pulse rounded-full bg-muted-foreground/60" />
-      <Shimmer duration={1.2}>{label === 'text' ? 'Generating code…' : `Generating ${label}…`}</Shimmer>
-    </div>
-  );
 }
 
 function BlockChrome({ label, code, children }: { label: string; code: string; children: React.ReactNode }) {

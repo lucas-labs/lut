@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "ignore": ["src/components/ui/**", "src/components/ai-elements/**"],
+  "ignore": ["src/components/ui/**"],
   "ignoreDependencies": [
     "@tauri-apps/plugin-log",
     "@tauri-apps/plugin-window-state",

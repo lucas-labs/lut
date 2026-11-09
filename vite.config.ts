@@ -82,26 +82,10 @@ function eagerChunk(id: string): string | null {
   return null;
 }
 
-const AI_PROVIDER_CHUNKS: Record<string, string> = {
-  "@ai-sdk/anthropic": "ai-anthropic",
-  "@ai-sdk/google": "ai-google",
-  "@ai-sdk/openai-compatible": "ai-openai-compat",
-  "@ai-sdk/openai": "ai-openai",
-  "@ai-sdk/cerebras": "ai-cerebras",
-  "@ai-sdk/groq": "ai-groq",
-  "@ai-sdk/xai": "ai-xai",
-};
-
 /** Heavy features loaded on demand; each lands in its own named chunk. */
 function lazyChunk(id: string): string | null {
   const pkg = packageOf(id);
   if (!pkg) return null;
-
-  // Each AI provider SDK in its own chunk so unused providers
-  // don't bloat the initial load (lazy-imported in agent.ts).
-  const provider = AI_PROVIDER_CHUNKS[pkg];
-  if (provider) return provider;
-  if (pkg.startsWith("@ai-sdk/")) return "ai-sdk-shared";
 
   // Lang packs and legacy modes are dynamically imported by
   // languageResolver; give each its own named chunk so they load on
@@ -163,12 +147,6 @@ export default defineConfig(async ({ mode }): Promise<UserConfig> => ({
           rootDir,
           "./src/modules/lsp/lib/protocolShim.ts",
         ),
-      },
-      // The AI SDK reads one enum from zod 3; the shim keeps the rest of it
-      // (~14 kB gzipped) out. Exact match only: nothing else may import zod/v3.
-      {
-        find: /^zod\/v3$/,
-        replacement: path.resolve(rootDir, "./src/modules/ai/lib/zodV3Shim.ts"),
       },
     ],
   },
