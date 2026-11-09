@@ -44,21 +44,21 @@ Rust workspace. Later runs are incremental.
 
 ## Commands
 
-| Purpose                                   | Command                                                                                               |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Install dependencies                      | `pnpm install --frozen-lockfile`                                                                      |
-| Run the app (dev)                         | `pnpm tauri dev`                                                                                      |
-| Release build + installers                | `pnpm tauri build`                                                                                    |
-| Frontend only (browser, no Tauri backend) | `pnpm dev` (Vite on port 1420, strict)                                                                |
-| Frontend production build                 | `pnpm build` (`tsc && vite build` into `dist/`)                                                       |
-| Type check                                | `pnpm check-types`                                                                                    |
-| Lint / format check                       | `pnpm lint` (ESLint) · `pnpm format:check` (Biome); both `src/` only                                  |
-| Frontend tests                            | `pnpm test` (Vitest)                                                                                  |
-| Rust tests                                | `cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace`                                |
-| Clippy                                    | `cargo clippy --manifest-path src-tauri/Cargo.toml --locked --workspace --all-targets -- -D warnings` |
-| Rust format                               | `cargo fmt --manifest-path src-tauri/Cargo.toml --all`                                                |
-| Unused files/exports                      | `pnpm knip`                                                                                           |
-| Bundle checks                             | `pnpm check:dist` · `pnpm size` (after `pnpm build`) · `pnpm analyze:eager`                           |
+| Purpose                                   | Command                                                                                                |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Install dependencies                      | `pnpm install --frozen-lockfile`                                                                       |
+| Run the app (dev)                         | `pnpm tauri dev`                                                                                       |
+| Release build + installers                | `pnpm tauri build`                                                                                     |
+| Frontend only (browser, no Tauri backend) | `pnpm dev` (Vite on port 1420, strict)                                                                 |
+| Frontend production build                 | `pnpm build` (`tsc && vite build` into `dist/`)                                                        |
+| Type check                                | `pnpm check-types`                                                                                     |
+| Lint / format check                       | `pnpm lint` (ESLint, `src/`) · `pnpm format:check` (Prettier, `src/**/*.{ts,tsx}` and `.docs/**/*.md`) |
+| Frontend tests                            | `pnpm test` (Vitest)                                                                                   |
+| Rust tests                                | `cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace`                                 |
+| Clippy                                    | `cargo clippy --manifest-path src-tauri/Cargo.toml --locked --workspace --all-targets -- -D warnings`  |
+| Rust format                               | `cargo fmt --manifest-path src-tauri/Cargo.toml --all`                                                 |
+| Unused files/exports                      | `pnpm knip`                                                                                            |
+| Bundle checks                             | `pnpm check:dist` · `pnpm size` (after `pnpm build`) · `pnpm analyze:eager`                            |
 
 `src-tauri/Cargo.toml` is a Cargo workspace with the app plus `crates/terax-cli` and
 `crates/terax-control-protocol`; `--workspace` covers all three.

@@ -71,7 +71,7 @@ How `cargo test` splits up:
 - **Suspected cause:** formatting is not enforced upstream. Terax's quality bar lists `pnpm lint`, but not
   `format:check`. Also, `biome.json` declares schema 2.4.16 while 2.5.14 is installed, so formatter changes between
   those versions may account for part of it.
-- **Fixed by:** E01-17, which replaces Biome with Prettier (user decision) and reformats the codebase.
+- **Fixed by:** E01-17 (#320), which replaces Biome with Prettier (user decision) and reformats the codebase. ✅ Fixed: `pnpm format:check` exits 0.
 
 ### `pnpm knip`: unused devDependency
 
