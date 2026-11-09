@@ -43,16 +43,16 @@ To re-check after a change: `git grep -n "generate_handler" src-tauri/src` gives
 
 ### Entry points and shared code
 
-| Path              | Role                                                                                                                                                                                                                                                                     |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `main.tsx`        | Global CSS, borderless chrome flag, optional bench driver (`__TERAX_BENCH__`), `invoke('pty_close_all')` to reap orphaned PTYs, launch dir seed, renders `<App/>`, shows the window.                                                                                     |
-| `app/App.tsx`     | The single coordinator (1484 lines): tab model via `useTabs`, spaces, every shortcut handler, agent launch flow, control bridge, LSP navigator, open-file listener, layout (header, sidebar, workspace surface, status bar, AI bridges, command palette, close dialogs). |
-| `app/components/` | `WorkspaceSurface` (the central area), `CloseDialogs`.                                                                                                                                                                                                                   |
-| `app/hooks/`      | Close guards (`useAppCloseGuard`, `useTabCloseGuards`, `tabCloseGuards`) and `useWorkspaceSwitcher`.                                                                                                                                                                     |
-| `settings/`       | The settings window app (`SettingsApp.tsx`, `sections/`, `components/`).                                                                                                                                                                                                 |
-| `lib/`            | Shared helpers: `utils` (`cn`), `platform`, `fonts`, `launchDir`, `useAssetGrant`, `shellQuote`, `homeRelativePath`, `external-link`, `usePresence`, `useZoom`.                                                                                                          |
-| `components/`     | `WindowControls.tsx` and shadcn primitives (`ui/`); `ui/` is excluded from lint and format.                                                                                                                                                                              |
-| `bench/`          | The in-app benchmark driver, loaded only when built with `TERAX_BENCH` (`__TERAX_BENCH__`).                                                                                                                                                                              |
+| Path              | Role                                                                                                                                                                                                                                                         |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `main.tsx`        | Global CSS, borderless chrome flag, optional bench driver (`__TERAX_BENCH__`), `invoke('pty_close_all')` to reap orphaned PTYs, launch dir seed, renders `<App/>`, shows the window.                                                                         |
+| `app/App.tsx`     | The single coordinator (1484 lines): tab model via `useTabs`, spaces, every shortcut handler, agent launch flow, control bridge, LSP navigator, open-file listener, layout (header, sidebar, workspace surface, status bar, command palette, close dialogs). |
+| `app/components/` | `WorkspaceSurface` (the central area), `CloseDialogs`.                                                                                                                                                                                                       |
+| `app/hooks/`      | Close guards (`useAppCloseGuard`, `useTabCloseGuards`, `tabCloseGuards`) and `useWorkspaceSwitcher`.                                                                                                                                                         |
+| `settings/`       | The settings window app (`SettingsApp.tsx`, `sections/`, `components/`).                                                                                                                                                                                     |
+| `lib/`            | Shared helpers: `utils` (`cn`), `platform`, `fonts`, `launchDir`, `useAssetGrant`, `shellQuote`, `homeRelativePath`, `external-link`, `usePresence`, `useZoom`.                                                                                              |
+| `components/`     | `WindowControls.tsx` and shadcn primitives (`ui/`); `ui/` is excluded from lint and format.                                                                                                                                                                  |
+| `bench/`          | The in-app benchmark driver, loaded only when built with `TERAX_BENCH` (`__TERAX_BENCH__`).                                                                                                                                                                  |
 
 ### Feature modules (`src/modules/`)
 
@@ -62,7 +62,7 @@ Sizes count non-test `.ts`/`.tsx` files; tests are the `*.test.*` files in the m
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------ | ----- |
 | `terminal`        | Panes and sessions: `TerminalStack`, `PaneTreeView`, `TerminalPane`; Ghostty WASM model and WebGPU/WebGL renderers (`ghostty/`); PTY bridge and helpers (`lib/`). | 125   | 23 720 | 115   |
 | `explorer`        | File tree, file operations, drag and drop, clipboard paste, watcher, inline search.                                                                               | 23    | 6 407  | 9     |
-| `editor`          | CodeMirror editor, diff stacks (git and AI), external formatter, file sync.                                                                                       | 36    | 4 801  | 13    |
+| `editor`          | CodeMirror editor, git diff stacks, external formatter, file sync.                                                                                                | 36    | 4 801  | 13    |
 | `theme`           | Theme provider, built-in and custom themes, theme files, vibrancy, surface layer, window activity.                                                                | 36    | 3 364  | 13    |
 | `source-control`  | Git panel: status, stage, commit, push/pull, branches.                                                                                                            | 10    | 3 368  | 5     |
 | `tabs`            | Tab model (`lib/useTabs.ts`, 1440 lines, 8 tab kinds), tab bar, tab switcher, new-tab menu.                                                                       | 10    | 2 438  | 13    |
@@ -109,8 +109,7 @@ live in a module-level map keyed by leaf id (`modules/terminal/ghostty/useGhostt
   `terax-palette-mru`, `terax-palette-recent-files` (`modules/command-palette/lib/`), `terax.experimental.terminal-backend`
   (`modules/terminal/backend/selection.ts`), and the diagnostics flags `terax:terminal-diagnostics`,
   `terax:terminal-gc-mirror`, `terax:terminal-text-contrast`.
-- **Backend files:** AI session files (`modules/ai_sessions.rs`) and secrets in the OS keychain (`modules/secrets.rs`), with no frontend caller since E05-13; the
-  control descriptor and CLI launcher under the cache dir (`modules/control.rs`), shell-integration scripts under the
+- **Backend files:** the control descriptor and CLI launcher under the cache dir (`modules/control.rs`), shell-integration scripts under the
   cache dir (`modules/pty/shell_init.rs`). E02 moves all of them to lut names.
 
 ### Global side effects
@@ -156,14 +155,13 @@ reads `window.__TAURI__`.
    opener; on macOS also the app menu (`modules/app_menu.rs`).
 3. **URI schemes:** `terax-pty` → `pty::stream_protocol` (terminal output, see [Channels](#channels-and-uri-schemes)),
    `asset` → `fs::assets::serve`.
-4. **Page load** (`Started`): revokes the webview's asset grants, cancels its AI streams, resets its PTY streams and
+4. **Page load** (`Started`): revokes the webview's asset grants, resets its PTY streams and
    marks its agent-decision UI as not ready.
 5. **Setup:** bench guard (feature `bench`), macOS window-presentation observer, the control server
    (`control::start`), and on macOS destroying `settings` with `main`.
-6. **Managed state:** `PtyState`, `AiStreamState`, `SessionFilesState`, `WindowPresentationState`, `ControlState`,
-   `ShellState`, `SecretsState`, `FsWatchState`, `AssetGrants`, `GitWatchState`, `LspState`,
+6. **Managed state:** `PtyState`, `WindowPresentationState`, `ControlState`, `FsWatchState`, `AssetGrants`, `GitWatchState`, `LspState`,
    `Supersede`, `FileIndexState`, `WorkspaceRegistry` (bootstrapped, launch dir authorized), `LaunchDir`, `LaunchFiles`.
-7. **Run events:** on `WindowEvent::Destroyed` the window's asset grants, AI streams and PTYs are released; on `Exit`
+7. **Run events:** on `WindowEvent::Destroyed` the window's asset grants and PTYs are released; on `Exit`
    the LSP servers are killed and the control server shut down; on macOS `Opened` (Open With) the files are stored
    and `terax:open-file` is emitted.
 
@@ -173,42 +171,37 @@ reads `window.__TAURI__`.
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------ |
 | `git/`                   | Git CLI wrapper for the panel, history and watcher.                                                                                                   | 14    | 5 731  |
 | `pty/`                   | PTY sessions (portable-pty, ConPTY on Windows), output hub and `terax-pty` transport, shell launch and integration scripts, agent detection from OSC. | 16    | 10 905 |
-| `fs/`                    | File tree, read/write, mutations, copy, clipboard paths, watcher, search index, grep, assets, AI fs tools, read policy.                               | 19    | 8 846  |
+| `fs/`                    | File tree, read/write, mutations, copy, clipboard paths, watcher, search index, grep, assets, read policy.                                            | 17    | 7 964  |
 | `control.rs`             | Loopback TCP control server for the CLI: descriptor, per-pane tokens, request routing.                                                                | 1     | 1 533  |
 | `agent_events.rs`        | Server side of `terax hook`: validation, normalization, rate limit, decision broker, events to the frontend.                                          | 1     | 1 388  |
 | `agent.rs`               | Agent hook installer (Claude, Codex, Gemini, Pi): plan/apply/status.                                                                                  | 1     | 1 358  |
 | `workspace.rs`           | Workspace registry (authorized roots), launch cwd, WSL distros and homes.                                                                             | 1     | 1 350  |
-| `ai_sessions.rs`         | AI conversation files, one per session (removed by E05).                                                                                              | 1     | 1 243  |
-| `net/`, `net.rs`         | AI HTTP proxy with streaming, `lm_ping` (removed by E05).                                                                                             | 4     | 1 978  |
 | `lsp/`                   | Language-server processes and JSON-RPC framing.                                                                                                       | 4     | 1 070  |
 | `agent_json.rs`          | Format-preserving edits of agents' JSON settings files.                                                                                               | 1     | 910    |
-| `shell/`                 | Non-PTY commands, persistent shell sessions and background processes for the AI tools.                                                                | 4     | 904    |
+| `shell/`                 | One-shot non-PTY commands (the editor's external formatters).                                                                                         | 1     | 210    |
 | `bench.rs`               | App benchmark support (feature `bench`).                                                                                                              | 1     | 779    |
 | `proc/`                  | Child-output capture, Windows Job Objects, RSS, `hide_console`.                                                                                       | 4     | 525    |
-| `secrets.rs`             | Secret storage in the OS keychain (AI keys).                                                                                                          | 1     | 511    |
 | `vibrancy.rs`            | Window backdrop (Mica, NSVisualEffectView).                                                                                                           | 1     | 320    |
 | `window_presentation.rs` | Live-resize and occlusion state for the renderers.                                                                                                    | 1     | 287    |
 | `runtime.rs`             | The async runtime behind commands.                                                                                                                    | 1     | 124    |
-| `ipc_body.rs`            | Raw IPC request bodies (AI commands).                                                                                                                 | 1     | 104    |
 | `app_menu.rs`            | macOS menu with a guarded Quit.                                                                                                                       | 1     | 83     |
 
 ## IPC surface
 
 ### Commands
 
-111 commands are registered (3 of them only with the `bench` feature). E02-05 removed the 22 of the git agent-task
-backend, E02-18 removed `fs_grep`, `fs_glob` and `git_show_commit`, and E06-06 removed the four `history_*` commands.
+85 commands are registered (3 of them only with the `bench` feature). E02-05 removed the 22 of the git agent-task
+backend, E02-18 removed `fs_grep`, `fs_glob` and `git_show_commit`, E06-06 removed the four `history_*` commands,
+and E05-14, E05-15 and E05-16 removed the 26 that only the AI used.
 The tables below list each one with the frontend files that call it; for the wrapper objects the caller is written as
 `` `git.method` → users ``; `workspaceNative` is in `modules/workspace/native.ts`.
 
-**Commands without a real caller (28):**
+**Commands without a real caller (2):**
 
-| Commands                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Why                                                        | Removed by             |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ---------------------- |
-| `pty_has_foreground_job`                                                                                                                                                                                                                                                                                                                                                                                                                                                         | No caller                                                  | E14-11                 |
-| `lm_ping`                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | No caller since E05-11 removed the Models settings section | E05-16                 |
-| `shell_session_close`, `ai_read_file`, `ai_read_dir`, `ai_grep`, `ai_glob`, `fs_read_project_memory`, `fs_list_files`, `shell_session_open`, `shell_session_run`, `shell_bg_spawn`, `shell_bg_logs`, `shell_bg_kill`, `shell_bg_list`, `secrets_get`, `secrets_set`, `secrets_delete`, `secrets_get_all`, `ai_http_stream`, `ai_http_cancel`, `ai_http_ack`, `ai_session_load`, `ai_session_save`, `ai_session_delete`, `ai_session_finish_migration`, `ai_session_prune_backup` | No caller since E05-13 deleted the AI module               | E05-14, E05-15, E05-16 |
-| `wsl_default_distro`                                                                                                                                                                                                                                                                                                                                                                                                                                                             | No caller; kept as an input for WSL profile detection      | (E14-06)               |
+| Commands                 | Why                                                   | Removed by |
+| ------------------------ | ----------------------------------------------------- | ---------- |
+| `pty_has_foreground_job` | No caller                                             | E14-11     |
+| `wsl_default_distro`     | No caller; kept as an input for WSL profile detection | (E14-06)   |
 
 **Callers the running app never loads:** `agent_decisions_ready` and `agent_decision_respond`
 (`modules/control/lib/agentDecisions.ts`) and `agent_disable_hooks`, `agent_hooks_plan`, `agent_hooks_apply` (only
@@ -237,35 +230,29 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 
 #### fs
 
-| Command                  | Handler              | Frontend caller(s)                                                                                                                                             |
-| ------------------------ | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `list_subdirs`           | `fs::tree`           | `modules/statusbar/CwdBreadcrumb.tsx`                                                                                                                          |
-| `fs_read_dir`            | `fs::tree`           | `modules/explorer/lib/useFileTree.ts`                                                                                                                          |
-| `fs_read_file`           | `fs::file`           | `modules/editor/lib/externalFormat.ts`, `modules/editor/lib/useDocument.ts`, `modules/markdown/useMarkdownDocument.ts`, `modules/theme/useThemeFileEditing.ts` |
-| `ai_read_file`           | `fs::ai`             | **no caller**                                                                                                                                                  |
-| `ai_read_dir`            | `fs::ai`             | **no caller**                                                                                                                                                  |
-| `ai_grep`                | `fs::ai`             | **no caller**                                                                                                                                                  |
-| `ai_glob`                | `fs::ai`             | **no caller**                                                                                                                                                  |
-| `asset_grant`            | `fs::assets`         | `lib/useAssetGrant.ts`                                                                                                                                         |
-| `asset_revoke`           | `fs::assets`         | `lib/useAssetGrant.ts`                                                                                                                                         |
-| `fs_read_project_memory` | `fs::project_memory` | **no caller**                                                                                                                                                  |
-| `fs_write_file`          | `fs::file`           | `modules/editor/lib/useDocument.ts`, `modules/theme/themeFiles.ts`                                                                                             |
-| `fs_stat`                | `fs::file`           | `modules/editor/lib/useDocument.ts`, `modules/terminal/lib/terminalLinks.ts`, `modules/theme/themeFiles.ts`                                                    |
-| `fs_canonicalize`        | `fs::file`           | `modules/markdown/useMarkdownDocument.ts`, `modules/terminal/lib/terminalLinks.ts`                                                                             |
-| `fs_create_file`         | `fs::mutate`         | `modules/editor/NewEditorDialog.tsx`, `modules/explorer/lib/useFileTree.ts`                                                                                    |
-| `fs_create_dir`          | `fs::mutate`         | `modules/explorer/lib/useFileTree.ts`, `modules/theme/themeFiles.ts`                                                                                           |
-| `fs_rename`              | `fs::mutate`         | `modules/explorer/lib/useFileTree.ts`                                                                                                                          |
-| `fs_move`                | `fs::mutate`         | `modules/explorer/lib/useFileTree.ts`                                                                                                                          |
-| `fs_delete`              | `fs::mutate`         | `modules/explorer/lib/useFileTree.ts`, `modules/theme/themeFiles.ts`                                                                                           |
-| `fs_delete_batch`        | `fs::mutate`         | `modules/explorer/lib/useFileTree.ts`                                                                                                                          |
-| `fs_copy`                | `fs::copy`           | `modules/explorer/lib/clipboardPaste.ts`, `modules/explorer/lib/useExplorerFileDrop.ts`                                                                        |
-| `fs_clipboard_paths`     | `fs::clipboard`      | `modules/explorer/lib/clipboardPaste.ts`                                                                                                                       |
-| `fs_watch_add`           | `fs::watch`          | `modules/explorer/lib/watch.ts`                                                                                                                                |
-| `fs_watch_remove`        | `fs::watch`          | `modules/explorer/lib/watch.ts`                                                                                                                                |
-| `fs_search`              | `fs::search`         | `modules/command-palette/hooks/useFileSearch.ts`, `modules/explorer/ExplorerSearch.tsx`                                                                        |
-| `fs_warm_index`          | `fs::search`         | `modules/command-palette/hooks/useFileSearch.ts`                                                                                                               |
-| `fs_list_files`          | `fs::search`         | **no caller**                                                                                                                                                  |
-| `fs_grep_interactive`    | `fs::grep`           | `modules/command-palette/hooks/useContentSearch.ts`                                                                                                            |
+| Command               | Handler         | Frontend caller(s)                                                                                                                                             |
+| --------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `list_subdirs`        | `fs::tree`      | `modules/statusbar/CwdBreadcrumb.tsx`                                                                                                                          |
+| `fs_read_dir`         | `fs::tree`      | `modules/explorer/lib/useFileTree.ts`                                                                                                                          |
+| `fs_read_file`        | `fs::file`      | `modules/editor/lib/externalFormat.ts`, `modules/editor/lib/useDocument.ts`, `modules/markdown/useMarkdownDocument.ts`, `modules/theme/useThemeFileEditing.ts` |
+| `asset_grant`         | `fs::assets`    | `lib/useAssetGrant.ts`                                                                                                                                         |
+| `asset_revoke`        | `fs::assets`    | `lib/useAssetGrant.ts`                                                                                                                                         |
+| `fs_write_file`       | `fs::file`      | `modules/editor/lib/useDocument.ts`, `modules/theme/themeFiles.ts`                                                                                             |
+| `fs_stat`             | `fs::file`      | `modules/editor/lib/useDocument.ts`, `modules/terminal/lib/terminalLinks.ts`, `modules/theme/themeFiles.ts`                                                    |
+| `fs_canonicalize`     | `fs::file`      | `modules/markdown/useMarkdownDocument.ts`, `modules/terminal/lib/terminalLinks.ts`                                                                             |
+| `fs_create_file`      | `fs::mutate`    | `modules/editor/NewEditorDialog.tsx`, `modules/explorer/lib/useFileTree.ts`                                                                                    |
+| `fs_create_dir`       | `fs::mutate`    | `modules/explorer/lib/useFileTree.ts`, `modules/theme/themeFiles.ts`                                                                                           |
+| `fs_rename`           | `fs::mutate`    | `modules/explorer/lib/useFileTree.ts`                                                                                                                          |
+| `fs_move`             | `fs::mutate`    | `modules/explorer/lib/useFileTree.ts`                                                                                                                          |
+| `fs_delete`           | `fs::mutate`    | `modules/explorer/lib/useFileTree.ts`, `modules/theme/themeFiles.ts`                                                                                           |
+| `fs_delete_batch`     | `fs::mutate`    | `modules/explorer/lib/useFileTree.ts`                                                                                                                          |
+| `fs_copy`             | `fs::copy`      | `modules/explorer/lib/clipboardPaste.ts`, `modules/explorer/lib/useExplorerFileDrop.ts`                                                                        |
+| `fs_clipboard_paths`  | `fs::clipboard` | `modules/explorer/lib/clipboardPaste.ts`                                                                                                                       |
+| `fs_watch_add`        | `fs::watch`     | `modules/explorer/lib/watch.ts`                                                                                                                                |
+| `fs_watch_remove`     | `fs::watch`     | `modules/explorer/lib/watch.ts`                                                                                                                                |
+| `fs_search`           | `fs::search`    | `modules/command-palette/hooks/useFileSearch.ts`, `modules/explorer/ExplorerSearch.tsx`                                                                        |
+| `fs_warm_index`       | `fs::search`    | `modules/command-palette/hooks/useFileSearch.ts`                                                                                                               |
+| `fs_grep_interactive` | `fs::grep`      | `modules/command-palette/hooks/useContentSearch.ts`                                                                                                            |
 
 #### lsp
 
@@ -305,16 +292,9 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 
 #### shell
 
-| Command               | Handler | Frontend caller(s)                     |
-| --------------------- | ------- | -------------------------------------- |
-| `shell_run_command`   | `shell` | `modules/editor/lib/externalFormat.ts` |
-| `shell_session_open`  | `shell` | **no caller**                          |
-| `shell_session_run`   | `shell` | **no caller**                          |
-| `shell_session_close` | `shell` | **no caller**                          |
-| `shell_bg_spawn`      | `shell` | **no caller**                          |
-| `shell_bg_logs`       | `shell` | **no caller**                          |
-| `shell_bg_kill`       | `shell` | **no caller**                          |
-| `shell_bg_list`       | `shell` | **no caller**                          |
+| Command             | Handler | Frontend caller(s)                     |
+| ------------------- | ------- | -------------------------------------- |
+| `shell_run_command` | `shell` | `modules/editor/lib/externalFormat.ts` |
 
 #### workspace
 
@@ -357,34 +337,6 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 | `agent_hooks_plan`    | `agent` | `modules/control/lib/hooksConfig.ts`                                                                  |
 | `agent_hooks_apply`   | `agent` | `modules/control/lib/hooksConfig.ts`                                                                  |
 | `agent_hooks_status`  | `agent` | `modules/agents/components/NotificationBell.tsx`, `modules/control/lib/hooksConfig.ts`                |
-
-#### secrets
-
-| Command           | Handler   | Frontend caller(s) |
-| ----------------- | --------- | ------------------ |
-| `secrets_get`     | `secrets` | **no caller**      |
-| `secrets_set`     | `secrets` | **no caller**      |
-| `secrets_delete`  | `secrets` | **no caller**      |
-| `secrets_get_all` | `secrets` | **no caller**      |
-
-#### net
-
-| Command          | Handler | Frontend caller(s) |
-| ---------------- | ------- | ------------------ |
-| `lm_ping`        | `net`   | **no caller**      |
-| `ai_http_stream` | `net`   | **no caller**      |
-| `ai_http_cancel` | `net`   | **no caller**      |
-| `ai_http_ack`    | `net`   | **no caller**      |
-
-#### ai_sessions
-
-| Command                       | Handler       | Frontend caller(s) |
-| ----------------------------- | ------------- | ------------------ |
-| `ai_session_load`             | `ai_sessions` | **no caller**      |
-| `ai_session_save`             | `ai_sessions` | **no caller**      |
-| `ai_session_delete`           | `ai_sessions` | **no caller**      |
-| `ai_session_finish_migration` | `ai_sessions` | **no caller**      |
-| `ai_session_prune_backup`     | `ai_sessions` | **no caller**      |
 
 #### vibrancy
 
@@ -441,8 +393,7 @@ Emitted with `emit` from `@tauri-apps/api/event` so that the other window (main 
   through `pty_write` with a raw body.
 - **`asset` scheme** (`modules/fs/assets.rs`): serves files granted with `asset_grant` (images in the editor and Markdown previews), revoked
   per webview on reload and close.
-- **Tauri channels:** `lsp_spawn` takes `on_message` and `on_exit` channels (`modules/lsp/`); `ai_http_stream` takes an
-  `on_event` channel for the streamed response (`modules/net.rs`).
+- **Tauri channels:** `lsp_spawn` takes `on_message` and `on_exit` channels (`modules/lsp/`).
 
 ### Control protocol
 
@@ -457,7 +408,7 @@ CLI (`terax-cli`) connects with JSON lines. Methods (`terax-control-protocol`): 
 - The updater and process plugins are gone (#318): `backend-core.md` still lists them, and `app-shell.md` mentions
   `UpdaterDialog` in `App.tsx`.
 - `App.tsx` is 1484 lines, not 1695; most `App.tsx:<line>` references in `app-shell.md` have shifted.
-- On `WindowEvent::Destroyed` the backend releases asset grants, AI streams and PTYs; control sessions are not closed
+- On `WindowEvent::Destroyed` the backend releases asset grants and PTYs; control sessions are not closed
   there (`backend-core.md` says they are). Agent-decision readiness is reset on page load instead.
-- `fs_grep`, `fs_glob`, `git_show_commit` and `shell_session_close` have no real caller; the analyses list only
-  `pty_has_foreground_job`.
+- `fs_grep`, `fs_glob`, `git_show_commit` and `shell_session_close` had no real caller (removed by E02-18 and E05-15);
+  the analyses list only `pty_has_foreground_job`.
