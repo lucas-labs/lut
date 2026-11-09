@@ -1,4 +1,3 @@
-import { firePendingReviewForSession } from '@/modules/agents/lib/review';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { onKeysChanged } from '@/modules/settings/store';
 import { useEffect, useState } from 'react';
@@ -22,12 +21,7 @@ export function useAiBootstrap(): {
   const setApiKeys = useChatStore((s) => s.setApiKeys);
   const setCustomEndpointKeys = useChatStore((s) => s.setCustomEndpointKeys);
   const setSelectedModelId = useChatStore((s) => s.setSelectedModelId);
-  const activeSessionId = useChatStore((s) => s.activeSessionId);
   const hydrateSessions = useChatStore((s) => s.hydrateSessions);
-
-  useEffect(() => {
-    if (activeSessionId) firePendingReviewForSession(activeSessionId);
-  }, [activeSessionId]);
 
   const lmstudioModelId = usePreferencesStore((s) => s.lmstudioModelId);
   const lmstudioBaseURL = usePreferencesStore((s) => s.lmstudioBaseURL);

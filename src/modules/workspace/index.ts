@@ -8,3 +8,4 @@ export {
   type WorkspaceEnv,
   workspaceScopeKey,
 } from './env';
+export { workspaceNative } from './native';

@@ -4,7 +4,7 @@ const DEFAULT_MAX_ROUNDS = 3;
 
 type ManagedPhase = 'spawning' | 'working' | 'reviewing' | 'done';
 
-export type ManagedAgent = {
+type ManagedAgent = {
   leafId: number;
   tabId: number;
   sessionId: string;

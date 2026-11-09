@@ -1,9 +1,8 @@
-import { native } from '@/modules/ai/lib/native';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import type { Tab } from '@/modules/tabs';
 import { DEFAULT_SPACE_ID } from '@/modules/tabs/lib/useTabs';
 import { isLeaf, type PaneNode } from '@/modules/terminal/lib/panes';
-import { parseWorkspaceScopeKey, type WorkspaceEnv } from '@/modules/workspace';
+import { parseWorkspaceScopeKey, type WorkspaceEnv, workspaceNative } from '@/modules/workspace';
 import { useEffect, useRef } from 'react';
 import { activeSpaceEnv, freshTabCwd } from './activeSpace';
 import { freshTerminalTab, hydrateTabs } from './serialize';
@@ -97,7 +96,9 @@ export function useSpacesBoot({
           restored.push(freshTerminalTab(active, cwd, allocId));
         }
 
-        await Promise.allSettled(uniqueCwds(restored).map((cwd) => native.workspaceAuthorize(cwd)));
+        await Promise.allSettled(
+          uniqueCwds(restored).map((cwd) => workspaceNative.workspaceAuthorize(cwd)),
+        );
 
         const initialActiveIndex: Record<string, number> = {};
         for (const [id, st] of states) initialActiveIndex[id] = st.activeTabIndex;

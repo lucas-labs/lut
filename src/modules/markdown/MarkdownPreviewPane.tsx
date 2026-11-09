@@ -1,9 +1,9 @@
-import { MarkdownCode } from '@/components/ai-elements/markdown-code';
 import { useAssetGrant } from '@/lib/useAssetGrant';
 import { cn } from '@/lib/utils';
 import { checkReadable } from '@/modules/ai/lib/security';
 import { memo, useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { defaultRehypePlugins, Streamdown } from 'streamdown';
+import { MarkdownCode } from './code/markdown-code';
 import { previewBoundary, rehypeLocalImages } from './lib/assetPath';
 import { MarkdownLink } from './MarkdownLink';
 import { MarkdownViewToggle } from './MarkdownViewToggle';

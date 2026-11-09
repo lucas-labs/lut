@@ -89,9 +89,6 @@ vi.mock('../store/agentsStore', () => ({
 vi.mock('../store/snippetsStore', () => ({
   useSnippetsStore: { getState: () => ({ hydrate: vi.fn() }) },
 }));
-vi.mock('@/modules/agents/lib/review', () => ({
-  firePendingReviewForSession: vi.fn(),
-}));
 
 import { useAiBootstrap } from './useAiBootstrap';
 

@@ -1,4 +1,4 @@
-import { currentWorkspaceEnv, type WorkspaceEnv } from '@/modules/workspace';
+import { currentWorkspaceEnv, type WorkspaceEnv, workspaceNative } from '@/modules/workspace';
 import { invoke } from '@tauri-apps/api/core';
 
 export type ReadResult =
@@ -39,12 +39,6 @@ type GlobHit = { path: string; rel: string };
 export type GlobResponse = { hits: GlobHit[]; truncated: boolean };
 
 export const native = {
-  workspaceCurrentDir: () => invoke<string>('workspace_current_dir'),
-  workspaceAuthorize: (path: string) =>
-    invoke<string>('workspace_authorize', {
-      path,
-      workspace: currentWorkspaceEnv(),
-    }),
   readProjectMemory: (root: string, checkedPath: string, workspace: WorkspaceEnv) =>
     invoke<string | null>('fs_read_project_memory', {
       root,
@@ -62,11 +56,7 @@ export const native = {
       content,
       workspace: currentWorkspaceEnv(),
     }),
-  canonicalize: (path: string, workspace = currentWorkspaceEnv()) =>
-    invoke<string>('fs_canonicalize', {
-      path,
-      workspace,
-    }),
+  canonicalize: workspaceNative.canonicalize,
   createFile: (path: string) =>
     invoke<void>('fs_create_file', { path, workspace: currentWorkspaceEnv() }),
   createDir: (path: string) =>

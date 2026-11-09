@@ -4,13 +4,13 @@ import {
   ConversationEmptyState,
   ConversationScrollButton,
 } from '@/components/ai-elements/conversation';
-import { MarkdownCode } from '@/components/ai-elements/markdown-code';
 import { Message, MessageContent, MessageResponse, type MessageResponseProps } from '@/components/ai-elements/message';
 import { Reasoning, ReasoningContent, ReasoningTrigger } from '@/components/ai-elements/reasoning';
 import { Tool } from '@/components/ai-elements/tool';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
+import { MarkdownCode } from '@/modules/markdown/code/markdown-code';
 import { MarkdownLink, type MarkdownLinkProps } from '@/modules/markdown/MarkdownLink';
 import { ArrowRight01Icon, CodeIcon, File01Icon, HashtagIcon, TerminalIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';

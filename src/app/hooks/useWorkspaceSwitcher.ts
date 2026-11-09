@@ -1,6 +1,10 @@
-import { native } from '@/modules/ai/lib/native';
 import type { Tab } from '@/modules/tabs';
-import { getWslHome, LOCAL_WORKSPACE, type WorkspaceEnv } from '@/modules/workspace';
+import {
+  getWslHome,
+  LOCAL_WORKSPACE,
+  type WorkspaceEnv,
+  workspaceNative,
+} from '@/modules/workspace';
 import { homeDir } from '@tauri-apps/api/path';
 import { type RefObject, useCallback, useEffect, useState } from 'react';
 
@@ -39,7 +43,7 @@ export function useWorkspaceSwitcher({
         const normalized = p.replace(/\\/g, '/');
         setHome(normalized);
         try {
-          await native.workspaceAuthorize(normalized);
+          await workspaceNative.workspaceAuthorize(normalized);
         } catch {
           // Bootstrap already authorizes home from Rust; ignore.
         }
@@ -48,7 +52,7 @@ export function useWorkspaceSwitcher({
   }, []);
 
   useEffect(() => {
-    native
+    workspaceNative
       .workspaceCurrentDir()
       .then(setLaunchCwd)
       .catch(() => setLaunchCwd(null))
@@ -59,7 +63,7 @@ export function useWorkspaceSwitcher({
     setHome(nextHome);
     setLaunchCwd(nextHome);
     try {
-      await native.workspaceAuthorize(nextHome);
+      await workspaceNative.workspaceAuthorize(nextHome);
     } catch {
       // Non-fatal — git panel will surface "not authorized" if needed.
     }

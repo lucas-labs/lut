@@ -1,7 +1,5 @@
 import { routeAgentNotification } from '@/modules/agents/lib/route';
-import type { AgentStatus } from '@/modules/agents/lib/types';
 import { useWindowFocus } from '@/modules/agents/lib/useWindowFocus';
-import { useAgentStore } from '@/modules/agents/store/agentStore';
 import { useEffect, useRef } from 'react';
 import { useChatStore } from '../store/chatStore';
 
@@ -11,12 +9,6 @@ type RunStatus = 'idle' | 'thinking' | 'streaming' | 'awaiting-approval' | 'erro
 
 function isBusy(s: RunStatus): boolean {
   return s === 'thinking' || s === 'streaming' || s === 'awaiting-approval';
-}
-
-function liveStatus(s: RunStatus): AgentStatus | null {
-  if (s === 'awaiting-approval') return 'waiting';
-  if (s === 'thinking' || s === 'streaming') return 'working';
-  return null;
 }
 
 export function LocalAgentNotificationsBridge() {
@@ -32,8 +24,6 @@ export function LocalAgentNotificationsBridge() {
   const prev = useRef<RunStatus>(status);
 
   useEffect(() => {
-    useAgentStore.getState().setLocalAgent(liveStatus(status) ? { agent: AGENT, status: liveStatus(status)! } : null);
-
     const was = prev.current;
     prev.current = status;
     if (was === status) return;
