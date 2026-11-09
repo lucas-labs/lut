@@ -65,7 +65,7 @@ SCOPE = (
     "webview itself. A synthetic coding-agent program runs in the PTYs. Single machine, "
     "single display; not packaged-app signing, other users' fonts/shell config or cross-platform."
 )
-procstats.ROLE_BY_NAME["terax"] = "host"
+procstats.ROLE_BY_NAME["lut"] = "host"
 procstats.ROLE_ORDER[:] = ["host", "web_content", "web_content_prewarmed", "gpu", "networking", "workload"]
 procstats.ROLE_LABEL["workload"] = "PTY-procs"
 
@@ -163,7 +163,7 @@ def other_benchmarks() -> list[str]:
     found = []
     for pid, (_, command) in procstats.process_table().items():
         name = os.path.basename(command)
-        if name == "renderer-lab" or (name == "terax" and "Terax App Lab" in command and pid != os.getpid()):
+        if name == "renderer-lab" or (name == "lut" and "Terax App Lab" in command and pid != os.getpid()):
             found.append(f"{name}[{pid}]")
     return found
 

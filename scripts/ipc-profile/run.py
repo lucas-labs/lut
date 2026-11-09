@@ -68,7 +68,7 @@ try:
         subprocess.run(["pnpm", "exec", "tauri", "build", "--debug", "--no-bundle", "--config", str(config)], cwd=repo, env=env, stdout=log, stderr=log, check=True)
     metadata = json.loads(subprocess.check_output(["cargo", "metadata", "--locked", "--no-deps", "--format-version=1", "--manifest-path", "src-tauri/Cargo.toml"], cwd=repo))
     with (output / "app.log").open("w") as log:
-        process = subprocess.Popen([str(Path(metadata["target_directory"]) / "debug/terax")], cwd=repo, stdout=log, stderr=log)
+        process = subprocess.Popen([str(Path(metadata["target_directory"]) / "debug/lut")], cwd=repo, stdout=log, stderr=log)
         if not finished.wait(45):
             raise RuntimeError("Native IPC test timed out")
         process.wait(timeout=10)

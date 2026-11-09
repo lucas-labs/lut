@@ -299,8 +299,8 @@ Commands:
 
 ```powershell
 pnpm tauri build --no-bundle
-pwsh scripts/baseline/measure.ps1 -Exe src-tauri/target/release/terax.exe -Out results.json
-pwsh scripts/baseline/measure.ps1 -Exe src-tauri/target/release/terax.exe -MemoryOnly -Out memory.json
+pwsh scripts/baseline/measure.ps1 -Exe src-tauri/target/release/lut.exe -Out results.json
+pwsh scripts/baseline/measure.ps1 -Exe src-tauri/target/release/lut.exe -MemoryOnly -Out memory.json
 ```
 
 Do not touch the keyboard or mouse while it runs: it types into the app and reads the screen.

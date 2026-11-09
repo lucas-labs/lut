@@ -2328,6 +2328,54 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 
 [[package]]
+name = "lut"
+version = "0.9.0"
+dependencies = [
+ "block2",
+ "dirs",
+ "fsevent-sys",
+ "getrandom 0.4.3",
+ "globset",
+ "grep-regex",
+ "grep-searcher",
+ "gtk",
+ "http-range",
+ "ignore",
+ "libc",
+ "log",
+ "memchr",
+ "notify",
+ "nucleo-matcher",
+ "objc2",
+ "objc2-app-kit",
+ "objc2-foundation",
+ "percent-encoding",
+ "portable-pty",
+ "proptest",
+ "regex",
+ "serde",
+ "serde_json",
+ "shared_child",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-clipboard-manager",
+ "tauri-plugin-log",
+ "tauri-plugin-notification",
+ "tauri-plugin-opener",
+ "tauri-plugin-os",
+ "tauri-plugin-store",
+ "tauri-plugin-window-state",
+ "tempfile",
+ "terax-cli",
+ "terax-control-protocol",
+ "tokio",
+ "wasmparser",
+ "which",
+ "window-vibrancy 0.6.0",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
 name = "mac-notification-sys"
 version = "0.6.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4451,54 +4499,6 @@ checksum = "c4790fc369d5a530f4b544b094e31388b9b3a37c0f4652ade4505945f5660d24"
 dependencies = [
  "new_debug_unreachable",
  "utf-8",
-]
-
-[[package]]
-name = "terax"
-version = "0.9.0"
-dependencies = [
- "block2",
- "dirs",
- "fsevent-sys",
- "getrandom 0.4.3",
- "globset",
- "grep-regex",
- "grep-searcher",
- "gtk",
- "http-range",
- "ignore",
- "libc",
- "log",
- "memchr",
- "notify",
- "nucleo-matcher",
- "objc2",
- "objc2-app-kit",
- "objc2-foundation",
- "percent-encoding",
- "portable-pty",
- "proptest",
- "regex",
- "serde",
- "serde_json",
- "shared_child",
- "tauri",
- "tauri-build",
- "tauri-plugin-clipboard-manager",
- "tauri-plugin-log",
- "tauri-plugin-notification",
- "tauri-plugin-opener",
- "tauri-plugin-os",
- "tauri-plugin-store",
- "tauri-plugin-window-state",
- "tempfile",
- "terax-cli",
- "terax-control-protocol",
- "tokio",
- "wasmparser",
- "which",
- "window-vibrancy 0.6.0",
- "windows-sys 0.61.2",
 ]
 
 [[package]]

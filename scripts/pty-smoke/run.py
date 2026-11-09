@@ -153,7 +153,7 @@ try:
     metadata = json.loads(subprocess.check_output(["cargo", "metadata", "--no-deps", "--format-version=1", "--manifest-path", "src-tauri/Cargo.toml"], cwd=repo))
     target = output / "cargo-target" if args.dev else Path(metadata["target_directory"])
     with (output / "app.log").open("w") as log:
-        process = subprocess.Popen([str(target / "debug/terax")], cwd=repo, stdout=log, stderr=log)
+        process = subprocess.Popen([str(target / "debug/lut")], cwd=repo, stdout=log, stderr=log)
         budget = 240 + args.idle_ms / 1000 + args.spin_seconds * 6
         if not finished.wait(budget):
             raise RuntimeError(f"PTY smoke timed out after {budget:.0f}s (see {output / 'app.log'})")
