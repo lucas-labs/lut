@@ -1,9 +1,34 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { expect, it } from 'vitest';
 
-const windowsBash = 'C:/Program Files/Git/bin/bash.exe';
-const bash = process.platform === 'win32' ? windowsBash : '/bin/bash';
+// Git Bash lives in the Git for Windows install, wherever that is. Its root is found from `git --exec-path`
+// (`<root>/mingw64/libexec/git-core`) or from `git.exe` on PATH (`<root>/cmd` or `<root>/bin`). `bash` on PATH is not
+// used: it can be WSL's `C:\Windows\System32\bash.exe`.
+function findGitBash(): string {
+  const fallback = 'C:/Program Files/Git/bin/bash.exe';
+  const starts: string[] = [];
+  const execPath = spawnSync('git', ['--exec-path'], { encoding: 'utf8' });
+  if (execPath.status === 0) starts.push(execPath.stdout.trim());
+  const where = spawnSync('where', ['git'], { encoding: 'utf8' });
+  if (where.status === 0)
+    starts.push(
+      ...where.stdout
+        .split(/\r?\n/)
+        .filter(Boolean)
+        .map((p) => dirname(p)),
+    );
+  for (const start of starts) {
+    for (let dir = start, up = 0; up < 4; dir = dirname(dir), up++) {
+      const candidate = join(dir, 'bin', 'bash.exe');
+      if (existsSync(candidate)) return candidate;
+    }
+  }
+  return fallback;
+}
+
+const bash = process.platform === 'win32' ? findGitBash() : '/bin/bash';
 const integration = readFileSync(
   new URL('../../../../src-tauri/src/modules/pty/scripts/bashrc.bash', import.meta.url),
   'utf8',

@@ -176,14 +176,14 @@ The React Compiler warnings (`react-hooks/*`, 105 in total) left after the BYOK 
 
 `src/app/dist-budget.test.ts` locks the bundle graph and the duplicate-package rule.
 
-**Tests that skip depending on the environment** (2 files and 9 tests skipped on this machine):
+**Tests that skip depending on the environment** (2 files and 9 tests skipped on this machine at E01-03; since E01-20, 1 file and 2 tests):
 
-| Test                                                       | Condition                                                         | On this machine                                    |
-| ---------------------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------- |
-| `terminal/ghostty/bashPromptHooks.test.ts` (7 tests)       | needs `C:/Program Files/Git/bin/bash.exe` (hardcoded)             | skipped: Git is installed on `D:`. Fixed by E01-20 |
-| `terminal/ghostty/shellBlockCompatibility.test.ts` (1)     | skipped on `win32`                                                | skipped                                            |
-| `terminal/lib/quoteShellPath.test.ts`, fish round trip (1) | needs `fish`                                                      | skipped                                            |
-| `terminal/block/lib/pathComplete.shell.test.ts`            | one suite per shell among bash, zsh, pwsh, powershell that starts | runs for the shells found                          |
+| Test                                                       | Condition                                                                    | On this machine                 |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------- |
+| `terminal/ghostty/bashPromptHooks.test.ts` (7 tests)       | needs Git Bash, found from `git --exec-path` or `git` on PATH (E01-20, #323) | ✅ runs: Git Bash found on `D:` |
+| `terminal/ghostty/shellBlockCompatibility.test.ts` (1)     | skipped on `win32`                                                           | skipped                         |
+| `terminal/lib/quoteShellPath.test.ts`, fish round trip (1) | needs `fish`                                                                 | skipped                         |
+| `terminal/block/lib/pathComplete.shell.test.ts`            | one suite per shell among bash, zsh, pwsh, powershell that starts            | runs for the shells found       |
 
 ### Backend: Rust (`cargo test --workspace`)
 
