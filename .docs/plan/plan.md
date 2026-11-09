@@ -88,6 +88,7 @@ size: S
 **Acceptance criteria:**
 - [ ] `dev:inspect` and `analyze:bundle` no longer use POSIX `VAR=x cmd` syntax (cross-platform env setter or a Node wrapper); behaviour unchanged.
 - [ ] `vite.config.ts`, `biome.json`, `knip.json` and `.size-limit.json` commands pass on Windows, or remaining failures are recorded in `.docs/testing/baseline.md` with the issue that will fix them.
+- [ ] `pnpm knip` passes: the unused devDependency `react-compiler-healthcheck` is removed (it can still be run with `npx` when needed), and the knip entry in `.docs/testing/baseline.md` is marked fixed.
 - [ ] No dependency upgrades beyond what the fix strictly needs (IR-45).
 
 **Verification:** in pwsh: `pnpm dev:inspect` starts, `pnpm analyze:bundle` produces the report, `pnpm knip` and `pnpm size` (after `pnpm build`) give the same result as on POSIX.
@@ -97,7 +98,7 @@ size: S
 ### E01-05 — Add the CI quality gate workflow
 ```yaml
 id: E01-05
-depends-on: [E01-04]
+depends-on: [E01-04, E01-17, E01-19, E01-20]
 refs: [ADR-007, .docs/plan/analysis/proposal.md]
 covers: [ADR-007]
 type: task
@@ -107,7 +108,7 @@ size: M
 **Goal:** Every PR to `master` runs lint, typecheck, tests and clippy automatically (IR-95), so changes pass a reproducible gate.
 
 **Acceptance criteria:**
-- [ ] `.github/workflows/ci.yml` runs on pull requests and pushes to `master`: `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm format:check`, `pnpm check-types`, `pnpm test`, `pnpm build`, and from `src-tauri/` `cargo test --locked --workspace` and `cargo clippy --all-targets --locked -- -D warnings`.
+- [ ] `.github/workflows/ci.yml` runs on pull requests and pushes to `master`: `pnpm install --frozen-lockfile`, `pnpm lint`, `pnpm format:check`, `pnpm check-types`, `pnpm test`, `pnpm build`, `pnpm knip`, and from `src-tauri/` `cargo fmt --all --check`, `cargo test --locked --workspace` and `cargo clippy --all-targets --locked -- -D warnings`.
 - [ ] Runs on `windows-latest` (primary platform). macOS and Linux jobs are added by E24-01 (decision 20); this issue does not add them.
 - [ ] Pre-existing failures recorded in the baseline are fixed in their own issues or explicitly allowed to fail with a link to the baseline entry; nothing is skipped silently.
 - [ ] pnpm and cargo caches configured; toolchain versions match `.docs/development/build.md`.
@@ -283,10 +284,114 @@ size: XS
 
 **Verification:** CI green or failing only on documented baseline entries; manual review of the gate section.
 
+### E01-16 — Replace the Biome linter with ESLint
+```yaml
+id: E01-16
+depends-on: [E01-04]
+refs: [ADR-007, .docs/testing/baseline.md]
+covers: [build-identity/frontend-build-config, build-identity/node-package, ADR-007]
+type: task
+scope: none
+size: M
+```
+**Goal:** `pnpm lint` runs ESLint instead of Biome (user decision: Biome is dropped for Prettier + ESLint), with at least the same checks as today.
+
+**Acceptance criteria:**
+- [ ] `eslint.config.js` (flat config) with `typescript-eslint`, `eslint-plugin-react-hooks` and `eslint-plugin-jsx-a11y`; same file scope as `biome.json` today (`src/**/*.{ts,tsx}`, `packages/ghostty-core/lib/official/**/*.ts`, excluding `src/components/ui/**` and `src/components/ai-elements/**`).
+- [ ] Rules that are errors in Biome today stay errors: type-only imports and exports (`useImportType`, `useExportType`) and banned `@ts-ignore` (`noTsIgnore`). Biome's warning-level rules map to their ESLint equivalents as warnings.
+- [ ] Import ordering is enforced by a lint rule with Biome's current groups: node builtins, `@/`, packages, aliases, relative paths.
+- [ ] The 23 `biome-ignore` comments (13 files) are converted to `eslint-disable-next-line` with the same justification.
+- [ ] `pnpm lint` and `pnpm lint:fix` run ESLint and exit 0. Rules with pre-existing violations are warnings, with their counts recorded in `.docs/testing/baseline.md`.
+- [ ] No behaviour change: only lint configuration, comments, and mechanical import-type or import-order fixes.
+
+**Verification:** `pnpm lint` exits 0; `pnpm check-types && pnpm test` pass; adding `// @ts-ignore` to a file makes `pnpm lint` fail.
+
+**Notes:** Biome stays installed until E01-17 removes it together with the formatter. The in-app editor's Biome format-on-save option (`src/modules/editor/lib/externalFormat.ts`) is a product feature and is not touched.
+
+### E01-17 — Replace the Biome formatter with Prettier and remove Biome
+```yaml
+id: E01-17
+depends-on: [E01-16]
+refs: [ADR-007, .docs/testing/baseline.md, .docs/development/build.md]
+covers: [build-identity/frontend-build-config, build-identity/node-package, build-identity/repo-tooling, ADR-007]
+type: task
+scope: none
+size: L
+size-exception: Reformatting the whole codebase is mechanical; the config change and the reformat are separate commits so the config can be reviewed on its own.
+```
+**Goal:** Prettier formats the code and Markdown docs with the user's style, and Biome is no longer a dependency of the repo.
+
+**Acceptance criteria:**
+- [ ] Prettier config: `singleQuote: true`, `semi: true`, `trailingComma: 'all'`. Line width 100 for `*.ts`, 120 for `*.tsx`, 120 for `*.md`, the last two through `overrides`.
+- [ ] Scope: the ESLint file scope from E01-16, plus `.docs/**/*.md` except `.docs/origin-terax/**` (imported Terax docs stay untouched). Markdown uses `proseWrap: 'preserve'`.
+- [ ] `pnpm format` and `pnpm format:check` run Prettier. `pnpm format:check` passes after one commit that only reformats.
+- [ ] `@biomejs/biome` and `biome.json` removed. `.vscode/settings.json` and `.vscode/extensions.json` point to Prettier and ESLint.
+- [ ] `.docs/development/build.md` updated (lint/format row), and the `format:check` entry in `.docs/testing/baseline.md` marked fixed with a link to this issue.
+- [ ] The in-app editor's Biome format-on-save option is kept (product feature).
+
+**Verification:** `pnpm format:check` and `pnpm lint` exit 0; `pnpm check-types && pnpm test && pnpm build` pass; `git grep -n biome -- ':!src/modules/editor' ':!.docs' ':!pnpm-lock.yaml'` returns nothing.
+
+### E01-18 — Apply rustfmt to the backend
+```yaml
+id: E01-18
+depends-on: [E01-03]
+refs: [ADR-007, .docs/testing/baseline.md]
+covers: [ADR-007]
+type: task
+scope: be
+size: S
+size-exception: Mechanical formatting only (55 hunks in 15 files).
+```
+**Goal:** `cargo fmt --check` passes, so the CI gate can enforce it.
+
+**Acceptance criteria:**
+- [ ] `cargo fmt --manifest-path src-tauri/Cargo.toml --all` applied, with no other change in the PR.
+- [ ] The `cargo fmt --check` entry in `.docs/testing/baseline.md` is marked fixed with a link to this issue.
+
+**Verification:** `cargo fmt --manifest-path src-tauri/Cargo.toml --all --check` exits 0; `cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace` passes.
+
+### E01-19 — Fix the pre-existing clippy errors
+```yaml
+id: E01-19
+depends-on: [E01-18]
+refs: [ADR-007, .docs/testing/baseline.md]
+covers: [ADR-007]
+type: task
+scope: be
+size: XS
+```
+**Goal:** `cargo clippy --all-targets --locked -- -D warnings` passes on Windows, so the CI gate can enforce it.
+
+**Acceptance criteria:**
+- [ ] The four Windows-only errors in the git agent-task tests (`followup_tests.rs:8,13`, `task_worktree_tests.rs:2`, `feedback_tests.rs:344`) are fixed by gating the imports and the helper with `#[cfg(unix)]`. That module is deleted by E02-05; this keeps the gate green until then.
+- [ ] `src/modules/workspace.rs:559` uses `as_chunks::<2>()` instead of `chunks_exact(2)` (`clippy::chunks_exact_to_as_chunks`), with unchanged behaviour (the existing UTF-16 decoding tests pass).
+- [ ] The clippy entry in `.docs/testing/baseline.md` is marked fixed with a link to this issue.
+
+**Verification:** `cargo clippy --manifest-path src-tauri/Cargo.toml --locked --workspace --all-targets -- -D warnings` exits 0; `cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace` passes.
+
+### E01-20 — Find Git Bash through PATH in the Bash prompt-hook tests
+```yaml
+id: E01-20
+depends-on: [E01-17]
+refs: [.docs/testing/baseline.md]
+covers: [terminal/session-lifecycle, F0:8]
+type: task
+scope: ui
+size: XS
+```
+**Goal:** The Bash shell-integration tests run on every Windows machine with Git Bash, not only when it is installed in `C:\Program Files\Git`.
+
+**Acceptance criteria:**
+- [ ] `src/modules/terminal/ghostty/bashPromptHooks.test.ts` resolves Git Bash on Windows from `git --exec-path` or `PATH` (never WSL's `bash.exe` in `System32`), with the hardcoded path only as a fallback.
+- [ ] The tests are still skipped, not failed, when no Git Bash exists.
+- [ ] The skipped-tests table in `.docs/testing/baseline.md` is updated.
+
+**Verification:** on a machine with Git installed in `D:\Program Files\Git`, `pnpm exec vitest run src/modules/terminal/ghostty/bashPromptHooks.test.ts` runs the 7 tests and they pass.
+
 ### E01-15 — Close-out: Phase 0 baseline
 ```yaml
 id: E01-15
-depends-on: [E01-01, E01-02, E01-03, E01-04, E01-05, E01-06, E01-07, E01-08, E01-09, E01-10, E01-11, E01-12, E01-13, E01-14]
+depends-on: [E01-01, E01-02, E01-03, E01-04, E01-05, E01-06, E01-07, E01-08, E01-09, E01-10, E01-11, E01-12, E01-13, E01-14, E01-16, E01-17, E01-18, E01-19, E01-20]
 refs: [F0]
 covers: []
 type: closeout
