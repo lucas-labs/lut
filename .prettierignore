@@ -1,0 +1,6 @@
+# Generated shadcn / AI-elements components (not formatted, as with Biome).
+src/components/ui/
+src/components/ai-elements/
+
+# Imported Terax documentation stays as imported.
+.docs/origin-terax/
