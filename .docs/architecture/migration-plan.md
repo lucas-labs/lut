@@ -38,7 +38,7 @@ E11 design (user) + E14 ─ E13 settings ─ E10 tools on demand ─ E12 app she
   (E01-05), the PR rules (E01-06), these architecture documents (E01-07 to E01-09) and the performance baseline
   (E01-10 to E01-12). **Gate:** E01-14; nothing is deleted before it.
 - **E02** isolates lut's identity from Terax (bundle id, executable, env vars, storage, hooks) and deletes the unwired
-  git agent-task backend (E02-03 → E02-04 → E02-05). **Check:** E02-16, coexistence with an installed Terax.
+  git agent-task backend (E02-03 → E02-04 → E02-05). **Check:** E04-13 (moved from E02-16), coexistence with an installed Terax.
 - **E03** licensing and provenance; **E04** user-visible names, then the repository goes public (E04-09).
 
 ### 2. Terminal-first proof of concept (F1): E07

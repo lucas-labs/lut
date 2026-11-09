@@ -302,7 +302,7 @@ size: S
 **Acceptance criteria:**
 
 - [ ] `.docs/testing/baseline.md` records results for: pwsh, WSL, splits, tabs, Ghostty renderer on WebGPU and WebGL fallback, agents with hooks disabled.
-- [ ] Agents with hooks **enabled** are not tested here: the imported hook installer still uses Terax markers. That part of F0:9 is run by E02-16, after E02-11 makes the markers lut-owned.
+- [ ] Agents with hooks **enabled** are not tested here: the imported hook installer still uses Terax markers. That part of F0:9 is run by E04-13, after E02-11 makes the markers lut-owned.
 - [ ] Every failure is listed as a known failure with reproduction steps.
 
 **Verification:** `pnpm tauri dev` on Windows 11; checklist in the PR with pass/fail per item.
@@ -957,31 +957,6 @@ its own service name.
 
 **Notes:** the AI store files (`terax-ai-*.json`) live in lut's own app data dir after E02-06 and are deleted with the AI (E05), so they are not renamed here.
 
-### E02-16 — Verify coexistence with an installed Terax
-
-```yaml
-id: E02-16
-depends-on: [E02-05, E02-06, E02-07, E02-10, E02-11, E02-12, E02-13, E02-14, E02-15]
-refs: [13.2:21, 16:26, F0:9, F0:10, .docs/plan/analysis/build-identity.md]
-covers: [13.2:21, 16:26, F0:9, F0:10, identity:1]
-type: task
-scope: none
-size: S
-```
-
-**Goal:** prove the acceptance tests 13.2:21 and 16:26: lut neither reads nor writes Terax data, stores, keychain entries, installer registrations, hooks or variables, and uninstalling lut hooks preserves Terax's. Also run the part of the F0:9 smoke test deferred by E01-13: agents with hooks enabled with consent.
-
-**Acceptance criteria:**
-
-- [ ] `git grep -n -i` over the class (a) tokens of `.docs/plan/analysis/build-identity.md` (plus `notify;Terax;`, `.terax-tmp-`, `"name": "terax"`, `cache.join("terax")`) shows only intended leftovers (the read-policy deny of `<cache>/terax`, E06-owned block code, internal rename-on-touch names), each listed in the PR.
-- [ ] Keychain: `git grep -n '"terax-ai"' src src-tauri/src` returns no keychain service name (only unrelated test strings, listed in the PR); nothing that runs at startup reads the `terax-ai` service.
-- [ ] Installer: `productName`/`mainBinaryName` are `lut`; installing and uninstalling the lut NSIS bundle leaves Terax's install dir, Start-menu entry, uninstall key and file-association ProgIDs unchanged.
-- [ ] Manual run on Windows with Terax installed: lut creates only its own data/cache dirs, Terax's dirs and `~/.claude`/`~/.codex` Terax entries keep their content, lut hook install/uninstall leaves Terax's hooks intact, and no request goes to Terax infrastructure.
-- [ ] Agents with hooks enabled with consent (F0:9): Claude Code and Codex in lut panes deliver hook events; the before/after of `~/.claude/settings.json` is recorded and differs only in lut's groups.
-- [ ] Results recorded in the PR and in the Phase 0 baseline report.
-
-**Verification:** `cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace && pnpm test`; the manual checklist above.
-
 ### E02-18 — Remove the uncalled fs_grep, fs_glob and git_show_commit commands
 
 ```yaml
@@ -1008,7 +983,7 @@ size: S
 
 ```yaml
 id: E02-17
-depends-on: [E02-01, E02-02, E02-03, E02-04, E02-05, E02-06, E02-07, E02-08, E02-09, E02-10, E02-11, E02-12, E02-13, E02-14, E02-15, E02-16, E02-18]
+depends-on: [E02-01, E02-02, E02-03, E02-04, E02-05, E02-06, E02-07, E02-08, E02-09, E02-10, E02-11, E02-12, E02-13, E02-14, E02-15, E02-18]
 refs: []
 type: closeout
 scope: none
@@ -1180,6 +1155,7 @@ size: XS
 **Acceptance criteria:**
 
 - [ ] `src-tauri/Cargo.toml` package `description` uses lut; `tauri.conf.json` `longDescription`, `shortDescription`, `copyright` and `publisher` describe lut (Terax attribution stays in `NOTICE`).
+- [ ] Publisher and copyright holder are **lucode** (owner decision): `publisher: "lucode"`, so the installer's manufacturer key is `HKCU\Software\lucode\lut` instead of Terax's `Crynta`; `Cargo.toml` `authors` too.
 - [ ] Internal crate/lib names (`terax_lib`, `terax-control-protocol`) are not renamed here.
 
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml`; `pnpm tauri build`; the installer's properties and the Windows "Apps" entry show lut's description and publisher.
@@ -1362,7 +1338,7 @@ size: XS
 
 ```yaml
 id: E04-10
-depends-on: [E01-08, E01-14, E02-16, E03-02]
+depends-on: [E01-08, E01-14, E04-13, E03-02]
 refs: [F0, 15]
 covers: [F0:entregable]
 type: task
@@ -1375,7 +1351,7 @@ test registry, dependency matrix, licensing strategy, identity isolated from Ter
 
 **Acceptance criteria:**
 
-- [ ] `.docs/testing/baseline.md` gets a "Phase 0 deliverable" summary that links: the build doc (E01-01), the baseline and gate result (E01-03, E01-14), the test registry, the dependency matrix (E01-08), the licensing inventory (E03-02), the identity-isolation results (E02-16) and the updater removal (E01-02).
+- [ ] `.docs/testing/baseline.md` gets a "Phase 0 deliverable" summary that links: the build doc (E01-01), the baseline and gate result (E01-03, E01-14), the test registry, the dependency matrix (E01-08), the licensing inventory (E03-02), the identity-isolation results (E04-13) and the updater removal (E01-02).
 - [ ] Every link resolves; any missing part is added to `plan.md` as a blocking item of E04-09.
 
 **Verification:** links resolve; manual review of the summary.
@@ -1409,17 +1385,43 @@ texts; this one renames what is left (about 1500 lines when it was written, E06-
       `packages` and `scripts`.
 - [ ] Kept on purpose and listed in the PR: credit and licence (`public/licenses/terax.txt`, README credit, notices),
       `.docs/origin-terax/`, and the places that must name Terax to stay apart from it (E02-11 hooks, E02-15
-      keychain, E02-16 coexistence).
+      keychain, E04-13 coexistence).
 
 **Verification:** `git grep -i terax -- . ':!.docs'` returns only the kept list; `pnpm test`, `cargo test`, the
 script tests (`bashrc.test.bash`, `zshrc.test.py`, `init.test.fish`) and `bashCommandStart.test.ts` pass; manual:
 pwsh, bash and WSL prompts and cwd tracking still work, and old Bash still blocks injected commands.
 
+### E04-13 — Verify coexistence with an installed Terax
+
+```yaml
+id: E04-13
+depends-on: [E02-05, E02-06, E02-07, E02-10, E02-11, E02-12, E02-13, E02-14, E02-15, E04-02]
+refs: [13.2:21, 16:26, F0:9, F0:10, .docs/plan/analysis/build-identity.md]
+covers: [13.2:21, 16:26, F0:9, F0:10, identity:1]
+type: task
+scope: none
+size: S
+```
+
+**Goal:** (Moved from E02-16 so E02 can close; it needs E04-02, because until then the lut installer owns Terax's `OpenInTerax` keys.) Prove the acceptance tests 13.2:21 and 16:26: lut neither reads nor writes Terax data, stores, keychain entries, installer registrations, hooks or variables, and uninstalling lut hooks preserves Terax's. Also run the part of the F0:9 smoke test deferred by E01-13: agents with hooks enabled with consent.
+
+**Acceptance criteria:**
+
+- [ ] `git grep -n -i` over the class (a) tokens of `.docs/plan/analysis/build-identity.md` (plus `notify;Terax;`, `.terax-tmp-`, `"name": "terax"`, `cache.join("terax")`) shows only intended leftovers (the read-policy deny of `<cache>/terax`, E06-owned block code, internal rename-on-touch names), each listed in the PR.
+- [ ] Keychain: `git grep -n '"terax-ai"' src src-tauri/src` returns no keychain service name (only unrelated test strings, listed in the PR); nothing that runs at startup reads the `terax-ai` service.
+- [ ] Installer: `productName`/`mainBinaryName` are `lut`; installing and uninstalling the lut NSIS bundle leaves Terax's install dir, Start-menu entry, uninstall key and file-association ProgIDs unchanged.
+- [ ] Manual run on Windows with Terax installed: lut creates only its own data/cache dirs, Terax's dirs and `~/.claude`/`~/.codex` Terax entries keep their content, lut hook install/uninstall leaves Terax's hooks intact, and no request goes to Terax infrastructure.
+- [ ] Agents with hooks enabled with consent (F0:9): Claude Code and Codex in lut panes deliver hook events; the before/after of `~/.claude/settings.json` is recorded and differs only in lut's groups.
+- [ ] Uninstalling lut leaves nothing behind: `NSIS_HOOK_POSTUNINSTALL` also deletes the manufacturer key (`HKCU\Software\lucode\lut` after E04-01) and the `lut Document_backup` values Tauri's file-association macro writes under each `HKCU\Software\Classes\.<ext>` (both left by the E04-02 install test).
+- [ ] Results recorded in the PR and in the Phase 0 baseline report.
+
+**Verification:** `cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace && pnpm test`; the manual checklist above.
+
 ### E04-11 — Close-out: names and going public
 
 ```yaml
 id: E04-11
-depends-on: [E04-01, E04-02, E04-03, E04-04, E04-05, E04-06, E04-07, E04-08, E04-09, E04-10, E04-12]
+depends-on: [E04-01, E04-02, E04-03, E04-04, E04-05, E04-06, E04-07, E04-08, E04-09, E04-10, E04-12, E04-13]
 refs: [identity]
 covers: []
 type: closeout
