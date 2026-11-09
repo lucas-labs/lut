@@ -51,7 +51,7 @@
     "/library/caches/terax",
     "/.cache/terax",
     "/appdata/local/terax",
-    "/appdata/local/app.crynta.terax",
-    "/.local/share/app.crynta.terax"
+    "/appdata/local/dev.lucode.lut",
+    "/.local/share/dev.lucode.lut"
   ]
 }

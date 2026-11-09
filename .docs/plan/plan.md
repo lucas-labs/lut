@@ -897,6 +897,8 @@ linked to the issue that removes them, and the BYOK AI no longer identifies itse
 
 **Verification:** `pnpm check-types && pnpm test`; `git grep -n -E "fetch\(|reqwest|https://" src src-tauri/src` reproduces the table; `git grep -n "terax.ai" src src-tauri/src` returns nothing; reviewer cross-checks.
 
+**Notes:** The `HTTP-Referer`/`X-Title` criterion is met by E05: the AI code that sent them was deleted (#358). The audit table and the no-telemetry check remain.
+
 ### E02-14 — Rename persisted store files and webview storage keys to lut
 
 ```yaml
@@ -949,6 +951,8 @@ its own service name.
 - [ ] A unit test asserts the service name used by the keyring wrappers is not `terax-ai`.
 
 **Verification:** `pnpm check-types && pnpm test`; `git grep -n -E 'KEYRING_SERVICE = "terax-ai"|service: *"terax-ai"' src src-tauri/src` returns nothing; manual: with a `terax-ai` entry in the Windows Credential Manager, lut starts with no API key configured.
+
+**Notes:** Closed without a PR: E05 removed the BYOK AI, `keyring.ts`, the `secrets_*` commands and the `keyring` dependency (#358, #359), so nothing in lut reads the OS keychain.
 
 **Notes:** the AI store files (`terax-ai-*.json`) live in lut's own app data dir after E02-06 and are deleted with the AI (E05), so they are not renamed here.
 

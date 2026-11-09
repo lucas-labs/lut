@@ -45,7 +45,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
 server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
 threading.Thread(target=server.serve_forever, daemon=True).start()
-identifier = f"app.crynta.terax.ipc-lab-{uuid.uuid4().hex[:12]}"
+identifier = f"dev.lucode.lut.ipc-lab-{uuid.uuid4().hex[:12]}"
 config = output / "tauri.conf.json"
 config.write_text(json.dumps({
     "productName": "Terax IPC Lab", "identifier": identifier,

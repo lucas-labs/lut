@@ -271,7 +271,7 @@ describe('built startup graph', () => {
       return '';
     };
     expect(failure({ TERAX_BENCH_IDENTIFIER: '' })).toContain('TERAX_BENCH_IDENTIFIER');
-    expect(failure({ TERAX_BENCH_IDENTIFIER: 'app.crynta.terax' })).toContain(
+    expect(failure({ TERAX_BENCH_IDENTIFIER: 'dev.lucode.lut' })).toContain(
       'not the product identifier',
     );
     // Nothing was emitted by either attempt.
