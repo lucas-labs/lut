@@ -491,11 +491,34 @@ size: XS
 
 **Verification:** `pnpm knip` and `pnpm test src/modules/terminal/ghostty/bashPromptHooks.test.ts` pass.
 
+### E01-23 — Make the CI workflow pass on the Windows runner
+
+```yaml
+id: E01-23
+depends-on: [E01-05]
+refs: [ADR-007]
+covers: [ADR-007]
+type: task
+scope: none
+size: XS
+```
+
+**Goal:** The CI workflow passes on `windows-latest`. Every earlier run ended in `startup_failure`; the first real one
+(#362) failed in two format checks that pass locally.
+
+**Acceptance criteria:**
+
+- [ ] LF is fixed everywhere: `.gitattributes` (`* text=auto eol=lf`), Prettier `endOfLine: lf`, rustfmt `newline_style = "Unix"` and `.editorconfig`. The runner defaults to `core.autocrlf=true`, so every file had CRLF and `pnpm format:check` failed on 665 files.
+- [ ] `src-tauri/src/modules/fs/read_policy.rs` is formatted with rustfmt (left unformatted by E05-14).
+- [ ] Every CI job passes on the PR.
+
+**Verification:** the CI run of the PR is green.
+
 ### E01-15 — Close-out: Phase 0 baseline
 
 ```yaml
 id: E01-15
-depends-on: [E01-01, E01-02, E01-03, E01-04, E01-05, E01-06, E01-07, E01-08, E01-09, E01-10, E01-11, E01-12, E01-13, E01-14, E01-16, E01-17, E01-18, E01-19, E01-20, E01-21, E01-22]
+depends-on: [E01-01, E01-02, E01-03, E01-04, E01-05, E01-06, E01-07, E01-08, E01-09, E01-10, E01-11, E01-12, E01-13, E01-14, E01-16, E01-17, E01-18, E01-19, E01-20, E01-21, E01-22, E01-23]
 refs: [F0]
 covers: []
 type: closeout
