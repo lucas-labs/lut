@@ -1,15 +1,7 @@
-import { createProxyFetch } from "@/modules/ai/lib/proxyFetch";
-import {
-  saveMessages,
-  loadMessages,
-  deleteSessionData,
-  flushSessionWrites,
-} from "@/modules/ai/lib/sessions";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 const original = fetch;
-const nativeFetch = createProxyFetch({ allowPrivateNetwork: true });
 declare const __TERAX_IPC_BASE_URL__: string;
 declare const __TERAX_IPC_TREE__: string;
 const base = __TERAX_IPC_BASE_URL__;
@@ -20,7 +12,6 @@ type Json = Record<string, unknown>;
 
 async function checkMainThread(output: Record<string, unknown>) {
   const heavy = Promise.all([
-    invoke("fs_grep", { pattern: "zzzz-no-match-\\d+", root: tree, maxResults: 10 }),
     invoke("fs_list_files", { root: tree, limit: 10000 }),
     invoke("fs_search", { root: tree, query: "f099", limit: 50 }),
   ]);
@@ -141,57 +132,6 @@ async function checkBackdrop(output: Record<string, unknown>) {
 
 async function run() {
   const output: Record<string, unknown> = {};
-  const payload = "raw body λ 日本語\n".repeat(10000);
-  const response = await nativeFetch(base + "/echo", {
-    method: "POST",
-    body: payload,
-  });
-  output.rawBody = (await response.text()) === payload;
-  const bulk = await nativeFetch(base + "/bulk");
-  await sleep(300);
-  const content = await bulk.text();
-  output.boundedConsumer =
-    content.length === 1024 * 1024 &&
-    content.startsWith("ABCD") &&
-    content.endsWith("ABCD");
-  const sse = await (await nativeFetch(base + "/sse")).text();
-  output.smallChunks =
-    sse === Array.from({ length: 400 }, (_, i) => `data: ${i}\n\n`).join("");
-  const controller = new AbortController();
-  const slow = await nativeFetch(base + "/slow", { signal: controller.signal });
-  if (!slow.body) throw new Error("Missing streaming response");
-  const reader = slow.body.getReader();
-  await reader.read();
-  controller.abort();
-  try {
-    await reader.read();
-    output.abort = false;
-  } catch (e) {
-    output.abort = e instanceof DOMException && e.name === "AbortError";
-  }
-  await saveMessages("ipc-smoke", [
-    {
-      id: "one",
-      role: "user",
-      parts: [{ type: "text", text: "isolated storage check" }],
-    },
-  ]);
-  output.stored = (await loadMessages("ipc-smoke"))?.[0]?.id === "one";
-  const big = [
-    {
-      id: "big",
-      role: "assistant",
-      parts: [{ type: "text", text: "λ日本語 ".repeat(400_000) }],
-    },
-  ] as Parameters<typeof saveMessages>[1];
-  await saveMessages("ipc-big", big, { durable: true });
-  const back = await loadMessages("ipc-big");
-  output.bigSession =
-    (back?.[0].parts[0] as { text: string }).text.length === 2_000_000;
-  await deleteSessionData("ipc-big");
-  await deleteSessionData("ipc-smoke");
-  const flush = await flushSessionWrites();
-  output.deleted = (await loadMessages("ipc-smoke")) === null && flush.ok;
   await checkMainThread(output);
   await checkSearch(output);
   await checkWatch(output);

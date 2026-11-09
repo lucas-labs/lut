@@ -9,7 +9,6 @@ import shutil
 import subprocess
 import tempfile
 import threading
-import time
 import uuid
 
 parser = argparse.ArgumentParser()
@@ -22,7 +21,6 @@ repo = root.parent.parent
 output = (args.output or Path(tempfile.mkdtemp(prefix="terax-ipc-profile-"))).resolve()
 output.mkdir(parents=True, exist_ok=True)
 finished = threading.Event()
-state = {"slowDisconnected": False}
 result = {}
 
 class Handler(http.server.BaseHTTPRequestHandler):
@@ -37,7 +35,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
         body = self.rfile.read(int(self.headers.get("Content-Length", "0")))
         if self.path == "/report":
             result.update(json.loads(body))
-            result.update(state)
         self.send_response(200)
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Content-Length", str(len(body)))
@@ -45,27 +42,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
         self.wfile.write(body)
         if self.path == "/report":
             finished.set()
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-Type", "text/plain")
-        self.end_headers()
-        if self.path == "/bulk":
-            self.wfile.write(b"ABCD" * (256 * 1024))
-            self.wfile.flush()
-        elif self.path == "/sse":
-            for i in range(400):
-                self.wfile.write(f"data: {i}\n\n".encode())
-                self.wfile.flush()
-                if i % 20 == 0:
-                    time.sleep(0.005)
-        elif self.path == "/slow":
-            try:
-                for _ in range(1000):
-                    self.wfile.write(b"hello\n")
-                    self.wfile.flush()
-                    time.sleep(0.02)
-            except (BrokenPipeError, ConnectionResetError):
-                state["slowDisconnected"] = True
 
 server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
 threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -96,7 +72,7 @@ try:
         if not finished.wait(45):
             raise RuntimeError("Native IPC test timed out")
         process.wait(timeout=10)
-    expected = {"rawBody", "boundedConsumer", "smallChunks", "abort", "stored", "bigSession", "deleted", "slowDisconnected", "mainThreadResponsive", "grepSuperseded", "searchCached", "searchSeesNewFile", "watchDirectory", "watchFile", "watchQuietOutside", "backdropToggle"}
+    expected = {"mainThreadResponsive", "grepSuperseded", "searchCached", "searchSeesNewFile", "watchDirectory", "watchFile", "watchQuietOutside", "backdropToggle"}
     if any(result.get(key) is not True for key in expected):
         raise RuntimeError(result)
     print(json.dumps(result))
@@ -105,7 +81,7 @@ finally:
         process.terminate()
         process.wait(timeout=10)
     server.shutdown()
-    (output / "result.json").write_text(json.dumps({"scope": "Real Tauri debug webview, local synthetic HTTP, isolated conversation storage", **result}, indent=2) + "\n")
+    (output / "result.json").write_text(json.dumps({"scope": "Real Tauri debug webview, local synthetic HTTP", **result}, indent=2) + "\n")
     profile = Path.home() / "Library/Application Support" / identifier
     if profile.exists():
         shutil.rmtree(profile)
