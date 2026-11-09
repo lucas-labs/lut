@@ -60,3 +60,7 @@ that seemingly visual changes can break.
     | chore    | 🧹    | i18n   | 🌐    |
     | release  | 🔖    | revert | 🔙    |
     | wip      | 🚧    |        |       |
+
+- **Visual and engine changes never share a commit.** UI customisation (styles, layout, components, copy) and changes
+  to the engine (PTY, renderer, control protocol) go in separate commits, so a regression can be traced and reverted
+  on one side only ([provenance and change policy](provenance.md)).
