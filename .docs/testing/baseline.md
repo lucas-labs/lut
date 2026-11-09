@@ -115,7 +115,7 @@ Most of the hunks (28 of 55) are in `src/modules/pty/agent_detect.rs`. The rest:
   It passed 5 of 5 times on its own and in the next full run. It did not fail in the E01-03 baseline run.
 - **Suspected cause:** the test gives index B 2 s to finish, and the rest of the suite (the git agent-task tests above all)
   loads the machine enough to exceed it.
-- **Fixed by:** E01-21 (#329).
+- **Fixed by:** E01-21 (#329). ✅ Fixed: the six waits in `fs::index` tests share a 30 s bound (`WAIT`) instead of 2 s; with get_or_build forced to serialize roots the test still fails, after 30 s.
 
 ### `cargo test`: flaky git agent-task test
 

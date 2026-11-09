@@ -489,6 +489,11 @@ mod tests {
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
+    // Upper bound for an event that must happen. Generous on purpose: the full suite can load the machine enough to
+    // slow a cold index build past a few seconds (E01-21). A correct run never waits this long; a regression fails
+    // after it.
+    const WAIT: Duration = Duration::from_secs(30);
+
     #[test]
     fn unrelated_cold_roots_build_without_waiting_for_each_other() {
         let state = FileIndexState::default();
@@ -511,7 +516,7 @@ mod tests {
                 state.get_or_build(&key(b.path()));
                 done_tx.send(()).unwrap();
             });
-            let completed = done_rx.recv_timeout(Duration::from_secs(2));
+            let completed = done_rx.recv_timeout(WAIT);
             release_tx.send(()).unwrap();
             assert!(completed.is_ok(), "B must finish while A is paused");
         });
@@ -559,7 +564,7 @@ mod tests {
                     |_| panic!("same key must share the build"),
                 )
             });
-            joined_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+            joined_rx.recv_timeout(WAIT).unwrap();
             cancelled.store(true, Ordering::SeqCst);
             release_tx.send(()).unwrap();
             assert!(first.join().unwrap().is_none());
@@ -609,7 +614,7 @@ mod tests {
                     )
                     .unwrap()
             });
-            joined_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+            joined_rx.recv_timeout(WAIT).unwrap();
             release_tx.send(()).unwrap();
             assert!(owner
                 .join()
@@ -665,9 +670,9 @@ mod tests {
                 );
                 done_tx.send(result.is_none()).unwrap();
             });
-            joined_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+            joined_rx.recv_timeout(WAIT).unwrap();
             cancelled.store(true, Ordering::SeqCst);
-            let done = done_rx.recv_timeout(Duration::from_secs(2));
+            let done = done_rx.recv_timeout(WAIT);
             release_tx.send(()).unwrap();
             assert!(done.unwrap());
         });
@@ -713,7 +718,7 @@ mod tests {
             queued_rx.recv().unwrap();
             assert_eq!(state.walks_in_flight(), MAX_BUILDS);
             cancelled.store(true, Ordering::SeqCst);
-            let done = done_rx.recv_timeout(Duration::from_secs(2));
+            let done = done_rx.recv_timeout(WAIT);
             release_a_tx.send(()).unwrap();
             release_b_tx.send(()).unwrap();
             assert!(done.unwrap());
