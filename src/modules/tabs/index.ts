@@ -1,7 +1,5 @@
 export { labelFor } from './lib/tabLabel';
 export {
-  type AiDiffStatus,
-  type AiDiffTab,
   type CloseTabsPlan,
   type EditorTab,
   type GitCommitFileDiffTab,
