@@ -3,7 +3,7 @@
 How to build and run lut from a clean checkout. Windows 11 is the primary platform; macOS and Linux follow the
 same steps once their prerequisites are installed.
 
-> The imported code still uses Terax names (`terax`, `terax-cli`, `TERAX_*`, identifier `app.crynta.terax`).
+> The imported code still uses Terax names (`terax`, `terax-cli`, `TERAX_*`); the identifier is `dev.lucode.lut` since E02-06.
 > Commands below use the names that exist today. They change with the identity epics (E02, E04).
 
 ## Toolchain

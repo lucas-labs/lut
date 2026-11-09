@@ -55,7 +55,7 @@ export function AboutSection() {
         <dd className="font-mono text-[11.5px]">{build ? `${build} · v${version}` : `v${version}`}</dd>
 
         <dt className="text-muted-foreground">Bundle ID</dt>
-        <dd className="font-mono text-[11.5px]">app.crynta.terax</dd>
+        <dd className="font-mono text-[11.5px]">dev.lucode.lut</dd>
 
         <dt className="text-muted-foreground">License</dt>
         <dd>Apache 2.0</dd>

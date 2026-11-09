@@ -280,7 +280,8 @@ elsewhere), and `run.py` builds a macOS bundle and samples with `footprint`, `vm
 needed for a baseline (E01-10), so Windows uses `scripts/baseline/measure.ps1`, which drives the release app from
 outside:
 
-- it moves the app data dirs (`%APPDATA%` and `%LOCALAPPDATA%` `\app.crynta.terax`) aside and restores them at the end;
+- it moves the app data dirs (`%APPDATA%` and `%LOCALAPPDATA%` `\<Identifier>`: `app.crynta.terax` when this baseline was taken, `dev.lucode.lut` since E02-06) aside and
+  restores them at the end;
 - startup: from `Start-Process` to the main window being visible with a real client area, to a shell process existing
   in the app's process tree (polled, ±50 ms), and to the window content settling (no change larger than a cursor cell
   for 1 s);

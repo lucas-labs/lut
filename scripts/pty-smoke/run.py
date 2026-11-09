@@ -94,7 +94,7 @@ def check_gate(gate):
 
 server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
 threading.Thread(target=server.serve_forever, daemon=True).start()
-identifier = f"app.crynta.terax.pty-smoke-{uuid.uuid4().hex[:12]}"
+identifier = f"dev.lucode.lut.pty-smoke-{uuid.uuid4().hex[:12]}"
 real = json.loads((repo / "src-tauri/tauri.conf.json").read_text())
 config = output / "tauri.conf.json"
 dev_port = None

@@ -26,7 +26,7 @@
 #>
 param(
   [Parameter(Mandatory)] [string] $Exe,
-  [string] $Identifier = 'app.crynta.terax',
+  [string] $Identifier = 'dev.lucode.lut',
   [int] $StartupRuns = 5,
   [int] $LatencySamples = 200,
   [int] $ThroughputMB = 50,

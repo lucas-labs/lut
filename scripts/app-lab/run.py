@@ -19,7 +19,7 @@ Scenarios (`--scenario`):
   idle           one idle shell for `--duration` s
   input          native key events / input-method calls into a PTY reader (pass/fail in page.log)
 
-The app runs from an isolated bundle (identifier app.crynta.terax.app-lab, its own HOME), never
+The app runs from an isolated bundle (identifier dev.lucode.lut.app-lab, its own HOME), never
 the user's profile; the bench build refuses to start under the product identifier. Build once
 (`--build-only`, release with the feature, a separate cargo target dir) and reuse with
 `--reuse-build`. To measure a pristine revision rather than the working tree use
@@ -55,7 +55,7 @@ sys.path.insert(0, str(REPO / "scripts/renderer-profile"))
 import app_report  # noqa: E402
 import procstats  # noqa: E402
 
-IDENTIFIER = "app.crynta.terax.app-lab"
+IDENTIFIER = "dev.lucode.lut.app-lab"
 PRODUCT_NAME = "Terax App Lab"
 MAX_ATTEMPTS = 3
 LOCK_PATH = Path(tempfile.gettempdir()) / "terax-app-lab.lock"
@@ -213,7 +213,7 @@ def build(args, source: Path, output: Path, target_dir: Path) -> Path:
 
 def clean_profile(home: Path) -> None:
     """Removes everything a previous run left for the bench identifier (never the product's)."""
-    assert IDENTIFIER != "app.crynta.terax"
+    assert IDENTIFIER != "dev.lucode.lut"
     shutil.rmtree(home, ignore_errors=True)
     # WebKit, Tauri and cfprefsd may resolve the user's real library even with HOME overridden.
     import pwd

@@ -295,7 +295,7 @@ if args.workload != "default":
     })
 url = f"http://127.0.0.1:{server.server_port}/?{urlencode(query)}" + ("&inspect=1" if args.inspect else "")
 with (bundle / "Contents/Info.plist").open("wb") as info:
-    plistlib.dump({"CFBundleIdentifier": "app.crynta.terax.renderer-lab", "CFBundleExecutable": "renderer-lab", "CFBundleName": "Terax Renderer Lab", "CFBundlePackageType": "APPL", "NSHighResolutionCapable": True, "TeraxLabURL": url}, info)
+    plistlib.dump({"CFBundleIdentifier": "dev.lucode.lut.renderer-lab", "CFBundleExecutable": "renderer-lab", "CFBundleName": "Terax Renderer Lab", "CFBundlePackageType": "APPL", "NSHighResolutionCapable": True, "TeraxLabURL": url}, info)
 
 # ---------------------------------------------------------------------------------------------
 # Sampling
