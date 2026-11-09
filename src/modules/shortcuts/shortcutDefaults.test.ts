@@ -51,7 +51,6 @@ view.zenMode: Shift+Cmd+'
 editor.undo: Cmd+z
 editor.redo: Cmd+y, Shift+Cmd+z
 editor.save: Cmd+s
-editor.aiComplete: Alt+\\
 editor.codeComplete: Ctrl+ `;
 
 const describeBinding = (b: KeyBinding): string =>

@@ -853,11 +853,6 @@ export const DEFAULT_AUTOCOMPLETE_MODEL: Partial<Record<ProviderId, string>> = {
   'openai-compatible': '',
 };
 
-/** Curated list of fast models suitable for inline completion (speed ≥ 4). */
-export function getAutocompleteEligibleModels(): readonly ModelInfo[] {
-  return MODELS.filter((m) => m.capabilities.speed >= 4 && m.id !== 'openai-compatible-custom');
-}
-
 export type SttProvider = 'openai' | 'groq' | 'whispercpp';
 
 export const STT_PROVIDER_LABELS: Record<SttProvider, string> = {

@@ -80,7 +80,6 @@ export const MAC_DEFAULTS: Readonly<Record<ShortcutId, readonly KeyBinding[]>> =
     { shift: true, meta: true, key: 'z' },
   ],
   'editor.save': [{ meta: true, key: 's' }],
-  'editor.aiComplete': [{ alt: true, key: '\\' }],
   'editor.codeComplete': [{ ctrl: true, key: ' ' }],
 };
 
@@ -134,6 +133,5 @@ export const WIN_LINUX_DEFAULTS: Readonly<Record<ShortcutId, readonly KeyBinding
     { ...CS, key: 'z' },
   ],
   'editor.save': [{ ctrl: true, key: 's' }],
-  'editor.aiComplete': [{ alt: true, key: '\\' }],
   'editor.codeComplete': [{ ctrl: true, key: ' ' }],
 };

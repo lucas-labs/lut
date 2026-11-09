@@ -1570,7 +1570,7 @@ size: M
 
 ```yaml
 id: E05-12
-depends-on: [E05-11]
+depends-on: [E05-11, E05-13]
 refs: [16:16, .docs/plan/analysis/state-settings.md]
 covers: [state-settings/settings-store]
 type: task
@@ -1588,11 +1588,13 @@ size: S
 
 **Verification:** `pnpm check-types` and `pnpm test` pass (with a test for legacy AI keys); manual: app boots with an old settings file.
 
+**Notes:** the AI module reads these preferences until it is deleted, so this lands with or after E05-13 (found in E05-11, which already removed the setters left without callers).
+
 ### E05-13 — Delete the frontend AI module and chat elements
 
 ```yaml
 id: E05-13
-depends-on: [E05-01, E05-02, E05-03, E05-05, E05-06, E05-07, E05-08, E05-09, E05-10, E05-11, E05-12, E06-02, E06-04]
+depends-on: [E05-01, E05-02, E05-03, E05-05, E05-06, E05-07, E05-08, E05-09, E05-10, E05-11, E06-02, E06-04]
 refs: [ADR-004, 9.9:2, .docs/plan/analysis/ai.md]
 covers: [ai/chat-elements, ai/chat-ui, ai/provider-config, ai/agent-runtime, ai/stores, ai/tools-and-subagents, agents/managed-agents, ADR-004, 9.9:2]
 type: task
