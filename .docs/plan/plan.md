@@ -510,6 +510,7 @@ size: XS
 
 - [ ] LF is fixed everywhere: `.gitattributes` (`* text=auto eol=lf`), Prettier `endOfLine: lf`, rustfmt `newline_style = "Unix"` and `.editorconfig`. The runner defaults to `core.autocrlf=true`, so every file had CRLF and `pnpm format:check` failed on 665 files.
 - [ ] `src-tauri/src/modules/fs/read_policy.rs` is formatted with rustfmt (left unformatted by E05-14).
+- [ ] `quoteShellPath.test.ts` gives its PowerShell round trip a 30 s timeout: the first full CI run timed out there (recorded in `baseline.md`).
 - [ ] Every CI job passes on the PR.
 
 **Verification:** the CI run of the PR is green.

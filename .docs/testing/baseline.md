@@ -198,6 +198,9 @@ OSC 133 B`, but a `Write-Host` prompt has already printed, so 133;A (prompt star
 - **Suspected cause:** a timing-sensitive test that exceeds its bound when the CPU is saturated, like the Rust
   `fs::index` case above.
 - **Next step:** if it shows up again (locally or in CI), record the test name here and open an issue.
+- **Update (E01-23):** the first full CI run timed out in `terminal/lib/quoteShellPath.test.ts` "round trips literal
+  paths through the platform shell", which starts `powershell.exe`; Windows PowerShell can take more than vitest's
+  default 5 s to start. The test now has a 30 s timeout.
 
 ## Test registry
 
