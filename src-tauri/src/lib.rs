@@ -2,9 +2,7 @@ pub mod modules;
 
 #[cfg(target_os = "macos")]
 use modules::app_menu;
-use modules::{
-    agent, control, fs, git, history, lsp, net, pty, secrets, shell, vibrancy, workspace,
-};
+use modules::{agent, control, fs, git, lsp, net, pty, secrets, shell, vibrancy, workspace};
 use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::{Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder};
@@ -266,7 +264,6 @@ pub fn run() {
         .manage(fs::watch::FsWatchState::default())
         .manage(fs::assets::AssetGrants::default())
         .manage(git::watch::GitWatchState::default())
-        .manage(history::HistoryState::default())
         .manage(lsp::LspState::default())
         .manage(fs::supersede::Supersede::default())
         .manage(fs::index::FileIndexState::default())
@@ -386,10 +383,6 @@ pub fn run() {
             modules::ai_sessions::ai_session_delete,
             modules::ai_sessions::ai_session_finish_migration,
             modules::ai_sessions::ai_session_prune_backup,
-            history::history_suggest,
-            history::history_commands,
-            history::history_record,
-            history::history_list,
             vibrancy::window_backdrop_kind,
             vibrancy::window_set_backdrop,
             modules::window_presentation::window_presentation_state,
