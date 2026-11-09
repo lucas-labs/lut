@@ -37,9 +37,6 @@ space.prev: Shift+Cmd+[
 space.overview: Shift+Cmd+s
 explorer.search: Shift+Cmd+f
 search.focus: Cmd+f
-ai.toggle: Cmd+i
-ai.toggleMini: Shift+Cmd+i
-ai.askSelection: Cmd+j
 agent.focusAttention: Shift+Cmd+a
 sidebar.toggle: Cmd+b, Shift+Cmd+b
 explorer.focus: Shift+Cmd+e
@@ -282,7 +279,6 @@ describe('Windows and Linux defaults', () => {
       hit({ ctrlKey: true, altKey: true, shiftKey: false, key: 'PageDown' }, 'space.next'),
     ).toBe(true);
     expect(hit({ ...ctrl, key: '?', code: 'Slash' }, 'explorer.search')).toBe(true);
-    expect(hit({ ...ctrl, key: '<', code: 'Comma' }, 'ai.toggleMini')).toBe(true);
     expect(hit({ ...ctrl, key: '_', code: 'Minus' }, 'view.zoomOut')).toBe(true);
     expect(hit({ ...ctrl, key: 'PageDown', code: 'PageDown' }, 'pane.focusNext')).toBe(true);
     expect(hit({ ...ctrl, key: 'PageUp', code: 'PageUp' }, 'pane.focusPrev')).toBe(true);
@@ -315,7 +311,6 @@ describe.each([
 
 describe('Windows and Linux shifted punctuation layout audit', () => {
   it.each([
-    ['Dvorak comma', '<', 'KeyW', 'ai.toggleMini'],
     ['AZERTY period', '/', 'Period', 'explorer.toggleHidden'],
     ['AZERTY minus', '°', 'Minus', 'view.zoomOut'],
     ['US minus', '_', 'Minus', 'view.zoomOut'],

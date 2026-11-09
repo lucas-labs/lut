@@ -38,9 +38,6 @@ export type ShortcutId =
   | 'view.zoomOut'
   | 'view.zoomReset'
   | 'view.zenMode'
-  | 'ai.toggle'
-  | 'ai.toggleMini'
-  | 'ai.askSelection'
   | 'agent.focusAttention'
   | 'settings.open'
   | 'sidebar.toggle'
@@ -208,21 +205,6 @@ const SHORTCUT_META: Omit<Shortcut, 'defaultBindings'>[] = [
     id: 'search.focus',
     label: 'Find in tab',
     group: 'Search',
-  },
-  {
-    id: 'ai.toggle',
-    label: 'Toggle AI agent',
-    group: 'AI',
-  },
-  {
-    id: 'ai.toggleMini',
-    label: 'Toggle AI chat window',
-    group: 'AI',
-  },
-  {
-    id: 'ai.askSelection',
-    label: 'Ask AI about selection',
-    group: 'AI',
   },
   {
     id: 'agent.focusAttention',

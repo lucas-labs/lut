@@ -1,5 +1,5 @@
 export { shortcutLabel } from './lib/shortcutLabel';
-export { shouldDisableAskSelection, shouldDisablePaneSwapShortcut } from './lib/shortcutScope';
+export { shouldDisablePaneSwapShortcut } from './lib/shortcutScope';
 export { type ShortcutHandlers, useGlobalShortcuts } from './lib/useGlobalShortcuts';
 export { useShortcutHint, useShortcutLabel } from './lib/useShortcutLabel';
 export {

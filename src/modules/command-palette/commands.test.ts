@@ -36,8 +36,6 @@ function baseContext(over: Partial<CommandPaletteActionContext> = {}): CommandPa
     focusExplorerSearch: noop,
     toggleSidebar: noop,
     toggleHiddenFiles: noop,
-    toggleAi: noop,
-    askAiSelection: noop,
     openSettings: noop,
     openKeyboardShortcuts: noop,
     openSpacesOverview: noop,
