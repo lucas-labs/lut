@@ -11,11 +11,19 @@ import { AppShell } from '../AppShell';
 import { WorkspaceSurface } from './WorkspaceSurface';
 
 // The real session hook (useGhosttyTerminalSession) runs here; only what needs a GPU, the WASM core or the native
-// side is replaced: the Ghostty core and its model, the renderer surface, the input controller, font loading,
-// measuring and theme colours, and the PTY bridge. PTY opens and closes are counted where the hook calls the bridge, so a session the
-// hook restarts on its own (an effect that disposes on a visibility or order change) shows up as an extra open or
-// close. WorkspaceSurface.lifecycle.test.tsx covers the same moves with a fake hook and counts React mounts.
-const pty = vi.hoisted(() => ({ opened: [] as number[], closed: [] as number[] }));
+// side is replaced: the Ghostty core and its model, the renderer surfaces and the WebGPU runtime, the input
+// controller, font loading, measuring and theme colours, and the PTY bridge. PTY opens and closes are counted where the
+// hook calls the bridge, so a session the hook restarts on its own (an effect that disposes on a visibility or order
+// change) shows up as an extra open or close. WorkspaceSurface.lifecycle.test.tsx covers the same moves with a fake
+// hook and counts React mounts.
+const pty = vi.hoisted(() => ({
+  opened: [] as number[],
+  closed: [] as number[],
+  /** Each PTY's output handler, to emit shell output. */
+  output: new Map<number, (bytes: Uint8Array) => unknown>(),
+}));
+/** What reached each terminal model (the Ghostty core), and how many WebGL surfaces were built. */
+const terminal = vi.hoisted(() => ({ written: new Map<number, string>(), webGlSurfaces: 0 }));
 
 /** An object with the given members; any other member is a no-op function (never a thenable). */
 const stub = vi.hoisted(
@@ -31,12 +39,13 @@ vi.mock('@/modules/terminal/lib/pty-bridge', async (importOriginal) => ({
   openPty: async (
     _cols: number,
     _rows: number,
-    _handlers: unknown,
+    handlers: { onData: (bytes: Uint8Array) => unknown },
     _cwd?: string,
     _shell?: string,
     leafId?: number,
   ) => {
     pty.opened.push(leafId ?? -1);
+    pty.output.set(leafId ?? -1, handlers.onData);
     return {
       id: leafId ?? -1,
       write: async () => {},
@@ -72,13 +81,28 @@ vi.mock('@/modules/terminal/ghostty/gpu/terminalVisuals', async (importOriginal)
 vi.mock('@/modules/terminal/ghostty/GhosttyCoreRuntime', () => ({
   getGhosttyCoreRuntime: () => ({
     preload: async () => {},
-    createModel: async () => stub({ cols: 80, rows: 24 }),
+    createModel: async ({ leafId }: { leafId: number }) =>
+      stub({
+        cols: 80,
+        rows: 24,
+        write: (bytes: Uint8Array) => {
+          terminal.written.set(leafId, (terminal.written.get(leafId) ?? '') + new TextDecoder().decode(bytes));
+        },
+      }),
   }),
+}));
+// WebGPU is unavailable: a session that wants it must fall back to WebGL.
+vi.mock('@/modules/terminal/ghostty/gpu/WebGpuTerminalRuntime', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  getWebGpuTerminalRuntime: async () => {
+    throw new Error('WebGPU adapter unavailable');
+  },
 }));
 // The hook loads the WebGL renderer through loadSessionRenderer (a dynamic import); hand it a fake surface class.
 vi.mock('@/modules/terminal/ghostty/loadSessionRenderer', () => {
   class FakeWebGlSurface {
     constructor() {
+      terminal.webGlSurfaces += 1;
       return stub({
         backend: 'ghostty-webgl',
         eventTarget: () => document.createElement('div'),
@@ -127,6 +151,8 @@ const noop = () => {};
 let root: Root;
 let host: HTMLElement;
 let nextId = 1;
+/** Every leaf a test rendered, disposed after it whether or not its PTY opened. */
+const rendered = new Set<number>();
 
 /** Each test uses fresh leaf ids: sessions live in a module registry that outlives the React tree. */
 function term(paneTree?: PaneNode): Extract<Tab, { kind: 'terminal' }> {
@@ -178,6 +204,7 @@ function shell(
   activeId: number,
   { vertical = false, sidebar = null, mode = 'dark', theme = firstTheme }: ShellOptions = {},
 ) {
+  for (const leaf of leaves(tabs)) rendered.add(leaf);
   const strip = createElement('div', { 'data-tabs': '' });
   return createElement(
     ThemeContext.Provider,
@@ -199,20 +226,29 @@ function shell(
   );
 }
 
-/** Renders, then lets the sessions' async start (fonts, core, renderer, PTY) and theme frames run. */
+async function tick() {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  });
+}
+
+/** Renders, then gives effects, theme frames and any unwanted session restart time to show up. */
 async function render(node: ReactNode) {
   await act(async () => {
     root.render(node);
   });
-  await settle();
+  for (let i = 0; i < 20; i++) await tick();
 }
 
-async function settle() {
-  for (let i = 0; i < 20; i++) {
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 5));
-    });
-  }
+/** Waits until `count` PTYs have opened (the sessions start asynchronously: fonts, core, renderer, then PTY). */
+async function waitForOpens(count: number) {
+  for (let i = 0; i < 400 && pty.opened.length < count; i++) await tick();
+  expect(pty.opened).toHaveLength(count);
+}
+
+/** Shell output arriving on a leaf's PTY. */
+function emit(leaf: number, text: string) {
+  void pty.output.get(leaf)?.(new TextEncoder().encode(text));
 }
 
 beforeEach(() => {
@@ -222,6 +258,10 @@ beforeEach(() => {
   }
   pty.opened = [];
   pty.closed = [];
+  pty.output.clear();
+  terminal.written.clear();
+  terminal.webGlSurfaces = 0;
+  rendered.clear();
   host = document.createElement('div');
   document.body.append(host);
   root = createRoot(host);
@@ -230,13 +270,14 @@ beforeEach(() => {
 afterEach(async () => {
   await act(async () => root.unmount());
   host.remove();
-  for (const leaf of new Set(pty.opened)) disposeGhosttySession(leaf);
+  for (const leaf of new Set([...rendered, ...pty.opened])) disposeGhosttySession(leaf);
 });
 
 describe('the real session hook keeps every PTY open', () => {
   it('opens one PTY per pane at start', async () => {
     const tabs = [term(), term(), term()];
     await render(shell(tabs, tabs[0].id));
+    await waitForOpens(3);
     expect([...pty.opened].sort((a, b) => a - b)).toEqual(leaves(tabs));
     expect(pty.closed).toEqual([]);
   });
@@ -244,8 +285,8 @@ describe('the real session hook keeps every PTY open', () => {
   it('switching and reordering tabs opens and closes no PTY', async () => {
     const [a, b, c] = [term(), term(), term()];
     await render(shell([a, b, c], a.id));
+    await waitForOpens(3);
     const opened = [...pty.opened];
-    expect(opened).toHaveLength(3);
     await render(shell([a, b, c], b.id));
     await render(shell([c, a, b], c.id));
     await render(shell([b, c, a], a.id));
@@ -257,11 +298,12 @@ describe('the real session hook keeps every PTY open', () => {
     const a = term();
     const b = term();
     await render(shell([a, b], a.id));
+    await waitForOpens(2);
     const opened = [...pty.opened];
-    expect(opened).toHaveLength(2);
     const leaf = a.activeLeafId;
     const split = { ...a, paneTree: splitLeaf({ kind: 'leaf', id: leaf }, leaf, leaf + 1, leaf + 2, 'row') };
     await render(shell([split, b], a.id));
+    await waitForOpens(3);
     expect(pty.opened).toEqual([...opened, leaf + 2]);
     expect(pty.closed).toEqual([]);
   });
@@ -270,8 +312,8 @@ describe('the real session hook keeps every PTY open', () => {
     const tabs = [term(), term()];
     const view = (name: string) => createElement('nav', { key: name }, name);
     await render(shell(tabs, tabs[0].id));
+    await waitForOpens(2);
     const opened = [...pty.opened];
-    expect(opened).toHaveLength(2);
     await render(shell(tabs, tabs[0].id, { vertical: true }));
     await render(shell(tabs, tabs[0].id, { vertical: true, sidebar: view('spaces') }));
     await render(shell(tabs, tabs[1].id, { sidebar: view('explorer') }));
@@ -283,11 +325,45 @@ describe('the real session hook keeps every PTY open', () => {
   it('switching the theme opens and closes no PTY', async () => {
     const tabs = [term(), term()];
     await render(shell(tabs, tabs[0].id));
+    await waitForOpens(2);
     const opened = [...pty.opened];
-    expect(opened).toHaveLength(2);
     await render(shell(tabs, tabs[0].id, { mode: 'light' }));
     await render(shell(tabs, tabs[1].id, { mode: 'dark', theme: secondTheme }));
     expect(pty.opened).toEqual(opened);
     expect(pty.closed).toEqual([]);
+  });
+
+  it('a hidden tab keeps receiving output and has all of it when shown again (E07-09)', async () => {
+    const [a, b] = [term(), term()];
+    await render(shell([a, b], a.id));
+    await waitForOpens(2);
+    const opened = [...pty.opened];
+    await render(shell([a, b], b.id));
+    emit(a.activeLeafId, 'built in 1.2s\r\n');
+    emit(a.activeLeafId, 'watching for changes\r\n');
+    await render(shell([a, b], a.id));
+    expect(terminal.written.get(a.activeLeafId)).toBe('built in 1.2s\r\nwatching for changes\r\n');
+    expect(pty.opened).toEqual(opened);
+    expect(pty.closed).toEqual([]);
+  });
+
+  it('falls back to a working WebGL terminal when WebGPU is unavailable (E07-08)', async () => {
+    Object.defineProperty(navigator, 'gpu', { configurable: true, value: {} });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const a = term();
+      await render(shell([a], a.id));
+      await waitForOpens(1);
+      expect(terminal.webGlSurfaces).toBe(1);
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('WebGPU initialization failed'),
+        'WebGPU adapter unavailable',
+      );
+      emit(a.activeLeafId, 'ok\r\n');
+      expect(terminal.written.get(a.activeLeafId)).toBe('ok\r\n');
+    } finally {
+      Reflect.deleteProperty(navigator, 'gpu');
+      warn.mockRestore();
+    }
   });
 });
