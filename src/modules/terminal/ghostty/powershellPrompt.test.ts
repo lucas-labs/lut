@@ -24,14 +24,27 @@ $global:LASTEXITCODE = 0
 $text = prompt
 [Console]::Write($text)
 `;
-  const run = spawnSync(pwsh, ['-NoLogo', '-NoProfile', '-NonInteractive', '-Command', '-'], {
-    input: script,
-    encoding: 'utf8',
-  });
+  // One encoded command, not `-Command -`: reading statements from stdin makes pwsh on Linux write terminal modes
+  // (ESC[?1h / ESC[?1l) around each one. Text output keeps Write-Host as plain text instead of CLIXML.
+  const encoded = Buffer.from(script, 'utf16le').toString('base64');
+  const run = spawnSync(
+    pwsh,
+    [
+      '-NoLogo',
+      '-NoProfile',
+      '-NonInteractive',
+      '-OutputFormat',
+      'Text',
+      '-EncodedCommand',
+      encoded,
+    ],
+    {
+      encoding: 'utf8',
+    },
+  );
   expect(run.stderr).toBe('');
   expect(run.status).toBe(0);
-  // On Linux, pwsh toggles the cursor-keys mode (ESC[?1h / ESC[?1l) around its writes; it is not part of the prompt.
-  return run.stdout.replace(/\x1b\[\?\d+[hl]/g, '');
+  return run.stdout;
 }
 
 /** Drops OSC 7 (the cwd report), which depends on the machine and directory. */
