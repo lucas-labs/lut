@@ -1,4 +1,3 @@
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { consumeLaunchFiles, getLaunchDir } from '@/lib/launchDir';
@@ -36,7 +35,7 @@ import {
   tabDigit,
   useGlobalShortcuts,
 } from '@/modules/shortcuts';
-import { SIDEBAR_MAX_WIDTH, SIDEBAR_MIN_WIDTH, SidebarRail, useSidebarPanel } from '@/modules/sidebar';
+import { SidebarRail, useSidebarPanel } from '@/modules/sidebar';
 import { SourceControlPanel, useRepositoryTargeting, useSourceControlContext } from '@/modules/source-control';
 import { SpaceSwitcher, useSpacePersistence, useSpaces, useSpacesBoot } from '@/modules/spaces';
 import { StatusBar } from '@/modules/statusbar';
@@ -80,6 +79,7 @@ import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { AppShell } from './AppShell';
 import { CloseDialogs } from './components/CloseDialogs';
 import { WorkspaceSurface } from './components/WorkspaceSurface';
 import { hasOpenPathTab, renamedPath, spacesEmptiedByTabs } from './hooks/tabCloseGuards';
@@ -1106,137 +1106,114 @@ export default function App() {
             />
           </Suspense>
         )}
-        <div className="relative flex h-screen flex-col overflow-hidden bg-frame text-foreground">
-          {!zenMode && (
-            <Header
-              tabs={spaceTabs}
-              activeId={activeId}
-              onSelect={setActiveId}
-              onNew={openNewTab}
-              onNewPrivate={openNewPrivateTab}
-              onNewPreview={() => openPreviewTab('')}
-              onNewEditor={() => setNewEditorOpen(true)}
-              onNewGitGraph={openGitGraphFromContext}
-              onLaunchAgents={launchAgentGroup}
-              onClose={handleClose}
-              onCloseTabsToRight={handleCloseTabsToRight}
-              onCloseOtherTabs={handleCloseOtherTabs}
-              onPin={pinTab}
-              onRename={handleRenameTab}
-              onReorder={reorderTabByGap}
-              onToggleSidebar={toggleSidebar}
-              onOpenCommandPalette={() => openCommandPalette('commands')}
-              onActivateAgent={onActivateAgent}
-              onOpenSettings={() => void openSettingsWindow()}
-              spaceSwitcher={spaceSwitcher}
-              searchTarget={searchTarget}
-              searchRef={searchInlineRef}
-              onOverrideLanguage={setOverrideLanguage}
-            />
-          )}
-
-          <main className="zoom-content flex min-h-0 flex-1 flex-col">
-            <ResizablePanelGroup
-              orientation="horizontal"
-              className="min-h-0 flex-1"
-              onLayoutChanged={(_, { isUserInteraction }) => {
-                const width = sidebarRef.current?.getSize().inPixels ?? 0;
-                persistSidebarWidth(width, isUserInteraction);
-              }}
-            >
-              <ResizablePanel
-                id="sidebar"
-                panelRef={sidebarRef}
-                defaultSize={initialSidebarCollapsed ? '0px' : `${sidebarWidthRef.current}px`}
-                minSize={`${SIDEBAR_MIN_WIDTH}px`}
-                maxSize={`${SIDEBAR_MAX_WIDTH}px`}
-                collapsible
-                collapsedSize={0}
-                onResize={(size) => {
-                  persistSidebarCollapsed(size.inPixels <= 0);
-                }}
-              >
-                <div className="h-full min-h-0 pl-2 pr-0.5">
-                  <div className="lut-pane flex h-full min-h-0 flex-col">
-                    <div key={sidebarView} className="min-h-0 flex-1 lut-panel-in">
-                      {sidebarView === 'explorer' ? (
-                        <FileExplorer
-                          ref={explorerRef}
-                          rootPath={explorerRoot}
-                          gitStatus={explorerGitDecorations ? sourceControl.status : null}
-                          activeFilePath={explorerActiveFilePath}
-                          onOpenFile={handleOpenFile}
-                          onPathRenamed={handleExplorerPathRenamed}
-                          onPathsDeleted={handlePathsDeleted}
-                          canReplacePath={canReplaceExplorerPath}
-                          onRevealInTerminal={cdInNewTab}
-                          onOpenInSourceControl={handleOpenRepositoryInSourceControl}
-                          onOpenGitHistory={handleOpenGitHistoryForPath}
-                          pathDropTarget={terminalPathDropTarget}
-                          visible={!sidebarCollapsed}
-                        />
-                      ) : (
-                        <SourceControlPanel
-                          open
-                          sourceControl={sourceControl}
-                          onOpenDiff={openGitDiffTab}
-                          onOpenGitGraph={openGitGraphFromContext}
-                          onOpenFile={handleOpenFile}
-                          onNavigateToPath={cdInNewTab}
-                          repositoryTarget={sourceControlRepositoryTarget}
-                          onFollowRepositoryContext={handleFollowRepositoryContext}
-                        />
-                      )}
-                    </div>
-                    <SidebarRail
-                      activeView={sidebarView}
-                      onSelectView={persistSidebarView}
-                      changedCount={sourceControl.changedCount}
+        <AppShell
+          header={
+            zenMode ? null : (
+              <Header
+                tabs={spaceTabs}
+                activeId={activeId}
+                onSelect={setActiveId}
+                onNew={openNewTab}
+                onNewPrivate={openNewPrivateTab}
+                onNewPreview={() => openPreviewTab('')}
+                onNewEditor={() => setNewEditorOpen(true)}
+                onNewGitGraph={openGitGraphFromContext}
+                onLaunchAgents={launchAgentGroup}
+                onClose={handleClose}
+                onCloseTabsToRight={handleCloseTabsToRight}
+                onCloseOtherTabs={handleCloseOtherTabs}
+                onPin={pinTab}
+                onRename={handleRenameTab}
+                onReorder={reorderTabByGap}
+                onToggleSidebar={toggleSidebar}
+                onOpenCommandPalette={() => openCommandPalette('commands')}
+                onActivateAgent={onActivateAgent}
+                onOpenSettings={() => void openSettingsWindow()}
+                spaceSwitcher={spaceSwitcher}
+                searchTarget={searchTarget}
+                searchRef={searchInlineRef}
+                onOverrideLanguage={setOverrideLanguage}
+              />
+            )
+          }
+          sidebarRef={sidebarRef}
+          sidebarInitialWidth={initialSidebarCollapsed ? 0 : sidebarWidthRef.current}
+          onSidebarLayout={persistSidebarWidth}
+          onSidebarCollapsedChange={persistSidebarCollapsed}
+          sidebar={
+            <div className="h-full min-h-0 pl-2 pr-0.5">
+              <div className="lut-pane flex h-full min-h-0 flex-col">
+                <div key={sidebarView} className="min-h-0 flex-1 lut-panel-in">
+                  {sidebarView === 'explorer' ? (
+                    <FileExplorer
+                      ref={explorerRef}
+                      rootPath={explorerRoot}
+                      gitStatus={explorerGitDecorations ? sourceControl.status : null}
+                      activeFilePath={explorerActiveFilePath}
+                      onOpenFile={handleOpenFile}
+                      onPathRenamed={handleExplorerPathRenamed}
+                      onPathsDeleted={handlePathsDeleted}
+                      canReplacePath={canReplaceExplorerPath}
+                      onRevealInTerminal={cdInNewTab}
+                      onOpenInSourceControl={handleOpenRepositoryInSourceControl}
+                      onOpenGitHistory={handleOpenGitHistoryForPath}
+                      pathDropTarget={terminalPathDropTarget}
+                      visible={!sidebarCollapsed}
                     />
-                  </div>
+                  ) : (
+                    <SourceControlPanel
+                      open
+                      sourceControl={sourceControl}
+                      onOpenDiff={openGitDiffTab}
+                      onOpenGitGraph={openGitGraphFromContext}
+                      onOpenFile={handleOpenFile}
+                      onNavigateToPath={cdInNewTab}
+                      repositoryTarget={sourceControlRepositoryTarget}
+                      onFollowRepositoryContext={handleFollowRepositoryContext}
+                    />
+                  )}
                 </div>
-              </ResizablePanel>
-              <ResizableHandle className="w-1 rounded-full bg-transparent transition-colors duration-[var(--dur-fast)] after:w-4 hover:bg-border" />
-              <ResizablePanel id="workspace" defaultSize="78%" minSize="30%">
-                <div className="h-full min-h-0 pl-0.5 pr-2">
-                  <div className="lut-pane flex h-full min-h-0 flex-col">
-                    <div className="relative min-h-0 flex-1">
-                      <WorkspaceSurface
-                        tabs={tabs}
-                        activeId={activeId}
-                        activeTab={activeTab}
-                        registerTerminalHandle={registerTerminalHandle}
-                        onSearchReady={handleSearchReady}
-                        onCwd={handleTerminalCwd}
-                        onExit={handleLeafExit}
-                        onFocusLeaf={handleFocusLeaf}
-                        registerEditorHandle={registerEditorHandle}
-                        onEditorDirtyChange={handleEditorDirty}
-                        onEditorCloseTab={disposeTab}
-                        registerPreviewHandle={registerPreviewHandle}
-                        onPreviewUrlChange={handlePreviewUrl}
-                        onOpenCommitFile={openCommitFileDiffTab}
-                        onGitHistorySearchHandle={setGitHistoryHandle}
-                        onSetMarkdownView={setMarkdownView}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
-          </main>
-
-          {!zenMode && (
-            <StatusBar
-              cwd={activeCwd}
-              filePath={activeFilePath}
-              home={home}
-              onCd={sendCd}
-              onWorkspaceChange={handleWorkspaceChange}
-              privateActive={activeTab?.kind === 'terminal' && activeTab.private === true}
+                <SidebarRail
+                  activeView={sidebarView}
+                  onSelectView={persistSidebarView}
+                  changedCount={sourceControl.changedCount}
+                />
+              </div>
+            </div>
+          }
+          workspace={
+            <WorkspaceSurface
+              tabs={tabs}
+              activeId={activeId}
+              activeTab={activeTab}
+              registerTerminalHandle={registerTerminalHandle}
+              onSearchReady={handleSearchReady}
+              onCwd={handleTerminalCwd}
+              onExit={handleLeafExit}
+              onFocusLeaf={handleFocusLeaf}
+              registerEditorHandle={registerEditorHandle}
+              onEditorDirtyChange={handleEditorDirty}
+              onEditorCloseTab={disposeTab}
+              registerPreviewHandle={registerPreviewHandle}
+              onPreviewUrlChange={handlePreviewUrl}
+              onOpenCommitFile={openCommitFileDiffTab}
+              onGitHistorySearchHandle={setGitHistoryHandle}
+              onSetMarkdownView={setMarkdownView}
             />
-          )}
-
+          }
+          statusBar={
+            zenMode ? null : (
+              <StatusBar
+                cwd={activeCwd}
+                filePath={activeFilePath}
+                home={home}
+                onCd={sendCd}
+                onWorkspaceChange={handleWorkspaceChange}
+                privateActive={activeTab?.kind === 'terminal' && activeTab.private === true}
+              />
+            )
+          }
+        >
           <WindowVibrancyBridge />
           {IS_MAC ? <LivePageResizeBridge /> : null}
           <WindowActivityBridge
@@ -1285,7 +1262,7 @@ export default function App() {
             onCancelAppClose={cancelAppClose}
             onConfirmAppClose={confirmAppClose}
           />
-        </div>
+        </AppShell>
       </TooltipProvider>
     </ThemeProvider>
   );
