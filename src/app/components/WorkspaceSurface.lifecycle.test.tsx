@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
+import { useSidebarPanel } from '@/modules/sidebar';
 import type { Tab } from '@/modules/tabs';
 import { type PaneLifecycleEvent, setPaneLifecycleListener } from '@/modules/terminal/lib/paneLifecycle';
 import { type PaneNode, removeLeaf, splitLeaf } from '@/modules/terminal/lib/panes';
 import * as themeModule from '@/modules/theme';
-import { act, type Context, createElement, createRef, type ReactNode } from 'react';
+import { act, type Context, createElement, createRef, type ReactNode, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import type { PanelImperativeHandle } from 'react-resizable-panels';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -149,6 +150,28 @@ function shell(tabs: Tab[], { vertical = false, sidebar = null }: { vertical?: b
     sidebarInitialWidth: 0,
     onSidebarLayout: noop,
     onSidebarCollapsedChange: noop,
+    workspace: surface(tabs, 1),
+  });
+}
+
+type SidebarControls = ReturnType<typeof useSidebarPanel>;
+
+/** The real sidebar panel and its controls (`useSidebarPanel`, as App uses them) around the workspace. */
+function SidebarShell({ tabs, onControls }: { tabs: Tab[]; onControls: (controls: SidebarControls) => void }) {
+  const sidebar = useSidebarPanel(createRef());
+  useEffect(() => onControls(sidebar));
+  return createElement(AppShell, {
+    header: null,
+    tabsColumn: null,
+    tabsColumnRef: createRef<PanelImperativeHandle>(),
+    tabsColumnInitialWidth: 200,
+    onTabsColumnLayout: noop,
+    statusBar: null,
+    sidebar: createElement('nav', { key: sidebar.sidebarView, 'data-view': sidebar.sidebarView }),
+    sidebarRef: sidebar.sidebarRef,
+    sidebarInitialWidth: sidebar.initialSidebarCollapsed ? 0 : 260,
+    onSidebarLayout: sidebar.persistSidebarWidth,
+    onSidebarCollapsedChange: sidebar.persistSidebarCollapsed,
     workspace: surface(tabs, 1),
   });
 }
@@ -304,6 +327,48 @@ describe('WorkspaceSurface keeps terminals mounted', () => {
       expect(unmounts(leaf)).toBe(0);
     }
     expect(fake.opened).toEqual([10, 20, 21]);
+    expect(fake.closed).toEqual([]);
+  });
+
+  it('collapsing and expanding the sidebar panel and switching its views keep every pane mounted (E07-06)', () => {
+    const tabs = [term(1), term(2)];
+    let controls: SidebarControls | null = null;
+    const sidebar = () => controls as unknown as SidebarControls;
+    // happy-dom has no layout: the panel's share of the group is real, but its pixel size is always 0, so the
+    // pixel-based initial width cannot apply and the test collapses the panel itself, as a first run starts.
+    const share = () => sidebar().sidebarRef.current?.getSize().asPercentage ?? -1;
+    const view = () => host.querySelector('[data-view]')?.getAttribute('data-view');
+    render(
+      createElement(SidebarShell, {
+        tabs,
+        onControls: (next) => {
+          controls = next;
+        },
+      }),
+    );
+    act(() => sidebar().sidebarRef.current?.collapse());
+    expect(share()).toBe(0);
+
+    act(() => sidebar().openSidebarView('spaces'));
+    expect(share()).toBeGreaterThan(0);
+    expect(view()).toBe('spaces');
+    act(() => sidebar().cycleSidebarView('source-control'));
+    expect(view()).toBe('source-control');
+    act(() => sidebar().cycleSidebarView('source-control'));
+    expect(share()).toBe(0);
+    act(() => sidebar().openSidebarView('explorer'));
+    expect(share()).toBeGreaterThan(0);
+    expect(view()).toBe('explorer');
+    act(() => sidebar().toggleSidebar());
+    expect(share()).toBe(0);
+    act(() => sidebar().toggleSidebar());
+    expect(share()).toBeGreaterThan(0);
+
+    for (const leaf of [10, 20]) {
+      expect(mounts(leaf)).toBe(1);
+      expect(unmounts(leaf)).toBe(0);
+    }
+    expect(fake.opened).toEqual([10, 20]);
     expect(fake.closed).toEqual([]);
   });
 });
