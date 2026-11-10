@@ -203,6 +203,7 @@ async function main() {
   // Existing issues on GitHub, matched by marker (repairs/extends the map).
   let existing = new Map();
   const remote = new Map(); // plan id -> GitHub issue (title, body, state, labels)
+  const duplicated = new Map(); // plan id -> numbers of every issue carrying its marker
   if (!DRY || map.items) {
     try {
       let cursor = null;
@@ -213,11 +214,16 @@ async function main() {
         );
         map.repoId = d.repository.id;
         for (const n of d.repository.issues.nodes) {
-          const mk = n.body?.match(/<!-- lut-plan-id: (E\d{2}(?:-\d{2})?) -->/);
-          if (mk) {
-            existing.set(mk[1], { number: n.number, id: n.id });
-            remote.set(mk[1], n);
+          // The sync writes the marker as the body's first line; a marker quoted anywhere else is not one.
+          const mk = n.body?.match(/^<!-- lut-plan-id: (E\d{2}(?:-\d{2})?) -->/);
+          if (!mk) continue;
+          const id = mk[1];
+          if (existing.has(id)) {
+            duplicated.set(id, [...(duplicated.get(id) ?? [existing.get(id).number]), n.number]);
+            continue;
           }
+          existing.set(id, { number: n.number, id: n.id });
+          remote.set(id, n);
         }
         cursor = d.repository.issues.pageInfo.hasNextPage ? d.repository.issues.pageInfo.endCursor : null;
       } while (cursor);
@@ -226,6 +232,11 @@ async function main() {
     }
   }
   for (const [k, v] of existing) map.items[k] = v;
+  // An id on two issues is never updated: which one is the plan's is for a person to decide.
+  for (const [id, numbers] of duplicated) {
+    remote.delete(id);
+    log(`marker ${id} found on ${numbers.map((x) => `#${x}`).join(", ")}; not updated until only one issue carries it`);
+  }
 
   const toCreate = [...epics.map((e) => e.meta.id), ...issues.map(({ i }) => i.meta.id)].filter((id) => !map.items[id]);
   const edgesTodo = allEdges.filter(([a, b]) => !edgesDone.has(edgeKey(a, b)));
