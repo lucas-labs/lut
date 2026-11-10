@@ -232,14 +232,16 @@ async function main() {
     }
   }
   for (const [k, v] of existing) map.items[k] = v;
-  // An id on two issues is never updated: which one is the plan's is for a person to decide.
+  // An id on two issues is never touched, nor any dependency with it at either end: which issue is the plan's is for a
+  // person to decide, and an edge recorded against the wrong one would not be added to the right one later.
   for (const [id, numbers] of duplicated) {
     remote.delete(id);
-    log(`marker ${id} found on ${numbers.map((x) => `#${x}`).join(", ")}; not updated until only one issue carries it`);
+    log(`marker ${id} found on ${numbers.map((x) => `#${x}`).join(", ")}; it and its dependencies are left alone until only one issue carries it`);
   }
+  const touchesDuplicate = (a, b) => duplicated.has(a) || duplicated.has(b);
 
   const toCreate = [...epics.map((e) => e.meta.id), ...issues.map(({ i }) => i.meta.id)].filter((id) => !map.items[id]);
-  const edgesTodo = allEdges.filter(([a, b]) => !edgesDone.has(edgeKey(a, b)));
+  const edgesTodo = allEdges.filter(([a, b]) => !edgesDone.has(edgeKey(a, b)) && !touchesDuplicate(a, b));
   const wanted = new Map([
     ...epics.map((e) => [e.meta.id, { title: `[${e.meta.id}] ${e.title}`, body: epicBody(e), labels: ["epic"] }]),
     ...issues.map(({ epic, i }) => [i.meta.id, { title: `[${i.meta.id}] ${i.title}`, body: issueBody(epic, i), labels: labelsFor(i) }]),
@@ -259,7 +261,7 @@ async function main() {
     if (changed.length) toUpdate.push({ id, number: n.number, nodeId: n.id, title: w.title, body, labels, changed });
   }
   const planEdges = new Set(allEdges.map(([a, b]) => edgeKey(a, b)));
-  const staleEdges = [...edgesDone].filter((k) => !planEdges.has(k));
+  const staleEdges = [...edgesDone].filter((k) => !planEdges.has(k) && !touchesDuplicate(...k.split("<-")));
   const notInPlan = [...remote.keys()].filter((id) => !wanted.has(id));
   for (const u of toUpdate) log(`update #${u.number} ${u.id}: ${u.changed.join(", ")}`);
   for (const k of staleEdges) log(`remove dependency ${k}`);
@@ -304,7 +306,7 @@ async function main() {
   const flushEdges = async () => {
     for (const [a, b] of allEdges) {
       const k = edgeKey(a, b);
-      if (edgesDone.has(k) || !map.items[a] || !map.items[b]) continue;
+      if (edgesDone.has(k) || !map.items[a] || !map.items[b] || touchesDuplicate(a, b)) continue;
       try {
         await write(`dep ${k}`, `mutation($i:ID!,$b:ID!){addBlockedBy(input:{issueId:$i,blockingIssueId:$b}){issue{id}}}`, { i: map.items[a].id, b: map.items[b].id });
       } catch (e) {
