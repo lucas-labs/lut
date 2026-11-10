@@ -2,7 +2,8 @@
 import type { Tab } from '@/modules/tabs';
 import { type PaneLifecycleEvent, setPaneLifecycleListener } from '@/modules/terminal/lib/paneLifecycle';
 import { type PaneNode, removeLeaf, splitLeaf } from '@/modules/terminal/lib/panes';
-import { act, createElement, createRef, type ReactNode } from 'react';
+import * as themeModule from '@/modules/theme';
+import { act, type Context, createElement, createRef, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import type { PanelImperativeHandle } from 'react-resizable-panels';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -18,6 +19,8 @@ const fake = vi.hoisted(() => ({
   live: new Set<number>(),
   output: new Map<number, number>(),
   mounted: new Set<number>(),
+  themed: [] as number[],
+  sessions: new Map<number, object>(),
 }));
 vi.mock('@/modules/terminal/ghostty/useGhosttyTerminalSession', async () => {
   const { useEffect } = await import('react');
@@ -33,17 +36,24 @@ vi.mock('@/modules/terminal/ghostty/useGhosttyTerminalSession', async () => {
           fake.mounted.delete(leafId);
         };
       }, [leafId]);
-      return {
-        model: null,
-        error: null,
-        write: () => {},
-        writeAtPrompt: async () => false,
-        focus: () => {},
-        getBuffer: () => null,
-        getSelection: () => null,
-        applyTheme: () => {},
-        retry: () => {},
-      };
+      // Stable per leaf, like the real hook's memoized handle.
+      let session = fake.sessions.get(leafId);
+      if (!session) {
+        session = {
+          model: null,
+          error: null,
+          write: () => {},
+          writeAtPrompt: async () => false,
+          focus: () => {},
+          getBuffer: () => null,
+          getSelection: () => null,
+          // The real one recolors the existing model, surface and PTY in place.
+          applyTheme: () => fake.themed.push(leafId),
+          retry: () => {},
+        };
+        fake.sessions.set(leafId, session);
+      }
+      return session;
     },
     disposeGhosttySession: (leafId: number) => {
       fake.closed.push(leafId);
@@ -52,12 +62,31 @@ vi.mock('@/modules/terminal/ghostty/useGhosttyTerminalSession', async () => {
     },
   };
 });
-vi.mock('@/modules/theme', () => ({ useTheme: () => ({ resolvedMode: 'dark', activeTheme: null }) }));
+// Theme changes reach the panes through context, as with the real ThemeProvider.
+vi.mock('@/modules/theme', async () => {
+  const { createContext, useContext } = await import('react');
+  const ThemeContext = createContext<{ resolvedMode: string; activeTheme: object | null }>({
+    resolvedMode: 'dark',
+    activeTheme: null,
+  });
+  return { ThemeContext, useTheme: () => useContext(ThemeContext) };
+});
 // The other surfaces render nothing without their own tabs; stubbing them keeps their code out of the test.
 vi.mock('@/modules/editor', () => ({ EditorStack: () => null, GitDiffStack: () => null }));
 vi.mock('@/modules/git-history', () => ({ GitHistoryStack: () => null }));
 vi.mock('@/modules/markdown', () => ({ MarkdownStack: () => null }));
 vi.mock('@/modules/preview', () => ({ PreviewStack: () => null }));
+
+const { ThemeContext } = themeModule as unknown as {
+  ThemeContext: Context<{ resolvedMode: string; activeTheme: object | null }>;
+};
+
+/** Panes apply a theme on the next animation frame. */
+async function nextFrames() {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  });
+}
 
 /** PTY output reaches every session that is still mounted, visible or not. */
 function emitOutput() {
@@ -134,6 +163,8 @@ beforeEach(() => {
   fake.closed = [];
   fake.live.clear();
   fake.output.clear();
+  fake.themed = [];
+  fake.sessions.clear();
   setPaneLifecycleListener((event, leafId) => events.push([event, leafId]));
   host = document.createElement('div');
   document.body.append(host);
@@ -249,6 +280,30 @@ describe('WorkspaceSurface keeps terminals mounted', () => {
       expect(unmounts(leaf)).toBe(0);
     }
     expect(fake.opened).toEqual([10, 20]);
+    expect(fake.closed).toEqual([]);
+  });
+
+  it('switching the theme re-themes every pane in place, with no remount or PTY change (E07-07)', async () => {
+    const tabs = [term(1), term(2, splitLeaf({ kind: 'leaf', id: 20 }, 20, 200, 21, 'row'))];
+    const themed = (resolvedMode: string, activeTheme: object | null) =>
+      createElement(ThemeContext.Provider, { value: { resolvedMode, activeTheme } }, shell(tabs));
+    render(themed('dark', null));
+    await nextFrames();
+    for (const [mode, custom] of [
+      ['light', null],
+      ['dark', null],
+      ['dark', { id: 'custom' }],
+    ] as const) {
+      fake.themed = [];
+      render(themed(mode, custom));
+      await nextFrames();
+      expect([...fake.themed].sort((a, b) => a - b)).toEqual([10, 20, 21]);
+    }
+    for (const leaf of [10, 20, 21]) {
+      expect(mounts(leaf)).toBe(1);
+      expect(unmounts(leaf)).toBe(0);
+    }
+    expect(fake.opened).toEqual([10, 20, 21]);
     expect(fake.closed).toEqual([]);
   });
 });
