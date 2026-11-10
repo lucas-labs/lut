@@ -37,11 +37,16 @@ function readSidebarView(): SidebarViewId {
   return 'explorer';
 }
 
+/** lut starts with terminals only: the sidebar stays collapsed until the user opens it once (E07-04). */
+export function sidebarStartsCollapsed(stored: string | null): boolean {
+  return stored !== '0';
+}
+
 function readSidebarCollapsed(): boolean {
   try {
-    return window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY) === '1';
+    return sidebarStartsCollapsed(window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY));
   } catch {
-    return false;
+    return true;
   }
 }
 
