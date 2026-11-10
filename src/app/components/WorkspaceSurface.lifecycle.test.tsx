@@ -11,9 +11,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '../AppShell';
 import { WorkspaceSurface } from './WorkspaceSurface';
 
-// The PTY bridge is mocked at the session hook: the real hook needs the Ghostty WASM renderer. The session registry
-// outlives React: a pane that mounts reuses the leaf's session, and only an explicit dispose closes its PTY. The fake
-// keeps that contract so the tests can count PTY opens (pty_open) and closes (pty_close) per leaf.
+// The session hook is faked here, so the tests can count React mounts per pane. The session registry outlives React:
+// a pane that mounts reuses the leaf's session, and only an explicit dispose closes its PTY; the fake keeps that
+// contract. WorkspaceSurface.ptyBoundary.test.tsx runs the real hook, with only the renderer and PTY bridge mocked.
 const fake = vi.hoisted(() => ({
   opened: [] as number[],
   closed: [] as number[],
