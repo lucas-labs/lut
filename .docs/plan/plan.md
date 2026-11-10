@@ -3394,27 +3394,26 @@ size: M
 - [ ] Relaunch consent modal designed (run / always in this Space / don't run).
 - [ ] Restore error states (retry / open shell) designed.
 
-### E11-06 — Agents UI: tab badges, notifications, focus-next-attention, hooks manager preview/diff, activity view
+### E11-06 — Agents UI: tab badges, notifications, focus-next-attention, hooks manager preview/diff
 
 ```yaml
 id: E11-06
 depends-on: [E11-02]
 refs: [.docs/plan/analysis/agents.md]
-covers: [AGT-005, AGT-006, AGT-007, AGT-008]
+covers: [AGT-005, AGT-006, AGT-007]
 type: design
 scope: ui
 size: M
 ```
 
 **Goal:** The user designs agent status on tabs/panes, notifications, the focus-next-attention affordance, the hooks
-manager with preview/diff and selective uninstall, and the collapsed activity view.
+manager with preview/diff and selective uninstall.
 
 **Acceptance criteria:**
 
 - [ ] Every normalized agent state, including the degraded "no hooks" state, has a visual.
 - [ ] Notification list/toasts and focus action designed.
 - [ ] Hooks manager (per-agent status, diff preview, stale-preview error, uninstall) designed.
-- [ ] Activity view (tools, subagents, errors) designed.
 
 ### E11-07 — Command palette and context menus
 
@@ -5690,11 +5689,11 @@ size: XS
 ```yaml
 id: E20
 depends-on: [E11, E19, E02, E12, E13, E18]
-refs: [9.6, AGT-006, AGT-007, AGT-008, AGT-010, F5, .docs/plan/analysis/agents.md]
+refs: [9.6, AGT-006, AGT-007, AGT-010, F5, .docs/plan/analysis/agents.md]
 ```
 
 Agent status in tabs, native and in-app notifications (including BEL and OSC 9/777, decision 17), focus-next-attention,
-the hooks manager with preview/diff and selective uninstall, the optional activity view and event retention.
+the hooks manager with preview/diff and selective uninstall, and event retention. No activity view (decision 27).
 
 ### E20-01 — Route BEL and OSC 9/777 terminal notifications into the notification pipeline
 
@@ -5940,28 +5939,6 @@ size: S
 
 **Verification:** `pnpm test`; manual in a sandboxed HOME: launch Claude from the launcher with no hooks installed → `~/.claude/settings.json` unchanged until consent.
 
-### E20-12 — Agent activity view: tools, subagents, errors and events
-
-```yaml
-id: E20-12
-depends-on: [E20-03, E20-10, E11-06]
-refs: [AGT-008, F5:5, 9.6:4]
-covers: [AGT-008, F5:5, 9.6:4]
-type: task
-scope: ui
-size: M
-```
-
-**Goal:** Optional activity view, collapsed by default and opened by shortcut or tab menu, showing the session history when the CLI provides tool/subagent data.
-
-**Acceptance criteria:**
-
-- [ ] Enabling the view offers to add tool/subagent events through the hooks manager preview flow.
-- [ ] Shows only fields allowed by the privacy settings (14.2).
-- [ ] Hidden and inert when no data source exists.
-
-**Verification:** `pnpm test`; manual with tool events enabled for Claude.
-
 ### E20-13 — Project panel of active agent sessions
 
 ```yaml
@@ -6018,7 +5995,7 @@ size-exception: the plugins are declarative manifests and hook files; the rest d
 
 ```yaml
 id: E20-14
-depends-on: [E20-01, E20-02, E20-03, E20-04, E20-05, E20-06, E20-07, E20-08, E20-09, E20-10, E20-11, E20-12, E20-13, E20-15]
+depends-on: [E20-01, E20-02, E20-03, E20-04, E20-05, E20-06, E20-07, E20-08, E20-09, E20-10, E20-11, E20-13, E20-15]
 refs: []
 covers: []
 type: closeout
@@ -7024,6 +7001,9 @@ size: XS
 - `AGT-011` — P2: approve/deny permissions from the UI (post-v1); the existing decision broker stays as is.
 - `AGT-014` — P2: plugin system for more agent adapters (post-v1); existing adapters are kept.
 - `5.10:13` — Multiwindow is a later phase (post-v1).
+- `AGT-008` — P1: agent activity view; agent CLIs such as Claude Code already show it (decision 27).
+- `9.6:4` — Agent activity view (decision 27).
+- `F5:5` — Agent activity timeline and subagents (decision 27).
 - `9.8:1` — Rules for AGT-011 (P2, post-v1).
 - `9.8:2` — Rules for AGT-011 (P2, post-v1).
 - `9.8:3` — Rules for AGT-011 (P2, post-v1).
