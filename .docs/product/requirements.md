@@ -22,7 +22,7 @@ columns are out of date.
 | TER-004 | P0       | Splits horizontales/verticales           | E08-06                                                                        |                |       |
 | TER-005 | P0       | Sesiones ocultas activas                 | E07-01                                                                        |                |       |
 | TER-006 | P0       | Copiar, pegar, selección, búsqueda       | E12-03                                                                        |                |       |
-| TER-007 | P0       | Teclado y TUI fiables                    | E24-04                                                                        |                |       |
+| TER-007 | P0       | Teclado y TUI fiables                    | E14-20, E24-04                                                                |                |       |
 | TER-008 | P1       | Atajos configurables                     | E13-09                                                                        |                |       |
 | TER-009 | P1       | Mover sesiones entre tabs                | E08-07                                                                        |                |       |
 | TER-010 | P2       | Mover sesiones entre ventanas            | Not planned: P2: moving sessions between windows needs multiwindow (post-v1). |                |       |
