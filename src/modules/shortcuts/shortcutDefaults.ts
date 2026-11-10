@@ -71,6 +71,8 @@ export const MAC_DEFAULTS: Readonly<Record<ShortcutId, readonly KeyBinding[]>> =
   ],
   'view.zoomReset': [{ meta: true, key: '0' }],
   'view.zenMode': [{ shift: true, meta: true, key: "'" }],
+  'view.tabOrientation': [{ shift: true, meta: true, key: 'y' }],
+  'view.tabsColumn': [{ shift: true, meta: true, key: 'j' }],
   'editor.undo': [{ meta: true, key: 'z' }],
   'editor.redo': [
     { meta: true, key: 'y' },
@@ -121,6 +123,8 @@ export const WIN_LINUX_DEFAULTS: Readonly<Record<ShortcutId, readonly KeyBinding
   'view.zoomOut': [{ ...CS, key: '-' }],
   'view.zoomReset': [{ ctrl: true, key: '0' }],
   'view.zenMode': [{ ...CS, key: "'" }],
+  'view.tabOrientation': [{ ...CS, key: 'y' }],
+  'view.tabsColumn': [{ ...CS, key: 'j' }],
   'editor.undo': [{ ctrl: true, key: 'z' }],
   'editor.redo': [
     { ctrl: true, key: 'y' },

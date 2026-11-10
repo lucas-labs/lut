@@ -1,4 +1,3 @@
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { consumeLaunchFiles, getLaunchDir } from '@/lib/launchDir';
@@ -6,6 +5,7 @@ import { IS_MAC } from '@/lib/platform';
 import { quoteShellArg } from '@/lib/shellQuote';
 import { useZoom } from '@/lib/useZoom';
 import { isMarkdownPath } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import {
   type AgentLaunchRequest,
   AgentNotificationsBridge,
@@ -28,7 +28,7 @@ import { setLspNavigator } from '@/modules/lsp';
 import type { PreviewPaneHandle } from '@/modules/preview';
 import { openSettingsWindow } from '@/modules/settings/openSettingsWindow';
 import { usePreferencesStore } from '@/modules/settings/preferences';
-import { setShowHidden } from '@/modules/settings/store';
+import { setShowHidden, setTabOrientation } from '@/modules/settings/store';
 import {
   type ShortcutHandlers,
   type ShortcutId,
@@ -36,14 +36,16 @@ import {
   tabDigit,
   useGlobalShortcuts,
 } from '@/modules/shortcuts';
-import { SIDEBAR_MAX_WIDTH, SIDEBAR_MIN_WIDTH, SidebarRail, useSidebarPanel } from '@/modules/sidebar';
+import { SidebarRail, useSidebarPanel } from '@/modules/sidebar';
 import { SourceControlPanel, useRepositoryTargeting, useSourceControlContext } from '@/modules/source-control';
 import { SpaceSwitcher, useSpacePersistence, useSpaces, useSpacesBoot } from '@/modules/spaces';
 import { StatusBar } from '@/modules/statusbar';
 import {
   type CloseTabsPlan,
+  TabBar,
   TabSwitcherHud,
   useTabs,
+  useTabsColumn,
   useTabSwitcher,
   useWindowTitle,
   useWorkspaceCwd,
@@ -80,6 +82,7 @@ import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { AppShell } from './AppShell';
 import { CloseDialogs } from './components/CloseDialogs';
 import { WorkspaceSurface } from './components/WorkspaceSurface';
 import { hasOpenPathTab, renamedPath, spacesEmptiedByTabs } from './hooks/tabCloseGuards';
@@ -156,6 +159,8 @@ export default function App() {
   const terminalRefs = useRef<Map<number, TerminalPaneHandle>>(new Map());
   const editorRefs = useRef<Map<number, EditorPaneHandle>>(new Map());
   const previewRefs = useRef<Map<number, PreviewPaneHandle>>(new Map());
+  // A new empty preview tab wants its address bar focused; the preview code may still be loading (E07-04).
+  const pendingPreviewFocusRef = useRef<number | null>(null);
   const [activeEditorHandle, setActiveEditorHandle] = useState<EditorPaneHandle | null>(null);
   const [gitHistoryHandle, setGitHistoryHandle] = useState<GitHistorySearchHandle | null>(null);
   const { zoomIn, zoomOut, zoomReset } = useZoom();
@@ -630,16 +635,27 @@ export default function App() {
     openCommitHistoryTab,
   });
 
+  /** Focuses a pending preview's address bar once its pane exists, if its tab is still active. */
+  const focusPendingPreview = useCallback((id: number) => {
+    if (pendingPreviewFocusRef.current !== id) return;
+    const handle = previewRefs.current.get(id);
+    if (!handle) return; // still loading: registerPreviewHandle calls this again
+    pendingPreviewFocusRef.current = null;
+    if (activeIdRef.current === id) handle.focusAddressBar();
+  }, []);
+
   const openPreviewTab = useCallback(
     (url: string) => {
       const id = newPreviewTab(url);
-      // Focus the address bar if the URL is empty so the user can type.
+      // Focus the address bar if the URL is empty so the user can type. If the pane is not registered yet, the
+      // request waits for registerPreviewHandle.
       if (!url) {
-        setTimeout(() => previewRefs.current.get(id)?.focusAddressBar(), 0);
+        pendingPreviewFocusRef.current = id;
+        setTimeout(() => focusPendingPreview(id), 0);
       }
       return id;
     },
-    [newPreviewTab],
+    [newPreviewTab, focusPendingPreview],
   );
 
   const splitActivePaneInActiveTab = useCallback(
@@ -679,6 +695,13 @@ export default function App() {
   }, [activeId, closeActivePane, handleClose]);
 
   const [zenMode, setZenMode] = useState(false);
+  const tabOrientation = usePreferencesStore((s) => s.tabOrientation);
+  const verticalTabs = tabOrientation === 'vertical';
+  const { tabsColumnRef, tabsColumnInitialWidth, persistTabsColumnLayout, toggleTabsColumn } = useTabsColumn();
+  const toggleTabOrientation = useCallback(() => {
+    const current = usePreferencesStore.getState().tabOrientation;
+    void setTabOrientation(current === 'vertical' ? 'horizontal' : 'vertical');
+  }, []);
 
   // Focus an agent's tab, switching to its space first so the header and tab
   // strip don't end up showing a different space than the focused pane.
@@ -739,6 +762,8 @@ export default function App() {
       'view.zoomOut': zoomOut,
       'view.zoomReset': zoomReset,
       'view.zenMode': () => setZenMode((v) => !v),
+      'view.tabOrientation': toggleTabOrientation,
+      'view.tabsColumn': toggleTabsColumn,
       'editor.undo': () => editorRefs.current.get(activeId)?.undo(),
       'editor.redo': () => editorRefs.current.get(activeId)?.redo(),
       'editor.save': () => {
@@ -768,6 +793,8 @@ export default function App() {
       zoomOut,
       zoomReset,
       activateAgentTarget,
+      toggleTabOrientation,
+      toggleTabsColumn,
     ],
   );
 
@@ -824,10 +851,15 @@ export default function App() {
     [activeId],
   );
 
-  const registerPreviewHandle = useCallback((id: number, h: PreviewPaneHandle | null) => {
-    if (h) previewRefs.current.set(id, h);
-    else previewRefs.current.delete(id);
-  }, []);
+  const registerPreviewHandle = useCallback(
+    (id: number, h: PreviewPaneHandle | null) => {
+      if (h) {
+        previewRefs.current.set(id, h);
+        if (pendingPreviewFocusRef.current === id) setTimeout(() => focusPendingPreview(id), 0);
+      } else previewRefs.current.delete(id);
+    },
+    [focusPendingPreview],
+  );
 
   const handlePreviewUrl = useCallback((id: number, url: string) => updateTab(id, { url }), [updateTab]);
 
@@ -1001,6 +1033,8 @@ export default function App() {
             focusSearch: () => searchInlineRef.current?.focus(),
             focusExplorerSearch: () => explorerRef.current?.focusSearch(),
             toggleSidebar,
+            toggleTabOrientation,
+            toggleTabsColumn,
             toggleHiddenFiles,
             openSettings: () => void openSettingsWindow(),
             openKeyboardShortcuts: () => void openSettingsWindow('shortcuts'),
@@ -1026,6 +1060,8 @@ export default function App() {
       handleCloseTabOrPane,
       splitActivePaneInActiveTab,
       toggleSidebar,
+      toggleTabOrientation,
+      toggleTabsColumn,
       toggleHiddenFiles,
       activeSpaceId,
       handleNewSpace,
@@ -1106,137 +1142,145 @@ export default function App() {
             />
           </Suspense>
         )}
-        <div className="relative flex h-screen flex-col overflow-hidden bg-frame text-foreground">
-          {!zenMode && (
-            <Header
-              tabs={spaceTabs}
-              activeId={activeId}
-              onSelect={setActiveId}
-              onNew={openNewTab}
-              onNewPrivate={openNewPrivateTab}
-              onNewPreview={() => openPreviewTab('')}
-              onNewEditor={() => setNewEditorOpen(true)}
-              onNewGitGraph={openGitGraphFromContext}
-              onLaunchAgents={launchAgentGroup}
-              onClose={handleClose}
-              onCloseTabsToRight={handleCloseTabsToRight}
-              onCloseOtherTabs={handleCloseOtherTabs}
-              onPin={pinTab}
-              onRename={handleRenameTab}
-              onReorder={reorderTabByGap}
-              onToggleSidebar={toggleSidebar}
-              onOpenCommandPalette={() => openCommandPalette('commands')}
-              onActivateAgent={onActivateAgent}
-              onOpenSettings={() => void openSettingsWindow()}
-              spaceSwitcher={spaceSwitcher}
-              searchTarget={searchTarget}
-              searchRef={searchInlineRef}
-              onOverrideLanguage={setOverrideLanguage}
-            />
-          )}
-
-          <main className="zoom-content flex min-h-0 flex-1 flex-col">
-            <ResizablePanelGroup
-              orientation="horizontal"
-              className="min-h-0 flex-1"
-              onLayoutChanged={(_, { isUserInteraction }) => {
-                const width = sidebarRef.current?.getSize().inPixels ?? 0;
-                persistSidebarWidth(width, isUserInteraction);
-              }}
-            >
-              <ResizablePanel
-                id="sidebar"
-                panelRef={sidebarRef}
-                defaultSize={initialSidebarCollapsed ? '0px' : `${sidebarWidthRef.current}px`}
-                minSize={`${SIDEBAR_MIN_WIDTH}px`}
-                maxSize={`${SIDEBAR_MAX_WIDTH}px`}
-                collapsible
-                collapsedSize={0}
-                onResize={(size) => {
-                  persistSidebarCollapsed(size.inPixels <= 0);
-                }}
-              >
-                <div className="h-full min-h-0 pl-2 pr-0.5">
-                  <div className="lut-pane flex h-full min-h-0 flex-col">
-                    <div key={sidebarView} className="min-h-0 flex-1 lut-panel-in">
-                      {sidebarView === 'explorer' ? (
-                        <FileExplorer
-                          ref={explorerRef}
-                          rootPath={explorerRoot}
-                          gitStatus={explorerGitDecorations ? sourceControl.status : null}
-                          activeFilePath={explorerActiveFilePath}
-                          onOpenFile={handleOpenFile}
-                          onPathRenamed={handleExplorerPathRenamed}
-                          onPathsDeleted={handlePathsDeleted}
-                          canReplacePath={canReplaceExplorerPath}
-                          onRevealInTerminal={cdInNewTab}
-                          onOpenInSourceControl={handleOpenRepositoryInSourceControl}
-                          onOpenGitHistory={handleOpenGitHistoryForPath}
-                          pathDropTarget={terminalPathDropTarget}
-                          visible={!sidebarCollapsed}
-                        />
-                      ) : (
-                        <SourceControlPanel
-                          open
-                          sourceControl={sourceControl}
-                          onOpenDiff={openGitDiffTab}
-                          onOpenGitGraph={openGitGraphFromContext}
-                          onOpenFile={handleOpenFile}
-                          onNavigateToPath={cdInNewTab}
-                          repositoryTarget={sourceControlRepositoryTarget}
-                          onFollowRepositoryContext={handleFollowRepositoryContext}
-                        />
-                      )}
-                    </div>
-                    <SidebarRail
-                      activeView={sidebarView}
-                      onSelectView={persistSidebarView}
-                      changedCount={sourceControl.changedCount}
+        <AppShell
+          header={
+            zenMode ? null : (
+              <Header
+                tabs={spaceTabs}
+                activeId={activeId}
+                onSelect={setActiveId}
+                onNew={openNewTab}
+                onNewPrivate={openNewPrivateTab}
+                onNewPreview={() => openPreviewTab('')}
+                onNewEditor={() => setNewEditorOpen(true)}
+                onNewGitGraph={openGitGraphFromContext}
+                onLaunchAgents={launchAgentGroup}
+                onClose={handleClose}
+                onCloseTabsToRight={handleCloseTabsToRight}
+                onCloseOtherTabs={handleCloseOtherTabs}
+                onPin={pinTab}
+                onRename={handleRenameTab}
+                onReorder={reorderTabByGap}
+                onToggleSidebar={toggleSidebar}
+                onOpenCommandPalette={() => openCommandPalette('commands')}
+                onActivateAgent={onActivateAgent}
+                onOpenSettings={() => void openSettingsWindow()}
+                spaceSwitcher={spaceSwitcher}
+                searchTarget={searchTarget}
+                searchRef={searchInlineRef}
+                onOverrideLanguage={setOverrideLanguage}
+                showTabs={!verticalTabs}
+              />
+            )
+          }
+          tabsColumn={
+            verticalTabs && !zenMode ? (
+              <div className={cn('flex h-full min-h-0 flex-col pr-0.5', sidebarCollapsed ? 'pl-2' : 'pl-0.5')}>
+                <div className="lut-pane flex min-h-0 flex-1 flex-col p-1">
+                  <TabBar
+                    orientation="vertical"
+                    tabs={spaceTabs}
+                    activeId={activeId}
+                    onSelect={setActiveId}
+                    onNew={openNewTab}
+                    onNewPrivate={openNewPrivateTab}
+                    onNewPreview={() => openPreviewTab('')}
+                    onNewEditor={() => setNewEditorOpen(true)}
+                    onNewGitGraph={openGitGraphFromContext}
+                    onLaunchAgents={launchAgentGroup}
+                    onClose={handleClose}
+                    onCloseTabsToRight={handleCloseTabsToRight}
+                    onCloseOtherTabs={handleCloseOtherTabs}
+                    onPin={pinTab}
+                    onRename={handleRenameTab}
+                    onReorder={reorderTabByGap}
+                    onOverrideLanguage={setOverrideLanguage}
+                  />
+                </div>
+              </div>
+            ) : null
+          }
+          tabsColumnRef={tabsColumnRef}
+          tabsColumnInitialWidth={tabsColumnInitialWidth}
+          onTabsColumnLayout={persistTabsColumnLayout}
+          sidebarRef={sidebarRef}
+          sidebarInitialWidth={initialSidebarCollapsed ? 0 : sidebarWidthRef.current}
+          onSidebarLayout={persistSidebarWidth}
+          onSidebarCollapsedChange={persistSidebarCollapsed}
+          sidebar={
+            <div className="h-full min-h-0 pl-2 pr-0.5">
+              <div className="lut-pane flex h-full min-h-0 flex-col">
+                <div key={sidebarView} className="min-h-0 flex-1 lut-panel-in">
+                  {sidebarView === 'explorer' ? (
+                    <FileExplorer
+                      ref={explorerRef}
+                      rootPath={explorerRoot}
+                      gitStatus={explorerGitDecorations ? sourceControl.status : null}
+                      activeFilePath={explorerActiveFilePath}
+                      onOpenFile={handleOpenFile}
+                      onPathRenamed={handleExplorerPathRenamed}
+                      onPathsDeleted={handlePathsDeleted}
+                      canReplacePath={canReplaceExplorerPath}
+                      onRevealInTerminal={cdInNewTab}
+                      onOpenInSourceControl={handleOpenRepositoryInSourceControl}
+                      onOpenGitHistory={handleOpenGitHistoryForPath}
+                      pathDropTarget={terminalPathDropTarget}
+                      visible={!sidebarCollapsed}
                     />
-                  </div>
+                  ) : (
+                    <SourceControlPanel
+                      open
+                      sourceControl={sourceControl}
+                      onOpenDiff={openGitDiffTab}
+                      onOpenGitGraph={openGitGraphFromContext}
+                      onOpenFile={handleOpenFile}
+                      onNavigateToPath={cdInNewTab}
+                      repositoryTarget={sourceControlRepositoryTarget}
+                      onFollowRepositoryContext={handleFollowRepositoryContext}
+                    />
+                  )}
                 </div>
-              </ResizablePanel>
-              <ResizableHandle className="w-1 rounded-full bg-transparent transition-colors duration-[var(--dur-fast)] after:w-4 hover:bg-border" />
-              <ResizablePanel id="workspace" defaultSize="78%" minSize="30%">
-                <div className="h-full min-h-0 pl-0.5 pr-2">
-                  <div className="lut-pane flex h-full min-h-0 flex-col">
-                    <div className="relative min-h-0 flex-1">
-                      <WorkspaceSurface
-                        tabs={tabs}
-                        activeId={activeId}
-                        activeTab={activeTab}
-                        registerTerminalHandle={registerTerminalHandle}
-                        onSearchReady={handleSearchReady}
-                        onCwd={handleTerminalCwd}
-                        onExit={handleLeafExit}
-                        onFocusLeaf={handleFocusLeaf}
-                        registerEditorHandle={registerEditorHandle}
-                        onEditorDirtyChange={handleEditorDirty}
-                        onEditorCloseTab={disposeTab}
-                        registerPreviewHandle={registerPreviewHandle}
-                        onPreviewUrlChange={handlePreviewUrl}
-                        onOpenCommitFile={openCommitFileDiffTab}
-                        onGitHistorySearchHandle={setGitHistoryHandle}
-                        onSetMarkdownView={setMarkdownView}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
-          </main>
-
-          {!zenMode && (
-            <StatusBar
-              cwd={activeCwd}
-              filePath={activeFilePath}
-              home={home}
-              onCd={sendCd}
-              onWorkspaceChange={handleWorkspaceChange}
-              privateActive={activeTab?.kind === 'terminal' && activeTab.private === true}
+                <SidebarRail
+                  activeView={sidebarView}
+                  onSelectView={persistSidebarView}
+                  changedCount={sourceControl.changedCount}
+                />
+              </div>
+            </div>
+          }
+          workspace={
+            <WorkspaceSurface
+              tabs={tabs}
+              activeId={activeId}
+              activeTab={activeTab}
+              registerTerminalHandle={registerTerminalHandle}
+              onSearchReady={handleSearchReady}
+              onCwd={handleTerminalCwd}
+              onExit={handleLeafExit}
+              onFocusLeaf={handleFocusLeaf}
+              registerEditorHandle={registerEditorHandle}
+              onEditorDirtyChange={handleEditorDirty}
+              onEditorCloseTab={disposeTab}
+              registerPreviewHandle={registerPreviewHandle}
+              onPreviewUrlChange={handlePreviewUrl}
+              onOpenCommitFile={openCommitFileDiffTab}
+              onGitHistorySearchHandle={setGitHistoryHandle}
+              onSetMarkdownView={setMarkdownView}
             />
-          )}
-
+          }
+          statusBar={
+            zenMode ? null : (
+              <StatusBar
+                cwd={activeCwd}
+                filePath={activeFilePath}
+                home={home}
+                onCd={sendCd}
+                onWorkspaceChange={handleWorkspaceChange}
+                privateActive={activeTab?.kind === 'terminal' && activeTab.private === true}
+              />
+            )
+          }
+        >
           <WindowVibrancyBridge />
           {IS_MAC ? <LivePageResizeBridge /> : null}
           <WindowActivityBridge
@@ -1285,7 +1329,7 @@ export default function App() {
             onCancelAppClose={cancelAppClose}
             onConfirmAppClose={confirmAppClose}
           />
-        </div>
+        </AppShell>
       </TooltipProvider>
     </ThemeProvider>
   );

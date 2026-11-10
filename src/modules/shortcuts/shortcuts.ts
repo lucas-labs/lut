@@ -38,6 +38,8 @@ export type ShortcutId =
   | 'view.zoomOut'
   | 'view.zoomReset'
   | 'view.zenMode'
+  | 'view.tabOrientation'
+  | 'view.tabsColumn'
   | 'agent.focusAttention'
   | 'settings.open'
   | 'sidebar.toggle'
@@ -246,6 +248,16 @@ const SHORTCUT_META: Omit<Shortcut, 'defaultBindings'>[] = [
   {
     id: 'view.zenMode',
     label: 'Toggle zen mode',
+    group: 'View',
+  },
+  {
+    id: 'view.tabOrientation',
+    label: 'Toggle vertical tabs',
+    group: 'View',
+  },
+  {
+    id: 'view.tabsColumn',
+    label: 'Show or hide the vertical tab column',
     group: 'View',
   },
   {

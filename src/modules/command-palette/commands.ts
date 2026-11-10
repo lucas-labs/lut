@@ -9,6 +9,7 @@ import {
   Globe02Icon,
   IncognitoIcon,
   KeyboardIcon,
+  LayoutLeftIcon,
   LayoutTwoColumnIcon,
   LayoutTwoRowIcon,
   PaintBoardIcon,
@@ -49,6 +50,8 @@ export type CommandPaletteActionContext = {
   focusSearch: () => void;
   focusExplorerSearch: () => void;
   toggleSidebar: () => void;
+  toggleTabOrientation: () => void;
+  toggleTabsColumn: () => void;
   toggleHiddenFiles: () => void;
   openSettings: () => void;
   openKeyboardShortcuts: () => void;
@@ -246,6 +249,24 @@ export function createCommandItems(ctx: CommandPaletteActionContext): PaletteIte
       icon: SidebarLeftIcon,
       shortcutId: 'sidebar.toggle',
       run: ctx.toggleSidebar,
+    },
+    {
+      id: 'view.tabOrientation',
+      title: 'Toggle vertical tabs',
+      group: 'View',
+      keywords: ['tabs', 'vertical', 'horizontal', 'orientation', 'layout'],
+      icon: LayoutLeftIcon,
+      shortcutId: 'view.tabOrientation',
+      run: ctx.toggleTabOrientation,
+    },
+    {
+      id: 'view.tabsColumn',
+      title: 'Show or hide the vertical tab column',
+      group: 'View',
+      keywords: ['tabs', 'vertical', 'column', 'hide', 'collapse'],
+      icon: LayoutLeftIcon,
+      shortcutId: 'view.tabsColumn',
+      run: ctx.toggleTabsColumn,
     },
     {
       id: 'explorer.toggleHidden',

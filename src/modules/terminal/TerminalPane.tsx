@@ -5,6 +5,7 @@ import { forwardRef, lazy, memo, Suspense, useEffect, useImperativeHandle, useRe
 import type { TerminalBackendKind } from './backend/contracts';
 import { terminalBackendFor } from './backend/selection';
 import { useGhosttyTerminalSession } from './ghostty/useGhosttyTerminalSession';
+import { usePaneLifecycle } from './lib/paneLifecycle';
 
 export type TerminalPaneHandle = {
   write: (data: string) => void;
@@ -122,6 +123,7 @@ const GhosttyTerminalPane = memo(
 
 export const TerminalPane = memo(
   forwardRef<TerminalPaneHandle, TerminalPaneProps>(function TerminalPane(props, ref) {
+    usePaneLifecycle(props.leafId);
     const [backend] = useState(() => terminalBackendFor(usePreferencesStore.getState().terminalRenderer));
     return <GhosttyTerminalPane ref={ref} {...props} backend={backend} />;
   }),

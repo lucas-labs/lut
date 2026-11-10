@@ -1,13 +1,15 @@
-import type { Tab } from '@/modules/tabs';
 import type { TerminalSearchController } from '@/modules/terminal/search/TerminalSearchController';
-import { useEffect, useMemo, useRef } from 'react';
-import { selectLiveTerminals } from './lib/liveTerminals';
-import { leafIds } from './lib/panes';
+import { useEffect, useRef } from 'react';
+import { leafIds, type PaneNode } from './lib/panes';
 import { PaneTreeView } from './PaneTreeView';
 import type { TerminalPaneHandle } from './TerminalPane';
 
+/** What TerminalStack needs from a terminal tab: its id, its pane tree and its focused pane. */
+export type TerminalStackEntry = { id: number; paneTree: PaneNode; activeLeafId: number };
+
 type Props = {
-  tabs: Tab[];
+  /** Mounted terminals; the caller decides which (e.g. cold restored tabs stay out). */
+  terminals: TerminalStackEntry[];
   activeId: number;
   /** Register/unregister handle by leaf id (not tab id). */
   registerHandle: (leafId: number, handle: TerminalPaneHandle | null) => void;
@@ -24,9 +26,15 @@ type Bundle = {
   onExit: (leafId: number, code: number) => void;
 };
 
-export function TerminalStack({ tabs, activeId, registerHandle, onSearchReady, onCwd, onExit, onFocusLeaf }: Props) {
-  const terminals = useMemo(() => selectLiveTerminals(tabs), [tabs]);
-
+export function TerminalStack({
+  terminals,
+  activeId,
+  registerHandle,
+  onSearchReady,
+  onCwd,
+  onExit,
+  onFocusLeaf,
+}: Props) {
   const registerRef = useRef(registerHandle);
   const searchReadyRef = useRef(onSearchReady);
   const cwdRef = useRef(onCwd);

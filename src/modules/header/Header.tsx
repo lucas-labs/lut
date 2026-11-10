@@ -39,6 +39,8 @@ type Props = {
   spaceSwitcher: ReactNode;
   searchTarget: SearchTarget;
   searchRef: RefObject<SearchInlineHandle | null>;
+  /** False when the tabs are shown as a vertical column instead (E07-05). */
+  showTabs?: boolean;
 };
 
 const COMPACT_WIDTH = 720;
@@ -67,6 +69,7 @@ export function Header({
   spaceSwitcher,
   searchTarget,
   searchRef,
+  showTabs = true,
 }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [compact, setCompact] = useState(false);
@@ -139,25 +142,27 @@ export function Header({
         }}
       >
         {spaceSwitcher}
-        <TabBar
-          tabs={tabs}
-          activeId={activeId}
-          onSelect={onSelect}
-          onNew={onNew}
-          onNewPrivate={onNewPrivate}
-          onNewPreview={onNewPreview}
-          onNewEditor={onNewEditor}
-          onNewGitGraph={onNewGitGraph}
-          onLaunchAgents={onLaunchAgents}
-          onClose={onClose}
-          onCloseTabsToRight={onCloseTabsToRight}
-          onCloseOtherTabs={onCloseOtherTabs}
-          onPin={onPin}
-          onRename={onRename}
-          onReorder={onReorder}
-          onOverrideLanguage={onOverrideLanguage}
-          compact={compact}
-        />
+        {showTabs && (
+          <TabBar
+            tabs={tabs}
+            activeId={activeId}
+            onSelect={onSelect}
+            onNew={onNew}
+            onNewPrivate={onNewPrivate}
+            onNewPreview={onNewPreview}
+            onNewEditor={onNewEditor}
+            onNewGitGraph={onNewGitGraph}
+            onLaunchAgents={onLaunchAgents}
+            onClose={onClose}
+            onCloseTabsToRight={onCloseTabsToRight}
+            onCloseOtherTabs={onCloseOtherTabs}
+            onPin={onPin}
+            onRename={onRename}
+            onReorder={onReorder}
+            onOverrideLanguage={onOverrideLanguage}
+            compact={compact}
+          />
+        )}
         <div data-tauri-drag-region className="h-full min-w-2 flex-1" />
       </div>
 

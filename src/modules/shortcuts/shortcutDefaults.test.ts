@@ -45,6 +45,8 @@ view.zoomIn: Cmd+=, Shift+Cmd++
 view.zoomOut: Cmd+-, Shift+Cmd+_
 view.zoomReset: Cmd+0
 view.zenMode: Shift+Cmd+'
+view.tabOrientation: Shift+Cmd+y
+view.tabsColumn: Shift+Cmd+j
 editor.undo: Cmd+z
 editor.redo: Cmd+y, Shift+Cmd+z
 editor.save: Cmd+s
