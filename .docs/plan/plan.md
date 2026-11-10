@@ -3970,11 +3970,38 @@ size: M
 
 **Verification:** the captures and the decision in the PR; any follow-up issue synced.
 
+### E13-14 — Turn off WebView2's browser shortcuts on Windows
+
+```yaml
+id: E13-14
+depends-on: []
+refs: [TER-008, .docs/plan/analysis/app-shell.md]
+covers: [app-shell/shortcuts]
+type: task
+scope: be
+size: S
+```
+
+**Goal:** a key lut does not bind never triggers a browser feature. Found on Windows: `Ctrl+P` with focus outside a
+terminal opens the print dialog, because WebView2 keeps its browser accelerator keys on by default (print, find on page,
+reload with `Ctrl+R`/`F5`, page zoom). Tauri 2.12 does not expose the setting, so the main window sets
+`AreBrowserAcceleratorKeysEnabled(false)` on the WebView2 settings through `with_webview` when it is created.
+
+**Acceptance criteria:**
+
+- [ ] On Windows, `Ctrl+P`, `Ctrl+F`, `Ctrl+R`, `F5` and `Ctrl+Plus`/`Ctrl+Minus` with focus outside a terminal do
+      not print, find, reload or zoom the page; lut's own shortcuts on those keys keep working.
+- [ ] Debug builds keep the DevTools keys (`F12`, `Ctrl+Shift+I`).
+- [ ] macOS and Linux are unchanged.
+
+**Verification:** `pnpm tauri dev` and a release build on Windows: press each key with focus in the sidebar, a
+terminal and an editor tab.
+
 ### E13-11 — Close-out: settings and theming
 
 ```yaml
 id: E13-11
-depends-on: [E13-01, E13-03, E13-04, E13-05, E13-06, E13-07, E13-08, E13-09, E13-10, E13-12, E13-13]
+depends-on: [E13-01, E13-03, E13-04, E13-05, E13-06, E13-07, E13-08, E13-09, E13-10, E13-12, E13-13, E13-14]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
