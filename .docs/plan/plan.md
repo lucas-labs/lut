@@ -5178,7 +5178,7 @@ size: M
 
 ```yaml
 id: E17-14
-depends-on: [E17-13]
+depends-on: [E17-13, E17-07]
 refs: [8.4, 8.5, F4:5]
 covers: [8.4:8, 8.5:5, 16:12, F4:5]
 type: task
@@ -5190,9 +5190,10 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] A per-session guard relaunches each command at most once per restore, including retries racing with the ready event and a project opened twice.
+- [ ] A per-session guard relaunches each command at most once per restore, including duplicate ready events and a project opened twice; an explicit "Retry" after a failed run (E17-15) starts a new attempt.
 - [ ] A global `relaunchCommands` setting (default on) turns relaunching off (panes reopen with an empty shell); it is checked at execution time, not only at plan time.
-- [ ] Tests: dedupe under duplicate ready events and double open; global switch off → no command runs, consent is not even requested.
+- [ ] Command text is saved only while `relaunchCommands` is on and `startupMode` is `restoreLast` (decision 28); turning either off clears the saved commands.
+- [ ] Tests: dedupe under duplicate ready events and double open; Retry after a failure runs again; global switch off → no command runs, consent is not even requested.
 
 **Verification:** `pnpm test`; manual: disable relaunching, restart a project with an approved command → nothing runs.
 
@@ -5413,7 +5414,7 @@ size: S
 **Acceptance criteria:**
 
 - [ ] A startup section offers the three `startupMode` values of E17-07; choosing "default project" shows a project picker (archived projects excluded).
-- [ ] The global relaunch switch of E17-14 is shown in the same section.
+- [ ] The global relaunch switch of E17-14 is shown in the same section, with a warning that running command lines are saved locally to relaunch them and may contain secrets (decision 28).
 - [ ] Changes are saved through the settings store and apply at the next launch; matches the E11-03 design.
 - [ ] Component tests for each mode and for the project picker.
 

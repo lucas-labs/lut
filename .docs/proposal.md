@@ -149,7 +149,7 @@ Ejemplos de perfiles: PowerShell 7 normal; PowerShell sin perfil; Ubuntu WSL; CM
 | PRJ-001 | P0        | Lista de proyectos                        | Crear, renombrar, duplicar, archivar/borrar                                                                                                                                                                                                                                                         |
 | PRJ-002 | P0        | Guardar tabs y splits                     | Cerrar aplicación y restaurar árbol y tabs en siguiente inicio                                                                                                                                                                                                                                      |
 | PRJ-003 | P0        | Directorio por pane                       | Mantener cwd específico, no solo raíz del proyecto                                                                                                                                                                                                                                                  |
-| PRJ-004 | P0        | Relanzar comandos                         | Al restaurar, relanzar los comandos que seguían corriendo en cada pane, con confirmación                                                                                                                                                                                                            |
+| PRJ-004 | P0        | Relanzar comandos                         | Al restaurar, relanzar a pedido (P0) o con confirmación (P1) los comandos que seguían corriendo en cada pane                                                                                                                                                                                        |
 | PRJ-005 | P0        | Distintos perfiles en un proyecto         | Por ejemplo PowerShell, WSL y shell de scripts                                                                                                                                                                                                                                                      |
 | PRJ-006 | P1        | Ratios de splits                          | Guardar proporciones reales, no sólo la topología                                                                                                                                                                                                                                                   |
 | PRJ-007 | P1        | Confirmación de relanzamiento             | Ejecutar / ejecutar siempre en este proyecto / no ejecutar, por comando                                                                                                                                                                                                                             |
@@ -701,7 +701,7 @@ type WindowState = {
 };
 
 type ProjectState = {
-  schemaVersion: 1;
+  schemaVersion: 2;               // v1: Spaces migrados (layout y cwd); v2 agrega runningCommand y relaunchApprovals
   projectId: string;
   windows: WindowState[];
   panes: Record<string, PaneState>;
@@ -1271,6 +1271,9 @@ El proyecto debe funcionar totalmente local para terminal/sesiones/proyectos y n
 
 - **Permitido por defecto:** IDs, agente, estado, tiempo, PTY, tab, proyecto, metadatos mínimos.
 - **Opt-in explícito:** comandos, nombres de herramientas, previews, mensajes, errores detallados, timeline persistente.
+  El opt-in para guardar los comandos que siguen corriendo (para relanzarlos, §8) es la opción de inicio “restaurar la
+  última sesión” con el relanzamiento activado, que advierte que esas líneas se guardan localmente y pueden contener
+  secretos (decisión 28).
 - **No guardar por defecto:** prompts completos, contenido leído/escrito, transcripciones, variables de entorno, tokens.
 
 ## 14.3. Licenciamiento y atribuciones
