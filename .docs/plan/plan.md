@@ -3056,7 +3056,7 @@ placement) per E11-08.
 
 ```yaml
 id: E10-13
-depends-on: [E10-06, E11-08, E11-01]
+depends-on: [E10-06, E11-08]
 refs: [UX-009, F6:3]
 covers: [ide-tools/source-control-ui]
 type: task
@@ -3103,7 +3103,7 @@ Terax panel code.
 
 ```yaml
 id: E10-15
-depends-on: [E10-06, E11-08, E11-01]
+depends-on: [E10-06, E11-08]
 refs: [F6:3]
 covers: [ide-tools/git-history-ui]
 type: task
@@ -3125,7 +3125,7 @@ size: M
 
 ```yaml
 id: E10-16
-depends-on: [E10-08, E11-08, E11-01]
+depends-on: [E10-08, E11-08]
 refs: [UX-009, 10.2:6]
 covers: [ide-tools/explorer-ui]
 type: task
@@ -3168,11 +3168,11 @@ remaining Terax explorer views.
 **Verification:** `pnpm test src/modules/explorer`, `cargo test --manifest-path src-tauri/Cargo.toml --locked`; manual:
 file operations on a scratch folder.
 
-### E10-18 — Replace the Catppuccin file icon theme with lut's iconography
+### E10-18 — Replace the Catppuccin file icon theme with lut's file icons
 
 ```yaml
 id: E10-18
-depends-on: [E11-08, E11-01, E05-13]
+depends-on: [E11-08, E05-13]
 refs: [UX-006]
 covers: [ide-tools/file-icons]
 type: task
@@ -3180,7 +3180,7 @@ scope: ui
 size: M
 ```
 
-**Goal:** Replace `FileIcon.tsx` and the icon mapping with the designed file iconography and drop
+**Goal:** Replace `FileIcon.tsx` and the icon mapping with a file icon set consistent with lut's UI icons and drop
 `@iconify-json/catppuccin` if unused.
 
 **Acceptance criteria:**
@@ -3196,7 +3196,7 @@ size: M
 
 ```yaml
 id: E10-19
-depends-on: [E10-04, E11-08, E11-01, E13-02]
+depends-on: [E10-04, E11-08]
 refs: [UX-004]
 covers: [ide-tools/editor-themes]
 type: task
@@ -3220,7 +3220,7 @@ size: M
 
 ```yaml
 id: E10-20
-depends-on: [E10-09, E11-08, E11-01]
+depends-on: [E10-09, E11-08]
 refs: [UX-009]
 covers: [ide-tools/markdown-ui]
 type: task
@@ -3242,7 +3242,7 @@ size: M
 
 ```yaml
 id: E10-21
-depends-on: [E10-09, E11-08, E11-01]
+depends-on: [E10-09, E11-08]
 refs: [10.3:4]
 covers: [ide-tools/preview-ui]
 type: task
@@ -3283,36 +3283,36 @@ depends-on: []
 refs: [.docs/proposal.md, .docs/plan/analysis/decisions.md, .docs/plan/analysis/app-shell.md]
 ```
 
-Design issues owned by the user. Every issue that creates or changes visuals depends on the relevant design issue here;
-Terax's visual components are not a design baseline (shadcn/Radix primitives remain the component base).
+Layout design owned by the user: how each surface is arranged and how it flows. Colours come from the active theme and
+are not designed here (the theme model already provides the UI tokens); typography and density are implementation
+(E12-01). Every issue that creates or
+changes a surface's layout depends on the relevant design issue here; Terax's visual components are not a design
+baseline (shadcn/Radix primitives remain the component base).
 
-### E11-01 — Visual language: tokens, typography, density, iconography, lut logo and app icon
+### E11-01 — lut logo and app icon
 
 ```yaml
 id: E11-01
 depends-on: []
 refs: [.docs/plan/analysis/decisions.md, .docs/plan/analysis/build-identity.md]
-covers: [UX-006]
+covers: [build-identity/icons-logos]
 type: design
 scope: ui
-size: M
+size: S
 ```
 
-**Goal:** The user defines lut's visual language: design tokens (colour, spacing, radius), typography, density, iconography,
-the lut logo and the app icon, compatible with the kept personalisations (themes, vibrancy, background image, opacity).
+**Goal:** The user designs the lut logo and the app icon.
 
 **Acceptance criteria:**
 
-- [ ] Token set (names and values) for light/dark and theme-driven colours is documented.
-- [ ] Typography scale, density rules and icon set are documented.
-- [ ] lut logo and app icon source assets exist in the repo.
-- [ ] Interaction with vibrancy, background image and opacity is specified.
+- [ ] The logo and app icon exist as source artwork with PNG and ICO exports at the sizes the bundle needs.
+- [ ] The variant used as the app icon is chosen.
 
 ### E11-02 — App shell: window frame/title bar, tab navigator (horizontal/vertical), header, status bar, dialogs
 
 ```yaml
 id: E11-02
-depends-on: [E11-01]
+depends-on: []
 refs: [.docs/plan/analysis/app-shell.md]
 covers: [UX-002, 10.2:2]
 type: design
@@ -3335,7 +3335,7 @@ and vertical orientation, header, status bar, split panes chrome and dialogs (cl
 
 ```yaml
 id: E11-03
-depends-on: [E11-01]
+depends-on: []
 refs: [.docs/plan/analysis/state-settings.md]
 covers: [UX-004, UX-005]
 type: design
@@ -3355,7 +3355,7 @@ size: M
 
 ```yaml
 id: E11-04
-depends-on: [E11-01, E11-02]
+depends-on: [E11-02]
 refs: [.docs/plan/analysis/proposal.md]
 covers: [PRO-012, F3:4]
 type: design
@@ -3377,7 +3377,7 @@ tab title/colour customisation.
 
 ```yaml
 id: E11-05
-depends-on: [E11-01, E11-02]
+depends-on: [E11-02]
 refs: [.docs/plan/analysis/proposal.md]
 covers: [UX-003, 10.2:6]
 type: design
@@ -3398,7 +3398,7 @@ restore errors are shown.
 
 ```yaml
 id: E11-06
-depends-on: [E11-01, E11-02]
+depends-on: [E11-02]
 refs: [.docs/plan/analysis/agents.md]
 covers: [AGT-005, AGT-006, AGT-007, AGT-008]
 type: design
@@ -3420,7 +3420,7 @@ manager with preview/diff and selective uninstall, and the collapsed activity vi
 
 ```yaml
 id: E11-07
-depends-on: [E11-01]
+depends-on: []
 refs: [.docs/plan/analysis/app-shell.md]
 covers: [UX-007, UX-008]
 type: design
@@ -3440,7 +3440,7 @@ panes and terminal.
 
 ```yaml
 id: E11-08
-depends-on: [E11-01, E11-02]
+depends-on: [E11-02]
 refs: [.docs/plan/analysis/ide-tools.md, UX-009, 10.3:4, F6:3]
 covers: [UX-009]
 type: design
@@ -3484,11 +3484,11 @@ refs: [ADR-002, 10.2, UX-001, UX-002, .docs/plan/analysis/app-shell.md]
 Implement the user's design for the window frame, tab navigator, header, status bar, dialogs, global styles and icons.
 Behaviour (navigation model, close guards, coordinator) comes from E08/E09; this epic replaces only the visual layer.
 
-### E12-01 — Rebuild global styles on lut's visual language
+### E12-01 — Rebuild global styles on the theme's UI tokens
 
 ```yaml
 id: E12-01
-depends-on: [E11-01]
+depends-on: [E11-02]
 refs: [ADR-002, UX-004, UX-006, .docs/plan/analysis/app-shell.md]
 covers: [app-shell/styles, ADR-002]
 type: task
@@ -3496,11 +3496,14 @@ scope: ui
 size: M
 ```
 
-**Goal:** Replace Terax's `globals.css` visual language with the tokens, typography and density of the user's design, keeping the React + shadcn/Radix base (ADR-002) and the performance invariants.
+**Goal:** Replace Terax's `globals.css` visual language with lut's: colours from the active theme's tokens, and the
+typography, spacing and density scales the E11-02 layouts need, keeping the React + shadcn/Radix base (ADR-002) and the
+performance invariants.
 
 **Acceptance criteria:**
 
-- [ ] `src/styles/globals.css` uses the token names defined in E11-01; `terax-*` animations and chrome styles removed or renamed per design.
+- [ ] `src/styles/globals.css` takes every colour from the theme tokens; typography, spacing and radius scales are
+      defined once there; `terax-*` animations and chrome styles removed or renamed.
 - [ ] `@font-face` rules for terminal symbol fonts in `src/styles/fonts.css` preserved.
 - [ ] `compositingBudget.test.ts` and `motionBudget.test.ts` adapted to the new CSS and green (no infinite animations, compositing limits kept).
 - [ ] Light and dark modes both render; vibrancy and background image customisation still work (decision 16).
@@ -3750,35 +3753,13 @@ size: S
 
 **Verification:** `pnpm test` (`shortcuts`, `shortcutDefaults`, `resolveShortcut` tests); `pnpm check-types`.
 
-### E13-02 — Align theme tokens with lut's design tokens
-
-```yaml
-id: E13-02
-depends-on: [E11-01]
-refs: [UX-004, 5.10:9, .docs/plan/analysis/state-settings.md]
-covers: [state-settings/theme-core, UX-004]
-type: task
-scope: ui
-size: M
-```
-
-**Goal:** The token-based theme (`src/modules/theme/types.ts`) exposes the UI token names of E11-01 for light, dark and custom themes.
-
-**Acceptance criteria:**
-
-- [ ] `Theme` type and `applyTheme.ts` map to the E11-01 token set; `validateTheme` rejects themes missing required tokens with a clear error.
-- [ ] Light, dark and custom themes apply through the same path; `prepaintSync` test green.
-- [ ] The editor theme field stays (the editor is kept, decision 2).
-
-**Verification:** `pnpm test` (`applyTheme`, `validateTheme`, `customThemes`, `prepaintSync` tests).
-
 ### E13-03 — Resolve terminal theme and font through layered preferences
 
 ```yaml
 id: E13-03
-depends-on: [E14-02, E13-02, E14-01, E14-03]
+depends-on: [E14-02, E14-01, E14-03]
 refs: [13.2:19, 16:6, 16:24, 3.4:invariant, .docs/plan/analysis/terminal.md, .docs/plan/analysis/decisions.md]
-covers: [terminal/theme-font, 13.2:19, 16:6, 16:24]
+covers: [terminal/theme-font, state-settings/theme-core, 13.2:19, 16:6, 16:24]
 type: task
 scope: ui
 size: M
@@ -3822,9 +3803,9 @@ size: S
 
 ```yaml
 id: E13-05
-depends-on: [E13-02]
+depends-on: []
 refs: [F6:4, UX-004, .docs/plan/analysis/state-settings.md]
-covers: [state-settings/theme-files, F6:4]
+covers: [state-settings/theme-files, F6:4, UX-004]
 type: task
 scope: ui
 size: S
@@ -3844,7 +3825,7 @@ size: S
 
 ```yaml
 id: E13-06
-depends-on: [E11-01, E13-02]
+depends-on: []
 refs: [F6:5, UX-004, identity:2]
 covers: [state-settings/theme-builtin-themes, F6:5]
 type: task
@@ -3852,11 +3833,11 @@ scope: ui
 size: M
 ```
 
-**Goal:** lut ships the built-in themes and default chosen in the user's design.
+**Goal:** lut ships a curated set of built-in themes and a default, chosen with the user.
 
 **Acceptance criteria:**
 
-- [ ] `src/modules/theme/themes/` replaced with the E11-01 set; `terax-default` removed and the new default set.
+- [ ] `src/modules/theme/themes/` replaced with the chosen set; `terax-default` removed and the new default set.
 - [ ] An unknown stored `themeId` falls back to the default without error.
 
 **Verification:** `pnpm test`; manual: switch among built-in themes in light/dark.
@@ -3888,7 +3869,7 @@ size: M
 id: E13-08
 depends-on: [E13-07, E13-03, E13-04, E13-05, E13-06]
 refs: [UX-004, UX-005, 16:6, identity:2]
-covers: [state-settings/settings-sections-terminal]
+covers: [state-settings/settings-sections-terminal, UX-004]
 type: task
 scope: ui
 size: M
@@ -3993,7 +3974,7 @@ size: M
 
 ```yaml
 id: E13-11
-depends-on: [E13-01, E13-02, E13-03, E13-04, E13-05, E13-06, E13-07, E13-08, E13-09, E13-10, E13-12, E13-13]
+depends-on: [E13-01, E13-03, E13-04, E13-05, E13-06, E13-07, E13-08, E13-09, E13-10, E13-12, E13-13]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
@@ -4533,7 +4514,7 @@ size-exception: one form over the whole TerminalProfile model; splitting it leav
 
 ```yaml
 id: E15-03
-depends-on: [E11-04, E11-01, E15-02]
+depends-on: [E11-04, E15-02]
 refs: [PRO-012, .docs/plan/analysis/proposal.md]
 covers: [PRO-012]
 type: task
@@ -4545,7 +4526,7 @@ size: M
 
 **Acceptance criteria:**
 
-- [ ] Built-in icon set from the E11-01 iconography; detected profiles get sensible defaults (pwsh, cmd, WSL distro, bash...).
+- [ ] Built-in icon set from the app's UI icon library; detected profiles get sensible defaults (pwsh, cmd, WSL distro, bash...).
 - [ ] User image files are loaded safely through the asset protocol with a scoped path; a missing file falls back to the default icon.
 - [ ] Icon shown in the picker, editor and tab.
 
@@ -6395,7 +6376,7 @@ size: S
 
 ```yaml
 id: E22-07
-depends-on: [E11-01]
+depends-on: [E12-01]
 refs: [UX-006, F6:7]
 covers: [UX-006, F6:7]
 type: task
@@ -6403,7 +6384,7 @@ scope: ui
 size: S
 ```
 
-**Goal:** A density setting (compact/normal) applied app-wide using the E11-01 tokens.
+**Goal:** A density setting (compact/normal) applied app-wide through the E12-01 spacing scale.
 
 **Acceptance criteria:**
 
@@ -6480,7 +6461,7 @@ size: M
 
 ```yaml
 id: E22-11
-depends-on: [E22-04, E11-01]
+depends-on: [E22-04]
 refs: [F6:8, UX-011]
 covers: [F6:8, UX-011]
 type: task
@@ -6493,7 +6474,7 @@ size: M
 **Acceptance criteria:**
 
 - [ ] Tab bar and sidebar navigable by keyboard (roving focus, arrow keys, activation); focus returns to the terminal after leaving them.
-- [ ] Focus ring follows E11-01 tokens; text contrast of these surfaces meets WCAG AA in both themes.
+- [ ] Focus ring uses the theme's `ring` token; text contrast of these surfaces meets WCAG AA in both themes.
 - [ ] axe is wired into vitest (shared helper); the tab navigator and sidebar report no serious violations.
 
 **Verification:** `pnpm test`; manual keyboard-only session over tabs and projects; Narrator smoke.

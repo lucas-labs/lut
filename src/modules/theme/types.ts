@@ -79,4 +79,4 @@ export type Theme = {
   };
 };
 
-export const DEFAULT_THEME_ID = 'lut-default';
+export const DEFAULT_THEME_ID = 'lut';

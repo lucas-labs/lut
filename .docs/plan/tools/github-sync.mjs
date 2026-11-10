@@ -1,12 +1,14 @@
 #!/usr/bin/env node
-// Creates the plan on GitHub: epics (issues labelled "epic"), their issues as sub-issues (parent set at creation), labels,
+// Syncs the plan to GitHub: epics (issues labelled "epic"), their issues as sub-issues (parent set at creation), labels,
 // GitHub Project membership, and "blocked by" dependencies for issues and epics.
 //
 // Idempotent and resumable:
 //   - every created issue carries a hidden marker "<!-- lut-plan-id: E01-02 -->"; on start, existing issues are read from
 //     GitHub and matched by marker, so nothing is created twice even without the map file;
 //   - .docs/plan/github-map.json records plan id -> issue number/node id and the dependency edges already created.
-// Only creates what is missing; it never edits or deletes existing issues.
+// Creates what is missing, then brings existing issues in line with the plan: title, body and plan labels are updated
+// when they differ (checked boxes in the body are kept; other labels are left alone), and dependencies no longer in the
+// plan are removed. Issues are never closed or deleted: plan ids missing from plan.md are only listed.
 //
 // Pacing: one content-creating request every --interval ms (default 800, under the 80/min limit). A short back-off is
 // waited out once; the hourly limit stops the run (exit code 2) with progress saved: run it again later to continue.
@@ -157,6 +159,28 @@ function epicBody(e) {
     "",
   ].join("\n");
 }
+// A box checked on GitHub stays checked when the same line is still in the plan's body.
+function keepChecks(body, current) {
+  const checked = new Set(
+    current
+      .split(/\r?\n/)
+      .filter((l) => /^\s*[-*] \[[xX]\] /.test(l))
+      .map((l) => l.replace(/\[[xX]\]/, "[ ]")),
+  );
+  return body
+    .split("\n")
+    .map((l) => (checked.has(l) ? l.replace("[ ]", "[x]") : l))
+    .join("\n");
+}
+// What a body says, for comparison: box states and blank lines (which formatting moves around) are ignored.
+const comparable = (md) =>
+  md
+    .replace(/\r\n/g, "\n")
+    .replace(/^(\s*[-*] )\[[xX]\] /gm, "$1[ ] ")
+    .split("\n")
+    .filter((l) => l.trim())
+    .join("\n");
+const sameSet = (a, b) => a.length === b.length && a.every((x) => b.includes(x));
 const labelsFor = (i) => [`type:${i.meta.type}`, ...(i.meta.scope !== "none" ? [`scope:${i.meta.scope}`] : []), `size:${i.meta.size}`];
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -178,18 +202,28 @@ async function main() {
 
   // Existing issues on GitHub, matched by marker (repairs/extends the map).
   let existing = new Map();
+  const remote = new Map(); // plan id -> GitHub issue (title, body, state, labels)
+  const duplicated = new Map(); // plan id -> numbers of every issue carrying its marker
   if (!DRY || map.items) {
     try {
       let cursor = null;
       do {
         const d = ghGraphql(
-          `query($o:String!,$n:String!,$c:String){repository(owner:$o,name:$n){id issues(first:100,after:$c,states:[OPEN,CLOSED]){pageInfo{hasNextPage endCursor} nodes{id number body}}}}`,
+          `query($o:String!,$n:String!,$c:String){repository(owner:$o,name:$n){id issues(first:100,after:$c,states:[OPEN,CLOSED]){pageInfo{hasNextPage endCursor} nodes{id number title body state labels(first:50){nodes{id name}}}}}}`,
           { o: OWNER, n: NAME, c: cursor },
         );
         map.repoId = d.repository.id;
         for (const n of d.repository.issues.nodes) {
-          const mk = n.body?.match(/<!-- lut-plan-id: (E\d{2}(?:-\d{2})?) -->/);
-          if (mk) existing.set(mk[1], { number: n.number, id: n.id });
+          // The sync writes the marker as the body's first line; a marker quoted anywhere else is not one.
+          const mk = n.body?.match(/^<!-- lut-plan-id: (E\d{2}(?:-\d{2})?) -->/);
+          if (!mk) continue;
+          const id = mk[1];
+          if (existing.has(id)) {
+            duplicated.set(id, [...(duplicated.get(id) ?? [existing.get(id).number]), n.number]);
+            continue;
+          }
+          existing.set(id, { number: n.number, id: n.id });
+          remote.set(id, n);
         }
         cursor = d.repository.issues.pageInfo.hasNextPage ? d.repository.issues.pageInfo.endCursor : null;
       } while (cursor);
@@ -198,12 +232,43 @@ async function main() {
     }
   }
   for (const [k, v] of existing) map.items[k] = v;
+  // An id on two issues is never touched, nor any dependency with it at either end: which issue is the plan's is for a
+  // person to decide, and an edge recorded against the wrong one would not be added to the right one later.
+  for (const [id, numbers] of duplicated) {
+    remote.delete(id);
+    log(`marker ${id} found on ${numbers.map((x) => `#${x}`).join(", ")}; it and its dependencies are left alone until only one issue carries it`);
+  }
+  const touchesDuplicate = (a, b) => duplicated.has(a) || duplicated.has(b);
 
   const toCreate = [...epics.map((e) => e.meta.id), ...issues.map(({ i }) => i.meta.id)].filter((id) => !map.items[id]);
-  const edgesTodo = allEdges.filter(([a, b]) => !edgesDone.has(edgeKey(a, b)));
-  const est = Math.round(((toCreate.length + edgesTodo.length) * interval) / 60_000);
+  const edgesTodo = allEdges.filter(([a, b]) => !edgesDone.has(edgeKey(a, b)) && !touchesDuplicate(a, b));
+  const wanted = new Map([
+    ...epics.map((e) => [e.meta.id, { title: `[${e.meta.id}] ${e.title}`, body: epicBody(e), labels: ["epic"] }]),
+    ...issues.map(({ epic, i }) => [i.meta.id, { title: `[${i.meta.id}] ${i.title}`, body: issueBody(epic, i), labels: labelsFor(i) }]),
+  ]);
+  const toUpdate = [];
+  for (const [id, n] of remote) {
+    const w = wanted.get(id);
+    if (!w) continue;
+    const body = keepChecks(w.body, n.body ?? "");
+    const have = n.labels.nodes.map((l) => l.name);
+    const labels = [...have.filter((l) => !LABELS[l]), ...w.labels];
+    const changed = [
+      n.title !== w.title && "title",
+      comparable(n.body ?? "") !== comparable(body) && "body",
+      !sameSet(have, labels) && "labels",
+    ].filter(Boolean);
+    if (changed.length) toUpdate.push({ id, number: n.number, nodeId: n.id, title: w.title, body, labels, changed });
+  }
+  const planEdges = new Set(allEdges.map(([a, b]) => edgeKey(a, b)));
+  const staleEdges = [...edgesDone].filter((k) => !planEdges.has(k) && !touchesDuplicate(...k.split("<-")));
+  const notInPlan = [...remote.keys()].filter((id) => !wanted.has(id));
+  for (const u of toUpdate) log(`update #${u.number} ${u.id}: ${u.changed.join(", ")}`);
+  for (const k of staleEdges) log(`remove dependency ${k}`);
+  for (const id of notInPlan) log(`not in plan.md: ${id} (#${remote.get(id).number}, ${remote.get(id).state.toLowerCase()}); left as is`);
+  const est = Math.round(((toCreate.length + edgesTodo.length + toUpdate.length + staleEdges.length) * interval) / 60_000);
   log(`plan: ${epics.length} epics, ${issues.length} issues, ${allEdges.length} dependencies`);
-  log(`to do: ${toCreate.length} issues to create, ${edgesTodo.length} dependencies to add (~${est} min at ${interval} ms/write, without back-offs)`);
+  log(`to do: ${toCreate.length} issues to create, ${edgesTodo.length} dependencies to add, ${toUpdate.length} issues to update, ${staleEdges.length} dependencies to remove (~${est} min at ${interval} ms/write, without back-offs)`);
   if (DRY) return;
 
   // Labels (idempotent via --force) and project.
@@ -241,7 +306,7 @@ async function main() {
   const flushEdges = async () => {
     for (const [a, b] of allEdges) {
       const k = edgeKey(a, b);
-      if (edgesDone.has(k) || !map.items[a] || !map.items[b]) continue;
+      if (edgesDone.has(k) || !map.items[a] || !map.items[b] || touchesDuplicate(a, b)) continue;
       try {
         await write(`dep ${k}`, `mutation($i:ID!,$b:ID!){addBlockedBy(input:{issueId:$i,blockingIssueId:$b}){issue{id}}}`, { i: map.items[a].id, b: map.items[b].id });
       } catch (e) {
@@ -260,6 +325,29 @@ async function main() {
     }
     await flushEdges();
     log(`epic ${e.meta.id} done`);
+  }
+  for (const u of toUpdate) {
+    const labelIds = u.labels.map((l) => map.labels[l] ?? remote.get(u.id).labels.nodes.find((x) => x.name === l)?.id).filter(Boolean);
+    await write(
+      `update ${u.id}`,
+      `mutation($i:ID!,$t:String!,$b:String!,$l:[ID!]){updateIssue(input:{id:$i,title:$t,body:$b,labelIds:$l}){issue{id}}}`,
+      { i: u.nodeId, t: u.title, b: u.body, l: labelIds },
+    );
+    log(`#${u.number} ${u.id} updated (${u.changed.join(", ")})`);
+  }
+  for (const k of staleEdges) {
+    const [a, b] = k.split("<-");
+    if (map.items[a] && map.items[b]) {
+      try {
+        await write(`remove dep ${k}`, `mutation($i:ID!,$b:ID!){removeBlockedBy(input:{issueId:$i,blockingIssueId:$b}){issue{id}}}`, { i: map.items[a].id, b: map.items[b].id });
+      } catch (e) {
+        if (!/not found|does not exist|no .*relationship/i.test(e.message)) throw e;
+      }
+    }
+    edgesDone.delete(k);
+    map.edges = [...edgesDone];
+    saveMap();
+    log(`dependency ${k} removed`);
   }
   log(`done: ${Object.keys(map.items).length} issues, ${edgesDone.size} dependencies. Project #${map.project.number}`);
 }

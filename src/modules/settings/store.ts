@@ -18,7 +18,7 @@ import { LazyStore } from '@tauri-apps/plugin-store';
 
 export type ThemePref = 'system' | 'light' | 'dark';
 
-export const DEFAULT_THEME_ID = 'lut-default';
+export const DEFAULT_THEME_ID = 'lut';
 
 export type TabOrientation = 'horizontal' | 'vertical';
 

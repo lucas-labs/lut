@@ -23,6 +23,7 @@ type ThemeProviderProps = {
 type ThemeProviderState = {
   mode: ThemePref;
   resolvedMode: 'dark' | 'light';
+  /** The committed theme in effect: a stored id that matches no theme reads as the default theme's id. */
   themeId: string;
   activeTheme: Theme;
   customThemes: Theme[];
@@ -64,8 +65,9 @@ function writeFastThemeId(id: string): void {
   }
 }
 
+/** Built-in ids are reserved (validateTheme rejects them for custom themes), so a built-in wins over a custom theme. */
 function resolveTheme(id: string, custom: Theme[]): Theme {
-  return custom.find((t) => t.id === id) ?? getBuiltinTheme(id) ?? getDefaultTheme();
+  return getBuiltinTheme(id) ?? custom.find((t) => t.id === id) ?? getDefaultTheme();
 }
 
 export function ThemeProvider({ children, defaultMode = 'system' }: ThemeProviderProps) {
@@ -130,15 +132,18 @@ export function ThemeProvider({ children, defaultMode = 'system' }: ThemeProvide
     root.classList.add(resolvedMode);
   }, [resolvedMode]);
 
-  const effectiveId = previewId ?? themeId;
-  const activeTheme = useMemo(() => resolveTheme(effectiveId, customThemes), [effectiveId, customThemes]);
+  const committedId = useMemo(() => resolveTheme(themeId, customThemes).id, [themeId, customThemes]);
+  const activeTheme = useMemo(
+    () => resolveTheme(previewId ?? themeId, customThemes),
+    [previewId, themeId, customThemes],
+  );
   useEffect(() => {
-    if (effectiveId === DEFAULT_THEME_ID) {
+    if (activeTheme.id === DEFAULT_THEME_ID) {
       clearTheme();
       return;
     }
     applyTheme(activeTheme, resolvedMode);
-  }, [effectiveId, activeTheme, resolvedMode]);
+  }, [activeTheme, resolvedMode]);
 
   const setMode = useCallback((next: ThemePref) => {
     setModeState(next);
@@ -161,14 +166,14 @@ export function ThemeProvider({ children, defaultMode = 'system' }: ThemeProvide
     () => ({
       mode,
       resolvedMode,
-      themeId,
+      themeId: committedId,
       activeTheme,
       customThemes,
       setMode,
       setThemeId,
       previewThemeId,
     }),
-    [mode, resolvedMode, themeId, activeTheme, customThemes, setMode, setThemeId, previewThemeId],
+    [mode, resolvedMode, committedId, activeTheme, customThemes, setMode, setThemeId, previewThemeId],
   );
 
   return (
