@@ -54,16 +54,16 @@ columns are out of date.
 | PRJ-001 | P0       | Lista de proyectos                        | E16-04, E17-10, E18-03                                   |                |       |
 | PRJ-002 | P0       | Guardar tabs y splits                     | E16-05, E16-06, E16-12, E17-05                           |                |       |
 | PRJ-003 | P0       | Directorio por pane                       | E16-05                                                   |                |       |
-| PRJ-004 | P0       | Comandos de inicio                        | E17-12, E17-16                                           |                |       |
+| PRJ-004 | P0       | Relanzar comandos                         | E17-12, E17-19                                           |                |       |
 | PRJ-005 | P0       | Distintos perfiles en un proyecto         | E16-07                                                   |                |       |
 | PRJ-006 | P1       | Ratios de splits                          | E16-05                                                   |                |       |
-| PRJ-007 | P1       | Estrategia de restauración                | E17-13                                                   |                |       |
-| PRJ-008 | P1       | Estados de inicio por pane                | E17-12, E17-16                                           |                |       |
+| PRJ-007 | P1       | Confirmación de relanzamiento             | E17-13                                                   |                |       |
+| PRJ-008 | P1       | Estados de inicio por pane                | E17-12                                                   |                |       |
 | PRJ-009 | P1       | Reabrir proyecto existente                | E17-08                                                   |                |       |
 | PRJ-010 | P1       | Reanudar agentes                          | E21-02, E21-03                                           |                |       |
 | PRJ-011 | P1       | Varios proyectos activos                  | E17-08                                                   |                |       |
 | PRJ-012 | P2       | Ventanas múltiples por proyecto           | Not planned: P2: multiple windows per project (post-v1). |                |       |
-| PRJ-013 | P1       | Presets vs estado vivo                    | E16-08                                                   |                |       |
+| PRJ-013 | P1       | Estado vivo, sin presets                  | E16-05                                                   |                |       |
 | PRJ-014 | P1       | Migraciones de esquema                    | E16-03                                                   |                |       |
 | PRJ-015 | P1       | Exportar/importar proyectos               | E23-03                                                   |                |       |
 | PRJ-016 | P0       | Restaurar la última sesión al iniciar lut | E17-01, E17-07, E18-07                                   |                |       |
