@@ -78,10 +78,6 @@ function global:prompt {
     if ($null -eq $lec) { $lec = if ($?) { 0 } else { 1 } }
     $esc = [char]27
 
-    $oscD = "$esc]133;D;$lec$esc\"
-    $oscA = "$esc]133;A$esc\"
-    $oscB = "$esc]133;B$esc\"
-
     $loc = Get-Location
     $osc7 = ''
     if ($loc.Provider.Name -eq 'FileSystem') {
@@ -92,6 +88,11 @@ function global:prompt {
         $osc7 = "$esc]7;file://$hostName$cwdEnc$esc\"
     }
 
+    # 133;A starts a fresh line when the cursor is not at column 0, so D, A and
+    # the cwd are written before the user's prompt runs: a prompt that prints
+    # itself (Write-Host, e.g. pshazz) would otherwise be followed by a newline.
+    try { [Console]::Write("$esc]133;D;$lec$esc\$esc]133;A$esc\$osc7") } catch {}
+
     $original = if (Test-Path Function:__lut_user_prompt) {
         try { & __lut_user_prompt } catch { "PS $((Get-Location).Path)> " }
     } else {
@@ -99,5 +100,5 @@ function global:prompt {
     }
 
     $global:LASTEXITCODE = $lec
-    "$oscD$oscA$osc7${original}${oscB}"
+    "${original}$esc]133;B$esc\"
 }

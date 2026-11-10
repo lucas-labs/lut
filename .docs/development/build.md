@@ -95,8 +95,8 @@ else), so the checks `master` requires always report (E04-09). Its jobs:
   to `master` runs all of them.
 - **frontend** (Ubuntu): `pnpm install --frozen-lockfile`, `lint`, `format:check`, `check-types`, `test`, `build`,
   `knip`.
-- **frontend shell tests** (Windows): the Vitest files with a Windows-only path (`quoteShellPath.test.ts` with
-  PowerShell, `bashPromptHooks.test.ts` with Git Bash).
+- **frontend shell tests** (Windows): the Vitest files with a Windows-only path (`quoteShellPath.test.ts` and
+  `powershellPrompt.test.ts` with PowerShell, `bashPromptHooks.test.ts` with Git Bash).
 - **backend** (Windows): builds the CLI sidecar, then runs `cargo fmt --check`, `cargo clippy -D warnings` and
   `cargo test`.
 

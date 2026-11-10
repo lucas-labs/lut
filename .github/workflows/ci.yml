@@ -92,11 +92,13 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # The tests whose Windows path differs from the Linux one: PowerShell quoting and the Bash hooks under Git Bash.
+      # The tests whose Windows path differs from the Linux one: PowerShell quoting and prompt markers, and the Bash
+      # hooks under Git Bash.
       - run: >-
           pnpm vitest run --reporter=verbose
           src/modules/terminal/lib/quoteShellPath.test.ts
           src/modules/terminal/ghostty/bashPromptHooks.test.ts
+          src/modules/terminal/ghostty/powershellPrompt.test.ts
 
   backend:
     name: backend (windows)
