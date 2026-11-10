@@ -12,4 +12,4 @@ export {
 export { isTerminalSurfaceTarget } from './lib/terminalSurfaceTarget';
 export { type TerminalPathDropTarget, useTerminalFileDrop } from './lib/useTerminalFileDrop';
 export type { TerminalPaneHandle } from './TerminalPane';
-export { TerminalStack } from './TerminalStack';
+export { TerminalStack, type TerminalStackEntry } from './TerminalStack';

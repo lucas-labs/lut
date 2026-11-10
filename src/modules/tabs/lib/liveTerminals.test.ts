@@ -1,6 +1,6 @@
-import type { Tab } from '@/modules/tabs/lib/useTabs';
 import { describe, expect, it } from 'vitest';
 import { selectLiveTerminals } from './liveTerminals';
+import type { Tab } from './useTabs';
 
 function term(id: number, over: Partial<Tab> = {}): Tab {
   return {

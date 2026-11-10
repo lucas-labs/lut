@@ -3,9 +3,9 @@ import { EditorStack, GitDiffStack } from '@/modules/editor';
 import { GitHistoryStack } from '@/modules/git-history';
 import { MarkdownStack } from '@/modules/markdown';
 import { PreviewStack } from '@/modules/preview';
-import type { Tab } from '@/modules/tabs';
+import { selectLiveTerminals, type Tab } from '@/modules/tabs';
 import { TerminalStack } from '@/modules/terminal';
-import type { ComponentProps } from 'react';
+import { type ComponentProps, useMemo } from 'react';
 
 type TerminalStackProps = ComponentProps<typeof TerminalStack>;
 type EditorStackProps = ComponentProps<typeof EditorStack>;
@@ -59,6 +59,7 @@ export function WorkspaceSurface({
   onGitHistorySearchHandle,
   onSetMarkdownView,
 }: Props) {
+  const terminals = useMemo(() => selectLiveTerminals(tabs), [tabs]);
   const kind = activeTab?.kind;
   const isTerminalTab = kind === 'terminal';
   const isEditorTab = kind === 'editor';
@@ -74,7 +75,7 @@ export function WorkspaceSurface({
         aria-hidden={!isTerminalTab}
       >
         <TerminalStack
-          tabs={tabs}
+          terminals={terminals}
           activeId={activeId}
           registerHandle={registerTerminalHandle}
           onSearchReady={onSearchReady}

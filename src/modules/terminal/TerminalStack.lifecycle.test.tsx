@@ -1,11 +1,10 @@
 // @vitest-environment happy-dom
-import type { Tab } from '@/modules/tabs/lib/useTabs';
 import { act, createElement, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type PaneLifecycleEvent, setPaneLifecycleListener } from './lib/paneLifecycle';
 import { type PaneNode, removeLeaf, splitLeaf } from './lib/panes';
-import { TerminalStack } from './TerminalStack';
+import { TerminalStack, type TerminalStackEntry } from './TerminalStack';
 
 // The session registry outlives React: a pane that mounts reuses the leaf's session, and only an explicit dispose
 // closes its PTY. The fake keeps that contract so the tests can count PTY opens and closes per leaf.
@@ -56,9 +55,8 @@ function emitOutput() {
   for (const leafId of fake.mounted) fake.output.set(leafId, (fake.output.get(leafId) ?? 0) + 1);
 }
 
-function term(id: number, paneTree: PaneNode = { kind: 'leaf', id: id * 10 }): Tab {
-  const first = paneTree.kind === 'leaf' ? paneTree.id : id * 10;
-  return { id, kind: 'terminal', spaceId: 's1', title: 'shell', paneTree, activeLeafId: first } as Tab;
+function term(id: number, paneTree: PaneNode = { kind: 'leaf', id: id * 10 }): TerminalStackEntry {
+  return { id, paneTree, activeLeafId: paneTree.kind === 'leaf' ? paneTree.id : id * 10 };
 }
 
 const noop = () => {};
@@ -70,9 +68,9 @@ function render(node: ReactNode) {
   act(() => root.render(node));
 }
 
-function stack(tabs: Tab[], activeId: number) {
+function stack(terminals: TerminalStackEntry[], activeId: number) {
   return createElement(TerminalStack, {
-    tabs,
+    terminals,
     activeId,
     registerHandle: noop,
     onSearchReady: noop,

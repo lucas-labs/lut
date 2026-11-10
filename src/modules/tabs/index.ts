@@ -1,3 +1,4 @@
+export { selectLiveTerminals } from './lib/liveTerminals';
 export { labelFor } from './lib/tabLabel';
 export {
   type CloseTabsPlan,
