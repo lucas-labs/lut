@@ -4433,11 +4433,33 @@ size: S
 
 **Verification:** `pnpm tauri dev` on Windows with pshazz: the cursor follows the `$`; `cd` updates the cwd breadcrumb.
 
+### E14-20 — Stop the screen shifting one line per keystroke in nushell
+
+```yaml
+id: E14-20
+depends-on: []
+refs: []
+covers: [TER-007]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** typing in `nu` (nushell) does not move the screen. Found while closing E07 (Windows, `nu` started from a pwsh tab): every keystroke shifts the content above the prompt up by one line; Windows Terminal does not. lut has no nushell integration script, so the cause is in the terminal emulation, not in lut's prompt markers. Likely suspects: the reply to the cursor position report (`CSI 6n`), which reedline queries to repaint its prompt, or a PTY size that differs from the renderer grid by one row, so reedline draws one row lower than it thinks and the terminal scrolls.
+
+**Acceptance criteria:**
+
+- [ ] The cause is identified and recorded in the PR (what reedline sends and what lut answers or sizes, compared with Windows Terminal).
+- [ ] Typing in `nu` no longer shifts the screen; the fix is in the layer that caused it.
+- [ ] A regression test replays the sequence that triggered the shift.
+
+**Verification:** `pnpm tauri dev` on Windows: run `nu`, type a long command; the content above the prompt stays still.
+
 ### E14-18 — Close-out: profiles model and launch
 
 ```yaml
 id: E14-18
-depends-on: [E14-01, E14-02, E14-03, E14-04, E14-05, E14-06, E14-07, E14-08, E14-09, E14-10, E14-11, E14-12, E14-13, E14-14, E14-15, E14-16, E14-17, E14-19]
+depends-on: [E14-01, E14-02, E14-03, E14-04, E14-05, E14-06, E14-07, E14-08, E14-09, E14-10, E14-11, E14-12, E14-13, E14-14, E14-15, E14-16, E14-17, E14-19, E14-20]
 refs: [F3]
 covers: []
 type: closeout
