@@ -2197,7 +2197,7 @@ size: M
 
 **Verification:** `pnpm test`; manual: run `nvim` in a tab, toggle orientation twice, the session is intact.
 
-### E07-06 — Add a collapsible projects sidebar placeholder
+### E07-06 — Add Spaces as a sidebar view
 
 ```yaml
 id: E07-06
@@ -2209,14 +2209,16 @@ scope: ui
 size: S
 ```
 
-**Goal:** A projects sidebar region (reusing the current spaces list as-is) that can be shown or hidden, with no new persistence.
+**Goal:** The spaces list moves from the title-bar popover into the sidebar as its first view (Spaces / Git / Files), shown and hidden with the sidebar. "Spaces" is the UI name of what this plan calls projects (E16–E18).
 
 **Acceptance criteria:**
 
-- [ ] Toggle by command/shortcut; collapsed state kept in memory only.
-- [ ] Collapsing/expanding does not unmount sessions (test).
+- [ ] The sidebar rail shows Spaces, Git and Files; the Spaces view reuses the current spaces list as-is (switch, rename, new tab, delete, drag to reorder spaces or move tabs).
+- [ ] The title-bar space button and its popover are removed; `space.overview` (Ctrl+Shift+S) and its palette command open the sidebar on Spaces, expanding it when collapsed.
+- [ ] No new persistence: the sidebar keeps its stored width, collapsed state and view.
+- [ ] Switching sidebar views and collapsing/expanding the sidebar does not unmount sessions (test).
 
-**Verification:** `pnpm test`; manual: `pnpm dev` running, collapse/expand repeatedly, the dev server keeps running.
+**Verification:** `pnpm test`; manual: `pnpm dev` running, collapse/expand and switch views repeatedly, the dev server keeps running.
 
 ### E07-07 — Wire basic theming and tab/split shortcuts into AppShell
 
@@ -5292,7 +5294,7 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] `src/modules/sidebar/types.ts` no longer has `explorer`/`source-control` as permanent sidebar views; a `projects` view exists (the E07-06 placeholder until E18-02 renders the navigator).
+- [ ] `src/modules/sidebar/types.ts` no longer has `explorer`/`source-control` as permanent sidebar views; a `spaces` view exists (added by E07-06; E18-02 renders the navigator in it).
 - [ ] Explorer and Git panel stay reachable through the E10-12 entry points (command, shortcut, button).
 - [ ] Collapsed state and width persistence (`useSidebarPanel.ts:14-60`) keep working; a stored `explorer`/`source-control` active view loads as `projects`; tests updated.
 

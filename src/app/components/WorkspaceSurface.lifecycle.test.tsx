@@ -105,6 +105,25 @@ function surface(tabs: Tab[], activeId: number) {
   });
 }
 
+/** The window around the workspace: tabs in the title bar or in the vertical column, and a sidebar view or none. */
+function shell(tabs: Tab[], { vertical = false, sidebar = null }: { vertical?: boolean; sidebar?: ReactNode } = {}) {
+  const strip = createElement('div', { 'data-tabs': '' });
+  return createElement(AppShell, {
+    header: createElement('header', null, vertical ? null : strip),
+    tabsColumn: vertical ? createElement('aside', null, strip) : null,
+    tabsColumnRef: createRef<PanelImperativeHandle>(),
+    tabsColumnInitialWidth: 200,
+    onTabsColumnLayout: noop,
+    statusBar: null,
+    sidebar,
+    sidebarRef: createRef<PanelImperativeHandle>(),
+    sidebarInitialWidth: 0,
+    onSidebarLayout: noop,
+    onSidebarCollapsedChange: noop,
+    workspace: surface(tabs, 1),
+  });
+}
+
 const mounts = (leafId: number) => events.filter(([e, id]) => e === 'mount' && id === leafId).length;
 const unmounts = (leafId: number) => events.filter(([e, id]) => e === 'unmount' && id === leafId).length;
 
@@ -205,31 +224,31 @@ describe('WorkspaceSurface keeps terminals mounted', () => {
 
   it('switching the tab orientation keeps every pane mounted and opens or closes no PTY (E07-05)', () => {
     const tabs = [term(1), term(2, splitLeaf({ kind: 'leaf', id: 20 }, 20, 200, 21, 'col'))];
-    const strip = createElement('div', { 'data-tabs': '' });
-    const shell = (vertical: boolean) =>
-      createElement(AppShell, {
-        header: createElement('header', null, vertical ? null : strip),
-        tabsColumn: vertical ? createElement('aside', null, strip) : null,
-        tabsColumnRef: createRef<PanelImperativeHandle>(),
-        tabsColumnInitialWidth: 200,
-        onTabsColumnLayout: noop,
-        statusBar: null,
-        sidebar: null,
-        sidebarRef: createRef<PanelImperativeHandle>(),
-        sidebarInitialWidth: 0,
-        onSidebarLayout: noop,
-        onSidebarCollapsedChange: noop,
-        workspace: surface(tabs, 1),
-      });
-    render(shell(false));
-    render(shell(true));
-    render(shell(false));
-    render(shell(true));
+    render(shell(tabs));
+    render(shell(tabs, { vertical: true }));
+    render(shell(tabs));
+    render(shell(tabs, { vertical: true }));
     for (const leaf of [10, 20, 21]) {
       expect(mounts(leaf)).toBe(1);
       expect(unmounts(leaf)).toBe(0);
     }
     expect(fake.opened).toEqual([10, 20, 21]);
+    expect(fake.closed).toEqual([]);
+  });
+
+  it('switching sidebar views and hiding the sidebar keeps every pane mounted and opens or closes no PTY (E07-06)', () => {
+    const tabs = [term(1), term(2)];
+    const view = (name: string) => createElement('nav', { key: name }, name);
+    render(shell(tabs, { sidebar: view('spaces') }));
+    render(shell(tabs, { sidebar: view('source-control') }));
+    render(shell(tabs, { sidebar: view('explorer') }));
+    render(shell(tabs));
+    render(shell(tabs, { sidebar: view('spaces'), vertical: true }));
+    for (const leaf of [10, 20]) {
+      expect(mounts(leaf)).toBe(1);
+      expect(unmounts(leaf)).toBe(0);
+    }
+    expect(fake.opened).toEqual([10, 20]);
     expect(fake.closed).toEqual([]);
   });
 });

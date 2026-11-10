@@ -38,7 +38,7 @@ import {
 } from '@/modules/shortcuts';
 import { SidebarRail, useSidebarPanel } from '@/modules/sidebar';
 import { SourceControlPanel, useRepositoryTargeting, useSourceControlContext } from '@/modules/source-control';
-import { SpaceSwitcher, useSpacePersistence, useSpaces, useSpacesBoot } from '@/modules/spaces';
+import { SpacesView, useSpacePersistence, useSpaces, useSpacesBoot } from '@/modules/spaces';
 import { StatusBar } from '@/modules/statusbar';
 import {
   type CloseTabsPlan,
@@ -246,8 +246,6 @@ export default function App() {
     if (inSpace.some((t) => t.id === activeId)) return;
     setActiveId(inSpace[inSpace.length - 1].id);
   }, [activeSpaceId, activeId, spacesHydrated, setActiveSpaceForNewTabs, setActiveId, adoptWorkspaceEnv]);
-
-  const [switcherOpen, setSwitcherOpen] = useState(false);
 
   const spaceTabs = useMemo(
     () => tabs.filter((t) => t.spaceId === (activeSpaceId ?? DEFAULT_SPACE_ID)),
@@ -732,7 +730,7 @@ export default function App() {
       'tab.selectByIndex': (e) => selectByIndex((tabDigit(e, e.shiftKey) ?? 1) - 1, activeSpaceId ?? DEFAULT_SPACE_ID),
       'space.next': () => cycleSpace(1),
       'space.prev': () => cycleSpace(-1),
-      'space.overview': () => setSwitcherOpen(true),
+      'space.overview': () => openSidebarView('spaces'),
       'pane.splitRight': () => splitActivePaneInActiveTab('row'),
       'pane.splitDown': () => splitActivePaneInActiveTab('col'),
       'pane.focusNext': () => focusNextPaneInTab(activeId, 1),
@@ -795,6 +793,7 @@ export default function App() {
       activateAgentTarget,
       toggleTabOrientation,
       toggleTabsColumn,
+      openSidebarView,
     ],
   );
 
@@ -991,25 +990,8 @@ export default function App() {
       if (!t) return;
       setActiveId(tabId);
       useSpaces.getState().setActive(t.spaceId);
-      setSwitcherOpen(false);
     },
     [setActiveId],
-  );
-
-  const spaceSwitcher = (
-    <SpaceSwitcher
-      open={switcherOpen}
-      onOpenChange={setSwitcherOpen}
-      tabs={tabs}
-      onNewSpace={() => void handleNewSpace()}
-      onDeleteSpace={handleDeleteSpace}
-      onNewTabInSpace={handleNewTabInSpace}
-      onJumpTab={jumpToTab}
-      onCloseTab={handleClose}
-      onMoveTabToSpace={handleMoveTab}
-      onReorderTab={handleReorderTab}
-      onReorderSpaces={(ids) => useSpaces.getState().reorder(ids)}
-    />
   );
 
   const commandPaletteItems = useMemo(
@@ -1040,7 +1022,7 @@ export default function App() {
             openKeyboardShortcuts: () => void openSettingsWindow('shortcuts'),
             spaces: useSpaces.getState().spaces,
             activeSpaceId,
-            openSpacesOverview: () => setSwitcherOpen(true),
+            openSpacesOverview: () => openSidebarView('spaces'),
             newSpace: () => void handleNewSpace(),
             switchSpace: (id) => useSpaces.getState().setActive(id),
           })
@@ -1062,6 +1044,7 @@ export default function App() {
       toggleSidebar,
       toggleTabOrientation,
       toggleTabsColumn,
+      openSidebarView,
       toggleHiddenFiles,
       activeSpaceId,
       handleNewSpace,
@@ -1165,7 +1148,6 @@ export default function App() {
                 onOpenCommandPalette={() => openCommandPalette('commands')}
                 onActivateAgent={onActivateAgent}
                 onOpenSettings={() => void openSettingsWindow()}
-                spaceSwitcher={spaceSwitcher}
                 searchTarget={searchTarget}
                 searchRef={searchInlineRef}
                 onOverrideLanguage={setOverrideLanguage}
@@ -1211,7 +1193,19 @@ export default function App() {
             <div className="h-full min-h-0 pl-2 pr-0.5">
               <div className="lut-pane flex h-full min-h-0 flex-col">
                 <div key={sidebarView} className="min-h-0 flex-1 lut-panel-in">
-                  {sidebarView === 'explorer' ? (
+                  {sidebarView === 'spaces' ? (
+                    <SpacesView
+                      tabs={tabs}
+                      onNewSpace={() => void handleNewSpace()}
+                      onDeleteSpace={handleDeleteSpace}
+                      onNewTabInSpace={handleNewTabInSpace}
+                      onJumpTab={jumpToTab}
+                      onCloseTab={handleClose}
+                      onMoveTabToSpace={handleMoveTab}
+                      onReorderTab={handleReorderTab}
+                      onReorderSpaces={(ids) => useSpaces.getState().reorder(ids)}
+                    />
+                  ) : sidebarView === 'explorer' ? (
                     <FileExplorer
                       ref={explorerRef}
                       rootPath={explorerRoot}
