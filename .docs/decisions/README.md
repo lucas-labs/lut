@@ -12,7 +12,9 @@ A PR needs an ADR when it changes any of these (proposal §15, change-control ru
 - **a persisted model**: store files, their schema or location, exported files, settings keys;
 - **a platform constraint**: supported OS, shells, WebView or renderer requirements, toolchain versions.
 
-Implementation details inside a module that keep its contract need no ADR. When in doubt, write a short one.
+Implementation details inside a module that keep its contract need no ADR. Neither does a new UI preference (a
+settings key or a stored layout value such as a panel width) whose missing or unknown value falls back to a safe
+default: it is listed in the PR instead. When in doubt, write a short one.
 
 ## Numbering and files
 
