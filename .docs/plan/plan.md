@@ -3480,7 +3480,8 @@ depends-on: [E11, E08, E09, E07, E10]
 refs: [ADR-002, 10.2, UX-001, UX-002, .docs/plan/analysis/app-shell.md]
 ```
 
-Implement the user's design for the window frame, tab navigator, header, status bar, dialogs, global styles and icons.
+Implement the user's design for the window frame, tab navigator, header, dialogs, global styles and icons (no status
+bar, decision 30).
 Behaviour (navigation model, close guards, coordinator) comes from E08/E09; this epic replaces only the visual layer.
 
 ### E12-01 — Rebuild global styles on the theme's UI tokens
@@ -3598,7 +3599,7 @@ size: M
 
 **Verification:** `pnpm test`; manual: toggle orientation with a long-running command in a hidden tab; it keeps running.
 
-### E12-06 — Rebuild the status bar
+### E12-06 — Move the status bar indicators into the header, the editor and the tabs
 
 ```yaml
 id: E12-06
@@ -3610,15 +3611,22 @@ scope: ui
 size: M
 ```
 
-**Goal:** Status bar per design with the context indicators (cwd, shell/WSL environment, git branch via `useGitBranch`) and the LSP diagnostics badge as a secondary-tool element.
+**Goal:** The design has no status bar (decision 30). Each of its indicators moves to where the design puts it, and the
+status bar itself is removed.
 
 **Acceptance criteria:**
 
-- [ ] `StatusBar`, `CwdBreadcrumb` and `OsIcon` rebuilt per design; no AI controls. (`WorkspaceEnvSelector` is removed by E16-13.)
-- [ ] `DiagnosticsBadge` redesigned and shown only when the editor/LSP tool is active (decision 2).
-- [ ] Indicators use `pathUtils` and `useSystemInfo` (both kept by E06-02, which moves `OsIcon`/`useSystemInfo` next to the status bar).
+- [ ] The cwd breadcrumb (`CwdBreadcrumb`) sits in the header per design; clicking a segment still `cd`s there.
+- [ ] Editor tabs get a status line per design: file path, line and column, LSP state (`LspStatusPill`) and
+      `DiagnosticsBadge`, shown only in editor tabs (decision 2).
+- [ ] The private terminal is marked by its tab icon (as today); the "not saved in the Space" explanation moves to the
+      tab tooltip.
+- [ ] The git branch (`useGitBranch`) shows in the sidebar Git view and the OS/shell mark is the tab's profile icon
+      (`OsIcon`, `useSystemInfo`); whatever ends up unused is removed. (`WorkspaceEnvSelector` is removed by E16-13.)
+- [ ] `StatusBar` and its footer are removed; the terminal area grows and each PTY gets one resize.
 
-**Verification:** `pnpm check-types && pnpm test`; manual: `cd` in the terminal updates the breadcrumb; opening a file with diagnostics shows the badge.
+**Verification:** `pnpm check-types && pnpm test`; manual: `cd` in the terminal updates the header breadcrumb; opening a
+file with diagnostics shows the badge in the editor's status line.
 
 ### E12-07 — Rebuild the close confirmation dialogs
 
@@ -3663,33 +3671,11 @@ size: M
 
 **Verification:** `pnpm test`; manual on Windows: the default window shows the terminal occupying the central area; opening/closing the editor keeps sessions.
 
-### E12-09 — Make the status bar hideable
-
-```yaml
-id: E12-09
-depends-on: [E11-02, E12-06]
-refs: [UX-006, 10.2, .docs/plan/analysis/proposal.md]
-covers: [UX-006]
-type: task
-scope: ui
-size: S
-```
-
-**Goal:** The status bar is optional (§10.5 "Status discreto opcional", IR-87): a persisted setting and a command show or hide it, per the E11-02 design.
-
-**Acceptance criteria:**
-
-- [ ] A `statusBarVisible` preference (default per design) persisted in the settings store; a stored value from an older version without the key loads with the default.
-- [ ] A command (palette and shortcut registry entry) toggles it; the change applies live without remounting terminals (no `pty_close`/`pty_open`, checked with the E07-01 instrumentation).
-- [ ] Layout without the status bar matches the design; the terminal area grows and the PTY gets one resize.
-
-**Verification:** `pnpm test` (preference default, toggle, no remount); manual: toggle the status bar while `top` runs.
-
 ### E12-10 — Add focus mode (hide all chrome)
 
 ```yaml
 id: E12-10
-depends-on: [E11-02, E12-03, E12-04, E12-09]
+depends-on: [E11-02, E12-03, E12-04]
 refs: [10.4, .docs/plan/analysis/proposal.md]
 covers: [10.4]
 type: task
@@ -3701,8 +3687,8 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] A command and shortcut enter and leave focus mode; it hides the tab navigator, projects sidebar, header and status bar.
-- [ ] Leaving focus mode restores the previous chrome state (orientation, sidebar collapsed/width, status bar visibility) exactly.
+- [ ] A command and shortcut enter and leave focus mode; it hides the tab navigator, projects sidebar and header.
+- [ ] Leaving focus mode restores the previous chrome state (orientation, sidebar collapsed/width) exactly.
 - [ ] Entering and leaving never remounts terminal panes or restarts PTYs (test with the E07-01 instrumentation).
 
 **Verification:** `pnpm test`; manual: enter focus mode with two tabs and a split, switch tabs by shortcut, leave focus mode.
@@ -3711,7 +3697,7 @@ size: S
 
 ```yaml
 id: E12-11
-depends-on: [E12-01, E12-02, E12-03, E12-04, E12-05, E12-06, E12-07, E12-08, E12-09, E12-10]
+depends-on: [E12-01, E12-02, E12-03, E12-04, E12-05, E12-06, E12-07, E12-08, E12-10]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout

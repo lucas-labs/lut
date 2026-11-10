@@ -78,7 +78,7 @@ columns are out of date.
 | UX-003 | P0       | Sidebar de proyectos opcional, colapsable y con ancho persistido                      | E11-05, E18-01                                          |                |       |
 | UX-004 | P0       | Temas claros/oscuros y temas personalizados mediante tokens                           | E11-03, E13-05, E13-08                                  |                |       |
 | UX-005 | P0       | Fuentes configurables y soporte de Nerd Fonts/powerline cuando el renderer lo permita | E11-03, E13-04                                          |                |       |
-| UX-006 | P1       | UI minimalista, densidad compacta/normal, iconografía coherente                       | E12-09, E22-07                                          |                |       |
+| UX-006 | P1       | UI minimalista, densidad compacta/normal, iconografía coherente                       | E22-07                                                  |                |       |
 | UX-007 | P1       | Menús contextuales para tabs/panes/proyectos                                          | E11-07, E22-04, E22-05                                  |                |       |
 | UX-008 | P1       | Command palette orientado a acciones de terminal/proyectos                            | E11-07, E22-02                                          |                |       |
 | UX-009 | P1       | Paneles secundarios opcionales: explorer, Git, diff, logs de agentes                  | E10-12, E11-08                                          |                |       |
