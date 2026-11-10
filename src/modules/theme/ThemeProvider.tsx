@@ -65,8 +65,9 @@ function writeFastThemeId(id: string): void {
   }
 }
 
+/** Built-in ids are reserved (validateTheme rejects them for custom themes), so a built-in wins over a custom theme. */
 function resolveTheme(id: string, custom: Theme[]): Theme {
-  return custom.find((t) => t.id === id) ?? getBuiltinTheme(id) ?? getDefaultTheme();
+  return getBuiltinTheme(id) ?? custom.find((t) => t.id === id) ?? getDefaultTheme();
 }
 
 export function ThemeProvider({ children, defaultMode = 'system' }: ThemeProviderProps) {

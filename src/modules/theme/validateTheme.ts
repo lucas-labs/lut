@@ -1,3 +1,4 @@
+import { getBuiltinTheme } from './themes';
 import type { TerminalPalette, Theme, ThemeColors, ThemeVariant } from './types';
 
 export type ValidationResult = { ok: true; theme: Theme } | { ok: false; error: string };
@@ -144,6 +145,9 @@ export function validateTheme(raw: unknown): ValidationResult {
   if (!isObj(raw)) return { ok: false, error: 'Theme must be a JSON object' };
   if (!isStr(raw.id) || !ID_RE.test(raw.id)) {
     return { ok: false, error: 'id must be a kebab-case string (a-z, 0-9, -)' };
+  }
+  if (getBuiltinTheme(raw.id)) {
+    return { ok: false, error: `id "${raw.id}" belongs to a built-in theme; choose another id` };
   }
   if (!isStr(raw.name) || raw.name.trim().length === 0) {
     return { ok: false, error: 'name must be a non-empty string' };

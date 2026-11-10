@@ -70,4 +70,12 @@ describe('ThemeProvider', () => {
     expect(theme.themeId).toBe('my-theme');
     expect(theme.activeTheme.id).toBe('my-theme');
   });
+
+  it('keeps the built-in theme when a stored custom theme reuses its id', async () => {
+    stored.themeId = 'lut';
+    stored.custom = [{ id: 'lut', name: 'Old custom', variants: { dark: { colors: { background: '#101010' } } } }];
+    const theme = await mount();
+    expect(theme.themeId).toBe('lut');
+    expect(theme.activeTheme.name).toBe('Lut');
+  });
 });

@@ -24,6 +24,14 @@ describe('validateTheme', () => {
     expect(validateTheme(baseTheme({ id: 'has space' })).ok).toBe(false);
   });
 
+  it('rejects the id of a built-in theme', () => {
+    expect(validateTheme(baseTheme({ id: 'lut' }))).toEqual({
+      ok: false,
+      error: 'id "lut" belongs to a built-in theme; choose another id',
+    });
+    expect(validateTheme(baseTheme({ id: 'nord' })).ok).toBe(false);
+  });
+
   it('requires a non-empty name and trims it', () => {
     expect(validateTheme(baseTheme({ name: '  ' })).ok).toBe(false);
     const result = validateTheme(baseTheme({ name: '  Padded  ' }));
