@@ -23,9 +23,13 @@ let root: Root;
 let host: HTMLElement;
 const sidebarRef = createRef<PanelImperativeHandle>();
 
-function shell(props: { header?: ReactNode; statusBar?: ReactNode; sidebar?: ReactNode }) {
+function shell(props: { header?: ReactNode; statusBar?: ReactNode; sidebar?: ReactNode; tabsColumn?: ReactNode }) {
   return createElement(AppShell, {
     header: props.header ?? null,
+    tabsColumn: props.tabsColumn ?? null,
+    tabsColumnRef: createRef<PanelImperativeHandle>(),
+    tabsColumnInitialWidth: 200,
+    onTabsColumnLayout: () => {},
     statusBar: props.statusBar ?? null,
     sidebar: props.sidebar ?? null,
     sidebarRef,
@@ -62,4 +66,14 @@ it('shows and hides the chrome without remounting the workspace', () => {
   expect(mounts).toEqual(['workspace']);
   expect(unmounts).toEqual([]);
   expect(host.querySelectorAll('[data-probe="workspace"]')).toHaveLength(1);
+});
+
+it('switches the tabs between the title bar and a vertical column without remounting the workspace', () => {
+  const strip = createElement('div', { 'data-tabs': '' });
+  render(shell({ header: createElement('header', null, strip) }));
+  render(shell({ header: createElement('header'), tabsColumn: createElement('aside', null, strip) }));
+  render(shell({ header: createElement('header', null, strip) }));
+  render(shell({ header: createElement('header'), tabsColumn: createElement('aside', null, strip) }));
+  expect(mounts).toEqual(['workspace']);
+  expect(unmounts).toEqual([]);
 });

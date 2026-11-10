@@ -5,6 +5,7 @@ import { IS_MAC } from '@/lib/platform';
 import { quoteShellArg } from '@/lib/shellQuote';
 import { useZoom } from '@/lib/useZoom';
 import { isMarkdownPath } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import {
   type AgentLaunchRequest,
   AgentNotificationsBridge,
@@ -27,7 +28,7 @@ import { setLspNavigator } from '@/modules/lsp';
 import type { PreviewPaneHandle } from '@/modules/preview';
 import { openSettingsWindow } from '@/modules/settings/openSettingsWindow';
 import { usePreferencesStore } from '@/modules/settings/preferences';
-import { setShowHidden } from '@/modules/settings/store';
+import { setShowHidden, setTabOrientation } from '@/modules/settings/store';
 import {
   type ShortcutHandlers,
   type ShortcutId,
@@ -41,8 +42,10 @@ import { SpaceSwitcher, useSpacePersistence, useSpaces, useSpacesBoot } from '@/
 import { StatusBar } from '@/modules/statusbar';
 import {
   type CloseTabsPlan,
+  TabBar,
   TabSwitcherHud,
   useTabs,
+  useTabsColumn,
   useTabSwitcher,
   useWindowTitle,
   useWorkspaceCwd,
@@ -679,6 +682,13 @@ export default function App() {
   }, [activeId, closeActivePane, handleClose]);
 
   const [zenMode, setZenMode] = useState(false);
+  const tabOrientation = usePreferencesStore((s) => s.tabOrientation);
+  const verticalTabs = tabOrientation === 'vertical';
+  const { tabsColumnRef, tabsColumnInitialWidth, persistTabsColumnLayout, toggleTabsColumn } = useTabsColumn();
+  const toggleTabOrientation = useCallback(() => {
+    const current = usePreferencesStore.getState().tabOrientation;
+    void setTabOrientation(current === 'vertical' ? 'horizontal' : 'vertical');
+  }, []);
 
   // Focus an agent's tab, switching to its space first so the header and tab
   // strip don't end up showing a different space than the focused pane.
@@ -739,6 +749,8 @@ export default function App() {
       'view.zoomOut': zoomOut,
       'view.zoomReset': zoomReset,
       'view.zenMode': () => setZenMode((v) => !v),
+      'view.tabOrientation': toggleTabOrientation,
+      'view.tabsColumn': toggleTabsColumn,
       'editor.undo': () => editorRefs.current.get(activeId)?.undo(),
       'editor.redo': () => editorRefs.current.get(activeId)?.redo(),
       'editor.save': () => {
@@ -768,6 +780,8 @@ export default function App() {
       zoomOut,
       zoomReset,
       activateAgentTarget,
+      toggleTabOrientation,
+      toggleTabsColumn,
     ],
   );
 
@@ -1001,6 +1015,8 @@ export default function App() {
             focusSearch: () => searchInlineRef.current?.focus(),
             focusExplorerSearch: () => explorerRef.current?.focusSearch(),
             toggleSidebar,
+            toggleTabOrientation,
+            toggleTabsColumn,
             toggleHiddenFiles,
             openSettings: () => void openSettingsWindow(),
             openKeyboardShortcuts: () => void openSettingsWindow('shortcuts'),
@@ -1026,6 +1042,8 @@ export default function App() {
       handleCloseTabOrPane,
       splitActivePaneInActiveTab,
       toggleSidebar,
+      toggleTabOrientation,
+      toggleTabsColumn,
       toggleHiddenFiles,
       activeSpaceId,
       handleNewSpace,
@@ -1133,9 +1151,40 @@ export default function App() {
                 searchTarget={searchTarget}
                 searchRef={searchInlineRef}
                 onOverrideLanguage={setOverrideLanguage}
+                showTabs={!verticalTabs}
               />
             )
           }
+          tabsColumn={
+            verticalTabs && !zenMode ? (
+              <div className={cn('flex h-full min-h-0 flex-col pr-0.5', sidebarCollapsed ? 'pl-2' : 'pl-0.5')}>
+                <div className="lut-pane flex min-h-0 flex-1 flex-col p-1">
+                  <TabBar
+                    orientation="vertical"
+                    tabs={spaceTabs}
+                    activeId={activeId}
+                    onSelect={setActiveId}
+                    onNew={openNewTab}
+                    onNewPrivate={openNewPrivateTab}
+                    onNewPreview={() => openPreviewTab('')}
+                    onNewEditor={() => setNewEditorOpen(true)}
+                    onNewGitGraph={openGitGraphFromContext}
+                    onLaunchAgents={launchAgentGroup}
+                    onClose={handleClose}
+                    onCloseTabsToRight={handleCloseTabsToRight}
+                    onCloseOtherTabs={handleCloseOtherTabs}
+                    onPin={pinTab}
+                    onRename={handleRenameTab}
+                    onReorder={reorderTabByGap}
+                    onOverrideLanguage={setOverrideLanguage}
+                  />
+                </div>
+              </div>
+            ) : null
+          }
+          tabsColumnRef={tabsColumnRef}
+          tabsColumnInitialWidth={tabsColumnInitialWidth}
+          onTabsColumnLayout={persistTabsColumnLayout}
           sidebarRef={sidebarRef}
           sidebarInitialWidth={initialSidebarCollapsed ? 0 : sidebarWidthRef.current}
           onSidebarLayout={persistSidebarWidth}
