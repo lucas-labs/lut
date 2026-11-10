@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { FolderGitTwoIcon, FolderTreeIcon } from '@hugeicons/core-free-icons';
+import { FolderGitTwoIcon, FolderTreeIcon, LayersIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import type { SidebarViewId } from './types';
 
@@ -20,13 +20,14 @@ type Props = {
 
 export function SidebarRail({ activeView, onSelectView, changedCount }: Props) {
   const items: RailItem[] = [
-    { id: 'explorer', label: 'Files', icon: FolderTreeIcon },
+    { id: 'spaces', label: 'Spaces', icon: LayersIcon },
     {
       id: 'source-control',
       label: 'Git',
       icon: FolderGitTwoIcon,
       badge: changedCount,
     },
+    { id: 'explorer', label: 'Files', icon: FolderTreeIcon },
   ];
 
   return (

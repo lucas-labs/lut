@@ -1,8 +1,10 @@
 // @vitest-environment happy-dom
+import { useSidebarPanel } from '@/modules/sidebar';
 import type { Tab } from '@/modules/tabs';
 import { type PaneLifecycleEvent, setPaneLifecycleListener } from '@/modules/terminal/lib/paneLifecycle';
 import { type PaneNode, removeLeaf, splitLeaf } from '@/modules/terminal/lib/panes';
-import { act, createElement, createRef, type ReactNode } from 'react';
+import * as themeModule from '@/modules/theme';
+import { act, type Context, createElement, createRef, type ReactNode, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import type { PanelImperativeHandle } from 'react-resizable-panels';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -18,6 +20,8 @@ const fake = vi.hoisted(() => ({
   live: new Set<number>(),
   output: new Map<number, number>(),
   mounted: new Set<number>(),
+  themed: [] as number[],
+  sessions: new Map<number, object>(),
 }));
 vi.mock('@/modules/terminal/ghostty/useGhosttyTerminalSession', async () => {
   const { useEffect } = await import('react');
@@ -33,17 +37,24 @@ vi.mock('@/modules/terminal/ghostty/useGhosttyTerminalSession', async () => {
           fake.mounted.delete(leafId);
         };
       }, [leafId]);
-      return {
-        model: null,
-        error: null,
-        write: () => {},
-        writeAtPrompt: async () => false,
-        focus: () => {},
-        getBuffer: () => null,
-        getSelection: () => null,
-        applyTheme: () => {},
-        retry: () => {},
-      };
+      // Stable per leaf, like the real hook's memoized handle.
+      let session = fake.sessions.get(leafId);
+      if (!session) {
+        session = {
+          model: null,
+          error: null,
+          write: () => {},
+          writeAtPrompt: async () => false,
+          focus: () => {},
+          getBuffer: () => null,
+          getSelection: () => null,
+          // The real one recolors the existing model, surface and PTY in place.
+          applyTheme: () => fake.themed.push(leafId),
+          retry: () => {},
+        };
+        fake.sessions.set(leafId, session);
+      }
+      return session;
     },
     disposeGhosttySession: (leafId: number) => {
       fake.closed.push(leafId);
@@ -52,12 +63,31 @@ vi.mock('@/modules/terminal/ghostty/useGhosttyTerminalSession', async () => {
     },
   };
 });
-vi.mock('@/modules/theme', () => ({ useTheme: () => ({ resolvedMode: 'dark', activeTheme: null }) }));
+// Theme changes reach the panes through context, as with the real ThemeProvider.
+vi.mock('@/modules/theme', async () => {
+  const { createContext, useContext } = await import('react');
+  const ThemeContext = createContext<{ resolvedMode: string; activeTheme: object | null }>({
+    resolvedMode: 'dark',
+    activeTheme: null,
+  });
+  return { ThemeContext, useTheme: () => useContext(ThemeContext) };
+});
 // The other surfaces render nothing without their own tabs; stubbing them keeps their code out of the test.
 vi.mock('@/modules/editor', () => ({ EditorStack: () => null, GitDiffStack: () => null }));
 vi.mock('@/modules/git-history', () => ({ GitHistoryStack: () => null }));
 vi.mock('@/modules/markdown', () => ({ MarkdownStack: () => null }));
 vi.mock('@/modules/preview', () => ({ PreviewStack: () => null }));
+
+const { ThemeContext } = themeModule as unknown as {
+  ThemeContext: Context<{ resolvedMode: string; activeTheme: object | null }>;
+};
+
+/** Panes apply a theme on the next animation frame. */
+async function nextFrames() {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  });
+}
 
 /** PTY output reaches every session that is still mounted, visible or not. */
 function emitOutput() {
@@ -105,6 +135,47 @@ function surface(tabs: Tab[], activeId: number) {
   });
 }
 
+/** The window around the workspace: tabs in the title bar or in the vertical column, and a sidebar view or none. */
+function shell(tabs: Tab[], { vertical = false, sidebar = null }: { vertical?: boolean; sidebar?: ReactNode } = {}) {
+  const strip = createElement('div', { 'data-tabs': '' });
+  return createElement(AppShell, {
+    header: createElement('header', null, vertical ? null : strip),
+    tabsColumn: vertical ? createElement('aside', null, strip) : null,
+    tabsColumnRef: createRef<PanelImperativeHandle>(),
+    tabsColumnInitialWidth: 200,
+    onTabsColumnLayout: noop,
+    statusBar: null,
+    sidebar,
+    sidebarRef: createRef<PanelImperativeHandle>(),
+    sidebarInitialWidth: 0,
+    onSidebarLayout: noop,
+    onSidebarCollapsedChange: noop,
+    workspace: surface(tabs, 1),
+  });
+}
+
+type SidebarControls = ReturnType<typeof useSidebarPanel>;
+
+/** The real sidebar panel and its controls (`useSidebarPanel`, as App uses them) around the workspace. */
+function SidebarShell({ tabs, onControls }: { tabs: Tab[]; onControls: (controls: SidebarControls) => void }) {
+  const sidebar = useSidebarPanel(createRef());
+  useEffect(() => onControls(sidebar));
+  return createElement(AppShell, {
+    header: null,
+    tabsColumn: null,
+    tabsColumnRef: createRef<PanelImperativeHandle>(),
+    tabsColumnInitialWidth: 200,
+    onTabsColumnLayout: noop,
+    statusBar: null,
+    sidebar: createElement('nav', { key: sidebar.sidebarView, 'data-view': sidebar.sidebarView }),
+    sidebarRef: sidebar.sidebarRef,
+    sidebarInitialWidth: sidebar.initialSidebarCollapsed ? 0 : 260,
+    onSidebarLayout: sidebar.persistSidebarWidth,
+    onSidebarCollapsedChange: sidebar.persistSidebarCollapsed,
+    workspace: surface(tabs, 1),
+  });
+}
+
 const mounts = (leafId: number) => events.filter(([e, id]) => e === 'mount' && id === leafId).length;
 const unmounts = (leafId: number) => events.filter(([e, id]) => e === 'unmount' && id === leafId).length;
 
@@ -115,6 +186,8 @@ beforeEach(() => {
   fake.closed = [];
   fake.live.clear();
   fake.output.clear();
+  fake.themed = [];
+  fake.sessions.clear();
   setPaneLifecycleListener((event, leafId) => events.push([event, leafId]));
   host = document.createElement('div');
   document.body.append(host);
@@ -205,31 +278,97 @@ describe('WorkspaceSurface keeps terminals mounted', () => {
 
   it('switching the tab orientation keeps every pane mounted and opens or closes no PTY (E07-05)', () => {
     const tabs = [term(1), term(2, splitLeaf({ kind: 'leaf', id: 20 }, 20, 200, 21, 'col'))];
-    const strip = createElement('div', { 'data-tabs': '' });
-    const shell = (vertical: boolean) =>
-      createElement(AppShell, {
-        header: createElement('header', null, vertical ? null : strip),
-        tabsColumn: vertical ? createElement('aside', null, strip) : null,
-        tabsColumnRef: createRef<PanelImperativeHandle>(),
-        tabsColumnInitialWidth: 200,
-        onTabsColumnLayout: noop,
-        statusBar: null,
-        sidebar: null,
-        sidebarRef: createRef<PanelImperativeHandle>(),
-        sidebarInitialWidth: 0,
-        onSidebarLayout: noop,
-        onSidebarCollapsedChange: noop,
-        workspace: surface(tabs, 1),
-      });
-    render(shell(false));
-    render(shell(true));
-    render(shell(false));
-    render(shell(true));
+    render(shell(tabs));
+    render(shell(tabs, { vertical: true }));
+    render(shell(tabs));
+    render(shell(tabs, { vertical: true }));
     for (const leaf of [10, 20, 21]) {
       expect(mounts(leaf)).toBe(1);
       expect(unmounts(leaf)).toBe(0);
     }
     expect(fake.opened).toEqual([10, 20, 21]);
+    expect(fake.closed).toEqual([]);
+  });
+
+  it('switching sidebar views and hiding the sidebar keeps every pane mounted and opens or closes no PTY (E07-06)', () => {
+    const tabs = [term(1), term(2)];
+    const view = (name: string) => createElement('nav', { key: name }, name);
+    render(shell(tabs, { sidebar: view('spaces') }));
+    render(shell(tabs, { sidebar: view('source-control') }));
+    render(shell(tabs, { sidebar: view('explorer') }));
+    render(shell(tabs));
+    render(shell(tabs, { sidebar: view('spaces'), vertical: true }));
+    for (const leaf of [10, 20]) {
+      expect(mounts(leaf)).toBe(1);
+      expect(unmounts(leaf)).toBe(0);
+    }
+    expect(fake.opened).toEqual([10, 20]);
+    expect(fake.closed).toEqual([]);
+  });
+
+  it('switching the theme re-themes every pane in place, with no remount or PTY change (E07-07)', async () => {
+    const tabs = [term(1), term(2, splitLeaf({ kind: 'leaf', id: 20 }, 20, 200, 21, 'row'))];
+    const themed = (resolvedMode: string, activeTheme: object | null) =>
+      createElement(ThemeContext.Provider, { value: { resolvedMode, activeTheme } }, shell(tabs));
+    render(themed('dark', null));
+    await nextFrames();
+    for (const [mode, custom] of [
+      ['light', null],
+      ['dark', null],
+      ['dark', { id: 'custom' }],
+    ] as const) {
+      fake.themed = [];
+      render(themed(mode, custom));
+      await nextFrames();
+      expect([...fake.themed].sort((a, b) => a - b)).toEqual([10, 20, 21]);
+    }
+    for (const leaf of [10, 20, 21]) {
+      expect(mounts(leaf)).toBe(1);
+      expect(unmounts(leaf)).toBe(0);
+    }
+    expect(fake.opened).toEqual([10, 20, 21]);
+    expect(fake.closed).toEqual([]);
+  });
+
+  it('collapsing and expanding the sidebar panel and switching its views keep every pane mounted (E07-06)', () => {
+    const tabs = [term(1), term(2)];
+    let controls: SidebarControls | null = null;
+    const sidebar = () => controls as unknown as SidebarControls;
+    // happy-dom has no layout: the panel's share of the group is real, but its pixel size is always 0, so the
+    // pixel-based initial width cannot apply and the test collapses the panel itself, as a first run starts.
+    const share = () => sidebar().sidebarRef.current?.getSize().asPercentage ?? -1;
+    const view = () => host.querySelector('[data-view]')?.getAttribute('data-view');
+    render(
+      createElement(SidebarShell, {
+        tabs,
+        onControls: (next) => {
+          controls = next;
+        },
+      }),
+    );
+    act(() => sidebar().sidebarRef.current?.collapse());
+    expect(share()).toBe(0);
+
+    act(() => sidebar().openSidebarView('spaces'));
+    expect(share()).toBeGreaterThan(0);
+    expect(view()).toBe('spaces');
+    act(() => sidebar().cycleSidebarView('source-control'));
+    expect(view()).toBe('source-control');
+    act(() => sidebar().cycleSidebarView('source-control'));
+    expect(share()).toBe(0);
+    act(() => sidebar().openSidebarView('explorer'));
+    expect(share()).toBeGreaterThan(0);
+    expect(view()).toBe('explorer');
+    act(() => sidebar().toggleSidebar());
+    expect(share()).toBe(0);
+    act(() => sidebar().toggleSidebar());
+    expect(share()).toBeGreaterThan(0);
+
+    for (const leaf of [10, 20]) {
+      expect(mounts(leaf)).toBe(1);
+      expect(unmounts(leaf)).toBe(0);
+    }
+    expect(fake.opened).toEqual([10, 20]);
     expect(fake.closed).toEqual([]);
   });
 });

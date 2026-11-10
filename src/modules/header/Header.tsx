@@ -7,7 +7,7 @@ import type { Tab } from '@/modules/tabs';
 import { TabBar } from '@/modules/tabs';
 import { CommandIcon, Settings01Icon, SidebarLeftIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react';
+import { type RefObject, useEffect, useRef, useState } from 'react';
 import { SearchInline, type SearchInlineHandle, type SearchTarget } from './SearchInline';
 
 type Props = {
@@ -36,7 +36,6 @@ type Props = {
   onOpenCommandPalette: () => void;
   onActivateAgent: (tabId: number, leafId: number) => void;
   onOpenSettings: () => void;
-  spaceSwitcher: ReactNode;
   searchTarget: SearchTarget;
   searchRef: RefObject<SearchInlineHandle | null>;
   /** False when the tabs are shown as a vertical column instead (E07-05). */
@@ -66,7 +65,6 @@ export function Header({
   onOpenCommandPalette,
   onActivateAgent,
   onOpenSettings,
-  spaceSwitcher,
   searchTarget,
   searchRef,
   showTabs = true,
@@ -141,7 +139,6 @@ export function Header({
           e.preventDefault();
         }}
       >
-        {spaceSwitcher}
         {showTabs && (
           <TabBar
             tabs={tabs}

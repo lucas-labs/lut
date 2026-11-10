@@ -1,5 +1,4 @@
 import { Kbd } from '@/components/ui/kbd';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { useShortcutLabel } from '@/modules/shortcuts';
 import { labelFor, type Tab, TabIcon } from '@/modules/tabs';
@@ -21,8 +20,6 @@ import { useSpaces } from './lib/useSpaces';
 import { SpaceAvatar } from './SpaceAvatar';
 
 type Props = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   tabs: Tab[];
   onNewSpace: () => void;
   onDeleteSpace: (id: string) => void;
@@ -63,9 +60,8 @@ function subtitleFor(tab: Tab): string | null {
   return null;
 }
 
-export function SpaceSwitcher({
-  open,
-  onOpenChange,
+/** The Spaces view of the sidebar (E07-06): every space with its tabs; drag to reorder spaces or move tabs. */
+export function SpacesView({
   tabs,
   onNewSpace,
   onDeleteSpace,
@@ -93,8 +89,6 @@ export function SpaceSwitcher({
   const [drop, setDrop] = useState<DropTarget | null>(null);
   const [overlay, setOverlay] = useState<{ x: number; y: number } | null>(null);
 
-  const current = spaces.find((s) => s.id === activeId);
-
   const tabsBySpace = useMemo(() => {
     const m = new Map<string, Tab[]>();
     for (const t of tabs) {
@@ -109,9 +103,9 @@ export function SpaceSwitcher({
   const draggedSpace = dragging?.kind === 'space' ? (spaces.find((s) => s.id === dragging.id) ?? null) : null;
 
   useEffect(() => {
-    if (!open || !activeId) return;
+    if (!activeId) return;
     setExpanded((prev) => (prev.has(activeId) ? prev : new Set(prev).add(activeId)));
-  }, [open, activeId]);
+  }, [activeId]);
 
   const toggleExpand = (id: string) =>
     setExpanded((prev) => {
@@ -208,71 +202,54 @@ export function SpaceSwitcher({
     endDrag(e.currentTarget);
   };
 
-  if (!current) return null;
-
   return (
-    <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverTrigger asChild>
+    <div className="flex h-full min-h-0 flex-col p-1.5">
+      <div className="flex items-center justify-between px-1.5 pb-1.5 pt-0.5">
+        <span className="text-xs font-semibold text-foreground">Spaces</span>
+        {shortcut && <Kbd className="h-5 bg-muted/70 text-[10px]">{shortcut}</Kbd>}
+      </div>
+      <div className="-mx-0.5 min-h-0 flex-1 overflow-y-auto px-0.5">
+        {spaces.map((sp) => (
+          <SpaceRow
+            key={sp.id}
+            space={sp}
+            tabs={tabsBySpace.get(sp.id) ?? []}
+            isActive={sp.id === activeId}
+            canDelete={spaces.length > 1}
+            expanded={expanded.has(sp.id)}
+            editing={editingId === sp.id}
+            dragging={dragging}
+            drop={drop}
+            draggingTabFromOther={draggedTab !== null && draggedTab.spaceId !== sp.id}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onToggle={() => toggleExpand(sp.id)}
+            onSwitch={() => setActive(sp.id)}
+            onStartRename={() => setEditingId(sp.id)}
+            onCommitRename={(name) => {
+              const v = name.trim();
+              if (v) rename(sp.id, v);
+              setEditingId(null);
+            }}
+            onCancelRename={() => setEditingId(null)}
+            onDelete={() => onDeleteSpace(sp.id)}
+            onNewTab={() => onNewTabInSpace(sp.id)}
+            onJumpTab={onJumpTab}
+            onCloseTab={onCloseTab}
+          />
+        ))}
+      </div>
+      <div className="mt-1.5 border-t border-border/60 pt-1.5">
         <button
           type="button"
-          title={shortcut ? `Spaces · ${shortcut}` : 'Spaces'}
-          className="flex h-7 shrink-0 items-center gap-2 rounded-md px-2 text-muted-foreground/90 outline-none transition-colors hover:bg-accent hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-foreground"
+          onClick={onNewSpace}
+          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
         >
-          <span className="max-w-36 truncate text-xs font-medium">{current.name}</span>
-          <HugeiconsIcon icon={ArrowRight01Icon} size={14} strokeWidth={1.75} className="shrink-0 opacity-65" />
+          <HugeiconsIcon icon={PlusSignIcon} size={14} strokeWidth={1.75} />
+          <span className="flex-1">New space</span>
         </button>
-      </PopoverTrigger>
-      <PopoverContent align="start" sideOffset={6} className="w-[20rem] p-1.5">
-        <div className="flex items-center justify-between px-1.5 pb-1.5 pt-0.5">
-          <span className="text-xs font-semibold text-foreground">Spaces</span>
-          {shortcut && <Kbd className="h-5 bg-muted/70 text-[10px]">{shortcut}</Kbd>}
-        </div>
-        <div className="-mx-0.5 max-h-[60vh] overflow-y-auto px-0.5">
-          {spaces.map((sp) => (
-            <SpaceRow
-              key={sp.id}
-              space={sp}
-              tabs={tabsBySpace.get(sp.id) ?? []}
-              isActive={sp.id === activeId}
-              canDelete={spaces.length > 1}
-              expanded={expanded.has(sp.id)}
-              editing={editingId === sp.id}
-              dragging={dragging}
-              drop={drop}
-              draggingTabFromOther={draggedTab !== null && draggedTab.spaceId !== sp.id}
-              onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={onPointerUp}
-              onToggle={() => toggleExpand(sp.id)}
-              onSwitch={() => {
-                setActive(sp.id);
-                onOpenChange(false);
-              }}
-              onStartRename={() => setEditingId(sp.id)}
-              onCommitRename={(name) => {
-                const v = name.trim();
-                if (v) rename(sp.id, v);
-                setEditingId(null);
-              }}
-              onCancelRename={() => setEditingId(null)}
-              onDelete={() => onDeleteSpace(sp.id)}
-              onNewTab={() => onNewTabInSpace(sp.id)}
-              onJumpTab={onJumpTab}
-              onCloseTab={onCloseTab}
-            />
-          ))}
-        </div>
-        <div className="mt-1.5 border-t border-border/60 pt-1.5">
-          <button
-            type="button"
-            onClick={onNewSpace}
-            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
-          >
-            <HugeiconsIcon icon={PlusSignIcon} size={14} strokeWidth={1.75} />
-            <span className="flex-1">New space</span>
-          </button>
-        </div>
-      </PopoverContent>
+      </div>
       {overlay &&
         (draggedSpace || draggedTab) &&
         createPortal(
@@ -285,7 +262,7 @@ export function SpaceSwitcher({
           </div>,
           document.body,
         )}
-    </Popover>
+    </div>
   );
 }
 
