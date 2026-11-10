@@ -42,7 +42,7 @@ columns are out of date.
 | PRO-003 | P0       | Directorio de inicio                 | E14-10         |                |       |
 | PRO-004 | P1       | Variables de entorno                 | E14-09         |                |       |
 | PRO-005 | P0       | Apariencia por perfil                | E14-01, E14-16 |                |       |
-| PRO-006 | P1       | Entorno Windows/WSL/macOS/Linux      | E14-06         |                |       |
+| PRO-006 | P1       | Entorno Windows/WSL/macOS/Linux      | E14-06, E16-13 |                |       |
 | PRO-007 | P1       | Exportar/importar perfiles           | E23-02         |                |       |
 | PRO-009 | P1       | Perfil en cada pane                  | E14-14         |                |       |
 | PRO-010 | P1       | Validación de perfiles               | E14-03, E15-02 |                |       |

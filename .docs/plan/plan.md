@@ -3614,7 +3614,7 @@ size: M
 
 **Acceptance criteria:**
 
-- [ ] `StatusBar`, `CwdBreadcrumb`, `WorkspaceEnvSelector` and `OsIcon` rebuilt per design; no AI controls.
+- [ ] `StatusBar`, `CwdBreadcrumb` and `OsIcon` rebuilt per design; no AI controls. (`WorkspaceEnvSelector` is removed by E16-13.)
 - [ ] `DiagnosticsBadge` redesigned and shown only when the editor/LSP tool is active (decision 2).
 - [ ] Indicators use `pathUtils` and `useSystemInfo` (both kept by E06-02, which moves `OsIcon`/`useSystemInfo` next to the status bar).
 
@@ -4857,11 +4857,41 @@ others are kept for persistence only, and the space-switch effect in `App.tsx` f
 
 **Verification:** `pnpm test`; manual: two spaces, a non-last tab active in each, restart and switch between them.
 
+### E16-13 — Tools follow the focused pane or the Space's pinned folder; drop the workspace env selector
+
+```yaml
+id: E16-13
+depends-on: [E14-10, E16-04]
+refs: [PRO-006, .docs/plan/analysis/app-shell.md, .docs/plan/analysis/backend-core.md]
+covers: [PRO-006]
+type: task
+scope: ui
+size: M
+```
+
+**Goal:** A Space mixes Windows and WSL panes (decision 29). The window-wide workspace env (local or a WSL distro), its
+status-bar selector and the switch that tears down every session (`useWorkspaceSwitcher`) go away: the terminal's
+environment comes from its profile (E14-10), and the tools (Files, Git, editor, LSP) use the location of the focused
+pane (its cwd in its own filesystem, e.g. `\\wsl$\Ubuntu\...` for a WSL pane), or the Space's pinned folder when it
+has one, so they stay put while panes move between folders.
+
+**Acceptance criteria:**
+
+- [ ] Without a pinned folder, Files and Git follow the focused pane's cwd and filesystem; focusing a pane of another
+      profile or folder switches them, with no session torn down.
+- [ ] A Space can pin a folder (and unpin it) from its menu; while pinned, the tools use it whatever pane has focus. The
+      pinned folder is saved with the Space (`root`); the stored `env` is migrated away.
+- [ ] `WorkspaceEnvSelector`, the window-wide env store and the interactive local⇄WSL switch are removed.
+- [ ] Tests: tool location for a focused pwsh pane, a focused WSL pane and a pinned folder; migration of a stored env.
+
+**Verification:** `pnpm test`; manual on Windows with WSL: a Space with a pwsh pane and an Ubuntu pane, focus each and
+check Files and Git; pin a folder and focus both again.
+
 ### E16-11 — Close-out: projects model and persistence
 
 ```yaml
 id: E16-11
-depends-on: [E16-01, E16-02, E16-03, E16-04, E16-05, E16-06, E16-07, E16-09, E16-10, E16-12]
+depends-on: [E16-01, E16-02, E16-03, E16-04, E16-05, E16-06, E16-07, E16-09, E16-10, E16-12, E16-13]
 refs: [F4]
 covers: []
 type: closeout
