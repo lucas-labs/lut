@@ -985,6 +985,9 @@ El sidebar de proyectos y el navegador de tabs **son componentes distintos**, au
 
 En modo horizontal, tabs debajo o dentro de la barra superior; la superficie terminal no cambia de propietario ni se desmonta.
 
+El diseño final (E11) no tiene barra de estado (decisión 30): el cwd va en la barra superior, el estado del LSP y los
+diagnósticos en la línea de estado del editor, la rama en la vista Git del sidebar, y el shell/perfil en el ícono del tab.
+
 ---
 
 # 11. Roadmap de ejecución y entregables por fase
