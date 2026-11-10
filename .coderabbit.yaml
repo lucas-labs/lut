@@ -1,0 +1,122 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# CodeRabbit for lut (E04-08, decision 21f): a first-pass reviewer, not a merge gate. The rules it reviews against are
+# in .docs/development/change-control.md.
+language: en-US
+
+tone_instructions: >-
+  Senior reviewer for lut, a terminal-first Tauri + React desktop terminal. High-signal findings only; skip style,
+  formatting and lint nits that the CI already checks.
+
+early_access: false
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  changed_files_summary: true
+  estimate_code_review_effort: true
+  assess_linked_issues: true
+  related_issues: true
+  related_prs: true
+  suggested_labels: false
+  auto_apply_labels: false
+  suggested_reviewers: false
+  sequence_diagrams: false
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+
+  auto_review:
+    enabled: true
+    drafts: false
+    auto_incremental_review: true
+    base_branches:
+      - master
+    ignore_title_keywords:
+      - wip
+      - '[skip-review]'
+
+  finishing_touches:
+    docstrings:
+      enabled: false
+    unit_tests:
+      enabled: false
+
+  pre_merge_checks:
+    docstrings:
+      mode: 'off'
+    title:
+      mode: 'warning'
+      requirements: >-
+        Lowercase conventional commit with emoji, e.g. "fix: 🚑 …" or "feat(ui): ✨ …"; scope only ui or be; under 70
+        characters. The title becomes the squash commit message.
+    description:
+      mode: 'warning'
+    issue_assessment:
+      mode: 'warning'
+
+  path_filters:
+    - '!pnpm-lock.yaml'
+    - '!src-tauri/Cargo.lock'
+    - '!**/*.wasm'
+    - '!**/*.woff2'
+    - '!src-tauri/icons/**'
+    - '!src-tauri/gen/**'
+    - '!.docs/origin-terax/**'
+    - '!dist/**'
+
+  path_instructions:
+    - path: '**'
+      instructions: >-
+        Review against the rules in .docs/development/change-control.md. Focus on: (1) regressions and blast radius
+        beyond the PR's stated issue; (2) one issue, one concern: flag refactors mixed with behaviour changes;
+        (3) cross-platform behaviour, Windows first (paths, shells, quoting); (4) security: nothing (scripts, startup
+        commands, hooks, permissions) is activated silently, and lut never shares data, hooks or identifiers with an
+        installed Terax; (5) performance and new dependencies, which need a reason. When unsure whether something is a
+        real problem, say so instead of guessing.
+    - path: 'src-tauri/**/*.rs'
+      instructions: >-
+        The Rust backend owns all OS access. Check every cfg arm the change affects (windows, macos, unix). Keep tauri
+        commands thin with logic in pure, tested functions. The read policy (fs/read_policy.rs) must never be bypassed.
+        Do not accept changes to the PTY, the control protocol or the Ghostty WASM bridge made only for aesthetics.
+    - path: 'src/**/*.{ts,tsx}'
+      instructions: >-
+        Watch for wasted re-renders, extra IPC round trips and eager work that should be lazy. Tabs stay mounted while
+        hidden, so logic must not assume unmount on switch. Paths from OSC 7, the explorer or the OS must accept both
+        separators.
+    - path: '.github/workflows/**'
+      instructions: >-
+        The CI is the merge gate of master: flag anything that could make a required check stop reporting or pass
+        without running.
+    - path: '**/*.md'
+      instructions: >-
+        Only flag substance (wrong facts, broken links, contradictions with the code or the plan), not style.
+
+  tools:
+    gitleaks:
+      enabled: true
+    actionlint:
+      enabled: true
+    shellcheck:
+      enabled: true
+    biome:
+      enabled: false
+    clippy:
+      enabled: false
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  web_search:
+    enabled: true
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - '.docs/development/change-control.md'
+  learnings:
+    scope: auto
+  issues:
+    scope: auto
+  pull_requests:
+    scope: auto
