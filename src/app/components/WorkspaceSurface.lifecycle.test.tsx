@@ -1,13 +1,17 @@
 // @vitest-environment happy-dom
-import { act, createElement, type ReactNode } from 'react';
+import type { Tab } from '@/modules/tabs';
+import { type PaneLifecycleEvent, setPaneLifecycleListener } from '@/modules/terminal/lib/paneLifecycle';
+import { type PaneNode, removeLeaf, splitLeaf } from '@/modules/terminal/lib/panes';
+import { act, createElement, createRef, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import type { PanelImperativeHandle } from 'react-resizable-panels';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type PaneLifecycleEvent, setPaneLifecycleListener } from './lib/paneLifecycle';
-import { type PaneNode, removeLeaf, splitLeaf } from './lib/panes';
-import { TerminalStack, type TerminalStackEntry } from './TerminalStack';
+import { AppShell } from '../AppShell';
+import { WorkspaceSurface } from './WorkspaceSurface';
 
-// The session registry outlives React: a pane that mounts reuses the leaf's session, and only an explicit dispose
-// closes its PTY. The fake keeps that contract so the tests can count PTY opens and closes per leaf.
+// The PTY bridge is mocked at the session hook: the real hook needs the Ghostty WASM renderer. The session registry
+// outlives React: a pane that mounts reuses the leaf's session, and only an explicit dispose closes its PTY. The fake
+// keeps that contract so the tests can count PTY opens (pty_open) and closes (pty_close) per leaf.
 const fake = vi.hoisted(() => ({
   opened: [] as number[],
   closed: [] as number[],
@@ -49,14 +53,26 @@ vi.mock('@/modules/terminal/ghostty/useGhosttyTerminalSession', async () => {
   };
 });
 vi.mock('@/modules/theme', () => ({ useTheme: () => ({ resolvedMode: 'dark', activeTheme: null }) }));
+// The other surfaces render nothing without their own tabs; stubbing them keeps their code out of the test.
+vi.mock('@/modules/editor', () => ({ EditorStack: () => null, GitDiffStack: () => null }));
+vi.mock('@/modules/git-history', () => ({ GitHistoryStack: () => null }));
+vi.mock('@/modules/markdown', () => ({ MarkdownStack: () => null }));
+vi.mock('@/modules/preview', () => ({ PreviewStack: () => null }));
 
 /** PTY output reaches every session that is still mounted, visible or not. */
 function emitOutput() {
   for (const leafId of fake.mounted) fake.output.set(leafId, (fake.output.get(leafId) ?? 0) + 1);
 }
 
-function term(id: number, paneTree: PaneNode = { kind: 'leaf', id: id * 10 }): TerminalStackEntry {
-  return { id, paneTree, activeLeafId: paneTree.kind === 'leaf' ? paneTree.id : id * 10 };
+function term(id: number, paneTree: PaneNode = { kind: 'leaf', id: id * 10 }): Tab {
+  return {
+    id,
+    kind: 'terminal',
+    spaceId: 'default',
+    title: 'shell',
+    paneTree,
+    activeLeafId: paneTree.kind === 'leaf' ? paneTree.id : id * 10,
+  };
 }
 
 const noop = () => {};
@@ -68,15 +84,24 @@ function render(node: ReactNode) {
   act(() => root.render(node));
 }
 
-function stack(terminals: TerminalStackEntry[], activeId: number) {
-  return createElement(TerminalStack, {
-    terminals,
+function surface(tabs: Tab[], activeId: number) {
+  return createElement(WorkspaceSurface, {
+    tabs,
     activeId,
-    registerHandle: noop,
+    activeTab: tabs.find((tab) => tab.id === activeId),
+    registerTerminalHandle: noop,
     onSearchReady: noop,
     onCwd: noop,
     onExit: noop,
     onFocusLeaf: noop,
+    registerEditorHandle: noop,
+    onEditorDirtyChange: noop,
+    onEditorCloseTab: noop,
+    registerPreviewHandle: noop,
+    onPreviewUrlChange: noop,
+    onOpenCommitFile: noop,
+    onGitHistorySearchHandle: noop,
+    onSetMarkdownView: noop,
   });
 }
 
@@ -102,13 +127,13 @@ afterEach(() => {
   setPaneLifecycleListener(null);
 });
 
-describe('TerminalStack keeps terminals mounted', () => {
+describe('WorkspaceSurface keeps terminals mounted', () => {
   it('switching tabs keeps every pane mounted and opens no new PTY', () => {
     const tabs = [term(1), term(2), term(3)];
-    render(stack(tabs, 1));
-    render(stack(tabs, 2));
-    render(stack(tabs, 3));
-    render(stack(tabs, 1));
+    render(surface(tabs, 1));
+    render(surface(tabs, 2));
+    render(surface(tabs, 3));
+    render(surface(tabs, 1));
     for (const leaf of [10, 20, 30]) {
       expect(mounts(leaf)).toBe(1);
       expect(unmounts(leaf)).toBe(0);
@@ -119,9 +144,9 @@ describe('TerminalStack keeps terminals mounted', () => {
 
   it('splitting a pane keeps the other panes mounted and the split pane keeps its PTY', () => {
     const other = term(2);
-    render(stack([term(1), other], 1));
+    render(surface([term(1), other], 1));
     const split = splitLeaf({ kind: 'leaf', id: 10 }, 10, 100, 11, 'row');
-    render(stack([term(1, split), other], 1));
+    render(surface([term(1, split), other], 1));
     expect(mounts(20)).toBe(1);
     expect(unmounts(20)).toBe(0);
     expect(fake.opened).toEqual([10, 20, 11]);
@@ -139,10 +164,10 @@ describe('TerminalStack keeps terminals mounted', () => {
         { kind: 'leaf', id: 12 },
       ],
     };
-    render(stack([term(1, three), term(2)], 1));
+    render(surface([term(1, three), term(2)], 1));
     const remaining = removeLeaf(three, 12);
     expect(remaining).not.toBeNull();
-    render(stack([term(1, remaining as PaneNode), term(2)], 1));
+    render(surface([term(1, remaining as PaneNode), term(2)], 1));
     for (const leaf of [10, 11, 20]) {
       expect(mounts(leaf)).toBe(1);
       expect(unmounts(leaf)).toBe(0);
@@ -153,28 +178,58 @@ describe('TerminalStack keeps terminals mounted', () => {
 
   it('hidden tabs stay mounted and keep receiving output', () => {
     const tabs = [term(1), term(2)];
-    render(stack(tabs, 1));
-    render(stack(tabs, 2));
+    render(surface(tabs, 1));
+    render(surface(tabs, 2));
     emitOutput();
     emitOutput();
     expect(fake.output.get(10)).toBe(2);
     const hidden = host.querySelector<HTMLElement>('[data-terminal-tab="1"]');
     expect(hidden?.style.visibility).toBe('hidden');
-    render(stack(tabs, 1));
+    render(surface(tabs, 1));
     expect(mounts(10)).toBe(1);
     expect(unmounts(10)).toBe(0);
   });
 
-  it('detects a stack that is re-parented or rendered conditionally', () => {
+  it('detects a surface that is re-parented or rendered conditionally', () => {
     const tabs = [term(1)];
     const wrapped = (inBox: boolean) =>
-      inBox ? createElement('section', null, stack(tabs, 1)) : createElement('div', null, stack(tabs, 1));
+      inBox ? createElement('section', null, surface(tabs, 1)) : createElement('div', null, surface(tabs, 1));
     render(wrapped(false));
     render(wrapped(true));
     expect(unmounts(10)).toBe(1);
     expect(mounts(10)).toBe(2);
     render(null);
-    render(stack(tabs, 1));
+    render(surface(tabs, 1));
     expect(mounts(10)).toBe(3);
+  });
+
+  it('switching the tab orientation keeps every pane mounted and opens or closes no PTY (E07-05)', () => {
+    const tabs = [term(1), term(2, splitLeaf({ kind: 'leaf', id: 20 }, 20, 200, 21, 'col'))];
+    const strip = createElement('div', { 'data-tabs': '' });
+    const shell = (vertical: boolean) =>
+      createElement(AppShell, {
+        header: createElement('header', null, vertical ? null : strip),
+        tabsColumn: vertical ? createElement('aside', null, strip) : null,
+        tabsColumnRef: createRef<PanelImperativeHandle>(),
+        tabsColumnInitialWidth: 200,
+        onTabsColumnLayout: noop,
+        statusBar: null,
+        sidebar: null,
+        sidebarRef: createRef<PanelImperativeHandle>(),
+        sidebarInitialWidth: 0,
+        onSidebarLayout: noop,
+        onSidebarCollapsedChange: noop,
+        workspace: surface(tabs, 1),
+      });
+    render(shell(false));
+    render(shell(true));
+    render(shell(false));
+    render(shell(true));
+    for (const leaf of [10, 20, 21]) {
+      expect(mounts(leaf)).toBe(1);
+      expect(unmounts(leaf)).toBe(0);
+    }
+    expect(fake.opened).toEqual([10, 20, 21]);
+    expect(fake.closed).toEqual([]);
   });
 });
