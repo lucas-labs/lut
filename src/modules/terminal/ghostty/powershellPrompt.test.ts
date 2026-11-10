@@ -30,7 +30,8 @@ $text = prompt
   });
   expect(run.stderr).toBe('');
   expect(run.status).toBe(0);
-  return run.stdout;
+  // On Linux, pwsh toggles the cursor-keys mode (ESC[?1h / ESC[?1l) around its writes; it is not part of the prompt.
+  return run.stdout.replace(/\x1b\[\?\d+[hl]/g, '');
 }
 
 /** Drops OSC 7 (the cwd report), which depends on the machine and directory. */
