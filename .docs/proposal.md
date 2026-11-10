@@ -196,7 +196,7 @@ Ejemplos de perfiles: PowerShell 7 normal; PowerShell sin perfil; Ubuntu WSL; CM
 | AGT-005 | P0        | Estado visible: iniciando, trabajando, atención, finalizado/error/salido                  |
 | AGT-006 | P0        | Notificar finalización y requerimientos de atención con acción de enfoque                 |
 | AGT-007 | P1        | Gestionar instalación de hooks con previsualización y desinstalación selectiva            |
-| AGT-008 | P1        | Vista opcional de actividad: herramientas, subagentes, errores y eventos                  |
+| AGT-008 | P1        | No planificada (decisión 27): las CLIs de agentes ya muestran su actividad                |
 | AGT-009 | P1        | Contexto de sesión y modelo/consumo donde exista fuente documentada de datos              |
 | AGT-010 | P1        | Configurar tipos de notificación, sonidos y privacidad                                    |
 | AGT-011 | P2        | Aprobar/rechazar permisos desde UI, sólo con protocolo seguro y fallback                  |
@@ -876,7 +876,7 @@ Las capacidades oficiales de Codex cambian por versión. Confirmar cuáles hooks
 - Tab muestra icono de CLI conocido y badge discreto de estado.
 - Si `needs-approval`: cambiar badge, destacar tab y permitir atajo “Ir al próximo agente que requiere atención”.
 - Si `response-done`: badge y notificación configurable; no sustituir output del CLI.
-- Vista `Agent Activity` **colapsada por defecto**, accesible mediante atajo o menú de tab.
+- Vista `Agent Activity` **colapsada por defecto**, accesible mediante atajo o menú de tab. **No planificada** (decisión 27).
 - Panel de proyecto opcional con todas las sesiones activas, estado y conteo de subagentes.
 - Historial corto de eventos locales, con política explícita de retención.
 - Notificaciones nativas sólo en casos relevantes; evitar spam por cada herramienta o token.
@@ -1094,7 +1094,7 @@ El rebranding visual (títulos, About, iconos, textos) no es parte de la Fase 0.
 2. Instalar hooks mediante preview/diff y consentimiento; soportar remover sólo hooks propios.
 3. Estado por tab/pane y notificaciones nativas.
 4. Shortcut de foco al agente que necesita atención.
-5. Timeline opcional y subagentes cuando la CLI/fuente ofrece datos.
+5. Timeline opcional y subagentes cuando la CLI/fuente ofrece datos. **No planificado** (decisión 27).
 6. Gestión de frecuencia, retención y privacidad.
 7. Integración opcional de métricas por statusLine sin pisar config del usuario.
 8. Tests de eventos fuera de orden, errores, cierre, timeout y fallback sin hooks.

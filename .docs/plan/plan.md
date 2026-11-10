@@ -4847,7 +4847,7 @@ others are kept for persistence only, and the space-switch effect in `App.tsx` f
 
 ```yaml
 id: E16-13
-depends-on: [E14-10, E16-04]
+depends-on: [E14-10, E16-04, E16-07]
 refs: [PRO-006, .docs/plan/analysis/app-shell.md, .docs/plan/analysis/backend-core.md]
 covers: [PRO-006]
 type: task
@@ -4864,11 +4864,17 @@ has one, so they stay put while panes move between folders.
 **Acceptance criteria:**
 
 - [ ] Without a pinned folder, Files and Git follow the focused pane's cwd and filesystem; focusing a pane of another
-      profile or folder switches them, with no session torn down.
+      profile or folder switches them, with no session torn down. While a tab without a terminal is active (editor,
+      preview, graph), they keep the last focused terminal pane of the Space.
 - [ ] A Space can pin a folder (and unpin it) from its menu; while pinned, the tools use it whatever pane has focus. The
-      pinned folder is saved with the Space (`root`); the stored `env` is migrated away.
+      pin is its own field (`pinnedFolder`): the existing `root` (launch directory or home for the default Space) stays
+      the Space's base directory and is never migrated into a pin.
+- [ ] The stored `env` is migrated away without losing WSL: in a WSL Space, every pane saved without a profile gets the
+      detected profile of that distro; panes with an explicit profile keep it.
+- [ ] ADR-009 records the change to the Space model and to where the tools take their location from.
 - [ ] `WorkspaceEnvSelector`, the window-wide env store and the interactive local⇄WSL switch are removed.
-- [ ] Tests: tool location for a focused pwsh pane, a focused WSL pane and a pinned folder; migration of a stored env.
+- [ ] Tests: tool location for a focused pwsh pane, a focused WSL pane, an active editor tab and a pinned folder;
+      migration of a local and a WSL Space (profiles assigned, `root` kept, no pin).
 
 **Verification:** `pnpm test`; manual on Windows with WSL: a Space with a pwsh pane and an Ubuntu pane, focus each and
 check Files and Git; pin a folder and focus both again.
@@ -5164,7 +5170,8 @@ after E17-19); panes without it (cmd, nu, profiles without integration) keep no 
 
 - [ ] The pane records the command text at command start and clears it at command end (133;D); the saved state holds it only while it runs, with a `schemaVersion` bump and migration.
 - [ ] Relaunch sends the captured line to the same profile's shell as typed input after the E17-11 ready event; it is never rebuilt by concatenating parts (14.1:2).
-- [ ] A user-triggered "Relaunch" action runs the pane's command once (P0 manual).
+- [ ] A user-triggered "Relaunch" action runs the pane's command once (P0 manual); it is offered only for panes with
+      a saved command, so only while command saving is on (decision 28).
 
 **Verification:** `pnpm test` (capture and clear on 133;C/D, schema migration test); manual: run a command containing quotes in pwsh and bash, restart, relaunch it.
 
@@ -5330,7 +5337,7 @@ size: S
 
 ```yaml
 id: E18-02
-depends-on: [E18-01, E11-05, E16-04, E17-09]
+depends-on: [E18-01, E11-05, E16-04, E17-09, E16-13]
 refs: [10.2:6, PRJ-017, .docs/plan/analysis/state-settings.md]
 covers: [app-shell/sidebar-ui, state-settings/spaces-ui, 10.2:6]
 type: task
@@ -5343,7 +5350,8 @@ size: M
 **Acceptance criteria:**
 
 - [ ] The navigator lists projects, marks open and active ones, and opens/focuses/closes projects via the E17 store actions.
-- [ ] Create, rename, reorder and remove go through the projects store.
+- [ ] Create, rename, reorder and remove go through the projects store; pinning and unpinning the Space's folder
+      (E16-13) stays available from the navigator.
 - [ ] `SidebarRail.tsx`, `SpaceSwitcher.tsx`, `SpaceAvatar.tsx` and `src/modules/projects/components/` (the former `spaces/components/`, renamed by E16-02) are removed or replaced.
 - [ ] Matches the E11-05 design.
 

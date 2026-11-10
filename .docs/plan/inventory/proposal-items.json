@@ -389,7 +389,7 @@
       "id": "AGT-008",
       "section": "3",
       "kind": "requirement",
-      "text": "P1 Vista opcional de actividad: herramientas, subagentes, errores y eventos"
+      "text": "P1 No planificada (decisión 27): las CLIs de agentes ya muestran su actividad"
     },
     {
       "id": "AGT-009",
@@ -929,7 +929,7 @@
       "id": "9.6:4",
       "section": "9.6",
       "kind": "list-item",
-      "text": "Vista `Agent Activity` colapsada por defecto, accesible mediante atajo o menú de tab."
+      "text": "Vista `Agent Activity` colapsada por defecto, accesible mediante atajo o menú de tab. No planificada (decisión 27)."
     },
     {
       "id": "9.6:5",
@@ -1475,7 +1475,7 @@
       "id": "F5:5",
       "section": "F5",
       "kind": "phase-task",
-      "text": "Timeline opcional y subagentes cuando la CLI/fuente ofrece datos."
+      "text": "Timeline opcional y subagentes cuando la CLI/fuente ofrece datos. No planificado (decisión 27)."
     },
     {
       "id": "F5:6",
