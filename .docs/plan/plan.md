@@ -3527,7 +3527,8 @@ size-exception: Binary asset replacement (full Tauri icon set) plus deletion of 
 
 **Acceptance criteria:**
 
-- [ ] `src-tauri/icons/` regenerated from the E11-01 app icon (`pnpm tauri icon <source>`); android/ios sets deleted.
+- [ ] `src-tauri/icons/` built from the E11-01 artwork by `pnpm icons`: the per-size exports (each adjusted for its
+      size) are used as they are, `pnpm tauri icon` renders only the sizes with no export; android/ios sets deleted.
 - [ ] `terax-icon.png` removed and `public/logo.png` replaced; `rg -n "terax-icon" .` returns nothing.
 
 **Verification:** `pnpm tauri build` succeeds; the installed app shows the lut icon in taskbar, window and installer.

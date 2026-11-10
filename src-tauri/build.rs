@@ -1,5 +1,8 @@
 fn main() {
     configure_sidecar();
+    // tauri-build embeds the window and executable icons from icons/ but only reruns when the config
+    // changes, so a replaced icon would keep the old one in the binary until a clean build.
+    println!("cargo:rerun-if-changed=icons");
     tauri_build::build()
 }
 
