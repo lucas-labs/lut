@@ -159,6 +159,8 @@ export default function App() {
   const terminalRefs = useRef<Map<number, TerminalPaneHandle>>(new Map());
   const editorRefs = useRef<Map<number, EditorPaneHandle>>(new Map());
   const previewRefs = useRef<Map<number, PreviewPaneHandle>>(new Map());
+  // A new empty preview tab wants its address bar focused; the preview code may still be loading (E07-04).
+  const pendingPreviewFocusRef = useRef<number | null>(null);
   const [activeEditorHandle, setActiveEditorHandle] = useState<EditorPaneHandle | null>(null);
   const [gitHistoryHandle, setGitHistoryHandle] = useState<GitHistorySearchHandle | null>(null);
   const { zoomIn, zoomOut, zoomReset } = useZoom();
@@ -633,16 +635,27 @@ export default function App() {
     openCommitHistoryTab,
   });
 
+  /** Focuses a pending preview's address bar once its pane exists, if its tab is still active. */
+  const focusPendingPreview = useCallback((id: number) => {
+    if (pendingPreviewFocusRef.current !== id) return;
+    const handle = previewRefs.current.get(id);
+    if (!handle) return; // still loading: registerPreviewHandle calls this again
+    pendingPreviewFocusRef.current = null;
+    if (activeIdRef.current === id) handle.focusAddressBar();
+  }, []);
+
   const openPreviewTab = useCallback(
     (url: string) => {
       const id = newPreviewTab(url);
-      // Focus the address bar if the URL is empty so the user can type.
+      // Focus the address bar if the URL is empty so the user can type. If the pane is not registered yet, the
+      // request waits for registerPreviewHandle.
       if (!url) {
-        setTimeout(() => previewRefs.current.get(id)?.focusAddressBar(), 0);
+        pendingPreviewFocusRef.current = id;
+        setTimeout(() => focusPendingPreview(id), 0);
       }
       return id;
     },
-    [newPreviewTab],
+    [newPreviewTab, focusPendingPreview],
   );
 
   const splitActivePaneInActiveTab = useCallback(
@@ -838,10 +851,15 @@ export default function App() {
     [activeId],
   );
 
-  const registerPreviewHandle = useCallback((id: number, h: PreviewPaneHandle | null) => {
-    if (h) previewRefs.current.set(id, h);
-    else previewRefs.current.delete(id);
-  }, []);
+  const registerPreviewHandle = useCallback(
+    (id: number, h: PreviewPaneHandle | null) => {
+      if (h) {
+        previewRefs.current.set(id, h);
+        if (pendingPreviewFocusRef.current === id) setTimeout(() => focusPendingPreview(id), 0);
+      } else previewRefs.current.delete(id);
+    },
+    [focusPendingPreview],
+  );
 
   const handlePreviewUrl = useCallback((id: number, url: string) => updateTab(id, { url }), [updateTab]);
 
