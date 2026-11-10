@@ -43,9 +43,9 @@ The installer's `copyright` and `publisher` fields are lucode (E04-01).
 `terminal-symbols.txt` reproduces the notices those sets require (the Apache-2.0 text for Material Design Icons, the
 CC BY 4.0 attributions for Codicons and Font Awesome Free). `src/lib/terminalSymbols.test.ts` checks them.
 
-Assets imported with Terax that carry no license of their own (`public/logo.png`, `src-tauri/icons/`,
-`terax-icon.png`) are treated as part of Terax's Apache-2.0 work. The icons and logo are replaced by lut's own in
-E12-02. Terax's notification sound had no recorded source, so it was replaced by the CC0 one above.
+The app icons and logo (`src-tauri/icons/`, `public/logo.png`) are lut's own artwork, built by `pnpm icons` from
+`src-tauri/icons/source/`; they replaced Terax's in E12-02. Terax's notification sound had no recorded source, so it
+was replaced by the CC0 one above.
 
 ## How the license files ship
 
