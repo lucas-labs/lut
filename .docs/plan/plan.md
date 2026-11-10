@@ -3805,7 +3805,7 @@ size: S
 id: E13-05
 depends-on: []
 refs: [F6:4, UX-004, .docs/plan/analysis/state-settings.md]
-covers: [state-settings/theme-files, F6:4]
+covers: [state-settings/theme-files, F6:4, UX-004]
 type: task
 scope: ui
 size: S
@@ -3869,7 +3869,7 @@ size: M
 id: E13-08
 depends-on: [E13-07, E13-03, E13-04, E13-05, E13-06]
 refs: [UX-004, UX-005, 16:6, identity:2]
-covers: [state-settings/settings-sections-terminal]
+covers: [state-settings/settings-sections-terminal, UX-004]
 type: task
 scope: ui
 size: M

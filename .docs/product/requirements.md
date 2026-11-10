@@ -76,7 +76,7 @@ columns are out of date.
 | UX-001 | P0       | Terminal ocupa el área central y predominante                                         | E12-08                                                  |                |       |
 | UX-002 | P0       | Navegación de tabs vertical, horizontal, o auto si se agrega más adelante             | E11-02, E12-05                                          |                |       |
 | UX-003 | P0       | Sidebar de proyectos opcional, colapsable y con ancho persistido                      | E11-05, E18-01                                          |                |       |
-| UX-004 | P0       | Temas claros/oscuros y temas personalizados mediante tokens                           | E11-03                                                  |                |       |
+| UX-004 | P0       | Temas claros/oscuros y temas personalizados mediante tokens                           | E11-03, E13-05, E13-08                                  |                |       |
 | UX-005 | P0       | Fuentes configurables y soporte de Nerd Fonts/powerline cuando el renderer lo permita | E11-03, E13-04                                          |                |       |
 | UX-006 | P1       | UI minimalista, densidad compacta/normal, iconografía coherente                       | E12-09, E22-07                                          |                |       |
 | UX-007 | P1       | Menús contextuales para tabs/panes/proyectos                                          | E11-07, E22-04, E22-05                                  |                |       |
