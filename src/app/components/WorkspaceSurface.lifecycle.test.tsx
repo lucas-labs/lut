@@ -215,6 +215,20 @@ describe('WorkspaceSurface keeps terminals mounted', () => {
     expect(fake.closed).toEqual([]);
   });
 
+  it('reordering tabs keeps every pane mounted and opens or closes no PTY (E07-09)', () => {
+    const [a, b, c] = [term(1), term(2), term(3)];
+    render(surface([a, b, c], 2));
+    render(surface([c, a, b], 2));
+    render(surface([b, c, a], 3));
+    render(surface([a, b, c], 1));
+    for (const leaf of [10, 20, 30]) {
+      expect(mounts(leaf)).toBe(1);
+      expect(unmounts(leaf)).toBe(0);
+    }
+    expect(fake.opened).toEqual([10, 20, 30]);
+    expect(fake.closed).toEqual([]);
+  });
+
   it('splitting a pane keeps the other panes mounted and the split pane keeps its PTY', () => {
     const other = term(2);
     render(surface([term(1), other], 1));
