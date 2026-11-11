@@ -85,7 +85,9 @@ pub async fn font_face_data(id: String) -> Result<Response, String> {
         if !is_known_file(system_fonts(), &id) {
             return Err("not an installed font file".to_owned());
         }
-        std::fs::read(&id).map(Response::new).map_err(|error| error.to_string())
+        std::fs::read(&id)
+            .map(Response::new)
+            .map_err(|error| error.to_string())
     })
     .await
     .map_err(|error| error.to_string())?
@@ -119,7 +121,10 @@ mod tests {
     fn reports_the_style_it_found_for_a_missing_italic() {
         let (_dir, database) = database();
         let face = find_face(&database, "Source Code Pro ExtraLight", 700, true).unwrap();
-        assert!(!face.italic, "the upright face stands in; the caller slants it");
+        assert!(
+            !face.italic,
+            "the upright face stands in; the caller slants it"
+        );
     }
 
     #[test]
