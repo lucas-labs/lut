@@ -1,7 +1,9 @@
 import type { SearchTarget } from '@/modules/header';
+import { neighborTerminalTab } from '@/modules/navigation';
 import { MAX_PANES_PER_TAB, type Tab } from '@/modules/tabs';
 import { leafIds } from '@/modules/terminal';
 import {
+  ArrowMoveUpRightIcon,
   Cancel01Icon,
   DashboardSquare01Icon,
   FileEditIcon,
@@ -12,6 +14,8 @@ import {
   LayoutLeftIcon,
   LayoutTwoColumnIcon,
   LayoutTwoRowIcon,
+  MoveLeftIcon,
+  MoveRightIcon,
   PaintBoardIcon,
   Search01Icon,
   Settings01Icon,
@@ -47,6 +51,9 @@ export type CommandPaletteActionContext = {
   closeActiveTabOrPane: () => void;
   splitPaneRight: () => void;
   splitPaneDown: () => void;
+  movePaneToNewTab: () => void;
+  movePaneToNextTab: () => void;
+  movePaneToPrevTab: () => void;
   focusSearch: () => void;
   focusExplorerSearch: () => void;
   toggleSidebar: () => void;
@@ -76,6 +83,17 @@ export function createCommandItems(ctx: CommandPaletteActionContext): PaletteIte
       ? 'Pane limit'
       : undefined;
   const closeDisabled = onlyOneTab && activePaneCount < 2 ? 'Last tab' : undefined;
+  const moveToNewDisabled = !activeTerminalTab
+    ? 'No terminal tab'
+    : activePaneCount < 2
+      ? 'Only pane'
+      : undefined;
+  const moveToNeighborDisabled = (delta: 1 | -1) => {
+    if (!activeTerminalTab) return 'No terminal tab';
+    const neighbor = neighborTerminalTab(ctx.tabs, activeTerminalTab.id, delta);
+    if (neighbor?.kind !== 'terminal') return 'No terminal tab there';
+    return leafIds(neighbor.paneTree).length >= MAX_PANES_PER_TAB ? 'Pane limit' : undefined;
+  };
 
   return [
     {
@@ -194,6 +212,36 @@ export function createCommandItems(ctx: CommandPaletteActionContext): PaletteIte
       shortcutId: 'pane.splitDown',
       disabledReason: splitDisabled,
       run: ctx.splitPaneDown,
+    },
+    {
+      id: 'pane.moveToNewTab',
+      title: 'Move pane to a new tab',
+      group: 'Panes',
+      keywords: ['terminal', 'pane', 'move', 'detach', 'tab'],
+      icon: ArrowMoveUpRightIcon,
+      shortcutId: 'pane.moveToNewTab',
+      disabledReason: moveToNewDisabled,
+      run: ctx.movePaneToNewTab,
+    },
+    {
+      id: 'pane.moveToNextTab',
+      title: 'Move pane to the next tab',
+      group: 'Panes',
+      keywords: ['terminal', 'pane', 'move', 'tab', 'next'],
+      icon: MoveRightIcon,
+      shortcutId: 'pane.moveToNextTab',
+      disabledReason: moveToNeighborDisabled(1),
+      run: ctx.movePaneToNextTab,
+    },
+    {
+      id: 'pane.moveToPrevTab',
+      title: 'Move pane to the previous tab',
+      group: 'Panes',
+      keywords: ['terminal', 'pane', 'move', 'tab', 'previous'],
+      icon: MoveLeftIcon,
+      shortcutId: 'pane.moveToPrevTab',
+      disabledReason: moveToNeighborDisabled(-1),
+      run: ctx.movePaneToPrevTab,
     },
     {
       id: 'git.graph',

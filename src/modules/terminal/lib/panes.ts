@@ -108,6 +108,8 @@ export function setLeafCwd(n: PaneNode, id: PaneId, cwd: string): PaneNode {
   return changed ? { ...n, children: next } : n;
 }
 
+export type LeafNode = Extract<PaneNode, { kind: 'leaf' }>;
+
 /**
  * Insert a new leaf next to `targetId` in direction `dir`.
  *
@@ -123,11 +125,21 @@ export function splitLeaf(
   dir: SplitDir,
   newCwd?: string,
 ): PaneNode {
+  return insertLeaf(tree, targetId, newSplitId, { kind: 'leaf', id: newLeafId, cwd: newCwd }, dir);
+}
+
+/** `splitLeaf` with an existing leaf, such as one detached from another tab. */
+export function insertLeaf(
+  tree: PaneNode,
+  targetId: PaneId,
+  newSplitId: PaneId,
+  newLeaf: LeafNode,
+  dir: SplitDir,
+): PaneNode {
   if (tree.kind === 'split' && tree.dir === dir) {
     const idx = tree.children.findIndex((c) => c.kind === 'leaf' && c.id === targetId);
     if (idx >= 0) {
       // The new pane takes half of the target's share; the other panes keep theirs.
-      const newLeaf: PaneNode = { kind: 'leaf', id: newLeafId, cwd: newCwd };
       const half = tree.ratios[idx] / 2;
       return {
         ...tree,
@@ -138,12 +150,26 @@ export function splitLeaf(
   }
   if (isLeaf(tree)) {
     if (tree.id !== targetId) return tree;
-    return splitNode(newSplitId, dir, [tree, { kind: 'leaf', id: newLeafId, cwd: newCwd }]);
+    return splitNode(newSplitId, dir, [tree, newLeaf]);
   }
   return {
     ...tree,
-    children: tree.children.map((c) => splitLeaf(c, targetId, newSplitId, newLeafId, dir, newCwd)),
+    children: tree.children.map((c) => insertLeaf(c, targetId, newSplitId, newLeaf, dir)),
   };
+}
+
+/**
+ * Takes a leaf out of its tree, for moving it elsewhere: the leaf (without its layout slot,
+ * which belongs to this tree) and what remains, `null` when it was the only leaf.
+ */
+export function detachLeaf(
+  tree: PaneNode,
+  leafId: PaneId,
+): { leaf: LeafNode; rest: PaneNode | null } | null {
+  const leaf = findLeaf(tree, leafId);
+  if (!leaf) return null;
+  const { slotId: _slot, ...moved } = leaf;
+  return { leaf: moved, rest: removeLeaf(tree, leafId) };
 }
 
 /**

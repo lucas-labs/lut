@@ -7,6 +7,21 @@ export function pickTabBySpaceIndex(tabs: Tab[], idx: number, spaceId: string): 
   return pool[idx];
 }
 
+/** The closest terminal tab after (`1`) or before (`-1`) a tab in its space's strip, if any. */
+export function neighborTerminalTab(tabs: Tab[], tabId: number, delta: 1 | -1): Tab | undefined {
+  const tab = tabs.find((t) => t.id === tabId);
+  if (!tab) return undefined;
+  const strip = tabs.filter((t) => t.spaceId === tab.spaceId);
+  for (
+    let i = strip.findIndex((t) => t.id === tabId) + delta;
+    i >= 0 && i < strip.length;
+    i += delta
+  ) {
+    if (strip[i].kind === 'terminal') return strip[i];
+  }
+  return undefined;
+}
+
 // Gap index is relative to the space's own strip, including the dragged tab.
 export function reorderTabsByGap(tabs: Tab[], fromId: number, toGapIndex: number): Tab[] {
   const moved = tabs.find((t) => t.id === fromId);

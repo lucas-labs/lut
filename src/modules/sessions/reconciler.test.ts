@@ -86,3 +86,14 @@ describe('sessions that stay', () => {
     expect(dispose).not.toHaveBeenCalled();
   });
 });
+
+describe('a moved pane', () => {
+  it('keeps its session when it moves to a new tab or into another tab', () => {
+    const leaf = store().splitActivePane(1, 'row');
+    if (leaf === null) throw new Error('Expected split leaf');
+    const landed = store().movePane(leaf, 'new');
+    if (landed === null) throw new Error('Expected a move');
+    store().movePane(leaf, 1);
+    expect(dispose).not.toHaveBeenCalled();
+  });
+});

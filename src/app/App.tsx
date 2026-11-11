@@ -25,7 +25,12 @@ import { FileExplorer, type FileExplorerHandle } from '@/modules/explorer';
 import type { GitHistorySearchHandle } from '@/modules/git-history';
 import { Header, type SearchInlineHandle, type SearchTarget } from '@/modules/header';
 import { setLspNavigator } from '@/modules/lsp';
-import { DEFAULT_SPACE_ID, type TabNavigatorActions, useNavigatorItems } from '@/modules/navigation';
+import {
+  DEFAULT_SPACE_ID,
+  neighborTerminalTab,
+  type TabNavigatorActions,
+  useNavigatorItems,
+} from '@/modules/navigation';
 import type { PreviewPaneHandle } from '@/modules/preview';
 import { openSettingsWindow } from '@/modules/settings/openSettingsWindow';
 import { usePreferencesStore } from '@/modules/settings/preferences';
@@ -131,6 +136,7 @@ export default function App() {
     swapActivePaneInDirection,
     splitActivePane,
     setSplitRatios,
+    movePane,
     closeActivePane,
     closePaneByLeaf,
   } = useTabs(getLaunchDir() ? { cwd: getLaunchDir() } : undefined);
@@ -628,6 +634,21 @@ export default function App() {
     [activeId, splitActivePane],
   );
 
+  // Moves the active tab's focused pane, session and all (E08-07).
+  const moveActivePane = useCallback(
+    (target: 'new' | 1 | -1) => {
+      const tab = tabsRef.current.find((t) => t.id === activeId);
+      if (tab?.kind !== 'terminal') return;
+      if (target === 'new') {
+        movePane(tab.activeLeafId, 'new');
+        return;
+      }
+      const neighbor = neighborTerminalTab(tabsRef.current, tab.id, target);
+      if (neighbor) movePane(tab.activeLeafId, neighbor.id);
+    },
+    [activeId, movePane],
+  );
+
   const livePaneBounds = useCallback((tabId: number): PaneBounds[] => {
     const tab = document.querySelector<HTMLElement>(`[data-terminal-tab="${tabId}"]`);
     if (!tab) return [];
@@ -716,6 +737,9 @@ export default function App() {
       'pane.swapRight': () => swapActivePane('right'),
       'pane.swapUp': () => swapActivePane('up'),
       'pane.swapDown': () => swapActivePane('down'),
+      'pane.moveToNewTab': () => moveActivePane('new'),
+      'pane.moveToNextTab': () => moveActivePane(1),
+      'pane.moveToPrevTab': () => moveActivePane(-1),
       'pane.source': toggleSourceControl,
       'terminal.clear': () => {
         clearFocusedTerminal();
@@ -748,6 +772,7 @@ export default function App() {
     }),
     [
       activeId,
+      moveActivePane,
       openCommandPalette,
       stepSwitcher,
       cycleSpace,
@@ -1003,6 +1028,9 @@ export default function App() {
             closeActiveTabOrPane: handleCloseTabOrPane,
             splitPaneRight: () => splitActivePaneInActiveTab('row'),
             splitPaneDown: () => splitActivePaneInActiveTab('col'),
+            movePaneToNewTab: () => moveActivePane('new'),
+            movePaneToNextTab: () => moveActivePane(1),
+            movePaneToPrevTab: () => moveActivePane(-1),
             focusSearch: () => searchInlineRef.current?.focus(),
             focusExplorerSearch: () => explorerRef.current?.focusSearch(),
             toggleSidebar,
@@ -1020,6 +1048,7 @@ export default function App() {
         : [],
     [
       commandPaletteOpen,
+      moveActivePane,
       tabs,
       activeId,
       searchTarget,

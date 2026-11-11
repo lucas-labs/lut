@@ -2,8 +2,10 @@ import { isMarkdownPath } from '@/lib/utils';
 import { type AgentInstanceCount, createAgentPanePlan } from '@/modules/agents/lib/launcher';
 import {
   canAddPane,
+  detachLeaf,
   findLeafCwd,
   hasLeaf,
+  insertLeaf,
   leafIds,
   nextLeafId,
   type PaneBounds,
@@ -96,6 +98,13 @@ type NavigationActions = {
     bounds?: PaneBounds[],
   ) => void;
   splitActivePane: (tabId: number, dir: SplitDir) => number | null;
+  /**
+   * Moves a pane, session and all, to another terminal tab of its space (next to that tab's
+   * focused pane) or to a new tab after its own. An emptied source tab closes. Returns the
+   * tab the pane landed in, or null when the move is refused: an unknown pane or target, a
+   * target in another space or already at the pane limit, or a lone pane to a new tab.
+   */
+  movePane: (leafId: number, target: number | 'new') => number | null;
   /** Records the shares of one split of a terminal tab, after a user resize. */
   setSplitRatios: (tabId: number, splitId: number, ratios: number[]) => void;
   closePaneByLeaf: (leafId: number) => void;
@@ -656,6 +665,64 @@ export const useNavigationStore = create<NavigationState>()((set, get) => {
         activeLeafId: leafId,
       }));
       return leafId;
+    },
+
+    movePane: (leafId, target) => {
+      const { tabs } = get();
+      const source = tabs.find(
+        (t): t is TerminalTab => t.kind === 'terminal' && hasLeaf(t.paneTree, leafId),
+      );
+      if (!source || target === source.id) return null;
+      const detached = detachLeaf(source.paneTree, leafId);
+      if (!detached) return null;
+      const { leaf, rest } = detached;
+
+      let destination: TerminalTab;
+      if (target === 'new') {
+        if (rest === null) return null;
+        destination = {
+          id: alloc(),
+          kind: 'terminal',
+          spaceId: source.spaceId,
+          title: leaf.cwd ? basename(leaf.cwd) : 'shell',
+          cwd: leaf.cwd,
+          paneTree: leaf,
+          activeLeafId: leaf.id,
+        };
+      } else {
+        const found = tabs.find((t) => t.id === target);
+        if (found?.kind !== 'terminal' || found.spaceId !== source.spaceId) return null;
+        if (!canAddPane(found.paneTree)) return null;
+        destination = {
+          ...found,
+          paneTree: insertLeaf(found.paneTree, found.activeLeafId, alloc(), leaf, 'row'),
+          activeLeafId: leaf.id,
+          ...(leaf.cwd !== undefined && { cwd: leaf.cwd }),
+        };
+      }
+
+      // One update: the leaf is never missing from every tab, so its session stays.
+      const next: Tab[] = [];
+      for (const t of tabs) {
+        if (t.id === source.id) {
+          if (rest !== null) {
+            const remaining = leafIds(rest);
+            const sibling = siblingLeafOf(source.paneTree, leafId);
+            const activeLeafId =
+              source.activeLeafId !== leafId
+                ? source.activeLeafId
+                : sibling && remaining.includes(sibling)
+                  ? sibling
+                  : remaining[0];
+            next.push({ ...source, paneTree: rest, activeLeafId });
+          }
+          if (target === 'new') next.push(destination);
+        } else {
+          next.push(t.id === destination.id ? destination : t);
+        }
+      }
+      commit({ tabs: next, activeId: destination.id });
+      return destination.id;
     },
 
     setSplitRatios: (tabId, splitId, ratios) =>
