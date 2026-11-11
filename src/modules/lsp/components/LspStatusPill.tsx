@@ -1,13 +1,7 @@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 import { setLspActivation } from '@/modules/settings/store';
-import {
-  Cancel01Icon,
-  Copy01Icon,
-  Loading03Icon,
-  RefreshIcon,
-  SourceCodeIcon,
-  Tick02Icon,
-} from '@hugeicons/core-free-icons';
+import { Cancel01Icon, Copy01Icon, RefreshIcon, SourceCodeIcon, Tick02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { useState } from 'react';
@@ -27,8 +21,13 @@ type Props = {
   filePath: string | null;
 };
 
+/** A state in the editor's status line: a dot and the server's name. */
 const PILL_CLASS =
-  'lut-pill-in ml-1.5 flex h-6 shrink-0 cursor-pointer [&_button]:cursor-pointer items-center gap-1 rounded-full border border-border/50 bg-accent/50 px-2 text-[10.5px] font-medium text-muted-foreground transition-colors duration-200 hover:bg-accent hover:text-foreground';
+  'lut-pill-in flex h-4 shrink-0 cursor-pointer items-center gap-1.5 text-muted-foreground transition-colors duration-200 hover:text-foreground';
+/** An action in the editor's status line (enable, install): an outlined button. */
+const ACTION_CLASS =
+  'lut-pill-in flex h-4 shrink-0 items-center gap-1.25 rounded-sm border border-input px-1.75 text-foreground transition-colors duration-200 hover:border-primary hover:text-primary [&_button]:cursor-pointer';
+const DOT_CLASS = 'size-1.75 shrink-0 rounded-full';
 
 export function LspStatusPill({ filePath }: Props) {
   const hint = useLspHint(filePath);
@@ -36,14 +35,14 @@ export function LspStatusPill({ filePath }: Props) {
 
   if (hint.kind === 'enable') {
     return (
-      <span key={`enable-${hint.preset.id}`} className={PILL_CLASS}>
+      <span key={`enable-${hint.preset.id}`} className={ACTION_CLASS}>
         <button
           type="button"
           className="flex items-center gap-1"
           onClick={() => void setLspActivation(hint.preset.id, 'enabled')}
           title={`Start ${hint.preset.command} for this workspace`}
         >
-          <HugeiconsIcon icon={SourceCodeIcon} size={11} strokeWidth={2} />
+          <HugeiconsIcon icon={SourceCodeIcon} size={10} strokeWidth={2} />
           <span>Enable {hint.preset.name} LSP</span>
         </button>
         <DismissButton preset={hint.preset} />
@@ -67,7 +66,7 @@ function ErrorPill({ preset, reason }: { preset: LspPreset; reason: string }) {
     <Popover>
       <PopoverTrigger asChild>
         <button type="button" className={PILL_CLASS} title="Language server stopped">
-          <span className="size-1.5 rounded-full bg-destructive" />
+          <span className={cn(DOT_CLASS, 'bg-destructive')} />
           <span>{preset.name} LSP</span>
         </button>
       </PopoverTrigger>
@@ -129,10 +128,10 @@ function InstallPill({ preset }: { preset: LspPreset }) {
 
   return (
     <Popover>
-      <span className={PILL_CLASS}>
+      <span className={ACTION_CLASS}>
         <PopoverTrigger asChild>
           <button type="button" className="flex items-center gap-1">
-            <HugeiconsIcon icon={SourceCodeIcon} size={11} strokeWidth={2} />
+            <HugeiconsIcon icon={SourceCodeIcon} size={10} strokeWidth={2} />
             <span>Install {preset.name} LSP</span>
           </button>
         </PopoverTrigger>
@@ -192,11 +191,9 @@ function ActivePill({ preset, starting }: { preset: LspPreset; starting: boolean
           className={PILL_CLASS}
           title={starting ? 'Language server starting' : 'Language server active'}
         >
-          {starting ? (
-            <HugeiconsIcon icon={Loading03Icon} size={11} strokeWidth={2} className="animate-spin" />
-          ) : (
-            <span className="size-1.5 rounded-full bg-emerald-500" />
-          )}
+          <span
+            className={cn(DOT_CLASS, starting ? 'lut-blink bg-(--terminal-ansi-yellow)' : 'bg-(--terminal-ansi-green)')}
+          />
           <span>{preset.name} LSP</span>
         </button>
       </PopoverTrigger>

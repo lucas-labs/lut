@@ -69,6 +69,9 @@ type Props = {
   orientation?: 'horizontal' | 'vertical';
 };
 
+/** Why a private terminal's tab carries the incognito icon. */
+const PRIVATE_TAB_HINT = "This terminal isn't saved in the Space, so it won't come back after a restart.";
+
 export function TabBar({
   tabs,
   activeId,
@@ -281,6 +284,7 @@ export function TabBar({
                   value={String(t.id)}
                   data-tab-id={t.id}
                   data-tab-active={isActive ? 'true' : undefined}
+                  title={t.kind === 'terminal' && t.private ? PRIVATE_TAB_HINT : undefined}
                   onPointerDown={(e) => {
                     if (e.button !== 0) return;
                     if ((e.target as HTMLElement).closest('[data-no-drag]')) return;

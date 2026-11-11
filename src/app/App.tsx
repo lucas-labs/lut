@@ -39,7 +39,6 @@ import {
 import { SidebarRail, useSidebarPanel } from '@/modules/sidebar';
 import { SourceControlPanel, useRepositoryTargeting, useSourceControlContext } from '@/modules/source-control';
 import { SpacesView, useSpacePersistence, useSpaces, useSpacesBoot } from '@/modules/spaces';
-import { StatusBar } from '@/modules/statusbar';
 import {
   type CloseTabsPlan,
   TabBar,
@@ -76,7 +75,7 @@ import {
   WindowActivityBridge,
   WindowVibrancyBridge,
 } from '@/modules/theme';
-import { useWorkspaceEnvStore, type WorkspaceEnv, workspaceNative, workspaceScopeKey } from '@/modules/workspace';
+import { useWorkspaceEnvStore, workspaceNative, workspaceScopeKey } from '@/modules/workspace';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -132,7 +131,6 @@ export default function App() {
     splitActivePane,
     closeActivePane,
     closePaneByLeaf,
-    resetWorkspace,
   } = useTabs(getLaunchDir() ? { cwd: getLaunchDir() } : undefined);
 
   // Load the saved preferences into this window and follow changes made in
@@ -172,25 +170,9 @@ export default function App() {
   // split/unsplit re-mount components but the leaf is still live.
   const liveLeavesRef = useRef<Set<number>>(new Set());
 
-  const clearWorkspaceState = useCallback(() => {
-    for (const id of liveLeavesRef.current) disposeSession(id);
-    searchAddons.current.clear();
-    terminalRefs.current.clear();
-    editorRefs.current.clear();
-    previewRefs.current.clear();
-    setActiveSearchAddon(null);
-    setActiveEditorHandle(null);
-  }, []);
-
   const workspaceEnv = useWorkspaceEnvStore((s) => s.env);
   const setWorkspaceEnv = useWorkspaceEnvStore((s) => s.setEnv);
-  const { home, launchCwd, launchCwdResolved, switchWorkspace, adoptWorkspaceEnv } = useWorkspaceSwitcher({
-    tabsRef,
-    workspaceEnv,
-    setWorkspaceEnv,
-    resetWorkspace,
-    clearWorkspaceState,
-  });
+  const { home, launchCwd, launchCwdResolved, adoptWorkspaceEnv } = useWorkspaceSwitcher({ setWorkspaceEnv });
 
   const activeSpaceId = useSpaces((s) => s.activeId);
   const spacesHydrated = useSpaces((s) => s.hydrated);
@@ -201,16 +183,6 @@ export default function App() {
     activeSpaceIdRef.current = activeSpaceId;
   }, [tabs, activeId, activeSpaceId]);
   const sourceControlSpaceId = activeSpaceId ?? DEFAULT_SPACE_ID;
-
-  const handleWorkspaceChange = useCallback(
-    async (env: WorkspaceEnv) => {
-      const switched = await switchWorkspace(env);
-      if (switched && activeSpaceId) {
-        useSpaces.getState().setEnv(activeSpaceId, env);
-      }
-    },
-    [switchWorkspace, activeSpaceId],
-  );
 
   useSpacesBoot({
     ready: launchCwdResolved,
@@ -1152,6 +1124,10 @@ export default function App() {
                 searchRef={searchInlineRef}
                 onOverrideLanguage={setOverrideLanguage}
                 showTabs={!verticalTabs}
+                cwd={activeCwd}
+                filePath={activeFilePath}
+                home={home}
+                onCd={sendCd}
               />
             )
           }
@@ -1261,18 +1237,6 @@ export default function App() {
               onGitHistorySearchHandle={setGitHistoryHandle}
               onSetMarkdownView={setMarkdownView}
             />
-          }
-          statusBar={
-            zenMode ? null : (
-              <StatusBar
-                cwd={activeCwd}
-                filePath={activeFilePath}
-                home={home}
-                onCd={sendCd}
-                onWorkspaceChange={handleWorkspaceChange}
-                privateActive={activeTab?.kind === 'terminal' && activeTab.private === true}
-              />
-            )
           }
         >
           <WindowVibrancyBridge />

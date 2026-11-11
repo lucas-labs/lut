@@ -215,7 +215,6 @@ function shell(
       tabsColumnRef: createRef<PanelImperativeHandle>(),
       tabsColumnInitialWidth: 200,
       onTabsColumnLayout: noop,
-      statusBar: null,
       sidebar,
       sidebarRef: createRef<PanelImperativeHandle>(),
       sidebarInitialWidth: 0,

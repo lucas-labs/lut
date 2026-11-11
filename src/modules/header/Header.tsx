@@ -8,6 +8,7 @@ import { TabBar } from '@/modules/tabs';
 import { CommandIcon, Settings01Icon, SidebarLeftIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { type RefObject, useEffect, useRef, useState } from 'react';
+import { CwdBreadcrumb } from './CwdBreadcrumb';
 import { SearchInline, type SearchInlineHandle, type SearchTarget } from './SearchInline';
 
 type Props = {
@@ -40,6 +41,13 @@ type Props = {
   searchRef: RefObject<SearchInlineHandle | null>;
   /** False when the tabs are shown as a vertical column instead (E07-05). */
   showTabs?: boolean;
+  /** The active terminal's directory, for the breadcrumb. */
+  cwd: string | null;
+  /** The active file, which the breadcrumb shows instead of `cwd`. */
+  filePath: string | null;
+  home: string | null;
+  /** `cd` the active terminal to a breadcrumb segment. */
+  onCd: (path: string) => void;
 };
 
 const COMPACT_WIDTH = 720;
@@ -68,6 +76,10 @@ export function Header({
   searchTarget,
   searchRef,
   showTabs = true,
+  cwd,
+  filePath,
+  home,
+  onCd,
 }: Props) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [compact, setCompact] = useState(false);
@@ -128,6 +140,8 @@ export function Header({
       {!IS_MAC && <span className="mx-1.5 h-4 w-px shrink-0 rounded-full bg-border" />}
 
       {IS_MAC && <span className="mr-1.5 h-4 w-px shrink-0 rounded-full bg-border" />}
+
+      <CwdBreadcrumb cwd={cwd} filePath={filePath} home={home} onCd={onCd} />
 
       <div
         className="flex min-w-0 flex-1 items-center gap-2"

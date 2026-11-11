@@ -86,14 +86,6 @@ describe('tab actions before deferred state updates commit', () => {
     });
   });
 
-  it('cleans pending sessions when resetting the workspace', () => {
-    const tabs = render();
-    tabs.newTab();
-    tabs.resetWorkspace('/next');
-    expect(scheduler.dispose.mock.calls.map(([id]) => id)).toEqual([2, 4]);
-    expect(render().tabs).toHaveLength(1);
-  });
-
   it('disposes a removed split leaf only once across repeated close requests', () => {
     const tabs = render();
     const leaf = tabs.splitActivePane(1, 'row');
