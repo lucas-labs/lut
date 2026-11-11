@@ -190,8 +190,9 @@ fn set_window_see_through(
         .map_err(|e| e.to_string())
 }
 
-// Windows and Linux keep their windows transparent from creation: the custom
-// borderless chrome paints its own rounded corners over a transparent frame.
+// Windows and Linux keep their windows transparent from creation. Windows draws
+// the borderless window's rounded corners itself (its frame shadow is kept), which
+// also clips Mica to them; Linux gets corners painted by the page.
 #[cfg(target_os = "windows")]
 fn set_backdrop(
     window: &tauri::WebviewWindow,
