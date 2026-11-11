@@ -4,18 +4,18 @@ import { expect, it } from 'vitest';
 
 const FACES = [
   {
-    file: 'lut-terminal-symbols.woff2',
-    family: 'lut Terminal Symbols',
+    file: 'nerd-font-icons.woff2',
+    family: 'Nerd Font Icons',
     range: 'U+E000-F8FF',
-    sha256: '08107a419bbbc0d24ea11fdbae136bc7fa1943a0fc2b3495975a8b3082428081',
+    sha256: '3244bd1ec660d04f9d53deca1b8b1ca676a752faa58834c54a8fd2c61d3a6c9a',
     // The face every terminal loads: small enough to be part of first paint.
     maxBytes: 400_000,
   },
   {
-    file: 'lut-terminal-symbols-mdi.woff2',
-    family: 'lut Terminal Symbols MDI',
+    file: 'nerd-font-icons-mdi.woff2',
+    family: 'Nerd Font Icons MDI',
     range: 'U+F0000-FFFFD',
-    sha256: '987533dfb02fd9f769dc199ffbf5f2bea02b9a102883eaa795fbebfacc10f4ac',
+    sha256: '626d78179d2afe26655f480de4f85624f5049a92473b36d57b636aa680e282b7',
     maxBytes: 400_000,
   },
 ];
@@ -29,7 +29,7 @@ it.each(FACES)('ships the verified, bounded $family face', async (face) => {
 
 it('ships the font licenses', async () => {
   const license = await readFile(
-    new URL('../../public/licenses/terminal-symbols.txt', import.meta.url),
+    new URL('../../public/licenses/nerd-font-icons.txt', import.meta.url),
     'utf8',
   );
   expect(license).toContain('SIL OPEN FONT LICENSE Version 1.1');
@@ -38,7 +38,7 @@ it('ships the font licenses', async () => {
 
 it('carries the notices the bundled icon sets require', async () => {
   const license = await readFile(
-    new URL('../../public/licenses/terminal-symbols.txt', import.meta.url),
+    new URL('../../public/licenses/nerd-font-icons.txt', import.meta.url),
     'utf8',
   );
   // Apache-2.0 (Material Design Icons): the full text, not a link.

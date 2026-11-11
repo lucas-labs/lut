@@ -1,4 +1,4 @@
-lut Terminal Symbols
+Nerd Font Icons
 Copyright 2020 The JetBrains Mono Project Authors (https://github.com/JetBrains/JetBrainsMono)
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
@@ -224,7 +224,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
 # Bundled icon sets
 
-The lut Terminal Symbols faces carry glyphs from the icon sets below (Nerd Fonts patcher
+The Nerd Font Icons faces carry glyphs from the icon sets below (Nerd Fonts patcher
 sources, see src/assets/fonts/README.md). The outlines were subset, rescaled to 500 units per
 em and renamed; they were not otherwise redrawn.
 

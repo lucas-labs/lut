@@ -106,7 +106,7 @@ const theme = {
 } as const;
 const pack = (color: readonly number[]) => (color[0] << 16) | (color[1] << 8) | color[2];
 const font = {
-  family: params.get("ff") ?? '"JetBrains Mono", SFMono-Regular, Menlo, monospace',
+  family: params.get("ff") ?? '"Source Code Pro", SFMono-Regular, Menlo, monospace',
   size: number("fs", 14),
   lineHeight: number("lh", 1.2),
   letterSpacing: 0,

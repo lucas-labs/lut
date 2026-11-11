@@ -1,4 +1,7 @@
 const NERD_FONT_CANDIDATES = [
+  'SauceCodePro Nerd Font Mono',
+  'SauceCodePro Nerd Font',
+  'SourceCodePro Nerd Font',
   'JetBrainsMono Nerd Font',
   'JetBrainsMono Nerd Font Mono',
   'JetBrainsMonoNL Nerd Font',
@@ -17,24 +20,21 @@ const NERD_FONT_CANDIDATES = [
   'CaskaydiaMono Nerd Font',
   'Iosevka Nerd Font',
   'Iosevka Term Nerd Font',
-  'SauceCodePro Nerd Font',
-  'SauceCodePro Nerd Font Mono',
-  'SourceCodePro Nerd Font',
   'RobotoMono Nerd Font',
   'UbuntuMono Nerd Font',
   'DejaVuSansM Nerd Font',
   'Hasklug Nerd Font',
 ];
 
-const SYMBOLS_FAMILY = 'lut Terminal Symbols';
-const EXTENDED_SYMBOLS_FAMILY = 'lut Terminal Symbols MDI';
+const SYMBOLS_FAMILY = 'Nerd Font Icons';
+const EXTENDED_SYMBOLS_FAMILY = 'Nerd Font Icons MDI';
 
 /**
  * Per codepoint, the first face that has the glyph wins. The installed Symbols Nerd
  * Font (complete) outranks the bundled subsets, which guarantee Powerline, Devicons,
  * Font Awesome, Codicons and Material Design icons without any installed font.
  */
-const FALLBACK_CHAIN = `"JetBrains Mono", "Symbols Nerd Font Mono", "Symbols Nerd Font", "${SYMBOLS_FAMILY}", "${EXTENDED_SYMBOLS_FAMILY}", SFMono-Regular, Menlo, monospace`;
+const FALLBACK_CHAIN = `"Source Code Pro", "Symbols Nerd Font Mono", "Symbols Nerd Font", "${SYMBOLS_FAMILY}", "${EXTENDED_SYMBOLS_FAMILY}", SFMono-Regular, Menlo, monospace`;
 
 const PROBE_SAMPLES = ['mmmmmmmmmmlli', 'Wim0123\ue0a0\ue718\u{f024b}'];
 const PROBE_BASELINES = ['monospace', 'serif', 'sans-serif'];
@@ -53,8 +53,8 @@ export function ensureMonoFontsLoaded(): Promise<void> {
     return monoReady;
   }
   monoReady = Promise.allSettled([
-    document.fonts.load('400 14px "JetBrains Mono"'),
-    document.fonts.load('700 14px "JetBrains Mono"'),
+    // One variable face per subset serves every weight.
+    document.fonts.load('400 14px "Source Code Pro"'),
     document.fonts.load(`400 14px "${SYMBOLS_FAMILY}"`, '\ue0a0\ue718'),
   ]).then(() => undefined);
   return monoReady;

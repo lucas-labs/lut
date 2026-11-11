@@ -3505,7 +3505,10 @@ performance invariants.
 
 - [ ] `src/styles/globals.css` takes every colour from the theme tokens; typography, spacing and radius scales are
       defined once there; `terax-*` animations and chrome styles removed or renamed.
-- [ ] `@font-face` rules for terminal symbol fonts in `src/styles/fonts.css` preserved.
+- [ ] `@font-face` rules for terminal symbol fonts in `src/styles/fonts.css` preserved, renamed "Nerd Font Icons"
+      (files, family and the fonts' own name tables) so they don't read as lut's own work.
+- [ ] The bundled monospace font is Source Code Pro, variable (weights 200-900), replacing JetBrains Mono; the
+      auto-detected Nerd Font prefers SauceCodePro.
 - [ ] `compositingBudget.test.ts` and `motionBudget.test.ts` adapted to the new CSS and green (no infinite animations, compositing limits kept).
 - [ ] Light and dark modes both render; vibrancy and background image customisation still work (decision 16).
 

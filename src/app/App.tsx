@@ -1158,7 +1158,7 @@ export default function App() {
           tabsColumn={
             verticalTabs && !zenMode ? (
               <div className={cn('flex h-full min-h-0 flex-col pr-0.5', sidebarCollapsed ? 'pl-2' : 'pl-0.5')}>
-                <div className="lut-pane flex min-h-0 flex-1 flex-col p-1">
+                <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-1">
                   <TabBar
                     orientation="vertical"
                     tabs={spaceTabs}
@@ -1191,7 +1191,7 @@ export default function App() {
           onSidebarCollapsedChange={persistSidebarCollapsed}
           sidebar={
             <div className="h-full min-h-0 pl-2 pr-0.5">
-              <div className="lut-pane flex h-full min-h-0 flex-col">
+              <div className="flex h-full min-h-0 flex-col overflow-hidden">
                 <div key={sidebarView} className="min-h-0 flex-1 lut-panel-in">
                   {sidebarView === 'spaces' ? (
                     <SpacesView

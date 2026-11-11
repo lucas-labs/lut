@@ -100,7 +100,7 @@ export function starterTheme(): Theme {
           cursor: '#e8e8ea',
           cursorAccent: '#0d0d10',
           selection: 'rgba(125,211,252,0.22)',
-          fontFamily: 'JetBrains Mono',
+          fontFamily: 'Source Code Pro',
           fontWeight: 'normal',
           fontSize: 14,
         },

@@ -46,9 +46,9 @@
     "gzip": true
   },
   {
-    "name": "terminal private-use symbol faces (the second loads only on use)",
+    "name": "nerd font icon faces (the second loads only on use)",
     "path": [
-      "dist/assets/lut-terminal-symbols-*.woff2"
+      "dist/assets/nerd-font-icons-*.woff2"
     ],
     "limit": "730 KB",
     "gzip": false,
