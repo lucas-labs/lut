@@ -5,6 +5,7 @@ pub mod agent_json;
 pub mod app_menu;
 #[cfg(feature = "bench")]
 pub mod bench;
+pub mod browser_features;
 pub mod control;
 pub mod fs;
 pub mod git;

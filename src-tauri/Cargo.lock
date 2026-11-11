@@ -2370,8 +2370,10 @@ dependencies = [
  "tempfile",
  "tokio",
  "wasmparser",
+ "webview2-com",
  "which",
  "window-vibrancy 0.6.0",
+ "windows-core",
  "windows-sys 0.61.2",
 ]
 

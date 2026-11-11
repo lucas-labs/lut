@@ -3957,7 +3957,7 @@ size: M
 
 **Verification:** the captures and the decision in the PR; any follow-up issue synced.
 
-### E13-14 — Turn off WebView2's browser shortcuts on Windows
+### E13-14 — Turn off WebView2's browser shortcuts and context menu on Windows
 
 ```yaml
 id: E13-14
@@ -3971,14 +3971,16 @@ size: S
 
 **Goal:** a key lut does not bind never triggers a browser feature. Found on Windows: `Ctrl+P` with focus outside a
 terminal opens the print dialog, because WebView2 keeps its browser accelerator keys on by default (print, find on page,
-reload with `Ctrl+R`/`F5`, page zoom). Tauri 2.12 does not expose the setting, so the main window sets
-`AreBrowserAcceleratorKeysEnabled(false)` on the WebView2 settings through `with_webview` when it is created.
+reload with `Ctrl+R`/`F5`, page zoom), and a right click outside lut's own menus opens the browser's context menu
+(back, reload, save as, print). Tauri 2.12 exposes neither setting, so every window hooks WebView2's
+`AcceleratorKeyPressed` and `ContextMenuRequested` events through `with_webview`.
 
 **Acceptance criteria:**
 
 - [ ] On Windows, `Ctrl+P`, `Ctrl+F`, `Ctrl+R`, `F5` and `Ctrl+Plus`/`Ctrl+Minus` with focus outside a terminal do
       not print, find, reload or zoom the page; lut's own shortcuts on those keys keep working.
-- [ ] Debug builds keep the DevTools keys (`F12`, `Ctrl+Shift+I`).
+- [ ] A right click outside lut's own menus opens no browser menu; text fields keep cut, copy, paste and select all.
+- [ ] Debug builds keep the DevTools keys (`F12`, `Ctrl+Shift+I`) and "Inspect".
 - [ ] macOS and Linux are unchanged.
 
 **Verification:** `pnpm tauri dev` and a release build on Windows: press each key with focus in the sidebar, a
