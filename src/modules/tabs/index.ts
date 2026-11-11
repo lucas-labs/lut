@@ -5,7 +5,6 @@ export { TABS_COLUMN_MAX_WIDTH, TABS_COLUMN_MIN_WIDTH, useTabsColumn } from './l
 export { useTabSwitcher } from './lib/useTabSwitcher';
 export { useWindowTitle } from './lib/useWindowTitle';
 export { useWorkspaceCwd } from './lib/useWorkspaceCwd';
-export { TabBar } from './TabBar';
 export { TabNavigator } from './TabNavigator';
 export { TabSwitcher } from './TabSwitcher';
 export {
