@@ -1,4 +1,9 @@
 export {
+  type DirtyContentProvider,
+  hasUnsavedChanges,
+  registerDirtyContentProvider,
+} from './dirtyContent';
+export {
   selectNavigatorItems,
   type TabNavigatorActions,
   type TabNavigatorItem,

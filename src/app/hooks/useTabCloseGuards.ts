@@ -7,6 +7,7 @@ import {
   hasCloseManyHazards,
   hasNewCloseManyHazards,
 } from '@/app/hooks/tabCloseGuards';
+import { hasUnsavedChanges } from '@/modules/navigation';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import {
   type CloseTabsPlan,
@@ -61,7 +62,7 @@ export function useTabCloseGuards({
       // dialog entirely so confirming it doesn't appear to silently fail.
       if (nextActiveInSpace(tabs, id) === null) return;
       const t = tabs.find((x) => x.id === id);
-      if (t?.kind === 'editor' && t.dirty) {
+      if (t && hasUnsavedChanges(t)) {
         setPendingCloseTab(id);
         return;
       }
@@ -82,7 +83,7 @@ export function useTabCloseGuards({
     const close = new Set(closeIds);
     const affected = tabsRef.current.filter((tab) => close.has(tab.id));
     return {
-      dirtyIds: affected.filter((tab) => tab.kind === 'editor' && tab.dirty).map((tab) => tab.id),
+      dirtyIds: affected.filter(hasUnsavedChanges).map((tab) => tab.id),
       leafIds: affected
         .filter((tab) => tab.kind === 'terminal')
         .flatMap((tab) => leafIds(tab.paneTree)),

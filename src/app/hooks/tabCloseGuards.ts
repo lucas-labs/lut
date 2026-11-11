@@ -1,3 +1,4 @@
+import { hasUnsavedChanges } from '@/modules/navigation';
 import type { CloseTabsPlan, Tab } from '@/modules/tabs';
 
 function normalizePath(path: string): string {
@@ -64,7 +65,7 @@ export function deletedPathTabs(
   for (const tab of tabs) {
     if (tab.kind !== 'editor' && tab.kind !== 'markdown') continue;
     if (!paths.some((path) => pathAtOrUnder(tab.path, path))) continue;
-    (tab.kind === 'editor' && tab.dirty ? dirtyIds : cleanIds).push(tab.id);
+    (hasUnsavedChanges(tab) ? dirtyIds : cleanIds).push(tab.id);
   }
   return { dirtyIds, cleanIds };
 }
