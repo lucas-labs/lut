@@ -1,42 +1,29 @@
 import { cn } from '@/lib/utils';
-import type { Tab } from '@/modules/navigation';
+import { TabIcon, type TabNavigatorItem } from '@/modules/navigation';
 import { useMemo } from 'react';
-import { labelFor } from './lib/tabLabel';
 import type { TabSwitcherState } from './lib/useTabSwitcher';
-import { TabIcon } from './TabBar';
 
-function subtitleFor(tab: Tab): string | null {
-  if (tab.kind === 'terminal')
-    return tab.cwd ? tab.cwd.split(/[\\/]/).filter(Boolean).slice(-2).join('/') || tab.cwd : null;
-  if (tab.kind === 'editor' || tab.kind === 'markdown')
-    return tab.path.split(/[\\/]/).filter(Boolean).slice(-2, -1)[0] ?? null;
-  return null;
-}
-
-export function TabSwitcherHud({ tabs, state }: { tabs: Tab[]; state: TabSwitcherState }) {
+export function TabSwitcherHud({ tabs, state }: { tabs: TabNavigatorItem[]; state: TabSwitcherState }) {
   const byId = useMemo(() => new Map(tabs.map((t) => [t.id, t])), [tabs]);
-  const rows = state.order.map((id) => byId.get(id)).filter((t): t is Tab => t !== undefined);
+  const rows = state.order.map((id) => byId.get(id)).filter((t): t is TabNavigatorItem => t !== undefined);
   const selectedId = state.order[state.index];
 
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center">
       <div className="flex max-h-[60vh] w-72 flex-col gap-0.5 overflow-y-auto rounded-2xl border border-border bg-popover p-1.5 shadow-2xl ring-1 ring-foreground/5">
-        {rows.map((t) => {
-          const subtitle = subtitleFor(t);
-          return (
-            <div
-              key={t.id}
-              className={cn(
-                'flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs',
-                t.id === selectedId ? 'bg-accent text-foreground' : 'text-muted-foreground',
-              )}
-            >
-              <TabIcon tab={t} />
-              <span className="min-w-0 flex-1 truncate">{labelFor(t)}</span>
-              {subtitle && <span className="shrink-0 truncate text-[10px] text-muted-foreground/55">{subtitle}</span>}
-            </div>
-          );
-        })}
+        {rows.map((t) => (
+          <div
+            key={t.id}
+            className={cn(
+              'flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-xs',
+              t.id === selectedId ? 'bg-accent text-foreground' : 'text-muted-foreground',
+            )}
+          >
+            <TabIcon id={t.id} />
+            <span className="min-w-0 flex-1 truncate">{t.title}</span>
+            {t.detail && <span className="shrink-0 truncate text-[10px] text-muted-foreground/55">{t.detail}</span>}
+          </div>
+        ))}
       </div>
     </div>
   );

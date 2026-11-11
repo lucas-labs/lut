@@ -25,7 +25,7 @@ import { FileExplorer, type FileExplorerHandle } from '@/modules/explorer';
 import type { GitHistorySearchHandle } from '@/modules/git-history';
 import { Header, type SearchInlineHandle, type SearchTarget } from '@/modules/header';
 import { setLspNavigator } from '@/modules/lsp';
-import { DEFAULT_SPACE_ID } from '@/modules/navigation';
+import { DEFAULT_SPACE_ID, type TabNavigatorActions, useNavigatorItems } from '@/modules/navigation';
 import type { PreviewPaneHandle } from '@/modules/preview';
 import { openSettingsWindow } from '@/modules/settings/openSettingsWindow';
 import { usePreferencesStore } from '@/modules/settings/preferences';
@@ -88,6 +88,9 @@ import { hasOpenPathTab, renamedPath, spacesEmptiedByTabs } from './hooks/tabClo
 import { useAppCloseGuard } from './hooks/useAppCloseGuard';
 import { useTabCloseGuards } from './hooks/useTabCloseGuards';
 import { useWorkspaceSwitcher } from './hooks/useWorkspaceSwitcher';
+import { registerTabPresenters } from './tabPresenters';
+
+registerTabPresenters();
 
 // Real-application benchmark driver (scripts/app-lab). `__LUT_BENCH__` is the literal `false`
 // in a normal build, so this is `null` and neither the import nor its chunk is emitted.
@@ -116,7 +119,6 @@ export default function App() {
     newPreviewTab,
     newMarkdownTab,
     setMarkdownView,
-    setOverrideLanguage,
     openGitDiffTab,
     openCommitHistoryTab,
     openCommitFileDiffTab,
@@ -218,11 +220,6 @@ export default function App() {
     if (inSpace.some((t) => t.id === activeId)) return;
     setActiveId(inSpace[inSpace.length - 1].id);
   }, [activeSpaceId, activeId, spacesHydrated, setActiveSpaceForNewTabs, setActiveId, adoptWorkspaceEnv]);
-
-  const spaceTabs = useMemo(
-    () => tabs.filter((t) => t.spaceId === (activeSpaceId ?? DEFAULT_SPACE_ID)),
-    [tabs, activeSpaceId],
-  );
 
   const {
     sidebarRef,
@@ -890,6 +887,20 @@ export default function App() {
     [updateTab],
   );
 
+  const navigatorItems = useNavigatorItems(activeSpaceId ?? DEFAULT_SPACE_ID);
+  const tabActions = useMemo<TabNavigatorActions>(
+    () => ({
+      select: setActiveId,
+      close: handleClose,
+      closeToEnd: handleCloseTabsToRight,
+      closeOthers: handleCloseOtherTabs,
+      pin: pinTab,
+      rename: handleRenameTab,
+      reorder: reorderTabByGap,
+    }),
+    [setActiveId, handleClose, handleCloseTabsToRight, handleCloseOtherTabs, pinTab, handleRenameTab, reorderTabByGap],
+  );
+
   const searchTarget = useMemo<SearchTarget>(() => {
     if (isTerminalTab && activeLeafId !== null && activeSearchAddon)
       return {
@@ -1117,28 +1128,20 @@ export default function App() {
           header={
             zenMode ? null : (
               <Header
-                tabs={spaceTabs}
-                activeId={activeId}
-                onSelect={setActiveId}
+                tabs={navigatorItems}
+                tabActions={tabActions}
                 onNew={openNewTab}
                 onNewPrivate={openNewPrivateTab}
                 onNewPreview={() => openPreviewTab('')}
                 onNewEditor={() => setNewEditorOpen(true)}
                 onNewGitGraph={openGitGraphFromContext}
                 onLaunchAgents={launchAgentGroup}
-                onClose={handleClose}
-                onCloseTabsToRight={handleCloseTabsToRight}
-                onCloseOtherTabs={handleCloseOtherTabs}
-                onPin={pinTab}
-                onRename={handleRenameTab}
-                onReorder={reorderTabByGap}
                 onToggleSidebar={toggleSidePanels}
                 onOpenCommandPalette={() => openCommandPalette('commands')}
                 onActivateAgent={onActivateAgent}
                 onOpenSettings={() => void openSettingsWindow()}
                 searchTarget={searchTarget}
                 searchRef={searchInlineRef}
-                onOverrideLanguage={setOverrideLanguage}
                 showTabs={!verticalTabs}
                 cwd={activeCwd}
                 filePath={activeFilePath}
@@ -1153,22 +1156,14 @@ export default function App() {
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-1">
                   <TabBar
                     orientation="vertical"
-                    tabs={spaceTabs}
-                    activeId={activeId}
-                    onSelect={setActiveId}
+                    tabs={navigatorItems}
+                    actions={tabActions}
                     onNew={openNewTab}
                     onNewPrivate={openNewPrivateTab}
                     onNewPreview={() => openPreviewTab('')}
                     onNewEditor={() => setNewEditorOpen(true)}
                     onNewGitGraph={openGitGraphFromContext}
                     onLaunchAgents={launchAgentGroup}
-                    onClose={handleClose}
-                    onCloseTabsToRight={handleCloseTabsToRight}
-                    onCloseOtherTabs={handleCloseOtherTabs}
-                    onPin={pinTab}
-                    onRename={handleRenameTab}
-                    onReorder={reorderTabByGap}
-                    onOverrideLanguage={setOverrideLanguage}
                   />
                 </div>
               </div>
@@ -1265,7 +1260,7 @@ export default function App() {
           <AgentNotificationsBridge tabs={tabs} activeId={activeId} onActivate={onActivateAgent} />
           <Toaster position="bottom-right" />
 
-          {switcherState && <TabSwitcherHud tabs={spaceTabs} state={switcherState} />}
+          {switcherState && <TabSwitcherHud tabs={navigatorItems} state={switcherState} />}
 
           <CommandPalette
             open={commandPaletteOpen}

@@ -3,7 +3,7 @@ import { WindowControls } from '@/components/WindowControls';
 import { IS_MAC, USE_CUSTOM_WINDOW_CONTROLS } from '@/lib/platform';
 import { NotificationBell } from '@/modules/agents';
 import type { AgentLaunchRequest } from '@/modules/agents/lib/launcher';
-import type { Tab } from '@/modules/tabs';
+import type { TabNavigatorActions, TabNavigatorItem } from '@/modules/navigation';
 import { TabBar } from '@/modules/tabs';
 import { CommandIcon, Settings01Icon, SidebarLeftIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -12,27 +12,15 @@ import { CwdBreadcrumb } from './CwdBreadcrumb';
 import { SearchInline, type SearchInlineHandle, type SearchTarget } from './SearchInline';
 
 type Props = {
-  tabs: Tab[];
-  activeId: number;
-  onSelect: (id: number) => void;
+  /** The active space's tabs, for the strip. */
+  tabs: TabNavigatorItem[];
+  tabActions: TabNavigatorActions;
   onNew: () => void;
   onNewPrivate: () => void;
   onNewPreview: () => void;
   onNewEditor: () => void;
   onNewGitGraph: () => void;
   onLaunchAgents: (request: AgentLaunchRequest) => void;
-  onClose: (id: number) => void;
-  /** Chrome-style: close every tab to the right of the given tab. */
-  onCloseTabsToRight: (id: number) => void;
-  /** Chrome-style: close every tab except the given tab. */
-  onCloseOtherTabs: (id: number) => void;
-  /** Promote a preview (transient) tab to persistent. */
-  onPin: (id: number) => void;
-  /** Set a terminal tab's custom label; empty string resets to default. */
-  onRename: (id: number, title: string) => void;
-  /** Move a dragged tab to a new position (insertion gap index). */
-  onReorder: (fromId: number, toGapIndex: number) => void;
-  onOverrideLanguage?: (id: number, lang: string | null) => void;
   onToggleSidebar: () => void;
   onOpenCommandPalette: () => void;
   onActivateAgent: (tabId: number, leafId: number) => void;
@@ -54,21 +42,13 @@ const COMPACT_WIDTH = 720;
 
 export function Header({
   tabs,
-  activeId,
-  onSelect,
+  tabActions,
   onNew,
   onNewPrivate,
   onNewPreview,
   onNewEditor,
   onNewGitGraph,
   onLaunchAgents,
-  onClose,
-  onCloseTabsToRight,
-  onCloseOtherTabs,
-  onPin,
-  onRename,
-  onReorder,
-  onOverrideLanguage,
   onToggleSidebar,
   onOpenCommandPalette,
   onActivateAgent,
@@ -156,21 +136,13 @@ export function Header({
         {showTabs && (
           <TabBar
             tabs={tabs}
-            activeId={activeId}
-            onSelect={onSelect}
+            actions={tabActions}
             onNew={onNew}
             onNewPrivate={onNewPrivate}
             onNewPreview={onNewPreview}
             onNewEditor={onNewEditor}
             onNewGitGraph={onNewGitGraph}
             onLaunchAgents={onLaunchAgents}
-            onClose={onClose}
-            onCloseTabsToRight={onCloseTabsToRight}
-            onCloseOtherTabs={onCloseOtherTabs}
-            onPin={onPin}
-            onRename={onRename}
-            onReorder={onReorder}
-            onOverrideLanguage={onOverrideLanguage}
             compact={compact}
           />
         )}

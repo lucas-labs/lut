@@ -1,11 +1,11 @@
 export { selectLiveTerminals } from './lib/liveTerminals';
-export { labelFor } from './lib/tabLabel';
+export { selectTabAgentStatus } from './lib/tabAgentStatus';
 export { useTabs } from './lib/useTabs';
 export { TABS_COLUMN_MAX_WIDTH, TABS_COLUMN_MIN_WIDTH, useTabsColumn } from './lib/useTabsColumn';
 export { useTabSwitcher } from './lib/useTabSwitcher';
 export { useWindowTitle } from './lib/useWindowTitle';
 export { useWorkspaceCwd } from './lib/useWorkspaceCwd';
-export { TabBar, TabIcon } from './TabBar';
+export { TabBar } from './TabBar';
 export { TabSwitcherHud } from './TabSwitcherHud';
 export {
   type CloseTabsPlan,

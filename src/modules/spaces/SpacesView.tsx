@@ -1,7 +1,7 @@
 import { Kbd } from '@/components/ui/kbd';
 import { cn } from '@/lib/utils';
+import { labelFor, type Tab, TabIcon } from '@/modules/navigation';
 import { useShortcutLabel } from '@/modules/shortcuts';
-import { labelFor, type Tab, TabIcon } from '@/modules/tabs';
 import {
   ArrowDown01Icon,
   ArrowRight01Icon,
@@ -451,7 +451,7 @@ function TabRow({
           isDragging && 'opacity-50',
         )}
       >
-        <TabIcon tab={tab} />
+        <TabIcon id={tab.id} />
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-[11.5px] leading-tight">{labelFor(tab)}</span>
           {subtitle && <span className="truncate text-[9.5px] leading-tight text-muted-foreground/55">{subtitle}</span>}
@@ -489,7 +489,7 @@ function OverlayChip({ tab, color, label }: { tab?: Tab; color?: string; label: 
   return (
     <div className="flex items-center gap-2 rounded-md border border-border bg-popover px-2 py-1.5 text-xs shadow-lg">
       {tab ? (
-        <TabIcon tab={tab} />
+        <TabIcon id={tab.id} />
       ) : (
         <span aria-hidden className="size-2 shrink-0 rounded-full" style={{ backgroundColor: color }} />
       )}

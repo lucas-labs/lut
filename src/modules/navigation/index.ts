@@ -1,4 +1,12 @@
 export {
+  selectNavigatorItems,
+  type TabNavigatorActions,
+  type TabNavigatorItem,
+  type TabNavigatorOrientation,
+  toNavigatorItem,
+  useNavigatorItems,
+} from './navigator';
+export {
   applyCloseTabsPlan,
   nextActiveInSpace,
   planCloseOtherTabs,
@@ -14,6 +22,8 @@ export {
 export { pickTabBySpaceIndex, reorderTabsByGap } from './planners/order';
 export { coldTerminalTab, planSpaceRemoval } from './planners/spaces';
 export { initialNavigationData, type NavigationState, useNavigationStore } from './store';
+export { registerTabPresenter, TabIcon, type TabPresenter } from './TabIcon';
+export { labelFor } from './tabLabel';
 export { basename, titleFromUrl } from './tabTitles';
 export {
   type CloseTabsPlan,
