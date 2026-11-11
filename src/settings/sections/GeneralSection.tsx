@@ -215,7 +215,7 @@ export function GeneralSection() {
         </SettingRow>
         <SettingRow
           title="Cursor blinking"
-          description="Blink the terminal cursor. Off by default for lower idle CPU, matching VS Code and the macOS terminal."
+          description="Blink the terminal cursor, which marks the active pane. On by default."
         >
           <Switch checked={terminalCursorBlink} onCheckedChange={(v) => void setTerminalCursorBlink(v)} />
         </SettingRow>

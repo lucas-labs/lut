@@ -6,7 +6,7 @@ const bridge = vi.hoisted(() => ({
 }));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: bridge.invoke }));
 
-import { parseCssColor, toHex } from './vibrancy';
+import { parseCssColor, PREPAINT_BG, toHex } from './vibrancy';
 
 describe('parseCssColor', () => {
   it('reads rgb() in its legacy and modern spellings', () => {
@@ -118,6 +118,6 @@ describe('applyVibrancy', () => {
     });
     const mod = await import('./vibrancy');
     await expect(mod.applyVibrancy(true, true)).resolves.toBeUndefined();
-    expect(document.documentElement.style.backgroundColor).toBe('#141414');
+    expect(document.documentElement.style.backgroundColor).toBe(PREPAINT_BG.dark);
   });
 });

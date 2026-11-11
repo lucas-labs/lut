@@ -93,6 +93,20 @@ function isAltGraph(event: KeyboardLike, ctx: KeyContext): boolean {
   return base !== null && key !== base;
 }
 
+/**
+ * A digit of a Windows Alt code: holding Alt while typing keypad digits enters a character (Alt+6, Alt+4 types `@`),
+ * which arrives as text when Alt is released. The digits belong to that entry, never to the terminal.
+ */
+function isWindowsAltCodeDigit(event: KeyboardLike, ctx: KeyContext): boolean {
+  return (
+    ctx.isWindows &&
+    event.altKey &&
+    !event.ctrlKey &&
+    !event.metaKey &&
+    /^Numpad[0-9]$/.test(event.code)
+  );
+}
+
 function isOptionMeta(event: KeyboardLike, ctx: KeyContext): boolean {
   return ctx.isMac && event.altKey && !event.metaKey && ctx.optionIsMeta();
 }
@@ -120,6 +134,7 @@ export function ignoredForIme(event: KeyboardLike, ctx: KeyContext): boolean {
 /** Classifies a key press the IME guard let through. */
 export function routeKeyDown(event: KeyboardLike, ctx: KeyContext, skipCopy = false): KeyRoute {
   const { key } = event;
+  if (isWindowsAltCodeDigit(event, ctx)) return IGNORE;
   const optionMeta = isOptionMeta(event, ctx);
 
   const clipboard = clipboardShortcut(event, ctx);

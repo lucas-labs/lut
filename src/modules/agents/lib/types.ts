@@ -1,4 +1,5 @@
-export type AgentStatus = 'working' | 'waiting';
+/** `idle`: running, between turns or before the first prompt; `waiting`: needs the user's input. */
+export type AgentStatus = 'idle' | 'working' | 'waiting';
 
 export type AgentSource = 'terminal';
 

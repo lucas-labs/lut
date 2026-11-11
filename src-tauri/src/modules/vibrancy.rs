@@ -33,9 +33,9 @@ pub fn window_backdrop_kind() -> Backdrop {
 /// Window background used when the frontend cannot report the theme colour.
 fn fallback_background(dark: bool) -> [u8; 3] {
     if dark {
-        [0x14, 0x14, 0x14]
+        [0x0f, 0x12, 0x11]
     } else {
-        [0xff, 0xff, 0xff]
+        [0xfb, 0xfb, 0xf9]
     }
 }
 
@@ -243,8 +243,14 @@ mod tests {
 
     #[test]
     fn the_fallback_matches_the_prepaint_colours_in_index_html() {
-        assert_eq!(fallback_background(true), [0x14, 0x14, 0x14]);
-        assert_eq!(fallback_background(false), [0xff, 0xff, 0xff]);
+        let html = include_str!("../../../index.html");
+        let hex = |[r, g, b]: [u8; 3]| format!("\"#{r:02x}{g:02x}{b:02x}\"");
+        let prepaint = format!(
+            "resolved === \"dark\" ? {} : {}",
+            hex(fallback_background(true)),
+            hex(fallback_background(false))
+        );
+        assert!(html.contains(&prepaint), "index.html lacks {prepaint}");
     }
 
     #[test]

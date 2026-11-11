@@ -23,10 +23,18 @@ let root: Root;
 let host: HTMLElement;
 const sidebarRef = createRef<PanelImperativeHandle>();
 
-function shell(props: { header?: ReactNode; sidebar?: ReactNode; tabsColumn?: ReactNode }) {
+function shell(props: {
+  titleBar?: ReactNode;
+  placement?: 'inline' | 'overlay';
+  sidebar?: ReactNode;
+  tabsColumn?: ReactNode;
+}) {
   return createElement(AppShell, {
-    header: props.header ?? null,
+    titleBar: props.titleBar ?? null,
+    titleBarPlacement: props.placement ?? 'inline',
     tabsColumn: props.tabsColumn ?? null,
+    sidebarOpen: true,
+    tabsColumnOpen: true,
     tabsColumnRef: createRef<PanelImperativeHandle>(),
     tabsColumnInitialWidth: 200,
     onTabsColumnLayout: () => {},
@@ -59,20 +67,24 @@ afterEach(() => {
 
 it('shows and hides the chrome without remounting the workspace', () => {
   render(shell({}));
-  render(shell({ header: createElement('header') }));
-  render(shell({ header: null, sidebar: createElement('nav') }));
-  render(shell({ header: createElement('header'), sidebar: createElement('aside') }));
+  render(shell({ titleBar: createElement('header') }));
+  render(shell({ titleBar: null, sidebar: createElement('nav') }));
+  render(shell({ titleBar: createElement('header'), sidebar: createElement('aside') }));
   expect(mounts).toEqual(['workspace']);
   expect(unmounts).toEqual([]);
   expect(host.querySelectorAll('[data-probe="workspace"]')).toHaveLength(1);
 });
 
-it('switches the tabs between the title bar and a vertical column without remounting the workspace', () => {
+it('moves the title bar and the tabs between the layouts without remounting the workspace', () => {
   const strip = createElement('div', { 'data-tabs': '' });
-  render(shell({ header: createElement('header', null, strip) }));
-  render(shell({ header: createElement('header'), tabsColumn: createElement('aside', null, strip) }));
-  render(shell({ header: createElement('header', null, strip) }));
-  render(shell({ header: createElement('header'), tabsColumn: createElement('aside', null, strip) }));
+  render(shell({ titleBar: createElement('header', null, strip) }));
+  render(
+    shell({ titleBar: createElement('header'), placement: 'overlay', tabsColumn: createElement('aside', null, strip) }),
+  );
+  render(shell({ titleBar: createElement('header', null, strip) }));
+  render(
+    shell({ titleBar: createElement('header'), placement: 'overlay', tabsColumn: createElement('aside', null, strip) }),
+  );
   expect(mounts).toEqual(['workspace']);
   expect(unmounts).toEqual([]);
 });

@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useHoldTitleBar } from '@/lib/titleBarHold';
 import { cn } from '@/lib/utils';
 import {
   ArrowDown01Icon,
@@ -48,7 +49,7 @@ function StatusRow({ agent, status, onClick }: { agent: string; status: AgentSta
         )}
       >
         {waiting ? <span className="size-1.5 rounded-full bg-primary" /> : null}
-        {waiting ? 'waiting' : 'working'}
+        {status}
       </span>
     </button>
   );
@@ -179,6 +180,8 @@ export function NotificationBell({ onActivate }: Props) {
     activate(n.tabId, n.leafId);
   };
 
+  useHoldTitleBar(open);
+
   const empty = activeCount === 0 && notifications.length === 0;
 
   return (
@@ -187,10 +190,11 @@ export function NotificationBell({ onActivate }: Props) {
         <Button
           variant="ghost"
           size="icon"
-          className="relative size-7 shrink-0 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+          className="relative size-[22px] shrink-0 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground aria-expanded:bg-accent"
+          aria-label="Agent notifications"
           title="Agent notifications"
         >
-          <HugeiconsIcon icon={Notification01Icon} size={16} strokeWidth={1.75} />
+          <HugeiconsIcon icon={Notification01Icon} size={14} strokeWidth={1.5} />
           {badge > 0 ? (
             <span className="absolute -top-0.5 -right-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-semibold leading-none text-primary-foreground">
               {badge > 9 ? '9+' : badge}

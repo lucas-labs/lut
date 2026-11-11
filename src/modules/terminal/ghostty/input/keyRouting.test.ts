@@ -273,6 +273,26 @@ describe('routeKeyDown', () => {
       ...over,
     }) as KeyboardLike;
 
+  it('leaves the keypad digits of a Windows Alt code to the code', () => {
+    for (const [key, code] of [
+      ['6', 'Numpad6'],
+      ['4', 'Numpad4'],
+      ['Home', 'Numpad7'],
+    ] as const) {
+      expect(routeKeyDown(press({ key, code, altKey: true }), ctx({ isWindows: true })).kind).toBe(
+        'ignore',
+      );
+    }
+    // Alt with a top-row digit is still a chord, and so is a keypad digit off Windows.
+    expect(
+      routeKeyDown(press({ key: '6', code: 'Digit6', altKey: true }), ctx({ isWindows: true }))
+        .kind,
+    ).not.toBe('ignore');
+    expect(routeKeyDown(press({ key: '6', code: 'Numpad6', altKey: true }), ctx()).kind).not.toBe(
+      'ignore',
+    );
+  });
+
   it('forwards Windows Ctrl+V as a key when there is no text to paste', () => {
     const route = routeKeyDown(
       press({ key: 'v', code: 'KeyV', ctrlKey: true }),

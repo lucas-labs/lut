@@ -1,19 +1,38 @@
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import { IS_MAC } from '@/lib/platform';
+import { cn } from '@/lib/utils';
+import type { TitleBarPlacement } from '@/modules/header';
 import { SIDEBAR_MAX_WIDTH, SIDEBAR_MIN_WIDTH } from '@/modules/sidebar';
 import { TABS_COLUMN_MAX_WIDTH, TABS_COLUMN_MIN_WIDTH } from '@/modules/tabs';
 import type { ReactNode, RefObject } from 'react';
 import type { PanelImperativeHandle } from 'react-resizable-panels';
 
-const HANDLE = 'w-1 rounded-full bg-transparent transition-colors duration-[var(--dur-fast)] after:w-4 hover:bg-border';
+/**
+ * A side panel's resize handle is the 1px line between it and what follows. Its negative margin lets it overlap the
+ * next panel instead of taking room, so a closed panel leaves no strip behind; a closed panel's handle is transparent.
+ * The handle never measures 0px: the panel library loops on a zero-width separator.
+ */
+function handleClass(open: boolean) {
+  return cn('-mr-px transition-colors duration-[var(--dur-fast)]', open ? 'bg-border' : 'bg-transparent');
+}
 
 type Props = {
-  /** Title bar with the tab strip; null hides it (zen mode). */
-  header: ReactNode;
+  /** The title bar; null hides it (zen mode). */
+  titleBar: ReactNode;
+  /**
+   * `inline`: above the workspace, beside the sidebar (horizontal tabs). `overlay`: over the whole window, laid
+   * out by the bar itself (vertical tabs).
+   */
+  titleBarPlacement: TitleBarPlacement;
   /** Vertical tab column right of the sidebar; null when the tabs are in the title bar (E07-05). */
   tabsColumn: ReactNode;
   tabsColumnRef: RefObject<PanelImperativeHandle | null>;
   tabsColumnInitialWidth: number;
   onTabsColumnLayout: (width: number, isUserInteraction: boolean) => void;
+  /** Whether the sidebar is open (its handle then draws the line beside it). */
+  sidebarOpen: boolean;
+  /** Whether the vertical tab column is open. */
+  tabsColumnOpen: boolean;
   /** Explorer / Source Control panel content. */
   sidebar: ReactNode;
   sidebarRef: RefObject<PanelImperativeHandle | null>;
@@ -33,12 +52,15 @@ type Props = {
  * empty: a region that comes and goes must not shift the workspace to another place in the tree.
  */
 export function AppShell({
-  header,
+  titleBar,
+  titleBarPlacement,
   tabsColumn,
   tabsColumnRef,
   tabsColumnInitialWidth,
   onTabsColumnLayout,
   sidebar,
+  sidebarOpen,
+  tabsColumnOpen,
   sidebarRef,
   sidebarInitialWidth,
   onSidebarLayout,
@@ -48,8 +70,6 @@ export function AppShell({
 }: Props) {
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-frame text-foreground">
-      {header}
-
       <main className="zoom-content flex min-h-0 flex-1 flex-col">
         <ResizablePanelGroup
           orientation="horizontal"
@@ -69,9 +89,13 @@ export function AppShell({
             collapsedSize={0}
             onResize={(size) => onSidebarCollapsedChange(size.inPixels <= 0)}
           >
-            {sidebar}
+            <div className="flex h-full min-h-0 flex-col">
+              {/* macOS draws its traffic lights over the window's top-left corner, which is the sidebar's. */}
+              {IS_MAC ? <div data-tauri-drag-region className="h-7 shrink-0" /> : null}
+              <div className="min-h-0 flex-1">{sidebar}</div>
+            </div>
           </ResizablePanel>
-          <ResizableHandle className={HANDLE} />
+          <ResizableHandle className={handleClass(sidebarOpen)} />
           {/* The column and its handle keep their slots when absent, so the workspace never moves in the tree. */}
           {tabsColumn ? (
             <ResizablePanel
@@ -86,10 +110,12 @@ export function AppShell({
               {tabsColumn}
             </ResizablePanel>
           ) : null}
-          {tabsColumn ? <ResizableHandle className={HANDLE} /> : null}
+          {tabsColumn ? <ResizableHandle className={handleClass(tabsColumnOpen)} /> : null}
           <ResizablePanel id="workspace" defaultSize="78%" minSize="30%">
-            <div className="h-full min-h-0 pr-2 pb-2 pl-0.5">
-              <div className="lut-pane flex h-full min-h-0 flex-col">
+            <div className="flex h-full min-h-0 flex-col">
+              {/* Both bar slots always exist (null when unused), so the workspace keeps its place in the tree. */}
+              {titleBarPlacement === 'inline' ? titleBar : null}
+              <div className="lut-pane flex min-h-0 flex-1 flex-col">
                 <div className="relative min-h-0 flex-1">{workspace}</div>
               </div>
             </div>
@@ -97,6 +123,7 @@ export function AppShell({
         </ResizablePanelGroup>
       </main>
 
+      {titleBarPlacement === 'overlay' ? titleBar : null}
       {children}
     </div>
   );

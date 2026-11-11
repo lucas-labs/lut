@@ -22,6 +22,8 @@ type Props = {
   getBundle: (leafId: number) => LeafBundle;
   /** The user resized a split: its children's new shares, in child order. */
   onSplitRatios?: (splitId: number, ratios: number[]) => void;
+  /** The node sits inside a split, so the tab has more than one pane. */
+  inSplit?: boolean;
 };
 
 type SplitNode = Extract<PaneNode, { kind: 'split' }>;
@@ -31,7 +33,7 @@ const panelId = (child: PaneNode) => `pane-slot-${firstLeafSlotId(child)}`;
 export function PaneTreeView(props: Props) {
   const { node } = props;
   if (node.kind === 'leaf') {
-    const { tabVisible, activeLeafId, onFocusLeaf, getBundle } = props;
+    const { tabVisible, activeLeafId, onFocusLeaf, getBundle, inSplit = false } = props;
     const focused = node.id === activeLeafId;
     const b = getBundle(node.id);
     return (
@@ -57,12 +59,27 @@ export function PaneTreeView(props: Props) {
           onCwd={b.onCwd}
           onExit={b.onExit}
         />
+        {focused && inSplit ? <ActivePaneMark /> : null}
         <DropOverlay leafId={node.id} />
       </div>
     );
   }
 
   return <SplitView {...props} node={node} />;
+}
+
+/**
+ * Marks the active pane of a split: a small triangle in its top-right corner, in lut's accent. A border around the
+ * pane would frame the text; the corner mark says which pane takes the keys without covering any of it.
+ */
+function ActivePaneMark() {
+  return (
+    <span
+      aria-hidden
+      data-active-pane-mark=""
+      className="pointer-events-none absolute top-0 right-0 z-10 size-0 border-t-[10px] border-l-[10px] border-t-primary border-l-transparent"
+    />
+  );
 }
 
 /**
@@ -116,7 +133,7 @@ function SplitView(props: Props & { node: SplitNode }) {
         <Fragment key={ids[i]}>
           {i > 0 && <TerminalResizableHandle />}
           <ResizablePanel id={ids[i]} defaultSize={`${node.ratios[i] * 100}%`} minSize="10%">
-            <PaneTreeView {...props} node={child} />
+            <PaneTreeView {...props} node={child} inSplit />
           </ResizablePanel>
         </Fragment>
       ))}

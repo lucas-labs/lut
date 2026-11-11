@@ -74,9 +74,11 @@ export function clearAgentActivity(id: number): void {
 
 /** Maps a raw detector signal to the phase it drives, `"exited"` to drop the
  * pty, or `null` to ignore. Pure so the mapping stays unit-testable. */
-export function phaseForSignal(kind: string): Exclude<AgentPhase, 'idle'> | 'exited' | null {
+export function phaseForSignal(kind: string): AgentPhase | 'exited' | null {
   switch (kind) {
+    // A new agent waits for its first prompt; "working" comes with the prompt.
     case 'started':
+      return 'idle';
     case 'working':
       return 'working';
     case 'attention':

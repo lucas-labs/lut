@@ -16,6 +16,12 @@ export type ThemeColors = Partial<{
   accent: string;
   accentForeground: string;
   destructive: string;
+  /** Status colours, generic (not tied to one feature): a done or healthy state. */
+  success: string;
+  /** Needs attention, but not an error. */
+  warning: string;
+  /** Neutral progress or information. */
+  info: string;
   border: string;
   input: string;
   ring: string;

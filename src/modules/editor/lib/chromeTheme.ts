@@ -85,8 +85,8 @@ const GROUP_COLORS: Record<IconGroup, { light: string; dark: string }> = {
 
 const SEVERITY_COLORS = {
   error: { light: 'var(--destructive)', dark: 'var(--destructive)' },
-  warning: { light: '#b45309', dark: '#fbbf24' },
-  info: { light: '#2563eb', dark: '#60a5fa' },
+  warning: { light: 'var(--warning)', dark: 'var(--warning)' },
+  info: { light: 'var(--info)', dark: 'var(--info)' },
   hint: { light: '#6b7280', dark: '#9ca3af' },
 } as const;
 

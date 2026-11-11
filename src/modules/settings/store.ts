@@ -275,7 +275,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   explorerGitDecorations: true,
   terminalRenderer: 'auto',
   terminalScreenReader: false,
-  terminalCursorBlink: false,
+  terminalCursorBlink: true,
   terminalCursorStyle: 'bar',
   terminalFontFamily: '',
   terminalFontWeight: 'normal',

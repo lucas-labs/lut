@@ -5,7 +5,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { AgentIcon } from '@/modules/agents/lib/agentIcon';
 import { ALL_LANGUAGES, EXPOSED_LANGUAGES } from '@/modules/editor/lib/languageDefinitions';
 import { resolveDisplayName } from '@/modules/editor/lib/languageResolver';
 import { FileIcon } from '@/modules/explorer/FileIcon';
@@ -15,11 +14,9 @@ import { leafIds, ptyIdForLeaf, useAgentActivityStore } from '@/modules/terminal
 import {
   CheckmarkCircle01Icon,
   Clock01Icon,
-  ComputerTerminal02Icon,
   GitCompareIcon,
   Globe02Icon,
   IncognitoIcon,
-  Message02Icon,
   Tick02Icon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -36,27 +33,63 @@ function terminalPtyIds(tab: TerminalTab): number[] {
   return ptyIds;
 }
 
-/**
- * Agent-aware terminal tab icon. The selector reduces the global activity maps
- * to this tab's own `{ state, agent }`, and `useShallow` keeps that result
- * stable, so an agent signal on one tab re-renders only that tab's icon.
- */
+/** A private terminal is marked by its icon; other terminals have none until profiles give them one. */
 function TerminalTabIcon({ tab }: { tab: Tab }) {
+  if (tab.kind !== 'terminal' || !tab.private) return null;
+  return <HugeiconsIcon icon={IncognitoIcon} size={13} strokeWidth={1.75} className="shrink-0 text-muted-foreground" />;
+}
+
+/**
+ * A terminal's agent state after its title. The selector reduces the global activity maps to this tab's own
+ * `{ state, agent }`, and `useShallow` keeps that result stable, so an agent signal on one tab re-renders only
+ * that tab's indicator.
+ */
+function TerminalTabStatus({ tab }: { tab: Tab }) {
   const terminal = tab as TerminalTab;
-  const agentStatus = useAgentActivityStore(useShallow((s) => selectTabAgentStatus(s, terminalPtyIds(terminal))));
-  if (terminal.private) {
-    return <HugeiconsIcon icon={IncognitoIcon} size={14} strokeWidth={2} className="shrink-0" />;
+  const { state } = useAgentActivityStore(useShallow((s) => selectTabAgentStatus(s, terminalPtyIds(terminal))));
+  if (state === 'working') {
+    return (
+      <>
+        <svg
+          viewBox="0 0 24 24"
+          aria-hidden
+          className="size-3 shrink-0 animate-spin"
+          fill="none"
+          strokeWidth={2.5}
+          strokeLinecap="round"
+        >
+          <circle cx="12" cy="12" r="8" className="stroke-info/25" />
+          <path d="M12 4a8 8 0 0 1 8 8" className="stroke-info" />
+          <title>Working</title>
+        </svg>
+        <span className="sr-only">Working</span>
+      </>
+    );
   }
-  if (agentStatus.state === 'attention') {
-    return <HugeiconsIcon icon={Message02Icon} size={14} strokeWidth={2} className="shrink-0" />;
+  if (state === 'attention') {
+    return (
+      <>
+        <svg viewBox="0 0 24 24" aria-hidden className="size-3 shrink-0">
+          <title>Needs attention</title>
+          <path d="M12 3 2 20h20L12 3z" className="fill-warning" />
+          <path d="M12 10v4M12 17h.01" className="stroke-background" strokeWidth={2.2} strokeLinecap="round" />
+        </svg>
+        <span className="sr-only">Needs attention</span>
+      </>
+    );
   }
-  if (agentStatus.state === 'finished') {
-    return <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} strokeWidth={2} className="shrink-0" />;
+  if (state === 'finished') {
+    return (
+      <HugeiconsIcon
+        icon={CheckmarkCircle01Icon}
+        size={12}
+        strokeWidth={2}
+        aria-label="Finished"
+        className="shrink-0 text-success"
+      />
+    );
   }
-  if ((agentStatus.state === 'working' || agentStatus.state === 'idle') && agentStatus.agent) {
-    return <AgentIcon agent={agentStatus.agent} size={14} className="shrink-0" />;
-  }
-  return <HugeiconsIcon icon={ComputerTerminal02Icon} size={14} strokeWidth={2} className="shrink-0" />;
+  return null;
 }
 
 function FileTabIcon({ tab }: { tab: Tab }) {
@@ -142,13 +175,19 @@ function EditorTabLanguageMenu({ tab }: { tab: Tab }) {
   );
 }
 
-const PreviewTabIcon = () => <HugeiconsIcon icon={Globe02Icon} size={14} strokeWidth={2} className="shrink-0" />;
-const GitDiffTabIcon = () => <HugeiconsIcon icon={GitCompareIcon} size={14} strokeWidth={2} className="shrink-0" />;
-const GitHistoryTabIcon = () => <HugeiconsIcon icon={Clock01Icon} size={14} strokeWidth={2} className="shrink-0" />;
+const PreviewTabIcon = () => (
+  <HugeiconsIcon icon={Globe02Icon} size={13} strokeWidth={1.75} className="shrink-0 text-muted-foreground" />
+);
+const GitDiffTabIcon = () => (
+  <HugeiconsIcon icon={GitCompareIcon} size={13} strokeWidth={1.75} className="shrink-0 text-muted-foreground" />
+);
+const GitHistoryTabIcon = () => (
+  <HugeiconsIcon icon={Clock01Icon} size={13} strokeWidth={1.75} className="shrink-0 text-muted-foreground" />
+);
 
 /** How each tab kind looks in the tab strip, the column, the switcher and the Spaces view. */
 export function registerTabPresenters() {
-  registerTabPresenter('terminal', { Icon: TerminalTabIcon });
+  registerTabPresenter('terminal', { Icon: TerminalTabIcon, Status: TerminalTabStatus });
   registerTabPresenter('editor', { Icon: FileTabIcon, IconMenu: EditorTabLanguageMenu });
   registerTabPresenter('markdown', { Icon: FileTabIcon });
   registerTabPresenter('preview', { Icon: PreviewTabIcon });

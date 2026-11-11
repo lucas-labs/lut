@@ -5,7 +5,6 @@ import { IS_MAC } from '@/lib/platform';
 import { quoteShellArg } from '@/lib/shellQuote';
 import { useZoom } from '@/lib/useZoom';
 import { isMarkdownPath } from '@/lib/utils';
-import { cn } from '@/lib/utils';
 import {
   type AgentLaunchRequest,
   AgentNotificationsBridge,
@@ -23,7 +22,7 @@ import { useControlBridge } from '@/modules/control';
 import { type EditorPaneHandle, NewEditorDialog, useApplyEditorFontSize, useEditorFileSync } from '@/modules/editor';
 import { FileExplorer, type FileExplorerHandle } from '@/modules/explorer';
 import type { GitHistorySearchHandle } from '@/modules/git-history';
-import { Header, type SearchInlineHandle, type SearchTarget } from '@/modules/header';
+import { type SearchInlineHandle, type SearchTarget, TitleBar } from '@/modules/header';
 import { setLspNavigator } from '@/modules/lsp';
 import {
   DEFAULT_SPACE_ID,
@@ -49,8 +48,8 @@ import { SourceControlPanel, useRepositoryTargeting, useSourceControlContext } f
 import { SpacesView, useSpacePersistence, useSpaces, useSpacesBoot } from '@/modules/spaces';
 import {
   type CloseTabsPlan,
-  TabBar,
-  TabSwitcherHud,
+  TabNavigator,
+  TabSwitcher,
   useTabs,
   useTabsColumn,
   useTabSwitcher,
@@ -176,6 +175,7 @@ export default function App() {
   const { home, launchCwd, launchCwdResolved, adoptWorkspaceEnv } = useWorkspaceSwitcher({ setWorkspaceEnv });
 
   const activeSpaceId = useSpaces((s) => s.activeId);
+  const activeSpaceName = useSpaces((s) => s.spaces.find((space) => space.id === s.activeId)?.name);
   const spacesHydrated = useSpaces((s) => s.hydrated);
   const sourceControlSpaceId = activeSpaceId ?? DEFAULT_SPACE_ID;
 
@@ -653,6 +653,7 @@ export default function App() {
   const {
     tabsColumnRef,
     tabsColumnInitialWidth,
+    tabsColumnCollapsed,
     persistTabsColumnLayout,
     toggleTabsColumn,
     isTabsColumnOpen,
@@ -1114,9 +1115,11 @@ export default function App() {
           </Suspense>
         )}
         <AppShell
-          header={
+          titleBarPlacement={verticalTabs ? 'overlay' : 'inline'}
+          titleBar={
             zenMode ? null : (
-              <Header
+              <TitleBar
+                placement={verticalTabs ? 'overlay' : 'inline'}
                 tabs={navigatorItems}
                 tabActions={tabActions}
                 onNew={openNewTab}
@@ -1125,13 +1128,12 @@ export default function App() {
                 onNewEditor={() => setNewEditorOpen(true)}
                 onNewGitGraph={openGitGraphFromContext}
                 onLaunchAgents={launchAgentGroup}
+                sidePanelsOpen={!sidebarCollapsed || (verticalTabs && !tabsColumnCollapsed)}
                 onToggleSidebar={toggleSidePanels}
-                onOpenCommandPalette={() => openCommandPalette('commands')}
                 onActivateAgent={onActivateAgent}
                 onOpenSettings={() => void openSettingsWindow()}
                 searchTarget={searchTarget}
                 searchRef={searchInlineRef}
-                showTabs={!verticalTabs}
                 cwd={activeCwd}
                 filePath={activeFilePath}
                 home={home}
@@ -1141,32 +1143,33 @@ export default function App() {
           }
           tabsColumn={
             verticalTabs && !zenMode ? (
-              <div className={cn('flex h-full min-h-0 flex-col pr-0.5', sidebarCollapsed ? 'pl-2' : 'pl-0.5')}>
-                <div className="flex min-h-0 flex-1 flex-col overflow-hidden p-1">
-                  <TabBar
-                    orientation="vertical"
-                    tabs={navigatorItems}
-                    actions={tabActions}
-                    onNew={openNewTab}
-                    onNewPrivate={openNewPrivateTab}
-                    onNewPreview={() => openPreviewTab('')}
-                    onNewEditor={() => setNewEditorOpen(true)}
-                    onNewGitGraph={openGitGraphFromContext}
-                    onLaunchAgents={launchAgentGroup}
-                  />
-                </div>
+              <div className="h-full min-h-0 bg-frame">
+                <TabNavigator
+                  orientation="vertical"
+                  heading={activeSpaceName}
+                  items={navigatorItems}
+                  actions={tabActions}
+                  onNew={openNewTab}
+                  onNewPrivate={openNewPrivateTab}
+                  onNewPreview={() => openPreviewTab('')}
+                  onNewEditor={() => setNewEditorOpen(true)}
+                  onNewGitGraph={openGitGraphFromContext}
+                  onLaunchAgents={launchAgentGroup}
+                />
               </div>
             ) : null
           }
           tabsColumnRef={tabsColumnRef}
           tabsColumnInitialWidth={tabsColumnInitialWidth}
           onTabsColumnLayout={persistTabsColumnLayout}
+          sidebarOpen={!sidebarCollapsed}
+          tabsColumnOpen={!tabsColumnCollapsed}
           sidebarRef={sidebarRef}
           sidebarInitialWidth={initialSidebarCollapsed ? 0 : sidebarWidthRef.current}
           onSidebarLayout={persistSidebarWidth}
           onSidebarCollapsedChange={persistSidebarCollapsed}
           sidebar={
-            <div className="h-full min-h-0 pl-2 pr-0.5">
+            <div className="h-full min-h-0">
               <div className="flex h-full min-h-0 flex-col overflow-hidden">
                 <div key={sidebarView} className="min-h-0 flex-1 lut-panel-in">
                   {sidebarView === 'spaces' ? (
@@ -1220,6 +1223,7 @@ export default function App() {
           }
           workspace={
             <WorkspaceSurface
+              insetFromSidePanel={!sidebarCollapsed || (verticalTabs && !tabsColumnCollapsed)}
               tabs={tabs}
               activeId={activeId}
               activeTab={activeTab}
@@ -1250,7 +1254,7 @@ export default function App() {
           <AgentNotificationsBridge tabs={tabs} activeId={activeId} onActivate={onActivateAgent} />
           <Toaster position="bottom-right" />
 
-          {switcherState && <TabSwitcherHud tabs={navigatorItems} state={switcherState} />}
+          {switcherState && <TabSwitcher items={navigatorItems} state={switcherState} />}
 
           <CommandPalette
             open={commandPaletteOpen}

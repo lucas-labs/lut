@@ -139,8 +139,11 @@ function surface(tabs: Tab[], activeId: number) {
 function shell(tabs: Tab[], { vertical = false, sidebar = null }: { vertical?: boolean; sidebar?: ReactNode } = {}) {
   const strip = createElement('div', { 'data-tabs': '' });
   return createElement(AppShell, {
-    header: createElement('header', null, vertical ? null : strip),
+    titleBar: createElement('header', null, vertical ? null : strip),
+    titleBarPlacement: vertical ? 'overlay' : 'inline',
     tabsColumn: vertical ? createElement('aside', null, strip) : null,
+    sidebarOpen: true,
+    tabsColumnOpen: true,
     tabsColumnRef: createRef<PanelImperativeHandle>(),
     tabsColumnInitialWidth: 200,
     onTabsColumnLayout: noop,
@@ -160,8 +163,11 @@ function SidebarShell({ tabs, onControls }: { tabs: Tab[]; onControls: (controls
   const sidebar = useSidebarPanel(createRef());
   useEffect(() => onControls(sidebar));
   return createElement(AppShell, {
-    header: null,
+    titleBar: null,
+    titleBarPlacement: 'inline',
     tabsColumn: null,
+    sidebarOpen: true,
+    tabsColumnOpen: true,
     tabsColumnRef: createRef<PanelImperativeHandle>(),
     tabsColumnInitialWidth: 200,
     onTabsColumnLayout: noop,

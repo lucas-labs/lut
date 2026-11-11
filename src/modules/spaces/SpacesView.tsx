@@ -1,4 +1,3 @@
-import { Kbd } from '@/components/ui/kbd';
 import { cn } from '@/lib/utils';
 import { labelFor, type Tab, TabIcon } from '@/modules/navigation';
 import { useShortcutLabel } from '@/modules/shortcuts';
@@ -203,12 +202,25 @@ export function SpacesView({
   };
 
   return (
-    <div className="flex h-full min-h-0 flex-col p-1.5">
-      <div className="flex items-center justify-between px-1.5 pb-1.5 pt-0.5">
-        <span className="text-xs font-semibold text-foreground">Spaces</span>
-        {shortcut && <Kbd className="h-5 bg-muted/70 text-[10px]">{shortcut}</Kbd>}
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex h-7 shrink-0 items-center gap-2 pr-1.5 pl-[18px]">
+        <span
+          className="min-w-0 flex-1 truncate text-xs text-muted-foreground"
+          title={shortcut ? `Spaces (${shortcut})` : undefined}
+        >
+          Spaces
+        </span>
+        <button
+          type="button"
+          onClick={onNewSpace}
+          aria-label="New space"
+          title="New space"
+          className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={1.5} />
+        </button>
       </div>
-      <div className="-mx-0.5 min-h-0 flex-1 overflow-y-auto px-0.5">
+      <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 pt-1 pb-2">
         {spaces.map((sp) => (
           <SpaceRow
             key={sp.id}
@@ -239,16 +251,6 @@ export function SpacesView({
             onCloseTab={onCloseTab}
           />
         ))}
-      </div>
-      <div className="mt-1.5 border-t border-border/60 pt-1.5">
-        <button
-          type="button"
-          onClick={onNewSpace}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
-        >
-          <HugeiconsIcon icon={PlusSignIcon} size={14} strokeWidth={1.75} />
-          <span className="flex-1">New space</span>
-        </button>
       </div>
       {overlay &&
         (draggedSpace || draggedTab) &&
@@ -338,7 +340,7 @@ function SpaceRow({
           }
         }}
         className={cn(
-          'group relative flex cursor-pointer select-none items-center gap-1.5 rounded-md px-1.5 py-1.5 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/40',
+          'group relative flex h-8 cursor-pointer select-none items-center gap-2 rounded-md px-2 outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring',
           moveTarget
             ? 'bg-primary/10 ring-1 ring-inset ring-primary/40'
             : isActive
@@ -362,7 +364,7 @@ function SpaceRow({
         {editing ? (
           <InlineRename initial={space.name} onCommit={onCommitRename} onCancel={onCancelRename} className="ml-0.5" />
         ) : (
-          <span className="min-w-0 flex-1 truncate text-xs font-medium text-foreground">{space.name}</span>
+          <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{space.name}</span>
         )}
         {!editing && (
           <>

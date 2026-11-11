@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -45,6 +45,8 @@ enum State {
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Status {
+    /// Armed, before its first prompt: a new agent waits for one.
+    Idle,
     Working,
     Waiting,
 }
@@ -155,13 +157,20 @@ pub enum HookIntent {
     Quiet,
 }
 
+/// Where a hooked agent is, as the hooks last reported it.
+const PHASE_IDLE: u8 = 0;
+const PHASE_WORKING: u8 = 1;
+const PHASE_WAITING: u8 = 2;
+
 /// State shared between a PTY's reader thread (OSC detection) and the control
 /// server (structured hooks), so the two sources agree on one agent per PTY.
 #[derive(Default)]
 pub struct AgentLink {
     armed: AtomicBool,
     hooked: AtomicBool,
-    waiting: AtomicBool,
+    /// `PHASE_IDLE` from arming until the first prompt (a new agent waits for
+    /// one), then working or waiting.
+    phase: AtomicU8,
 }
 
 impl AgentLink {
@@ -186,7 +195,7 @@ impl AgentLink {
             .is_ok();
         if armed {
             self.hooked.store(false, Ordering::Release);
-            self.waiting.store(false, Ordering::Release);
+            self.phase.store(PHASE_IDLE, Ordering::Release);
         }
         armed
     }
@@ -194,7 +203,7 @@ impl AgentLink {
     fn disarm(&self) -> bool {
         let was_armed = self.armed.swap(false, Ordering::AcqRel);
         self.hooked.store(false, Ordering::Release);
-        self.waiting.store(false, Ordering::Release);
+        self.phase.store(PHASE_IDLE, Ordering::Release);
         was_armed
     }
 
@@ -219,17 +228,17 @@ impl AgentLink {
         match intent {
             HookIntent::Quiet | HookIntent::Start | HookIntent::Activity => {}
             HookIntent::Working => {
-                if self.waiting.swap(false, Ordering::AcqRel) {
+                if self.phase.swap(PHASE_WORKING, Ordering::AcqRel) != PHASE_WORKING {
                     out.push(Transition::Working);
                 }
             }
             HookIntent::Attention => {
-                if !self.waiting.swap(true, Ordering::AcqRel) {
+                if self.phase.swap(PHASE_WAITING, Ordering::AcqRel) != PHASE_WAITING {
                     out.push(Transition::Attention);
                 }
             }
             HookIntent::Finished => {
-                self.waiting.store(true, Ordering::Release);
+                self.phase.store(PHASE_WAITING, Ordering::Release);
                 out.push(Transition::Finished);
             }
         }
@@ -314,7 +323,7 @@ impl AgentDetector {
             state: State::Ground,
             osc: Vec::new(),
             link,
-            status: Status::Working,
+            status: Status::Idle,
             last_attention: None,
             limiter: NotificationLimiter::new(),
             kitty: KittyPending::default(),
@@ -410,7 +419,7 @@ impl AgentDetector {
     }
 
     fn disarm(&mut self) -> bool {
-        self.status = Status::Working;
+        self.status = Status::Idle;
         self.last_attention = None;
         self.link.disarm()
     }
@@ -512,7 +521,7 @@ impl AgentDetector {
 
     fn ensure_armed<F: FnMut(Signal)>(&mut self, agent: &str, emit: &mut F) {
         if self.link.arm() {
-            self.status = Status::Working;
+            self.status = Status::Idle;
             self.last_attention = None;
             emit(Signal::Transition(Transition::Started {
                 agent: agent.to_string(),
@@ -875,11 +884,11 @@ mod tests {
 
     #[test]
     fn four_field_marker_self_arms_named_agent() {
-        // Fresh arm already implies Working, so `working` emits only Started.
+        // A fresh arm waits for a prompt, so `working` emits Started then Working.
         let mut d = AgentDetector::new();
         assert_eq!(
             run(&mut d, &osc("777;notify;lut;codex;working")),
-            vec![started("codex")]
+            vec![started("codex"), Transition::Working]
         );
         let mut g = AgentDetector::new();
         assert_eq!(
@@ -893,7 +902,7 @@ mod tests {
         let mut d = AgentDetector::new();
         assert_eq!(
             run(&mut d, &osc("777;notify;lut;pi;working")),
-            vec![started("pi")]
+            vec![started("pi"), Transition::Working]
         );
         assert_eq!(
             run(&mut d, &osc("777;notify;lut;pi;finished")),
@@ -1333,6 +1342,11 @@ mod tests {
     fn hooks_self_arm_then_track_turns() {
         let link = AgentLink::new();
         assert_eq!(hooked(&link, HookIntent::Start), vec![started("claude")]);
+        // A new session waits for its first prompt; the prompt starts the work.
+        assert_eq!(
+            hooked(&link, HookIntent::Working),
+            vec![Transition::Working]
+        );
         assert!(hooked(&link, HookIntent::Working).is_empty());
         assert!(hooked(&link, HookIntent::Activity).is_empty());
         assert_eq!(
@@ -1423,7 +1437,10 @@ mod tests {
         let mut d = AgentDetector::with_link(link.clone());
         run(&mut d, &osc("133;C;claude"));
         run(&mut d, &osc("133;D;0"));
-        assert_eq!(hooked(&link, HookIntent::Working), vec![started("claude")]);
+        assert_eq!(
+            hooked(&link, HookIntent::Working),
+            vec![started("claude"), Transition::Working]
+        );
     }
 
     fn timed_with(link: Arc<AgentLink>) -> AgentDetector {
