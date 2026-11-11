@@ -156,6 +156,8 @@ describe('TabNavigator', () => {
       input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }));
     });
     expect(actions.rename).toHaveBeenCalledWith(items()[1].id, 'build');
+    // Enter ends the edit from the keyboard, so focus goes back to the tab instead of the document.
+    expect(document.activeElement?.getAttribute('data-tab-id')).toBe(String(items()[1].id));
   });
 
   it('shows the space name and the tabs in a rail when vertical', async () => {

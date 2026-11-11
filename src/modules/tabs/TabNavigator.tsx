@@ -66,6 +66,20 @@ export function TabNavigator({
   const [draggingId, setDraggingId] = useState<number | null>(null);
   const [dropGap, setDropGap] = useState<number | null>(null);
   const drag = useRef<{ pointerId: number; start: number; fromId: number; active: boolean } | null>(null);
+  // The tab to focus once its rename input is gone, when Enter or Escape ended the edit.
+  const refocusId = useRef<number | null>(null);
+
+  const endEdit = (id: number, byKey: boolean) => {
+    if (byKey) refocusId.current = id;
+    setEditingId(null);
+  };
+
+  useEffect(() => {
+    if (editingId !== null || refocusId.current === null) return;
+    const id = refocusId.current;
+    refocusId.current = null;
+    scrollRef.current?.querySelector<HTMLElement>(`[data-tab-id="${id}"]`)?.focus();
+  }, [editingId]);
 
   // Play the enter animation only for tabs opened after the first paint, never for the restored set. Cells are
   // keyed, so a switch or a reorder doesn't remount them and doesn't replay it.
@@ -163,11 +177,11 @@ export function TabNavigator({
             <TabIcon id={t.id} />
             <TabRenameInput
               initial={t.title}
-              onCommit={(value) => {
+              onCommit={(value, byKey) => {
                 actions.rename(t.id, value);
-                setEditingId(null);
+                endEdit(t.id, byKey);
               }}
-              onCancel={() => setEditingId(null)}
+              onCancel={(byKey) => endEdit(t.id, byKey)}
             />
           </div>
           {i === items.length - 1 && showGap(items.length) && <DropIndicator vertical={vertical} />}
@@ -228,7 +242,10 @@ export function TabNavigator({
         {t.dirty ? (
           <span aria-label="Unsaved changes" className="size-1.5 shrink-0 rounded-full bg-foreground/70" />
         ) : null}
-        <TabStatus id={t.id} />
+        {/* Kept mounted so a screen reader hears the agent state change while the tab stays. */}
+        <span aria-live="polite" className="contents">
+          <TabStatus id={t.id} />
+        </span>
       </button>
     );
 
@@ -339,8 +356,9 @@ function TabRenameInput({
   onCancel,
 }: {
   initial: string;
-  onCommit: (value: string) => void;
-  onCancel: () => void;
+  /** `byKey`: Enter or Escape ended the edit (focus goes back to the tab), not a click elsewhere. */
+  onCommit: (value: string, byKey: boolean) => void;
+  onCancel: (byKey: boolean) => void;
 }) {
   const ref = useRef<HTMLInputElement>(null);
   // Guards against a trailing blur re-resolving an edit that Enter/Escape already finished (Escape must never
@@ -366,8 +384,8 @@ function TabRenameInput({
   // explicit = the user pressed Enter, which pins even the unchanged label. A plain blur with no change must not
   // freeze the cwd-derived default into a custom title.
   const commit = (value: string, explicit: boolean) => {
-    if (!explicit && value.trim() === initial.trim()) finish(onCancel);
-    else finish(() => onCommit(value));
+    if (!explicit && value.trim() === initial.trim()) finish(() => onCancel(false));
+    else finish(() => onCommit(value, explicit));
   };
 
   return (
@@ -379,7 +397,7 @@ function TabRenameInput({
       onKeyDown={(e) => {
         e.stopPropagation();
         if (e.key === 'Enter') commit(e.currentTarget.value, true);
-        else if (e.key === 'Escape') finish(onCancel);
+        else if (e.key === 'Escape') finish(() => onCancel(true));
       }}
       onBlur={(e) => {
         // Switching windows/apps blurs the input; keep the edit open instead of resolving it on the way out.

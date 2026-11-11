@@ -82,7 +82,7 @@ export const nord: Theme = {
         accentForeground: '#2e3440',
         destructive: '#bf616a',
         success: '#a3be8c',
-        warning: '#ebcb8b',
+        warning: '#d08770',
         info: '#81a1c1',
         border: 'rgba(46,52,64,0.12)',
         input: 'rgba(46,52,64,0.16)',
