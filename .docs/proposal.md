@@ -144,27 +144,27 @@ Ejemplos de perfiles: PowerShell 7 normal; PowerShell sin perfil; Ubuntu WSL; CM
 
 ## 3.3. Proyectos y workspaces persistentes
 
-| ID      | Prioridad | Requisito                                 | Criterio verificable                                                                                                                                                                                                                                                                                 |
-| ------- | --------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PRJ-001 | P0        | Lista de proyectos                        | Crear, renombrar, duplicar, archivar/borrar                                                                                                                                                                                                                                                          |
-| PRJ-002 | P0        | Guardar tabs y splits                     | Cerrar aplicación y restaurar árbol y tabs en siguiente inicio                                                                                                                                                                                                                                       |
-| PRJ-003 | P0        | Directorio por pane                       | Mantener cwd específico, no solo raíz del proyecto                                                                                                                                                                                                                                                   |
-| PRJ-004 | P0        | Comandos de inicio                        | Ejecutar comandos configurados al abrir el proyecto, con política de confirmación                                                                                                                                                                                                                    |
-| PRJ-005 | P0        | Distintos perfiles en un proyecto         | Por ejemplo PowerShell, WSL y shell de scripts                                                                                                                                                                                                                                                       |
-| PRJ-006 | P1        | Ratios de splits                          | Guardar proporciones reales, no sólo la topología                                                                                                                                                                                                                                                    |
-| PRJ-007 | P1        | Estrategia de restauración                | Automático/manual/confirmación según sensibilidad y riesgo del comando                                                                                                                                                                                                                               |
-| PRJ-008 | P1        | Estados de inicio por pane                | Pending, starting, ready, running, failed, exited                                                                                                                                                                                                                                                    |
-| PRJ-009 | P1        | Reabrir proyecto existente                | Elegir enfocar instancia activa vs crear una segunda                                                                                                                                                                                                                                                 |
-| PRJ-010 | P1        | Reanudar agentes                          | Mecanismo específico y opcional según CLI, sin prometer persistencia de procesos                                                                                                                                                                                                                     |
-| PRJ-011 | P1        | Varios proyectos activos                  | Cambiar entre ellos sin terminar sesiones existentes                                                                                                                                                                                                                                                 |
-| PRJ-012 | P2        | Ventanas múltiples por proyecto           | Guardar y restaurar geometría y asignación de tabs por ventana                                                                                                                                                                                                                                       |
-| PRJ-013 | P1        | Presets vs estado vivo                    | Elegir plantilla fija, snapshot manual o último estado de sesión                                                                                                                                                                                                                                     |
-| PRJ-014 | P1        | Migraciones de esquema                    | Actualizar formatos persistidos conservando datos y rollback                                                                                                                                                                                                                                         |
-| PRJ-015 | P1        | Exportar/importar proyectos               | Formato portable, sin incluir secretos inadvertidamente                                                                                                                                                                                                                                              |
-| PRJ-016 | P0        | Restaurar la última sesión al iniciar lut | Al abrir la app se reabren los proyectos que estaban abiertos al cerrar, con el proyecto activo y su layout; los comandos de inicio respetan su política (§8.4). Comportamiento configurable: restaurar última sesión (por defecto) / abrir un proyecto por defecto / iniciar con una terminal vacía |
-| PRJ-017 | P0        | Abrir otros proyectos desde la app        | Desde el navegador de proyectos o la command palette, sin cerrar los ya abiertos (ver PRJ-011)                                                                                                                                                                                                       |
+| ID      | Prioridad | Requisito                                 | Criterio verificable                                                                                                                                                                                                                                                                                |
+| ------- | --------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PRJ-001 | P0        | Lista de proyectos                        | Crear, renombrar, duplicar, archivar/borrar                                                                                                                                                                                                                                                         |
+| PRJ-002 | P0        | Guardar tabs y splits                     | Cerrar aplicación y restaurar árbol y tabs en siguiente inicio                                                                                                                                                                                                                                      |
+| PRJ-003 | P0        | Directorio por pane                       | Mantener cwd específico, no solo raíz del proyecto                                                                                                                                                                                                                                                  |
+| PRJ-004 | P0        | Relanzar comandos                         | Al restaurar, relanzar a pedido (P0) o con confirmación (P1) los comandos que seguían corriendo en cada pane                                                                                                                                                                                        |
+| PRJ-005 | P0        | Distintos perfiles en un proyecto         | Por ejemplo PowerShell, WSL y shell de scripts                                                                                                                                                                                                                                                      |
+| PRJ-006 | P1        | Ratios de splits                          | Guardar proporciones reales, no sólo la topología                                                                                                                                                                                                                                                   |
+| PRJ-007 | P1        | Confirmación de relanzamiento             | Ejecutar / ejecutar siempre en este proyecto / no ejecutar, por comando                                                                                                                                                                                                                             |
+| PRJ-008 | P1        | Estados de inicio por pane                | Pending, starting, ready, running, failed, exited                                                                                                                                                                                                                                                   |
+| PRJ-009 | P1        | Reabrir proyecto existente                | Elegir enfocar instancia activa vs crear una segunda                                                                                                                                                                                                                                                |
+| PRJ-010 | P1        | Reanudar agentes                          | Mecanismo específico y opcional según CLI, sin prometer persistencia de procesos                                                                                                                                                                                                                    |
+| PRJ-011 | P1        | Varios proyectos activos                  | Cambiar entre ellos sin terminar sesiones existentes                                                                                                                                                                                                                                                |
+| PRJ-012 | P2        | Ventanas múltiples por proyecto           | Guardar y restaurar geometría y asignación de tabs por ventana                                                                                                                                                                                                                                      |
+| PRJ-013 | P1        | Estado vivo, sin presets                  | El proyecto es su último estado de sesión; no hay plantillas separadas                                                                                                                                                                                                                              |
+| PRJ-014 | P1        | Migraciones de esquema                    | Actualizar formatos persistidos conservando datos y rollback                                                                                                                                                                                                                                        |
+| PRJ-015 | P1        | Exportar/importar proyectos               | Formato portable, sin incluir secretos inadvertidamente                                                                                                                                                                                                                                             |
+| PRJ-016 | P0        | Restaurar la última sesión al iniciar lut | Al abrir la app se reabren los proyectos que estaban abiertos al cerrar, con el proyecto activo y su layout; los comandos a relanzar piden confirmación (§8.4). Comportamiento configurable: restaurar última sesión (por defecto) / abrir un proyecto por defecto / iniciar con una terminal vacía |
+| PRJ-017 | P0        | Abrir otros proyectos desde la app        | Desde el navegador de proyectos o la command palette, sin cerrar los ya abiertos (ver PRJ-011)                                                                                                                                                                                                      |
 
-**Definición fundamental:** un _Project_ es el contexto de trabajo nombrado; un _Workspace Preset_ define cómo iniciarlo; un _Running Workspace_ representa las sesiones activas; un _Layout Snapshot_ describe lo que se debe reconstruir. Estos conceptos deben permanecer diferenciados.
+**Definición fundamental:** un _Project_ es el contexto de trabajo nombrado; su _estado guardado_ (tabs, splits, perfiles, cwd y comandos que seguían corriendo) es lo que se reconstruye; un _Running Workspace_ representa las sesiones activas. No hay presets: el proyecto es su estado vivo, que se guarda mientras se trabaja (decisión 26 de `.docs/plan/analysis/decisions.md`).
 
 ## 3.4. Interfaz y personalización
 
@@ -196,7 +196,7 @@ Ejemplos de perfiles: PowerShell 7 normal; PowerShell sin perfil; Ubuntu WSL; CM
 | AGT-005 | P0        | Estado visible: iniciando, trabajando, atención, finalizado/error/salido                  |
 | AGT-006 | P0        | Notificar finalización y requerimientos de atención con acción de enfoque                 |
 | AGT-007 | P1        | Gestionar instalación de hooks con previsualización y desinstalación selectiva            |
-| AGT-008 | P1        | Vista opcional de actividad: herramientas, subagentes, errores y eventos                  |
+| AGT-008 | P1        | No planificada (decisión 27): las CLIs de agentes ya muestran su actividad                |
 | AGT-009 | P1        | Contexto de sesión y modelo/consumo donde exista fuente documentada de datos              |
 | AGT-010 | P1        | Configurar tipos de notificación, sonidos y privacidad                                    |
 | AGT-011 | P2        | Aprobar/rechazar permisos desde UI, sólo con protocolo seguro y fallback                  |
@@ -248,7 +248,7 @@ Ejemplos de perfiles: PowerShell 7 normal; PowerShell sin perfil; Ubuntu WSL; CM
 
 ## ADR-006: proyectos
 
-**Elegido:** extender `Spaces` hacia proyectos con presets, manteniendo migración de datos.  
+**Elegido:** extender `Spaces` hacia proyectos que guardan su estado vivo y relanzan sus procesos, manteniendo migración de datos.  
 **No elegido:** solamente almacenar una lista de directorios.  
 **Motivo:** el valor es restaurar el entorno completo, incluido el arranque de herramientas.
 
@@ -495,7 +495,7 @@ Se recomienda diferenciar los siguientes dominios lógicos:
 - `navigation`: tabs, orientación, selección, orden y grupos. **No** crea el PTY por sí mismo.
 - `layouts`: árboles de split y ratios; operaciones puras con identificadores estables.
 - `profiles`: configuración y validación de procesos/estilo de sesión.
-- `projects`: metadatos, presets, snapshots, lifecycle de restauración y comandos.
+- `projects`: metadatos, estado guardado, lifecycle de restauración y relanzamiento de comandos.
 - `agents`: eventos normalizados, estados, plugins/adaptadores, notificaciones.
 - `optional-tools`: editor, Git, explorer, diff como capabilities con carga bajo demanda.
 - `settings`: preferencias globales y overrides por perfil/proyecto.
@@ -550,7 +550,6 @@ La estructura es orientativa. No reorganizar archivos del renderer sólo por est
 Cada entidad debe tener identificadores estables, separados:
 
 - `projectId`: proyecto lógico persistido.
-- `presetId`: configuración de arranque versionada.
 - `windowId`: ventana desktop.
 - `tabId`: agrupación visual de panes.
 - `paneId`/`leafId`: posición/identidad funcional de panel (confirmar su semántica real en Terax).
@@ -562,9 +561,9 @@ Cada entidad debe tener identificadores estables, separados:
 ## 6.5. Reglas de estado y persistencia
 
 - El PTY es recurso vivo y no debe almacenarse en JSON.
-- El preset es **declarativo**, no una instantánea del proceso.
+- El proyecto se guarda como su **estado vivo**; no hay plantillas declarativas (presets).
 - Un snapshot captura estructura visual y configuración de reinicio.
-- El último estado de aplicación no debe sobrescribir una plantilla guardada sin acción explícita.
+- Un comando a relanzar se guarda como texto mientras sigue corriendo, nunca como estado del proceso, y se borra cuando termina.
 - Las migraciones de esquema requieren `schemaVersion` y transformaciones probadas.
 - Los IDs de recursos de runtime deben regenerarse y reconciliarse durante hidratación.
 - El cierre de proyecto activo debe definir política: cerrar PTY, suspender presentación o mantener recursos en memoria.
@@ -651,37 +650,29 @@ En Windows conservar cuidadosamente scripts de PowerShell y el sourcing de perfi
 
 ---
 
-# 8. Diseño de proyectos: presets, restauración y ejecución
+# 8. Diseño de proyectos: estado guardado, restauración y relanzamiento
 
-## 8.1. Semántica: proyecto, preset y sesión
+## 8.1. Semántica: proyecto, estado guardado y sesión
 
-**Project:** entidad estable: `id`, nombre, repositorio/directorio base, metadatos, color, entornos autorizados.  
-**Preset:** receta de inicio con ventanas/tabs/panes, perfiles y comandos.  
-**Running Workspace:** instancia con sesiones reales, estado de ejecución y errores.  
-**Layout Snapshot:** geometría/topología guardada de ventanas/tabs/splits.
+**Project:** entidad estable: `id`, nombre, repositorio/directorio base, metadatos, color, entornos autorizados y una
+carpeta fija opcional (`pinnedFolder`). Las herramientas (archivos, Git, editor, LSP) usan esa carpeta si está fijada;
+si no, la ubicación del pane de terminal con foco (o el último que lo tuvo), en su propio sistema de archivos. El entorno
+(Windows o una distro WSL) lo da el perfil de cada pane, no el proyecto (decisión 29).  
+**Estado guardado:** ventanas/tabs/splits con ratios y, por pane, perfil, cwd y el comando que seguía corriendo; se guarda
+solo mientras se trabaja (no hay presets ni editor de presets).  
+**Running Workspace:** instancia con sesiones reales, estado de ejecución y errores.
 
-Un proyecto puede ofrecer: “Abrir proyecto”, “Abrir como nueva instancia”, “Restaurar último layout”, “Editar preset” y “Cerrar sesiones del proyecto”. Evitar duplicar procesos accidentalmente si ya está abierto.
+Un proyecto puede ofrecer: “Abrir proyecto”, “Abrir como nueva instancia” y “Cerrar sesiones del proyecto”. Evitar
+duplicar procesos accidentalmente si ya está abierto.
 
-## 8.2. Modelo propuesto de preset
+## 8.2. Modelo propuesto del estado guardado
 
 ```ts
-type StartupPolicy =
-  | { kind: "manual" }
-  | { kind: "auto" }
-  | { kind: "confirm" };
-
-type PanePreset = {
-  id: string;                     // ID estable del preset, no ptyId
+type PaneState = {
+  id: string;                     // ID estable del pane guardado, no ptyId
   profileId: string;
   cwd?: string;
-  env?: Record<string, string>;
-  startup?: {
-    command: string;             // se ejecuta dentro del shell configurado
-    policy: StartupPolicy;
-    waitForPrompt?: boolean;
-    timeoutMs?: number;
-    onFailure?: "keep-shell" | "show-error";
-  };
+  runningCommand?: string;        // comando que seguía corriendo al guardar, tal como se escribió
   resume?: {
     tool: "claude" | "codex" | "other";
     mode: "none" | "continue" | "specific-session";
@@ -690,7 +681,7 @@ type PanePreset = {
 };
 
 type LayoutNode =
-  | { kind: "pane"; panePresetId: string }
+  | { kind: "pane"; paneId: string }
   | {
       kind: "split";
       direction: "horizontal" | "vertical";
@@ -698,32 +689,31 @@ type LayoutNode =
       ratios?: number[];         // normalizar: suma 1; misma cantidad que hijos
     };
 
-type TabPreset = {
+type TabState = {
   id: string;
   title?: string;
   root: LayoutNode;
 };
 
-type WindowPreset = {
+type WindowState = {
   id: string;
   title?: string;
   bounds?: { x?: number; y?: number; width: number; height: number };
-  tabs: TabPreset[];
+  tabs: TabState[];
   activeTabId?: string;
 };
 
-type ProjectPreset = {
-  schemaVersion: 1;
-  id: string;
+type ProjectState = {
+  schemaVersion: 2;               // v1: Spaces migrados (layout y cwd); v2 agrega runningCommand y relaunchApprovals
   projectId: string;
-  name: string;
-  windows: WindowPreset[];
-  panes: Record<string, PanePreset>;
-  defaultStartupPolicy: StartupPolicy;
+  windows: WindowState[];
+  panes: Record<string, PaneState>;
+  // "Ejecutar siempre en este proyecto": cada aprobación vale para ese comando, cwd y perfil.
+  relaunchApprovals: { command: string; cwd?: string; profileId: string }[];
 };
 ```
 
-**MVP:** mantener `windows` preparado en el esquema aunque sólo se implemente una ventana, o aceptar temporalmente un solo `WindowPreset` con migración explícita posterior. Evitar agregar una UI multiwindow sin resolver antes el modelo de ownership del PTY y canvas.
+**MVP:** mantener `windows` preparado en el esquema aunque sólo se implemente una ventana, o aceptar temporalmente un solo `WindowState` con migración explícita posterior. Evitar agregar una UI multiwindow sin resolver antes el modelo de ownership del PTY y canvas.
 
 ## 8.3. Ejemplo de proyecto “Reforge”
 
@@ -734,49 +724,49 @@ project:
   id: reforge
   name: Reforge
   root: 'D:\dev\ayi\reforge'
-  preset:
+  state: # guardado mientras se trabaja
     window: main
-    tabOrientation: vertical
     tabs:
       - title: Desarrollo
         split: horizontal
         panes:
           - profile: pwsh7
-            cwd: 'D:\dev\ayi\reforge'
-            startup: { command: 'git status', policy: auto }
+            cwd: 'D:\dev\ayi\reforge' # el último comando ya terminó: no se relanza nada
           - profile: pwsh7
             cwd: 'D:\dev\ayi\reforge'
-            startup: { command: 'pnpm dev', policy: confirm }
+            runningCommand: 'pnpm dev'
       - title: Agents
         split: vertical
         panes:
           - profile: pwsh7
-            startup: { command: 'claude', policy: manual }
+            runningCommand: 'claude'
           - profile: pwsh7
-            startup: { command: 'codex', policy: manual }
+            runningCommand: 'codex'
+  relaunchApprovals:
+    - { command: 'pnpm dev', cwd: 'D:\dev\ayi\reforge', profile: pwsh7 }
 ```
 
 Este YAML es sólo un ejemplo legible. La implementación puede persistir en JSON mediante Tauri Store, con esquema versionado.
 
 ## 8.4. Restauración segura: algoritmo propuesto
 
-1. Cargar metadatos del proyecto y preset, validar `schemaVersion` y existencia de perfiles.
+1. Cargar metadatos y estado guardado del proyecto, validar `schemaVersion` y existencia de perfiles.
 2. Resolver disponibilidad de entornos (WSL distro, cwd, ejecutables) y mostrar correcciones si faltan.
 3. Resolver si hay una instancia viva: enfocar, crear otra o cancelar.
-4. Crear **estructura visual** con IDs de preset y runtime separados, sin ejecutar todavía comandos automáticos.
+4. Crear **estructura visual** con IDs guardados y de runtime separados, sin ejecutar todavía comandos.
 5. Crear sesiones PTY, respetando límites del renderer y carga progresiva. Conservar sesión oculta si está activa.
 6. Esperar evento de sesión lista / prompt reconocido; no usar un simple `sleep(500)` como contrato de shell-ready.
 7. Aplicar overrides del perfil y cwd de pane antes de ejecutar startup.
-8. Evaluar política `manual / auto / confirm`; pedir permiso donde corresponda y evitar doble ejecución.
-9. Registrar resultado por pane, errores y acciones “Reintentar”, “Abrir shell sin ejecutar comando”, “Editar preset”.
+8. Para cada pane con comando a relanzar: si no está aprobado en el proyecto, preguntar “Ejecutar”, “Ejecutar siempre en este proyecto” o “No ejecutar”; evitar doble ejecución.
+9. Registrar resultado por pane, errores y acciones “Reintentar” y “Abrir shell sin ejecutar comando”.
 10. Sólo después de hidratar correctamente, habilitar la persistencia automática para evitar sobreescribir datos guardados con un estado parcial.
 
 ## 8.5. Riesgos del autoarranque
 
-Nunca ejecutar sin confirmación inicial un preset importado de otro equipo o descargado de Internet. Comandos como `git reset --hard`, `rm`, `del`, despliegues, scripts de infraestructura o `npm run ...` pueden tener efectos secundarios. Ofrecer:
+Nunca relanzar sin confirmación un comando que no fue aprobado en este proyecto, incluido un proyecto importado de otro equipo o descargado de Internet (las aprobaciones no se exportan). Comandos como `git reset --hard`, `rm`, `del`, despliegues, scripts de infraestructura o `npm run ...` pueden tener efectos secundarios. Ofrecer:
 
-- Permiso por proyecto/preset.
-- Modal de previsualización de comandos de autoarranque.
+- Permiso por proyecto y comando (“Ejecutar siempre en este proyecto”).
+- Modal de previsualización de los comandos a relanzar.
 - Indicadores de contexto: directorio, shell/WSL y variables relevantes.
 - Detección de perfil inaccesible y comandos fallidos.
 - Posibilidad de desactivar autoarranque globalmente.
@@ -889,7 +879,7 @@ Las capacidades oficiales de Codex cambian por versión. Confirmar cuáles hooks
 - Tab muestra icono de CLI conocido y badge discreto de estado.
 - Si `needs-approval`: cambiar badge, destacar tab y permitir atajo “Ir al próximo agente que requiere atención”.
 - Si `response-done`: badge y notificación configurable; no sustituir output del CLI.
-- Vista `Agent Activity` **colapsada por defecto**, accesible mediante atajo o menú de tab.
+- Vista `Agent Activity` **colapsada por defecto**, accesible mediante atajo o menú de tab. **No planificada** (decisión 27).
 - Panel de proyecto opcional con todas las sesiones activas, estado y conteo de subagentes.
 - Historial corto de eventos locales, con política explícita de retención.
 - Notificaciones nativas sólo en casos relevantes; evitar spam por cada herramienta o token.
@@ -998,6 +988,9 @@ El sidebar de proyectos y el navegador de tabs **son componentes distintos**, au
 
 En modo horizontal, tabs debajo o dentro de la barra superior; la superficie terminal no cambia de propietario ni se desmonta.
 
+El diseño final (E11) no tiene barra de estado (decisión 30): el cwd va en la barra superior, el estado del LSP y los
+diagnósticos en la línea de estado del editor, la rama en la vista Git del sidebar, y el shell/perfil en el ícono del tab.
+
 ---
 
 # 11. Roadmap de ejecución y entregables por fase
@@ -1076,16 +1069,16 @@ El rebranding visual (títulos, About, iconos, textos) no es parte de la Fase 0.
 
 **Gate:** abrir dos panes con shells y preferencias distintas, persistir y restaurar.
 
-## Fase 4 — Proyectos y presets
+## Fase 4 — Proyectos y restauración
 
 **Objetivo:** resolver el problema de reconstruir el entorno al arrancar.
 
 **Tareas:**
 
-1. Modelo versionado de `Project`, `Preset`, `RunningWorkspace`.
+1. Modelo versionado de `Project`, su estado guardado y `RunningWorkspace`.
 2. Migrar `Spaces` actual conservando datos.
-3. Editor de presets y elección de perfiles por pane.
-4. Guardar árbol, orden, ratios, cwd, active tab y comandos.
+3. Confirmación para relanzar comandos (ejecutar / siempre en este proyecto / no ejecutar).
+4. Guardar árbol, orden, ratios, cwd, perfil, active tab y comandos que siguen corriendo.
 5. Ejecutar restauración con estado, confirmación y guardas contra duplicados.
 6. Soporte multi-proyecto activo y reglas de foco/instancia; abrir otros proyectos desde la app (PRJ-017).
 7. Restauración de la última sesión al iniciar lut (PRJ-016): persistir qué proyectos estaban abiertos y cuál era el activo; al arrancar, reabrirlos con el algoritmo de §8.4.
@@ -1104,7 +1097,7 @@ El rebranding visual (títulos, About, iconos, textos) no es parte de la Fase 0.
 2. Instalar hooks mediante preview/diff y consentimiento; soportar remover sólo hooks propios.
 3. Estado por tab/pane y notificaciones nativas.
 4. Shortcut de foco al agente que necesita atención.
-5. Timeline opcional y subagentes cuando la CLI/fuente ofrece datos.
+5. Timeline opcional y subagentes cuando la CLI/fuente ofrece datos. **No planificado** (decisión 27).
 6. Gestión de frecuencia, retención y privacidad.
 7. Integración opcional de métricas por statusLine sin pisar config del usuario.
 8. Tests de eventos fuera de orden, errores, cierre, timeout y fallback sin hooks.
@@ -1164,7 +1157,7 @@ Orden sugerido de PRs iniciales:
 - PR-004: nueva sidebar de proyectos vacía y estado de navegación.
 - PR-005: aislamiento de `AiComposerProvider`/chat BYOK.
 - PR-006: perfiles y contratos entre profile → pane → PTY.
-- PR-007: schema de presets versionado y migration de Spaces.
+- PR-007: schema de proyectos versionado y migration de Spaces.
 - PR-008: orquestador de arranque de proyecto.
 - PR-009: puente del reducer de agentes al UI.
 
@@ -1220,7 +1213,7 @@ Estos comandos deben ejecutarse en un entorno con dependencias instaladas y tool
 | Desinstalar hooks                               | Preserva hooks ajenos                                                                                            |
 | Hooks ausentes                                  | Terminal funciona; degradación de badges explícita                                                               |
 | Proveedor BYOK sin key                          | Terminal y agentes CLI funcionan igual                                                                           |
-| Reiniciar con preset peligroso                  | Exige confirmación antes de ejecutar                                                                             |
+| Reiniciar con comando peligroso a relanzar      | Exige confirmación antes de ejecutar                                                                             |
 | Cambiar tema/fuente                             | Presentación se actualiza sin reiniciar proceso                                                                  |
 | Cerrar y reabrir lut con dos proyectos abiertos | Se restauran ambos proyectos, el activo y sus layouts; comandos según política                                   |
 | Terax instalado en la misma máquina             | lut no lee ni escribe datos, stores, hooks ni variables de Terax; desinstalar hooks de lut preserva los de Terax |
@@ -1270,7 +1263,7 @@ No fijar cifras absolutas sin baseline. Registrar inicialmente:
 
 - Ejecutar programas mediante argv cuando sea posible; separar argumentos en arrays y no interpolar rutas en strings de shell.
 - Si los comandos de proyecto se ejecutan dentro de shell, usar un mecanismo de entrada/quoting de la shell activa, no construir una línea no escapada.
-- Mostrar claramente qué ejecuta el preset y con qué cwd/entorno.
+- Mostrar claramente qué se va a relanzar y con qué cwd/entorno.
 - Nunca registrar tokens de auth ni variables de entorno secretas.
 - Mantener restricciones de workspace authorization existentes hasta que se evalúe su modelo de amenaza.
 - Evitar puertos de control abiertos a otras máquinas; autenticar solicitudes locales.
@@ -1284,6 +1277,9 @@ El proyecto debe funcionar totalmente local para terminal/sesiones/proyectos y n
 
 - **Permitido por defecto:** IDs, agente, estado, tiempo, PTY, tab, proyecto, metadatos mínimos.
 - **Opt-in explícito:** comandos, nombres de herramientas, previews, mensajes, errores detallados, timeline persistente.
+  El opt-in para guardar los comandos que siguen corriendo (para relanzarlos, §8) es la opción de inicio “restaurar la
+  última sesión” con el relanzamiento activado, que advierte que esas líneas se guardan localmente y pueden contener
+  secretos (decisión 28).
 - **No guardar por defecto:** prompts completos, contenido leído/escrito, transcripciones, variables de entorno, tokens.
 
 ## 14.3. Licenciamiento y atribuciones
@@ -1342,14 +1338,14 @@ Al terminar la Fase 0, exigir estos artefactos dentro del repo. **Toda la docume
 
 ## Proyectos y perfiles
 
-- [ ] Puedo guardar un entorno de trabajo completo como preset.
+- [ ] Mi entorno de trabajo (tabs, splits, cwd, perfiles y procesos) se guarda solo mientras trabajo.
 - [ ] Puedo restaurarlo después de reiniciar la aplicación.
 - [ ] Al abrir lut se restaura la última sesión (proyectos abiertos, proyecto activo y layouts).
 - [ ] Puedo abrir otros proyectos guardados sin cerrar los que ya están abiertos.
 - [ ] Cada pane puede tener shell/cwd/perfil propios.
-- [ ] Los comandos configurados arrancan una sola vez y con políticas explícitas.
+- [ ] Los comandos relanzados arrancan una sola vez y sólo con confirmación o aprobación previa.
 - [ ] Los errores de configuración no bloquean toda la aplicación.
-- [ ] Un preset importado no ejecuta comandos sin consentimiento.
+- [ ] Un proyecto importado no relanza comandos sin consentimiento.
 
 ## Agentes
 

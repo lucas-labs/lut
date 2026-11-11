@@ -30,6 +30,15 @@ Several windows: PTY/renderer ownership per window, moving tabs/panes between wi
 - `F7:4` — restauración de geometría por monitor
 - `F7:gate` — ventanas se recuperan sin crear sesiones huérfanas, sin leaks visibles y sin errores de foco/propiedad de PTY.
 
+## Agent activity view
+
+A view of an agent session's tools, subagents, errors and events. Not wanted for now: agent CLIs such as Claude Code
+already show it (decision 27).
+
+- `AGT-008` — P1 Vista opcional de actividad: herramientas, subagentes, errores y eventos
+- `9.6:4` — Vista `Agent Activity` colapsada por defecto, accesible mediante atajo o menú de tab.
+- `F5:5` — Timeline opcional y subagentes cuando la CLI/fuente ofrece datos.
+
 ## Agent permission approval from the UI
 
 Approve/deny agent permission requests from lut, only with a secure protocol and fallback (proposal 9.8). The backend decision broker and the frontend client already exist and stay dormant.

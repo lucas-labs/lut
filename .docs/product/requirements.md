@@ -42,7 +42,7 @@ columns are out of date.
 | PRO-003 | P0       | Directorio de inicio                 | E14-10         |                |       |
 | PRO-004 | P1       | Variables de entorno                 | E14-09         |                |       |
 | PRO-005 | P0       | Apariencia por perfil                | E14-01, E14-16 |                |       |
-| PRO-006 | P1       | Entorno Windows/WSL/macOS/Linux      | E14-06         |                |       |
+| PRO-006 | P1       | Entorno Windows/WSL/macOS/Linux      | E14-06, E16-13 |                |       |
 | PRO-007 | P1       | Exportar/importar perfiles           | E23-02         |                |       |
 | PRO-009 | P1       | Perfil en cada pane                  | E14-14         |                |       |
 | PRO-010 | P1       | Validación de perfiles               | E14-03, E15-02 |                |       |
@@ -54,16 +54,16 @@ columns are out of date.
 | PRJ-001 | P0       | Lista de proyectos                        | E16-04, E17-10, E18-03                                   |                |       |
 | PRJ-002 | P0       | Guardar tabs y splits                     | E16-05, E16-06, E16-12, E17-05                           |                |       |
 | PRJ-003 | P0       | Directorio por pane                       | E16-05                                                   |                |       |
-| PRJ-004 | P0       | Comandos de inicio                        | E17-12, E17-16                                           |                |       |
+| PRJ-004 | P0       | Relanzar comandos                         | E17-12, E17-19                                           |                |       |
 | PRJ-005 | P0       | Distintos perfiles en un proyecto         | E16-07                                                   |                |       |
 | PRJ-006 | P1       | Ratios de splits                          | E16-05                                                   |                |       |
-| PRJ-007 | P1       | Estrategia de restauración                | E17-13                                                   |                |       |
-| PRJ-008 | P1       | Estados de inicio por pane                | E17-12, E17-16                                           |                |       |
+| PRJ-007 | P1       | Confirmación de relanzamiento             | E17-13                                                   |                |       |
+| PRJ-008 | P1       | Estados de inicio por pane                | E17-12                                                   |                |       |
 | PRJ-009 | P1       | Reabrir proyecto existente                | E17-08                                                   |                |       |
 | PRJ-010 | P1       | Reanudar agentes                          | E21-02, E21-03                                           |                |       |
 | PRJ-011 | P1       | Varios proyectos activos                  | E17-08                                                   |                |       |
 | PRJ-012 | P2       | Ventanas múltiples por proyecto           | Not planned: P2: multiple windows per project (post-v1). |                |       |
-| PRJ-013 | P1       | Presets vs estado vivo                    | E16-08                                                   |                |       |
+| PRJ-013 | P1       | Estado vivo, sin presets                  | E16-05                                                   |                |       |
 | PRJ-014 | P1       | Migraciones de esquema                    | E16-03                                                   |                |       |
 | PRJ-015 | P1       | Exportar/importar proyectos               | E23-03                                                   |                |       |
 | PRJ-016 | P0       | Restaurar la última sesión al iniciar lut | E17-01, E17-07, E18-07                                   |                |       |
@@ -78,7 +78,7 @@ columns are out of date.
 | UX-003 | P0       | Sidebar de proyectos opcional, colapsable y con ancho persistido                      | E11-05, E18-01                                          |                |       |
 | UX-004 | P0       | Temas claros/oscuros y temas personalizados mediante tokens                           | E11-03, E13-05, E13-08                                  |                |       |
 | UX-005 | P0       | Fuentes configurables y soporte de Nerd Fonts/powerline cuando el renderer lo permita | E11-03, E13-04                                          |                |       |
-| UX-006 | P1       | UI minimalista, densidad compacta/normal, iconografía coherente                       | E12-09, E22-07                                          |                |       |
+| UX-006 | P1       | UI minimalista, densidad compacta/normal, iconografía coherente                       | E22-07                                                  |                |       |
 | UX-007 | P1       | Menús contextuales para tabs/panes/proyectos                                          | E11-07, E22-04, E22-05                                  |                |       |
 | UX-008 | P1       | Command palette orientado a acciones de terminal/proyectos                            | E11-07, E22-02                                          |                |       |
 | UX-009 | P1       | Paneles secundarios opcionales: explorer, Git, diff, logs de agentes                  | E10-12, E11-08                                          |                |       |
@@ -97,7 +97,7 @@ columns are out of date.
 | AGT-005 | P0       | Estado visible: iniciando, trabajando, atención, finalizado/error/salido                  | E11-06, E19-07                                                                                             |                |       |
 | AGT-006 | P0       | Notificar finalización y requerimientos de atención con acción de enfoque                 | E11-06, E20-06                                                                                             |                |       |
 | AGT-007 | P1       | Gestionar instalación de hooks con previsualización y desinstalación selectiva            | E11-06, E20-10, E20-11, E20-15                                                                             |                |       |
-| AGT-008 | P1       | Vista opcional de actividad: herramientas, subagentes, errores y eventos                  | E11-06, E20-12                                                                                             |                |       |
+| AGT-008 | P1       | No planificada (decisión 27): las CLIs de agentes ya muestran su actividad                | Not planned: P1: agent activity view; agent CLIs such as Claude Code already show it (decision 27).        |                |       |
 | AGT-009 | P1       | Contexto de sesión y modelo/consumo donde exista fuente documentada de datos              | E21-05, E21-06                                                                                             |                |       |
 | AGT-010 | P1       | Configurar tipos de notificación, sonidos y privacidad                                    | E20-02, E20-07                                                                                             |                |       |
 | AGT-011 | P2       | Aprobar/rechazar permisos desde UI, sólo con protocolo seguro y fallback                  | Not planned: P2: approve/deny permissions from the UI (post-v1); the existing decision broker stays as is. |                |       |

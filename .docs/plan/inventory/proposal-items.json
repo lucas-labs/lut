@@ -185,7 +185,7 @@
       "id": "PRJ-004",
       "section": "3",
       "kind": "requirement",
-      "text": "P0 Comandos de inicio"
+      "text": "P0 Relanzar comandos"
     },
     {
       "id": "PRJ-005",
@@ -203,7 +203,7 @@
       "id": "PRJ-007",
       "section": "3",
       "kind": "requirement",
-      "text": "P1 Estrategia de restauración"
+      "text": "P1 Confirmación de relanzamiento"
     },
     {
       "id": "PRJ-008",
@@ -239,7 +239,7 @@
       "id": "PRJ-013",
       "section": "3",
       "kind": "requirement",
-      "text": "P1 Presets vs estado vivo"
+      "text": "P1 Estado vivo, sin presets"
     },
     {
       "id": "PRJ-014",
@@ -389,7 +389,7 @@
       "id": "AGT-008",
       "section": "3",
       "kind": "requirement",
-      "text": "P1 Vista opcional de actividad: herramientas, subagentes, errores y eventos"
+      "text": "P1 No planificada (decisión 27): las CLIs de agentes ya muestran su actividad"
     },
     {
       "id": "AGT-009",
@@ -629,7 +629,7 @@
       "id": "6.2:6",
       "section": "6.2",
       "kind": "list-item",
-      "text": "`projects`: metadatos, presets, snapshots, lifecycle de restauración y comandos."
+      "text": "`projects`: metadatos, estado guardado, lifecycle de restauración y relanzamiento de comandos."
     },
     {
       "id": "6.2:7",
@@ -659,7 +659,7 @@
       "id": "6.4",
       "section": "6.4",
       "kind": "section",
-      "text": "Cada entidad debe tener identificadores estables, separados: - `projectId`: proyecto lógico persistido. - `presetId`: configuración de arranque versionada. - `windowId`: ventana desktop. - `tabId`: agrupación visual de …"
+      "text": "Cada entidad debe tener identificadores estables, separados: - `projectId`: proyecto lógico persistido. - `windowId`: ventana desktop. - `tabId`: agrupación visual de panes. - `paneId`/`leafId`: posición/identidad funci…"
     },
     {
       "id": "6.5:1",
@@ -671,7 +671,7 @@
       "id": "6.5:2",
       "section": "6.5",
       "kind": "list-item",
-      "text": "El preset es declarativo, no una instantánea del proceso."
+      "text": "El proyecto se guarda como su estado vivo; no hay plantillas declarativas (presets)."
     },
     {
       "id": "6.5:3",
@@ -683,7 +683,7 @@
       "id": "6.5:4",
       "section": "6.5",
       "kind": "list-item",
-      "text": "El último estado de aplicación no debe sobrescribir una plantilla guardada sin acción explícita."
+      "text": "Un comando a relanzar se guarda como texto mientras sigue corriendo, nunca como estado del proceso, y se borra cuando termina."
     },
     {
       "id": "6.5:5",
@@ -725,7 +725,7 @@
       "id": "8.4:1",
       "section": "8.4",
       "kind": "list-item",
-      "text": "Cargar metadatos del proyecto y preset, validar `schemaVersion` y existencia de perfiles."
+      "text": "Cargar metadatos y estado guardado del proyecto, validar `schemaVersion` y existencia de perfiles."
     },
     {
       "id": "8.4:2",
@@ -743,7 +743,7 @@
       "id": "8.4:4",
       "section": "8.4",
       "kind": "list-item",
-      "text": "Crear estructura visual con IDs de preset y runtime separados, sin ejecutar todavía comandos automáticos."
+      "text": "Crear estructura visual con IDs guardados y de runtime separados, sin ejecutar todavía comandos."
     },
     {
       "id": "8.4:5",
@@ -767,13 +767,13 @@
       "id": "8.4:8",
       "section": "8.4",
       "kind": "list-item",
-      "text": "Evaluar política `manual / auto / confirm`; pedir permiso donde corresponda y evitar doble ejecución."
+      "text": "Para cada pane con comando a relanzar: si no está aprobado en el proyecto, preguntar “Ejecutar”, “Ejecutar siempre en este proyecto” o “No ejecutar”; evitar doble ejecución."
     },
     {
       "id": "8.4:9",
       "section": "8.4",
       "kind": "list-item",
-      "text": "Registrar resultado por pane, errores y acciones “Reintentar”, “Abrir shell sin ejecutar comando”, “Editar preset”."
+      "text": "Registrar resultado por pane, errores y acciones “Reintentar” y “Abrir shell sin ejecutar comando”."
     },
     {
       "id": "8.4:10",
@@ -785,13 +785,13 @@
       "id": "8.5:1",
       "section": "8.5",
       "kind": "list-item",
-      "text": "Permiso por proyecto/preset."
+      "text": "Permiso por proyecto y comando (“Ejecutar siempre en este proyecto”)."
     },
     {
       "id": "8.5:2",
       "section": "8.5",
       "kind": "list-item",
-      "text": "Modal de previsualización de comandos de autoarranque."
+      "text": "Modal de previsualización de los comandos a relanzar."
     },
     {
       "id": "8.5:3",
@@ -929,7 +929,7 @@
       "id": "9.6:4",
       "section": "9.6",
       "kind": "list-item",
-      "text": "Vista `Agent Activity` colapsada por defecto, accesible mediante atajo o menú de tab."
+      "text": "Vista `Agent Activity` colapsada por defecto, accesible mediante atajo o menú de tab. No planificada (decisión 27)."
     },
     {
       "id": "9.6:5",
@@ -1391,7 +1391,7 @@
       "id": "F4:1",
       "section": "F4",
       "kind": "phase-task",
-      "text": "Modelo versionado de `Project`, `Preset`, `RunningWorkspace`."
+      "text": "Modelo versionado de `Project`, su estado guardado y `RunningWorkspace`."
     },
     {
       "id": "F4:2",
@@ -1403,13 +1403,13 @@
       "id": "F4:3",
       "section": "F4",
       "kind": "phase-task",
-      "text": "Editor de presets y elección de perfiles por pane."
+      "text": "Confirmación para relanzar comandos (ejecutar / siempre en este proyecto / no ejecutar)."
     },
     {
       "id": "F4:4",
       "section": "F4",
       "kind": "phase-task",
-      "text": "Guardar árbol, orden, ratios, cwd, active tab y comandos."
+      "text": "Guardar árbol, orden, ratios, cwd, perfil, active tab y comandos que siguen corriendo."
     },
     {
       "id": "F4:5",
@@ -1475,7 +1475,7 @@
       "id": "F5:5",
       "section": "F5",
       "kind": "phase-task",
-      "text": "Timeline opcional y subagentes cuando la CLI/fuente ofrece datos."
+      "text": "Timeline opcional y subagentes cuando la CLI/fuente ofrece datos. No planificado (decisión 27)."
     },
     {
       "id": "F5:6",
@@ -1709,7 +1709,7 @@
       "id": "13.2:18",
       "section": "13.2",
       "kind": "table-row",
-      "text": "Reiniciar con preset peligroso | Exige confirmación antes de ejecutar"
+      "text": "Reiniciar con comando peligroso a relanzar | Exige confirmación antes de ejecutar"
     },
     {
       "id": "13.2:19",
@@ -1889,7 +1889,7 @@
       "id": "14.1:3",
       "section": "14.1",
       "kind": "list-item",
-      "text": "Mostrar claramente qué ejecuta el preset y con qué cwd/entorno."
+      "text": "Mostrar claramente qué se va a relanzar y con qué cwd/entorno."
     },
     {
       "id": "14.1:4",
@@ -2081,7 +2081,7 @@
       "id": "16:7",
       "section": "16",
       "kind": "list-item",
-      "text": "Puedo guardar un entorno de trabajo completo como preset."
+      "text": "Mi entorno de trabajo (tabs, splits, cwd, perfiles y procesos) se guarda solo mientras trabajo."
     },
     {
       "id": "16:8",
@@ -2111,7 +2111,7 @@
       "id": "16:12",
       "section": "16",
       "kind": "list-item",
-      "text": "Los comandos configurados arrancan una sola vez y con políticas explícitas."
+      "text": "Los comandos relanzados arrancan una sola vez y sólo con confirmación o aprobación previa."
     },
     {
       "id": "16:13",
@@ -2123,7 +2123,7 @@
       "id": "16:14",
       "section": "16",
       "kind": "list-item",
-      "text": "Un preset importado no ejecuta comandos sin consentimiento."
+      "text": "Un proyecto importado no relanza comandos sin consentimiento."
     },
     {
       "id": "16:15",

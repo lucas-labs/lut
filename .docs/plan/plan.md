@@ -3308,7 +3308,7 @@ size: S
 - [ ] The logo and app icon exist as source artwork with PNG and ICO exports at the sizes the bundle needs.
 - [ ] The variant used as the app icon is chosen.
 
-### E11-02 — App shell: window frame/title bar, tab navigator (horizontal/vertical), header, status bar, dialogs
+### E11-02 — App shell: window frame/title bar, tab navigator (horizontal/vertical), header, dialogs
 
 ```yaml
 id: E11-02
@@ -3321,15 +3321,16 @@ size: M
 ```
 
 **Goal:** The user designs the terminal-first app shell: window frame and title bar per OS, the tab navigator in horizontal
-and vertical orientation, header, status bar, split panes chrome and dialogs (close confirmations, errors).
+and vertical orientation, header, split panes chrome and dialogs (close confirmations, errors). There is no status bar
+(decision 30).
 
 **Acceptance criteria:**
 
 - [ ] Window frame/title bar designs for Windows, macOS and Linux.
 - [ ] Tab navigator in both orientations, including overflow and active/attention states.
-- [ ] Header, status bar, pane chrome and dialog designs.
-- [ ] Status bar visibility: how it is hidden/shown (setting and command) and the layout without it (§10.5, IR-87).
-- [ ] Focus mode: all chrome hidden (tabs, sidebar, header, status bar), how to enter and leave it (§10.4, IR-86).
+- [ ] Header, pane chrome and dialog designs; no status bar (decision 30), its indicators placed in the header, the
+      editor tab and the tabs.
+- [ ] Focus mode: all chrome hidden (tabs, sidebar, header), how to enter and leave it (§10.4, IR-86).
 
 ### E11-03 — Settings UI: sections, theme/font pickers, shortcuts editor
 
@@ -3373,7 +3374,7 @@ tab title/colour customisation.
 - [ ] Tab title and colour customisation designed.
 - [ ] In-pane error states designed: missing profile (with "open with default profile" / choose another profile) and the "process exited" state used by the profile `closeBehavior`.
 
-### E11-05 — Projects UI: sidebar navigator, preset editor, startup-command consent modal, restore errors
+### E11-05 — Projects UI: sidebar navigator, relaunch consent modal, restore errors
 
 ```yaml
 id: E11-05
@@ -3385,36 +3386,35 @@ scope: ui
 size: M
 ```
 
-**Goal:** The user designs project navigation in the sidebar, the preset editor, the startup-command consent modal and how
-restore errors are shown.
+**Goal:** The user designs project navigation in the sidebar, the modal that asks before relaunching a command
+(decision 26) and how restore errors are shown.
 
 **Acceptance criteria:**
 
 - [ ] Sidebar project navigator designed (no permanent explorer/source control).
-- [ ] Preset editor (including startup options and the inline error for more than 4 panes in a tab) and startup-command consent modal designed.
+- [ ] Relaunch consent modal designed (run / always in this Space / don't run).
 - [ ] Restore error states (retry / open shell) designed.
 
-### E11-06 — Agents UI: tab badges, notifications, focus-next-attention, hooks manager preview/diff, activity view
+### E11-06 — Agents UI: tab badges, notifications, focus-next-attention, hooks manager preview/diff
 
 ```yaml
 id: E11-06
 depends-on: [E11-02]
 refs: [.docs/plan/analysis/agents.md]
-covers: [AGT-005, AGT-006, AGT-007, AGT-008]
+covers: [AGT-005, AGT-006, AGT-007]
 type: design
 scope: ui
 size: M
 ```
 
 **Goal:** The user designs agent status on tabs/panes, notifications, the focus-next-attention affordance, the hooks
-manager with preview/diff and selective uninstall, and the collapsed activity view.
+manager with preview/diff and selective uninstall.
 
 **Acceptance criteria:**
 
 - [ ] Every normalized agent state, including the degraded "no hooks" state, has a visual.
 - [ ] Notification list/toasts and focus action designed.
 - [ ] Hooks manager (per-agent status, diff preview, stale-preview error, uninstall) designed.
-- [ ] Activity view (tools, subagents, errors) designed.
 
 ### E11-07 — Command palette and context menus
 
@@ -3481,7 +3481,8 @@ depends-on: [E11, E08, E09, E07, E10]
 refs: [ADR-002, 10.2, UX-001, UX-002, .docs/plan/analysis/app-shell.md]
 ```
 
-Implement the user's design for the window frame, tab navigator, header, status bar, dialogs, global styles and icons.
+Implement the user's design for the window frame, tab navigator, header, dialogs, global styles and icons (no status
+bar, decision 30).
 Behaviour (navigation model, close guards, coordinator) comes from E08/E09; this epic replaces only the visual layer.
 
 ### E12-01 — Rebuild global styles on the theme's UI tokens
@@ -3599,7 +3600,7 @@ size: M
 
 **Verification:** `pnpm test`; manual: toggle orientation with a long-running command in a hidden tab; it keeps running.
 
-### E12-06 — Rebuild the status bar
+### E12-06 — Move the status bar indicators into the header, the editor and the tabs
 
 ```yaml
 id: E12-06
@@ -3611,15 +3612,22 @@ scope: ui
 size: M
 ```
 
-**Goal:** Status bar per design with the context indicators (cwd, shell/WSL environment, git branch via `useGitBranch`) and the LSP diagnostics badge as a secondary-tool element.
+**Goal:** The design has no status bar (decision 30). Each of its indicators moves to where the design puts it, and the
+status bar itself is removed.
 
 **Acceptance criteria:**
 
-- [ ] `StatusBar`, `CwdBreadcrumb`, `WorkspaceEnvSelector` and `OsIcon` rebuilt per design; no AI controls.
-- [ ] `DiagnosticsBadge` redesigned and shown only when the editor/LSP tool is active (decision 2).
-- [ ] Indicators use `pathUtils` and `useSystemInfo` (both kept by E06-02, which moves `OsIcon`/`useSystemInfo` next to the status bar).
+- [ ] The cwd breadcrumb (`CwdBreadcrumb`) sits in the header per design; clicking a segment still `cd`s there.
+- [ ] Editor tabs get a status line per design: file path, line and column, LSP state (`LspStatusPill`) and
+      `DiagnosticsBadge`, shown only in editor tabs (decision 2).
+- [ ] The private terminal is marked by its tab icon (as today); the "not saved in the Space" explanation moves to the
+      tab tooltip.
+- [ ] The git branch (`useGitBranch`) shows in the sidebar Git view and the OS/shell mark is the tab's profile icon
+      (`OsIcon`, `useSystemInfo`); whatever ends up unused is removed. (`WorkspaceEnvSelector` is removed by E16-13.)
+- [ ] `StatusBar` and its footer are removed; the terminal area grows and each PTY gets one resize.
 
-**Verification:** `pnpm check-types && pnpm test`; manual: `cd` in the terminal updates the breadcrumb; opening a file with diagnostics shows the badge.
+**Verification:** `pnpm check-types && pnpm test`; manual: `cd` in the terminal updates the header breadcrumb; opening a
+file with diagnostics shows the badge in the editor's status line.
 
 ### E12-07 — Rebuild the close confirmation dialogs
 
@@ -3664,33 +3672,11 @@ size: M
 
 **Verification:** `pnpm test`; manual on Windows: the default window shows the terminal occupying the central area; opening/closing the editor keeps sessions.
 
-### E12-09 — Make the status bar hideable
-
-```yaml
-id: E12-09
-depends-on: [E11-02, E12-06]
-refs: [UX-006, 10.2, .docs/plan/analysis/proposal.md]
-covers: [UX-006]
-type: task
-scope: ui
-size: S
-```
-
-**Goal:** The status bar is optional (§10.5 "Status discreto opcional", IR-87): a persisted setting and a command show or hide it, per the E11-02 design.
-
-**Acceptance criteria:**
-
-- [ ] A `statusBarVisible` preference (default per design) persisted in the settings store; a stored value from an older version without the key loads with the default.
-- [ ] A command (palette and shortcut registry entry) toggles it; the change applies live without remounting terminals (no `pty_close`/`pty_open`, checked with the E07-01 instrumentation).
-- [ ] Layout without the status bar matches the design; the terminal area grows and the PTY gets one resize.
-
-**Verification:** `pnpm test` (preference default, toggle, no remount); manual: toggle the status bar while `top` runs.
-
 ### E12-10 — Add focus mode (hide all chrome)
 
 ```yaml
 id: E12-10
-depends-on: [E11-02, E12-03, E12-04, E12-09]
+depends-on: [E11-02, E12-03, E12-04]
 refs: [10.4, .docs/plan/analysis/proposal.md]
 covers: [10.4]
 type: task
@@ -3702,8 +3688,8 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] A command and shortcut enter and leave focus mode; it hides the tab navigator, projects sidebar, header and status bar.
-- [ ] Leaving focus mode restores the previous chrome state (orientation, sidebar collapsed/width, status bar visibility) exactly.
+- [ ] A command and shortcut enter and leave focus mode; it hides the tab navigator, projects sidebar and header.
+- [ ] Leaving focus mode restores the previous chrome state (orientation, sidebar collapsed/width) exactly.
 - [ ] Entering and leaving never remounts terminal panes or restarts PTYs (test with the E07-01 instrumentation).
 
 **Verification:** `pnpm test`; manual: enter focus mode with two tabs and a split, switch tabs by shortcut, leave focus mode.
@@ -3712,7 +3698,7 @@ size: S
 
 ```yaml
 id: E12-11
-depends-on: [E12-01, E12-02, E12-03, E12-04, E12-05, E12-06, E12-07, E12-08, E12-09, E12-10]
+depends-on: [E12-01, E12-02, E12-03, E12-04, E12-05, E12-06, E12-07, E12-08, E12-10]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
@@ -3971,11 +3957,38 @@ size: M
 
 **Verification:** the captures and the decision in the PR; any follow-up issue synced.
 
+### E13-14 — Turn off WebView2's browser shortcuts on Windows
+
+```yaml
+id: E13-14
+depends-on: []
+refs: [TER-008, .docs/plan/analysis/app-shell.md]
+covers: [app-shell/shortcuts]
+type: task
+scope: be
+size: S
+```
+
+**Goal:** a key lut does not bind never triggers a browser feature. Found on Windows: `Ctrl+P` with focus outside a
+terminal opens the print dialog, because WebView2 keeps its browser accelerator keys on by default (print, find on page,
+reload with `Ctrl+R`/`F5`, page zoom). Tauri 2.12 does not expose the setting, so the main window sets
+`AreBrowserAcceleratorKeysEnabled(false)` on the WebView2 settings through `with_webview` when it is created.
+
+**Acceptance criteria:**
+
+- [ ] On Windows, `Ctrl+P`, `Ctrl+F`, `Ctrl+R`, `F5` and `Ctrl+Plus`/`Ctrl+Minus` with focus outside a terminal do
+      not print, find, reload or zoom the page; lut's own shortcuts on those keys keep working.
+- [ ] Debug builds keep the DevTools keys (`F12`, `Ctrl+Shift+I`).
+- [ ] macOS and Linux are unchanged.
+
+**Verification:** `pnpm tauri dev` and a release build on Windows: press each key with focus in the sidebar, a
+terminal and an editor tab.
+
 ### E13-11 — Close-out: settings and theming
 
 ```yaml
 id: E13-11
-depends-on: [E13-01, E13-03, E13-04, E13-05, E13-06, E13-07, E13-08, E13-09, E13-10, E13-12, E13-13]
+depends-on: [E13-01, E13-03, E13-04, E13-05, E13-06, E13-07, E13-08, E13-09, E13-10, E13-12, E13-13, E13-14]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
@@ -4599,10 +4612,10 @@ depends-on: [E14, E02, E08]
 refs: [ADR-006, F4, 6.4, 6.5, .docs/plan/analysis/state-settings.md, .docs/plan/analysis/decisions.md]
 ```
 
-Evolve Spaces into versioned projects with declarative presets and live snapshots, `schemaVersion` migrations between
-lut versions only (decision 4: no Terax data), and stable ids reconciled at hydration.
+Evolve Spaces into versioned projects whose saved state is their live state (decision 26: no presets),
+`schemaVersion` migrations between lut versions only (decision 4: no Terax data), and stable ids reconciled at hydration.
 
-### E16-01 — Spike: Project, Preset and RunningWorkspace schema
+### E16-01 — Spike: Project and saved-state schema
 
 ```yaml
 id: E16-01
@@ -4618,11 +4631,11 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] Written schema in `.docs/` with `projectId`, `presetId`, `windowId`, `tabId`, `paneId`/runtime ids, pane tree with ratios, `profileId`, cwd, startup command + policy, and `windows[]` from v1 (IR-71).
+- [ ] Written schema in `.docs/` with `projectId`, `windowId`, `tabId`, `paneId`/runtime ids, pane tree with ratios, `profileId`, cwd, the still-running command, the per-project relaunch approvals, and `windows[]` from v1 (IR-71).
 - [ ] Storage decision: JSON via Tauri Store with `schemaVersion` (IR-73), file layout, owner (TS with Zod; Serde only where it crosses IPC).
-- [ ] Ratio validation rule (sum 1, one per child; IR-70) and the preset vs snapshot boundary documented.
-- [ ] Pane/leaf id semantics of the current code are investigated and written down (IR-60: which ids are stable across restarts, splits and moves) before preset ids are fixed.
-- [ ] Per-pane startup fields fixed: command/args, env, `waitForPrompt`, `timeoutMs`, `onFailure` (IR-69), and the 4-pane-per-tab limit as a schema rule (IR-48).
+- [ ] Ratio validation rule (sum 1, one per child; IR-70) documented.
+- [ ] Pane/leaf id semantics of the current code are investigated and written down (IR-60: which ids are stable across restarts, splits and moves) before persisted pane ids are fixed.
+- [ ] The running command is stored as the line the user typed, only while it runs (decision 26), and the 4-pane-per-tab limit is a schema rule (IR-48).
 - [ ] plan.md updated if the schema changes issue scope.
 
 **Verification:** Document reviewed by the user; `node .docs/plan/tools/validate.mjs` passes.
@@ -4674,7 +4687,7 @@ size: M
 
 **Verification:** `pnpm test`; manual: start with an existing store, restart, data intact and backup present.
 
-### E16-04 — Project, Preset and RunningWorkspace model
+### E16-04 — Project and saved-state model
 
 ```yaml
 id: E16-04
@@ -4686,11 +4699,11 @@ scope: ui
 size: M
 ```
 
-**Goal:** Implement the E16-01 schema: a project list with metadata, declarative presets and live snapshots with separate stable ids.
+**Goal:** Implement the E16-01 schema: a project list with metadata and each project's saved state, with separate stable ids.
 
 **Acceptance criteria:**
 
-- [ ] Zod schemas and types for `Project`, `Preset`, `RunningWorkspace` with `projectId`, `presetId`, `windowId`, `tabId`, `paneId`.
+- [ ] Zod schemas and types for `Project`, its saved state and `RunningWorkspace` with `projectId`, `windowId`, `tabId`, `paneId`.
 - [ ] Project list API (create, rename, archive flag per decision 19, delete) backed by the versioned store.
 - [ ] v1 → v2 migration if the shape changes, with a fixture test.
 
@@ -4702,23 +4715,23 @@ size: M
 id: E16-05
 depends-on: [E16-04, E08-09]
 refs: [F4:4, PRJ-002, PRJ-003, PRJ-006, 6.5:3]
-covers: [F4:4, PRJ-002, PRJ-003, PRJ-006, 6.5:3]
+covers: [F4:4, PRJ-002, PRJ-003, PRJ-006, PRJ-013, 6.5:2, 6.5:3, 6.5:4]
 type: task
 scope: ui
 size: M
 ```
 
-**Goal:** A snapshot captures tab order, pane tree, split ratios, cwd per pane, active tab and pane, and per-pane startup command fields (stored, not run here).
+**Goal:** A snapshot captures tab order, pane tree, split ratios, cwd per pane, active tab and pane: the project's saved state is its live state (decision 26). The still-running command is added by E17-12.
 
 **Acceptance criteria:**
 
 - [ ] Split nodes serialize ratios, validated and normalized (sum 1, one per child; IR-70).
-- [ ] Leaves serialize `cwd` and an optional startup command; tab order and active tab/pane persisted.
+- [ ] Leaves serialize `cwd`; tab order and active tab/pane persisted; autosave is the only writer (no templates, no "save as").
 - [ ] Round-trip tests: serialize → hydrate yields the same topology, ratios and cwds.
 
 **Verification:** `pnpm test`; manual: resize splits, restart, ratios kept.
 
-### E16-06 — Validate the 4-pane-per-tab limit in snapshots and presets
+### E16-06 — Validate the 4-pane-per-tab limit in saved state
 
 ```yaml
 id: E16-06
@@ -4734,7 +4747,7 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] The snapshot/preset Zod schema rejects a tab with more than 4 leaves with a typed, field-level error (tab id, pane count).
+- [ ] The saved-state Zod schema rejects a tab with more than 4 leaves with a typed, field-level error (tab id, pane count).
 - [ ] The limit is one shared constant used by `useTabs` (`src/modules/tabs/lib/useTabs.ts:31`) and the schema.
 - [ ] Hydrating a stored layout with more than 4 panes in a tab does not crash: the project is reported as invalid and not partially restored.
 - [ ] Tests: 4 panes accepted, 5 rejected, invalid stored file handled.
@@ -4753,7 +4766,7 @@ scope: ui
 size: S
 ```
 
-**Goal:** Snapshot and preset leaves reference a `profileId`; panes of one project can use different profiles.
+**Goal:** Saved leaves reference a `profileId`; panes of one project can use different profiles.
 
 **Acceptance criteria:**
 
@@ -4762,28 +4775,6 @@ size: S
 - [ ] Tests for mixed profiles and a missing profile.
 
 **Verification:** `pnpm test`; manual: project with pwsh and WSL panes restores both.
-
-### E16-08 — Keep presets separate from live state
-
-```yaml
-id: E16-08
-depends-on: [E16-05]
-refs: [PRJ-013, 6.5:2, 6.5:4]
-covers: [PRJ-013, 6.5:2, 6.5:4]
-type: task
-scope: ui
-size: S
-```
-
-**Goal:** Presets are declarative templates; the last live state is saved as a snapshot and never overwrites a preset without an explicit action.
-
-**Acceptance criteria:**
-
-- [ ] Autosave writes only `RunningWorkspace` snapshots; presets change only through explicit "save as preset"/"update preset" APIs.
-- [ ] Presets contain no runtime ids or process state.
-- [ ] Tests: autosave after layout changes leaves the preset untouched.
-
-**Verification:** `pnpm test`.
 
 ### E16-09 — Regenerate runtime ids at hydration; never persist live PTYs
 
@@ -4853,11 +4844,47 @@ others are kept for persistence only, and the space-switch effect in `App.tsx` f
 
 **Verification:** `pnpm test`; manual: two spaces, a non-last tab active in each, restart and switch between them.
 
+### E16-13 — Tools follow the focused pane or the Space's pinned folder; drop the workspace env selector
+
+```yaml
+id: E16-13
+depends-on: [E14-10, E16-04, E16-07]
+refs: [PRO-006, .docs/plan/analysis/app-shell.md, .docs/plan/analysis/backend-core.md]
+covers: [PRO-006]
+type: task
+scope: ui
+size: M
+```
+
+**Goal:** A Space mixes Windows and WSL panes (decision 29). The window-wide workspace env (local or a WSL distro), its
+status-bar selector and the switch that tears down every session (`useWorkspaceSwitcher`) go away: the terminal's
+environment comes from its profile (E14-10), and the tools (Files, Git, editor, LSP) use the location of the focused
+pane (its cwd in its own filesystem, e.g. `\\wsl$\Ubuntu\...` for a WSL pane), or the Space's pinned folder when it
+has one, so they stay put while panes move between folders.
+
+**Acceptance criteria:**
+
+- [ ] Without a pinned folder, Files and Git follow the focused pane's cwd and filesystem; focusing a pane of another
+      profile or folder switches them, with no session torn down. While a tab without a terminal is active (editor,
+      preview, graph), they keep the last focused terminal pane of the Space.
+- [ ] A Space can pin a folder (and unpin it) from its menu; while pinned, the tools use it whatever pane has focus. The
+      pin is its own field (`pinnedFolder`): the existing `root` (launch directory or home for the default Space) stays
+      the Space's base directory and is never migrated into a pin.
+- [ ] The stored `env` is migrated away without losing WSL: in a WSL Space, every pane saved without a profile gets the
+      detected profile of that distro; panes with an explicit profile keep it.
+- [ ] ADR-009 records the change to the Space model and to where the tools take their location from.
+- [ ] `WorkspaceEnvSelector`, the window-wide env store and the interactive local⇄WSL switch are removed.
+- [ ] Tests: tool location for a focused pwsh pane, a focused WSL pane, an active editor tab and a pinned folder;
+      migration of a local and a WSL Space (profiles assigned, `root` kept, no pin).
+
+**Verification:** `pnpm test`; manual on Windows with WSL: a Space with a pwsh pane and an Ubuntu pane, focus each and
+check Files and Git; pin a folder and focus both again.
+
 ### E16-11 — Close-out: projects model and persistence
 
 ```yaml
 id: E16-11
-depends-on: [E16-01, E16-02, E16-03, E16-04, E16-05, E16-06, E16-07, E16-08, E16-09, E16-10, E16-12]
+depends-on: [E16-01, E16-02, E16-03, E16-04, E16-05, E16-06, E16-07, E16-09, E16-10, E16-12, E16-13]
 refs: [F4]
 covers: []
 type: closeout
@@ -4868,7 +4895,7 @@ size: XS
 **Goal:** Verify every item of this epic is delivered (validator coverage), run the epic's verification commands, and add
 any discovered work to plan.md (or state 'nothing new').
 
-## E17 — Project restore, startup commands and multi-project
+## E17 — Project restore, command relaunch and multi-project
 
 ```yaml
 id: E17
@@ -4876,7 +4903,7 @@ depends-on: [E16, E14]
 refs: [8.4, 8.5, 14.1, F4, .docs/plan/analysis/state-settings.md, .docs/plan/analysis/decisions.md]
 ```
 
-Restore orchestrator (§8.4), last-session restore at startup, multiple open projects, archiving, and startup command policies with their safety rules (§8.5, §14.1). Per decision 8 the P0 restore rebuilds layout and cwd only and leaves commands manual; `auto`/`confirm` policies are P1.
+Restore orchestrator (§8.4), last-session restore at startup, multiple open projects, archiving, and relaunching the commands that were still running, with their consent and safety rules (§8.5, §14.1; decision 26). Per decision 8 the P0 restore rebuilds layout and cwd only; relaunching is P1.
 
 ### E17-01 — Persist the open-projects session separately from the project catalogue
 
@@ -4914,11 +4941,11 @@ scope: ui
 size: M
 ```
 
-**Goal:** First stages of the §8.4 algorithm as a pure, testable orchestrator: load project and preset, validate, and check that profiles, WSL distros, cwds and executables are available.
+**Goal:** First stages of the §8.4 algorithm as a pure, testable orchestrator: load the project's saved state, validate, and check that profiles, WSL distros, cwds and executables are available.
 
 **Acceptance criteria:**
 
-- [ ] `restoreProject(id)` loads metadata and preset, validates `schemaVersion` and profile existence, and returns a typed plan plus a list of per-pane problems.
+- [ ] `restoreProject(id)` loads metadata and saved state, validates `schemaVersion` and profile existence, and returns a typed plan plus a list of per-pane problems.
 - [ ] A missing profile / distro / cwd / executable yields a repairable per-pane problem with a fallback suggestion, not an exception.
 - [ ] One failing project never blocks the app or other projects (16:13).
 - [ ] No PTY is spawned and no command runs in these stages.
@@ -4937,16 +4964,16 @@ scope: ui
 size: M
 ```
 
-**Goal:** From a validated plan, create the tab/pane structure with preset ids separate from runtime ids, then create PTY sessions progressively with profile overrides and pane cwd applied.
+**Goal:** From a validated plan, create the tab/pane structure with persisted ids separate from runtime ids, then create PTY sessions progressively with profile overrides and pane cwd applied.
 
 **Acceptance criteria:**
 
-- [ ] Runtime pane/session ids are generated; preset ids are kept as a mapping and never reused as runtime ids.
-- [ ] Topology, ratios, profiles and cwd match the saved preset (13.2:10).
+- [ ] Runtime pane/session ids are generated; persisted ids are kept as a mapping and never reused as runtime ids.
+- [ ] Topology, ratios, profiles and cwd match the saved state (13.2:10).
 - [ ] Sessions are created progressively within renderer limits (4 panes per tab, decision 12); an active hidden session is kept.
-- [ ] Profile overrides and pane cwd are applied before any startup step; this stage executes no startup command.
+- [ ] Profile overrides and pane cwd are applied before any startup step; this stage relaunches no command.
 
-**Verification:** `pnpm test` (save → restore round-trip of a three-pane preset); manual: save a three-pane project, restart, structure and cwds match.
+**Verification:** `pnpm test` (save → restore round-trip of a three-pane project); manual: save a three-pane project, restart, structure and cwds match.
 
 ### E17-04 — Enable autosave only after hydration and cancel restore on close
 
@@ -4965,7 +4992,7 @@ size: S
 **Acceptance criteria:**
 
 - [ ] Project persistence stays disabled per project until its restore completes successfully.
-- [ ] Closing a project mid-restore cancels pending spawns, kills the PTYs already created for it and leaves the stored preset untouched.
+- [ ] Closing a project mid-restore cancels pending spawns, kills the PTYs already created for it and leaves the stored state untouched.
 
 **Verification:** `pnpm test` (autosave gated by hydration; cancel mid-restore leaves the store unchanged and no orphan sessions).
 
@@ -5008,7 +5035,7 @@ size: M
 **Acceptance criteria:**
 
 - [ ] Boot reads the session record and restores each open project through the orchestrator; the active project and its active tab are focused.
-- [ ] No startup command runs during the P0 restore; panes open a shell in the saved cwd.
+- [ ] No command is relaunched during the P0 restore; panes open a shell in the saved cwd.
 - [ ] A project that fails to restore is reported and skipped; the others still open.
 - [ ] An empty or missing session starts with the default project.
 
@@ -5098,9 +5125,9 @@ size: S
 **Acceptance criteria:**
 
 - [ ] Archiving (setting the E16-04 `archived` flag) closes the project if open and removes it from the session.
-- [ ] Archived projects are excluded from the default list and from startup restore; unarchiving restores visibility with the preset intact.
+- [ ] Archived projects are excluded from the default list and from startup restore; unarchiving restores visibility with its data intact.
 
-**Verification:** `pnpm test` (archive/unarchive keeps preset data; archived project skipped at boot).
+**Verification:** `pnpm test` (archive/unarchive keeps project data; archived project skipped at boot).
 
 ### E17-11 — Emit a shell-ready event for startup execution
 
@@ -5114,21 +5141,21 @@ scope: be
 size: M
 ```
 
-**Goal:** Replace any fixed delay with a session-ready / prompt-recognised signal that startup commands wait on.
+**Goal:** Replace any fixed delay with a session-ready / prompt-recognised signal that relaunched commands wait on.
 
 **Acceptance criteria:**
 
 - [ ] The backend emits a per-session ready event when the prompt is recognised (shell-integration marker), with a fallback on first output after spawn.
-- [ ] A configurable timeout marks the pane "not ready" with an error instead of waiting forever (a startup command that never returns a prompt does not hang the restore, 13.5:8).
+- [ ] A configurable timeout marks the pane "not ready" with an error instead of waiting forever (a relaunched command that never returns a prompt does not hang the restore, 13.5:8).
 - [ ] No `sleep`-based readiness remains in the restore path.
 
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml`; `pnpm test`; manual: pwsh, bash and a WSL profile each emit ready.
 
-### E17-12 — Store per-pane startup commands and send them with safe shell quoting
+### E17-12 — Capture the command still running in each pane and relaunch it as typed
 
 ```yaml
 id: E17-12
-depends-on: [E17-11]
+depends-on: [E17-11, E17-19]
 refs: [PRJ-004, PRJ-008, 14.1]
 covers: [PRJ-004, PRJ-008, 14.1:2]
 type: task
@@ -5136,17 +5163,20 @@ scope: ui
 size: M
 ```
 
-**Goal:** Presets carry startup commands per pane, sent through the active shell's quoting mechanism, never as an unescaped concatenated line.
+**Goal:** Each pane remembers the command line still running when the project is saved, so restore can relaunch it
+(decision 26). The line comes from shell integration (OSC 133;C with the command text: pwsh and fish today, bash and zsh
+after E17-19); panes without it (cmd, nu, profiles without integration) keep no command and reopen with an empty shell.
 
 **Acceptance criteria:**
 
-- [ ] The preset schema has per-pane `startup` (command, args, initial state) with a `schemaVersion` bump and migration.
-- [ ] Quoting helpers for pwsh/cmd/POSIX shells (incl. WSL) with table tests for spaces, quotes and metacharacters.
-- [ ] A user-triggered "Run startup" action runs the pane's command once, after the ready event (P0 manual).
+- [ ] The pane records the command text at command start and clears it at command end (133;D); the saved state holds it only while it runs, with a `schemaVersion` bump and migration.
+- [ ] Relaunch sends the captured line to the same profile's shell as typed input after the E17-11 ready event; it is never rebuilt by concatenating parts (14.1:2).
+- [ ] A user-triggered "Relaunch" action runs the pane's command once (P0 manual); it is offered only for panes with
+      a saved command, so only while command saving is on (decision 28).
 
-**Verification:** `pnpm test` (quoting table tests, schema migration test); manual: run a startup command containing quotes in pwsh and bash.
+**Verification:** `pnpm test` (capture and clear on 133;C/D, schema migration test); manual: run a command containing quotes in pwsh and bash, restart, relaunch it.
 
-### E17-13 — Apply startup policies manual/auto/confirm with hashed consent
+### E17-13 — Ask before relaunching: run, always in this Space, or don't run
 
 ```yaml
 id: E17-13
@@ -5158,21 +5188,21 @@ scope: ui
 size: M
 ```
 
-**Goal:** P1 restore strategy: evaluate the startup policy per pane and ask permission where needed.
+**Goal:** P1 restore: before relaunching a pane's command, ask unless the project already approves it (decision 26).
 
 **Acceptance criteria:**
 
-- [ ] Per-pane policy `manual | auto | confirm`; `auto` requires a stored per-project/preset permission bound to a hash of the commands (any change asks again).
-- [ ] Previewing a project never runs commands; imported or modified presets require confirmation (16:14, 13.2:18).
+- [ ] Each relaunch asks "Run" (this time only), "Always in this Space" (stores an approval for that command, cwd and profile in the project; any change asks again) or "Don't run" (the pane opens an empty shell).
+- [ ] Approved commands relaunch without asking; previewing a project never relaunches anything; an imported project carries no approvals (16:14, 13.2:18).
 - [ ] The consent request is exposed as data (commands, cwd, profile, env) for the E18 modal.
 
-**Verification:** `pnpm test` (policy matrix, permission invalidation on change); manual: restart with a dangerous preset → confirmation required before anything runs.
+**Verification:** `pnpm test` (approval matrix, invalidation when command, cwd or profile change); manual: restart with `pnpm dev` running → asked; "Always in this Space" → the next restart relaunches it without asking.
 
-### E17-14 — Run each startup command at most once and add a global autostart switch
+### E17-14 — Relaunch each command at most once and add a global relaunch switch
 
 ```yaml
 id: E17-14
-depends-on: [E17-13]
+depends-on: [E17-13, E17-07]
 refs: [8.4, 8.5, F4:5]
 covers: [8.4:8, 8.5:5, 16:12, F4:5]
 type: task
@@ -5180,15 +5210,16 @@ scope: ui
 size: S
 ```
 
-**Goal:** Startup commands never run twice (16:12) and the user can disable all autostart globally (8.5:5).
+**Goal:** Relaunched commands never run twice (16:12) and the user can disable relaunching globally (8.5:5).
 
 **Acceptance criteria:**
 
-- [ ] A per-session guard runs each startup command at most once per restore, including retries racing with the ready event and a project opened twice.
-- [ ] A global `startupCommandsEnabled` setting (default on) makes every policy behave as `manual`; it is checked at execution time, not only at plan time.
-- [ ] Tests: dedupe under duplicate ready events and double open; global switch off → no command runs, consent is not even requested.
+- [ ] A per-session guard relaunches each command at most once per restore, including duplicate ready events and a project opened twice; an explicit "Retry" after a failed run (E17-15) starts a new attempt.
+- [ ] A global `relaunchCommands` setting (default on) turns relaunching off (panes reopen with an empty shell); it is checked at execution time, not only at plan time.
+- [ ] Command text is saved only while `relaunchCommands` is on and `startupMode` is `restoreLast` (decision 28); turning either off clears the saved commands.
+- [ ] Tests: dedupe under duplicate ready events and double open; Retry after a failure runs again; global switch off → no command runs, consent is not even requested.
 
-**Verification:** `pnpm test`; manual: disable autostart globally, restart a project with an `auto` pane → nothing runs.
+**Verification:** `pnpm test`; manual: disable relaunching, restart a project with an approved command → nothing runs.
 
 ### E17-15 — Record per-pane restore results and recovery actions
 
@@ -5202,7 +5233,7 @@ scope: ui
 size: S
 ```
 
-**Goal:** Each pane exposes its restore result, errors and the actions "Retry", "Open shell without command" and "Edit preset", plus what was executed with which cwd/environment.
+**Goal:** Each pane exposes its restore result, errors and the actions "Retry" and "Open shell without command", plus what was executed with which cwd/environment.
 
 **Acceptance criteria:**
 
@@ -5211,30 +5242,6 @@ size: S
 - [ ] Executed command, cwd, profile and relevant env are recorded and queryable (rendered by E18).
 
 **Verification:** `pnpm test` (failed command → failed state; retry runs once; open-shell-only skips the command).
-
-### E17-16 — Per-pane startup env, waitForPrompt, timeout and onFailure
-
-```yaml
-id: E17-16
-depends-on: [E17-12, E17-11, E17-15]
-refs: [PRJ-004, PRJ-008, .docs/proposal.md, .docs/plan/analysis/proposal.md]
-covers: [PRJ-004, PRJ-008]
-type: task
-scope: ui
-size: M
-```
-
-**Goal:** The preset startup block carries the remaining fields of §8.2 (IR-69): per-pane `env`, `waitForPrompt`, `timeoutMs` and `onFailure`, and the startup runner honours them.
-
-**Acceptance criteria:**
-
-- [ ] Schema: per-pane `startup.env` (validated names, no secrets stored in plain text beyond what the user typed), `waitForPrompt: boolean` (default true), `timeoutMs` (bounded), `onFailure: "keepShell" | "closePane" | "markFailed"` (default `keepShell`), with a `schemaVersion` bump and migration.
-- [ ] `waitForPrompt` waits for the E17-11 ready event before sending the command; `false` sends after spawn. `timeoutMs` bounds the wait and marks the pane "not ready" on expiry.
-- [ ] `onFailure` is applied when the command fails or times out; the pane result (E17-15) records which branch ran.
-- [ ] Startup `env` is applied to the spawn of that pane only and is never logged (14.1:4).
-- [ ] Tests for each field, including timeout and each `onFailure` value.
-
-**Verification:** `pnpm test`; manual: a preset pane with `waitForPrompt` and a command that exits non-zero, with each `onFailure` value.
 
 ### E17-17 — Add serialization and startup integration tests and measure restore time
 
@@ -5252,17 +5259,40 @@ size: M
 
 **Acceptance criteria:**
 
-- [ ] Unit tests for preset/session serialization; integration tests for boot restore including last-session restore.
+- [ ] Unit tests for saved-state/session serialization; integration tests for boot restore including last-session restore.
 - [ ] Gate scenario covered: restart, open a three-pane project, structure recovered, only authorized commands run, errors reported, no duplicated processes.
 - [ ] Restore time of a project with multiple tools measured and recorded in the PR (13.4:8).
 
 **Verification:** `pnpm test`; `pnpm typecheck`; manual gate run documented in the PR.
 
+### E17-19 — Report the command line from bash and zsh shell integration
+
+```yaml
+id: E17-19
+depends-on: []
+refs: [.docs/plan/analysis/backend-core.md]
+covers: [PRJ-004]
+type: task
+scope: be
+size: S
+```
+
+**Goal:** bash and zsh shell integration send the command text at command start, as pwsh (`profile.ps1`) and fish
+(`init.fish`) already do, so E17-12 can capture the command still running in a pane (decision 26).
+
+**Acceptance criteria:**
+
+- [ ] `bashrc.bash` and `zshrc.zsh` send OSC 133;C with the command text, escaped like `profile.ps1` and `init.fish`.
+- [ ] The script tests (`bashrc.test.bash`, `zshrc.test.py`) cover a command with spaces, quotes and a semicolon.
+
+**Verification:** the bash and zsh script tests pass; manual: run a command with quotes in bash (WSL) and check the 133;C
+text in the PTY output.
+
 ### E17-18 — Close-out: project restore
 
 ```yaml
 id: E17-18
-depends-on: [E17-01, E17-02, E17-03, E17-04, E17-05, E17-06, E17-07, E17-08, E17-09, E17-10, E17-11, E17-12, E17-13, E17-14, E17-15, E17-16, E17-17]
+depends-on: [E17-01, E17-02, E17-03, E17-04, E17-05, E17-06, E17-07, E17-08, E17-09, E17-10, E17-11, E17-12, E17-13, E17-14, E17-15, E17-17, E17-19]
 refs: []
 covers: []
 type: closeout
@@ -5272,7 +5302,7 @@ size: XS
 
 **Goal:** Verify every item of this epic is delivered (validator coverage), run the epic's verification commands, and add any discovered work to plan.md (or state 'nothing new').
 
-## E18 — Project navigator and preset editor UI
+## E18 — Project navigator and relaunch UI
 
 ```yaml
 id: E18
@@ -5280,7 +5310,7 @@ depends-on: [E11, E16, E17, E10, E13]
 refs: [UX-003, 10.2, 8.5, F4, .docs/plan/analysis/app-shell.md, .docs/plan/analysis/state-settings.md]
 ```
 
-Projects sidebar navigator, archive, preset editor, startup consent modal and restore error surfaces, built on the user's E11 designs.
+Projects sidebar navigator, archive, relaunch consent modal and restore error surfaces, built on the user's E11 designs.
 
 ### E18-01 — Retarget sidebar panel state from explorer/source-control to projects
 
@@ -5308,7 +5338,7 @@ size: S
 
 ```yaml
 id: E18-02
-depends-on: [E18-01, E11-05, E16-04, E17-09]
+depends-on: [E18-01, E11-05, E16-04, E17-09, E16-13]
 refs: [10.2:6, PRJ-017, .docs/plan/analysis/state-settings.md]
 covers: [app-shell/sidebar-ui, state-settings/spaces-ui, 10.2:6]
 type: task
@@ -5321,7 +5351,8 @@ size: M
 **Acceptance criteria:**
 
 - [ ] The navigator lists projects, marks open and active ones, and opens/focuses/closes projects via the E17 store actions.
-- [ ] Create, rename, reorder and remove go through the projects store.
+- [ ] Create, rename, reorder and remove go through the projects store; pinning and unpinning the Space's folder
+      (E16-13) stays available from the navigator.
 - [ ] `SidebarRail.tsx`, `SpaceSwitcher.tsx`, `SpaceAvatar.tsx` and `src/modules/projects/components/` (the former `spaces/components/`, renamed by E16-02) are removed or replaced.
 - [ ] Matches the E11-05 design.
 
@@ -5346,52 +5377,29 @@ size: S
 - [ ] The archive action hides the project; an archived list allows unarchiving.
 - [ ] Uses the E17 archive store actions; no data is lost.
 
-**Verification:** `pnpm test`; manual: archive, restart, unarchive → preset intact.
+**Verification:** `pnpm test`; manual: archive, restart, unarchive → data intact.
 
-### E18-04 — Implement the preset editor with per-pane profile choice
-
-```yaml
-id: E18-04
-depends-on: [E18-02, E11-05, E11-04, E17-13, E17-16, E16-06]
-refs: [F4:3, PRJ-008]
-covers: [F4:3]
-type: task
-scope: ui
-size: M
-```
-
-**Goal:** Edit a project preset: layout, per-pane profile, cwd and startup command with its policy and startup options.
-
-**Acceptance criteria:**
-
-- [ ] Each pane can pick a profile (stored by profile id), cwd, and startup command + policy, env, `waitForPrompt`, `timeoutMs` and `onFailure` (E17-16).
-- [ ] Saving validates against the preset schema and shows errors inline.
-- [ ] Adding a fifth pane to a tab is prevented, and a preset with more than 4 panes in a tab shows the E16-06 error inline (IR-48).
-- [ ] "Save current layout as preset" captures the live workspace.
-
-**Verification:** `pnpm test`; `pnpm typecheck`; manual: change a pane's profile, save, restore → the new profile is used.
-
-### E18-05 — Implement the startup consent modal with command preview
+### E18-05 — Implement the relaunch consent modal with command preview
 
 ```yaml
 id: E18-05
-depends-on: [E18-04, E11-05, E17-13]
+depends-on: [E18-02, E11-05, E17-13]
 refs: [8.5, 14.1]
-covers: [8.5:2, 8.5:3, 14.1:3]
+covers: [F4:3, 8.5:2, 8.5:3, 14.1:3]
 type: task
 scope: ui
 size: S
 ```
 
-**Goal:** Show what a preset will run, with directory, shell/WSL and relevant variables, and collect consent.
+**Goal:** Show which commands will be relaunched, with directory, shell/WSL and relevant variables, and collect consent.
 
 **Acceptance criteria:**
 
 - [ ] The modal renders the consent request produced by the E17 policy engine: per-pane command, cwd, profile/WSL distro and relevant env.
-- [ ] "Allow once", "Always for this preset" and "Cancel" map to the stored permission.
-- [ ] Cancelling opens shells without running commands.
+- [ ] "Run", "Always in this Space" and "Don't run" map to the E17-13 approvals.
+- [ ] "Don't run" opens shells without running commands.
 
-**Verification:** `pnpm test`; manual: restore a `confirm` preset → modal lists commands; cancel → nothing runs.
+**Verification:** `pnpm test`; manual: restart with `pnpm dev` running → the modal lists it; "Don't run" → nothing runs.
 
 ### E18-06 — Show per-pane restore results and recovery actions
 
@@ -5405,14 +5413,14 @@ scope: ui
 size: S
 ```
 
-**Goal:** Render restore errors per pane with "Retry", "Open shell without command" and "Edit preset".
+**Goal:** Render restore errors per pane with "Retry" and "Open shell without command".
 
 **Acceptance criteria:**
 
-- [ ] Failed or skipped panes show the error and the three actions, wired to the E17 result actions.
+- [ ] Failed or skipped panes show the error and the two actions, wired to the E17 result actions.
 - [ ] Errors never block the rest of the app.
 
-**Verification:** `pnpm test`; manual: preset with a missing cwd → error shown, "Open shell without command" works.
+**Verification:** `pnpm test`; manual: project with a missing cwd → error shown, "Open shell without command" works.
 
 ### E18-07 — Startup mode and default project in settings
 
@@ -5426,12 +5434,12 @@ scope: ui
 size: S
 ```
 
-**Goal:** Users choose what lut opens at startup and can disable startup commands globally, in the settings surface designed in E11-03.
+**Goal:** Users choose what lut opens at startup and can disable relaunching globally, in the settings surface designed in E11-03.
 
 **Acceptance criteria:**
 
 - [ ] A startup section offers the three `startupMode` values of E17-07; choosing "default project" shows a project picker (archived projects excluded).
-- [ ] The global startup-commands switch of E17-14 is shown in the same section.
+- [ ] The global relaunch switch of E17-14 is shown in the same section, with a warning that running command lines are saved locally to relaunch them and may contain secrets (decision 28).
 - [ ] Changes are saved through the settings store and apply at the next launch; matches the E11-03 design.
 - [ ] Component tests for each mode and for the project picker.
 
@@ -5441,7 +5449,7 @@ size: S
 
 ```yaml
 id: E18-08
-depends-on: [E18-01, E18-02, E18-03, E18-04, E18-05, E18-06, E18-07]
+depends-on: [E18-01, E18-02, E18-03, E18-05, E18-06, E18-07]
 refs: []
 type: closeout
 scope: none
@@ -5734,11 +5742,11 @@ size: XS
 ```yaml
 id: E20
 depends-on: [E11, E19, E02, E12, E13, E18]
-refs: [9.6, AGT-006, AGT-007, AGT-008, AGT-010, F5, .docs/plan/analysis/agents.md]
+refs: [9.6, AGT-006, AGT-007, AGT-010, F5, .docs/plan/analysis/agents.md]
 ```
 
 Agent status in tabs, native and in-app notifications (including BEL and OSC 9/777, decision 17), focus-next-attention,
-the hooks manager with preview/diff and selective uninstall, the optional activity view and event retention.
+the hooks manager with preview/diff and selective uninstall, and event retention. No activity view (decision 27).
 
 ### E20-01 — Route BEL and OSC 9/777 terminal notifications into the notification pipeline
 
@@ -5984,28 +5992,6 @@ size: S
 
 **Verification:** `pnpm test`; manual in a sandboxed HOME: launch Claude from the launcher with no hooks installed → `~/.claude/settings.json` unchanged until consent.
 
-### E20-12 — Agent activity view: tools, subagents, errors and events
-
-```yaml
-id: E20-12
-depends-on: [E20-03, E20-10, E11-06]
-refs: [AGT-008, F5:5, 9.6:4]
-covers: [AGT-008, F5:5, 9.6:4]
-type: task
-scope: ui
-size: M
-```
-
-**Goal:** Optional activity view, collapsed by default and opened by shortcut or tab menu, showing the session history when the CLI provides tool/subagent data.
-
-**Acceptance criteria:**
-
-- [ ] Enabling the view offers to add tool/subagent events through the hooks manager preview flow.
-- [ ] Shows only fields allowed by the privacy settings (14.2).
-- [ ] Hidden and inert when no data source exists.
-
-**Verification:** `pnpm test`; manual with tool events enabled for Claude.
-
 ### E20-13 — Project panel of active agent sessions
 
 ```yaml
@@ -6062,7 +6048,7 @@ size-exception: the plugins are declarative manifests and hook files; the rest d
 
 ```yaml
 id: E20-14
-depends-on: [E20-01, E20-02, E20-03, E20-04, E20-05, E20-06, E20-07, E20-08, E20-09, E20-10, E20-11, E20-12, E20-13, E20-15]
+depends-on: [E20-01, E20-02, E20-03, E20-04, E20-05, E20-06, E20-07, E20-08, E20-09, E20-10, E20-11, E20-13, E20-15]
 refs: []
 covers: []
 type: closeout
@@ -6346,7 +6332,7 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] Open, restore, edit preset, rename and remove actions call existing project store actions.
+- [ ] Open, restore, rename and remove actions call existing project store actions.
 - [ ] Reachable by keyboard.
 
 **Verification:** `pnpm test`; manual in the projects sidebar.
@@ -6566,7 +6552,7 @@ depends-on: [E14, E16, E17, E11]
 refs: [PRO-007, PRJ-015, F4:8, 16:14]
 ```
 
-Portable export/import schema for profiles and projects that never contains secrets; imported presets never run commands without consent.
+Portable export/import schema for profiles and projects that never contains secrets; imported projects never relaunch commands without consent.
 
 ### E23-01 — Define the portable export schema without secrets
 
@@ -6611,7 +6597,7 @@ size: S
 
 **Verification:** `pnpm test`; manual: export two profiles, import them into a clean data dir.
 
-### E23-03 — Export and import projects with untrusted startup commands
+### E23-03 — Export and import projects without relaunch approvals
 
 ```yaml
 id: E23-03
@@ -6623,15 +6609,15 @@ scope: ui
 size: M
 ```
 
-**Goal:** Users export and import projects/presets; imported presets never run startup commands without consent.
+**Goal:** Users export and import projects; an imported project never relaunches a command without consent.
 
 **Acceptance criteria:**
 
-- [ ] Export includes preset layout, per-pane profile references and startup commands, without secrets or stored permissions.
-- [ ] Import marks presets untrusted: any `auto` policy requires confirmation until the user consents.
+- [ ] Export includes the saved layout, per-pane profile references and running commands, without secrets or relaunch approvals.
+- [ ] An imported project has no approvals: every relaunch asks (E17-13) until the user chooses "Always in this Space".
 - [ ] Missing referenced profiles produce repairable errors, not failures.
 
-**Verification:** `pnpm test`; manual: import a preset with an `auto` command → consent requested, nothing runs before.
+**Verification:** `pnpm test`; manual: import a project with a running command → consent requested, nothing runs before.
 
 ### E23-04 — Close-out: export/import
 
@@ -7068,6 +7054,9 @@ size: XS
 - `AGT-011` — P2: approve/deny permissions from the UI (post-v1); the existing decision broker stays as is.
 - `AGT-014` — P2: plugin system for more agent adapters (post-v1); existing adapters are kept.
 - `5.10:13` — Multiwindow is a later phase (post-v1).
+- `AGT-008` — P1: agent activity view; agent CLIs such as Claude Code already show it (decision 27).
+- `9.6:4` — Agent activity view (decision 27).
+- `F5:5` — Agent activity timeline and subagents (decision 27).
 - `9.8:1` — Rules for AGT-011 (P2, post-v1).
 - `9.8:2` — Rules for AGT-011 (P2, post-v1).
 - `9.8:3` — Rules for AGT-011 (P2, post-v1).
