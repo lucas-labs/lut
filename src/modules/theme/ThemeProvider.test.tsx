@@ -76,6 +76,6 @@ describe('ThemeProvider', () => {
     stored.custom = [{ id: 'lut', name: 'Old custom', variants: { dark: { colors: { background: '#101010' } } } }];
     const theme = await mount();
     expect(theme.themeId).toBe('lut');
-    expect(theme.activeTheme.name).toBe('Lut');
+    expect(theme.activeTheme.name).toBe('lut');
   });
 });

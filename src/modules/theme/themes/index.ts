@@ -8,6 +8,7 @@ import { gruvbox } from './gruvbox';
 import { kanagawa } from './kanagawa';
 import { kanagawaDragon } from './kanagawa-dragon';
 import { lut } from './lut';
+import { neutral } from './neutral';
 import { nord } from './nord';
 import { rosePine } from './rose-pine';
 import { sage } from './sage';
@@ -18,6 +19,7 @@ import { xcode } from './xcode';
 
 const BUILTIN: Theme[] = [
   lut,
+  neutral,
   xcode,
   claude,
   kanagawa,

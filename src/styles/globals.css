@@ -80,68 +80,68 @@
 /* Baseline tokens mirror the built-in default theme, so the first paint already
  * matches what `applyTheme` writes a frame later. */
 :root {
-  --background: #ffffff;
-  --foreground: #111111;
-  --card: #f3f3f3;
-  --card-foreground: #111111;
+  --background: #fbfbf9;
+  --foreground: #161a19;
+  --card: #f1f2ef;
+  --card-foreground: #161a19;
   --popover: #ffffff;
-  --popover-foreground: #111111;
-  --primary: #111111;
+  --popover-foreground: #161a19;
+  --primary: #3f6212;
   --primary-foreground: #ffffff;
-  --secondary: #ededed;
-  --secondary-foreground: #111111;
-  --muted: #ededed;
-  --muted-foreground: #656565;
-  --accent: #e5e5e5;
-  --accent-foreground: #111111;
-  --destructive: #c0392f;
-  --success: #2f7d4f;
-  --warning: #a37413;
-  --info: #2f6bb5;
-  --border: rgba(0, 0, 0, 0.09);
-  --input: rgba(0, 0, 0, 0.13);
-  --ring: #8a8a8a;
+  --secondary: #e4e7e2;
+  --secondary-foreground: #161a19;
+  --muted: #f1f2ef;
+  --muted-foreground: #565e5a;
+  --accent: #e4e7e2;
+  --accent-foreground: #161a19;
+  --destructive: #c4262e;
+  --success: #1d5fc2;
+  --warning: #9a5100;
+  --info: #3f6212;
+  --border: #d9dcd7;
+  --input: #d9dcd7;
+  --ring: #3f6212;
   --radius: 0.625rem;
-  --sidebar: #f3f3f3;
-  --sidebar-foreground: #111111;
-  --sidebar-primary: #111111;
+  --sidebar: #f1f2ef;
+  --sidebar-foreground: #161a19;
+  --sidebar-primary: #3f6212;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e5e5e5;
-  --sidebar-accent-foreground: #111111;
-  --sidebar-border: rgba(0, 0, 0, 0.09);
-  --sidebar-ring: #8a8a8a;
+  --sidebar-accent: #e4e7e2;
+  --sidebar-accent-foreground: #161a19;
+  --sidebar-border: #d9dcd7;
+  --sidebar-ring: #3f6212;
 }
 
 .dark {
-  --background: #141414;
-  --foreground: #f7f7f7;
-  --card: #1d1d1d;
-  --card-foreground: #f7f7f7;
-  --popover: #1d1d1d;
-  --popover-foreground: #f7f7f7;
-  --primary: #f7f7f7;
-  --primary-foreground: #141414;
-  --secondary: #2a2a2a;
-  --secondary-foreground: #f7f7f7;
-  --muted: #1d1d1d;
-  --muted-foreground: #a3a3a3;
-  --accent: #2a2a2a;
-  --accent-foreground: #f7f7f7;
-  --destructive: #e35d5d;
-  --success: #6ec48f;
-  --warning: #e0b34d;
-  --info: #6ea8e8;
-  --border: rgba(255, 255, 255, 0.09);
-  --input: rgba(255, 255, 255, 0.13);
-  --ring: #8a8a8a;
-  --sidebar: #1d1d1d;
-  --sidebar-foreground: #f7f7f7;
-  --sidebar-primary: #f7f7f7;
-  --sidebar-primary-foreground: #141414;
-  --sidebar-accent: #2a2a2a;
-  --sidebar-accent-foreground: #f7f7f7;
-  --sidebar-border: rgba(255, 255, 255, 0.09);
-  --sidebar-ring: #8a8a8a;
+  --background: #0f1211;
+  --foreground: #e6eae8;
+  --card: #161a19;
+  --card-foreground: #e6eae8;
+  --popover: #1e2321;
+  --popover-foreground: #e6eae8;
+  --primary: #b8e65a;
+  --primary-foreground: #0f1211;
+  --secondary: #262c2a;
+  --secondary-foreground: #e6eae8;
+  --muted: #161a19;
+  --muted-foreground: #9aa39f;
+  --accent: #262c2a;
+  --accent-foreground: #e6eae8;
+  --destructive: #ff6b6b;
+  --success: #6cb6ff;
+  --warning: #f5a524;
+  --info: #b8e65a;
+  --border: #2b312f;
+  --input: #2b312f;
+  --ring: #b8e65a;
+  --sidebar: #161a19;
+  --sidebar-foreground: #e6eae8;
+  --sidebar-primary: #b8e65a;
+  --sidebar-primary-foreground: #0f1211;
+  --sidebar-accent: #262c2a;
+  --sidebar-accent-foreground: #e6eae8;
+  --sidebar-border: #2b312f;
+  --sidebar-ring: #b8e65a;
 }
 
 @layer base {
@@ -169,25 +169,25 @@
 :root {
   --terminal-background: var(--background);
   --terminal-foreground: var(--foreground);
-  --terminal-cursor: var(--foreground);
-  --terminal-cursor-accent: var(--background);
-  --terminal-selection: var(--accent);
-  --terminal-ansi-black: #111111;
-  --terminal-ansi-red: #c0392f;
-  --terminal-ansi-green: #2f7d4f;
-  --terminal-ansi-yellow: #a37413;
-  --terminal-ansi-blue: #2f6bb5;
-  --terminal-ansi-magenta: #8a4fb5;
-  --terminal-ansi-cyan: #227d85;
-  --terminal-ansi-white: #cfcfcf;
-  --terminal-ansi-bright-black: #656565;
-  --terminal-ansi-bright-red: #d94f42;
-  --terminal-ansi-bright-green: #3d9c64;
-  --terminal-ansi-bright-yellow: #bf8a1f;
-  --terminal-ansi-bright-blue: #3f82d4;
-  --terminal-ansi-bright-magenta: #a065cf;
-  --terminal-ansi-bright-cyan: #2b98a2;
-  --terminal-ansi-bright-white: #111111;
+  --terminal-cursor: var(--primary);
+  --terminal-cursor-accent: var(--primary-foreground);
+  --terminal-selection: #dbe9c2;
+  --terminal-ansi-black: #1b201e;
+  --terminal-ansi-red: #c0322c;
+  --terminal-ansi-green: #3d7512;
+  --terminal-ansi-yellow: #855f00;
+  --terminal-ansi-blue: #1f5fbf;
+  --terminal-ansi-magenta: #963894;
+  --terminal-ansi-cyan: #0e706c;
+  --terminal-ansi-white: #5c6460;
+  --terminal-ansi-bright-black: #6e7571;
+  --terminal-ansi-bright-red: #cf3f38;
+  --terminal-ansi-bright-green: #47801a;
+  --terminal-ansi-bright-yellow: #8f6800;
+  --terminal-ansi-bright-blue: #2c6ccc;
+  --terminal-ansi-bright-magenta: #a443a1;
+  --terminal-ansi-bright-cyan: #147a76;
+  --terminal-ansi-bright-white: #2a302e;
 }
 
 /* The default theme short-circuits `applyTheme` (ThemeProvider calls
@@ -195,22 +195,23 @@
  * placeholder. An unscoped ANSI block would put dark colours on a white
  * terminal for every light-mode user. */
 .dark {
-  --terminal-ansi-black: #3f3f3f;
-  --terminal-ansi-red: #e35d5d;
-  --terminal-ansi-green: #6ec48f;
-  --terminal-ansi-yellow: #e0b34d;
-  --terminal-ansi-blue: #6ea8e8;
-  --terminal-ansi-magenta: #b98ce0;
-  --terminal-ansi-cyan: #5fc6cc;
-  --terminal-ansi-white: #d8d8d8;
-  --terminal-ansi-bright-black: #6e6e6e;
-  --terminal-ansi-bright-red: #f27f7f;
-  --terminal-ansi-bright-green: #85d9a4;
-  --terminal-ansi-bright-yellow: #eec469;
-  --terminal-ansi-bright-blue: #8dbcf2;
-  --terminal-ansi-bright-magenta: #cba5ee;
-  --terminal-ansi-bright-cyan: #7bdbe0;
-  --terminal-ansi-bright-white: #f7f7f7;
+  --terminal-selection: #2e3d17;
+  --terminal-ansi-black: #1b201e;
+  --terminal-ansi-red: #f2665f;
+  --terminal-ansi-green: #9fd65a;
+  --terminal-ansi-yellow: #e8c25a;
+  --terminal-ansi-blue: #6cb0f5;
+  --terminal-ansi-magenta: #d98ad6;
+  --terminal-ansi-cyan: #5cc8c0;
+  --terminal-ansi-white: #c9cfcc;
+  --terminal-ansi-bright-black: #78817e;
+  --terminal-ansi-bright-red: #ff8a80;
+  --terminal-ansi-bright-green: #c3ef7d;
+  --terminal-ansi-bright-yellow: #f6d97f;
+  --terminal-ansi-bright-blue: #94c9ff;
+  --terminal-ansi-bright-magenta: #ecaae8;
+  --terminal-ansi-bright-cyan: #86e0d8;
+  --terminal-ansi-bright-white: #f4f6f5;
 }
 
 :root {
