@@ -87,8 +87,9 @@ pub fn disable<R: Runtime>(window: &WebviewWindow<R>) {
 #[cfg(windows)]
 mod windows {
     use webview2_com::Microsoft::Web::WebView2::Win32::{
-        ICoreWebView2AcceleratorKeyPressedEventArgs2, ICoreWebView2Controller, ICoreWebView2_11,
-        COREWEBVIEW2_CONTEXT_MENU_ITEM_KIND, COREWEBVIEW2_CONTEXT_MENU_ITEM_KIND_SEPARATOR,
+        ICoreWebView2AcceleratorKeyPressedEventArgs2, ICoreWebView2ContextMenuRequestedEventArgs,
+        ICoreWebView2Controller, ICoreWebView2_11, COREWEBVIEW2_CONTEXT_MENU_ITEM_KIND,
+        COREWEBVIEW2_CONTEXT_MENU_ITEM_KIND_SEPARATOR,
     };
     use webview2_com::{
         take_pwstr, AcceleratorKeyPressedEventHandler, ContextMenuRequestedEventHandler,
@@ -143,37 +144,53 @@ mod windows {
             let Some(args) = args else {
                 return Ok(());
             };
-            let items = unsafe { args.MenuItems()? };
-            let mut count = 0;
-            unsafe { items.Count(&mut count)? };
-            let mut names = Vec::with_capacity(count as usize);
-            for index in 0..count {
-                let item = unsafe { items.GetValueAtIndex(index)? };
-                let mut kind = COREWEBVIEW2_CONTEXT_MENU_ITEM_KIND::default();
-                unsafe { item.Kind(&mut kind)? };
-                if kind == COREWEBVIEW2_CONTEXT_MENU_ITEM_KIND_SEPARATOR {
-                    names.push(None);
-                } else {
-                    let mut name = PWSTR::null();
-                    unsafe { item.Name(&mut name)? };
-                    names.push(Some(take_pwstr(name)));
-                }
-            }
-            let entries: Vec<_> = names.iter().map(Option::as_deref).collect();
-            let keep = super::kept_menu_entries(&entries, DEBUG);
-            // Remove from the end so the remaining indices stay valid.
-            for index in (0..count).rev() {
-                if !keep[index as usize] {
-                    unsafe { items.RemoveValueAtIndex(index)? };
-                }
-            }
-            if !keep.contains(&true) {
+            // Fail closed: if the menu cannot be read or trimmed, no browser menu opens.
+            if let Err(error) = unsafe { trim_menu(&args) } {
+                log::warn!("could not trim the browser context menu: {error}");
                 unsafe { args.SetHandled(true)? };
             }
             Ok(())
         }));
         let mut token = 0;
         unsafe { webview.add_ContextMenuRequested(&handler, &mut token) }
+    }
+
+    /// Leaves only the kept items in the requested menu, or suppresses it when none is left.
+    ///
+    /// # Safety
+    ///
+    /// Must run inside the `ContextMenuRequested` handler.
+    unsafe fn trim_menu(
+        args: &ICoreWebView2ContextMenuRequestedEventArgs,
+    ) -> windows_core::Result<()> {
+        let items = unsafe { args.MenuItems()? };
+        let mut count = 0;
+        unsafe { items.Count(&mut count)? };
+        let mut names = Vec::with_capacity(count as usize);
+        for index in 0..count {
+            let item = unsafe { items.GetValueAtIndex(index)? };
+            let mut kind = COREWEBVIEW2_CONTEXT_MENU_ITEM_KIND::default();
+            unsafe { item.Kind(&mut kind)? };
+            if kind == COREWEBVIEW2_CONTEXT_MENU_ITEM_KIND_SEPARATOR {
+                names.push(None);
+            } else {
+                let mut name = PWSTR::null();
+                unsafe { item.Name(&mut name)? };
+                names.push(Some(take_pwstr(name)));
+            }
+        }
+        let entries: Vec<_> = names.iter().map(Option::as_deref).collect();
+        let keep = super::kept_menu_entries(&entries, DEBUG);
+        // Remove from the end so the remaining indices stay valid.
+        for index in (0..count).rev() {
+            if !keep[index as usize] {
+                unsafe { items.RemoveValueAtIndex(index)? };
+            }
+        }
+        if !keep.contains(&true) {
+            unsafe { args.SetHandled(true)? };
+        }
+        Ok(())
     }
 }
 
