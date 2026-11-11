@@ -1,9 +1,7 @@
 import { cn } from '@/lib/utils';
-import { FolderGitTwoIcon, FolderTreeIcon, LayersIcon } from '@hugeicons/core-free-icons';
+import { DashboardSquare01Icon, Folder01Icon, GitBranchIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import type { SidebarViewId } from './types';
-
-const SIDEBAR_RAIL_HEIGHT = 36;
 
 type RailItem = {
   id: SidebarViewId;
@@ -18,51 +16,42 @@ type Props = {
   changedCount: number;
 };
 
+/** The sidebar's view switcher, at its bottom (E11-02 design). */
 export function SidebarRail({ activeView, onSelectView, changedCount }: Props) {
   const items: RailItem[] = [
-    { id: 'spaces', label: 'Spaces', icon: LayersIcon },
-    {
-      id: 'source-control',
-      label: 'Git',
-      icon: FolderGitTwoIcon,
-      badge: changedCount,
-    },
-    { id: 'explorer', label: 'Files', icon: FolderTreeIcon },
+    { id: 'spaces', label: 'Spaces', icon: DashboardSquare01Icon },
+    { id: 'explorer', label: 'Files', icon: Folder01Icon },
+    { id: 'source-control', label: 'Git', icon: GitBranchIcon, badge: changedCount },
   ];
 
   return (
-    <div
-      style={{ height: SIDEBAR_RAIL_HEIGHT }}
-      className="flex shrink-0 items-stretch gap-1 border-t border-border/60 bg-foreground/[0.025] px-1.5 py-1"
-    >
+    <div role="tablist" aria-label="Sidebar view" className="flex shrink-0 gap-0.5 border-t border-border p-1.5">
       {items.map((item) => {
         const isActive = item.id === activeView;
-        const showBadge = !!item.badge && item.badge > 0;
+        const badge = item.badge ?? 0;
         return (
           <button
             key={item.id}
             type="button"
-            aria-label={item.label}
-            aria-pressed={isActive}
+            role="tab"
+            aria-selected={isActive}
             onClick={() => onSelectView(item.id)}
             className={cn(
-              'group relative flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md text-[11px] font-medium outline-none transition-colors duration-[var(--dur-base)]',
-              'focus-visible:ring-2 focus-visible:ring-primary/40',
-              isActive
-                ? 'bg-foreground/[0.07] text-foreground dark:bg-foreground/[0.09]'
-                : 'text-muted-foreground hover:bg-foreground/[0.045] hover:text-foreground',
+              'flex h-7 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-1 text-xs whitespace-nowrap outline-none transition-colors',
+              'focus-visible:ring-1 focus-visible:ring-ring',
+              isActive ? 'bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground',
             )}
           >
-            <HugeiconsIcon
-              icon={item.icon}
-              size={14}
-              strokeWidth={isActive ? 2 : 1.75}
-              className="shrink-0 transition-[stroke-width] duration-[var(--dur-base)]"
-            />
+            <HugeiconsIcon icon={item.icon} size={14} strokeWidth={1.5} className="shrink-0" />
             <span>{item.label}</span>
-            {showBadge ? (
-              <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full border border-border/60 bg-card px-1 text-[9px] font-semibold leading-none tabular-nums text-muted-foreground/95">
-                {item.badge! > 99 ? '99+' : item.badge}
+            {badge > 0 ? (
+              <span
+                className={cn(
+                  'rounded-full px-[5px] text-[10px] leading-[15px] tabular-nums text-muted-foreground',
+                  isActive ? 'bg-popover' : 'bg-accent',
+                )}
+              >
+                {badge > 99 ? '99+' : badge}
               </span>
             ) : null}
           </button>

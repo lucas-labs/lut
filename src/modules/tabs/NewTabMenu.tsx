@@ -6,6 +6,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
+import { useHoldTitleBar } from '@/lib/titleBarHold';
 import { cn } from '@/lib/utils';
 import { AgentLauncherPanel } from '@/modules/agents/components/AgentLauncherPanel';
 import type { AgentLaunchRequest } from '@/modules/agents/lib/launcher';
@@ -52,6 +53,7 @@ export function NewTabMenu({
   const [launcherOpen, setLauncherOpen] = useState(false);
   const openLauncherAfterMenuClose = useRef(false);
   const openMenuAfterLauncherClose = useRef(false);
+  useHoldTitleBar(menuOpen || launcherOpen);
 
   const onMenuOpenChange = (next: boolean) => {
     if (next) {

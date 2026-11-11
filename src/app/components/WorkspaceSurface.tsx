@@ -30,6 +30,11 @@ type Props = {
   onOpenCommitFile: GitHistoryStackProps['onOpenCommitFile'];
   onGitHistorySearchHandle: GitHistoryStackProps['onSearchHandle'];
   onSetMarkdownView: EditorStackProps['onSetMarkdownView'];
+  /**
+   * A panel (sidebar or vertical tab rail) is open on the terminals' left: the terminal layer then keeps a gap from
+   * it. With nothing beside them, terminals reach the window's edge (full-screen programs like nvim fill it).
+   */
+  insetFromSidePanel?: boolean;
 };
 
 const LAYER = 'absolute inset-0';
@@ -39,8 +44,8 @@ const LAYER = 'absolute inset-0';
  * visibility off the active tab, so panes keep their mounted state (terminal
  * buffers, editor scroll, ...) when switching tabs.
  *
- * Layers sit flush inside the workspace pane; only the terminal layer is inset,
- * because the terminal draws glyphs right up to its container edge.
+ * Layers sit flush inside the workspace pane. The terminal layer only keeps a
+ * gap on its left while a side panel is open beside it.
  */
 export function WorkspaceSurface({
   tabs,
@@ -60,6 +65,7 @@ export function WorkspaceSurface({
   onOpenCommitFile,
   onGitHistorySearchHandle,
   onSetMarkdownView,
+  insetFromSidePanel = false,
 }: Props) {
   const terminals = useMemo(() => selectLiveTerminals(tabs), [tabs]);
   const kind = activeTab?.kind;
@@ -73,7 +79,7 @@ export function WorkspaceSurface({
   return (
     <div className="relative h-full min-h-0">
       <div
-        className={cn(LAYER, 'px-3 pt-2 pb-2', !isTerminalTab && 'invisible pointer-events-none')}
+        className={cn(LAYER, insetFromSidePanel && 'pl-3', !isTerminalTab && 'invisible pointer-events-none')}
         aria-hidden={!isTerminalTab}
       >
         <TerminalStack

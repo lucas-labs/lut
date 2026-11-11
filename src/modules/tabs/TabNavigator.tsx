@@ -144,7 +144,7 @@ export function TabNavigator({
           'focus-visible:ring-1 focus-visible:ring-ring',
           t.active
             ? 'z-[1] h-[25px] bg-background text-foreground shadow-[inset_1px_0_0_var(--border),inset_-1px_0_0_var(--border),inset_0_1px_0_var(--border)]'
-            : 'h-6 text-muted-foreground hover:bg-accent hover:text-foreground',
+            : 'mb-px h-6 text-muted-foreground hover:bg-accent hover:text-foreground',
         );
 
   const titleClass = (t: TabNavigatorItem) =>

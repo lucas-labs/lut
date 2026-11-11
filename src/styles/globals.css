@@ -1,8 +1,8 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
-@import "./fonts.css";
-@import "./code-highlight.css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import './fonts.css';
+@import './code-highlight.css';
 
 @source "../../node_modules/streamdown/dist/index.js";
 
@@ -36,132 +36,134 @@
 /* The UI uses the platform's own font (Segoe UI, San Francisco, Cantarell or
  * Ubuntu); nothing is bundled for it. */
 @theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: system-ui, -apple-system, 'Segoe UI', Cantarell, Ubuntu, 'Noto Sans', sans-serif;
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-ring: var(--ring);
-    --color-input: var(--input);
-    --color-border: var(--border);
-    --color-destructive: var(--destructive);
-    --color-success: var(--success);
-    --color-warning: var(--warning);
-    --color-info: var(--info);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-accent: var(--accent);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-muted: var(--muted);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-secondary: var(--secondary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-primary: var(--primary);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-popover: var(--popover);
-    --color-card-foreground: var(--card-foreground);
-    --color-card: var(--card);
-    --color-foreground: var(--foreground);
-    --color-background: var(--background);
-    --color-frame: var(--frame);
-    --radius-sm: 4px;
-    --radius-md: 6px;
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
+  --font-heading: var(--font-sans);
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Cantarell, Ubuntu, 'Noto Sans', sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --color-frame: var(--frame);
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
 /* Baseline tokens mirror the built-in default theme, so the first paint already
  * matches what `applyTheme` writes a frame later. */
 :root {
-    --background: #ffffff;
-    --foreground: #111111;
-    --card: #f3f3f3;
-    --card-foreground: #111111;
-    --popover: #ffffff;
-    --popover-foreground: #111111;
-    --primary: #111111;
-    --primary-foreground: #ffffff;
-    --secondary: #ededed;
-    --secondary-foreground: #111111;
-    --muted: #ededed;
-    --muted-foreground: #656565;
-    --accent: #e5e5e5;
-    --accent-foreground: #111111;
-    --destructive: #c0392f;
-    --success: #2f7d4f;
-    --warning: #a37413;
-    --info: #2f6bb5;
-    --border: rgba(0, 0, 0, 0.09);
-    --input: rgba(0, 0, 0, 0.13);
-    --ring: #8a8a8a;
-    --radius: 0.625rem;
-    --sidebar: #f3f3f3;
-    --sidebar-foreground: #111111;
-    --sidebar-primary: #111111;
-    --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: #e5e5e5;
-    --sidebar-accent-foreground: #111111;
-    --sidebar-border: rgba(0, 0, 0, 0.09);
-    --sidebar-ring: #8a8a8a;
+  --background: #ffffff;
+  --foreground: #111111;
+  --card: #f3f3f3;
+  --card-foreground: #111111;
+  --popover: #ffffff;
+  --popover-foreground: #111111;
+  --primary: #111111;
+  --primary-foreground: #ffffff;
+  --secondary: #ededed;
+  --secondary-foreground: #111111;
+  --muted: #ededed;
+  --muted-foreground: #656565;
+  --accent: #e5e5e5;
+  --accent-foreground: #111111;
+  --destructive: #c0392f;
+  --success: #2f7d4f;
+  --warning: #a37413;
+  --info: #2f6bb5;
+  --border: rgba(0, 0, 0, 0.09);
+  --input: rgba(0, 0, 0, 0.13);
+  --ring: #8a8a8a;
+  --radius: 0.625rem;
+  --sidebar: #f3f3f3;
+  --sidebar-foreground: #111111;
+  --sidebar-primary: #111111;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e5e5e5;
+  --sidebar-accent-foreground: #111111;
+  --sidebar-border: rgba(0, 0, 0, 0.09);
+  --sidebar-ring: #8a8a8a;
 }
 
 .dark {
-    --background: #141414;
-    --foreground: #f7f7f7;
-    --card: #1d1d1d;
-    --card-foreground: #f7f7f7;
-    --popover: #1d1d1d;
-    --popover-foreground: #f7f7f7;
-    --primary: #f7f7f7;
-    --primary-foreground: #141414;
-    --secondary: #2a2a2a;
-    --secondary-foreground: #f7f7f7;
-    --muted: #1d1d1d;
-    --muted-foreground: #a3a3a3;
-    --accent: #2a2a2a;
-    --accent-foreground: #f7f7f7;
-    --destructive: #e35d5d;
-    --success: #6ec48f;
-    --warning: #e0b34d;
-    --info: #6ea8e8;
-    --border: rgba(255, 255, 255, 0.09);
-    --input: rgba(255, 255, 255, 0.13);
-    --ring: #8a8a8a;
-    --sidebar: #1d1d1d;
-    --sidebar-foreground: #f7f7f7;
-    --sidebar-primary: #f7f7f7;
-    --sidebar-primary-foreground: #141414;
-    --sidebar-accent: #2a2a2a;
-    --sidebar-accent-foreground: #f7f7f7;
-    --sidebar-border: rgba(255, 255, 255, 0.09);
-    --sidebar-ring: #8a8a8a;
+  --background: #141414;
+  --foreground: #f7f7f7;
+  --card: #1d1d1d;
+  --card-foreground: #f7f7f7;
+  --popover: #1d1d1d;
+  --popover-foreground: #f7f7f7;
+  --primary: #f7f7f7;
+  --primary-foreground: #141414;
+  --secondary: #2a2a2a;
+  --secondary-foreground: #f7f7f7;
+  --muted: #1d1d1d;
+  --muted-foreground: #a3a3a3;
+  --accent: #2a2a2a;
+  --accent-foreground: #f7f7f7;
+  --destructive: #e35d5d;
+  --success: #6ec48f;
+  --warning: #e0b34d;
+  --info: #6ea8e8;
+  --border: rgba(255, 255, 255, 0.09);
+  --input: rgba(255, 255, 255, 0.13);
+  --ring: #8a8a8a;
+  --sidebar: #1d1d1d;
+  --sidebar-foreground: #f7f7f7;
+  --sidebar-primary: #f7f7f7;
+  --sidebar-primary-foreground: #141414;
+  --sidebar-accent: #2a2a2a;
+  --sidebar-accent-foreground: #f7f7f7;
+  --sidebar-border: rgba(255, 255, 255, 0.09);
+  --sidebar-ring: #8a8a8a;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    }
+  }
   body {
     @apply bg-background text-foreground;
     margin: 0;
     overflow: hidden;
-    }
-  html, body, #root {
+  }
+  html,
+  body,
+  #root {
     height: 100%;
-    }
+  }
   html {
     @apply font-sans;
-    }
+  }
   body {
     @apply text-sm;
-    }
+  }
 }
 
 :root {
@@ -216,47 +218,38 @@
   --editor-font-size: 13px;
 }
 
-/* Floating-pane chrome. `--frame` is the canvas the panes sit on (header,
- * gutters); a pane keeps `--background` so the terminal canvas and the
- * pane surface stay the same color. Both are derived from tokens every theme
- * already declares, so built-in and user themes get the separation for free. */
+/* `--frame` is the chrome around the workspace (title bar, sidebar, tab rail):
+ * the theme's own rail colour, `sidebar`. The workspace keeps `--background`
+ * so the terminal canvas and its surface stay the same color. Every theme
+ * declares both, so built-in and user themes get the separation for free. */
 :root {
-  --frame: color-mix(in oklab, var(--card) 97%, var(--foreground) 3%);
-  --pane-radius: calc(var(--radius) * 1.4);
-  --pane-shadow: none;
-}
-.dark {
-  --pane-shadow: inset 0 1px 0 color-mix(in oklab, var(--foreground) 3.5%, transparent);
+  --frame: var(--sidebar);
 }
 
-/* No drop shadow: panes meet the header flush, so the only
- * gutter is horizontal and anything cast downward would be clipped anyway
- * (react-resizable-panels clips panel content at the panel box). Separation
- * comes from the border plus the frame/pane tone step. */
+/* The workspace runs edge to edge (E11-02): no inset, radius or shadow. The
+ * title bar's bottom line and the side panels' borders separate it from the
+ * chrome, so the active tab can join it. */
 .lut-pane {
-  border-radius: var(--pane-radius);
-  border: 1px solid var(--border);
   background: var(--background);
-  box-shadow: var(--pane-shadow);
   overflow: hidden;
 }
 
-/* Window vibrancy (macOS NSVisualEffectView / Windows Mica). The frame goes
- * fully transparent, so the header, the sidebar and the tabs column (which
- * paint no background of their own) show the effect as it is; panes keep
+/* Window vibrancy (macOS NSVisualEffectView / Windows Mica). The frame turns
+ * translucent: the theme's rail colour over the effect, so the title bar, the
+ * sidebar and the tabs column show it with a touch of the theme; panes keep
  * `--background` so terminal and editor text stays on a solid, readable
  * surface and the terminal canvas still matches its container. Redefining
  * `--frame` rather than layering an overlay means `bg-frame` and the
  * borderless-chrome `#root` both follow automatically. */
-html[data-vibrancy="on"],
-html[data-vibrancy="on"] body {
+html[data-vibrancy='on'],
+html[data-vibrancy='on'] body {
   background: transparent;
 }
-html[data-vibrancy="on"] {
-  --frame: transparent;
+html[data-vibrancy='on'] {
+  --frame: color-mix(in srgb, var(--sidebar) 60%, transparent);
 }
 
-html[data-chrome="borderless"] .lut-bg-surface {
+html[data-chrome='borderless'] .lut-bg-surface {
   border-radius: 12px;
 }
 /* Window drag (macOS WebKit): while `data-live-resize` is set (see
@@ -266,7 +259,7 @@ html[data-chrome="borderless"] .lut-bg-surface {
  * of MiB for a drag) and frees them only after it ends. Hidden and
  * non-interactive: nothing paints or hit-tests there. */
 html[data-live-resize] body::after {
-  content: "";
+  content: '';
   position: absolute;
   left: 0;
   top: 0;
@@ -286,29 +279,27 @@ html[data-live-resize] body::after {
  * borderless window, and we paint the rounded corners + border ourselves so the
  * app doesn't look naked on GNOME/KDE/Hyprland. A maximized or full-screen window
  * fills the screen edge to edge, so it drops both. */
-html[data-chrome="borderless"],
-html[data-chrome="borderless"] body {
+html[data-chrome='borderless'],
+html[data-chrome='borderless'] body {
   background: transparent !important;
 }
-html[data-chrome="borderless"] #root,
-html[data-chrome="borderless"] #settings-root {
+html[data-chrome='borderless'] #root,
+html[data-chrome='borderless'] #settings-root {
   height: 100%;
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--border);
   background: var(--background);
 }
-html[data-chrome="borderless"] #root {
+html[data-chrome='borderless'] #root {
   background: var(--frame);
 }
-html[data-chrome="borderless"][data-window-maximized] #root,
-html[data-chrome="borderless"][data-window-maximized] #settings-root,
-html[data-chrome="borderless"][data-window-maximized] .lut-bg-surface {
+html[data-chrome='borderless'][data-window-maximized] #root,
+html[data-chrome='borderless'][data-window-maximized] #settings-root,
+html[data-chrome='borderless'][data-window-maximized] .lut-bg-surface {
   border-radius: 0;
   border-width: 0;
 }
-
-
 
 .cm-editor,
 .cm-scroller {
@@ -328,7 +319,7 @@ body {
 }
 input,
 textarea,
-[contenteditable="true"],
+[contenteditable='true'],
 .cm-editor,
 .select-text,
 .select-text * {
@@ -358,7 +349,6 @@ textarea,
   opacity: 0;
   cursor: pointer;
 }
-
 
 .no-scrollbar {
   scrollbar-width: none !important;
@@ -391,8 +381,7 @@ html *::-webkit-scrollbar {
 .lut-code-editor .cm-scroller {
   margin-right: -4px;
   scrollbar-width: thin !important;
-  scrollbar-color: color-mix(in srgb, var(--foreground) 18%, transparent)
-    transparent !important;
+  scrollbar-color: color-mix(in srgb, var(--foreground) 18%, transparent) transparent !important;
 }
 .lut-code-editor .cm-scroller::-webkit-scrollbar {
   width: 7px !important;
@@ -410,11 +399,7 @@ html *::-webkit-scrollbar {
   background-clip: padding-box;
 }
 .lut-code-editor .cm-scroller::-webkit-scrollbar-thumb:hover {
-  background-color: color-mix(
-    in srgb,
-    var(--foreground) 30%,
-    transparent
-  );
+  background-color: color-mix(in srgb, var(--foreground) 30%, transparent);
 }
 
 /* Motion tokens. Reduced-motion zeroes the durations as a global snap. */

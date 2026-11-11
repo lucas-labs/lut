@@ -210,8 +210,11 @@ function shell(
     ThemeContext.Provider,
     { value: { resolvedMode: mode, activeTheme: theme } },
     createElement(AppShell, {
-      header: createElement('header', null, vertical ? null : strip),
+      titleBar: createElement('header', null, vertical ? null : strip),
+      titleBarPlacement: vertical ? 'overlay' : 'inline',
       tabsColumn: vertical ? createElement('aside', null, strip) : null,
+      sidebarOpen: true,
+      tabsColumnOpen: true,
       tabsColumnRef: createRef<PanelImperativeHandle>(),
       tabsColumnInitialWidth: 200,
       onTabsColumnLayout: noop,

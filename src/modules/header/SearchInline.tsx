@@ -61,10 +61,6 @@ export const SearchInline = forwardRef<SearchInlineHandle, Props>(function Searc
 
   const baseLabel = target?.kind === 'git-history' ? 'Git search' : 'Search';
 
-  const placeholder = useMemo(() => {
-    return shortcutText ? `${baseLabel} (${shortcutText})` : baseLabel;
-  }, [baseLabel, shortcutText]);
-
   const tooltipTitle = useMemo(() => {
     return shortcutText ? `${baseLabel} (${shortcutText})` : baseLabel;
   }, [baseLabel, shortcutText]);
@@ -125,8 +121,8 @@ export const SearchInline = forwardRef<SearchInlineHandle, Props>(function Searc
 
   return (
     <div
-      className="relative h-7 shrink-0 transition-[width] duration-200 ease-out"
-      style={{ width: expanded ? 192 : 28 }}
+      className="relative h-[22px] shrink-0 transition-[width] duration-200 ease-out"
+      style={{ width: expanded ? 168 : 22 }}
     >
       {expanded ? (
         <div className="absolute inset-0 animate-in fade-in-0 duration-150">
@@ -136,11 +132,18 @@ export const SearchInline = forwardRef<SearchInlineHandle, Props>(function Searc
             strokeWidth={1.75}
             className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-muted-foreground"
           />
+          {!q && shortcutText ? (
+            <span className="pointer-events-none absolute top-1/2 right-1 -translate-y-1/2 rounded-sm bg-accent px-1 font-mono text-[11px] leading-4 text-muted-foreground">
+              {shortcutText}
+            </span>
+          ) : null}
           <Input
             ref={setInputRef}
             value={q}
-            placeholder={placeholder}
-            className="h-7 w-full bg-muted/80 pr-7 pl-7 text-[13px]! placeholder:text-muted-foreground/70 focus-visible:ring-0"
+            placeholder={baseLabel}
+            aria-label={tooltipTitle}
+            title={tooltipTitle}
+            className="h-[22px] w-full rounded-md border-border bg-transparent py-0 pr-6 pl-[26px] text-xs! shadow-none placeholder:text-muted-foreground hover:border-ring/60 focus-visible:border-ring focus-visible:ring-0 dark:bg-transparent"
             onChange={(e) => {
               const next = e.target.value;
               setQ(next);
@@ -184,11 +187,12 @@ export const SearchInline = forwardRef<SearchInlineHandle, Props>(function Searc
           <Button
             variant="ghost"
             size="icon"
-            className="size-7 shrink-0 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="size-[22px] shrink-0 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
             onClick={focus}
+            aria-label={tooltipTitle}
             title={tooltipTitle}
           >
-            <HugeiconsIcon icon={Search01Icon} size={15} strokeWidth={1.75} />
+            <HugeiconsIcon icon={Search01Icon} size={13} strokeWidth={1.75} />
           </Button>
         </div>
       )}

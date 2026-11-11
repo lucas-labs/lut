@@ -1027,7 +1027,7 @@ const EntryRow = memo(function EntryRow({
           aria-selected={isSelected}
           onMouseDown={() => onFocusRow(row.key)}
           className={cn(
-            'group relative flex h-[30px] items-center gap-2 rounded-md pl-2 pr-2 transition-all duration-100',
+            'group relative mx-2.5 flex h-[30px] items-center gap-2 rounded-md pl-3 pr-2 transition-all duration-100',
             focused ? 'bg-accent/60' : isSelected ? 'bg-accent/55 text-foreground' : 'hover:bg-accent/30',
           )}
         >

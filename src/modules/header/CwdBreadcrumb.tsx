@@ -4,6 +4,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useHoldTitleBar } from '@/lib/titleBarHold';
 import { cn } from '@/lib/utils';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { currentWorkspaceEnv } from '@/modules/workspace';
@@ -74,7 +75,7 @@ export function CwdBreadcrumb({ cwd, filePath, home, onCd }: Props) {
   if (filePath) {
     const segments = segmentsFromCwd(dirname(filePath), home);
     return (
-      <Trail>
+      <Trail first={firstShown(segments, null)}>
         <Parents segments={segments} onCd={onCd} />
         <Item first={false}>
           <span className={cn(SEGMENT_CLASS, 'text-foreground hover:bg-transparent')}>
@@ -92,7 +93,7 @@ export function CwdBreadcrumb({ cwd, filePath, home, onCd }: Props) {
   const segments = segmentsFromCwd(cwd, home);
   const current = segments[segments.length - 1];
   return (
-    <Trail>
+    <Trail first={firstShown(segments.slice(0, -1), current)}>
       <Parents segments={segments.slice(0, -1)} onCd={onCd} />
       <Item first={segments.length === 1}>
         <CurrentSegmentDropdown segment={current} onCd={onCd} />
@@ -101,13 +102,28 @@ export function CwdBreadcrumb({ cwd, filePath, home, onCd }: Props) {
   );
 }
 
-function Trail({ children }: { children: ReactNode }) {
+/**
+ * The first segment the trail shows: the parent when there is no `…` before it, else the current one. Null when
+ * the trail starts with `…`. `parents` are the segments before `current` (all of them for a file's folder).
+ */
+function firstShown(parents: Segment[], current: Segment | null): Segment | null {
+  if (parents.length > 1) return null;
+  return parents[0] ?? current;
+}
+
+/** The trail, led by a folder icon, or a house when it starts at the home folder. */
+function Trail({ first, children }: { first: Segment | null; children: ReactNode }) {
   return (
     <nav
       aria-label="Current directory"
       className="ml-1.5 flex max-w-[42%] min-w-0 shrink items-center gap-px overflow-hidden text-xs whitespace-nowrap text-muted-foreground"
     >
-      <HugeiconsIcon icon={Folder01Icon} size={13} strokeWidth={1.5} className="mr-1 shrink-0" />
+      <HugeiconsIcon
+        icon={first?.isHome ? Home03Icon : Folder01Icon}
+        size={13}
+        strokeWidth={1.5}
+        className="mr-1 shrink-0"
+      />
       {children}
     </nav>
   );
@@ -126,13 +142,8 @@ function Item({ first, children }: { first: boolean; children: ReactNode }) {
 }
 
 function SegmentLabel({ segment }: { segment: Segment }) {
-  if (!segment.isHome) return <span className={LABEL_CLASS}>{segment.label}</span>;
-  return (
-    <>
-      <HugeiconsIcon icon={Home03Icon} className="size-3" strokeWidth={1.75} />
-      Home
-    </>
-  );
+  // The home folder reads "Home"; its house leads the trail instead of sitting next to the name.
+  return <span className={LABEL_CLASS}>{segment.isHome ? 'Home' : segment.label}</span>;
 }
 
 /** The ancestors of the current segment: the nearest one, the rest folded into a `…` menu. */
@@ -156,6 +167,7 @@ function CurrentSegmentDropdown({ segment, onCd }: { segment: Segment; onCd: (p:
   const showHidden = usePreferencesStore((s) => s.showHidden);
   const closeFocus = useMenuCloseFocus();
   const [open, setOpen] = useState(false);
+  useHoldTitleBar(open);
   const [children, setChildren] = useState<string[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const path = segment.fullPath;
@@ -210,10 +222,12 @@ function CurrentSegmentDropdown({ segment, onCd }: { segment: Segment; onCd: (p:
 
 function CollapsedSegments({ segments, onCd }: { segments: Segment[]; onCd: (p: string) => void }) {
   const closeFocus = useMenuCloseFocus();
+  const [open, setOpen] = useState(false);
+  useHoldTitleBar(open);
   return (
     <span className="contents">
       <Item first>
-        <DropdownMenu>
+        <DropdownMenu open={open} onOpenChange={setOpen}>
           <DropdownMenuTrigger asChild>
             <button type="button" title="Show hidden folders" className={SEGMENT_CLASS}>
               <HugeiconsIcon icon={MoreHorizontalIcon} className="size-3" strokeWidth={1.75} />
