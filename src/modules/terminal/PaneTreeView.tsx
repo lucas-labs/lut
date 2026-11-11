@@ -1,6 +1,7 @@
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import type { TerminalSearchController } from '@/modules/terminal/search/TerminalSearchController';
 import { Fragment, useCallback, useEffect, useRef } from 'react';
+import type { GroupImperativeHandle, Layout } from 'react-resizable-panels';
 import { useTerminalDropStore } from './lib/dropStore';
 import { firstLeafSlotId, type PaneNode } from './lib/panes';
 import { beginTerminalResizeInteraction, endTerminalResizeInteraction } from './lib/terminalResizeInteraction';
@@ -19,7 +20,13 @@ type Props = {
   activeLeafId: number;
   onFocusLeaf: (leafId: number) => void;
   getBundle: (leafId: number) => LeafBundle;
+  /** The user resized a split: its children's new shares, in child order. */
+  onSplitRatios?: (splitId: number, ratios: number[]) => void;
 };
+
+type SplitNode = Extract<PaneNode, { kind: 'split' }>;
+
+const panelId = (child: PaneNode) => `pane-slot-${firstLeafSlotId(child)}`;
 
 export function PaneTreeView(props: Props) {
   const { node } = props;
@@ -55,19 +62,64 @@ export function PaneTreeView(props: Props) {
     );
   }
 
+  return <SplitView {...props} node={node} />;
+}
+
+/**
+ * A split laid out by the model's ratios. A user resize is written back to the model; a model
+ * change (a pane added or closed, a restore) is applied to the live layout, so the panes keep
+ * their proportions across tab switches and tree edits.
+ */
+function SplitView(props: Props & { node: SplitNode }) {
+  const { node, onSplitRatios } = props;
+  const groupRef = useRef<GroupImperativeHandle | null>(null);
+  const ids = node.children.map(panelId);
+  const idsKey = ids.join(',');
+
+  useEffect(() => {
+    const ids = idsKey.split(',');
+    const wanted: Layout = Object.fromEntries(ids.map((id, i) => [id, node.ratios[i] * 100]));
+    // A closed pane's panel unregisters after this effect may run; apply the layout once the
+    // group holds exactly this split's panels, a few frames at most.
+    let frame = 0;
+    let tries = 0;
+    const apply = () => {
+      const group = groupRef.current;
+      if (!group) return;
+      const live = group.getLayout();
+      const liveIds = Object.keys(live);
+      if (liveIds.length !== ids.length || ids.some((id) => !(id in live))) {
+        if (++tries <= 3) frame = requestAnimationFrame(apply);
+        return;
+      }
+      if (ids.some((id) => Math.abs(live[id] - wanted[id]) > 0.5)) group.setLayout(wanted);
+    };
+    apply();
+    return () => cancelAnimationFrame(frame);
+  }, [idsKey, node.ratios]);
+
   return (
-    <ResizablePanelGroup orientation={node.dir === 'row' ? 'horizontal' : 'vertical'}>
-      {node.children.map((child, i) => {
-        const slotId = firstLeafSlotId(child);
-        return (
-          <Fragment key={slotId}>
-            {i > 0 && <TerminalResizableHandle />}
-            <ResizablePanel id={`pane-slot-${slotId}`} minSize="10%">
-              <PaneTreeView {...props} node={child} />
-            </ResizablePanel>
-          </Fragment>
+    <ResizablePanelGroup
+      groupRef={groupRef}
+      orientation={node.dir === 'row' ? 'horizontal' : 'vertical'}
+      onLayoutChanged={(layout, { isUserInteraction }) => {
+        // Only a drag or a key moves the model: a programmatic layout (mount, setLayout) would
+        // echo the model back to itself.
+        if (!isUserInteraction) return;
+        onSplitRatios?.(
+          node.id,
+          ids.map((id) => layout[id] ?? 0),
         );
-      })}
+      }}
+    >
+      {node.children.map((child, i) => (
+        <Fragment key={ids[i]}>
+          {i > 0 && <TerminalResizableHandle />}
+          <ResizablePanel id={ids[i]} defaultSize={`${node.ratios[i] * 100}%`} minSize="10%">
+            <PaneTreeView {...props} node={child} />
+          </ResizablePanel>
+        </Fragment>
+      ))}
     </ResizablePanelGroup>
   );
 }

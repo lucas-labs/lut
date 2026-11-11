@@ -10,6 +10,7 @@ import {
   type PaneDirection,
   removeLeaf,
   setLeafCwd as setLeafCwdInTree,
+  setSplitRatios as setSplitRatiosInTree,
   siblingLeafOf,
   type SplitDir,
   splitLeaf,
@@ -95,6 +96,8 @@ type NavigationActions = {
     bounds?: PaneBounds[],
   ) => void;
   splitActivePane: (tabId: number, dir: SplitDir) => number | null;
+  /** Records the shares of one split of a terminal tab, after a user resize. */
+  setSplitRatios: (tabId: number, splitId: number, ratios: number[]) => void;
   closePaneByLeaf: (leafId: number) => void;
   closeActivePane: (tabId: number) => boolean;
 };
@@ -654,6 +657,12 @@ export const useNavigationStore = create<NavigationState>()((set, get) => {
       }));
       return leafId;
     },
+
+    setSplitRatios: (tabId, splitId, ratios) =>
+      mapTerminal(tabId, (t) => {
+        const paneTree = setSplitRatiosInTree(t.paneTree, splitId, ratios);
+        return paneTree === t.paneTree ? t : { ...t, paneTree };
+      }),
 
     closePaneByLeaf: (leafId) => {
       const { tabs, activeId } = get();

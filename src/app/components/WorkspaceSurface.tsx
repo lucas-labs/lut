@@ -21,6 +21,7 @@ type Props = {
   onCwd: TerminalStackProps['onCwd'];
   onExit: TerminalStackProps['onExit'];
   onFocusLeaf: TerminalStackProps['onFocusLeaf'];
+  onSplitRatios?: TerminalStackProps['onSplitRatios'];
   registerEditorHandle: EditorStackProps['registerHandle'];
   onEditorDirtyChange: EditorStackProps['onDirtyChange'];
   onEditorCloseTab: EditorStackProps['onCloseTab'];
@@ -50,6 +51,7 @@ export function WorkspaceSurface({
   onCwd,
   onExit,
   onFocusLeaf,
+  onSplitRatios,
   registerEditorHandle,
   onEditorDirtyChange,
   onEditorCloseTab,
@@ -82,6 +84,7 @@ export function WorkspaceSurface({
           onCwd={onCwd}
           onExit={onExit}
           onFocusLeaf={onFocusLeaf}
+          onSplitRatios={onSplitRatios}
         />
       </div>
       <div className={cn(LAYER, !isEditorTab && 'invisible pointer-events-none')} aria-hidden={!isEditorTab}>

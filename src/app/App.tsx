@@ -130,6 +130,7 @@ export default function App() {
     focusNextPaneInTab,
     swapActivePaneInDirection,
     splitActivePane,
+    setSplitRatios,
     closeActivePane,
     closePaneByLeaf,
   } = useTabs(getLaunchDir() ? { cwd: getLaunchDir() } : undefined);
@@ -1230,6 +1231,7 @@ export default function App() {
               onCwd={handleTerminalCwd}
               onExit={handleLeafExit}
               onFocusLeaf={handleFocusLeaf}
+              onSplitRatios={setSplitRatios}
               registerEditorHandle={registerEditorHandle}
               onEditorDirtyChange={handleEditorDirty}
               onEditorCloseTab={disposeTab}

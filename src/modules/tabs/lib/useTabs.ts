@@ -50,6 +50,7 @@ export function useTabs(initial?: Partial<TerminalTab>) {
     focusNextPaneInTab: s.focusNextPaneInTab,
     swapActivePaneInDirection: s.swapActivePaneInDirection,
     splitActivePane: s.splitActivePane,
+    setSplitRatios: s.setSplitRatios,
     closeActivePane: s.closeActivePane,
     closePaneByLeaf: s.closePaneByLeaf,
   };

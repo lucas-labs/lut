@@ -2432,7 +2432,7 @@ scope: ui
 size: S
 ```
 
-**Goal:** `PaneTreeView` renders splits with the model's ratios (`defaultSize`) and writes user resizes back to the store (`onLayout`), keeping the resize-interaction gating.
+**Goal:** `PaneTreeView` renders splits with the model's ratios (`defaultSize`) and writes user resizes back to the store (`onLayoutChanged` with `isUserInteraction`), keeping the resize-interaction gating.
 
 **Acceptance criteria:**
 
