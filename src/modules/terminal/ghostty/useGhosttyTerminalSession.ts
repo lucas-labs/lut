@@ -24,6 +24,7 @@ import { writeTerminalClipboard } from '../lib/terminalClipboard';
 import { GhosttySemanticEventRouter } from './core/GhosttySemanticEventRouter';
 import { getGhosttyCoreRuntime } from './GhosttyCoreRuntime';
 import type { GhosttyTerminalModelApi } from './GhosttyTerminalModel';
+import { prepareHintedFonts } from './gpu/hintedGlyphs';
 import {
   fontSpecKey,
   measureTerminalFont,
@@ -532,9 +533,11 @@ async function initializeSessionGeneration(
   const metricsPromise = (async () => {
     await ensureMonoFontsLoaded();
     await document.fonts.ready;
+    await prepareHintedFonts(session.font.family, session.font.weight);
     const initialFont = session.font;
     let metrics = await measureTerminalFont(initialFont);
     if (fontSpecKey(initialFont) !== fontSpecKey(session.font)) {
+      await prepareHintedFonts(session.font.family, session.font.weight);
       metrics = await measureTerminalFont(session.font);
     }
     mark('fontsReadyMs');
@@ -978,6 +981,7 @@ async function updateSessionFont(session: GhosttySession, font: TerminalFontSpec
 
   await ensureMonoFontsLoaded();
   await document.fonts.ready;
+  await prepareHintedFonts(font.family, font.weight);
   const metrics = await measureTerminalFont(font);
   if (session.disposed || !session.surface || fontSpecKey(session.font) !== fontSpecKey(font)) {
     return;

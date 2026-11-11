@@ -46,6 +46,23 @@
     "gzip": true
   },
   {
+    "name": "hinted glyph rasterizer WASM (Windows and Linux terminals)",
+    "path": [
+      "dist/assets/glyph-raster-*.wasm"
+    ],
+    "limit": "220 KB",
+    "gzip": true
+  },
+  {
+    "name": "bundled monospace font, TrueType (the cyrillic face loads only on use)",
+    "path": [
+      "dist/assets/source-code-pro-*.ttf"
+    ],
+    "limit": "70 KB",
+    "gzip": false,
+    "brotli": false
+  },
+  {
     "name": "nerd font icon faces (the second loads only on use)",
     "path": [
       "dist/assets/nerd-font-icons-*.woff2"

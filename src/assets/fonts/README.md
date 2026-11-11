@@ -25,8 +25,8 @@ dependency): keep the codepoint ranges above, drop hinting, layout tables and
 glyph names, rescale 1000 to 500 units per em (a point moves by at most 0.001 em),
 and rename the family to the names above. Advance widths stay one cell: 0.6 em, the
 cell of JetBrains Mono and of Source Code Pro, the bundled text font. One face serves
-regular, bold and italic; the webview synthesizes styles. The rasterizer fits each icon to the terminal's cell
-(`gpu/GlyphPlacement.ts`).
+regular, bold and italic; the webview synthesizes styles. The rasterizer fits each
+icon to the terminal's cell (`gpu/GlyphPlacement.ts`).
 
 - `nerd-font-icons.woff2` SHA-256:
   `3244bd1ec660d04f9d53deca1b8b1ca676a752faa58834c54a8fd2c61d3a6c9a`
@@ -36,3 +36,26 @@ regular, bold and italic; the webview synthesizes styles. The rasterizer fits ea
 The SIL Open Font License and Nerd Fonts notices accompany the source here and
 ship in `public/licenses/nerd-font-icons.txt`. Original copyright metadata is
 retained in both fonts.
+
+# Source Code Pro
+
+lut's monospace font (Adobe, OFL-1.1; `public/licenses/source-code-pro.txt`), variable
+from weight 200 to 900. TrueType rather than woff2 because the terminal's hinted
+rasterizer (`packages/glyph-raster`) reads the same files as the `@font-face` rules.
+The fonts carry no hinting program; the rasterizer's automatic hinter fits them to
+the pixel grid.
+
+| File | Codepoints | Size |
+| --- | --- | --- |
+| `source-code-pro-latin.ttf` | Latin | 41,284 B |
+| `source-code-pro-cyrillic.ttf` | Cyrillic | 25,288 B |
+
+Source: `@fontsource-variable/source-code-pro` 5.3.1 (Google Fonts v32),
+`files/source-code-pro-{latin,cyrillic}-wght-normal.woff2`, decompressed to
+TrueType with FontTools 4.60 (`TTFont(path).flavor = None`); the outlines and
+tables are unchanged.
+
+- `source-code-pro-latin.ttf` SHA-256:
+  `46556f6d056ea00095e563c58e0f67df774ea678c5c6e035ed37f5d628c4a61e`
+- `source-code-pro-cyrillic.ttf` SHA-256:
+  `c0589abf33cbf2eaa8603c23fe554044d3a99914915db813a017b400db9c9d87`

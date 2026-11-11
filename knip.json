@@ -4,7 +4,6 @@
   "ignoreDependencies": [
     "@tauri-apps/plugin-log",
     "@tauri-apps/plugin-window-state",
-    "@fontsource-variable/source-code-pro",
     "@smoke-driver"
   ],
   "ignoreBinaries": ["footprint", "swiftc", "where"],

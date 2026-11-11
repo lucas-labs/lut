@@ -26,6 +26,8 @@ const NERD_FONT_CANDIDATES = [
   'Hasklug Nerd Font',
 ];
 
+/** The monospace font lut bundles (`src/assets/fonts/source-code-pro-*.ttf`). */
+export const BUNDLED_MONO_FAMILY = 'Source Code Pro';
 const SYMBOLS_FAMILY = 'Nerd Font Icons';
 const EXTENDED_SYMBOLS_FAMILY = 'Nerd Font Icons MDI';
 
@@ -34,7 +36,7 @@ const EXTENDED_SYMBOLS_FAMILY = 'Nerd Font Icons MDI';
  * Font (complete) outranks the bundled subsets, which guarantee Powerline, Devicons,
  * Font Awesome, Codicons and Material Design icons without any installed font.
  */
-const FALLBACK_CHAIN = `"Source Code Pro", "Symbols Nerd Font Mono", "Symbols Nerd Font", "${SYMBOLS_FAMILY}", "${EXTENDED_SYMBOLS_FAMILY}", SFMono-Regular, Menlo, monospace`;
+const FALLBACK_CHAIN = `"${BUNDLED_MONO_FAMILY}", "Symbols Nerd Font Mono", "Symbols Nerd Font", "${SYMBOLS_FAMILY}", "${EXTENDED_SYMBOLS_FAMILY}", SFMono-Regular, Menlo, monospace`;
 
 const PROBE_SAMPLES = ['mmmmmmmmmmlli', 'Wim0123\ue0a0\ue718\u{f024b}'];
 const PROBE_BASELINES = ['monospace', 'serif', 'sans-serif'];
@@ -54,7 +56,7 @@ export function ensureMonoFontsLoaded(): Promise<void> {
   }
   monoReady = Promise.allSettled([
     // One variable face per subset serves every weight.
-    document.fonts.load('400 14px "Source Code Pro"'),
+    document.fonts.load(`400 14px "${BUNDLED_MONO_FAMILY}"`),
     document.fonts.load(`400 14px "${SYMBOLS_FAMILY}"`, '\ue0a0\ue718'),
   ]).then(() => undefined);
   return monoReady;

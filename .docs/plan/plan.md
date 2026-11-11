@@ -3509,6 +3509,8 @@ performance invariants.
       (files, family and the fonts' own name tables) so they don't read as lut's own work.
 - [ ] The bundled monospace font is Source Code Pro, variable (weights 200-900), replacing JetBrains Mono; the
       auto-detected Nerd Font prefers SauceCodePro.
+- [ ] Terminal text on Windows and Linux is hinted (stems on whole pixels, as native terminals draw them) by a
+      WebAssembly rasterizer for the installed or bundled text font; icons, emoji and other fallbacks keep the canvas.
 - [ ] `compositingBudget.test.ts` and `motionBudget.test.ts` adapted to the new CSS and green (no infinite animations, compositing limits kept).
 - [ ] Light and dark modes both render; vibrancy and background image customisation still work (decision 16).
 

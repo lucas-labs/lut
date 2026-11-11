@@ -1,17 +1,18 @@
-/* Source Code Pro, variable (weights 200-900) — woff2 only (every target webview supports it). */
+/* Source Code Pro, variable (weights 200-900). TrueType rather than woff2: the terminal's hinted
+   rasterizer reads these same files (src/assets/fonts/README.md). */
 @font-face {
   font-family: 'Source Code Pro';
   font-style: normal;
   font-display: swap;
   font-weight: 200 900;
-  src: url('@fontsource-variable/source-code-pro/files/source-code-pro-latin-wght-normal.woff2') format('woff2');
+  src: url('../assets/fonts/source-code-pro-latin.ttf') format('truetype');
 }
 @font-face {
   font-family: 'Source Code Pro';
   font-style: normal;
   font-display: swap;
   font-weight: 200 900;
-  src: url('@fontsource-variable/source-code-pro/files/source-code-pro-cyrillic-wght-normal.woff2') format('woff2');
+  src: url('../assets/fonts/source-code-pro-cyrillic.ttf') format('truetype');
 }
 
 @font-face {
