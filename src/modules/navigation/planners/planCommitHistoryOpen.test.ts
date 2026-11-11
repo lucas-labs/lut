@@ -1,5 +1,5 @@
+import { type GitHistoryTab, planCommitHistoryOpen, type Tab } from '@/modules/navigation';
 import { describe, expect, it } from 'vitest';
-import { type GitHistoryTab, planCommitHistoryOpen, type Tab } from './useTabs';
 
 function history(id: number, repoRoot: string, spaceId = 'space-a'): GitHistoryTab {
   return {

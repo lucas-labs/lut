@@ -4,7 +4,7 @@ import type {
   PreviewTab,
   Tab,
   TerminalTab,
-} from '@/modules/tabs/lib/useTabs';
+} from '@/modules/navigation';
 import { isLeaf, type PaneNode, type SplitDir } from '@/modules/terminal/lib/panes';
 
 type SerializedNode =

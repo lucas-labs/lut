@@ -25,6 +25,7 @@ import { FileExplorer, type FileExplorerHandle } from '@/modules/explorer';
 import type { GitHistorySearchHandle } from '@/modules/git-history';
 import { Header, type SearchInlineHandle, type SearchTarget } from '@/modules/header';
 import { setLspNavigator } from '@/modules/lsp';
+import { DEFAULT_SPACE_ID } from '@/modules/navigation';
 import type { PreviewPaneHandle } from '@/modules/preview';
 import { openSettingsWindow } from '@/modules/settings/openSettingsWindow';
 import { usePreferencesStore } from '@/modules/settings/preferences';
@@ -49,7 +50,6 @@ import {
   useWindowTitle,
   useWorkspaceCwd,
 } from '@/modules/tabs';
-import { DEFAULT_SPACE_ID } from '@/modules/tabs/lib/useTabs';
 import {
   clearFocusedTerminal,
   disposeSession,

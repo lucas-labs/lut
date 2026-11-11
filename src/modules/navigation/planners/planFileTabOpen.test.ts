@@ -1,11 +1,11 @@
-import { describe, expect, it } from 'vitest';
 import {
   type EditorTab,
   planFileTabOpen,
   planMarkdownTabOpen,
   type Tab,
   type TerminalTab,
-} from './useTabs';
+} from '@/modules/navigation';
+import { describe, expect, it } from 'vitest';
 
 const terminal: TerminalTab = {
   id: 1,

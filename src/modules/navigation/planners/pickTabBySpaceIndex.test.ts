@@ -1,5 +1,5 @@
+import { pickTabBySpaceIndex, type Tab } from '@/modules/navigation';
 import { describe, expect, it } from 'vitest';
-import { pickTabBySpaceIndex, type Tab } from './useTabs';
 
 function term(id: number, spaceId: string): Tab {
   return {

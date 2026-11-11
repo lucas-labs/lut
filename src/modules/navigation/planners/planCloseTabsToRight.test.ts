@@ -1,5 +1,5 @@
+import { planCloseTabsToRight, type Tab } from '@/modules/navigation';
 import { describe, expect, it } from 'vitest';
-import { planCloseTabsToRight, type Tab } from './useTabs';
 
 function tab(id: number, spaceId: string, kind: Tab['kind'] = 'editor'): Tab {
   return {

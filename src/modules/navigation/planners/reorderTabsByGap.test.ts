@@ -1,5 +1,5 @@
+import { reorderTabsByGap, type Tab } from '@/modules/navigation';
 import { describe, expect, it } from 'vitest';
-import { reorderTabsByGap, type Tab } from './useTabs';
 
 function term(id: number, spaceId: string): Tab {
   return {

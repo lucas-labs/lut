@@ -19,6 +19,7 @@ import type { AgentLaunchRequest } from '@/modules/agents/lib/launcher';
 import { ALL_LANGUAGES, EXPOSED_LANGUAGES } from '@/modules/editor/lib/languageDefinitions';
 import { resolveDisplayName } from '@/modules/editor/lib/languageResolver';
 import { FileIcon } from '@/modules/explorer/FileIcon';
+import type { EditorTab, Tab, TerminalTab } from '@/modules/navigation';
 import { leafIds, ptyIdForLeaf, useAgentActivityStore } from '@/modules/terminal';
 import {
   ArrowRight01Icon,
@@ -39,7 +40,6 @@ import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } f
 import { useShallow } from 'zustand/react/shallow';
 import { selectTabAgentStatus } from './lib/tabAgentStatus';
 import { labelFor } from './lib/tabLabel';
-import type { EditorTab, Tab, TerminalTab } from './lib/useTabs';
 import { NewTabMenu } from './NewTabMenu';
 
 type Props = {

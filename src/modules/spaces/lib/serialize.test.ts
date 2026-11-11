@@ -1,4 +1,4 @@
-import type { Tab } from '@/modules/tabs/lib/useTabs';
+import type { Tab } from '@/modules/navigation';
 import type { PaneNode } from '@/modules/terminal/lib/panes';
 import { describe, expect, it } from 'vitest';
 import { hydrateTabs, type SerializedTab, serializeTabs } from './serialize';

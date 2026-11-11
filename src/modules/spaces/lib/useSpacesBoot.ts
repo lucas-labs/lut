@@ -1,6 +1,6 @@
+import { DEFAULT_SPACE_ID } from '@/modules/navigation';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import type { Tab } from '@/modules/tabs';
-import { DEFAULT_SPACE_ID } from '@/modules/tabs/lib/useTabs';
 import { isLeaf, type PaneNode } from '@/modules/terminal/lib/panes';
 import { parseWorkspaceScopeKey, type WorkspaceEnv, workspaceNative } from '@/modules/workspace';
 import { useEffect, useRef } from 'react';

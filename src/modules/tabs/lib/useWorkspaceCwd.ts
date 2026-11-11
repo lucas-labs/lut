@@ -1,5 +1,5 @@
+import type { Tab } from '@/modules/navigation';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import type { Tab } from './useTabs';
 
 type Result = {
   explorerRoot: string | null;

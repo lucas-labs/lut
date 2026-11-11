@@ -1,4 +1,4 @@
-import type { Tab } from '@/modules/tabs/lib/useTabs';
+import type { Tab } from '@/modules/navigation';
 import { describe, expect, it } from 'vitest';
 import { resolveControlContext } from './context';
 

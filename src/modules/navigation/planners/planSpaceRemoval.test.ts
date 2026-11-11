@@ -1,5 +1,5 @@
+import { planSpaceRemoval, type Tab, type TerminalTab } from '@/modules/navigation';
 import { describe, expect, it } from 'vitest';
-import { planSpaceRemoval, type Tab, type TerminalTab } from './useTabs';
 
 function term(id: number, spaceId: string): Tab {
   return {

@@ -1,5 +1,10 @@
+import {
+  type GitDiffOpenInput,
+  type GitDiffTab,
+  planGitDiffOpen,
+  type Tab,
+} from '@/modules/navigation';
 import { describe, expect, it } from 'vitest';
-import { type GitDiffOpenInput, type GitDiffTab, planGitDiffOpen, type Tab } from './useTabs';
 
 function terminal(id: number, spaceId = 'default'): Tab {
   return {

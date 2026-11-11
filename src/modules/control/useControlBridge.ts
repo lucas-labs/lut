@@ -1,4 +1,4 @@
-import { DEFAULT_SPACE_ID, type Tab } from '@/modules/tabs/lib/useTabs';
+import { DEFAULT_SPACE_ID, type Tab } from '@/modules/navigation';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';

@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
+import type { Tab } from '@/modules/navigation';
 import { useMemo } from 'react';
 import { labelFor } from './lib/tabLabel';
-import type { Tab } from './lib/useTabs';
 import type { TabSwitcherState } from './lib/useTabSwitcher';
 import { TabIcon } from './TabBar';
 

@@ -1,6 +1,6 @@
+import type { TerminalTab } from '@/modules/navigation';
 import { describe, expect, it } from 'vitest';
 import { labelFor } from './tabLabel';
-import type { TerminalTab } from './useTabs';
 
 function terminalTab(over: Partial<TerminalTab> = {}): TerminalTab {
   return {

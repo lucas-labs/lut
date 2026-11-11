@@ -1,5 +1,10 @@
+import {
+  applyCloseTabsPlan,
+  planCloseTabsToRight,
+  planSingleTabClose,
+  type Tab,
+} from '@/modules/navigation';
 import { describe, expect, it } from 'vitest';
-import { applyCloseTabsPlan, planCloseTabsToRight, planSingleTabClose, type Tab } from './useTabs';
 
 function editor(id: number, spaceId = 'a'): Tab {
   return {
