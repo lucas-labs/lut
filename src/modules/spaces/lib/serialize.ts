@@ -1,11 +1,5 @@
-import type {
-  EditorTab,
-  MarkdownTab,
-  PreviewTab,
-  Tab,
-  TerminalTab,
-} from '@/modules/tabs/lib/useTabs';
-import { isLeaf, type PaneNode, type SplitDir } from '@/modules/terminal/lib/panes';
+import type { EditorTab, MarkdownTab, PreviewTab, Tab, TerminalTab } from '@/modules/navigation';
+import { isLeaf, type PaneNode, type SplitDir, splitNode } from '@/modules/terminal/lib/panes';
 
 type SerializedNode =
   | { kind: 'leaf'; cwd?: string; active?: boolean }
@@ -114,7 +108,7 @@ function hydrateNode(
   const children = node.children.map((c) => hydrateNode(c, allocId, acc));
   if (children.length === 0) return { kind: 'leaf', id: allocId() };
   if (children.length === 1) return children[0];
-  return { kind: 'split', id: allocId(), dir: node.dir, children };
+  return splitNode(allocId(), node.dir, children);
 }
 
 function hydrateTree(tree: SerializedNode, allocId: () => number): HydratedTree {

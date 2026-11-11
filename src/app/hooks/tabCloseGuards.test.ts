@@ -1,5 +1,7 @@
+import { editorHasUnsavedChanges } from '@/modules/editor/lib/dirtyContent';
+import { registerDirtyContentProvider } from '@/modules/navigation';
 import type { EditorTab, MarkdownTab } from '@/modules/tabs';
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   type CloseHazardSnapshot,
   type CloseManyHazards,
@@ -12,6 +14,13 @@ import {
   renamedPath,
   spacesEmptiedByTabs,
 } from './tabCloseGuards';
+
+// The editor registers its unsaved-changes check while it is loaded.
+let unregister = () => {};
+beforeAll(() => {
+  unregister = registerDirtyContentProvider(editorHasUnsavedChanges);
+});
+afterAll(() => unregister());
 
 function hazards(dirtyIds: number[] = [], busyLeafIds: number[] = []): CloseManyHazards {
   return { dirtyIds, busyLeafIds };

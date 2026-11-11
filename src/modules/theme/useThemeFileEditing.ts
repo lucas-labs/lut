@@ -1,9 +1,9 @@
+import { useNavigationStore } from '@/modules/navigation';
 import { setThemeId as persistThemeId } from '@/modules/settings/store';
-import type { Tab } from '@/modules/tabs';
 import { currentWorkspaceEnv } from '@/modules/workspace';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
-import { type RefObject, useEffect } from 'react';
+import { useEffect } from 'react';
 import { listCustomThemes, saveCustomTheme } from './customThemes';
 import {
   isThemeFilePath,
@@ -15,7 +15,6 @@ import {
 } from './themeFiles';
 
 type Params = {
-  tabsRef: RefObject<Tab[]>;
   openFileTab: (path: string) => void;
 };
 
@@ -24,7 +23,7 @@ type Params = {
  * Saving it re-ingests into the runtime store + applies live; the edit request
  * channel opens (or creates) the theme file for editing.
  */
-export function useThemeFileEditing({ tabsRef, openFileTab }: Params) {
+export function useThemeFileEditing({ openFileTab }: Params) {
   useEffect(() => {
     type FileWrittenPayload = { path: string; source?: string };
     const unlistenPromise = getCurrentWebviewWindow().listen<FileWrittenPayload>(
@@ -67,7 +66,9 @@ export function useThemeFileEditing({ tabsRef, openFileTab }: Params) {
       if (!theme) return;
       if (req.action === 'create') await saveCustomTheme(theme);
       const path = await themeFilePath(theme.id);
-      const open = tabsRef.current.some((t) => t.kind === 'editor' && t.path === path);
+      const open = useNavigationStore
+        .getState()
+        .tabs.some((t) => t.kind === 'editor' && t.path === path);
       if (!open) await writeThemeFile(theme);
       void persistThemeId(theme.id);
       openFileTab(path);
@@ -80,5 +81,5 @@ export function useThemeFileEditing({ tabsRef, openFileTab }: Params) {
       alive = false;
       unsub?.();
     };
-  }, [openFileTab, tabsRef]);
+  }, [openFileTab]);
 }

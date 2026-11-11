@@ -1,4 +1,4 @@
-import type { Tab } from '@/modules/tabs/lib/useTabs';
+import type { Tab } from '@/modules/navigation';
 import { hasLeaf } from '@/modules/terminal/lib/panes';
 
 export type ControlContext = {

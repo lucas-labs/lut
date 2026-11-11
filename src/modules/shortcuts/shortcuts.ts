@@ -28,6 +28,9 @@ export type ShortcutId =
   | 'pane.swapRight'
   | 'pane.swapUp'
   | 'pane.swapDown'
+  | 'pane.moveToNewTab'
+  | 'pane.moveToNextTab'
+  | 'pane.moveToPrevTab'
   | 'pane.source'
   | 'terminal.clear'
   | 'search.focus'
@@ -159,6 +162,21 @@ const SHORTCUT_META: Omit<Shortcut, 'defaultBindings'>[] = [
   {
     id: 'pane.swapDown',
     label: 'Swap pane down',
+    group: 'Panes',
+  },
+  {
+    id: 'pane.moveToNewTab',
+    label: 'Move pane to a new tab',
+    group: 'Panes',
+  },
+  {
+    id: 'pane.moveToNextTab',
+    label: 'Move pane to the next tab',
+    group: 'Panes',
+  },
+  {
+    id: 'pane.moveToPrevTab',
+    label: 'Move pane to the previous tab',
     group: 'Panes',
   },
   {

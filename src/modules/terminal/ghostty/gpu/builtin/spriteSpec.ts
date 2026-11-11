@@ -7,7 +7,7 @@ export type SpriteSpec = {
 };
 
 /**
- * Underline thickness of the bundled font (JetBrains Mono: 50 of 1000 units)
+ * Underline thickness of the bundled font (Source Code Pro: 50 of 1000 units)
  * as a fraction of the font size. Ghostty draws box lines at the font's own
  * underline thickness rounded up to whole pixels; the canvas cannot report it,
  * so the bundled font's value stands in for every font.

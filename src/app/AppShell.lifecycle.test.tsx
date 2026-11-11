@@ -23,14 +23,13 @@ let root: Root;
 let host: HTMLElement;
 const sidebarRef = createRef<PanelImperativeHandle>();
 
-function shell(props: { header?: ReactNode; statusBar?: ReactNode; sidebar?: ReactNode; tabsColumn?: ReactNode }) {
+function shell(props: { header?: ReactNode; sidebar?: ReactNode; tabsColumn?: ReactNode }) {
   return createElement(AppShell, {
     header: props.header ?? null,
     tabsColumn: props.tabsColumn ?? null,
     tabsColumnRef: createRef<PanelImperativeHandle>(),
     tabsColumnInitialWidth: 200,
     onTabsColumnLayout: () => {},
-    statusBar: props.statusBar ?? null,
     sidebar: props.sidebar ?? null,
     sidebarRef,
     sidebarInitialWidth: 0,
@@ -60,8 +59,8 @@ afterEach(() => {
 
 it('shows and hides the chrome without remounting the workspace', () => {
   render(shell({}));
-  render(shell({ header: createElement('header'), statusBar: createElement('footer') }));
-  render(shell({ header: null, statusBar: null, sidebar: createElement('nav') }));
+  render(shell({ header: createElement('header') }));
+  render(shell({ header: null, sidebar: createElement('nav') }));
   render(shell({ header: createElement('header'), sidebar: createElement('aside') }));
   expect(mounts).toEqual(['workspace']);
   expect(unmounts).toEqual([]);

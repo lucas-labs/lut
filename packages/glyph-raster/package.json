@@ -1,0 +1,10 @@
+{
+  "name": "@lut/glyph-raster",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./lib/index.ts",
+    "./glyph-raster.wasm": "./glyph-raster.wasm"
+  }
+}

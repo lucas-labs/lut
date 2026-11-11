@@ -5,97 +5,57 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { AgentIcon } from '@/modules/agents/lib/agentIcon';
 import type { AgentLaunchRequest } from '@/modules/agents/lib/launcher';
-import { ALL_LANGUAGES, EXPOSED_LANGUAGES } from '@/modules/editor/lib/languageDefinitions';
-import { resolveDisplayName } from '@/modules/editor/lib/languageResolver';
-import { FileIcon } from '@/modules/explorer/FileIcon';
-import { leafIds, ptyIdForLeaf, useAgentActivityStore } from '@/modules/terminal';
 import {
-  ArrowRight01Icon,
-  Cancel01Icon,
-  CancelCircleIcon,
-  CheckmarkCircle01Icon,
-  Clock01Icon,
-  ComputerTerminal02Icon,
-  GitCompareIcon,
-  Globe02Icon,
-  IncognitoIcon,
-  Message02Icon,
-  PencilEdit02Icon,
-  Tick02Icon,
-} from '@hugeicons/core-free-icons';
+  TabIcon,
+  type TabNavigatorActions,
+  type TabNavigatorItem,
+  type TabNavigatorOrientation,
+} from '@/modules/navigation';
+import { ArrowRight01Icon, Cancel01Icon, CancelCircleIcon, PencilEdit02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
-import { selectTabAgentStatus } from './lib/tabAgentStatus';
-import { labelFor } from './lib/tabLabel';
-import type { EditorTab, Tab, TerminalTab } from './lib/useTabs';
 import { NewTabMenu } from './NewTabMenu';
 
 type Props = {
-  tabs: Tab[];
-  activeId: number;
-  onSelect: (id: number) => void;
+  /** The active space's tabs, in strip order. */
+  tabs: TabNavigatorItem[];
+  actions: TabNavigatorActions;
   onNew: () => void;
   onNewPrivate: () => void;
   onNewPreview: () => void;
   onNewEditor: () => void;
   onNewGitGraph: () => void;
   onLaunchAgents: (request: AgentLaunchRequest) => void;
-  onClose: (id: number) => void;
-  /** Chrome-style: close every tab to the right of the given tab. */
-  onCloseTabsToRight: (id: number) => void;
-  /** Chrome-style: close every tab except the given tab. */
-  onCloseOtherTabs: (id: number) => void;
-  /** Pin (promote) a preview tab to persistent on double-click. */
-  onPin: (id: number) => void;
-  /** Set a terminal tab's custom label; empty string resets to default. */
-  onRename: (id: number, title: string) => void;
-  /** Move a dragged tab to a new position (insertion gap index 0..tabs.length). */
-  onReorder: (fromId: number, toGapIndex: number) => void;
-  onOverrideLanguage?: (id: number, lang: string | null) => void;
   compact?: boolean;
   /** Horizontal strip in the title bar, or a vertical column (E07-05). */
-  orientation?: 'horizontal' | 'vertical';
+  orientation?: TabNavigatorOrientation;
 };
+
+/** Why a private terminal's tab carries the incognito icon. */
+const PRIVATE_TAB_HINT = "This terminal isn't saved in the Space, so it won't come back after a restart.";
 
 export function TabBar({
   tabs,
-  activeId,
-  onSelect,
+  actions,
   onNew,
   onNewPrivate,
   onNewPreview,
   onNewEditor,
   onNewGitGraph,
   onLaunchAgents,
-  onClose,
-  onCloseTabsToRight,
-  onCloseOtherTabs,
-  onPin,
-  onRename,
-  onReorder,
-  onOverrideLanguage,
   compact,
   orientation = 'horizontal',
 }: Props) {
   const vertical = orientation === 'vertical';
+  const activeId = tabs.find((t) => t.active)?.id;
   const scrollRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draggingId, setDraggingId] = useState<number | null>(null);
   const [dropGap, setDropGap] = useState<number | null>(null);
-  const [showAllLanguages, setShowAllLanguages] = useState(false);
   const drag = useRef<{
     pointerId: number;
     start: number;
@@ -206,8 +166,8 @@ export function TabBar({
     >
       <div className={cn('flex gap-0.5', vertical ? 'w-full flex-col' : 'w-max items-center')}>
         <Tabs
-          value={String(activeId)}
-          onValueChange={(v) => onSelect(Number(v))}
+          value={activeId === undefined ? '' : String(activeId)}
+          onValueChange={(v) => actions.select(Number(v))}
           orientation={orientation}
           className={vertical ? 'w-full' : undefined}
         >
@@ -238,8 +198,8 @@ export function TabBar({
               }
             />
             {tabs.map((t, i) => {
-              const isPreview = (t.kind === 'editor' || t.kind === 'git-diff') && t.preview;
-              const isActive = t.id === activeId;
+              const isPreview = t.preview;
+              const isActive = t.active;
               const isNew = !firstRender && !seen.has(t.id);
 
               const srcIndex = tabs.findIndex((x) => x.id === draggingId);
@@ -249,7 +209,7 @@ export function TabBar({
               // While renaming, render a non-button cell so the <input> is not
               // nested inside the trigger <button> (invalid HTML, and WebKit
               // blocks focus/selection on inputs inside buttons).
-              if (editingId === t.id && t.kind === 'terminal') {
+              if (editingId === t.id && t.renamable) {
                 return (
                   <Fragment key={t.id}>
                     {showGap(i) && <DropIndicator vertical={vertical} />}
@@ -261,11 +221,11 @@ export function TabBar({
                         vertical && 'w-full',
                       )}
                     >
-                      <TabIcon tab={t} />
+                      <TabIcon id={t.id} />
                       <TabRenameInput
-                        initial={labelFor(t)}
+                        initial={t.title}
                         onCommit={(value) => {
-                          onRename(t.id, value);
+                          actions.rename(t.id, value);
                           setEditingId(null);
                         }}
                         onCancel={() => setEditingId(null)}
@@ -281,6 +241,7 @@ export function TabBar({
                   value={String(t.id)}
                   data-tab-id={t.id}
                   data-tab-active={isActive ? 'true' : undefined}
+                  title={t.private ? PRIVATE_TAB_HINT : undefined}
                   onPointerDown={(e) => {
                     if (e.button !== 0) return;
                     if ((e.target as HTMLElement).closest('[data-no-drag]')) return;
@@ -307,19 +268,19 @@ export function TabBar({
                   onPointerUp={(e) => {
                     const st = drag.current;
                     if (st?.active && dropGap !== null) {
-                      onReorder(st.fromId, dropGap);
+                      actions.reorder(st.fromId, dropGap);
                     } else if (st && !st.active) {
-                      onSelect(t.id);
+                      actions.select(t.id);
                     }
                     endDrag(e.currentTarget);
                   }}
                   onPointerCancel={(e) => endDrag(e.currentTarget)}
-                  onDoubleClick={() => isPreview && onPin(t.id)}
+                  onDoubleClick={() => isPreview && actions.pin(t.id)}
                   onAuxClick={(e) => {
                     if (e.button === 1 && tabs.length > 1) {
                       e.preventDefault();
                       e.stopPropagation();
-                      onClose(t.id);
+                      actions.close(t.id);
                     }
                   }}
                   // Suppress Radix's switch-on-mousedown so a tab grabbed to
@@ -350,88 +311,11 @@ export function TabBar({
                       vertical ? 'flex-1' : compact ? 'max-w-48' : 'max-w-80',
                     )}
                   >
-                    {t.kind === 'editor' ? (
-                      <DropdownMenu
-                        onOpenChange={(open) => {
-                          if (!open) setShowAllLanguages(false);
-                        }}
-                      >
-                        <DropdownMenuTrigger asChild>
-                          {/* span, not button: a button nested in the TabsTrigger button is invalid DOM and breaks WebKit focus. */}
-                          <span
-                            role="button"
-                            tabIndex={-1}
-                            data-no-drag
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                            }}
-                            className="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-sm p-1 -m-1 transition-all hover:bg-accent hover:text-accent-foreground hover:ring-1 hover:ring-primary/30 hover:shadow-[0_0_4px_var(--color-popover-foreground)]"
-                          >
-                            <TabIcon tab={t} />
-                          </span>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          align="start"
-                          side="bottom"
-                          sideOffset={6}
-                          alignOffset={-4}
-                          className="max-h-75 w-48 overflow-y-auto rounded-xl border border-border/40 bg-popover p-1 shadow-lg"
-                          onClick={(e) => e.stopPropagation()}
-                          onPointerDown={(e) => e.stopPropagation()}
-                          onPointerUp={(e) => e.stopPropagation()}
-                        >
-                          <DropdownMenuItem
-                            onSelect={() => {
-                              onOverrideLanguage?.(t.id, null);
-                            }}
-                            className="flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg cursor-default focus:bg-accent focus:text-accent-foreground"
-                          >
-                            <FileIcon name={t.title} className="size-3.5 shrink-0 object-contain" />
-                            <div className="flex flex-1 flex-col">
-                              <span>Auto Detect</span>
-                              <span className="text-[10px] text-muted-foreground italic">
-                                Mode: {resolveDisplayName(t.title)}
-                              </span>
-                            </div>
-                            {!(t as EditorTab).overrideLanguage && (
-                              <HugeiconsIcon icon={Tick02Icon} className="size-3.5 text-primary" />
-                            )}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onSelect={(e) => {
-                              e.preventDefault();
-                              setShowAllLanguages((v) => !v);
-                            }}
-                            className="w-full px-2.5 py-1.5 text-left text-xs text-primary/60 hover:text-primary rounded-lg transition-colors hover:bg-accent"
-                          >
-                            {showAllLanguages ? '↑ Fewer languages' : '↓ All languages'}
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator className="my-1 border-t border-border/30" />
-                          {(showAllLanguages ? ALL_LANGUAGES : EXPOSED_LANGUAGES).map((lang) => {
-                            const isSelected = (t as EditorTab).overrideLanguage === lang.ext;
-                            return (
-                              <DropdownMenuItem
-                                key={lang.ext}
-                                onSelect={() => onOverrideLanguage?.(t.id, lang.ext)}
-                                className="flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg cursor-default focus:bg-accent focus:text-accent-foreground"
-                              >
-                                <FileIcon name={`dummy.${lang.ext}`} className="size-3.5 shrink-0 object-contain" />
-                                <span className="flex-1">{lang.name}</span>
-                                {isSelected && <HugeiconsIcon icon={Tick02Icon} className="size-3.5 text-primary" />}
-                              </DropdownMenuItem>
-                            );
-                          })}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    ) : (
-                      <TabIcon tab={t} />
-                    )}
+                    <TabIcon id={t.id} menu />
                     {/* Preview tabs use italic to signal the transient state,
                         matching the visual convention from VSCode. */}
-                    <span className={cn('truncate', isPreview && 'italic')}>{labelFor(t)}</span>
-                    {t.kind === 'editor' && t.dirty ? (
+                    <span className={cn('truncate', isPreview && 'italic')}>{t.title}</span>
+                    {t.dirty ? (
                       <span aria-label="Unsaved changes" className="size-1.5 shrink-0 rounded-full bg-foreground/70" />
                     ) : null}
                   </span>
@@ -450,7 +334,7 @@ export function TabBar({
                       }}
                       onClick={(e) => {
                         e.stopPropagation();
-                        onClose(t.id);
+                        actions.close(t.id);
                       }}
                       className="rounded p-0.5 opacity-0 transition-opacity hover:bg-accent hover:opacity-100 group-hover:opacity-60"
                     >
@@ -466,7 +350,7 @@ export function TabBar({
                 <ContextMenu>
                   <ContextMenuTrigger asChild>{trigger}</ContextMenuTrigger>
                   <ContextMenuContent className="min-w-32 p-1" onCloseAutoFocus={(e) => e.preventDefault()}>
-                    {t.kind === 'terminal' && (
+                    {t.renamable && (
                       <>
                         <ContextMenuItem
                           className="gap-2 rounded-xl px-2.5 py-1.5 text-[13px]"
@@ -480,7 +364,7 @@ export function TabBar({
                             <ContextMenuSeparator />
                             <ContextMenuItem
                               className="gap-2 rounded-xl px-2.5 py-1.5 text-[13px]"
-                              onSelect={() => onClose(t.id)}
+                              onSelect={() => actions.close(t.id)}
                             >
                               <HugeiconsIcon icon={Cancel01Icon} size={13} strokeWidth={1.75} />
                               <span className="flex-1">Close</span>
@@ -492,7 +376,7 @@ export function TabBar({
                     <ContextMenuItem
                       className="gap-2 rounded-xl px-2.5 py-1.5 text-[13px]"
                       disabled={!hasTabsToRight}
-                      onSelect={() => onCloseTabsToRight(t.id)}
+                      onSelect={() => actions.closeToEnd(t.id)}
                     >
                       <HugeiconsIcon icon={ArrowRight01Icon} size={13} strokeWidth={1.75} />
                       <span className="flex-1">{vertical ? 'Close tabs below' : 'Close tabs to the right'}</span>
@@ -500,7 +384,7 @@ export function TabBar({
                     <ContextMenuItem
                       className="gap-2 rounded-xl px-2.5 py-1.5 text-[13px]"
                       disabled={tabs.length <= 1}
-                      onSelect={() => onCloseOtherTabs(t.id)}
+                      onSelect={() => actions.closeOthers(t.id)}
                     >
                       <HugeiconsIcon icon={CancelCircleIcon} size={13} strokeWidth={1.75} />
                       <span className="flex-1">Close other tabs</span>
@@ -539,60 +423,6 @@ function DropIndicator({ vertical }: { vertical: boolean }) {
       className={cn('shrink-0 self-stretch rounded-full bg-primary', vertical ? 'mx-0.5 h-0.5' : 'my-0.5 w-0.5')}
     />
   );
-}
-
-/** Live pty ids behind a terminal tab; resolved at read time, not render time. */
-function terminalPtyIds(tab: TerminalTab): number[] {
-  const ptyIds: number[] = [];
-  for (const leaf of leafIds(tab.paneTree)) {
-    const id = ptyIdForLeaf(leaf);
-    if (id !== null) ptyIds.push(id);
-  }
-  return ptyIds;
-}
-
-/**
- * Agent-aware terminal tab icon. The selector reduces the global activity maps
- * to this tab's own `{ state, agent }`, and `useShallow` keeps that result
- * stable, so an agent signal on one tab re-renders only that tab's icon.
- * Non-terminal tabs never reach this component and subscribe to nothing.
- */
-function TerminalTabIcon({ tab }: { tab: TerminalTab }) {
-  const agentStatus = useAgentActivityStore(useShallow((s) => selectTabAgentStatus(s, terminalPtyIds(tab))));
-  if (agentStatus.state === 'attention') {
-    return <HugeiconsIcon icon={Message02Icon} size={14} strokeWidth={2} className="shrink-0" />;
-  }
-  if (agentStatus.state === 'finished') {
-    return <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} strokeWidth={2} className="shrink-0" />;
-  }
-  if ((agentStatus.state === 'working' || agentStatus.state === 'idle') && agentStatus.agent) {
-    return <AgentIcon agent={agentStatus.agent} size={14} className="shrink-0" />;
-  }
-  return <HugeiconsIcon icon={ComputerTerminal02Icon} size={14} strokeWidth={2} className="shrink-0" />;
-}
-
-export function TabIcon({ tab }: { tab: Tab }) {
-  if (tab.kind === 'editor' || tab.kind === 'markdown') {
-    return (
-      <FileIcon
-        name={tab.kind === 'editor' && tab.overrideLanguage ? `dummy.${tab.overrideLanguage}` : tab.title}
-        className="size-3.5 shrink-0 object-contain"
-      />
-    );
-  }
-  if (tab.kind === 'preview') {
-    return <HugeiconsIcon icon={Globe02Icon} size={14} strokeWidth={2} className="shrink-0" />;
-  }
-  if (tab.kind === 'terminal' && tab.private) {
-    return <HugeiconsIcon icon={IncognitoIcon} size={14} strokeWidth={2} className="shrink-0" />;
-  }
-  if (tab.kind === 'git-diff' || tab.kind === 'git-commit-file') {
-    return <HugeiconsIcon icon={GitCompareIcon} size={14} strokeWidth={2} className="shrink-0" />;
-  }
-  if (tab.kind === 'git-history') {
-    return <HugeiconsIcon icon={Clock01Icon} size={14} strokeWidth={2} className="shrink-0" />;
-  }
-  return <TerminalTabIcon tab={tab} />;
 }
 
 function TabRenameInput({

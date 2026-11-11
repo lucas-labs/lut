@@ -23,8 +23,6 @@ type Props = {
   onSidebarCollapsedChange: (collapsed: boolean) => void;
   /** The tab surfaces, with the single TerminalStack. */
   workspace: ReactNode;
-  /** Bottom status bar; null hides it (zen mode). */
-  statusBar: ReactNode;
   /** Bridges, dialogs and other overlays. */
   children?: ReactNode;
 };
@@ -46,7 +44,6 @@ export function AppShell({
   onSidebarLayout,
   onSidebarCollapsedChange,
   workspace,
-  statusBar,
   children,
 }: Props) {
   return (
@@ -91,7 +88,7 @@ export function AppShell({
           ) : null}
           {tabsColumn ? <ResizableHandle className={HANDLE} /> : null}
           <ResizablePanel id="workspace" defaultSize="78%" minSize="30%">
-            <div className="h-full min-h-0 pl-0.5 pr-2">
+            <div className="h-full min-h-0 pr-2 pb-2 pl-0.5">
               <div className="lut-pane flex h-full min-h-0 flex-col">
                 <div className="relative min-h-0 flex-1">{workspace}</div>
               </div>
@@ -99,8 +96,6 @@ export function AppShell({
           </ResizablePanel>
         </ResizablePanelGroup>
       </main>
-
-      {statusBar}
 
       {children}
     </div>

@@ -7,6 +7,7 @@ import {
 } from './BuiltinGlyphs';
 import { hasIntrinsicColor } from './glyphColor';
 import { drawGlyph, isExtendedSymbol, layoutGlyph, placeGlyph } from './GlyphPlacement';
+import { rasterizeHinted } from './hintedGlyphs';
 import { fontCss, type TerminalFontMetrics } from './terminalVisuals';
 
 const RASTER_SIZE = 256;
@@ -52,9 +53,11 @@ export type RasterizedGlyph = {
  * atlas holds no bitmap. Only the area the previous glyph touched is cleared,
  * and `context.font` is assigned only when the style changes.
  *
- * Box drawing, blocks, braille and powerline separators skip the font: they are
- * drawn at exactly the cell size with no bearing (see `BuiltinGlyphs.ts`), so
- * neighbouring cells join without gaps, and bold or italic never alters them.
+ * Text the hinted rasterizer can draw (`hintedGlyphs.ts`) skips the canvas, so
+ * its stems land on whole pixels. Box drawing, blocks, braille and powerline
+ * separators skip the font: they are drawn at exactly the cell size with no
+ * bearing (see `BuiltinGlyphs.ts`), so neighbouring cells join without gaps,
+ * and bold or italic never alters them.
  */
 export class GlyphRasterizer {
   private canvas: HTMLCanvasElement | null = null;
@@ -90,6 +93,8 @@ export class GlyphRasterizer {
     if (isExtendedSymbol(codepoint) && extendedSymbolsPending()) {
       return EMPTY_GLYPH;
     }
+    const hinted = this.rasterizeHinted(text, style);
+    if (hinted) return hinted;
     const context = this.ensureContext();
     const fontStyle = style & (GLYPH_STYLE_BOLD | GLYPH_STYLE_ITALIC);
     if (fontStyle !== this.activeStyle) {
@@ -143,6 +148,25 @@ export class GlyphRasterizer {
       bearingY: layout.bearingY,
       intrinsicColor,
       exact: layout.exact,
+      pixels,
+    };
+  }
+
+  /** `text` from the hinted rasterizer, or null when the canvas draws it. */
+  private rasterizeHinted(text: string, style: number): RasterizedGlyph | null {
+    const { font, scale, deviceBaseline } = this.metrics;
+    const mask = rasterizeHinted(font.family, font.weight, text, style, font.size * scale);
+    if (!mask || mask.width > RASTER_SIZE || mask.height > RASTER_SIZE) return null;
+    if (mask.width === 0 || mask.height === 0) return EMPTY_GLYPH;
+    const pixels = this.coverage.subarray(0, mask.width * mask.height);
+    pixels.set(mask.pixels);
+    return {
+      width: mask.width,
+      height: mask.height,
+      bearingX: mask.left,
+      bearingY: deviceBaseline + mask.top,
+      intrinsicColor: false,
+      exact: false,
       pixels,
     };
   }

@@ -28,6 +28,9 @@ pane.swapLeft: Alt+Cmd+ArrowLeft
 pane.swapRight: Alt+Cmd+ArrowRight
 pane.swapUp: Alt+Cmd+ArrowUp
 pane.swapDown: Alt+Cmd+ArrowDown
+pane.moveToNewTab: 
+pane.moveToNextTab: 
+pane.moveToPrevTab: 
 pane.source: Cmd+g
 tab.next: Ctrl+Tab
 tab.prev: Ctrl+Shift+Tab
@@ -169,8 +172,13 @@ describe('Windows and Linux defaults', () => {
   const table = WIN_LINUX_DEFAULTS;
   /** More than one chord on purpose: the shifted symbol of a key on the US layout. */
   const TWO_BINDINGS: ReadonlySet<ShortcutId> = new Set(['view.zoomIn', 'editor.redo']);
-  /** Deliberately unbound: Ctrl+K is readline's kill-line. */
-  const UNBOUND: ReadonlySet<ShortcutId> = new Set(['terminal.clear']);
+  /** Deliberately unbound: Ctrl+K is readline's kill-line; moving a pane has no default. */
+  const UNBOUND: ReadonlySet<ShortcutId> = new Set([
+    'terminal.clear',
+    'pane.moveToNewTab',
+    'pane.moveToNextTab',
+    'pane.moveToPrevTab',
+  ]);
 
   it('covers every shortcut', () => {
     expect(Object.keys(table).sort()).toEqual([...ids].sort());

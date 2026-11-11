@@ -19,6 +19,7 @@ import {
   layoutGlyph,
   placeGlyph,
 } from '../gpu/GlyphPlacement';
+import { rasterizeHinted } from '../gpu/hintedGlyphs';
 import { SkylineAtlasAllocator } from '../gpu/SkylineAtlasAllocator';
 import { fontCss, type TerminalFontMetrics } from '../gpu/terminalVisuals';
 
@@ -69,6 +70,7 @@ const NULL_GLYPH: WebGlGlyphEntry = {
  * encountered. Box drawing, blocks, braille and powerline separators are drawn
  * procedurally at exactly the cell size (`BuiltinGlyphs.ts`) and share the
  * coverage atlas, so borders join without gaps and ignore bold and italic.
+ * Text the hinted rasterizer can draw (`hintedGlyphs.ts`) skips the canvas.
  */
 export class WebGlGlyphAtlas {
   private readonly coverageAllocator = new SkylineAtlasAllocator(ATLAS_SIZE, ATLAS_SIZE);
@@ -295,9 +297,11 @@ export class WebGlGlyphAtlas {
     if (isExtendedSymbol(text.codePointAt(0) ?? 0) && extendedSymbolsPending()) {
       return NULL_GLYPH;
     }
-    const context = this.rasterContext;
     const bold = (flags & CellFlags.BOLD) !== 0;
     const italic = (flags & CellFlags.ITALIC) !== 0;
+    const hinted = this.rasterizeHinted(text, (bold ? 1 : 0) | (italic ? 2 : 0));
+    if (hinted) return hinted;
+    const context = this.rasterContext;
     context.clearRect(0, 0, RASTER_SIZE, RASTER_SIZE);
     context.font = fontCss(
       {
@@ -398,6 +402,34 @@ export class WebGlGlyphAtlas {
     const mask = renderer.render(codepoint);
     if (!mask) return null;
     const { width, height } = renderer.spec;
+    return this.storeCoverage(mask, width, height, 0, 0, true);
+  }
+
+  /** `text` from the hinted rasterizer, or null when the canvas draws it. */
+  private rasterizeHinted(text: string, style: number): WebGlGlyphEntry | null {
+    const { font, deviceBaseline } = this.metrics;
+    const mask = rasterizeHinted(font.family, font.weight, text, style, font.size * this.scale);
+    if (!mask || mask.width > RASTER_SIZE || mask.height > RASTER_SIZE) return null;
+    if (mask.width === 0 || mask.height === 0) return NULL_GLYPH;
+    return this.storeCoverage(
+      mask.pixels,
+      mask.width,
+      mask.height,
+      mask.left,
+      deviceBaseline + mask.top,
+      false,
+    );
+  }
+
+  /** Copies a `width * height` coverage mask into the atlas. */
+  private storeCoverage(
+    mask: Uint8Array,
+    width: number,
+    height: number,
+    originOffsetX: number,
+    originOffsetY: number,
+    exact: boolean,
+  ): WebGlGlyphEntry {
     let region = this.coverageAllocator.allocate(width, height);
     if (!region) {
       this.reset();
@@ -414,8 +446,8 @@ export class WebGlGlyphAtlas {
     }
     this.coverageDirty = mergeDirty(this.coverageDirty, region.x, region.y, width, height);
     return {
-      originOffsetX: 0,
-      originOffsetY: 0,
+      originOffsetX,
+      originOffsetY,
       width,
       height,
       uvMinX: region.x / ATLAS_SIZE,
@@ -423,7 +455,7 @@ export class WebGlGlyphAtlas {
       uvMaxX: (region.x + width) / ATLAS_SIZE,
       uvMaxY: (region.y + height) / ATLAS_SIZE,
       intrinsicColor: false,
-      exact: true,
+      exact,
     };
   }
 

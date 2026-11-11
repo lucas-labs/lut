@@ -32,6 +32,9 @@ function baseContext(over: Partial<CommandPaletteActionContext> = {}): CommandPa
     closeActiveTabOrPane: noop,
     splitPaneRight: noop,
     splitPaneDown: noop,
+    movePaneToNewTab: noop,
+    movePaneToNextTab: noop,
+    movePaneToPrevTab: noop,
     focusSearch: noop,
     focusExplorerSearch: noop,
     toggleSidebar: noop,
@@ -62,6 +65,30 @@ describe('createCommandItems', () => {
   it('disables split when there is no terminal tab', () => {
     const editorTab = { ...terminalTab(1), kind: 'editor' } as unknown as Tab;
     expect(reasonById({ tabs: [editorTab] }, 'pane.splitRight')).toBe('No terminal tab');
+  });
+
+  it('moves a pane to a new tab only when its tab has another pane', () => {
+    expect(reasonById({}, 'pane.moveToNewTab')).toBe('Only pane');
+    const split = {
+      ...terminalTab(1),
+      paneTree: {
+        kind: 'split',
+        id: 5,
+        dir: 'row',
+        ratios: [0.5, 0.5],
+        children: [
+          { kind: 'leaf', id: 10 },
+          { kind: 'leaf', id: 11 },
+        ],
+      },
+    } as unknown as Tab;
+    expect(reasonById({ tabs: [split] }, 'pane.moveToNewTab')).toBeUndefined();
+  });
+
+  it('moves a pane to a neighbouring terminal tab only when there is one', () => {
+    const tabs = [terminalTab(1), terminalTab(2)];
+    expect(reasonById({ tabs, activeId: 1 }, 'pane.moveToNextTab')).toBeUndefined();
+    expect(reasonById({ tabs, activeId: 1 }, 'pane.moveToPrevTab')).toBe('No terminal tab there');
   });
 
   it('disables close on the last tab with a single pane', () => {

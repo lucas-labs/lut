@@ -20,6 +20,7 @@ import {
   useState,
 } from 'react';
 import { toast } from 'sonner';
+import { CursorStore, EditorStatusLine } from './EditorStatusLine';
 import { diagnosticsReporter } from './lib/diagnosticsReporter';
 import { useDiagnosticsStore } from './lib/diagnosticsStore';
 import {
@@ -105,6 +106,7 @@ export const EditorPane = memo(
     const adoptDiskTextRef = useRef(adoptDiskText);
     adoptDiskTextRef.current = adoptDiskText;
     const cmRef = useRef<ReactCodeMirrorRef>(null);
+    const [cursor] = useState(() => new CursorStore());
     const themeExt = useEditorThemeExt();
     const vimMode = usePreferencesStore((s) => s.vimMode);
     const wordWrapColumn = usePreferencesStore((s) => (s.editorWordWrap ? s.editorWordWrapColumn : null));
@@ -501,6 +503,7 @@ export const EditorPane = memo(
           onChange={onChange}
           theme={themeExt}
           extensions={extensions}
+          onUpdate={cursor.update}
           height="100%"
           className="lut-code-editor flex-1 min-h-0 overflow-hidden"
           basicSetup={{
@@ -515,6 +518,7 @@ export const EditorPane = memo(
             searchKeymap: true,
           }}
         />
+        <EditorStatusLine path={path} cursor={cursor} />
       </div>
     );
   }),

@@ -1,0 +1,121 @@
+import type { PaneNode } from '@/modules/terminal/lib/panes';
+
+export { MAX_PANES_PER_TAB } from '@/modules/terminal/lib/panes';
+
+type TabBase = {
+  spaceId: string;
+  /** Restored from disk, not yet activated: rendered as a placeholder, not mounted. */
+  cold?: boolean;
+};
+
+export type TerminalTab = TabBase & {
+  id: number;
+  kind: 'terminal';
+  title: string;
+  cwd?: string;
+  paneTree: PaneNode;
+  activeLeafId: number;
+  /** AI agent cannot read buffer / context of this terminal. */
+  private?: boolean;
+  /** User-set label that overrides the cwd-derived name. Survives cd. */
+  customTitle?: string;
+};
+
+export type EditorTab = TabBase & {
+  id: number;
+  kind: 'editor';
+  title: string;
+  path: string;
+  dirty: boolean;
+  /**
+   * True while the tab is in the transient "preview" state — opened by a
+   * single-click in the explorer and not yet pinned by the user. A preview tab
+   * is replaced by the next single-click rather than accumulating.
+   */
+  preview: boolean;
+  overrideLanguage?: string | null;
+};
+
+export type PreviewTab = TabBase & {
+  id: number;
+  kind: 'preview';
+  title: string;
+  url: string;
+};
+
+export type MarkdownTab = TabBase & {
+  id: number;
+  kind: 'markdown';
+  title: string;
+  path: string;
+};
+
+export type GitDiffTab = TabBase & {
+  id: number;
+  kind: 'git-diff';
+  title: string;
+  path: string;
+  repoRoot: string;
+  mode: '-' | '+';
+  originalPath: string | null;
+  preview: boolean;
+};
+
+export type GitHistoryTab = TabBase & {
+  id: number;
+  kind: 'git-history';
+  title: string;
+  repoRoot: string;
+};
+
+export type GitCommitFileDiffTab = TabBase & {
+  id: number;
+  kind: 'git-commit-file';
+  title: string;
+  repoRoot: string;
+  sha: string;
+  shortSha: string;
+  subject: string;
+  path: string;
+  originalPath: string | null;
+};
+
+export type Tab =
+  | TerminalTab
+  | EditorTab
+  | PreviewTab
+  | MarkdownTab
+  | GitDiffTab
+  | GitHistoryTab
+  | GitCommitFileDiffTab;
+
+export type TabPatch = Partial<{
+  title: string;
+  cwd: string;
+  path: string;
+  dirty: boolean;
+  url: string;
+  /** Empty string resets a terminal tab to its cwd-derived name. */
+  customTitle: string;
+  overrideLanguage: string | null;
+}>;
+
+export type GitDiffOpenInput = {
+  path: string;
+  repoRoot: string;
+  mode: '-' | '+';
+  originalPath?: string | null;
+  title?: string;
+};
+
+export type OpenFileTabOptions = {
+  spaceId?: string;
+  activate?: boolean;
+};
+
+export type CloseTabsPlan = {
+  closeIds: number[];
+  nextActiveId: number;
+};
+
+export const DEFAULT_SPACE_ID = 'default';

@@ -1,8 +1,9 @@
-import { DEFAULT_SPACE_ID, type Tab } from '@/modules/tabs/lib/useTabs';
+import { DEFAULT_SPACE_ID, useNavigationStore } from '@/modules/navigation';
+import { useSpaces } from '@/modules/spaces';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { type RefObject, useEffect } from 'react';
+import { useEffect } from 'react';
 import { resolveControlContext } from './lib/context';
 import { createReadinessQueue } from './lib/readiness';
 
@@ -34,9 +35,6 @@ type OpenRequest = {
 
 type UseControlBridgeOptions = {
   ready: boolean;
-  tabsRef: RefObject<Tab[]>;
-  activeTabIdRef: RefObject<number>;
-  activeSpaceIdRef: RefObject<string | null>;
   onOpen: (request: OpenRequest & { spaceId: string }) => number | null;
 };
 
@@ -90,13 +88,7 @@ async function respond(requestId: string, response: FrontendResponse): Promise<v
   }
 }
 
-export function useControlBridge({
-  ready,
-  tabsRef,
-  activeTabIdRef,
-  activeSpaceIdRef,
-  onOpen,
-}: UseControlBridgeOptions): void {
+export function useControlBridge({ ready, onOpen }: UseControlBridgeOptions): void {
   useEffect(() => {
     if (!ready) return;
     let disposed = false;
@@ -104,10 +96,11 @@ export function useControlBridge({
 
     const handleRequest = async (request: ControlRequest) => {
       try {
+        const { tabs, activeId } = useNavigationStore.getState();
         const context = resolveControlContext(
-          tabsRef.current ?? [],
-          activeTabIdRef.current ?? 0,
-          activeSpaceIdRef.current ?? DEFAULT_SPACE_ID,
+          tabs,
+          activeId,
+          useSpaces.getState().activeId ?? DEFAULT_SPACE_ID,
           request.caller.pane_id,
         );
         if (request.method === 'identify') {
@@ -179,5 +172,5 @@ export function useControlBridge({
         console.error('[lut] control bridge cleanup failed:', error);
       });
     };
-  }, [ready, tabsRef, activeTabIdRef, activeSpaceIdRef, onOpen]);
+  }, [ready, onOpen]);
 }

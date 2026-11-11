@@ -1,4 +1,4 @@
-import type { Tab } from '@/modules/tabs/lib/useTabs';
+import type { Tab } from '@/modules/navigation';
 import { describe, expect, it } from 'vitest';
 import { resolveControlContext } from './context';
 
@@ -12,6 +12,7 @@ const tabs: Tab[] = [
       kind: 'split',
       id: 11,
       dir: 'row',
+      ratios: [0.5, 0.5],
       children: [
         { kind: 'leaf', id: 12 },
         { kind: 'leaf', id: 13 },

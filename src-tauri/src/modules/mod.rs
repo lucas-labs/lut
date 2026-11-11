@@ -7,6 +7,7 @@ pub mod app_menu;
 pub mod bench;
 pub mod browser_features;
 pub mod control;
+pub mod fonts;
 pub mod fs;
 pub mod git;
 pub mod lsp;

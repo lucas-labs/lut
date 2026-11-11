@@ -1,8 +1,7 @@
 export { subscribeAgentSignals, useAgentActivityStore } from './lib/agentActivity';
-export { findLeafCwd, hasLeaf, leafIds, type PaneBounds, type PaneNode } from './lib/panes';
+export { findLeafCwd, hasLeaf, leafIds, type PaneBounds } from './lib/panes';
 export {
   clearFocusedTerminal,
-  disposeSession,
   leafHasForegroundProcess,
   leafIdForPty,
   ptyIdForLeaf,

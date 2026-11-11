@@ -1,9 +1,11 @@
 import { cn, isMarkdownPath } from '@/lib/utils';
 import { MarkdownViewToggle } from '@/modules/markdown';
+import { registerDirtyContentProvider } from '@/modules/navigation';
 import type { EditorTab, Tab } from '@/modules/tabs';
 import { useWindowInactive } from '@/modules/theme/WindowActivityBridge';
 import { useEffect, useRef } from 'react';
 import { EditorPane, type EditorPaneHandle } from './EditorPane';
+import { editorHasUnsavedChanges } from './lib/dirtyContent';
 
 type Props = {
   tabs: Tab[];
@@ -21,6 +23,9 @@ export function EditorStack({ tabs, activeId, onDirtyChange, registerHandle, onC
   // change identity every render, which makes React detach+reattach the ref
   // callback and re-invoke `onDirtyChange`, triggering setState loops in
   // the parent. Memoizing per id keeps each callback's identity stable.
+  // The close guards ask the editor about unsaved changes while it is loaded.
+  useEffect(() => registerDirtyContentProvider(editorHasUnsavedChanges), []);
+
   const registerRef = useRef(registerHandle);
   const dirtyRef = useRef(onDirtyChange);
   const closeRef = useRef(onCloseTab);

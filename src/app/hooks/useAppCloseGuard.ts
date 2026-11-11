@@ -1,8 +1,9 @@
+import { hasUnsavedChanges, useNavigationStore } from '@/modules/navigation';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import type { Tab } from '@/modules/tabs';
 import { leafHasForegroundProcess, leafIds } from '@/modules/terminal';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 async function anyTerminalBusy(tabs: Tab[]): Promise<boolean> {
@@ -25,7 +26,7 @@ export function canOptOutOfAppClosePrompt(blocker: AppCloseBlocker): boolean {
   return blocker.busyTerminal && blocker.dirtyEditors === 0;
 }
 
-export function useAppCloseGuard(tabsRef: RefObject<Tab[]>) {
+export function useAppCloseGuard() {
   const [pendingAppClose, setPendingAppClose] = useState<AppCloseBlocker | null>(null);
   const forceClose = useRef(false);
   const closing = useRef(false);
@@ -61,9 +62,9 @@ export function useAppCloseGuard(tabsRef: RefObject<Tab[]>) {
         // unsaved-changes guard below.
         const busyTerminal =
           usePreferencesStore.getState().confirmCloseRunningTerminal &&
-          (await anyTerminalBusy(tabsRef.current));
+          (await anyTerminalBusy(useNavigationStore.getState().tabs));
         // Count after the await so edits made during the IPC check are seen.
-        const dirtyEditors = tabsRef.current.filter((t) => t.kind === 'editor' && t.dirty).length;
+        const dirtyEditors = useNavigationStore.getState().tabs.filter(hasUnsavedChanges).length;
         if (dirtyEditors > 0 || busyTerminal) {
           setPendingAppClose({ dirtyEditors, busyTerminal });
         } else {
@@ -78,7 +79,7 @@ export function useAppCloseGuard(tabsRef: RefObject<Tab[]>) {
       disposed = true;
       unlisten?.();
     };
-  }, [tabsRef, finishClose]);
+  }, [finishClose]);
 
   const confirmAppClose = useCallback(() => {
     setPendingAppClose(null);

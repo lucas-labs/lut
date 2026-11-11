@@ -4,7 +4,7 @@ import { handOffThemeEdit, starterTheme } from './themeFiles';
 describe('starterTheme', () => {
   it('exposes terminal font settings in newly created themes', () => {
     expect(starterTheme().variants.dark?.terminal).toMatchObject({
-      fontFamily: 'JetBrains Mono',
+      fontFamily: 'Source Code Pro',
       fontWeight: 'normal',
       fontSize: 14,
     });

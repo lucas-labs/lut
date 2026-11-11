@@ -87,12 +87,23 @@ export function useSidebarPanel(explorerRef: RefObject<FocusableExplorer | null>
     }
   }, []);
 
-  const toggleSidebar = useCallback(() => {
+  const isSidebarOpen = useCallback(() => {
     const p = sidebarRef.current;
-    if (!p) return;
-    if (p.getSize().asPercentage <= 0) p.resize(`${sidebarWidthRef.current}px`);
+    return p ? p.getSize().asPercentage > 0 : false;
+  }, []);
+
+  /** Opens the sidebar at its last width, or collapses it. */
+  const setSidebarOpen = useCallback((open: boolean) => {
+    const p = sidebarRef.current;
+    if (!p || open === p.getSize().asPercentage > 0) return;
+    if (open) p.resize(`${sidebarWidthRef.current}px`);
     else p.collapse();
   }, []);
+
+  const toggleSidebar = useCallback(
+    () => setSidebarOpen(!isSidebarOpen()),
+    [isSidebarOpen, setSidebarOpen],
+  );
 
   const cycleSidebarView = useCallback(
     (view: SidebarViewId) => {
@@ -186,6 +197,8 @@ export function useSidebarPanel(explorerRef: RefObject<FocusableExplorer | null>
     persistSidebarView,
     persistSidebarCollapsed,
     toggleSidebar,
+    isSidebarOpen,
+    setSidebarOpen,
     cycleSidebarView,
     openSidebarView,
     persistSidebarWidth,

@@ -22,11 +22,10 @@ describe('global motion budget', () => {
     }
   });
 
-  it('covers the spinner and pulse utilities and the shimmer', () => {
+  it('covers the spinner and pulse utilities and the blink', () => {
     const names = infiniteAnimations(css).join('\n');
     expect(names).toContain('--animate-spin');
     expect(names).toContain('--animate-pulse');
-    expect(names).toContain('lut-shimmer');
     expect(names).toContain('lut-blink');
   });
 
@@ -46,7 +45,6 @@ describe('global motion budget', () => {
 
   it('removes the repeating indicators under prefers-reduced-motion', () => {
     const reduced = css.slice(css.indexOf('@media (prefers-reduced-motion'));
-    expect(reduced).toMatch(/\.lut-shimmer\s*\{[^}]*animation:\s*none/);
     expect(reduced).toMatch(/\.lut-blink[^{]*\{[^}]*animation:\s*none/);
   });
 });

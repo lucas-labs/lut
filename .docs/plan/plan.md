@@ -2344,7 +2344,7 @@ covers: [F2:1, 5.10:6, 6.2:3, 10.4, TER-002, app-shell/tabs-model]
 type: task
 scope: ui
 size: L
-size-exception: Moving the useState/refs state (useTabs.ts:586-623) into a store is mechanical but touches the whole hook body; the public API is kept so consumers do not change.
+size-exception: Moving the hook's useState/refs state into a store is mechanical but touches the whole hook body; the public API is kept so consumers do not change.
 ```
 
 **Goal:** One navigation store (tabs, active id, order, groups) replaces the local React state; `useTabs` becomes a thin facade with the same API. No second parallel store.
@@ -2390,11 +2390,11 @@ scope: ui
 size: M
 ```
 
-**Goal:** Refactor only: a `sessions` module owns PTY lifecycle, the `leafId ↔ ptyId` map, dispose and resize; navigation calls it instead of `useTabs` calling `disposeSession` directly.
+**Goal:** Refactor only: a `sessions` module owns session disposal. Its reconciler watches the navigation store and disposes a leaf's session once no terminal tab holds it, replacing the `disposeSession` calls in `useTabs` and the second sweep in `App.tsx`. The `leafId ↔ ptyId` lookup and resize stay in the terminal module, which owns the session registry.
 
 **Acceptance criteria:**
 
-- [ ] `useTabs`/the store no longer import terminal session internals (useTabs.ts:6-21) except through the sessions API.
+- [ ] `useTabs`/the store no longer import terminal session internals; each removed leaf is disposed exactly once, from the reconciler.
 - [ ] No behaviour change; E07 lifecycle tests green.
 
 **Verification:** `pnpm test`; manual: close a pane, its PTY is released (no orphan process).
@@ -2432,7 +2432,7 @@ scope: ui
 size: S
 ```
 
-**Goal:** `PaneTreeView` renders splits with the model's ratios (`defaultSize`) and writes user resizes back to the store (`onLayout`), keeping the resize-interaction gating.
+**Goal:** `PaneTreeView` renders splits with the model's ratios (`defaultSize`) and writes user resizes back to the store (`onLayoutChanged` with `isUserInteraction`), keeping the resize-interaction gating.
 
 **Acceptance criteria:**
 
@@ -3505,7 +3505,12 @@ performance invariants.
 
 - [ ] `src/styles/globals.css` takes every colour from the theme tokens; typography, spacing and radius scales are
       defined once there; `terax-*` animations and chrome styles removed or renamed.
-- [ ] `@font-face` rules for terminal symbol fonts in `src/styles/fonts.css` preserved.
+- [ ] `@font-face` rules for terminal symbol fonts in `src/styles/fonts.css` preserved, renamed "Nerd Font Icons"
+      (files, family and the fonts' own name tables) so they don't read as lut's own work.
+- [ ] The bundled monospace font is Source Code Pro, variable (weights 200-900), replacing JetBrains Mono; the
+      auto-detected Nerd Font prefers SauceCodePro.
+- [ ] Terminal text on Windows and Linux is hinted (stems on whole pixels, as native terminals draw them) by a
+      WebAssembly rasterizer for the installed or bundled text font; icons, emoji and other fallbacks keep the canvas.
 - [ ] `compositingBudget.test.ts` and `motionBudget.test.ts` adapted to the new CSS and green (no infinite animations, compositing limits kept).
 - [ ] Light and dark modes both render; vibrancy and background image customisation still work (decision 16).
 
@@ -3572,7 +3577,7 @@ size: M
 
 **Acceptance criteria:**
 
-- [ ] `TabNavigator` renders tabs from the navigation store, without the editor/explorer icon imports of `TabBar.tsx:17-24`.
+- [ ] `TabNavigator` renders tabs from the navigation store (`useNavigatorItems`, `TabNavigatorActions`), with icons from the tab presenters (`TabIcon`), never importing editor/explorer modules.
 - [ ] Tab indicators (active, title/color, activity/exit state, agent status slot fed by `tabAgentStatus`) per design (TER-012).
 - [ ] Reorder, close and rename work; the `NewTabMenu` entry point is kept (the profile picker itself belongs to the profiles UI epic).
 - [ ] `TabBar.tsx` and `TabSwitcherHud.tsx` deleted.

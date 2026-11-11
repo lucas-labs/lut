@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import type { Tab } from '@/modules/tabs';
 import { disposeGhosttySession } from '@/modules/terminal/ghostty/useGhosttyTerminalSession';
-import { type PaneNode, splitLeaf } from '@/modules/terminal/lib/panes';
+import { detachLeaf, insertLeaf, type PaneNode, splitLeaf } from '@/modules/terminal/lib/panes';
 import * as themeModule from '@/modules/theme';
 import { act, type Context, createElement, createRef, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
@@ -215,7 +215,6 @@ function shell(
       tabsColumnRef: createRef<PanelImperativeHandle>(),
       tabsColumnInitialWidth: 200,
       onTabsColumnLayout: noop,
-      statusBar: null,
       sidebar,
       sidebarRef: createRef<PanelImperativeHandle>(),
       sidebarInitialWidth: 0,
@@ -306,6 +305,31 @@ describe('the real session hook keeps every PTY open', () => {
     await waitForOpens(3);
     expect(pty.opened).toEqual([...opened, leaf + 2]);
     expect(pty.closed).toEqual([]);
+  });
+
+  it('moving a pane to another tab opens and closes no PTY and keeps its output (E08-07)', async () => {
+    const a = term();
+    const b = term();
+    const leaf = a.activeLeafId;
+    const moved = leaf + 2;
+    const split = { ...a, paneTree: splitLeaf(a.paneTree, leaf, leaf + 1, moved, 'row') };
+    await render(shell([split, b], a.id));
+    await waitForOpens(3);
+    emit(moved, 'top - 10:00:00 up 1 day\r\n');
+    const opened = [...pty.opened];
+
+    const detached = detachLeaf(split.paneTree, moved);
+    if (!detached?.rest) throw new Error('Expected the pane to detach');
+    const source = { ...split, paneTree: detached.rest, activeLeafId: leaf };
+    const target = {
+      ...b,
+      paneTree: insertLeaf(b.paneTree, b.activeLeafId, b.activeLeafId + 1, detached.leaf, 'row'),
+      activeLeafId: moved,
+    };
+    await render(shell([source, target], b.id));
+    expect(pty.opened).toEqual(opened);
+    expect(pty.closed).toEqual([]);
+    expect(terminal.written.get(moved)).toContain('top - 10:00:00');
   });
 
   it('switching the tab orientation and the sidebar views opens and closes no PTY', async () => {

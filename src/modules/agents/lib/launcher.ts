@@ -1,4 +1,4 @@
-import type { PaneNode } from '@/modules/terminal';
+import { type PaneNode, splitNode } from '@/modules/terminal/lib/panes';
 
 export const AGENT_LAUNCHERS = [
   {
@@ -110,12 +110,8 @@ export function createAgentPanePlan(
     id: allocateId(),
     cwd,
   }));
-  const split = (dir: 'row' | 'col', children: PaneNode[]): PaneNode => ({
-    kind: 'split',
-    id: allocateId(),
-    dir,
-    children,
-  });
+  const split = (dir: 'row' | 'col', children: PaneNode[]): PaneNode =>
+    splitNode(allocateId(), dir, children);
 
   switch (instances) {
     case 1:

@@ -17,6 +17,8 @@ type Props = {
   onCwd: (leafId: number, cwd: string) => void;
   onExit: (leafId: number, code: number) => void;
   onFocusLeaf: (tabId: number, leafId: number) => void;
+  /** The user resized a split of a tab: its children's new shares. */
+  onSplitRatios?: (tabId: number, splitId: number, ratios: number[]) => void;
 };
 
 type Bundle = {
@@ -34,6 +36,7 @@ export function TerminalStack({
   onCwd,
   onExit,
   onFocusLeaf,
+  onSplitRatios,
 }: Props) {
   const registerRef = useRef(registerHandle);
   const searchReadyRef = useRef(onSearchReady);
@@ -106,6 +109,7 @@ export function TerminalStack({
               activeLeafId={t.activeLeafId}
               onFocusLeaf={(leafId) => onFocusLeaf(t.id, leafId)}
               getBundle={getBundle}
+              onSplitRatios={onSplitRatios && ((splitId, ratios) => onSplitRatios(t.id, splitId, ratios))}
             />
           </div>
         );

@@ -144,7 +144,6 @@ function shell(tabs: Tab[], { vertical = false, sidebar = null }: { vertical?: b
     tabsColumnRef: createRef<PanelImperativeHandle>(),
     tabsColumnInitialWidth: 200,
     onTabsColumnLayout: noop,
-    statusBar: null,
     sidebar,
     sidebarRef: createRef<PanelImperativeHandle>(),
     sidebarInitialWidth: 0,
@@ -166,7 +165,6 @@ function SidebarShell({ tabs, onControls }: { tabs: Tab[]; onControls: (controls
     tabsColumnRef: createRef<PanelImperativeHandle>(),
     tabsColumnInitialWidth: 200,
     onTabsColumnLayout: noop,
-    statusBar: null,
     sidebar: createElement('nav', { key: sidebar.sidebarView, 'data-view': sidebar.sidebarView }),
     sidebarRef: sidebar.sidebarRef,
     sidebarInitialWidth: sidebar.initialSidebarCollapsed ? 0 : 260,
@@ -245,6 +243,7 @@ describe('WorkspaceSurface keeps terminals mounted', () => {
       kind: 'split',
       id: 100,
       dir: 'row',
+      ratios: [1 / 3, 1 / 3, 1 / 3],
       children: [
         { kind: 'leaf', id: 10 },
         { kind: 'leaf', id: 11 },

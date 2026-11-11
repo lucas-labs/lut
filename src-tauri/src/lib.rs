@@ -2,7 +2,7 @@ pub mod modules;
 
 #[cfg(target_os = "macos")]
 use modules::app_menu;
-use modules::{agent, control, fs, git, lsp, pty, shell, vibrancy, workspace};
+use modules::{agent, control, fonts, fs, git, lsp, pty, shell, vibrancy, workspace};
 use std::path::PathBuf;
 use std::sync::Mutex;
 use tauri::{Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder};
@@ -355,6 +355,8 @@ pub fn run() {
             agent::agent_hooks_status,
             vibrancy::window_backdrop_kind,
             vibrancy::window_set_backdrop,
+            fonts::font_face_find,
+            fonts::font_face_data,
             modules::window_presentation::window_presentation_state,
             #[cfg(feature = "bench")]
             modules::bench::bench_config,

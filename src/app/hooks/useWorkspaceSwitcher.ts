@@ -1,4 +1,3 @@
-import type { Tab } from '@/modules/tabs';
 import {
   getWslHome,
   LOCAL_WORKSPACE,
@@ -6,33 +5,21 @@ import {
   workspaceNative,
 } from '@/modules/workspace';
 import { homeDir } from '@tauri-apps/api/path';
-import { type RefObject, useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 async function resolveEnvHome(env: WorkspaceEnv): Promise<string> {
   return env.kind === 'wsl' ? getWslHome(env.distro) : (await homeDir()).replace(/\\/g, '/');
 }
 
 type Params = {
-  tabsRef: RefObject<Tab[]>;
-  workspaceEnv: WorkspaceEnv;
   setWorkspaceEnv: (env: WorkspaceEnv) => void;
-  resetWorkspace: (home?: string) => void;
-  /** Dispose live sessions and clear App-owned pane/handle ref maps. */
-  clearWorkspaceState: () => void;
 };
 
 /**
- * Owns the resolved home / launch cwd. switchWorkspace runs an interactive
- * local⇄WSL switch (tears down sessions, re-authorizes home, resets tabs);
- * adoptWorkspaceEnv applies a space's env + home on restore, without teardown.
+ * Owns the resolved home / launch cwd. adoptWorkspaceEnv applies a space's env + home on
+ * restore, without teardown.
  */
-export function useWorkspaceSwitcher({
-  tabsRef,
-  workspaceEnv,
-  setWorkspaceEnv,
-  resetWorkspace,
-  clearWorkspaceState,
-}: Params) {
+export function useWorkspaceSwitcher({ setWorkspaceEnv }: Params) {
   const [home, setHome] = useState<string | null>(null);
   const [launchCwd, setLaunchCwd] = useState<string | null>(null);
   const [launchCwdResolved, setLaunchCwdResolved] = useState(false);
@@ -69,38 +56,6 @@ export function useWorkspaceSwitcher({
     }
   }, []);
 
-  const switchWorkspace = useCallback(
-    async (env: WorkspaceEnv): Promise<boolean> => {
-      if (
-        env.kind === workspaceEnv.kind &&
-        (env.kind === 'local' ||
-          (workspaceEnv.kind === 'wsl' && env.distro === workspaceEnv.distro))
-      ) {
-        return false;
-      }
-      const dirty = tabsRef.current.some((t) => t.kind === 'editor' && t.dirty);
-      if (dirty) {
-        window.alert('Save or close unsaved editor tabs before switching workspace.');
-        return false;
-      }
-
-      let nextHome: string;
-      try {
-        nextHome = await resolveEnvHome(env);
-      } catch (e) {
-        window.alert(String(e));
-        return false;
-      }
-
-      clearWorkspaceState();
-      setWorkspaceEnv(env.kind === 'local' ? LOCAL_WORKSPACE : env);
-      await authorizeHome(nextHome);
-      resetWorkspace(nextHome);
-      return true;
-    },
-    [workspaceEnv, setWorkspaceEnv, resetWorkspace, tabsRef, clearWorkspaceState, authorizeHome],
-  );
-
   const adoptWorkspaceEnv = useCallback(
     async (env: WorkspaceEnv): Promise<string | null> => {
       setWorkspaceEnv(env.kind === 'local' ? LOCAL_WORKSPACE : env);
@@ -120,7 +75,6 @@ export function useWorkspaceSwitcher({
     home,
     launchCwd,
     launchCwdResolved,
-    switchWorkspace,
     adoptWorkspaceEnv,
   };
 }
