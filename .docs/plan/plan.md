@@ -2344,7 +2344,7 @@ covers: [F2:1, 5.10:6, 6.2:3, 10.4, TER-002, app-shell/tabs-model]
 type: task
 scope: ui
 size: L
-size-exception: Moving the useState/refs state (useTabs.ts:586-623) into a store is mechanical but touches the whole hook body; the public API is kept so consumers do not change.
+size-exception: Moving the hook's useState/refs state into a store is mechanical but touches the whole hook body; the public API is kept so consumers do not change.
 ```
 
 **Goal:** One navigation store (tabs, active id, order, groups) replaces the local React state; `useTabs` becomes a thin facade with the same API. No second parallel store.

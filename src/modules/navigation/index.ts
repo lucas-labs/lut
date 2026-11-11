@@ -13,6 +13,7 @@ export {
 } from './planners/open';
 export { pickTabBySpaceIndex, reorderTabsByGap } from './planners/order';
 export { coldTerminalTab, planSpaceRemoval } from './planners/spaces';
+export { initialNavigationData, type NavigationState, useNavigationStore } from './store';
 export { basename, titleFromUrl } from './tabTitles';
 export {
   type CloseTabsPlan,
