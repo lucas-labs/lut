@@ -192,7 +192,7 @@ function ActivePill({ preset, starting }: { preset: LspPreset; starting: boolean
           title={starting ? 'Language server starting' : 'Language server active'}
         >
           <span
-            className={cn(DOT_CLASS, starting ? 'lut-blink bg-(--terminal-ansi-yellow)' : 'bg-(--terminal-ansi-green)')}
+            className={cn(DOT_CLASS, starting ? 'lut-blink bg-warning' : 'bg-success')}
           />
           <span>{preset.name} LSP</span>
         </button>

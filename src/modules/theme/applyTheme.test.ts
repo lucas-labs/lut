@@ -113,6 +113,17 @@ describe('theme application', () => {
     expect(written.get('--accent')).toBe('#654321');
   });
 
+  it('writes the status colors and clears them for a theme without them', async () => {
+    const { applyTheme } = await loadModule();
+
+    applyTheme(theme({ dark: variant({ colors: { warning: '#aa0' } }) }), 'dark');
+    expect(written.get('--warning')).toBe('#aa0');
+
+    removed.length = 0;
+    applyTheme(theme({ dark: variant({ colors: {} }) }), 'dark');
+    expect(new Set(removed).has('--warning')).toBe(true);
+  });
+
   it('clears the surface when a theme has no usable variant', async () => {
     const { applyTheme, clearTheme } = await loadModule();
     applyTheme(theme({ dark: variant({ colors: { primary: '#123456' } }) }), 'dark');

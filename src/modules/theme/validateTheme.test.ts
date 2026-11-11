@@ -56,6 +56,12 @@ describe('validateTheme', () => {
     expect(result.ok).toBe(true);
   });
 
+  it('accepts the status colors', () => {
+    const colors = { success: '#0a0', warning: '#aa0', info: '#00a' };
+    const result = validateTheme(baseTheme({ variants: { dark: { colors } } }));
+    expect(result.ok && result.theme.variants.dark?.colors).toEqual(colors);
+  });
+
   it('rejects unrecognized color keys', () => {
     const result = validateTheme(baseTheme({ variants: { dark: { colors: { nope: '#fff' } } } }));
     expect(result).toEqual({
