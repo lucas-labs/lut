@@ -26,7 +26,7 @@ export {
 } from './planners/order';
 export { planSpaceRemoval } from './planners/spaces';
 export { initialNavigationData, type NavigationState, useNavigationStore } from './store';
-export { registerTabPresenter, TabIcon } from './TabIcon';
+export { registerTabPresenter, TabIcon, TabStatus } from './TabIcon';
 export { labelFor } from './tabLabel';
 export {
   type CloseTabsPlan,

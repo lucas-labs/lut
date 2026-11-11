@@ -404,6 +404,7 @@ export function TabBar({
           </TabsList>
         </Tabs>
         <NewTabMenu
+          size="rail"
           onNew={onNew}
           onNewPrivate={onNewPrivate}
           onNewPreview={onNewPreview}

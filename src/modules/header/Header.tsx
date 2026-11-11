@@ -4,7 +4,7 @@ import { IS_MAC, USE_CUSTOM_WINDOW_CONTROLS } from '@/lib/platform';
 import { NotificationBell } from '@/modules/agents';
 import type { AgentLaunchRequest } from '@/modules/agents/lib/launcher';
 import type { TabNavigatorActions, TabNavigatorItem } from '@/modules/navigation';
-import { TabBar } from '@/modules/tabs';
+import { TabNavigator } from '@/modules/tabs';
 import { CommandIcon, Settings01Icon, SidebarLeftIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { type RefObject, useEffect, useRef, useState } from 'react';
@@ -124,7 +124,7 @@ export function Header({
       <CwdBreadcrumb cwd={cwd} filePath={filePath} home={home} onCd={onCd} />
 
       <div
-        className="flex min-w-0 flex-1 items-center gap-2"
+        className="flex min-w-0 flex-1 items-center gap-2 self-stretch"
         data-tauri-drag-region
         onContextMenu={(e) => {
           // Empty chrome falls through to WebKit Reload, which reloads the
@@ -134,8 +134,9 @@ export function Header({
         }}
       >
         {showTabs && (
-          <TabBar
-            tabs={tabs}
+          <TabNavigator
+            orientation="horizontal"
+            items={tabs}
             actions={tabActions}
             onNew={onNew}
             onNewPrivate={onNewPrivate}

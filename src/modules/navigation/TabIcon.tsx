@@ -4,10 +4,12 @@ import type { Tab } from './types';
 
 /** How one kind of tab shows itself in a navigator. */
 export type TabPresenter = {
-  /** The tab's icon. */
+  /** The tab's icon; renders nothing when the kind has none. */
   Icon: ComponentType<{ tab: Tab }>;
   /** The icon as a menu trigger, for the tab strip (an editor's language picker). */
   IconMenu?: ComponentType<{ tab: Tab }>;
+  /** A live state shown after the title (a terminal's agent working or asking). */
+  Status?: ComponentType<{ tab: Tab }>;
 };
 
 const presenters = new Map<Tab['kind'], TabPresenter>();
@@ -20,12 +22,24 @@ export function registerTabPresenter(kind: Tab['kind'], presenter: TabPresenter)
   };
 }
 
+function useTab(id: number): Tab | undefined {
+  return useNavigationStore((s) => s.tabs.find((t) => t.id === id));
+}
+
 /** A tab's icon by id, from the presenter of its kind; `menu` asks for the strip's menu variant. */
 export function TabIcon({ id, menu = false }: { id: number; menu?: boolean }) {
-  const tab = useNavigationStore((s) => s.tabs.find((t) => t.id === id));
+  const tab = useTab(id);
   if (!tab) return null;
   const presenter = presenters.get(tab.kind);
   if (!presenter) return null;
   const Icon = (menu && presenter.IconMenu) || presenter.Icon;
   return <Icon tab={tab} />;
+}
+
+/** A tab's live state by id, from the presenter of its kind; nothing when the kind has none. */
+export function TabStatus({ id }: { id: number }) {
+  const tab = useTab(id);
+  if (!tab) return null;
+  const Status = presenters.get(tab.kind)?.Status;
+  return Status ? <Status tab={tab} /> : null;
 }

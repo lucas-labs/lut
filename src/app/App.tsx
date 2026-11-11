@@ -50,7 +50,7 @@ import { SpacesView, useSpacePersistence, useSpaces, useSpacesBoot } from '@/mod
 import {
   type CloseTabsPlan,
   TabBar,
-  TabSwitcherHud,
+  TabSwitcher,
   useTabs,
   useTabsColumn,
   useTabSwitcher,
@@ -1250,7 +1250,7 @@ export default function App() {
           <AgentNotificationsBridge tabs={tabs} activeId={activeId} onActivate={onActivateAgent} />
           <Toaster position="bottom-right" />
 
-          {switcherState && <TabSwitcherHud tabs={navigatorItems} state={switcherState} />}
+          {switcherState && <TabSwitcher items={navigatorItems} state={switcherState} />}
 
           <CommandPalette
             open={commandPaletteOpen}
