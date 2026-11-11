@@ -3,7 +3,7 @@ import type { PanelImperativeHandle } from 'react-resizable-panels';
 
 export const TABS_COLUMN_MIN_WIDTH = 140;
 export const TABS_COLUMN_MAX_WIDTH = 360;
-const TABS_COLUMN_DEFAULT_WIDTH = 200;
+const TABS_COLUMN_DEFAULT_WIDTH = 224;
 const TABS_COLUMN_WIDTH_STORAGE_KEY = 'lut.tabs.columnWidth';
 const TABS_COLUMN_COLLAPSED_STORAGE_KEY = 'lut.tabs.columnCollapsed';
 
@@ -81,6 +81,7 @@ export function useTabsColumn() {
   return {
     tabsColumnRef,
     tabsColumnInitialWidth: layout.collapsed ? 0 : layout.width,
+    tabsColumnCollapsed: layout.collapsed,
     persistTabsColumnLayout,
     toggleTabsColumn,
     isTabsColumnOpen,

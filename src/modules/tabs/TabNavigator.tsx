@@ -135,7 +135,7 @@ export function TabNavigator({
   const cellClass = (t: TabNavigatorItem) =>
     vertical
       ? cn(
-          'flex h-8 w-full min-w-0 shrink-0 items-center gap-2 rounded-md px-2.5 text-sm text-foreground outline-none',
+          'flex h-8 w-full min-w-0 shrink-0 items-center gap-2 rounded-md px-2.5 text-left text-sm text-foreground outline-none',
           'hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring',
           t.active && 'bg-accent',
         )

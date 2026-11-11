@@ -10,7 +10,7 @@ describe('parseTabsColumnWidth', () => {
     expect(parseTabsColumnWidth('240')).toBe(240);
     expect(parseTabsColumnWidth('10')).toBe(TABS_COLUMN_MIN_WIDTH);
     expect(parseTabsColumnWidth('9999')).toBe(TABS_COLUMN_MAX_WIDTH);
-    expect(parseTabsColumnWidth(null)).toBe(200);
-    expect(parseTabsColumnWidth('wide')).toBe(200);
+    expect(parseTabsColumnWidth(null)).toBe(224);
+    expect(parseTabsColumnWidth('wide')).toBe(224);
   });
 });
