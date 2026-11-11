@@ -144,7 +144,10 @@ describe('PTY bridge over the multiplexed stream', () => {
       [first.id, 'claude'],
       [second.id, 'codex'],
     ] as const) {
+      // A started agent waits for its first prompt; the prompt makes it work.
       mocks.signal?.({ payload: { id, kind: 'started', agent } });
+      expect(status(id)).toEqual({ state: 'idle', agent });
+      mocks.signal?.({ payload: { id, kind: 'working' } });
       expect(status(id)).toEqual({ state: 'working', agent });
     }
     mocks.signal?.({ payload: { id: first.id, kind: 'attention' } });

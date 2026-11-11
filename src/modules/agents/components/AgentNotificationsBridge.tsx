@@ -67,7 +67,7 @@ function handleSignal(sig: AgentSignal, ctx: Ctx): void {
       return;
     }
     case 'finished': {
-      store.setStatus(leafId, 'waiting');
+      store.setStatus(leafId, 'idle');
       const session = store.sessions[leafId];
       if (session) route(session, 'finished', ctx);
       return;
