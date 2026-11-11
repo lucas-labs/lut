@@ -54,7 +54,7 @@ function detailFor(tab: Tab): string | null {
   return null;
 }
 
-export function toNavigatorItem(tab: Tab, activeId: number): TabNavigatorItem {
+function toNavigatorItem(tab: Tab, activeId: number): TabNavigatorItem {
   return {
     id: tab.id,
     kind: tab.kind,

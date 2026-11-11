@@ -2,7 +2,7 @@ import { leafIds } from '@/modules/terminal/lib/panes';
 import { basename } from '../tabTitles';
 import type { Tab, TerminalTab } from '../types';
 
-export function coldTerminalTab(
+function coldTerminalTab(
   tabId: number,
   leafId: number,
   spaceId: string,

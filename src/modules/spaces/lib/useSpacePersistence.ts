@@ -1,5 +1,7 @@
+import { useNavigationStore } from '@/modules/navigation';
 import type { Tab } from '@/modules/tabs';
 import { useCallback, useEffect, useRef } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { isSerializableTab, serializeTabs } from './serialize';
 import { saveState } from './store';
 import { useSpaces } from './useSpaces';
@@ -8,14 +10,19 @@ const DEBOUNCE_MS = 3000;
 
 type Snapshot = { tabs: Tab[]; activeId: number; activeSpaceId: string };
 
-type Params = Snapshot & {
+type Params = {
+  activeSpaceId: string;
   /** Gate writes until boot hydration finished, so restore never round-trips. */
   enabled: boolean;
 };
 
 type LastWrite = { json: string; activeTabIndex: number };
 
-export function useSpacePersistence({ tabs, activeId, activeSpaceId, enabled }: Params) {
+/** Saves each space's tabs (from the navigation store) a while after they change. */
+export function useSpacePersistence({ activeSpaceId, enabled }: Params) {
+  const { tabs, activeId } = useNavigationStore(
+    useShallow((s) => ({ tabs: s.tabs, activeId: s.activeId })),
+  );
   const last = useRef<Map<string, LastWrite>>(new Map());
   const seeded = useRef(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);

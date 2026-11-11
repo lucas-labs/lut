@@ -28,7 +28,9 @@ import { setLspNavigator } from '@/modules/lsp';
 import {
   DEFAULT_SPACE_ID,
   neighborTerminalTab,
+  switcherOrder,
   type TabNavigatorActions,
+  useNavigationStore,
   useNavigatorItems,
 } from '@/modules/navigation';
 import type { PreviewPaneHandle } from '@/modules/preview';
@@ -83,7 +85,7 @@ import { useWorkspaceEnvStore, workspaceNative, workspaceScopeKey } from '@/modu
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { AppShell } from './AppShell';
 import { CloseDialogs } from './components/CloseDialogs';
@@ -96,6 +98,9 @@ import { registerTabPresenters } from './tabPresenters';
 
 registerTabPresenters();
 
+/** The navigation store's current state, for callbacks that must not close over a render's. */
+const nav = () => useNavigationStore.getState();
+
 // Real-application benchmark driver (scripts/app-lab). `__LUT_BENCH__` is the literal `false`
 // in a normal build, so this is `null` and neither the import nor its chunk is emitted.
 const BenchBridge = __LUT_BENCH__ ? lazy(() => import('@/bench/BenchBridge')) : null;
@@ -105,15 +110,12 @@ export default function App() {
     tabs,
     activeId,
     setActiveId,
-    allocId,
     booted,
-    replaceTabs,
     moveTabToSpace,
     reorderTab,
     reorderTabByGap,
     newTabInSpace,
     removeTabsForSpace,
-    markBooted,
     setActiveSpaceForNewTabs,
     newTab,
     newAgentGroupTab,
@@ -148,11 +150,6 @@ export default function App() {
     void initPreferences();
   }, [initPreferences]);
 
-  // Mirror `tabs` into a ref so callbacks scheduled with `setTimeout`
-  // (e.g. cdInNewTab) read the latest pane state instead of a stale closure.
-  const tabsRef = useRef(tabs);
-  const activeIdRef = useRef(activeId);
-
   const activeTerminalTab = useMemo(() => {
     const t = tabs.find((x) => x.id === activeId);
     return t && t.kind === 'terminal' ? t : null;
@@ -180,28 +177,16 @@ export default function App() {
 
   const activeSpaceId = useSpaces((s) => s.activeId);
   const spacesHydrated = useSpaces((s) => s.hydrated);
-  const activeSpaceIdRef = useRef(activeSpaceId);
-  useLayoutEffect(() => {
-    tabsRef.current = tabs;
-    activeIdRef.current = activeId;
-    activeSpaceIdRef.current = activeSpaceId;
-  }, [tabs, activeId, activeSpaceId]);
   const sourceControlSpaceId = activeSpaceId ?? DEFAULT_SPACE_ID;
 
   useSpacesBoot({
     ready: launchCwdResolved,
     launchCwd,
     home,
-    allocId,
-    replaceTabs,
-    markBooted,
-    setActiveSpaceForNewTabs,
     adoptWorkspaceEnv,
   });
 
   useSpacePersistence({
-    tabs,
-    activeId,
     activeSpaceId: activeSpaceId ?? DEFAULT_SPACE_ID,
     enabled: spacesHydrated,
   });
@@ -215,7 +200,7 @@ export default function App() {
     if (prev === null || prev === activeSpaceId) return;
     const meta = useSpaces.getState().spaces.find((s) => s.id === activeSpaceId);
     if (meta) void adoptWorkspaceEnv(meta.env);
-    const inSpace = tabsRef.current.filter((t) => t.spaceId === activeSpaceId);
+    const inSpace = nav().tabs.filter((t) => t.spaceId === activeSpaceId);
     if (inSpace.length === 0) return;
     // Keep the active tab if it already belongs to the newly active space (a
     // cross-space jump set it explicitly); else fall to the space's last tab.
@@ -252,8 +237,8 @@ export default function App() {
   const isEditorTab = activeTab?.kind === 'editor';
   const isGitHistoryTab = activeTab?.kind === 'git-history';
 
-  useEditorFileSync({ tabs, tabsRef, editorRefs });
-  useThemeFileEditing({ tabsRef, openFileTab });
+  useEditorFileSync({ tabs, editorRefs });
+  useThemeFileEditing({ openFileTab });
 
   const { explorerRoot, inheritedCwdForNewTab } = useWorkspaceCwd(activeTab, tabs, launchCwd ?? home);
 
@@ -298,7 +283,7 @@ export default function App() {
   const disposeDeletedTabs = useCallback(
     (ids: number[]) => {
       if (ids.length === 0) return;
-      for (const spaceId of spacesEmptiedByTabs(tabsRef.current, ids)) {
+      for (const spaceId of spacesEmptiedByTabs(nav().tabs, ids)) {
         const root = useSpaces.getState().spaces.find((s) => s.id === spaceId)?.root;
         newTabInSpace(spaceId, root ?? undefined);
       }
@@ -333,7 +318,7 @@ export default function App() {
     disposeTabs,
   });
 
-  const { pendingAppClose, confirmAppClose, cancelAppClose } = useAppCloseGuard(tabsRef);
+  const { pendingAppClose, confirmAppClose, cancelAppClose } = useAppCloseGuard();
 
   useEffect(() => {
     const live = new Set<number>();
@@ -347,7 +332,7 @@ export default function App() {
   }, [tabs]);
 
   useEffect(() => {
-    const tab = tabsRef.current.find((t) => t.id === activeId);
+    const tab = nav().tabs.find((t) => t.id === activeId);
     if (tab?.kind !== 'terminal') return;
     const ptyIds = leafIds(tab.paneTree).flatMap((leafId) => {
       const ptyId = ptyIdForLeaf(leafId);
@@ -356,30 +341,16 @@ export default function App() {
     useAgentActivityStore.getState().acknowledgeAttention(ptyIds);
   }, [activeId]);
 
-  // Most-recently-used tab ids, most recent first, pruned to live tabs. Drives
-  // the Ctrl+Tab quick switcher so it cycles by recency, not strip order.
-  const mruRef = useRef<number[]>([activeId]);
-  useEffect(() => {
-    mruRef.current = [activeId, ...mruRef.current.filter((id) => id !== activeId)];
-  }, [activeId]);
-  useEffect(() => {
-    const live = new Set(tabs.map((t) => t.id));
-    mruRef.current = mruRef.current.filter((id) => live.has(id));
-  }, [tabs]);
-
+  // The Ctrl+Tab quick switcher cycles by recency, not strip order.
   const getSwitcherOrder = useCallback(() => {
-    const space = activeSpaceId ?? DEFAULT_SPACE_ID;
-    const inSpace = tabsRef.current.filter((t) => t.spaceId === space).map((t) => t.id);
-    const present = new Set(inSpace);
-    const ordered = mruRef.current.filter((id) => present.has(id));
-    for (const id of inSpace) if (!ordered.includes(id)) ordered.push(id);
-    return [activeId, ...ordered.filter((id) => id !== activeId)];
+    const { tabs, mru } = nav();
+    return switcherOrder(tabs, mru, activeId, activeSpaceId ?? DEFAULT_SPACE_ID);
   }, [activeId, activeSpaceId]);
 
   const { state: switcherState, step: stepSwitcher } = useTabSwitcher({
     getOrder: getSwitcherOrder,
     onCommit: (id) => {
-      if (tabsRef.current.some((t) => t.id === id)) setActiveId(id);
+      if (nav().tabs.some((t) => t.id === id)) setActiveId(id);
     },
   });
 
@@ -461,7 +432,7 @@ export default function App() {
     (path: string) => {
       const tabId = newTab(path);
       setTimeout(() => {
-        const tab = tabsRef.current.find((x) => x.id === tabId);
+        const tab = nav().tabs.find((x) => x.id === tabId);
         if (!tab || tab.kind !== 'terminal') return;
         const t = terminalRefs.current.get(tab.activeLeafId);
         if (!t) return;
@@ -524,7 +495,7 @@ export default function App() {
 
   const handleExplorerPathRenamed = useCallback(
     (from: string, to: string) => {
-      for (const tab of tabsRef.current) {
+      for (const tab of nav().tabs) {
         if (tab.kind !== 'editor' && tab.kind !== 'markdown') continue;
         const path = renamedPath(tab.path, from, to);
         if (path === null) continue;
@@ -538,7 +509,7 @@ export default function App() {
     [updateTab],
   );
 
-  const canReplaceExplorerPath = useCallback((path: string) => !hasOpenPathTab(tabsRef.current, path), []);
+  const canReplaceExplorerPath = useCallback((path: string) => !hasOpenPathTab(nav().tabs, path), []);
 
   const activeTerminalLeafCwd =
     activeTab?.kind === 'terminal'
@@ -608,7 +579,7 @@ export default function App() {
     const handle = previewRefs.current.get(id);
     if (!handle) return; // still loading: registerPreviewHandle calls this again
     pendingPreviewFocusRef.current = null;
-    if (activeIdRef.current === id) handle.focusAddressBar();
+    if (nav().activeId === id) handle.focusAddressBar();
   }, []);
 
   const openPreviewTab = useCallback(
@@ -627,7 +598,7 @@ export default function App() {
 
   const splitActivePaneInActiveTab = useCallback(
     (dir: 'row' | 'col') => {
-      const t = tabsRef.current.find((x) => x.id === activeId);
+      const t = nav().tabs.find((x) => x.id === activeId);
       if (!t || t.kind !== 'terminal') return;
       splitActivePane(activeId, dir);
     },
@@ -637,13 +608,13 @@ export default function App() {
   // Moves the active tab's focused pane, session and all (E08-07).
   const moveActivePane = useCallback(
     (target: 'new' | 1 | -1) => {
-      const tab = tabsRef.current.find((t) => t.id === activeId);
+      const tab = nav().tabs.find((t) => t.id === activeId);
       if (tab?.kind !== 'terminal') return;
       if (target === 'new') {
         movePane(tab.activeLeafId, 'new');
         return;
       }
-      const neighbor = neighborTerminalTab(tabsRef.current, tab.id, target);
+      const neighbor = neighborTerminalTab(nav().tabs, tab.id, target);
       if (neighbor) movePane(tab.activeLeafId, neighbor.id);
     },
     [activeId, movePane],
@@ -668,7 +639,7 @@ export default function App() {
   );
 
   const handleCloseTabOrPane = useCallback(() => {
-    const t = tabsRef.current.find((x) => x.id === activeId);
+    const t = nav().tabs.find((x) => x.id === activeId);
     if (t?.kind === 'terminal' && leafIds(t.paneTree).length > 1) {
       closeActivePane(activeId);
       return;
@@ -703,7 +674,7 @@ export default function App() {
   // strip don't end up showing a different space than the focused pane.
   const activateAgentTarget = useCallback(
     (tabId: number, leafId: number) => {
-      const space = tabsRef.current.find((t) => t.id === tabId)?.spaceId;
+      const space = nav().tabs.find((t) => t.id === tabId)?.spaceId;
       if (space && space !== useSpaces.getState().activeId) {
         useSpaces.getState().setActive(space);
       }
@@ -884,7 +855,7 @@ export default function App() {
 
   const handleLeafExit = useCallback(
     (leafId: number, _code: number) => {
-      const all = tabsRef.current;
+      const all = nav().tabs;
       const tab = all.find((t) => t.kind === 'terminal' && hasLeaf(t.paneTree, leafId));
       if (!tab || tab.kind !== 'terminal') return;
       // Last pane of the last tab: quit instead of respawning a shell.
@@ -985,7 +956,7 @@ export default function App() {
   const handleReorderTab = useCallback(
     (tabId: number, targetTabId: number, edge: 'top' | 'bottom') => {
       if (reorderTab(tabId, targetTabId, edge)) {
-        const target = tabsRef.current.find((x) => x.id === targetTabId);
+        const target = nav().tabs.find((x) => x.id === targetTabId);
         if (target) useSpaces.getState().setActive(target.spaceId);
       }
     },
@@ -1002,7 +973,7 @@ export default function App() {
 
   const jumpToTab = useCallback(
     (tabId: number) => {
-      const t = tabsRef.current.find((x) => x.id === tabId);
+      const t = nav().tabs.find((x) => x.id === tabId);
       if (!t) return;
       setActiveId(tabId);
       useSpaces.getState().setActive(t.spaceId);
@@ -1116,9 +1087,6 @@ export default function App() {
 
   useControlBridge({
     ready: spacesHydrated && launchCwdResolved,
-    tabsRef,
-    activeTabIdRef: activeIdRef,
-    activeSpaceIdRef,
     onOpen: openControlFile,
   });
 

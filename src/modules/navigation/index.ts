@@ -1,14 +1,8 @@
+export { hasUnsavedChanges, registerDirtyContentProvider } from './dirtyContent';
 export {
-  type DirtyContentProvider,
-  hasUnsavedChanges,
-  registerDirtyContentProvider,
-} from './dirtyContent';
-export {
-  selectNavigatorItems,
   type TabNavigatorActions,
   type TabNavigatorItem,
   type TabNavigatorOrientation,
-  toNavigatorItem,
   useNavigatorItems,
 } from './navigator';
 export {
@@ -24,12 +18,16 @@ export {
   planGitDiffOpen,
   planMarkdownTabOpen,
 } from './planners/open';
-export { neighborTerminalTab, pickTabBySpaceIndex, reorderTabsByGap } from './planners/order';
-export { coldTerminalTab, planSpaceRemoval } from './planners/spaces';
+export {
+  neighborTerminalTab,
+  pickTabBySpaceIndex,
+  reorderTabsByGap,
+  switcherOrder,
+} from './planners/order';
+export { planSpaceRemoval } from './planners/spaces';
 export { initialNavigationData, type NavigationState, useNavigationStore } from './store';
-export { registerTabPresenter, TabIcon, type TabPresenter } from './TabIcon';
+export { registerTabPresenter, TabIcon } from './TabIcon';
 export { labelFor } from './tabLabel';
-export { basename, titleFromUrl } from './tabTitles';
 export {
   type CloseTabsPlan,
   DEFAULT_SPACE_ID,
@@ -40,9 +38,7 @@ export {
   type GitHistoryTab,
   type MarkdownTab,
   MAX_PANES_PER_TAB,
-  type OpenFileTabOptions,
   type PreviewTab,
   type Tab,
-  type TabPatch,
   type TerminalTab,
 } from './types';

@@ -53,6 +53,8 @@ type NavigationData = {
   activeSpaceId: string;
   /** The launch tab has been given the launch directory (see `seedLaunchTab`). */
   seeded: boolean;
+  /** Tab ids by recency of activation, most recent first, live tabs only (the Ctrl+Tab order). */
+  mru: number[];
 };
 
 type NavigationActions = {
@@ -74,7 +76,6 @@ type NavigationActions = {
     title: string,
     instances: AgentInstanceCount,
   ) => { tabId: number; leafIds: number[] };
-  newAgentTab: (cwd: string | undefined, title: string) => { tabId: number; leafId: number };
   newPrivateTab: (cwd?: string) => number;
   openFileTab: (path: string, pin?: boolean, options?: OpenFileTabOptions) => number;
   pinTab: (id: number) => void;
@@ -141,6 +142,7 @@ export function initialNavigationData(): NavigationData {
     nextId: 3,
     activeSpaceId: DEFAULT_SPACE_ID,
     seeded: false,
+    mru: [1],
   };
 }
 
@@ -257,13 +259,19 @@ function planPaneClose(
  * tab holds the leaf.
  */
 export const useNavigationStore = create<NavigationState>()((set, get) => {
-  /** Writes tabs/active/booted and warms the active tab when it is cold. */
+  /** Writes tabs/active/booted, warms the active tab when it is cold and keeps `mru` current. */
   const commit = (patch: Partial<Pick<NavigationData, 'tabs' | 'activeId' | 'booted'>>) =>
     set((s) => {
       const tabs = patch.tabs ?? s.tabs;
       const activeId = patch.activeId ?? s.activeId;
       const booted = patch.booted ?? s.booted;
-      return { ...patch, tabs: warmActive(tabs, activeId, booted) };
+      let mru = s.mru;
+      if (activeId !== s.activeId) mru = [activeId, ...mru.filter((id) => id !== activeId)];
+      if (tabs !== s.tabs) {
+        const live = new Set(tabs.map((t) => t.id));
+        if (mru.some((id) => !live.has(id))) mru = mru.filter((id) => live.has(id));
+      }
+      return { ...patch, tabs: warmActive(tabs, activeId, booted), mru };
     });
   const setTabs = (update: (tabs: Tab[]) => Tab[]) => {
     const curr = get().tabs;
@@ -441,11 +449,6 @@ export const useNavigationStore = create<NavigationState>()((set, get) => {
         tabId,
       );
       return { tabId, leafIds: agentLeafIds };
-    },
-
-    newAgentTab: (cwd, title) => {
-      const { tabId, leafIds: agentLeafIds } = get().newAgentGroupTab(cwd, title, 1);
-      return { tabId, leafId: agentLeafIds[0] };
     },
 
     newPrivateTab: (cwd) => {

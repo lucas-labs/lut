@@ -29,7 +29,7 @@ export function canAddPane(tree: PaneNode): boolean {
   return leafIds(tree).length < MAX_PANES_PER_TAB;
 }
 
-export function equalRatios(count: number): number[] {
+function equalRatios(count: number): number[] {
   return Array.from({ length: count }, () => 1 / count);
 }
 

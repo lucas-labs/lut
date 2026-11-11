@@ -7,6 +7,23 @@ export function pickTabBySpaceIndex(tabs: Tab[], idx: number, spaceId: string): 
   return pool[idx];
 }
 
+/**
+ * The Ctrl+Tab order for a space: the active tab, then the space's tabs by recency of use, then
+ * the ones never activated in strip order.
+ */
+export function switcherOrder(
+  tabs: Tab[],
+  mru: readonly number[],
+  activeId: number,
+  spaceId: string,
+): number[] {
+  const inSpace = tabs.filter((t) => t.spaceId === spaceId).map((t) => t.id);
+  const present = new Set(inSpace);
+  const ordered = mru.filter((id) => present.has(id));
+  for (const id of inSpace) if (!ordered.includes(id)) ordered.push(id);
+  return [activeId, ...ordered.filter((id) => id !== activeId)];
+}
+
 /** The closest terminal tab after (`1`) or before (`-1`) a tab in its space's strip, if any. */
 export function neighborTerminalTab(tabs: Tab[], tabId: number, delta: 1 | -1): Tab | undefined {
   const tab = tabs.find((t) => t.id === tabId);

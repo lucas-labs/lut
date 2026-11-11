@@ -1,4 +1,5 @@
 import { listenFsChanged, parentDir, watchAdd, watchRemove } from '@/modules/explorer/lib/watch';
+import { useNavigationStore } from '@/modules/navigation';
 import type { Tab } from '@/modules/tabs';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { type RefObject, useEffect, useRef } from 'react';
@@ -6,7 +7,6 @@ import type { EditorPaneHandle } from './EditorPane';
 
 type Params = {
   tabs: Tab[];
-  tabsRef: RefObject<Tab[]>;
   editorRefs: RefObject<Map<number, EditorPaneHandle>>;
 };
 
@@ -15,7 +15,7 @@ type Params = {
  * diffs, external writes, and fs-watch events, and maintains the watch set for
  * the directories of open editor files.
  */
-export function useEditorFileSync({ tabs, tabsRef, editorRefs }: Params) {
+export function useEditorFileSync({ tabs, editorRefs }: Params) {
   useEffect(() => {
     type FileWrittenPayload = { path: string; source?: string };
     const unlistenPromise = getCurrentWebviewWindow().listen<FileWrittenPayload>(
@@ -23,7 +23,7 @@ export function useEditorFileSync({ tabs, tabsRef, editorRefs }: Params) {
       (event) => {
         if (event.payload.source === 'editor') return;
         const normalizedPath = event.payload.path.replace(/\\/g, '/');
-        const currentTabs = tabsRef.current;
+        const currentTabs = useNavigationStore.getState().tabs;
         for (const t of currentTabs) {
           if (t.kind !== 'editor') continue;
           if (t.path.replace(/\\/g, '/') === normalizedPath) {
@@ -35,7 +35,7 @@ export function useEditorFileSync({ tabs, tabsRef, editorRefs }: Params) {
     return () => {
       void unlistenPromise.then((un) => un());
     };
-  }, [tabsRef, editorRefs]);
+  }, [editorRefs]);
 
   const editorWatchRef = useRef<Set<string>>(new Set());
   const editorFilesRef = useRef<Set<string>>(new Set());
@@ -66,7 +66,7 @@ export function useEditorFileSync({ tabs, tabsRef, editorRefs }: Params) {
     let unlisten: (() => void) | undefined;
     void listenFsChanged((paths) => {
       const changed = new Set(paths.map((p) => p.replace(/\\/g, '/')));
-      for (const t of tabsRef.current) {
+      for (const t of useNavigationStore.getState().tabs) {
         if (t.kind !== 'editor') continue;
         if (changed.has(t.path.replace(/\\/g, '/'))) {
           editorRefs.current.get(t.id)?.reload();
@@ -80,5 +80,5 @@ export function useEditorFileSync({ tabs, tabsRef, editorRefs }: Params) {
       alive = false;
       unlisten?.();
     };
-  }, [tabsRef, editorRefs]);
+  }, [editorRefs]);
 }
