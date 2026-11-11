@@ -60,17 +60,30 @@ export function useTabsColumn() {
     });
   }, []);
 
-  const toggleTabsColumn = useCallback(() => {
+  const isTabsColumnOpen = useCallback(() => {
     const panel = tabsColumnRef.current;
-    if (!panel) return;
-    if (panel.getSize().inPixels <= 0) panel.resize(`${widthRef.current}px`);
+    return panel ? panel.getSize().inPixels > 0 : false;
+  }, []);
+
+  /** Opens the column at its last width, or collapses it. */
+  const setTabsColumnOpen = useCallback((open: boolean) => {
+    const panel = tabsColumnRef.current;
+    if (!panel || open === panel.getSize().inPixels > 0) return;
+    if (open) panel.resize(`${widthRef.current}px`);
     else panel.collapse();
   }, []);
+
+  const toggleTabsColumn = useCallback(
+    () => setTabsColumnOpen(!isTabsColumnOpen()),
+    [isTabsColumnOpen, setTabsColumnOpen],
+  );
 
   return {
     tabsColumnRef,
     tabsColumnInitialWidth: layout.collapsed ? 0 : layout.width,
     persistTabsColumnLayout,
     toggleTabsColumn,
+    isTabsColumnOpen,
+    setTabsColumnOpen,
   };
 }

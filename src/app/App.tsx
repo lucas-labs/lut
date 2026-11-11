@@ -233,6 +233,8 @@ export default function App() {
     persistSidebarView,
     persistSidebarCollapsed,
     toggleSidebar,
+    isSidebarOpen,
+    setSidebarOpen,
     cycleSidebarView,
     openSidebarView,
     persistSidebarWidth,
@@ -667,7 +669,21 @@ export default function App() {
   const [zenMode, setZenMode] = useState(false);
   const tabOrientation = usePreferencesStore((s) => s.tabOrientation);
   const verticalTabs = tabOrientation === 'vertical';
-  const { tabsColumnRef, tabsColumnInitialWidth, persistTabsColumnLayout, toggleTabsColumn } = useTabsColumn();
+  const {
+    tabsColumnRef,
+    tabsColumnInitialWidth,
+    persistTabsColumnLayout,
+    toggleTabsColumn,
+    isTabsColumnOpen,
+    setTabsColumnOpen,
+  } = useTabsColumn();
+  // The header's sidebar button: hides the sidebar and the vertical tab column together while
+  // either is open, and shows both otherwise. Each keeps its own command and shortcut.
+  const toggleSidePanels = useCallback(() => {
+    const open = !(isSidebarOpen() || (verticalTabs && isTabsColumnOpen()));
+    setSidebarOpen(open);
+    if (verticalTabs) setTabsColumnOpen(open);
+  }, [verticalTabs, isSidebarOpen, setSidebarOpen, isTabsColumnOpen, setTabsColumnOpen]);
   const toggleTabOrientation = useCallback(() => {
     const current = usePreferencesStore.getState().tabOrientation;
     void setTabOrientation(current === 'vertical' ? 'horizontal' : 'vertical');
@@ -1116,7 +1132,7 @@ export default function App() {
                 onPin={pinTab}
                 onRename={handleRenameTab}
                 onReorder={reorderTabByGap}
-                onToggleSidebar={toggleSidebar}
+                onToggleSidebar={toggleSidePanels}
                 onOpenCommandPalette={() => openCommandPalette('commands')}
                 onActivateAgent={onActivateAgent}
                 onOpenSettings={() => void openSettingsWindow()}
