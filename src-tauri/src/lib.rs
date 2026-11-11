@@ -130,8 +130,8 @@ async fn open_settings_window(app: tauri::AppHandle, tab: Option<String>) -> Res
     #[cfg(any(target_os = "linux", target_os = "windows"))]
     let builder = builder.decorations(false).transparent(true);
 
-    #[cfg_attr(windows, allow(unused_variables))]
     let window = builder.build().map_err(|e| e.to_string())?;
+    modules::browser_features::disable(&window);
 
     // Some Linux compositors (GNOME/Mutter with CSD-by-default) ignore the
     // builder-time decorations flag — re-assert it after realize.
@@ -236,6 +236,9 @@ pub fn run() {
             modules::window_presentation::macos::install(_app.handle());
             if let Err(error) = control::start(_app.handle().clone(), control_for_setup.clone()) {
                 log::warn!("could not start lut control server: {error}");
+            }
+            if let Some(main) = _app.get_webview_window("main") {
+                modules::browser_features::disable(&main);
             }
             #[cfg(target_os = "macos")]
             if let Some(main) = _app.get_webview_window("main") {
