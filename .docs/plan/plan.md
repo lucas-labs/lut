@@ -3577,7 +3577,7 @@ size: M
 
 **Acceptance criteria:**
 
-- [ ] `TabNavigator` renders tabs from the navigation store, without the editor/explorer icon imports of `TabBar.tsx:17-24`.
+- [ ] `TabNavigator` renders tabs from the navigation store (`useNavigatorItems`, `TabNavigatorActions`), with icons from the tab presenters (`TabIcon`), never importing editor/explorer modules.
 - [ ] Tab indicators (active, title/color, activity/exit state, agent status slot fed by `tabAgentStatus`) per design (TER-012).
 - [ ] Reorder, close and rename work; the `NewTabMenu` entry point is kept (the profile picker itself belongs to the profiles UI epic).
 - [ ] `TabBar.tsx` and `TabSwitcherHud.tsx` deleted.
