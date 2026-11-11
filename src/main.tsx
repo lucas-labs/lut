@@ -1,5 +1,6 @@
 import './styles/globals.css';
 
+import { startSessionReconciler } from '@/modules/sessions';
 import { terminalDiagnosticsEnabled } from '@/modules/terminal/lib/terminalDiagnosticsEnabled';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -29,6 +30,9 @@ await invoke('pty_close_all').catch(() => {});
 
 // Seed before first paint so default tab mounts at target cwd (no flicker).
 await initLaunchDir();
+
+// A terminal leaf that no tab holds any more has its session disposed.
+startSessionReconciler();
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(<App />);
 

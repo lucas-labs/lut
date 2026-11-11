@@ -2390,11 +2390,11 @@ scope: ui
 size: M
 ```
 
-**Goal:** Refactor only: a `sessions` module owns PTY lifecycle, the `leafId ↔ ptyId` map, dispose and resize; navigation calls it instead of `useTabs` calling `disposeSession` directly.
+**Goal:** Refactor only: a `sessions` module owns session disposal. Its reconciler watches the navigation store and disposes a leaf's session once no terminal tab holds it, replacing the `disposeSession` calls in `useTabs` and the second sweep in `App.tsx`. The `leafId ↔ ptyId` lookup and resize stay in the terminal module, which owns the session registry.
 
 **Acceptance criteria:**
 
-- [ ] `useTabs`/the store no longer import terminal session internals (useTabs.ts:6-21) except through the sessions API.
+- [ ] `useTabs`/the store no longer import terminal session internals; each removed leaf is disposed exactly once, from the reconciler.
 - [ ] No behaviour change; E07 lifecycle tests green.
 
 **Verification:** `pnpm test`; manual: close a pane, its PTY is released (no orphan process).

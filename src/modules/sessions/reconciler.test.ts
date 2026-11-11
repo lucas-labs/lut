@@ -1,5 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { initialNavigationData, useNavigationStore } from './store';
+import { initialNavigationData, useNavigationStore } from '@/modules/navigation';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { startSessionReconciler } from './reconciler';
 
 const dispose = vi.hoisted(() => vi.fn());
 
@@ -9,12 +10,17 @@ vi.mock('@/modules/terminal/lib/terminalSessionApi', () => ({
 
 const store = () => useNavigationStore.getState();
 
+let stop: () => void = () => {};
+
 beforeEach(() => {
   useNavigationStore.setState(initialNavigationData());
+  stop = startSessionReconciler();
   dispose.mockClear();
 });
 
-describe('tab actions in a row, before React renders', () => {
+afterEach(() => stop());
+
+describe('sessions of leaves that tab actions remove, several actions in a row', () => {
   it('keeps a new tab when closing its predecessor', () => {
     const created = store().newTab();
     store().closeTab(1);
@@ -62,5 +68,21 @@ describe('tab actions in a row, before React renders', () => {
       spaceId: 'replacement',
       cwd: '/next',
     });
+  });
+});
+
+describe('sessions that stay', () => {
+  it('keeps the sessions of a cold tab', () => {
+    const cold = store().newTabInSpace(store().tabs[0].spaceId);
+    store().closeTab(1);
+    expect(store().tabs).toEqual([expect.objectContaining({ id: cold, cold: true })]);
+    expect(dispose).toHaveBeenCalledExactlyOnceWith(2);
+  });
+
+  it('disposes nothing when tabs only reorder or switch', () => {
+    const second = store().newTab();
+    store().reorderTabByGap(second, 0);
+    store().setActiveId(1);
+    expect(dispose).not.toHaveBeenCalled();
   });
 });

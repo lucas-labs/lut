@@ -1,8 +1,6 @@
 import { usePreferencesStore } from '@/modules/settings/preferences';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { initialNavigationData, useNavigationStore } from './store';
-
-vi.mock('@/modules/terminal/lib/terminalSessionApi', () => ({ disposeSession: vi.fn() }));
 
 const store = () => useNavigationStore.getState();
 const setOrientation = (tabOrientation: 'horizontal' | 'vertical') =>

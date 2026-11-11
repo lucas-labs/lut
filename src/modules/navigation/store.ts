@@ -14,7 +14,6 @@ import {
   splitLeaf,
   swapLeafInDirection,
 } from '@/modules/terminal/lib/panes';
-import { disposeSession } from '@/modules/terminal/lib/terminalSessionApi';
 import { create } from 'zustand';
 import { applyCloseTabsPlan, nextActiveInSpace, planSingleTabClose } from './planners/close';
 import {
@@ -241,8 +240,9 @@ function planPaneClose(
 /**
  * The window's navigation: its tabs, their order and spaces, and the active tab. Actions are
  * pure state updates and read the latest state, so several in a row compose before React
- * renders. They never open a PTY: a terminal tab only names its leaves, and the terminal
- * module opens a session when a leaf mounts.
+ * renders. They never open or close a PTY: a terminal tab only names its leaves; the terminal
+ * module opens a session when a leaf mounts and the sessions reconciler disposes it once no
+ * tab holds the leaf.
  */
 export const useNavigationStore = create<NavigationState>()((set, get) => {
   /** Writes tabs/active/booted and warms the active tab when it is cold. */
@@ -396,7 +396,6 @@ export const useNavigationStore = create<NavigationState>()((set, get) => {
       const plan = planSpaceRemoval(tabs, activeId, spaceId, fallbackSpaceId, fallbackCwd, alloc);
       if (!plan) return;
       commit({ tabs: plan.tabs, activeId: plan.activeId });
-      for (const leafId of plan.disposeLeafIds) disposeSession(leafId);
     },
 
     newTab: (cwd) => {
@@ -582,14 +581,12 @@ export const useNavigationStore = create<NavigationState>()((set, get) => {
       const result = planSingleTabClose(tabs, id, activeId);
       if (!result) return;
       commit({ tabs: result.tabs, activeId: result.nextActiveId });
-      for (const leafId of result.disposeLeafIds) disposeSession(leafId);
     },
 
     closeTabs: (anchorId, plan) => {
       const result = applyCloseTabsPlan(get().tabs, anchorId, plan);
       if (!result) return [];
       commit({ tabs: result.tabs, activeId: result.nextActiveId });
-      for (const leafId of result.disposeLeafIds) disposeSession(leafId);
       return result.closeIds;
     },
 
@@ -668,7 +665,6 @@ export const useNavigationStore = create<NavigationState>()((set, get) => {
         tabs: plan.tabs,
         activeId: plan.fallback !== null && activeId === tab.id ? plan.fallback : activeId,
       });
-      disposeSession(leafId);
     },
 
     closeActivePane: (tabId) => {
@@ -682,7 +678,6 @@ export const useNavigationStore = create<NavigationState>()((set, get) => {
         tabs: plan.tabs,
         activeId: plan.fallback !== null && activeId === tabId ? plan.fallback : activeId,
       });
-      disposeSession(leafId);
       return plan.closedTab;
     },
   };

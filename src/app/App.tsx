@@ -52,7 +52,6 @@ import {
 } from '@/modules/tabs';
 import {
   clearFocusedTerminal,
-  disposeSession,
   findLeafCwd,
   hasLeaf,
   isTerminalSurfaceTarget,
@@ -167,10 +166,6 @@ export default function App() {
   useApplyEditorFontSize();
   const terminalPathDropTarget = useTerminalFileDrop();
   const explorerRef = useRef<FileExplorerHandle>(null);
-
-  // Drives session disposal off the pane tree, not React lifecycles —
-  // split/unsplit re-mount components but the leaf is still live.
-  const liveLeavesRef = useRef<Set<number>>(new Set());
 
   const workspaceEnv = useWorkspaceEnvStore((s) => s.env);
   const setWorkspaceEnv = useWorkspaceEnvStore((s) => s.setEnv);
@@ -340,10 +335,6 @@ export default function App() {
         for (const id of leafIds(t.paneTree)) live.add(id);
       }
     }
-    for (const id of liveLeavesRef.current) {
-      if (!live.has(id)) disposeSession(id);
-    }
-    liveLeavesRef.current = live;
     for (const k of [...terminalRefs.current.keys()]) if (!live.has(k)) terminalRefs.current.delete(k);
     for (const k of [...searchAddons.current.keys()]) if (!live.has(k)) searchAddons.current.delete(k);
   }, [tabs]);
