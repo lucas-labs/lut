@@ -654,7 +654,10 @@ En Windows conservar cuidadosamente scripts de PowerShell y el sourcing de perfi
 
 ## 8.1. Semántica: proyecto, estado guardado y sesión
 
-**Project:** entidad estable: `id`, nombre, repositorio/directorio base, metadatos, color, entornos autorizados.  
+**Project:** entidad estable: `id`, nombre, repositorio/directorio base, metadatos, color, entornos autorizados y una
+carpeta fija opcional (`pinnedFolder`). Las herramientas (archivos, Git, editor, LSP) usan esa carpeta si está fijada;
+si no, la ubicación del pane de terminal con foco (o el último que lo tuvo), en su propio sistema de archivos. El entorno
+(Windows o una distro WSL) lo da el perfil de cada pane, no el proyecto (decisión 29).  
 **Estado guardado:** ventanas/tabs/splits con ratios y, por pane, perfil, cwd y el comando que seguía corriendo; se guarda
 solo mientras se trabaja (no hay presets ni editor de presets).  
 **Running Workspace:** instancia con sesiones reales, estado de ejecución y errores.

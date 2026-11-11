@@ -3308,7 +3308,7 @@ size: S
 - [ ] The logo and app icon exist as source artwork with PNG and ICO exports at the sizes the bundle needs.
 - [ ] The variant used as the app icon is chosen.
 
-### E11-02 — App shell: window frame/title bar, tab navigator (horizontal/vertical), header, status bar, dialogs
+### E11-02 — App shell: window frame/title bar, tab navigator (horizontal/vertical), header, dialogs
 
 ```yaml
 id: E11-02
@@ -3321,15 +3321,16 @@ size: M
 ```
 
 **Goal:** The user designs the terminal-first app shell: window frame and title bar per OS, the tab navigator in horizontal
-and vertical orientation, header, status bar, split panes chrome and dialogs (close confirmations, errors).
+and vertical orientation, header, split panes chrome and dialogs (close confirmations, errors). There is no status bar
+(decision 30).
 
 **Acceptance criteria:**
 
 - [ ] Window frame/title bar designs for Windows, macOS and Linux.
 - [ ] Tab navigator in both orientations, including overflow and active/attention states.
-- [ ] Header, status bar, pane chrome and dialog designs.
-- [ ] Status bar visibility: how it is hidden/shown (setting and command) and the layout without it (§10.5, IR-87).
-- [ ] Focus mode: all chrome hidden (tabs, sidebar, header, status bar), how to enter and leave it (§10.4, IR-86).
+- [ ] Header, pane chrome and dialog designs; no status bar (decision 30), its indicators placed in the header, the
+      editor tab and the tabs.
+- [ ] Focus mode: all chrome hidden (tabs, sidebar, header), how to enter and leave it (§10.4, IR-86).
 
 ### E11-03 — Settings UI: sections, theme/font pickers, shortcuts editor
 
