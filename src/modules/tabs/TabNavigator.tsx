@@ -127,8 +127,16 @@ export function TabNavigator({
     active?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }, [activeId]);
 
-  /** Arrow keys move to the neighbouring tab, Home/End to the ends, as in a tablist. */
+  /**
+   * Arrow keys move to the neighbouring tab, Home/End to the ends, as in a tablist. Enter/Space select the focused
+   * tab (a pointer selects on release, so the button has no click handler to do it).
+   */
   const onTabKeyDown = (e: KeyboardEvent, index: number) => {
+    if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      actions.select(items[index].id);
+      return;
+    }
     const prev = vertical ? 'ArrowUp' : 'ArrowLeft';
     const next = vertical ? 'ArrowDown' : 'ArrowRight';
     let target: number | null = null;

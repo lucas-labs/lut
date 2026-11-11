@@ -128,6 +128,17 @@ describe('TabNavigator', () => {
     expect(actions.select).not.toHaveBeenCalled();
   });
 
+  it('selects the focused tab on Enter and Space', async () => {
+    await render();
+    for (const key of ['Enter', ' ']) {
+      await act(async () => {
+        tabs()[1].dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key }));
+      });
+    }
+    expect(actions.select).toHaveBeenCalledTimes(2);
+    expect(actions.select).toHaveBeenCalledWith(items()[1].id);
+  });
+
   it('closes a tab on a middle click', async () => {
     await render();
     const second = tabs()[1];
