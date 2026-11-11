@@ -17,13 +17,13 @@ columns are out of date.
 | ID      | Priority | Requirement                              | Issues                                                                        | Implementation | Tests |
 | ------- | -------- | ---------------------------------------- | ----------------------------------------------------------------------------- | -------------- | ----- |
 | TER-001 | P0       | Crear sesión interactiva PTY             | E14-12                                                                        |                |       |
-| TER-002 | P0       | Tabs múltiples                           | E08-02                                                                        |                |       |
+| TER-002 | P0       | Tabs múltiples                           | E08-02, E16-14                                                                |                |       |
 | TER-003 | P0       | Orientación horizontal/vertical de tabs  | E12-05                                                                        |                |       |
-| TER-004 | P0       | Splits horizontales/verticales           | E08-06                                                                        |                |       |
+| TER-004 | P0       | Splits horizontales/verticales           | E08-06, E13-15                                                                |                |       |
 | TER-005 | P0       | Sesiones ocultas activas                 | E07-01                                                                        |                |       |
 | TER-006 | P0       | Copiar, pegar, selección, búsqueda       | E12-03                                                                        |                |       |
 | TER-007 | P0       | Teclado y TUI fiables                    | E14-20, E24-04                                                                |                |       |
-| TER-008 | P1       | Atajos configurables                     | E13-09                                                                        |                |       |
+| TER-008 | P1       | Atajos configurables                     | E13-09, E13-15                                                                |                |       |
 | TER-009 | P1       | Mover sesiones entre tabs                | E08-07                                                                        |                |       |
 | TER-010 | P2       | Mover sesiones entre ventanas            | Not planned: P2: moving sessions between windows needs multiwindow (post-v1). |                |       |
 | TER-011 | P1       | Cierre seguro                            | E08-08                                                                        |                |       |
@@ -32,20 +32,20 @@ columns are out of date.
 
 ## Profiles (PRO, §3.2)
 
-| ID      | Priority | Requirement                          | Issues         | Implementation | Tests |
-| ------- | -------- | ------------------------------------ | -------------- | -------------- | ----- |
-| PRO-001 | P0       | Perfiles nombrados                   | E14-03         |                |       |
-| PRO-011 | P0       | Abrir pestaña con un perfil          | E15-01         |                |       |
-| PRO-012 | P0       | Ícono por perfil                     | E11-04, E15-03 |                |       |
-| PRO-013 | P1       | Título y color de pestaña por perfil | E15-04         |                |       |
-| PRO-002 | P0       | Shell/comando ejecutable por perfil  | E14-07         |                |       |
-| PRO-003 | P0       | Directorio de inicio                 | E14-10         |                |       |
-| PRO-004 | P1       | Variables de entorno                 | E14-09         |                |       |
-| PRO-005 | P0       | Apariencia por perfil                | E14-01, E14-16 |                |       |
-| PRO-006 | P1       | Entorno Windows/WSL/macOS/Linux      | E14-06, E16-13 |                |       |
-| PRO-007 | P1       | Exportar/importar perfiles           | E23-02         |                |       |
-| PRO-009 | P1       | Perfil en cada pane                  | E14-14         |                |       |
-| PRO-010 | P1       | Validación de perfiles               | E14-03, E15-02 |                |       |
+| ID      | Priority | Requirement                          | Issues                 | Implementation | Tests |
+| ------- | -------- | ------------------------------------ | ---------------------- | -------------- | ----- |
+| PRO-001 | P0       | Perfiles nombrados                   | E14-03                 |                |       |
+| PRO-011 | P0       | Abrir pestaña con un perfil          | E15-01                 |                |       |
+| PRO-012 | P0       | Ícono por perfil                     | E11-04, E15-03         |                |       |
+| PRO-013 | P1       | Título y color de pestaña por perfil | E15-04                 |                |       |
+| PRO-002 | P0       | Shell/comando ejecutable por perfil  | E14-07                 |                |       |
+| PRO-003 | P0       | Directorio de inicio                 | E14-10                 |                |       |
+| PRO-004 | P1       | Variables de entorno                 | E14-09                 |                |       |
+| PRO-005 | P0       | Apariencia por perfil                | E14-01, E14-16, E14-21 |                |       |
+| PRO-006 | P1       | Entorno Windows/WSL/macOS/Linux      | E14-06, E16-13         |                |       |
+| PRO-007 | P1       | Exportar/importar perfiles           | E23-02                 |                |       |
+| PRO-009 | P1       | Perfil en cada pane                  | E14-14                 |                |       |
+| PRO-010 | P1       | Validación de perfiles               | E14-03, E15-02         |                |       |
 
 ## Projects and persistent workspaces (PRJ, §3.3)
 

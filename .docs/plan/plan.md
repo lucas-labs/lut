@@ -3555,9 +3555,20 @@ size: M
 
 **Acceptance criteria:**
 
-- [ ] `src/modules/header/` rebuilt per E11-02; search target routing (terminal or editor, `SearchInline.tsx:4`) kept over the terminal search controller.
+- [ ] `src/modules/header/` rebuilt per E11-02 as a 28px `TitleBar`: sidebar toggle, tabs (horizontal), drag area,
+      cwd breadcrumb by the search, search pill, agent notification bell, settings, window controls. The command
+      palette has no button (shortcut only).
+- [ ] Horizontal tabs: the bar sits above the workspace only, beside a full-height sidebar, so the tabs line up with
+      the terminals. Vertical tabs: the bar is hidden and slides in over the window after the pointer rests on the
+      top edge; it stays while focus is in it or a menu opened from it is open, and shows briefly on launch.
+- [ ] Search target routing (terminal or editor, `SearchInline.tsx:4`) kept over the terminal search controller.
 - [ ] Copy, paste, selection and search keep working in terminal panes (TER-006).
 - [ ] `src/components/WindowControls.tsx` per design on Windows/Linux (custom or native as designed); macOS traffic lights intact; drag region works.
+- [ ] The workspace runs edge to edge (no inset, radius or shadow); the terminal layer keeps a 12px left gap only
+      while a side panel is open beside it. The chrome takes the theme's `sidebar` colour.
+- [ ] In a split, the active pane carries a small accent triangle in its top-right corner; the cursor blinks by
+      default.
+- [ ] The design's palette is the default `lut` theme; the previous default palette is kept as the `neutral` theme.
 
 **Verification:** `pnpm check-types && pnpm test`; manual on Windows 11: min/max/close, drag, find text in terminal output, copy/paste.
 
@@ -3577,9 +3588,18 @@ size: M
 
 **Acceptance criteria:**
 
-- [ ] `TabNavigator` renders tabs from the navigation store (`useNavigatorItems`, `TabNavigatorActions`), with icons from the tab presenters (`TabIcon`), never importing editor/explorer modules.
-- [ ] Tab indicators (active, title/color, activity/exit state, agent status slot fed by `tabAgentStatus`) per design (TER-012).
+- [ ] `TabNavigator` renders tabs from the navigation store (`useNavigatorItems`, `TabNavigatorActions`), with icons
+      and live state from the tab presenters (`TabIcon`, `TabStatus`), never importing editor/explorer modules.
+- [ ] Tab indicators per design (TER-012): active, dirty, preview and the agent state after the title (working, needs
+      attention, finished, fed by `tabAgentStatus`). Terminal tabs carry no icon until profiles give them one
+      (E11-04); the private terminal keeps its mark. Tab colours come with the profiles UI.
+- [ ] A detected agent starts idle (no spinner) until its first prompt, in the Rust detector, the tab state and the
+      notification bell; a finished agent is idle, not waiting.
+- [ ] No close button on the tab: middle click, the tab menu and `tab.close` close it.
 - [ ] Reorder, close and rename work; the `NewTabMenu` entry point is kept (the profile picker itself belongs to the profiles UI epic).
+- [ ] The tab menu, the new-tab menu and the Ctrl+Tab switcher take the design's menu look.
+- [ ] The theme gains generic status colours (`success`, `warning`, `info`; `destructive` stays the error colour),
+      set by every built-in theme from its own palette; existing status indicators use them.
 - [ ] `TabBar.tsx` and `TabSwitcherHud.tsx` deleted.
 
 **Verification:** `pnpm check-types && pnpm test`; manual: reorder/close/rename with nvim running in a tab, no PTY restart.
@@ -3600,7 +3620,8 @@ size: M
 
 **Acceptance criteria:**
 
-- [ ] Vertical presentation per E11-02, switching live from the global orientation preference.
+- [ ] Vertical presentation per E11-02 (a rail headed by the space name and the new-tab button), switching live
+      from the global orientation preference.
 - [ ] Switching orientation never unmounts `TerminalStack` nor restarts PTYs; the navigation lifecycle tests stay green.
 
 **Verification:** `pnpm test`; manual: toggle orientation with a long-running command in a hidden tab; it keeps running.
@@ -3693,17 +3714,47 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] A command and shortcut enter and leave focus mode; it hides the tab navigator, projects sidebar and header.
+- [ ] A command and shortcut enter and leave focus mode; it hides the tab navigator, projects sidebar and header. It
+      replaces today's zen mode (`view.zenMode`).
+- [ ] Focus mode also puts the window in OS full screen; leaving it restores the window as it was (maximized or not).
+- [ ] A separate full-screen toggle (F11 by default, as in Windows Terminal) works with or without focus mode.
 - [ ] Leaving focus mode restores the previous chrome state (orientation, sidebar collapsed/width) exactly.
 - [ ] Entering and leaving never remounts terminal panes or restarts PTYs (test with the E07-01 instrumentation).
 
 **Verification:** `pnpm test`; manual: enter focus mode with two tabs and a split, switch tabs by shortcut, leave focus mode.
 
+### E12-12 — macOS and Linux title bars per the design
+
+```yaml
+id: E12-12
+depends-on: [E12-03]
+refs: [UX-011, .docs/plan/analysis/app-shell.md]
+covers: [app-shell/window-controls]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** E12-03 built the title bar and checked it on Windows only. On Linux the bar reuses the Windows caption
+buttons, and on macOS the native traffic lights neither sit in the 28px bar nor hide with the vertical-tabs bar.
+
+**Acceptance criteria:**
+
+- [ ] Linux: `WindowControls` gets the design's GNOME-style variant (round 20px buttons, minimize, maximize, close).
+- [ ] macOS: `trafficLightPosition` centres the traffic lights in the 28px bar; the space the bar and the sidebar keep
+      clear for them (E12-03) matches.
+- [ ] macOS, vertical tabs: the traffic lights hide and show with the hidden title bar, through a native call from
+      Rust (`standardWindowButton` `setHidden`), and are always visible while the bar is.
+- [ ] Checked on macOS and on a Linux desktop (GNOME and one other): both tab orientations, drag, min/max/close,
+      sidebar open and closed.
+
+**Verification:** `pnpm test`; `cargo test`; manual on macOS and Linux as listed.
+
 ### E12-11 — Close-out: app shell UI
 
 ```yaml
 id: E12-11
-depends-on: [E12-01, E12-02, E12-03, E12-04, E12-05, E12-06, E12-07, E12-08, E12-10]
+depends-on: [E12-01, E12-02, E12-03, E12-04, E12-05, E12-06, E12-07, E12-08, E12-10, E12-12]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
@@ -3991,11 +4042,39 @@ reload with `Ctrl+R`/`F5`, page zoom), and a right click outside lut's own menus
 **Verification:** `pnpm tauri dev` and a release build on Windows: press each key with focus in the sidebar, a
 terminal and an editor tab.
 
+### E13-15 — Directional pane focus and resize shortcuts
+
+```yaml
+id: E13-15
+depends-on: [E13-01]
+refs: [TER-004, TER-008, .docs/plan/analysis/state-settings.md]
+covers: [TER-004, TER-008]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** Move between panes and resize them from the keyboard as Windows Terminal does: by direction, not by order.
+Today only `pane.focusNext`/`pane.focusPrev` (order) and `pane.swap*` exist.
+
+**Acceptance criteria:**
+
+- [ ] `pane.focusLeft/Right/Up/Down` focus the pane beside the active one in that direction, picked from the pane
+      rectangles (`paneRects`); nothing happens at an edge. Default: Alt+arrows.
+- [ ] `pane.resizeLeft/Right/Up/Down` move the edge of the active pane on that side through `setSplitRatios`, within
+      the split's minimum size. Default: Alt+Shift+arrows (Ctrl+Shift+arrows stays with the shells' word selection).
+- [ ] Both are configurable in Settings → Shortcuts and appear in the command palette.
+- [ ] The Alt+arrow defaults no longer reach the shell (its Alt+Left/Right word moves); this is stated in the
+      shortcut's description, and rebinding it gives them back.
+- [ ] Tests: focus picks the right neighbour in nested splits; resize respects the minimum and keeps ratios summing 1.
+
+**Verification:** `pnpm test`; manual: a 2×2 split, move around with Alt+arrows and resize with Alt+Shift+arrows.
+
 ### E13-11 — Close-out: settings and theming
 
 ```yaml
 id: E13-11
-depends-on: [E13-01, E13-03, E13-04, E13-05, E13-06, E13-07, E13-08, E13-09, E13-10, E13-12, E13-13, E13-14]
+depends-on: [E13-01, E13-03, E13-04, E13-05, E13-06, E13-07, E13-08, E13-09, E13-10, E13-12, E13-13, E13-14, E13-15]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
@@ -4457,11 +4536,38 @@ size: S
 
 **Verification:** `pnpm tauri dev` on Windows: run `nu`, type a long command; the content above the prompt stays still.
 
+### E14-21 — Per-profile terminal padding inside panes
+
+```yaml
+id: E14-21
+depends-on: [E14-16]
+refs: [PRO-005, F3:5]
+covers: [PRO-005]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** Each profile sets the padding around the terminal grid, inside its panes, as Windows Terminal profiles do.
+The workspace adds none of its own (only a 12px left gap while a side panel is open, E12-03), so full-screen programs
+like nvim fill the pane by default.
+
+**Acceptance criteria:**
+
+- [ ] Profiles gain a padding field (top, right, bottom, left; default 0) resolved through `resolvePreferences` like the
+      other appearance fields (E14-16).
+- [ ] The terminal fit (`fitTerminalViewport`) subtracts the padding before counting columns and rows, so nothing is
+      cut and the PTY gets the real size; the pane's background fills the padding.
+- [ ] Changing a profile's padding resizes its open panes once each, without respawning.
+- [ ] Tests for the fit with padding, including a pane too small for it.
+
+**Verification:** `pnpm test`; manual: two panes with different profiles and paddings, nvim in one of them.
+
 ### E14-18 — Close-out: profiles model and launch
 
 ```yaml
 id: E14-18
-depends-on: [E14-01, E14-02, E14-03, E14-04, E14-05, E14-06, E14-07, E14-08, E14-09, E14-10, E14-11, E14-12, E14-13, E14-14, E14-15, E14-16, E14-17, E14-19, E14-20]
+depends-on: [E14-01, E14-02, E14-03, E14-04, E14-05, E14-06, E14-07, E14-08, E14-09, E14-10, E14-11, E14-12, E14-13, E14-14, E14-15, E14-16, E14-17, E14-19, E14-20, E14-21]
 refs: [F3]
 covers: []
 type: closeout
@@ -4887,11 +4993,39 @@ has one, so they stay put while panes move between folders.
 **Verification:** `pnpm test`; manual on Windows with WSL: a Space with a pwsh pane and an Ubuntu pane, focus each and
 check Files and Git; pin a folder and focus both again.
 
+### E16-14 — Let a space have no tabs: close the last tab, show an empty workspace
+
+```yaml
+id: E16-14
+depends-on: [E16-12]
+refs: [TER-002, PRJ-002]
+covers: [TER-002]
+type: task
+scope: ui
+size: M
+```
+
+**Goal:** The last tab of a space can be closed, as any other. Today it can't: `nextActiveInSpace` returns null for it
+and `closeTab` refuses, so the code everywhere assumes every space has a tab and there is always an active one.
+
+**Acceptance criteria:**
+
+- [ ] The navigation store allows no active tab (`activeId: number | null`), per space; closing a space's last tab
+      leaves it empty instead of refusing, and switching to an empty space shows it empty (never another space's tab).
+- [ ] Every consumer of the active tab handles none (title bar, breadcrumb, window title, search, shortcuts that act
+      on a pane, command palette, persistence, boot), without scattered null checks.
+- [ ] The workspace of an empty space shows an empty state (existing empty-state patterns): a message and a button
+      to open a terminal, with the new-tab shortcut.
+- [ ] An empty space persists and restores empty.
+- [ ] Tests: close the last tab, switch to an empty space, restart with an empty space, open a tab from the empty state.
+
+**Verification:** `pnpm test`; manual: close every tab of a space, switch away and back, restart.
+
 ### E16-11 — Close-out: projects model and persistence
 
 ```yaml
 id: E16-11
-depends-on: [E16-01, E16-02, E16-03, E16-04, E16-05, E16-06, E16-07, E16-09, E16-10, E16-12, E16-13]
+depends-on: [E16-01, E16-02, E16-03, E16-04, E16-05, E16-06, E16-07, E16-09, E16-10, E16-12, E16-13, E16-14]
 refs: [F4]
 covers: []
 type: closeout
