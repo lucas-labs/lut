@@ -8,8 +8,8 @@ import type { Theme } from '../types';
  */
 export const lut: Theme = {
   id: 'lut',
-  name: 'lut',
-  description: "lut's own palette: deep green-greys with a lime accent.",
+  name: 'Lut',
+  description: "Lut's own palette: deep green-greys with a lime accent.",
   editorTheme: { dark: 'github-dark', light: 'github-light' },
   variants: {
     light: {},
