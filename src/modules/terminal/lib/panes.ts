@@ -17,7 +17,59 @@ export type PaneNode =
       id: PaneId;
       dir: SplitDir;
       children: PaneNode[];
+      /** Each child's share of the split, in child order; they sum to 1. */
+      ratios: number[];
     };
+
+/** Matches the renderer slot pool size — over this we'd evict an active leaf. */
+export const MAX_PANES_PER_TAB = 4;
+
+/** Whether one more pane fits in the tree. */
+export function canAddPane(tree: PaneNode): boolean {
+  return leafIds(tree).length < MAX_PANES_PER_TAB;
+}
+
+export function equalRatios(count: number): number[] {
+  return Array.from({ length: count }, () => 1 / count);
+}
+
+/**
+ * Scales `ratios` to sum 1 for `count` children. A list of the wrong length or with a
+ * non-positive or non-finite share gives equal shares instead.
+ */
+export function normaliseRatios(ratios: readonly number[], count: number): number[] {
+  if (ratios.length !== count || ratios.some((r) => !(r > 0) || !Number.isFinite(r))) {
+    return equalRatios(count);
+  }
+  const total = ratios.reduce((sum, r) => sum + r, 0);
+  return ratios.map((r) => r / total);
+}
+
+/** A split with equal shares for its children. */
+export function splitNode(id: PaneId, dir: SplitDir, children: PaneNode[]): PaneNode {
+  return { kind: 'split', id, dir, children, ratios: equalRatios(children.length) };
+}
+
+/** Sets one split's shares (normalised); the tree is returned as is when nothing changes. */
+export function setSplitRatios(
+  tree: PaneNode,
+  splitId: PaneId,
+  ratios: readonly number[],
+): PaneNode {
+  if (isLeaf(tree)) return tree;
+  if (tree.id === splitId) {
+    const next = normaliseRatios(ratios, tree.children.length);
+    const same = next.every((r, i) => Math.abs(r - tree.ratios[i]) < 1e-6);
+    return same ? tree : { ...tree, ratios: next };
+  }
+  let changed = false;
+  const children = tree.children.map((c) => {
+    const u = setSplitRatios(c, splitId, ratios);
+    if (u !== c) changed = true;
+    return u;
+  });
+  return changed ? { ...tree, children } : tree;
+}
 
 export function isLeaf(n: PaneNode): n is Extract<PaneNode, { kind: 'leaf' }> {
   return n.kind === 'leaf';
@@ -74,22 +126,19 @@ export function splitLeaf(
   if (tree.kind === 'split' && tree.dir === dir) {
     const idx = tree.children.findIndex((c) => c.kind === 'leaf' && c.id === targetId);
     if (idx >= 0) {
+      // The new pane takes half of the target's share; the other panes keep theirs.
       const newLeaf: PaneNode = { kind: 'leaf', id: newLeafId, cwd: newCwd };
+      const half = tree.ratios[idx] / 2;
       return {
         ...tree,
         children: [...tree.children.slice(0, idx + 1), newLeaf, ...tree.children.slice(idx + 1)],
+        ratios: [...tree.ratios.slice(0, idx), half, half, ...tree.ratios.slice(idx + 1)],
       };
     }
   }
   if (isLeaf(tree)) {
     if (tree.id !== targetId) return tree;
-    const newLeaf: PaneNode = { kind: 'leaf', id: newLeafId, cwd: newCwd };
-    return {
-      kind: 'split',
-      id: newSplitId,
-      dir,
-      children: [tree, newLeaf],
-    };
+    return splitNode(newSplitId, dir, [tree, { kind: 'leaf', id: newLeafId, cwd: newCwd }]);
   }
   return {
     ...tree,
@@ -98,19 +147,26 @@ export function splitLeaf(
 }
 
 /**
- * Remove a leaf and collapse single-child splits left in its wake. Returns
- * `null` when the entire subtree is gone.
+ * Remove a leaf and collapse single-child splits left in its wake. The removed child's share
+ * goes to the remaining children in proportion to theirs. Returns `null` when the entire
+ * subtree is gone.
  */
 export function removeLeaf(tree: PaneNode, targetId: PaneId): PaneNode | null {
   if (isLeaf(tree)) return tree.id === targetId ? null : tree;
-  const newChildren: PaneNode[] = [];
-  for (const c of tree.children) {
+  const children: PaneNode[] = [];
+  const ratios: number[] = [];
+  let changed = false;
+  tree.children.forEach((c, i) => {
     const r = removeLeaf(c, targetId);
-    if (r !== null) newChildren.push(r);
-  }
-  if (newChildren.length === 0) return null;
-  if (newChildren.length === 1) return newChildren[0];
-  return { ...tree, children: newChildren };
+    if (r !== c) changed = true;
+    if (r === null) return;
+    children.push(r);
+    ratios.push(tree.ratios[i]);
+  });
+  if (!changed) return tree;
+  if (children.length === 0) return null;
+  if (children.length === 1) return children[0];
+  return { ...tree, children, ratios: normaliseRatios(ratios, children.length) };
 }
 
 export function nextLeafId(tree: PaneNode, currentId: PaneId, delta: 1 | -1): PaneId {
@@ -152,12 +208,15 @@ type PaneRect = { id: PaneId; x: number; y: number; width: number; height: numbe
 
 function paneRects(node: PaneNode, x = 0, y = 0, width = 1, height = 1): PaneRect[] {
   if (isLeaf(node)) return [{ id: node.id, x, y, width, height }];
-  const count = node.children.length;
-  return node.children.flatMap((child, index) =>
-    node.dir === 'row'
-      ? paneRects(child, x + (width * index) / count, y, width / count, height)
-      : paneRects(child, x, y + (height * index) / count, width, height / count),
-  );
+  let offset = 0;
+  return node.children.flatMap((child, index) => {
+    const share = node.ratios[index];
+    const start = offset;
+    offset += share;
+    return node.dir === 'row'
+      ? paneRects(child, x + width * start, y, width * share, height)
+      : paneRects(child, x, y + height * start, width, height * share);
+  });
 }
 
 function directionalTarget(

@@ -59,6 +59,7 @@ describe('serializeTabs', () => {
       kind: 'split',
       id: 10,
       dir: 'row',
+      ratios: [0.5, 0.5],
       children: [
         { kind: 'leaf', id: 11, cwd: '/a' },
         { kind: 'leaf', id: 12, cwd: '/b' },
@@ -80,6 +81,7 @@ describe('hydrateTabs', () => {
       kind: 'split',
       id: 10,
       dir: 'col',
+      ratios: [0.5, 0.5],
       children: [
         { kind: 'leaf', id: 11, cwd: '/a' },
         { kind: 'leaf', id: 12, cwd: '/b' },
@@ -123,6 +125,7 @@ describe('hydrateTabs', () => {
       kind: 'split',
       id: 10,
       dir: 'row',
+      ratios: [0.5, 0.5],
       children: [
         { kind: 'leaf', id: 11, cwd: '/a' },
         { kind: 'leaf', id: 12, cwd: '/b' },

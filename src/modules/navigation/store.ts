@@ -1,6 +1,7 @@
 import { isMarkdownPath } from '@/lib/utils';
 import { type AgentInstanceCount, createAgentPanePlan } from '@/modules/agents/lib/launcher';
 import {
+  canAddPane,
   findLeafCwd,
   hasLeaf,
   leafIds,
@@ -31,7 +32,6 @@ import {
   type EditorTab,
   type GitCommitFileDiffTab,
   type GitDiffOpenInput,
-  MAX_PANES_PER_TAB,
   type OpenFileTabOptions,
   type Tab,
   type TabPatch,
@@ -642,7 +642,7 @@ export const useNavigationStore = create<NavigationState>()((set, get) => {
     /** Split the active leaf of `tabId` along `dir`. Returns the new leaf id. */
     splitActivePane: (tabId, dir) => {
       const tab = get().tabs.find((t) => t.id === tabId);
-      if (tab?.kind !== 'terminal' || leafIds(tab.paneTree).length >= MAX_PANES_PER_TAB) {
+      if (tab?.kind !== 'terminal' || !canAddPane(tab.paneTree)) {
         return null;
       }
       const splitId = alloc();

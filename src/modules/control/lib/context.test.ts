@@ -12,6 +12,7 @@ const tabs: Tab[] = [
       kind: 'split',
       id: 11,
       dir: 'row',
+      ratios: [0.5, 0.5],
       children: [
         { kind: 'leaf', id: 12 },
         { kind: 'leaf', id: 13 },

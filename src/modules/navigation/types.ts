@@ -1,7 +1,6 @@
 import type { PaneNode } from '@/modules/terminal/lib/panes';
 
-// Matches the renderer slot pool size — over this we'd evict an active leaf.
-export const MAX_PANES_PER_TAB = 4;
+export { MAX_PANES_PER_TAB } from '@/modules/terminal/lib/panes';
 
 type TabBase = {
   spaceId: string;

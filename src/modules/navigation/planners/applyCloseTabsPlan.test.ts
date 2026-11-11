@@ -57,6 +57,7 @@ describe('applyCloseTabsPlan', () => {
         kind: 'split',
         id: 99,
         dir: 'row',
+        ratios: [0.5, 0.5],
         children: [
           { kind: 'leaf', id: 20 },
           { kind: 'leaf', id: 21 },

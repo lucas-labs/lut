@@ -243,6 +243,7 @@ describe('WorkspaceSurface keeps terminals mounted', () => {
       kind: 'split',
       id: 100,
       dir: 'row',
+      ratios: [1 / 3, 1 / 3, 1 / 3],
       children: [
         { kind: 'leaf', id: 10 },
         { kind: 'leaf', id: 11 },
