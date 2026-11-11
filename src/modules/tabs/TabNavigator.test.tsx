@@ -128,15 +128,16 @@ describe('TabNavigator', () => {
     expect(actions.select).not.toHaveBeenCalled();
   });
 
-  it('selects the focused tab on Enter and Space', async () => {
+  it('selects a tab activated without a pointer (Enter, Space, a screen reader), not on a pointer click', async () => {
     await render();
-    for (const key of ['Enter', ' ']) {
-      await act(async () => {
-        tabs()[1].dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key }));
-      });
-    }
-    expect(actions.select).toHaveBeenCalledTimes(2);
-    expect(actions.select).toHaveBeenCalledWith(items()[1].id);
+    await act(async () => {
+      tabs()[1].dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
+    });
+    expect(actions.select).not.toHaveBeenCalled();
+    await act(async () => {
+      tabs()[1].dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 0 }));
+    });
+    expect(actions.select).toHaveBeenCalledExactlyOnceWith(items()[1].id);
   });
 
   it('closes a tab on a middle click', async () => {

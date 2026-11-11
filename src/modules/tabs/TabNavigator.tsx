@@ -127,16 +127,8 @@ export function TabNavigator({
     active?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }, [activeId]);
 
-  /**
-   * Arrow keys move to the neighbouring tab, Home/End to the ends, as in a tablist. Enter/Space select the focused
-   * tab (a pointer selects on release, so the button has no click handler to do it).
-   */
+  /** Arrow keys move to the neighbouring tab, Home/End to the ends, as in a tablist. */
   const onTabKeyDown = (e: KeyboardEvent, index: number) => {
-    if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
-      e.preventDefault();
-      actions.select(items[index].id);
-      return;
-    }
     const prev = vertical ? 'ArrowUp' : 'ArrowLeft';
     const next = vertical ? 'ArrowDown' : 'ArrowRight';
     let target: number | null = null;
@@ -231,6 +223,11 @@ export function TabNavigator({
           endDrag(e.currentTarget);
         }}
         onPointerCancel={(e) => endDrag(e.currentTarget)}
+        // A pointer selects on release, above (a drag must not). A click with no pointer behind it (detail 0) is
+        // Enter/Space or a screen reader activating the button.
+        onClick={(e) => {
+          if (e.detail === 0) actions.select(t.id);
+        }}
         onDoubleClick={() => t.preview && actions.pin(t.id)}
         onAuxClick={(e) => {
           if (e.button === 1 && items.length > 1) {
