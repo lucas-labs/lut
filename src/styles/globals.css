@@ -289,7 +289,7 @@ html[data-live-resize] body::after {
   zoom: calc(1 / var(--app-zoom));
 }
 
-/* Custom window chrome (Linux; lib/windowFrame.ts): the OS gives us a transparent
+/* Custom window chrome (Linux; modules/platform/windowFrame.ts): the OS gives us a transparent
  * borderless window, and we paint the rounded corners + border ourselves so the
  * app doesn't look naked on GNOME/KDE/Hyprland. A maximized or full-screen window
  * fills the screen edge to edge, so it drops both. */

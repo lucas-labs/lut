@@ -1,6 +1,6 @@
 import type { Tab } from '@/modules/navigation';
+import { setWindowTitle } from '@/modules/platform';
 import { findLeafCwd } from '@/modules/terminal/lib/panes';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useEffect } from 'react';
 
 const APP_NAME = 'lut';
@@ -39,8 +39,6 @@ export function useWindowTitle(activeTab: Tab | undefined, explorerRoot: string 
     else title = project || label || APP_NAME;
 
     document.title = title;
-    void getCurrentWindow()
-      .setTitle(title)
-      .catch(() => {});
+    void setWindowTitle(title).catch(() => {});
   }, [project, label]);
 }

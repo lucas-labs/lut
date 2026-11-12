@@ -24,8 +24,7 @@ import {
   useNavigationStore,
   useNavigatorItems,
 } from '@/modules/navigation';
-import { getLaunchDir } from '@/modules/platform';
-import { IS_MAC } from '@/modules/platform';
+import { closeWindow, getLaunchDir, IS_MAC } from '@/modules/platform';
 import type { PreviewPaneHandle } from '@/modules/preview';
 import { openSettingsWindow } from '@/modules/settings/openSettingsWindow';
 import { usePreferencesStore } from '@/modules/settings/preferences';
@@ -64,7 +63,6 @@ import {
   WindowVibrancyBridge,
 } from '@/modules/theme';
 import { useWorkspaceEnvStore, workspaceNative, workspaceScopeKey } from '@/modules/workspace';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { AppShell } from './AppShell';
@@ -654,7 +652,7 @@ export default function App() {
       if (!tab || tab.kind !== 'terminal') return;
       // Last pane of the last tab: quit instead of respawning a shell.
       if (leafIds(tab.paneTree).length === 1 && all.length === 1) {
-        void getCurrentWindow().close();
+        void closeWindow();
       } else {
         closePaneByLeaf(leafId);
       }

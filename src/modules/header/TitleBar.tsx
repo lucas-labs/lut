@@ -1,12 +1,11 @@
 import { AppLogo } from '@/components/AppLogo';
 import { WindowControls } from '@/components/WindowControls';
 import { TitleBarHoldProvider } from '@/lib/titleBarHold';
-import { dragRegion, useWindowFullScreen } from '@/lib/useWindowFullScreen';
 import { cn } from '@/lib/utils';
 import { NotificationBell } from '@/modules/agents';
 import type { AgentLaunchRequest } from '@/modules/agents/lib/launcher';
 import type { TabNavigatorActions, TabNavigatorItem } from '@/modules/navigation';
-import { IS_MAC, USE_CUSTOM_WINDOW_CONTROLS } from '@/modules/platform';
+import { dragRegion, IS_MAC, USE_CUSTOM_WINDOW_CONTROLS, useWindowFullScreen } from '@/modules/platform';
 import { TabNavigator } from '@/modules/tabs';
 import { SidebarLeftIcon, SlidersHorizontalIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';

@@ -1,5 +1,5 @@
-import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useEffect, useState } from 'react';
+import { isWindowFullScreen, onWindowResized } from './window';
 
 /** Whether the window is in OS full screen, kept current as the window resizes. */
 export function useWindowFullScreen(): boolean {
@@ -7,27 +7,18 @@ export function useWindowFullScreen(): boolean {
 
   useEffect(() => {
     let alive = true;
-    let unlisten: (() => void) | undefined;
-    const win = getCurrentWindow();
     const sync = () => {
-      void win
-        .isFullscreen()
+      void isWindowFullScreen()
         .then((value) => {
           if (alive) setFullScreen(value);
         })
         .catch(() => {});
     };
     sync();
-    void win
-      .onResized(sync)
-      .then((stop) => {
-        if (alive) unlisten = stop;
-        else stop();
-      })
-      .catch(() => {});
+    const stop = onWindowResized(sync);
     return () => {
       alive = false;
-      unlisten?.();
+      stop();
     };
   }, []);
 

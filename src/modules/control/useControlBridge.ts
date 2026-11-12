@@ -1,8 +1,8 @@
 import { DEFAULT_SPACE_ID, useNavigationStore } from '@/modules/navigation';
+import { bringWindowToFront } from '@/modules/platform';
 import { useSpaces } from '@/modules/spaces';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useEffect } from 'react';
 import { resolveControlContext } from './lib/context';
 import { createReadinessQueue } from './lib/readiness';
@@ -111,10 +111,8 @@ export function useControlBridge({ ready, onOpen }: UseControlBridgeOptions): vo
           const open = parseOpenRequest(request.params);
           let focused = false;
           if (open.focus) {
-            const window = getCurrentWindow();
             try {
-              await window.show();
-              await window.setFocus();
+              await bringWindowToFront();
               focused = true;
             } catch (error) {
               console.warn('[lut] could not focus control target:', error);

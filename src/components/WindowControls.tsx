@@ -1,7 +1,13 @@
-import { useWindowFullScreen } from '@/lib/useWindowFullScreen';
 import { cn } from '@/lib/utils';
-import { USE_CUSTOM_WINDOW_CONTROLS } from '@/modules/platform';
-import { getCurrentWindow } from '@tauri-apps/api/window';
+import {
+  closeWindow,
+  isWindowMaximized,
+  minimizeWindow,
+  onWindowResized,
+  toggleMaximizeWindow,
+  USE_CUSTOM_WINDOW_CONTROLS,
+  useWindowFullScreen,
+} from '@/modules/platform';
 import { useEffect, useState } from 'react';
 import { CloseIcon, MaximizeIcon, MinimizeIcon, RestoreIcon } from './windowControlIcons';
 
@@ -16,37 +22,27 @@ export function WindowControls({ closeOnly = false }: Props) {
 
   useEffect(() => {
     if (!USE_CUSTOM_WINDOW_CONTROLS || closeOnly) return;
-    const w = getCurrentWindow();
-    let unlisten: (() => void) | undefined;
-    void w.isMaximized().then(setMaximized);
-    void w
-      .onResized(() => {
-        void w.isMaximized().then(setMaximized);
-      })
-      .then((un) => {
-        unlisten = un;
-      });
-    return () => unlisten?.();
+    const sync = () => void isWindowMaximized().then(setMaximized);
+    sync();
+    return onWindowResized(sync);
   }, [closeOnly]);
 
   if (!USE_CUSTOM_WINDOW_CONTROLS) return null;
 
-  const w = getCurrentWindow();
-
   return (
     <div className="flex h-full shrink-0 items-start self-start">
       {!closeOnly && (
-        <CtlButton ariaLabel="Minimize" onClick={() => void w.minimize()}>
+        <CtlButton ariaLabel="Minimize" onClick={() => void minimizeWindow()}>
           <MinimizeIcon />
         </CtlButton>
       )}
       {/* Maximize means nothing to a full-screen window; F11 leaves full screen. */}
       {!closeOnly && !fullScreen && (
-        <CtlButton ariaLabel={maximized ? 'Restore' : 'Maximize'} onClick={() => void w.toggleMaximize()}>
+        <CtlButton ariaLabel={maximized ? 'Restore' : 'Maximize'} onClick={() => void toggleMaximizeWindow()}>
           {maximized ? <RestoreIcon /> : <MaximizeIcon />}
         </CtlButton>
       )}
-      <CtlButton ariaLabel="Close" onClick={() => void w.close()} danger>
+      <CtlButton ariaLabel="Close" onClick={() => void closeWindow()} danger>
         <CloseIcon />
       </CtlButton>
     </div>

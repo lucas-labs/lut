@@ -1,13 +1,11 @@
 import './styles/globals.css';
 
-import { initLaunchDir } from '@/modules/platform';
+import { initLaunchDir, initWindowFrame, showHiddenWindow } from '@/modules/platform';
 import { startSessionReconciler } from '@/modules/sessions';
 import { terminalDiagnosticsEnabled } from '@/modules/terminal/lib/terminalDiagnosticsEnabled';
 import { invoke } from '@tauri-apps/api/core';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 import ReactDOM from 'react-dom/client';
 import App from './app/App';
-import { initWindowFrame } from './lib/windowFrame';
 
 initWindowFrame();
 
@@ -36,17 +34,8 @@ startSessionReconciler();
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(<App />);
 
-// Window starts hidden (per tauri.conf.json) so users never see a transparent
-// shadow-only frame before React paints. Use setTimeout — rAF is throttled
-// while the window is hidden and would never fire.
-const showWindow = () => {
-  getCurrentWindow()
-    .show()
-    .catch((e) => console.error('window.show failed:', e));
-};
-setTimeout(showWindow, 50);
-// Safety net: if the first show somehow fails to take effect, force again.
-setTimeout(showWindow, 500);
+// The window starts hidden (tauri.conf.json) until React paints.
+showHiddenWindow('window.show');
 
 if (terminalDiagnosticsEnabled()) {
   void import('@/modules/terminal/lib/terminalDiagnostics').then((diagnostics) =>
