@@ -39,7 +39,7 @@ let host: HTMLElement;
 /** Lets the window calls (promises) run. */
 async function settle() {
   await act(async () => {
-    for (let i = 0; i < 5; i++) await Promise.resolve();
+    for (let i = 0; i < 20; i++) await Promise.resolve();
   });
 }
 
@@ -89,6 +89,29 @@ describe('useFocusMode', () => {
     await settle();
     expect(api().focusMode).toBe(false);
     expect(win.fullScreen).toBe(false);
+    expect(win.calls).toEqual([]);
+  });
+
+  it('lets a quick leave and enter again end in full screen', async () => {
+    act(() => api().toggleFocusMode());
+    await settle();
+    act(() => {
+      api().toggleFocusMode();
+      api().toggleFocusMode();
+    });
+    await settle();
+    expect(api().focusMode).toBe(true);
+    expect(win.fullScreen).toBe(true);
+    expect(win.calls).toEqual([true, false, true]);
+  });
+
+  it('toggles full screen twice on two quick presses', async () => {
+    act(() => {
+      api().toggleFullScreen();
+      api().toggleFullScreen();
+    });
+    await settle();
+    expect(win.calls).toEqual([true, false]);
   });
 
   it('toggles full screen on its own, without focus mode', async () => {
