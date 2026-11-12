@@ -973,7 +973,7 @@ export default function App() {
           }
           tabsColumn={
             verticalTabs ? (
-              <div className="h-full min-h-0 bg-frame">
+              <div className="h-full min-h-0">
                 <TabNavigator
                   orientation="vertical"
                   heading={activeSpaceName}
