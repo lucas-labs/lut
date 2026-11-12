@@ -17,13 +17,15 @@ function handleClass(open: boolean) {
 }
 
 /**
- * A side panel whose `defaultSize` is the one it mounted with. The panel library re-registers a panel and lays its
- * group out again whenever `defaultSize` changes, so a size that follows the panel's own state (collapsed or not)
- * feeds back into itself.
+ * A side panel: it keeps its width in pixels when the window resizes, and the workspace takes the difference.
+ *
+ * Its `defaultSize` is the one it mounted with. The panel library re-registers a panel and lays its group out again
+ * whenever `defaultSize` changes, so a size that follows the panel's own state (collapsed or not) feeds back into
+ * itself.
  */
 function SidePanel({ defaultSize, ...props }: ComponentProps<typeof ResizablePanel>) {
   const [mountedSize] = useState(defaultSize);
-  return <ResizablePanel defaultSize={mountedSize} {...props} />;
+  return <ResizablePanel groupResizeBehavior="preserve-pixel-size" defaultSize={mountedSize} {...props} />;
 }
 
 type Props = {
