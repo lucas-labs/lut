@@ -6,11 +6,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const win = vi.hoisted(() => ({
   fullScreen: false,
   calls: [] as boolean[],
+  read: vi.fn<() => Promise<boolean>>(),
 }));
 
 vi.mock('@tauri-apps/api/window', () => ({
   getCurrentWindow: () => ({
-    isFullscreen: async () => win.fullScreen,
+    isFullscreen: () => win.read(),
     setFullscreen: async (value: boolean) => {
       win.calls.push(value);
       win.fullScreen = value;
@@ -47,6 +48,7 @@ beforeEach(() => {
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   win.fullScreen = false;
   win.calls = [];
+  win.read.mockReset().mockImplementation(async () => win.fullScreen);
   host = document.createElement('div');
   root = createRoot(host);
   act(() => root.render(createElement(Host)));
@@ -91,6 +93,37 @@ describe('useFocusMode', () => {
     expect(win.fullScreen).toBe(false);
     expect(win.calls).toEqual([]);
   });
+
+  it.each(['before the read starts', 'while the read is pending', 'after the read resolves'])(
+    'preserves entry, F11, exit order when exit happens %s',
+    async (timing) => {
+      let resolveRead!: (value: boolean) => void;
+      const read = new Promise<boolean>((resolve) => {
+        resolveRead = resolve;
+      });
+      win.read.mockImplementationOnce(() => read);
+
+      act(() => api().toggleFocusMode());
+      if (timing !== 'before the read starts') {
+        await settle();
+        expect(win.read).toHaveBeenCalledTimes(1);
+      }
+      if (timing === 'after the read resolves') {
+        resolveRead(false);
+        await settle();
+      }
+      act(() => {
+        api().toggleFullScreen();
+        api().toggleFocusMode();
+      });
+      resolveRead(false);
+      await settle();
+
+      expect(api().focusMode).toBe(false);
+      expect(win.fullScreen).toBe(false);
+      expect(win.calls).toEqual([true, false, false]);
+    },
+  );
 
   it('lets a quick leave and enter again end in full screen', async () => {
     act(() => api().toggleFocusMode());
