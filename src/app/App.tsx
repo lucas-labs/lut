@@ -91,6 +91,7 @@ import { CloseDialogs } from './components/CloseDialogs';
 import { WorkspaceSurface } from './components/WorkspaceSurface';
 import { hasOpenPathTab, renamedPath, spacesEmptiedByTabs } from './hooks/tabCloseGuards';
 import { useAppCloseGuard } from './hooks/useAppCloseGuard';
+import { useFocusMode } from './hooks/useFocusMode';
 import { useTabCloseGuards } from './hooks/useTabCloseGuards';
 import { useWorkspaceSwitcher } from './hooks/useWorkspaceSwitcher';
 import { registerTabPresenters } from './tabPresenters';
@@ -213,7 +214,6 @@ export default function App() {
     sidebarWidthRef,
     sidebarView,
     sidebarCollapsed,
-    initialSidebarCollapsed,
     persistSidebarView,
     persistSidebarCollapsed,
     toggleSidebar,
@@ -647,7 +647,7 @@ export default function App() {
     void handleClose(activeId);
   }, [activeId, closeActivePane, handleClose]);
 
-  const [zenMode, setZenMode] = useState(false);
+  const { focusMode, toggleFocusMode, toggleFullScreen } = useFocusMode();
   const tabOrientation = usePreferencesStore((s) => s.tabOrientation);
   const verticalTabs = tabOrientation === 'vertical';
   const {
@@ -732,7 +732,8 @@ export default function App() {
       'view.zoomIn': zoomIn,
       'view.zoomOut': zoomOut,
       'view.zoomReset': zoomReset,
-      'view.zenMode': () => setZenMode((v) => !v),
+      'view.focusMode': toggleFocusMode,
+      'view.fullScreen': toggleFullScreen,
       'view.tabOrientation': toggleTabOrientation,
       'view.tabsColumn': toggleTabsColumn,
       'editor.undo': () => editorRefs.current.get(activeId)?.undo(),
@@ -768,6 +769,8 @@ export default function App() {
       toggleTabOrientation,
       toggleTabsColumn,
       openSidebarView,
+      toggleFocusMode,
+      toggleFullScreen,
     ],
   );
 
@@ -1116,33 +1119,32 @@ export default function App() {
         )}
         <AppShell
           titleBarPlacement={verticalTabs ? 'overlay' : 'inline'}
+          focusMode={focusMode}
           titleBar={
-            zenMode ? null : (
-              <TitleBar
-                placement={verticalTabs ? 'overlay' : 'inline'}
-                tabs={navigatorItems}
-                tabActions={tabActions}
-                onNew={openNewTab}
-                onNewPrivate={openNewPrivateTab}
-                onNewPreview={() => openPreviewTab('')}
-                onNewEditor={() => setNewEditorOpen(true)}
-                onNewGitGraph={openGitGraphFromContext}
-                onLaunchAgents={launchAgentGroup}
-                sidePanelsOpen={!sidebarCollapsed || (verticalTabs && !tabsColumnCollapsed)}
-                onToggleSidebar={toggleSidePanels}
-                onActivateAgent={onActivateAgent}
-                onOpenSettings={() => void openSettingsWindow()}
-                searchTarget={searchTarget}
-                searchRef={searchInlineRef}
-                cwd={activeCwd}
-                filePath={activeFilePath}
-                home={home}
-                onCd={sendCd}
-              />
-            )
+            <TitleBar
+              placement={verticalTabs ? 'overlay' : 'inline'}
+              tabs={navigatorItems}
+              tabActions={tabActions}
+              onNew={openNewTab}
+              onNewPrivate={openNewPrivateTab}
+              onNewPreview={() => openPreviewTab('')}
+              onNewEditor={() => setNewEditorOpen(true)}
+              onNewGitGraph={openGitGraphFromContext}
+              onLaunchAgents={launchAgentGroup}
+              sidePanelsOpen={!sidebarCollapsed || (verticalTabs && !tabsColumnCollapsed)}
+              onToggleSidebar={toggleSidePanels}
+              onActivateAgent={onActivateAgent}
+              onOpenSettings={() => void openSettingsWindow()}
+              searchTarget={searchTarget}
+              searchRef={searchInlineRef}
+              cwd={activeCwd}
+              filePath={activeFilePath}
+              home={home}
+              onCd={sendCd}
+            />
           }
           tabsColumn={
-            verticalTabs && !zenMode ? (
+            verticalTabs ? (
               <div className="h-full min-h-0 bg-frame">
                 <TabNavigator
                   orientation="vertical"
@@ -1165,7 +1167,7 @@ export default function App() {
           sidebarOpen={!sidebarCollapsed}
           tabsColumnOpen={!tabsColumnCollapsed}
           sidebarRef={sidebarRef}
-          sidebarInitialWidth={initialSidebarCollapsed ? 0 : sidebarWidthRef.current}
+          sidebarInitialWidth={sidebarCollapsed ? 0 : sidebarWidthRef.current}
           onSidebarLayout={persistSidebarWidth}
           onSidebarCollapsedChange={persistSidebarCollapsed}
           sidebar={
@@ -1223,7 +1225,7 @@ export default function App() {
           }
           workspace={
             <WorkspaceSurface
-              insetFromSidePanel={!sidebarCollapsed || (verticalTabs && !tabsColumnCollapsed)}
+              insetFromSidePanel={!focusMode && (!sidebarCollapsed || (verticalTabs && !tabsColumnCollapsed))}
               tabs={tabs}
               activeId={activeId}
               activeTab={activeTab}

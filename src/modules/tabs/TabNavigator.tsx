@@ -31,6 +31,8 @@ type Props = {
   heading?: string;
   /** Narrow window: shorter titles in the strip. */
   compact?: boolean;
+  /** The strip's `data-tauri-drag-region` value: "false" while the window is full screen. */
+  dragRegion?: '' | 'false';
   onNew: () => void;
   onNewPrivate: () => void;
   onNewPreview: () => void;
@@ -51,6 +53,7 @@ export function TabNavigator({
   orientation,
   heading,
   compact,
+  dragRegion = '',
   onNew,
   onNewPrivate,
   onNewPreview,
@@ -331,7 +334,7 @@ export function TabNavigator({
         ref={scrollRef}
         role="tablist"
         aria-orientation="horizontal"
-        data-tauri-drag-region
+        data-tauri-drag-region={dragRegion}
         className={cn('flex h-full min-w-0 items-end gap-0.5 overflow-x-auto', HIDDEN_SCROLLBAR)}
       >
         {cells}

@@ -1,4 +1,5 @@
 import { USE_CUSTOM_WINDOW_CONTROLS } from '@/lib/platform';
+import { useWindowFullScreen } from '@/lib/useWindowFullScreen';
 import { cn } from '@/lib/utils';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useEffect, useState } from 'react';
@@ -11,6 +12,7 @@ type Props = {
 
 export function WindowControls({ closeOnly = false }: Props) {
   const [maximized, setMaximized] = useState(false);
+  const fullScreen = useWindowFullScreen();
 
   useEffect(() => {
     if (!USE_CUSTOM_WINDOW_CONTROLS || closeOnly) return;
@@ -34,14 +36,15 @@ export function WindowControls({ closeOnly = false }: Props) {
   return (
     <div className="flex h-full shrink-0 items-start self-start">
       {!closeOnly && (
-        <>
-          <CtlButton ariaLabel="Minimize" onClick={() => void w.minimize()}>
-            <MinimizeIcon />
-          </CtlButton>
-          <CtlButton ariaLabel={maximized ? 'Restore' : 'Maximize'} onClick={() => void w.toggleMaximize()}>
-            {maximized ? <RestoreIcon /> : <MaximizeIcon />}
-          </CtlButton>
-        </>
+        <CtlButton ariaLabel="Minimize" onClick={() => void w.minimize()}>
+          <MinimizeIcon />
+        </CtlButton>
+      )}
+      {/* Maximize means nothing to a full-screen window; F11 leaves full screen. */}
+      {!closeOnly && !fullScreen && (
+        <CtlButton ariaLabel={maximized ? 'Restore' : 'Maximize'} onClick={() => void w.toggleMaximize()}>
+          {maximized ? <RestoreIcon /> : <MaximizeIcon />}
+        </CtlButton>
       )}
       <CtlButton ariaLabel="Close" onClick={() => void w.close()} danger>
         <CloseIcon />

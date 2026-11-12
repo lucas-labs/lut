@@ -47,7 +47,8 @@ explorer.toggleHidden: Shift+Cmd+.
 view.zoomIn: Cmd+=, Shift+Cmd++
 view.zoomOut: Cmd+-, Shift+Cmd+_
 view.zoomReset: Cmd+0
-view.zenMode: Shift+Cmd+'
+view.focusMode: Shift+Cmd+'
+view.fullScreen: Ctrl+Cmd+f
 view.tabOrientation: Shift+Cmd+y
 view.tabsColumn: Shift+Cmd+j
 editor.undo: Cmd+z
@@ -138,7 +139,8 @@ const TUI_EVENTS: { name: string; event: Partial<KeyboardEvent> }[] = [
     event: { key, code: key, ctrlKey: true },
   })),
   ...Array.from({ length: 12 }, (_, index) => `F${index + 1}`).flatMap((key) => [
-    { name: key, event: { key, code: key } },
+    // A plain F11 never reaches a terminal program: every terminal takes it for full screen (lut too).
+    ...(key === 'F11' ? [] : [{ name: key, event: { key, code: key } }]),
     { name: `Shift+${key}`, event: { key, code: key, shiftKey: true } },
     { name: `Ctrl+${key}`, event: { key, code: key, ctrlKey: true } },
   ]),
@@ -233,7 +235,9 @@ describe('Windows and Linux defaults', () => {
           !!binding.alt && !!binding.ctrl && binding.key.length === 1,
           `${text} is AltGr on many layouts`,
         ).toBe(false);
-        expect(/^F\d+$/.test(binding.key), `${text} is a function key`).toBe(false);
+        // F11 is full screen in every terminal, so no terminal program counts on it.
+        const fullScreen = id === 'view.fullScreen' && binding.key === 'F11';
+        expect(/^F\d+$/.test(binding.key) && !fullScreen, `${text} is a function key`).toBe(false);
       }
     }
   });

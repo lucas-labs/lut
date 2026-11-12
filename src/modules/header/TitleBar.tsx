@@ -1,6 +1,7 @@
 import { WindowControls } from '@/components/WindowControls';
 import { IS_MAC, USE_CUSTOM_WINDOW_CONTROLS } from '@/lib/platform';
 import { TitleBarHoldProvider } from '@/lib/titleBarHold';
+import { dragRegion, useWindowFullScreen } from '@/lib/useWindowFullScreen';
 import { cn } from '@/lib/utils';
 import { NotificationBell } from '@/modules/agents';
 import type { AgentLaunchRequest } from '@/modules/agents/lib/launcher';
@@ -99,6 +100,7 @@ function TitleBarRow({
   const inline = placement === 'inline';
   const rootRef = useRef<HTMLDivElement>(null);
   const [compact, setCompact] = useState(false);
+  const drag = dragRegion(useWindowFullScreen());
 
   useEffect(() => {
     const el = rootRef.current;
@@ -121,7 +123,7 @@ function TitleBarRow({
   return (
     <div
       ref={rootRef}
-      data-tauri-drag-region
+      data-tauri-drag-region={drag}
       // Empty chrome falls through to WebKit Reload, which reloads the webview and closes every shell. Menus of
       // the tabs and the breadcrumb still open: Radix handles their triggers before this bubbles.
       onContextMenu={(e) => e.preventDefault()}
@@ -152,6 +154,7 @@ function TitleBarRow({
           items={tabs}
           actions={tabActions}
           compact={compact}
+          dragRegion={drag}
           onNew={onNew}
           onNewPrivate={onNewPrivate}
           onNewPreview={onNewPreview}
@@ -160,7 +163,7 @@ function TitleBarRow({
           onLaunchAgents={onLaunchAgents}
         />
       )}
-      <span data-tauri-drag-region className="h-full min-w-24 flex-1" />
+      <span data-tauri-drag-region={drag} className="h-full min-w-24 flex-1" />
       {/* The path sits by the search, so the left side is the tabs' alone. */}
       <CwdBreadcrumb cwd={cwd} filePath={filePath} home={home} onCd={onCd} />
       <span aria-hidden className="w-1.5 shrink-0" />

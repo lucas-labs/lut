@@ -11,7 +11,8 @@ import type { KeyBinding, ShortcutId } from './shortcuts';
  * end of input, Ctrl+[ for Escape, Ctrl+] tag jump, Ctrl+- undo ...), so an
  * application default there is never a plain Ctrl chord that is a control
  * byte, never an Alt or Alt+Shift chord (Meta bindings of readline, emacs,
- * nano and tmux), never an unmodified or Shift function key (mc, htop, vim),
+ * nano and tmux), never an unmodified or Shift function key (mc, htop, vim)
+ * except F11 for full screen, which terminals already take,
  * and never Ctrl+Alt+<character> (AltGr on many layouts). Commands take
  * Ctrl+Shift+<key> as Windows Terminal and VS Code's terminal do, plus Ctrl
  * with a comma or an equals sign. Chords also avoid what the editor's
@@ -73,7 +74,8 @@ export const MAC_DEFAULTS: Readonly<Record<ShortcutId, readonly KeyBinding[]>> =
     { shift: true, meta: true, key: '_' },
   ],
   'view.zoomReset': [{ meta: true, key: '0' }],
-  'view.zenMode': [{ shift: true, meta: true, key: "'" }],
+  'view.focusMode': [{ shift: true, meta: true, key: "'" }],
+  'view.fullScreen': [{ ctrl: true, meta: true, key: 'f' }],
   'view.tabOrientation': [{ shift: true, meta: true, key: 'y' }],
   'view.tabsColumn': [{ shift: true, meta: true, key: 'j' }],
   'editor.undo': [{ meta: true, key: 'z' }],
@@ -128,7 +130,9 @@ export const WIN_LINUX_DEFAULTS: Readonly<Record<ShortcutId, readonly KeyBinding
   ],
   'view.zoomOut': [{ ...CS, key: '-' }],
   'view.zoomReset': [{ ctrl: true, key: '0' }],
-  'view.zenMode': [{ ...CS, key: "'" }],
+  'view.focusMode': [{ ...CS, key: "'" }],
+  // The one function key: F11 is full screen in Windows Terminal, GNOME Terminal and Konsole alike.
+  'view.fullScreen': [{ key: 'F11' }],
   'view.tabOrientation': [{ ...CS, key: 'y' }],
   'view.tabsColumn': [{ ...CS, key: 'j' }],
   'editor.undo': [{ ctrl: true, key: 'z' }],
