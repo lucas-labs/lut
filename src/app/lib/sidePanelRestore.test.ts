@@ -2,9 +2,9 @@ import type { Layout } from 'react-resizable-panels';
 import { describe, expect, it } from 'vitest';
 import {
   foldSideLayoutChange,
+  settledLayout,
   type SideLayoutChange,
   sideLayoutChange,
-  sidePanelsToSettle,
 } from './sidePanelRestore';
 
 const SIDE = ['sidebar', 'tabs-column'] as const;
@@ -111,26 +111,47 @@ describe('foldSideLayoutChange', () => {
   });
 });
 
-describe('sidePanelsToSettle', () => {
-  it('lists only the panels away from their target', () => {
+describe('settledLayout', () => {
+  it('moves only the panels away from their target, and the workspace takes the difference', () => {
     const layout = { sidebar: 20, 'tabs-column': 0, workspace: 80 };
-    expect(sidePanelsToSettle({ sidebar: 200, 'tabs-column': 150 }, layout, px(layout))).toEqual([
-      ['tabs-column', 150],
-    ]);
+    expect(settledLayout({ sidebar: 200, 'tabs-column': 150 }, layout, 1000, 'workspace')).toEqual({
+      sidebar: 20,
+      'tabs-column': 15,
+      workspace: 65,
+    });
   });
 
-  it('collapses an open panel whose target is closed', () => {
+  it('closes an open panel whose target is closed', () => {
     const layout = { sidebar: 20, workspace: 80 };
-    expect(sidePanelsToSettle({ sidebar: 0 }, layout, px(layout))).toEqual([['sidebar', 0]]);
+    expect(settledLayout({ sidebar: 0 }, layout, 1000, 'workspace')).toEqual({
+      sidebar: 0,
+      workspace: 100,
+    });
+  });
+
+  it('keeps a panel already at its target where it is while a panel beside it grows', () => {
+    // Back to vertical tabs after a horizontal-mode drag widened the sidebar: the column must not pay for it.
+    const layout = { sidebar: 22, 'tabs-column': 14, workspace: 64 };
+    expect(settledLayout({ sidebar: 480, 'tabs-column': 140 }, layout, 1000, 'workspace')).toEqual({
+      sidebar: 48,
+      'tabs-column': 14,
+      workspace: 38,
+    });
   });
 
   it('needs nothing when the batch already ended where it should', () => {
     const layout = { sidebar: 0, 'tabs-column': 0, workspace: 100 };
-    expect(sidePanelsToSettle({ sidebar: 0, 'tabs-column': 0 }, layout, px(layout))).toEqual([]);
+    expect(settledLayout({ sidebar: 0, 'tabs-column': 0 }, layout, 1000, 'workspace')).toBeNull();
   });
 
   it('ignores a panel that is no longer in the group', () => {
     const layout = { sidebar: 0, workspace: 100 };
-    expect(sidePanelsToSettle({ 'tabs-column': 150 }, layout, px(layout))).toEqual([]);
+    expect(settledLayout({ 'tabs-column': 150 }, layout, 1000, 'workspace')).toBeNull();
+  });
+
+  it('needs the group laid out', () => {
+    expect(
+      settledLayout({ sidebar: 200 }, { sidebar: 0, workspace: 100 }, 0, 'workspace'),
+    ).toBeNull();
   });
 });

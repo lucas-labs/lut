@@ -5,8 +5,8 @@ import { IS_MAC } from '@/modules/platform';
 import { SIDEBAR_MAX_WIDTH, SIDEBAR_MIN_WIDTH } from '@/modules/sidebar';
 import { TABS_COLUMN_MAX_WIDTH, TABS_COLUMN_MIN_WIDTH } from '@/modules/tabs';
 import { type ComponentProps, type ReactNode, type RefObject, useRef, useState } from 'react';
-import type { Layout, PanelImperativeHandle } from 'react-resizable-panels';
-import { foldSideLayoutChange, sideLayoutChange, sidePanelsToSettle } from './lib/sidePanelRestore';
+import type { GroupImperativeHandle, Layout, PanelImperativeHandle } from 'react-resizable-panels';
+import { foldSideLayoutChange, settledLayout, sideLayoutChange } from './lib/sidePanelRestore';
 
 /**
  * A side panel's resize handle is the 1px line between it and what follows. Its negative margin lets it overlap the
@@ -102,6 +102,7 @@ export function AppShell({
   const pending = useRef<Record<string, number> | null>(null);
   const restoring = useRef(false);
   const group = useRef<HTMLDivElement | null>(null);
+  const groupHandle = useRef<GroupImperativeHandle | null>(null);
   // From the layout, not the panels' elements: a layout set from code is reported before it renders.
   const widthIn = (layout: Layout) => (id: string) =>
     Math.round(((layout[id] ?? 0) / 100) * (group.current?.offsetWidth ?? 0));
@@ -121,15 +122,14 @@ export function AppShell({
     pending.current = null;
     const layout = lastLayout.current;
     if (!targets || !layout) return;
-    restoring.current = true;
-    try {
-      for (const [id, width] of sidePanelsToSettle(targets, layout, widthIn(layout))) {
-        const panel = (id === 'sidebar' ? sidebarRef : tabsColumnRef).current;
-        if (width > 0) panel?.resize(`${width}px`);
-        else panel?.collapse();
+    const settled = settledLayout(targets, layout, group.current?.offsetWidth ?? 0, 'workspace');
+    if (settled) {
+      restoring.current = true;
+      try {
+        groupHandle.current?.setLayout(settled);
+      } finally {
+        restoring.current = false;
       }
-    } finally {
-      restoring.current = false;
     }
     // The settled layout, also when it needed no correction and the group reported nothing more.
     if (lastLayout.current) accept(lastLayout.current, false);
@@ -141,6 +141,7 @@ export function AppShell({
           orientation="horizontal"
           className="min-h-0 flex-1"
           elementRef={group}
+          groupRef={groupHandle}
           onLayoutChanged={(layout, { isUserInteraction }) => {
             const prev = lastLayout.current;
             lastLayout.current = layout;

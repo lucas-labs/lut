@@ -52,17 +52,30 @@ export function foldSideLayoutChange(
   return next;
 }
 
-/** The side panels not yet at their target width (0 is collapsed), with the width to set. */
-export function sidePanelsToSettle(
+/**
+ * The group's layout with every side panel at its target width in px (0 is closed) and `absorber` taking the
+ * difference, or null when every side panel is already there. One layout for all of them: resizing one panel takes
+ * the space from the panel next to it, which can move a side panel that was already where it should be.
+ */
+export function settledLayout(
   targets: Readonly<Record<string, number>>,
   layout: Layout,
-  widthNow: (id: string) => number,
-): [id: string, width: number][] {
-  return Object.entries(targets).filter(([id, target]) => {
-    if (!(id in layout)) return false;
-    const width = widthNow(id);
-    if (target <= 0) return width > 0;
+  groupWidth: number,
+  absorber: string,
+): Layout | null {
+  if (groupWidth <= 0 || !(absorber in layout)) return null;
+  const next = { ...layout };
+  let moved = false;
+  for (const [id, target] of Object.entries(targets)) {
+    if (!(id in layout)) continue;
+    const width = Math.round(((layout[id] ?? 0) / 100) * groupWidth);
     // Percentages round to the pixel either way.
-    return Math.abs(width - target) > 1;
-  });
+    const away = target <= 0 ? width > 0 : Math.abs(width - target) > 1;
+    if (!away) continue;
+    const size = (Math.max(target, 0) / groupWidth) * 100;
+    next[absorber] += layout[id] - size;
+    next[id] = size;
+    moved = true;
+  }
+  return moved ? next : null;
 }
