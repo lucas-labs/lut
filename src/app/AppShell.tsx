@@ -4,8 +4,9 @@ import { cn } from '@/lib/utils';
 import type { TitleBarPlacement } from '@/modules/header';
 import { SIDEBAR_MAX_WIDTH, SIDEBAR_MIN_WIDTH } from '@/modules/sidebar';
 import { TABS_COLUMN_MAX_WIDTH, TABS_COLUMN_MIN_WIDTH } from '@/modules/tabs';
-import { type ComponentProps, type ReactNode, type RefObject, useState } from 'react';
-import type { PanelImperativeHandle } from 'react-resizable-panels';
+import { type ComponentProps, type ReactNode, type RefObject, useLayoutEffect, useRef, useState } from 'react';
+import type { Layout, PanelImperativeHandle } from 'react-resizable-panels';
+import { sidePanelsToRestore } from './lib/sidePanelRestore';
 
 /**
  * A side panel's resize handle is the 1px line between it and what follows. Its negative margin lets it overlap the
@@ -28,6 +29,9 @@ function SidePanel({ defaultSize, ...props }: ComponentProps<typeof ResizablePan
   return <ResizablePanel groupResizeBehavior="preserve-pixel-size" defaultSize={mountedSize} {...props} />;
 }
 
+const SIDE_PANELS = ['sidebar', 'tabs-column'] as const;
+type SidePanelId = (typeof SIDE_PANELS)[number];
+
 type Props = {
   /** Focus mode (E12-10): only the workspace shows; the chrome keeps its own state for when it comes back. */
   focusMode: boolean;
@@ -40,6 +44,7 @@ type Props = {
   /** Vertical tab column right of the sidebar; null when the tabs are in the title bar (E07-05). */
   tabsColumn: ReactNode;
   tabsColumnRef: RefObject<PanelImperativeHandle | null>;
+  /** The tab column's width in px as the app keeps it; 0 is collapsed. */
   tabsColumnInitialWidth: number;
   onTabsColumnLayout: (width: number, isUserInteraction: boolean) => void;
   /** Whether the sidebar is open (its handle then draws the line beside it). */
@@ -49,7 +54,7 @@ type Props = {
   /** Explorer / Source Control panel content. */
   sidebar: ReactNode;
   sidebarRef: RefObject<PanelImperativeHandle | null>;
-  /** The sidebar's width in px when it mounts (on start and after focus mode); 0 is collapsed. */
+  /** The sidebar's width in px as the app keeps it; 0 is collapsed. */
   sidebarInitialWidth: number;
   onSidebarLayout: (width: number, isUserInteraction: boolean) => void;
   onSidebarCollapsedChange: (collapsed: boolean) => void;
@@ -84,17 +89,56 @@ export function AppShell({
 }: Props) {
   const titleBar = focusMode ? null : titleBarProp;
   const tabsColumn = focusMode ? null : tabsColumnProp;
+
+  // The side panels' own sizes, and the group's last layout: when the group lays itself out (a panel set change,
+  // a panel opening or closing), the side panels that should not have moved go back to their size.
+  const sizes = useRef<Record<SidePanelId, number>>({ sidebar: 0, 'tabs-column': 0 });
+  useLayoutEffect(() => {
+    sizes.current = { sidebar: sidebarInitialWidth, 'tabs-column': tabsColumnInitialWidth };
+  });
+  const lastLayout = useRef<Layout | null>(null);
+  const restoring = useRef(false);
+  const group = useRef<HTMLDivElement | null>(null);
+  const restoreSidePanels = (ids: string[], target: Record<SidePanelId, number>) => {
+    restoring.current = true;
+    try {
+      for (const id of ids as SidePanelId[]) {
+        const panel = (id === 'sidebar' ? sidebarRef : tabsColumnRef).current;
+        if (target[id] > 0) panel?.resize(`${target[id]}px`);
+        else panel?.collapse();
+      }
+    } finally {
+      restoring.current = false;
+    }
+  };
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-frame text-foreground">
       <main className="zoom-content flex min-h-0 flex-1 flex-col">
         <ResizablePanelGroup
           orientation="horizontal"
           className="min-h-0 flex-1"
-          onLayoutChanged={(_, { isUserInteraction }) => {
+          elementRef={group}
+          onLayoutChanged={(layout, { isUserInteraction }) => {
+            // A layout the restore itself causes is the intended one; it starts nothing new.
+            const restore = restoring.current
+              ? []
+              : sidePanelsToRestore(lastLayout.current, layout, isUserInteraction, SIDE_PANELS);
+            lastLayout.current = layout;
+            if (restore.length > 0) {
+              // The sizes as they were before this layout.
+              const target = { ...sizes.current };
+              // After the group's own layout pass, not inside it.
+              queueMicrotask(() => restoreSidePanels(restore, target));
+              // This layout is about to be corrected: the app records the corrected one, not this.
+              return;
+            }
             // The side panels are gone in focus mode; their stored layout stays as it was.
             if (focusMode) return;
-            onSidebarLayout(sidebarRef.current?.getSize().inPixels ?? 0, isUserInteraction);
-            if (tabsColumn) onTabsColumnLayout(tabsColumnRef.current?.getSize().inPixels ?? 0, isUserInteraction);
+            // From the layout, not the panels' elements: a layout set from code is reported before it renders.
+            const width = (id: SidePanelId) =>
+              Math.round(((layout[id] ?? 0) / 100) * (group.current?.offsetWidth ?? 0));
+            onSidebarLayout(width('sidebar'), isUserInteraction);
+            if (tabsColumn) onTabsColumnLayout(width('tabs-column'), isUserInteraction);
           }}
         >
           {/* In focus mode the sidebar leaves its slot empty, as the tab column does; it comes back at its width. */}
