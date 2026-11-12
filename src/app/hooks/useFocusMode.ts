@@ -13,7 +13,8 @@ function logWindowError(action: string) {
  * tab column, orientation) is never touched, so leaving shows it exactly as it was. Leaving also leaves full screen,
  * unless the window was already full screen on the way in.
  *
- * `toggleFullScreen` is the separate full-screen toggle (F11), with or without focus mode.
+ * `toggleFullScreen` is the separate full-screen toggle (F11), with or without focus mode. Once it is used, full
+ * screen is the user's choice: leaving focus mode no longer changes it.
  */
 export function useFocusMode() {
   const [focusMode, setFocusMode] = useState(false);
@@ -21,9 +22,8 @@ export function useFocusMode() {
   const activeRef = useRef(false);
   // Whether focus mode put the window in full screen, so leaving takes it out again.
   const enteredFullScreenRef = useRef(false);
-  // F11 is an ordering boundary: a later exit must not cancel entry across it.
-  const fullScreenToggleRef = useRef(0);
-  // Window changes run one after another, each reading the window as the previous one left it.
+  // Window changes run one after another, in the order they were asked for, each reading the window as the
+  // previous one left it.
   const queueRef = useRef<Promise<void>>(Promise.resolve());
 
   const enqueue = useCallback((action: string, change: () => Promise<unknown>) => {
@@ -34,15 +34,9 @@ export function useFocusMode() {
     const entering = !activeRef.current;
     activeRef.current = entering;
     setFocusMode(entering);
-    const fullScreenToggle = fullScreenToggleRef.current;
-    const entryCancelled = () =>
-      !activeRef.current && fullScreenToggleRef.current === fullScreenToggle;
     enqueue(entering ? 'entering full screen' : 'leaving full screen', async () => {
       if (entering) {
-        // A quick entry/exit pair can cancel only when no F11 separates them.
-        if (entryCancelled()) return;
-        const alreadyFullScreen = await isFullScreen();
-        if (alreadyFullScreen || entryCancelled()) return;
+        if (await isFullScreen()) return;
         await setFullScreen(true);
         enteredFullScreenRef.current = true;
       } else if (enteredFullScreenRef.current) {
@@ -53,8 +47,10 @@ export function useFocusMode() {
   }, [enqueue]);
 
   const toggleFullScreen = useCallback(() => {
-    fullScreenToggleRef.current += 1;
-    enqueue('toggling full screen', async () => setFullScreen(!(await isFullScreen())));
+    enqueue('toggling full screen', async () => {
+      enteredFullScreenRef.current = false;
+      await setFullScreen(!(await isFullScreen()));
+    });
   }, [enqueue]);
 
   return { focusMode, toggleFocusMode, toggleFullScreen };

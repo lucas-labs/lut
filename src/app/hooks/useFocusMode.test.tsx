@@ -83,7 +83,7 @@ describe('useFocusMode', () => {
     expect(win.calls).toEqual([]);
   });
 
-  it('alternates on two quick presses and leaves the window as it was', async () => {
+  it('alternates on two quick presses and ends where it started', async () => {
     act(() => {
       api().toggleFocusMode();
       api().toggleFocusMode();
@@ -91,7 +91,7 @@ describe('useFocusMode', () => {
     await settle();
     expect(api().focusMode).toBe(false);
     expect(win.fullScreen).toBe(false);
-    expect(win.calls).toEqual([]);
+    expect(win.calls).toEqual([true, false]);
   });
 
   it.each(['before the read starts', 'while the read is pending', 'after the read resolves'])(
@@ -121,9 +121,23 @@ describe('useFocusMode', () => {
 
       expect(api().focusMode).toBe(false);
       expect(win.fullScreen).toBe(false);
-      expect(win.calls).toEqual([true, false, false]);
+      expect(win.calls).toEqual([true, false]);
     },
   );
+
+  it('leaves full screen alone on the way out once F11 was used in focus mode', async () => {
+    act(() => api().toggleFocusMode());
+    await settle();
+    act(() => api().toggleFullScreen());
+    await settle();
+    act(() => api().toggleFullScreen());
+    await settle();
+    act(() => api().toggleFocusMode());
+    await settle();
+    expect(api().focusMode).toBe(false);
+    expect(win.fullScreen).toBe(true);
+    expect(win.calls).toEqual([true, false, true]);
+  });
 
   it('lets a quick leave and enter again end in full screen', async () => {
     act(() => api().toggleFocusMode());
