@@ -9,7 +9,7 @@ import { usePreferencesStore } from '@/modules/settings/preferences';
 import { TabNavigator, useTabs, useWindowTitle, useWorkspaceCwd } from '@/modules/tabs';
 import { findLeafCwd } from '@/modules/terminal';
 import { ThemeProvider, useThemeFileEditing } from '@/modules/theme';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppShell } from './AppShell';
 import { AppOverlays } from './components/AppOverlays';
 import { AppSidebar } from './components/AppSidebar';
@@ -74,6 +74,7 @@ export default function App() {
   useWindowTitle(activeTab, explorerRoot);
   const zoom = useZoom();
   const searchInlineRef = useRef<SearchInlineHandle | null>(null);
+  const focusSearchInline = useCallback(() => searchInlineRef.current?.focus(), []);
   const [newEditorOpen, setNewEditorOpen] = useState(false);
 
   const closeGuards = useTabClosing({
@@ -104,7 +105,7 @@ export default function App() {
     explorerRoot,
     openPreviewTab: previews.openPreviewTab,
     setNewEditorOpen,
-    searchInlineRef,
+    focusSearchInline,
   });
 
   useLaunchFiles({ booted, openFile: commands.openFile });
@@ -121,7 +122,7 @@ export default function App() {
     activeId,
     activeTab,
     editorRefs: editors.editorRefs,
-    searchInlineRef,
+    focusSearchInline,
     selectByIndex,
     focusNextPaneInTab,
     openCommandPalette: palette.openCommandPalette,

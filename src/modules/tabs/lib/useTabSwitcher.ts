@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLatest } from '@/lib/useLatest';
+import { useCallback, useEffect, useState } from 'react';
 
 export type TabSwitcherState = { order: number[]; index: number };
 
@@ -11,22 +12,24 @@ type Options = {
 
 export function useTabSwitcher({ getOrder, onCommit }: Options) {
   const [state, setState] = useState<TabSwitcherState | null>(null);
-  const stateRef = useRef(state);
-  stateRef.current = state;
-  const cb = useRef({ getOrder, onCommit });
-  cb.current = { getOrder, onCommit };
+  const stateRef = useLatest(state);
+  const cb = useLatest({ getOrder, onCommit });
 
-  const step = useCallback((delta: 1 | -1) => {
-    setState((prev) => {
-      if (prev) {
-        const len = prev.order.length;
-        return { ...prev, index: (prev.index + delta + len) % len };
-      }
+  const step = useCallback(
+    (delta: 1 | -1) => {
+      // Read here, not in the updater: an updater runs during render. Used only when the switcher opens.
       const order = cb.current.getOrder();
-      if (order.length < 2) return null;
-      return { order, index: (delta + order.length) % order.length };
-    });
-  }, []);
+      setState((prev) => {
+        if (prev) {
+          const len = prev.order.length;
+          return { ...prev, index: (prev.index + delta + len) % len };
+        }
+        if (order.length < 2) return null;
+        return { order, index: (delta + order.length) % order.length };
+      });
+    },
+    [cb],
+  );
 
   const commit = useCallback(() => {
     const s = stateRef.current;
@@ -34,7 +37,7 @@ export function useTabSwitcher({ getOrder, onCommit }: Options) {
     setState(null);
     const id = s.order[s.index];
     if (id !== undefined && id !== s.order[0]) cb.current.onCommit(id);
-  }, []);
+  }, [stateRef, cb]);
 
   const cancel = useCallback(() => setState(null), []);
 
@@ -58,7 +61,7 @@ export function useTabSwitcher({ getOrder, onCommit }: Options) {
       window.removeEventListener('keydown', onKeyDown, { capture: true });
       window.removeEventListener('blur', cancel);
     };
-  }, [commit, cancel]);
+  }, [commit, cancel, stateRef]);
 
   return { state, step };
 }

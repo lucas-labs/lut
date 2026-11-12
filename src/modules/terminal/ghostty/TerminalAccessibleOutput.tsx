@@ -19,9 +19,8 @@ export default function TerminalAccessibleOutput({
   const announce = useEffectEvent((previous: string, next: string) => {
     setAnnouncement(focused ? changedTerminalText(previous, next) : '');
   });
-  useEffect(() => {
-    if (!focused) setAnnouncement('');
-  }, [focused]);
+  // Only the focused terminal announces; leaving it drops what it was saying.
+  if (!focused && announcement) setAnnouncement('');
   useEffect(() => {
     if (!visible) return;
     let timer: ReturnType<typeof setTimeout> | null = null;

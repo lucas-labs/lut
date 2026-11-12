@@ -275,12 +275,7 @@ export function useSourceControlPanel(
     | { scope: 'all'; entries: SourceControlEntry[] }
     | null
   >(null);
-  const selectedRef = useRef<DiffSelection | null>(null);
   const reconcileTimerRef = useRef(0);
-
-  useEffect(() => {
-    selectedRef.current = selected;
-  }, [selected]);
 
   const stagedEntries = useMemo(
     () =>
@@ -389,7 +384,24 @@ export function useSourceControlPanel(
     await summary.refresh({ remote: 'never' });
   }, [isOpen, summary]);
 
-  useEffect(() => {
+  // The panel follows the shared summary: each change of it (or of the panel opening) settles the panel's state and
+  // the selection, during render so the panel never paints a stale state first.
+  const syncInputs = {
+    isOpen,
+    hasRepo: summary.hasRepo,
+    isLoading: summary.isLoading,
+    localError: summary.localError,
+    repo: summary.repo,
+    status: summary.status,
+  };
+  const [syncedInputs, setSyncedInputs] = useState<typeof syncInputs | null>(null);
+  const summaryChanged =
+    syncedInputs === null ||
+    (Object.keys(syncInputs) as (keyof typeof syncInputs)[]).some(
+      (k) => syncedInputs[k] !== syncInputs[k],
+    );
+
+  function syncWithSummary() {
     if (!isOpen) {
       setPanelState('closed');
       setSelectionTransition('none');
@@ -426,7 +438,7 @@ export function useSourceControlPanel(
     setStatus(summary.status);
     setPanelState('ready');
 
-    const current = selectedRef.current;
+    const current = selected;
     const exists =
       !!current &&
       summary.status.changedFiles.some((file) => {
@@ -453,14 +465,12 @@ export function useSourceControlPanel(
     } else {
       setSelectionTransition('none');
     }
-  }, [
-    isOpen,
-    summary.hasRepo,
-    summary.isLoading,
-    summary.localError,
-    summary.repo,
-    summary.status,
-  ]);
+  }
+
+  if (summaryChanged) {
+    setSyncedInputs(syncInputs);
+    syncWithSummary();
+  }
 
   const selectEntry = useCallback(
     async (entry: SourceControlEntry) => {
@@ -685,19 +695,20 @@ export function useSourceControlPanel(
     }
   }, [commitMessage, repo, summary]);
 
+  const upstream = status?.upstream;
   const push = useCallback(async () => {
     if (!repo) return;
     setActionMessage(null);
     setActionError(null);
     const result = await summary.runRemoteAction('push');
     if (result.ok) {
-      setActionMessage(status?.upstream ? `Pushed to ${status.upstream}` : 'Push completed');
+      setActionMessage(upstream ? `Pushed to ${upstream}` : 'Push completed');
       return;
     }
     if (result.error) {
       setActionError(result.error);
     }
-  }, [repo, status?.upstream, summary]);
+  }, [repo, upstream, summary]);
 
   const pendingDiscardView = useMemo<PendingDiscard | null>(() => {
     if (!pendingDiscard) return null;

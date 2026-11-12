@@ -59,8 +59,6 @@ export default tseslint.config(
       'simple-import-sort/exports': 'error',
 
       // Warnings in Biome.
-      'react-hooks/exhaustive-deps': 'warn',
-      'react-hooks/rules-of-hooks': 'warn',
       'react/no-array-index-key': 'warn',
       '@typescript-eslint/no-non-null-assertion': 'warn',
       '@typescript-eslint/no-unused-vars': [
@@ -81,12 +79,18 @@ export default tseslint.config(
       'jsx-a11y/label-has-associated-control': 'warn',
       'jsx-a11y/no-autofocus': 'warn',
 
-      // New with ESLint (React Compiler and core checks); pre-existing violations.
-      'react-hooks/refs': 'warn',
-      'react-hooks/set-state-in-effect': 'warn',
-      'react-hooks/immutability': 'warn',
-      'react-hooks/preserve-manual-memoization': 'warn',
-      'react-hooks/globals': 'warn',
+      // Hooks and React Compiler checks (E09-10): every component compiles. An intentional exception, such as a
+      // third-party hook the compiler cannot memoize, is an `eslint-disable-next-line` with its reason.
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'error',
+      'react-hooks/refs': 'error',
+      'react-hooks/set-state-in-effect': 'error',
+      'react-hooks/immutability': 'error',
+      'react-hooks/preserve-manual-memoization': 'error',
+      'react-hooks/globals': 'error',
+      'react-hooks/incompatible-library': 'error',
+
+      // New with ESLint (core checks); pre-existing violations.
       'prefer-const': 'warn',
       'no-empty': 'warn',
 

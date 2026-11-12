@@ -20,11 +20,9 @@ export function useLspExtension(
   const presetId = preset?.id;
   // generation: re-acquire after a server crash tears the session down
   // presetId: swapping the enabled server for a language must rebind the doc
+  const active = ready && !!langId && activation === 'enabled';
   useEffect(() => {
-    if (!ready || !langId || activation !== 'enabled') {
-      setExt(null);
-      return;
-    }
+    if (!ready || !langId || activation !== 'enabled') return;
     let cancelled = false;
     let handle: LspDocHandle | null = null;
     acquireDocExtension(path, langId)
@@ -45,5 +43,5 @@ export function useLspExtension(
     };
   }, [path, langId, ready, activation, generation, presetId]);
 
-  return ext;
+  return active ? ext : null;
 }

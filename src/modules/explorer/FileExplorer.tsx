@@ -355,12 +355,13 @@ export const FileExplorer = memo(
 
     const dropTargetDir = dnd.dropTargetDir ?? fileDrop.externalTargetDir;
     const rootIsDropTarget = dropTargetDir != null && dropTargetDir === rootPath;
+    const { expanded: expandedDirs, expand: expandDir, refresh: refreshTree } = tree;
     useEffect(() => {
       if (!dropTargetDir || dropTargetDir === rootPath) return;
-      if (tree.expanded.has(dropTargetDir)) return;
-      const id = window.setTimeout(() => tree.expand(dropTargetDir), 700);
+      if (expandedDirs.has(dropTargetDir)) return;
+      const id = window.setTimeout(() => expandDir(dropTargetDir), 700);
       return () => window.clearTimeout(id);
-    }, [dropTargetDir, rootPath, tree.expanded, tree.expand]);
+    }, [dropTargetDir, rootPath, expandedDirs, expandDir]);
 
     const pasteInto = useCallback(
       async (destDir: string) => {
@@ -373,14 +374,14 @@ export const FileExplorer = memo(
             root: rootPath,
             workspace,
             isCurrent,
-            refresh: (path) => tree.refresh(path, true),
+            refresh: (path) => refreshTree(path, true),
           });
           if (isCurrent() && paths.length > 0) setPastedSelection({ scope, paths });
         } finally {
           pasteBusyRef.current = false;
         }
       },
-      [rootPath, workspace, tree.refresh],
+      [rootPath, workspace, refreshTree],
     );
 
     useEffect(() => {

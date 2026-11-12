@@ -13,19 +13,18 @@ export type LspHint =
   | { kind: 'error'; preset: LspPreset; reason: string };
 
 export function useLspHint(filePath: string | null): LspHint | null {
-  const [langId, setLangId] = useState<string | null>(null);
+  // The resolved language, kept with the file it was resolved for.
+  const [resolved, setResolved] = useState<{ path: string; langId: string | null } | null>(null);
+  const langId = filePath && resolved?.path === filePath ? resolved.langId : null;
   const envKind = useWorkspaceEnvStore((s) => s.env.kind);
 
   useEffect(() => {
-    if (!filePath) {
-      setLangId(null);
-      return;
-    }
+    if (!filePath) return;
     let cancelled = false;
     void resolveLanguage(filePath).then((result) => {
       if (cancelled) return;
       const ext = filePath.split('.').pop()?.toLowerCase() ?? null;
-      setLangId(result?.id || ext);
+      setResolved({ path: filePath, langId: result?.id || ext });
     });
     return () => {
       cancelled = true;

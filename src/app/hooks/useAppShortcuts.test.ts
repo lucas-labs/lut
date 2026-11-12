@@ -37,7 +37,7 @@ function args(over: Partial<AppShortcutArgs> = {}): AppShortcutArgs {
     activeSpaceId: 'space-a',
     activeTab: terminalTab(1),
     editorRefs: { current: new Map() },
-    searchInlineRef: { current: null },
+    focusSearchInline: () => {},
     openCommandPalette: vi.fn(),
     openNewTab: vi.fn(),
     openNewPrivateTab: vi.fn(),

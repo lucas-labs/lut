@@ -1,4 +1,5 @@
 import { quoteShellArg } from '@/lib/shellQuote';
+import { useLatest } from '@/lib/useLatest';
 import { useNavigationStore } from '@/modules/navigation';
 import { closeWindow } from '@/modules/platform';
 import type { Tab } from '@/modules/tabs';
@@ -41,12 +42,14 @@ export function useTerminalPanes({ tabs, activeId, activeLeafId }: TerminalPanes
     );
   }, [activeLeafId]);
 
+  // Stable, so the panes don't re-render when the focus moves.
+  const activeLeaf = useLatest(activeLeafId);
   const onSearchReady = useCallback(
     (leafId: number, addon: TerminalSearchController) => {
       searchAddons.current.set(leafId, addon);
-      if (leafId === activeLeafId) setActiveSearchAddon(addon);
+      if (leafId === activeLeaf.current) setActiveSearchAddon(addon);
     },
-    [activeLeafId],
+    [activeLeaf],
   );
 
   // Handles and search controllers are keyed by leaf, so they are pruned as the pane trees change.

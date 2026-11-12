@@ -17,7 +17,15 @@ import { useTerminalFont } from '@/modules/terminal/lib/useTerminalFont';
 import type { TerminalSearchController } from '@/modules/terminal/search/TerminalSearchController';
 import { currentWorkspaceEnv, workspaceScopeKey } from '@/modules/workspace';
 import { invoke } from '@tauri-apps/api/core';
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { isAgentActivePty } from '../lib/agentActivity';
 import { openPty, type PtySession } from '../lib/pty-bridge';
 import { writeTerminalClipboard } from '../lib/terminalClipboard';
@@ -151,23 +159,26 @@ export function useGhosttyTerminalSession({
     }),
     [fontFamily, fontSize, fontWeight, letterSpacing, zoomLevel, symbols],
   );
-  const fontRef = useRef(font);
-  fontRef.current = font;
-  const callbackRef = useRef({ onSearchReady, onExit, onCwd });
-  callbackRef.current = { onSearchReady, onExit, onCwd };
+  // The session outlives renders: it reads the font it starts with, and reports to the pane's latest callbacks.
+  const currentFont = useEffectEvent(() => font);
+  const reportSearchReady = useEffectEvent((search: TerminalSearchController) =>
+    onSearchReady?.(search),
+  );
+  const reportExit = useEffectEvent((code: number) => onExit?.(code));
+  const reportCwd = useEffectEvent((cwd: string) => onCwd?.(cwd));
   const initialCwdRef = useRef(initialCwd);
 
   useEffect(() => {
-    const session = ensureSession(leafId, backend, initialCwdRef.current, fontRef.current);
+    const session = ensureSession(leafId, backend, initialCwdRef.current, currentFont());
     const node = container.current;
     session.container = node;
     setModel(session.model);
     session.callbacks = {
       onModel: setModel,
       onError: setError,
-      onSearchReady: (search) => callbackRef.current.onSearchReady?.(search),
-      onExit: (code) => callbackRef.current.onExit?.(code),
-      onCwd: (cwd) => callbackRef.current.onCwd?.(cwd),
+      onSearchReady: (search) => reportSearchReady(search),
+      onExit: (code) => reportExit(code),
+      onCwd: (cwd) => reportCwd(cwd),
     };
     setError(sessionFailure(session));
     if (session.surface) {

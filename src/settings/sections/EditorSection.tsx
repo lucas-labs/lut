@@ -27,7 +27,7 @@ import {
 import { useShortcutHint } from '@/modules/shortcuts';
 import { Cancel01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { LspServersGroup } from '../components/LspServersGroup';
 import { SectionHeader } from '../components/SectionHeader';
 import { SettingRow } from '../components/SettingRow';
@@ -137,10 +137,12 @@ function FormatterSelect({ value, onChange }: { value: EditorFormatter; onChange
 function CustomFormatCommandInput() {
   const stored = usePreferencesStore((s) => s.editorCustomFormatCommand);
   const [draft, setDraft] = useState(stored);
-
-  useEffect(() => {
+  // A change saved elsewhere replaces the draft.
+  const [draftOf, setDraftOf] = useState(stored);
+  if (stored !== draftOf) {
+    setDraftOf(stored);
     setDraft(stored);
-  }, [stored]);
+  }
 
   return (
     <SettingRow
@@ -239,10 +241,12 @@ function Label({ children }: { children: React.ReactNode }) {
 
 function AutoSaveDelayInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const [draft, setDraft] = useState(String(value));
-
-  useEffect(() => {
+  // A change saved elsewhere replaces the draft.
+  const [draftOf, setDraftOf] = useState(value);
+  if (value !== draftOf) {
+    setDraftOf(value);
     setDraft(String(value));
-  }, [value]);
+  }
 
   const commit = () => {
     const n = Number(draft);
@@ -281,10 +285,12 @@ function AutoSaveDelayInput({ value, onChange }: { value: number; onChange: (v: 
 
 function WordWrapColumnInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const [draft, setDraft] = useState(String(value));
-
-  useEffect(() => {
+  // A change saved elsewhere replaces the draft.
+  const [draftOf, setDraftOf] = useState(value);
+  if (value !== draftOf) {
+    setDraftOf(value);
     setDraft(String(value));
-  }, [value]);
+  }
 
   const commit = () => {
     const n = Number(draft);

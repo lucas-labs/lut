@@ -17,7 +17,7 @@ import {
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { invoke } from '@tauri-apps/api/core';
-import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useRef, useState } from 'react';
 import { type Segment, segmentsFromCwd } from './lib/pathUtils';
 
 type Props = {
@@ -187,12 +187,14 @@ function CurrentSegmentDropdown({ segment, onCd }: { segment: Segment; onCd: (p:
     }
   }, [path, showHidden]);
 
-  useEffect(() => {
-    if (open) load();
-  }, [open, load]);
+  // The folders are listed each time the menu opens.
+  const onOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (next) void load();
+  };
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
         <button type="button" aria-current="location" className={cn(SEGMENT_CLASS, 'text-foreground')}>
           <SegmentLabel segment={segment} />

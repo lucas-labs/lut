@@ -180,9 +180,21 @@ export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: P
     height: number;
   } | null>(null);
   const [remoteWeb, setRemoteWeb] = useState<RemoteWebInfo | null>(null);
-  const filesCacheRef = useRef(new Map<string, FilesEntry>());
-  const [filesTick, setFilesTick] = useState(0);
-  const bumpFiles = useCallback(() => setFilesTick((n) => n + 1), []);
+  // Each opened commit's changed files, newest last, at most FILES_CACHE_LIMIT.
+  const [filesCache, setFilesCache] = useState<ReadonlyMap<string, FilesEntry>>(() => new Map());
+  const cacheFiles = useCallback((sha: string, entry: FilesEntry) => {
+    setFilesCache((prev) => {
+      const next = new Map(prev);
+      next.delete(sha);
+      next.set(sha, entry);
+      while (next.size > FILES_CACHE_LIMIT) {
+        const oldest = next.keys().next().value;
+        if (oldest === undefined || oldest === sha) break;
+        next.delete(oldest);
+      }
+      return next;
+    });
+  }, []);
 
   const requestIdRef = useRef(0);
   const inflightMoreRef = useRef(false);
@@ -261,6 +273,7 @@ export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: P
     });
   }, [commits, activeSearch]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual returns a mutable instance the compiler cannot memoize, so this component stays uncompiled.
   const virtualizer = useVirtualizer({
     count: filtered.length,
     getScrollElement: () => scrollRef.current,
@@ -317,12 +330,11 @@ export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: P
 
   useEffect(() => {
     filesInflightRef.current.clear();
-    filesCacheRef.current.clear();
-    bumpFiles();
+    setFilesCache(new Map());
     setCommits([]);
     setOpenAnchor(null);
     void loadInitial();
-  }, [bumpFiles, loadInitial]);
+  }, [loadInitial]);
 
   useEffect(() => {
     let cancelled = false;
@@ -372,37 +384,27 @@ export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: P
 
   const handleRefresh = useCallback(() => {
     filesInflightRef.current.clear();
-    filesCacheRef.current.clear();
-    bumpFiles();
+    setFilesCache(new Map());
     void loadInitial();
-  }, [bumpFiles, loadInitial]);
+  }, [loadInitial]);
 
   const fetchFiles = useCallback(
     async (sha: string) => {
       if (filesInflightRef.current.has(sha)) return;
-      const cache = filesCacheRef.current;
-      const existing = cache.get(sha);
+      const existing = filesCache.get(sha);
       if (existing && existing.state !== 'error') return;
       filesInflightRef.current.add(sha);
-      cache.set(sha, { state: 'loading' });
-      bumpFiles();
+      cacheFiles(sha, { state: 'loading' });
       try {
         const files = await git.commitFiles(repoRoot, sha);
-        cache.set(sha, { state: 'loaded', files });
-        while (cache.size > FILES_CACHE_LIMIT) {
-          const oldest = cache.keys().next().value;
-          if (oldest === undefined || oldest === sha) break;
-          cache.delete(oldest);
-        }
-        bumpFiles();
+        cacheFiles(sha, { state: 'loaded', files });
       } catch (err) {
-        cache.set(sha, { state: 'error', error: normalizeError(err) });
-        bumpFiles();
+        cacheFiles(sha, { state: 'error', error: normalizeError(err) });
       } finally {
         filesInflightRef.current.delete(sha);
       }
     },
-    [repoRoot],
+    [repoRoot, filesCache, cacheFiles],
   );
 
   const handleRowClick = useCallback(
@@ -431,10 +433,7 @@ export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: P
 
   const closePopover = useCallback(() => setOpenAnchor(null), []);
 
-  const openFilesEntry = useMemo(() => {
-    if (!openAnchor) return null;
-    return filesCacheRef.current.get(openAnchor.sha) ?? null;
-  }, [openAnchor, filesTick]);
+  const openFilesEntry = openAnchor ? (filesCache.get(openAnchor.sha) ?? null) : null;
 
   const handleFileOpen = useCallback(
     (commit: GitLogEntry, file: GitCommitFileChange) => {

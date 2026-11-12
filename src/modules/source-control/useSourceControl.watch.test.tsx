@@ -76,8 +76,12 @@ vi.mock('react', async (original) => {
 
 type Props = { path: string; enabled?: boolean; live?: boolean };
 let summary: SourceControlSummary;
+/** Keeps the summary the probe rendered last. */
+function keep(rendered: SourceControlSummary) {
+  summary = rendered;
+}
 function Probe({ path, enabled = true, live = true }: Props) {
-  summary = useSourceControl(path, enabled, { live });
+  keep(useSourceControl(path, enabled, { live }));
   return null;
 }
 function render(props: Props) {

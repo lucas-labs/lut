@@ -123,22 +123,30 @@ function loadStateFromCache(source: WorkingSource | CommitSource): LoadState {
   };
 }
 
+/** Where an active diff starts: its cached contents, or loading them. */
+function startState(source: WorkingSource | CommitSource): LoadState {
+  const cached = loadStateFromCache(source);
+  return cached.kind === 'loaded' ? cached : { kind: 'loading' };
+}
+
 export function GitDiffPane({ source, chipLabel, active }: Props) {
   const cmRef = useRef<ReactCodeMirrorRef>(null);
   const themeExt = useEditorThemeExt();
-  const [state, setState] = useState<LoadState>(() => (active ? loadStateFromCache(source) : { kind: 'idle' }));
+  const [state, setState] = useState<LoadState>(() => (active ? startState(source) : { kind: 'idle' }));
 
   const key = cacheKey(source);
 
+  // Each activation, and each new diff while active, starts from the cache, or loading.
+  const loadKey = active ? key : null;
+  const [startedKey, setStartedKey] = useState(loadKey);
+  if (loadKey !== startedKey) {
+    setStartedKey(loadKey);
+    if (loadKey !== null) setState(startState(source));
+  }
+
   useEffect(() => {
-    if (!active) return;
-    const cached = loadStateFromCache(source);
-    if (cached.kind === 'loaded') {
-      setState(cached);
-      return;
-    }
+    if (!active || loadStateFromCache(source).kind === 'loaded') return;
     let cancelled = false;
-    setState({ kind: 'loading' });
     const promise =
       source.kind === 'working'
         ? fetchWorkingDiff(source.repoRoot, source.path, source.mode, source.originalPath)

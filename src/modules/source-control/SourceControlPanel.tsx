@@ -185,11 +185,11 @@ function BranchDropdown({
     }
   }, [repoRoot]);
 
-  useEffect(() => {
-    if (open) {
-      void loadBranches();
-    }
-  }, [open, loadBranches]);
+  // The branches are listed each time the menu opens.
+  const onOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (next) void loadBranches();
+  };
 
   const handleCheckout = useCallback(
     async (branch: string) => {
@@ -215,7 +215,7 @@ function BranchDropdown({
   const worktrees = useMemo(() => branches.filter((b) => b.kind === 'worktree'), [branches]);
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
@@ -502,6 +502,7 @@ export const SourceControlPanel = memo(function SourceControlPanel({
     [rows],
   );
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual returns a mutable instance the compiler cannot memoize, so this component stays uncompiled.
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollRef.current,
@@ -1196,14 +1197,16 @@ function IconActionButton({
 function CommitFeedback({ feedback }: { feedback: { tone: 'error' | 'success'; message: string } | null }) {
   const [visibleFeedback, setVisibleFeedback] = useState(feedback);
   const [isVisible, setIsVisible] = useState(false);
+  // New feedback shows at once; no feedback fades out what is shown.
+  const [shownFor, setShownFor] = useState<typeof feedback | undefined>(undefined);
+  if (feedback !== shownFor) {
+    setShownFor(feedback);
+    if (feedback) setVisibleFeedback(feedback);
+    setIsVisible(feedback !== null);
+  }
 
   useEffect(() => {
-    if (!feedback) {
-      setIsVisible(false);
-      return;
-    }
-    setVisibleFeedback(feedback);
-    setIsVisible(true);
+    if (!feedback) return;
     const hideTimer = window.setTimeout(() => setIsVisible(false), 3600);
     const clearTimer = window.setTimeout(() => {
       setVisibleFeedback((current) =>

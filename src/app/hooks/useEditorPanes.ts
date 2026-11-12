@@ -1,3 +1,4 @@
+import { useLatest } from '@/lib/useLatest';
 import { type EditorPaneHandle, useApplyEditorFontSize, useEditorFileSync } from '@/modules/editor';
 import { setLspNavigator } from '@/modules/lsp';
 import { useNavigationStore } from '@/modules/navigation';
@@ -30,6 +31,8 @@ export function useEditorPanes({ tabs, activeId }: { tabs: Tab[]; activeId: numb
     setActiveEditorHandle(editorRefs.current.get(activeId) ?? null);
   }, [activeId]);
 
+  // Stable, so an editor's ref callback is not swapped (detached and attached again) when the active tab changes.
+  const active = useLatest(activeId);
   const registerEditorHandle = useCallback(
     (id: number, h: EditorPaneHandle | null) => {
       if (h) {
@@ -43,9 +46,9 @@ export function useEditorPanes({ tabs, activeId }: { tabs: Tab[]; activeId: numb
       } else {
         editorRefs.current.delete(id);
       }
-      if (id === activeId) setActiveEditorHandle(h);
+      if (id === active.current) setActiveEditorHandle(h);
     },
-    [activeId],
+    [active],
   );
 
   /** Drops a closed tab's handle. */

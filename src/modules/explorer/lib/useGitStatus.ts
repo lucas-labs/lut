@@ -19,22 +19,25 @@ export function useGitStatus(
   status: GitStatusSnapshot | null | undefined,
   enabled: boolean,
 ) {
-  const [canonicalRoot, setCanonicalRoot] = useState<string | null>(null);
+  // The root's canonical form, kept with the root it belongs to: it only counts for that root.
+  const [resolved, setResolved] = useState<{ root: string; canonical: string | null } | null>(null);
+  const canonicalRoot =
+    enabled && workspaceRoot && resolved?.root === workspaceRoot ? resolved.canonical : null;
   const reqRef = useRef(0);
 
   useEffect(() => {
     if (!enabled || !workspaceRoot) {
-      setCanonicalRoot(null);
+      reqRef.current += 1;
       return;
     }
     const req = ++reqRef.current;
     void workspaceNative
       .canonicalize(workspaceRoot)
       .then((c) => {
-        if (req === reqRef.current) setCanonicalRoot(c);
+        if (req === reqRef.current) setResolved({ root: workspaceRoot, canonical: c });
       })
       .catch(() => {
-        if (req === reqRef.current) setCanonicalRoot(null);
+        if (req === reqRef.current) setResolved({ root: workspaceRoot, canonical: null });
       });
   }, [enabled, workspaceRoot]);
 

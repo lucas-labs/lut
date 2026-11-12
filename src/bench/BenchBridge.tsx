@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 import { startBenchDriver } from './driver';
 import type { BenchAppApi } from './types';
 
@@ -7,10 +7,9 @@ import type { BenchAppApi } from './types';
  * (which runs once, after the first render) and renders nothing.
  */
 export default function BenchBridge(props: BenchAppApi) {
-  const latest = useRef(props);
-  latest.current = props;
+  const currentApi = useEffectEvent(() => props);
   useEffect(() => {
-    void startBenchDriver(() => latest.current);
+    void startBenchDriver(() => currentApi());
   }, []);
   return null;
 }

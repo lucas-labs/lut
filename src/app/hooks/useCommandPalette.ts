@@ -1,10 +1,10 @@
 import { createCommandItems, type PaletteInitialMode } from '@/modules/command-palette';
-import type { SearchInlineHandle, SearchTarget } from '@/modules/header';
+import type { SearchTarget } from '@/modules/header';
 import { openSettingsWindow } from '@/modules/settings/openSettingsWindow';
 import type { SidebarViewId } from '@/modules/sidebar';
 import { useSpaces } from '@/modules/spaces';
 import type { Tab } from '@/modules/tabs';
-import { type RefObject, useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 type CommandPaletteArgs = {
   tabs: Tab[];
@@ -22,8 +22,9 @@ type CommandPaletteArgs = {
   handleCloseTabOrPane: () => void;
   splitActivePaneInActiveTab: (dir: 'row' | 'col') => void;
   moveActivePane: (target: 'new' | 1 | -1) => void;
-  searchInlineRef: RefObject<SearchInlineHandle | null>;
-  explorerRef: RefObject<{ focusSearch: () => void } | null>;
+  /** Focuses the header's search. */
+  focusSearchInline: () => void;
+  focusExplorerSearch: () => void;
   toggleSidebar: () => void;
   toggleTabOrientation: () => void;
   toggleTabsColumn: () => void;
@@ -54,8 +55,8 @@ export function useCommandPalette({
   handleCloseTabOrPane,
   splitActivePaneInActiveTab,
   moveActivePane,
-  searchInlineRef,
-  explorerRef,
+  focusSearchInline,
+  focusExplorerSearch,
   toggleSidebar,
   toggleTabOrientation,
   toggleTabsColumn,
@@ -94,8 +95,8 @@ export function useCommandPalette({
             movePaneToNewTab: () => moveActivePane('new'),
             movePaneToNextTab: () => moveActivePane(1),
             movePaneToPrevTab: () => moveActivePane(-1),
-            focusSearch: () => searchInlineRef.current?.focus(),
-            focusExplorerSearch: () => explorerRef.current?.focusSearch(),
+            focusSearch: focusSearchInline,
+            focusExplorerSearch,
             toggleSidebar,
             toggleTabOrientation,
             toggleTabsColumn,
@@ -127,8 +128,8 @@ export function useCommandPalette({
       handleCloseTabOrPane,
       splitActivePaneInActiveTab,
       moveActivePane,
-      searchInlineRef,
-      explorerRef,
+      focusSearchInline,
+      focusExplorerSearch,
       toggleSidebar,
       toggleTabOrientation,
       toggleTabsColumn,

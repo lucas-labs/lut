@@ -38,6 +38,8 @@ export function useSidePanels() {
     void setShowHidden(!usePreferencesStore.getState().showHidden);
   }, [openSidebarView]);
 
+  const focusExplorerSearch = useCallback(() => explorerRef.current?.focusSearch(), []);
+
   const openSourceControl = useCallback(() => {
     openSidebarView('source-control');
   }, [openSidebarView]);
@@ -46,6 +48,7 @@ export function useSidePanels() {
     ...sidebar,
     ...tabsColumn,
     explorerRef,
+    focusExplorerSearch,
     focusMode,
     toggleFocusMode,
     toggleFullScreen,

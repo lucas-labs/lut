@@ -495,10 +495,12 @@ function notificationTestTitle(status: NotificationTestState): string {
 
 function FontFamilyInput({ value, onCommit }: { value: string; onCommit: (v: string) => void }) {
   const [draft, setDraft] = useState(value);
-
-  useEffect(() => {
+  // A change saved elsewhere replaces the draft.
+  const [draftOf, setDraftOf] = useState(value);
+  if (value !== draftOf) {
+    setDraftOf(value);
     setDraft(value);
-  }, [value]);
+  }
 
   // Commit (and trim) only on blur/Enter so a trailing space can be typed
   // mid-edit, e.g. "JetBrains Mono ".

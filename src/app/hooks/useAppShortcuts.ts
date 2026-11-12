@@ -1,7 +1,6 @@
 import { nextAttentionTarget } from '@/modules/agents';
 import type { PaletteInitialMode } from '@/modules/command-palette';
 import type { EditorPaneHandle } from '@/modules/editor';
-import type { SearchInlineHandle } from '@/modules/header';
 import { DEFAULT_SPACE_ID } from '@/modules/navigation';
 import { openSettingsWindow } from '@/modules/settings/openSettingsWindow';
 import {
@@ -24,7 +23,8 @@ export type AppShortcutArgs = {
   activeSpaceId: string | null;
   activeTab: Tab | undefined;
   editorRefs: RefObject<Map<number, EditorPaneHandle>>;
-  searchInlineRef: RefObject<SearchInlineHandle | null>;
+  /** Focuses the header's search. */
+  focusSearchInline: () => void;
   openCommandPalette: (mode: PaletteInitialMode) => void;
   openNewTab: () => void;
   openNewPrivateTab: () => void;
@@ -58,7 +58,7 @@ export function createAppShortcutHandlers({
   activeId,
   activeSpaceId,
   editorRefs,
-  searchInlineRef,
+  focusSearchInline,
   openCommandPalette,
   openNewTab,
   openNewPrivateTab,
@@ -120,7 +120,7 @@ export function createAppShortcutHandlers({
     'search.focus': () => {
       const editor = editorRefs.current.get(activeId);
       if (editor) editor.openSearch();
-      else searchInlineRef.current?.focus();
+      else focusSearchInline();
     },
     'agent.focusAttention': () => {
       const t = nextAttentionTarget();

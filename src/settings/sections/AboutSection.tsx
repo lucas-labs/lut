@@ -19,22 +19,24 @@ const PLATFORM_LABEL: Record<string, string> = {
   freebsd: 'FreeBSD',
 };
 
+/** The platform and architecture lut runs on, e.g. "Windows · x86_64". */
+function buildLabel(): string {
+  try {
+    const p = platform();
+    return `${PLATFORM_LABEL[p] ?? p} · ${arch()}`;
+  } catch {
+    return '';
+  }
+}
+
 export function AboutSection() {
   const [version, setVersion] = useState('');
   const [name, setName] = useState('lut');
-  const [build, setBuild] = useState('');
+  const [build] = useState(buildLabel);
 
   useEffect(() => {
     void getVersion().then(setVersion);
     void getName().then(setName);
-    try {
-      const p = platform();
-      const a = arch();
-      const platformLabel = PLATFORM_LABEL[p] ?? p;
-      setBuild(`${platformLabel} · ${a}`);
-    } catch {
-      setBuild('');
-    }
   }, []);
 
   return (

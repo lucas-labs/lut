@@ -33,6 +33,12 @@ function toStatus(res: ReadResult): MarkdownStatus {
  */
 export function useMarkdownDocument(path: string, visible: boolean): MarkdownStatus {
   const [status, setStatus] = useState<MarkdownStatus>({ kind: 'loading' });
+  // Another file starts loading.
+  const [statusPath, setStatusPath] = useState(path);
+  if (path !== statusPath) {
+    setStatusPath(path);
+    setStatus({ kind: 'loading' });
+  }
   const visibleRef = useRef(visible);
   const reloadRef = useRef<(() => void) | null>(null);
   const staleRef = useRef(false);
@@ -52,7 +58,6 @@ export function useMarkdownDocument(path: string, visible: boolean): MarkdownSta
     // The watcher reports canonical paths; the tab may hold an alias spelling.
     let canonical: string | null = null;
     staleRef.current = false;
-    setStatus({ kind: 'loading' });
 
     const read = () => {
       const id = ++requestId;

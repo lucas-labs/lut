@@ -319,11 +319,13 @@ export const EditorPane = memo(
       void resolveLanguage(resolvePath).catch(() => {});
     }, [path, overrideLanguage]);
 
+    const docReady = doc.status === 'ready';
+    const syntaxTooLarge = doc.status === 'ready' && doc.size > SYNTAX_MAX_BYTES;
     useEffect(() => {
       const ext = overrideLanguage || (path.split('.').pop()?.toLowerCase() ?? null);
       languageRef.current = ext;
-      if (doc.status !== 'ready') return;
-      if (doc.size > SYNTAX_MAX_BYTES) {
+      if (!docReady) return;
+      if (syntaxTooLarge) {
         setLangId(null);
         const view = cmRef.current?.view;
         view?.dispatch({ effects: languageCompartment.reconfigure([]) });
@@ -347,7 +349,7 @@ export const EditorPane = memo(
       return () => {
         cancelled = true;
       };
-    }, [path, doc.status, overrideLanguage]);
+    }, [path, docReady, syntaxTooLarge, overrideLanguage]);
 
     useImperativeHandle(
       ref,

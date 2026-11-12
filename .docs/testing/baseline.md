@@ -180,6 +180,21 @@ rule with pre-existing violations is a warning; the other rules are errors. Coun
 
 The React Compiler warnings (`react-hooks/*`, 105 in total) left after the BYOK AI, blocks and App-split cleanups are resolved by E09-10 (#326).
 
+**Since E09-10 (#326)** every `react-hooks/*` rule is an error and reports nothing: 54 compiler warnings and 7 hooks
+warnings were fixed. Three intentional exceptions carry an `eslint-disable-next-line` with their reason: TanStack
+Virtual's `useVirtualizer` in `GitHistoryPane` and `SourceControlPanel` (`incompatible-library`), and two tests that
+drive a hook through a mocked React (`rules-of-hooks`). `pnpm lint` exits 0 with 36 warnings in 18 files, its new
+budget (`--max-warnings 36`):
+
+| Rule                                                                                                                                                                                                                   | Count  |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| `jsx-a11y/prefer-tag-over-role`                                                                                                                                                                                        | 10     |
+| `prefer-template`                                                                                                                                                                                                      | 5      |
+| `@typescript-eslint/no-non-null-assertion`                                                                                                                                                                             | 4      |
+| `jsx-a11y/interactive-supports-focus`, `jsx-a11y/click-events-have-key-events`                                                                                                                                         | 3 each |
+| `jsx-a11y/no-static-element-interactions`, `jsx-a11y/no-noninteractive-tabindex`                                                                                                                                       | 2 each |
+| `jsx-a11y/no-autofocus`, `jsx-a11y/label-has-associated-control`, `jsx-a11y/no-noninteractive-element-interactions`, `prefer-const`, `no-empty`, `@typescript-eslint/no-empty-object-type`, `react/no-array-index-key` | 1 each |
+
 ### Smoke test: zoom shortcuts depend on the keyboard layout
 
 - **Reproduce:** Windows with a Spanish layout. `Ctrl++` (main row or numpad) types `+` into the prompt;

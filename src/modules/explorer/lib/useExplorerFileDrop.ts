@@ -6,7 +6,7 @@ import {
 import { currentWorkspaceEnv } from '@/modules/workspace';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWebview } from '@tauri-apps/api/webview';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 import { toast } from 'sonner';
 
 type Options = {
@@ -48,8 +48,7 @@ function dirAt(
 // land outside the explorer (the terminal handles its own).
 export function useExplorerFileDrop({ rootPath, enabled = true, isDir, onCopied }: Options) {
   const [targetDir, setTargetDir] = useState<string | null>(null);
-  const optsRef = useRef({ rootPath, isDir, onCopied });
-  optsRef.current = { rootPath, isDir, onCopied };
+  const currentOpts = useEffectEvent(() => ({ rootPath, isDir, onCopied }));
 
   useEffect(() => {
     if (!enabled) return;
@@ -59,7 +58,7 @@ export function useExplorerFileDrop({ rootPath, enabled = true, isDir, onCopied 
     void getCurrentWebview()
       .onDragDropEvent((e) => {
         const p = e.payload;
-        const { rootPath, isDir, onCopied } = optsRef.current;
+        const { rootPath, isDir, onCopied } = currentOpts();
         if (p.type === 'enter' || p.type === 'over') {
           setTargetDir(dirAt(p.position.x, p.position.y, rootPath, isDir));
           return;
@@ -84,7 +83,7 @@ export function useExplorerFileDrop({ rootPath, enabled = true, isDir, onCopied 
             .finally(() => {
               if (
                 !disposed &&
-                optsRef.current.rootPath === rootPath &&
+                currentOpts().rootPath === rootPath &&
                 currentWorkspaceEnv() === workspace
               )
                 onCopied(dir);

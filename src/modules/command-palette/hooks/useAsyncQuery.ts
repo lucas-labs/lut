@@ -1,3 +1,4 @@
+import { useLatest } from '@/lib/useLatest';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 type Params<T> = {
@@ -26,40 +27,44 @@ export function useAsyncQuery<T>({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const requestIdRef = useRef(0);
-  const runRef = useRef(run);
-  runRef.current = run;
+  const runRef = useLatest(run);
 
-  const execute = useCallback((q: string) => {
-    const requestId = ++requestIdRef.current;
-    setLoading(true);
+  const execute = useCallback(
+    (q: string) => {
+      const requestId = ++requestIdRef.current;
+      setLoading(true);
+      setError(null);
+      runRef
+        .current(q)
+        .then((hits) => {
+          if (requestId !== requestIdRef.current) return;
+          setResults(hits);
+        })
+        .catch((e) => {
+          if (requestId !== requestIdRef.current) return;
+          setResults([]);
+          setError(String(e));
+        })
+        .finally(() => {
+          if (requestId === requestIdRef.current) setLoading(false);
+        });
+    },
+    [runRef],
+  );
+
+  // A new query (or none) clears the previous results; a query starts loading at once, before its debounce.
+  const activeTerm = enabled && term.length >= minLength ? term : null;
+  const [shownTerm, setShownTerm] = useState<string | null | undefined>(undefined);
+  if (activeTerm !== shownTerm) {
+    setShownTerm(activeTerm);
+    setResults([]);
+    setLoading(activeTerm !== null);
     setError(null);
-    runRef
-      .current(q)
-      .then((hits) => {
-        if (requestId !== requestIdRef.current) return;
-        setResults(hits);
-      })
-      .catch((e) => {
-        if (requestId !== requestIdRef.current) return;
-        setResults([]);
-        setError(String(e));
-      })
-      .finally(() => {
-        if (requestId === requestIdRef.current) setLoading(false);
-      });
-  }, []);
+  }
 
   useEffect(() => {
     requestIdRef.current += 1;
-    if (!enabled || term.length < minLength) {
-      setResults([]);
-      setLoading(false);
-      setError(null);
-      return;
-    }
-    setResults([]);
-    setLoading(true);
-    setError(null);
+    if (!enabled || term.length < minLength) return;
     const handle = window.setTimeout(() => execute(term), debounceMs);
     return () => window.clearTimeout(handle);
   }, [enabled, term, minLength, debounceMs, execute]);
