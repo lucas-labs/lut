@@ -1,10 +1,12 @@
 // Builds lut's app icons and logo from the artwork in src-tauri/icons/source/:
 //   icon-<size>.png  one export per size, each adjusted by hand for its size;
-//   icon.ico         the exports from 16 to 256 px packed together.
-// Every bundle file is an export as it is, or the macOS .icns packed from them: nothing is rescaled.
+//   icon.ico         the exports from 16 to 256 px packed together;
+//   icon-<size>.svg  vector exports for the logo the app shows (src/components/AppLogo.tsx).
+// Every bundle file is an export as it is, or the macOS .icns packed from them: nothing is rescaled. The app's logo
+// comes from the vector exports in src/assets/logo/; public/logo.png is the favicon.
 //
 // usage: pnpm icons
-import { copyFileSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -65,4 +67,8 @@ writeFileSync(
   ),
 );
 copyFileSync(join(source, 'icon-256.png'), join(root, 'public', 'logo.png'));
-console.log('icons written to src-tauri/icons and public/logo.png');
+const logo = join(root, 'src', 'assets', 'logo');
+mkdirSync(logo, { recursive: true });
+for (const size of [16, 48])
+  copyFileSync(join(source, `icon-${size}.svg`), join(logo, `${size}.svg`));
+console.log('icons written to src-tauri/icons, public/logo.png and src/assets/logo/');

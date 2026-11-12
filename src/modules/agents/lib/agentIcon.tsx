@@ -1,3 +1,4 @@
+import { AppLogo } from '@/components/AppLogo';
 import {
   AiBrowserIcon,
   ChatGptIcon,
@@ -37,16 +38,7 @@ export function AgentIcon({ agent, size = 15, className }: { agent: string; size
     return <PiIcon size={size} className={className} />;
   }
   if (agent.toLowerCase().includes('lut')) {
-    return (
-      <img
-        src="/logo.png"
-        alt=""
-        width={size}
-        height={size}
-        className={className}
-        style={{ width: size, height: size }}
-      />
-    );
+    return <AppLogo size={size} className={className} />;
   }
   return <HugeiconsIcon icon={iconFor(agent)} size={size} strokeWidth={1.75} className={className} />;
 }

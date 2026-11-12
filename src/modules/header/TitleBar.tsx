@@ -1,3 +1,4 @@
+import { AppLogo } from '@/components/AppLogo';
 import { WindowControls } from '@/components/WindowControls';
 import { IS_MAC, USE_CUSTOM_WINDOW_CONTROLS } from '@/lib/platform';
 import { TitleBarHoldProvider } from '@/lib/titleBarHold';
@@ -115,7 +116,7 @@ function TitleBarRow({
   const clearTrafficLights = IS_MAC && (!inline || !sidePanelsOpen);
   const appMark = (
     <span className="flex shrink-0 items-center gap-1.5 px-2 text-xs text-muted-foreground">
-      <img src="/logo.png" alt="" className="size-4" draggable={false} />
+      <AppLogo size={16} />
       lut
     </span>
   );
