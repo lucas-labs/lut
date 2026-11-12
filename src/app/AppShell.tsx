@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import type { TitleBarPlacement } from '@/modules/header';
 import { SIDEBAR_MAX_WIDTH, SIDEBAR_MIN_WIDTH } from '@/modules/sidebar';
 import { TABS_COLUMN_MAX_WIDTH, TABS_COLUMN_MIN_WIDTH } from '@/modules/tabs';
-import type { ReactNode, RefObject } from 'react';
+import { type ComponentProps, type ReactNode, type RefObject, useState } from 'react';
 import type { PanelImperativeHandle } from 'react-resizable-panels';
 
 /**
@@ -14,6 +14,16 @@ import type { PanelImperativeHandle } from 'react-resizable-panels';
  */
 function handleClass(open: boolean) {
   return cn('-mr-px transition-colors duration-[var(--dur-fast)]', open ? 'bg-border' : 'bg-transparent');
+}
+
+/**
+ * A side panel whose `defaultSize` is the one it mounted with. The panel library re-registers a panel and lays its
+ * group out again whenever `defaultSize` changes, so a size that follows the panel's own state (collapsed or not)
+ * feeds back into itself.
+ */
+function SidePanel({ defaultSize, ...props }: ComponentProps<typeof ResizablePanel>) {
+  const [mountedSize] = useState(defaultSize);
+  return <ResizablePanel defaultSize={mountedSize} {...props} />;
 }
 
 type Props = {
@@ -87,7 +97,7 @@ export function AppShell({
         >
           {/* In focus mode the sidebar leaves its slot empty, as the tab column does; it comes back at its width. */}
           {focusMode ? null : (
-            <ResizablePanel
+            <SidePanel
               id="sidebar"
               panelRef={sidebarRef}
               defaultSize={`${sidebarInitialWidth}px`}
@@ -102,12 +112,12 @@ export function AppShell({
                 {IS_MAC ? <div data-tauri-drag-region className="h-7 shrink-0" /> : null}
                 <div className="min-h-0 flex-1">{sidebar}</div>
               </div>
-            </ResizablePanel>
+            </SidePanel>
           )}
           {focusMode ? null : <ResizableHandle className={handleClass(sidebarOpen)} />}
           {/* The column and its handle keep their slots when absent, so the workspace never moves in the tree. */}
           {tabsColumn ? (
-            <ResizablePanel
+            <SidePanel
               id="tabs-column"
               panelRef={tabsColumnRef}
               defaultSize={`${tabsColumnInitialWidth}px`}
@@ -117,7 +127,7 @@ export function AppShell({
               collapsedSize={0}
             >
               {tabsColumn}
-            </ResizablePanel>
+            </SidePanel>
           ) : null}
           {tabsColumn ? <ResizableHandle className={handleClass(tabsColumnOpen)} /> : null}
           <ResizablePanel id="workspace" defaultSize="78%" minSize="30%">
