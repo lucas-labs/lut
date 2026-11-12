@@ -58,3 +58,13 @@ Approve/deny agent permission requests from lut, only with a secure protocol and
 A plugin system for additional agent adapters. The existing built-in adapters (Claude, Codex, Gemini, Pi, OpenCode, Grok) are kept in v1.
 
 - `AGT-014` — P2 Plugins/adaptadores de agentes adicionales
+
+## Schema migrations
+
+lut has no releases and no user data: until the first release, a change to a stored shape drops the old data instead
+of migrating it. Versioned stores (`schemaVersion`), ordered migrations and rollback come with the first release that
+must keep data across an update.
+
+- `PRJ-014` — P1 Migraciones de esquema
+- `6.5:5` — Las migraciones de esquema requieren `schemaVersion` y transformaciones probadas.
+- `F4:2` — Migrar `Spaces` actual conservando datos. Not needed: there is no Spaces data to keep.
