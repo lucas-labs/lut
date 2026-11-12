@@ -8,7 +8,7 @@ import {
   PromptPresentationGate,
 } from './core/PromptPresentationGate';
 
-vi.mock('@/lib/platform', () => ({ IS_WINDOWS: true }));
+vi.mock('@/modules/platform', () => ({ IS_WINDOWS: true }));
 
 let ghostty: LutGhostty;
 

@@ -1,4 +1,4 @@
-import { isPrimaryModifierPressed } from '@/lib/platform';
+import { isPrimaryModifierPressed } from '@/modules/platform';
 import type { TerminalSurface } from '@/modules/terminal/backend/contracts';
 import { TerminalScrollbarSync } from '@/modules/terminal/ghostty/gpu/terminalScrollbar';
 import { bindTerminalInteraction } from '@/modules/terminal/ghostty/input/terminalInteraction';

@@ -20,7 +20,7 @@ vi.mock('@tauri-apps/api/event', () => ({
   },
 }));
 
-vi.mock('@/lib/launchDir', () => ({
+vi.mock('@/modules/platform', () => ({
   consumeLaunchFiles: async () => {
     ipc.drains++;
     const files = ipc.launchFiles;

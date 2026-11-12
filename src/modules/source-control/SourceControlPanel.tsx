@@ -29,13 +29,13 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { IS_MAC } from '@/lib/platform';
 import { cn } from '@/lib/utils';
 import { FileIcon } from '@/modules/explorer/FileIcon';
 import { copyToClipboard, revealInFinder } from '@/modules/explorer/lib/contextActions';
 import { COMPACT_CONTENT, COMPACT_ITEM } from '@/modules/explorer/lib/menuItemClass';
 import { joinPath } from '@/modules/explorer/lib/useFileTree';
 import { git, type GitBranchEntry } from '@/modules/git';
+import { IS_MAC } from '@/modules/platform';
 import {
   Alert02Icon,
   ArrowDown01Icon,

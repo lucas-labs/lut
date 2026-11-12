@@ -1,7 +1,5 @@
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { getLaunchDir } from '@/lib/launchDir';
-import { IS_MAC } from '@/lib/platform';
 import { quoteShellArg } from '@/lib/shellQuote';
 import { useZoom } from '@/lib/useZoom';
 import { isMarkdownPath } from '@/lib/utils';
@@ -26,6 +24,8 @@ import {
   useNavigationStore,
   useNavigatorItems,
 } from '@/modules/navigation';
+import { getLaunchDir } from '@/modules/platform';
+import { IS_MAC } from '@/modules/platform';
 import type { PreviewPaneHandle } from '@/modules/preview';
 import { openSettingsWindow } from '@/modules/settings/openSettingsWindow';
 import { usePreferencesStore } from '@/modules/settings/preferences';

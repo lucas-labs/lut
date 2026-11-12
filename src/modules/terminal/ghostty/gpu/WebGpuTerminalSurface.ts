@@ -1,5 +1,5 @@
 import { smoothHooks } from '@/bench/smoothHooks';
-import { isPrimaryModifierPressed } from '@/lib/platform';
+import { isPrimaryModifierPressed } from '@/modules/platform';
 import type { TerminalSurface } from '@/modules/terminal/backend/contracts';
 import {
   isClampedScrollEcho,

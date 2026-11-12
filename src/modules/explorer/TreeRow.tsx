@@ -1,5 +1,5 @@
-import { isPrimaryModifierPressed } from '@/lib/platform';
 import { cn } from '@/lib/utils';
+import { isPrimaryModifierPressed } from '@/modules/platform';
 import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { memo } from 'react';

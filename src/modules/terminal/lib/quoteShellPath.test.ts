@@ -1,7 +1,7 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/platform', () => ({ IS_WINDOWS: false }));
+vi.mock('@/modules/platform', () => ({ IS_WINDOWS: false }));
 
 import { quoteShellArg, unescapeForShell } from '@/lib/shellQuote';
 import { formatDroppedPaths, quoteShellPath } from './quoteShellPath';

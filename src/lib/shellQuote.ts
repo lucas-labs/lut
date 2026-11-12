@@ -1,4 +1,4 @@
-import { IS_WINDOWS } from './platform';
+import { IS_WINDOWS } from '@/modules/platform';
 
 /** Characters a POSIX shell treats as syntax when a path is pasted unquoted. */
 const POSIX_SHELL_SPECIAL = /([\\\s"'$`!&;|<>()[\]{}*?#~=])/g;

@@ -1,6 +1,6 @@
-import { USE_CUSTOM_WINDOW_CONTROLS } from '@/lib/platform';
 import { useWindowFullScreen } from '@/lib/useWindowFullScreen';
 import { cn } from '@/lib/utils';
+import { USE_CUSTOM_WINDOW_CONTROLS } from '@/modules/platform';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useEffect, useState } from 'react';
 import { CloseIcon, MaximizeIcon, MinimizeIcon, RestoreIcon } from './windowControlIcons';

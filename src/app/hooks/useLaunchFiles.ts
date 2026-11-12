@@ -1,4 +1,4 @@
-import { consumeLaunchFiles } from '@/lib/launchDir';
+import { consumeLaunchFiles } from '@/modules/platform';
 import { listen } from '@tauri-apps/api/event';
 import { useCallback, useEffect } from 'react';
 

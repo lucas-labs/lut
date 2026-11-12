@@ -1,12 +1,12 @@
 import './styles/globals.css';
 
+import { initLaunchDir } from '@/modules/platform';
 import { startSessionReconciler } from '@/modules/sessions';
 import { terminalDiagnosticsEnabled } from '@/modules/terminal/lib/terminalDiagnosticsEnabled';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import ReactDOM from 'react-dom/client';
 import App from './app/App';
-import { initLaunchDir } from './lib/launchDir';
 import { initWindowFrame } from './lib/windowFrame';
 
 initWindowFrame();

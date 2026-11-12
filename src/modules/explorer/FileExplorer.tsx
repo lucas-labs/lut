@@ -7,9 +7,9 @@ import {
   ContextMenuShortcut,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import { IS_MAC } from '@/lib/platform';
 import { cn } from '@/lib/utils';
 import type { GitStatusSnapshot } from '@/modules/git';
+import { IS_MAC } from '@/modules/platform';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { useGlobalShortcuts } from '@/modules/shortcuts';
 import type { TerminalPathDropTarget } from '@/modules/terminal';

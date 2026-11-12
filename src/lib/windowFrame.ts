@@ -1,5 +1,5 @@
+import { IS_WINDOWS, USE_CUSTOM_WINDOW_CONTROLS } from '@/modules/platform';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { IS_WINDOWS, USE_CUSTOM_WINDOW_CONTROLS } from './platform';
 
 /** Set on `<html>` while the window is maximized or full screen. */
 const WINDOW_MAXIMIZED_ATTR = 'data-window-maximized';
