@@ -4,9 +4,9 @@ import { cn } from '@/lib/utils';
 import type { TitleBarPlacement } from '@/modules/header';
 import { SIDEBAR_MAX_WIDTH, SIDEBAR_MIN_WIDTH } from '@/modules/sidebar';
 import { TABS_COLUMN_MAX_WIDTH, TABS_COLUMN_MIN_WIDTH } from '@/modules/tabs';
-import { type ComponentProps, type ReactNode, type RefObject, useLayoutEffect, useRef, useState } from 'react';
+import { type ComponentProps, type ReactNode, type RefObject, useRef, useState } from 'react';
 import type { Layout, PanelImperativeHandle } from 'react-resizable-panels';
-import { sidePanelsToRestore } from './lib/sidePanelRestore';
+import { foldSideLayoutChange, sideLayoutChange, sidePanelsToSettle } from './lib/sidePanelRestore';
 
 /**
  * A side panel's resize handle is the 1px line between it and what follows. Its negative margin lets it overlap the
@@ -30,7 +30,6 @@ function SidePanel({ defaultSize, ...props }: ComponentProps<typeof ResizablePan
 }
 
 const SIDE_PANELS = ['sidebar', 'tabs-column'] as const;
-type SidePanelId = (typeof SIDE_PANELS)[number];
 
 type Props = {
   /** Focus mode (E12-10): only the workspace shows; the chrome keeps its own state for when it comes back. */
@@ -90,26 +89,50 @@ export function AppShell({
   const titleBar = focusMode ? null : titleBarProp;
   const tabsColumn = focusMode ? null : tabsColumnProp;
 
-  // The side panels' own sizes, and the group's last layout: when the group lays itself out (a panel set change,
-  // a panel opening or closing), the side panels that should not have moved go back to their size.
-  const sizes = useRef<Record<SidePanelId, number>>({ sidebar: 0, 'tabs-column': 0 });
-  useLayoutEffect(() => {
-    sizes.current = { sidebar: sidebarInitialWidth, 'tabs-column': tabsColumnInitialWidth };
+  // The side panels' own widths as of the last layout the app accepted, and the group's last layout: when the group
+  // lays itself out (a panel set change, a panel opening or closing), the side panels that should not have moved go
+  // back to their width.
+  const sizes = useRef<Record<string, number>>({
+    sidebar: sidebarInitialWidth,
+    'tabs-column': tabsColumnInitialWidth,
   });
   const lastLayout = useRef<Layout | null>(null);
+  // The widths the side panels should end at once the current batch of layout changes settles; null when none is
+  // pending.
+  const pending = useRef<Record<string, number> | null>(null);
   const restoring = useRef(false);
   const group = useRef<HTMLDivElement | null>(null);
-  const restoreSidePanels = (ids: string[], target: Record<SidePanelId, number>) => {
+  // From the layout, not the panels' elements: a layout set from code is reported before it renders.
+  const widthIn = (layout: Layout) => (id: string) =>
+    Math.round(((layout[id] ?? 0) / 100) * (group.current?.offsetWidth ?? 0));
+
+  const accept = (layout: Layout, isUserInteraction: boolean) => {
+    // The side panels are gone in focus mode; their stored layout stays as it was.
+    if (focusMode) return;
+    const width = widthIn(layout);
+    for (const id of SIDE_PANELS) if (id in layout) sizes.current[id] = width(id);
+    onSidebarLayout(width('sidebar'), isUserInteraction);
+    if (tabsColumn) onTabsColumnLayout(width('tabs-column'), isUserInteraction);
+  };
+
+  // After the group's own layout pass, not inside it; every change one command made has been reported by then.
+  const settle = () => {
+    const targets = pending.current;
+    pending.current = null;
+    const layout = lastLayout.current;
+    if (!targets || !layout) return;
     restoring.current = true;
     try {
-      for (const id of ids as SidePanelId[]) {
+      for (const [id, width] of sidePanelsToSettle(targets, layout, widthIn(layout))) {
         const panel = (id === 'sidebar' ? sidebarRef : tabsColumnRef).current;
-        if (target[id] > 0) panel?.resize(`${target[id]}px`);
+        if (width > 0) panel?.resize(`${width}px`);
         else panel?.collapse();
       }
     } finally {
       restoring.current = false;
     }
+    // The settled layout, also when it needed no correction and the group reported nothing more.
+    if (lastLayout.current) accept(lastLayout.current, false);
   };
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-frame text-foreground">
@@ -119,26 +142,25 @@ export function AppShell({
           className="min-h-0 flex-1"
           elementRef={group}
           onLayoutChanged={(layout, { isUserInteraction }) => {
-            // A layout the restore itself causes is the intended one; it starts nothing new.
-            const restore = restoring.current
-              ? []
-              : sidePanelsToRestore(lastLayout.current, layout, isUserInteraction, SIDE_PANELS);
+            const prev = lastLayout.current;
             lastLayout.current = layout;
-            if (restore.length > 0) {
-              // The sizes as they were before this layout.
-              const target = { ...sizes.current };
-              // After the group's own layout pass, not inside it.
-              queueMicrotask(() => restoreSidePanels(restore, target));
-              // This layout is about to be corrected: the app records the corrected one, not this.
-              return;
+            // A layout the settling itself causes is the intended one; it starts nothing new.
+            if (!restoring.current) {
+              const change = sideLayoutChange(prev, layout, isUserInteraction, SIDE_PANELS);
+              if (pending.current || change.restore.length > 0) {
+                const first = pending.current === null;
+                pending.current = foldSideLayoutChange(
+                  pending.current ?? {},
+                  change,
+                  widthIn(layout),
+                  (id) => sizes.current[id] ?? 0,
+                );
+                if (first) queueMicrotask(settle);
+                // This layout is about to be corrected: the app records the settled one, not this.
+                return;
+              }
             }
-            // The side panels are gone in focus mode; their stored layout stays as it was.
-            if (focusMode) return;
-            // From the layout, not the panels' elements: a layout set from code is reported before it renders.
-            const width = (id: SidePanelId) =>
-              Math.round(((layout[id] ?? 0) / 100) * (group.current?.offsetWidth ?? 0));
-            onSidebarLayout(width('sidebar'), isUserInteraction);
-            if (tabsColumn) onTabsColumnLayout(width('tabs-column'), isUserInteraction);
+            accept(layout, isUserInteraction);
           }}
         >
           {/* In focus mode the sidebar leaves its slot empty, as the tab column does; it comes back at its width. */}
