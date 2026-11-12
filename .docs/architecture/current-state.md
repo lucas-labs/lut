@@ -1,6 +1,7 @@
 # Current state: modules and IPC surface
 
-A map of the imported Terax code as it is on `master` at `4059e1a` (2026-11-09), before any refactor (E01-07). It
+A map of the imported Terax code as it is on `master` at `4059e1a` (2026-11-09), before any refactor (E01-07). The
+frontend sections and the callers named in the IPC tables were refreshed after the App split (E09-09). It
 reuses the area analyses under `.docs/plan/analysis/` and re-checks their facts against the code; where they disagree,
 this file wins (see [Corrections to the area analyses](#corrections-to-the-area-analyses)).
 
@@ -43,44 +44,49 @@ To re-check after a change: `git grep -n "generate_handler" src-tauri/src` gives
 
 ### Entry points and shared code
 
-| Path              | Role                                                                                                                                                                                                                                                         |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `main.tsx`        | Global CSS, borderless chrome flag, optional bench driver (`__LUT_BENCH__`), `invoke('pty_close_all')` to reap orphaned PTYs, launch dir seed, renders `<App/>`, shows the window.                                                                           |
-| `app/App.tsx`     | The single coordinator (1484 lines): tab model via `useTabs`, spaces, every shortcut handler, agent launch flow, control bridge, LSP navigator, open-file listener, layout (header, sidebar, workspace surface, status bar, command palette, close dialogs). |
-| `app/components/` | `WorkspaceSurface` (the central area), `CloseDialogs`.                                                                                                                                                                                                       |
-| `app/hooks/`      | Close guards (`useAppCloseGuard`, `useTabCloseGuards`, `tabCloseGuards`) and `useWorkspaceSwitcher`.                                                                                                                                                         |
-| `settings/`       | The settings window app (`SettingsApp.tsx`, `sections/`, `components/`).                                                                                                                                                                                     |
-| `lib/`            | Shared helpers: `utils` (`cn`), `platform`, `fonts`, `launchDir`, `useAssetGrant`, `shellQuote`, `homeRelativePath`, `external-link`, `usePresence`, `useZoom`.                                                                                              |
-| `components/`     | `WindowControls.tsx` and shadcn primitives (`ui/`); `ui/` is excluded from lint and format.                                                                                                                                                                  |
-| `bench/`          | The in-app benchmark driver, loaded only when built with `LUT_BENCH` (`__LUT_BENCH__`).                                                                                                                                                                      |
+| Path               | Role                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `main.tsx`         | Imports the global CSS and calls `bootstrap()` with the render of `<App/>`.                                                                                                                                                                                                                                                                                                                    |
+| `app/bootstrap.ts` | The boot sequence, in order: window frame flag, optional react-scan, early bench driver (`__LUT_BENCH__`), `invoke('pty_close_all')` to reap orphaned PTYs, launch dir seed, session reconciler, render, show the window, terminal diagnostics.                                                                                                                                                |
+| `app/App.tsx`      | The coordinator (about 250 lines): composes the hooks below and lays out `AppShell` with the title bar, tab navigator, sidebar, workspace surface and overlays.                                                                                                                                                                                                                                |
+| `app/AppShell.tsx` | The window layout: title bar, sidebar, vertical tab column and workspace in one panel group; keeps the side panels at their width (`lib/sidePanelRestore.ts`).                                                                                                                                                                                                                                 |
+| `app/components/`  | `WorkspaceSurface` (the central area), `AppSidebar` (Spaces, Files and Git views with the rail), `AppOverlays` (bridges, switcher, palette, dialogs), `CloseDialogs`.                                                                                                                                                                                                                          |
+| `app/hooks/`       | The window's wiring, one concern each: `useAppShortcuts`, `useLaunchFiles`, `useAgentLaunch`, `useWorkspaceCoordinator` (with `useWorkspaceSwitcher`), `useTerminalPanes`, `useEditorPanes`, `usePreviewPanes`, `useSidePanels`, `useFocusMode`, `useAppSourceControl`, `useTabCommands`, `useTabClosing` (with the close guards), `useSearchTarget`, `useCommandPalette`, `useAppCloseGuard`. |
+| `app/lib/`         | Pure helpers of the shell: `activeFilePath`, `sidePanelRestore`.                                                                                                                                                                                                                                                                                                                               |
+| `settings/`        | The settings window app (`SettingsApp.tsx`, `sections/`, `components/`).                                                                                                                                                                                                                                                                                                                       |
+| `lib/`             | Shared helpers: `utils` (`cn`), `fonts`, `useAssetGrant`, `useLatest`, `shellQuote`, `external-link`, `titleBarHold`, `useZoom`, `security/`.                                                                                                                                                                                                                                                  |
+| `components/`      | `WindowControls.tsx`, `AppLogo.tsx` and shadcn primitives (`ui/`); `ui/` is excluded from lint and format.                                                                                                                                                                                                                                                                                     |
+| `bench/`           | The in-app benchmark driver, loaded only when built with `LUT_BENCH` (`__LUT_BENCH__`).                                                                                                                                                                                                                                                                                                        |
 
 ### Feature modules (`src/modules/`)
 
 Sizes count non-test `.ts`/`.tsx` files; tests are the `*.test.*` files in the module.
 
-| Module            | Role                                                                                                                                                              | Files | Lines  | Tests |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------ | ----- |
-| `terminal`        | Panes and sessions: `TerminalStack`, `PaneTreeView`, `TerminalPane`; Ghostty WASM model and WebGPU/WebGL renderers (`ghostty/`); PTY bridge and helpers (`lib/`). | 125   | 23 720 | 115   |
-| `explorer`        | File tree, file operations, drag and drop, clipboard paste, watcher, inline search.                                                                               | 23    | 6 407  | 9     |
-| `editor`          | CodeMirror editor, git diff stacks, external formatter, file sync.                                                                                                | 36    | 4 801  | 13    |
-| `theme`           | Theme provider, built-in and custom themes, theme files, vibrancy, surface layer, window activity.                                                                | 36    | 3 364  | 13    |
-| `source-control`  | Git panel: status, stage, commit, push/pull, branches.                                                                                                            | 10    | 3 368  | 5     |
-| `tabs`            | Tab model (`lib/useTabs.ts`, 1440 lines, 8 tab kinds), tab bar, tab switcher, new-tab menu.                                                                       | 10    | 2 438  | 13    |
-| `agents`          | CLI agent tracking: activity and managed-agent stores, notification bell and bridge, launch requests; `model/` is a reducer not yet wired.                        | 22    | 2 138  | 11    |
-| `lsp`             | Language-server client: detection, sessions, transport, runtime store, status pill.                                                                               | 14    | 1 913  | 7     |
-| `command-palette` | Palette modes, fuzzy ranking, MRU, quick-open (`fs_search`) and content search (`fs_grep_interactive`).                                                           | 13    | 1 554  | 7     |
-| `git-history`     | Commit log pane.                                                                                                                                                  | 7     | 1 365  | 3     |
-| `spaces`          | Spaces (workspace groups): store, persistence, boot, switcher.                                                                                                    | 11    | 1 316  | 3     |
-| `git`             | Frontend git API (`api.ts`, the `git` wrapper object), change subscription (`changes.ts`), types, dead hunk/scope models (E02-04).                                | 6     | 1 259  | 4     |
-| `settings`        | Settings persistence (`store.ts`, `LazyStore`), preferences store, `openSettingsWindow`.                                                                          | 3     | 1 058  | 6     |
-| `shortcuts`       | Shortcut registry, per-OS defaults, resolver, the global `keydown` handler.                                                                                       | 8     | 730    | 5     |
-| `control`         | Control bridge to the CLI (`useControlBridge`); `agents.ts` and most of `lib/` are a staged agent-event API not yet wired.                                        | 8     | 585    | 6     |
-| `markdown`        | Markdown preview tabs.                                                                                                                                            | 9     | 574    | 4     |
-| `preview`         | Web preview tabs (iframe with address bar).                                                                                                                       | 5     | 532    | 3     |
-| `statusbar`       | Status bar, cwd breadcrumb, diagnostics badge, workspace env selector; `useGitBranch`, `useSystemInfo`, `OsIcon` (not mounted, kept for E12-06).                  | 9     | 515    | 1     |
-| `header`          | Title bar and inline search.                                                                                                                                      | 3     | 387    | 0     |
-| `sidebar`         | Sidebar rail and panel state.                                                                                                                                     | 4     | 265    | 1     |
-| `workspace`       | Workspace environment (local or WSL distro) store and scope keys.                                                                                                 | 2     | 76     | 0     |
+| Module            | Role                                                                                                                                                                               | Files | Lines  | Tests |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- | ------ | ----- |
+| `terminal`        | Panes and sessions: `TerminalStack`, `PaneTreeView`, `TerminalPane`; Ghostty WASM model and WebGPU/WebGL renderers (`ghostty/`); PTY bridge and helpers (`lib/`).                  | 126   | 24 230 | 117   |
+| `explorer`        | File tree, file operations, drag and drop, clipboard paste, watcher, inline search.                                                                                                | 23    | 6 410  | 9     |
+| `editor`          | CodeMirror editor, git diff stacks, external formatter, file sync.                                                                                                                 | 32    | 3 740  | 10    |
+| `theme`           | Theme provider, built-in and custom themes, theme files, vibrancy, surface layer, window activity.                                                                                 | 37    | 3 595  | 14    |
+| `source-control`  | Git panel: status, stage, commit, push/pull, branches.                                                                                                                             | 10    | 3 120  | 5     |
+| `lsp`             | Language-server client: detection, sessions, transport, runtime store, status pill.                                                                                                | 14    | 1 905  | 7     |
+| `agents`          | CLI agent tracking: activity and managed-agent stores, notification bell and bridge, launch requests.                                                                              | 20    | 1 902  | 10    |
+| `command-palette` | Palette modes, fuzzy ranking, MRU, quick-open (`fs_search`) and content search (`fs_grep_interactive`).                                                                            | 12    | 1 561  | 7     |
+| `navigation`      | The tab model (E08): the navigation store with tabs, panes, spaces of tabs and MRU, its planners, tab titles and icons, the navigator types.                                       | 12    | 1 519  | 17    |
+| `git-history`     | Commit log pane.                                                                                                                                                                   | 7     | 1 364  | 3     |
+| `spaces`          | Spaces (workspace groups): store, persistence, boot, overview.                                                                                                                     | 11    | 1 282  | 3     |
+| `markdown`        | Markdown preview tabs.                                                                                                                                                             | 12    | 1 094  | 5     |
+| `tabs`            | Tab navigator (strip and column), new-tab menu, Ctrl+Tab switcher, tab column state, window title, workspace cwd; `useTabs` seeds the launch tab.                                  | 12    | 972    | 5     |
+| `settings`        | Settings persistence (`store.ts`, `LazyStore`), preferences store, `openSettingsWindow`.                                                                                           | 3     | 822    | 8     |
+| `header`          | Title bar, cwd breadcrumb and inline search.                                                                                                                                       | 6     | 765    | 2     |
+| `shortcuts`       | Shortcut registry, per-OS defaults, resolver, the global `keydown` handler.                                                                                                        | 8     | 732    | 5     |
+| `control`         | Control bridge to the CLI (`useControlBridge`); `agents.ts` and most of `lib/` are a staged agent-event API not yet wired.                                                         | 8     | 576    | 6     |
+| `preview`         | Web preview tabs (iframe with address bar).                                                                                                                                        | 6     | 528    | 3     |
+| `git`             | Frontend git API (`api.ts`, the `git` wrapper object), change subscription (`changes.ts`), types.                                                                                  | 4     | 372    | 2     |
+| `sidebar`         | Sidebar rail and panel state.                                                                                                                                                      | 4     | 273    | 1     |
+| `platform`        | OS detection and shortcut formatting (`os`), launch dir and files, window calls and subscriptions (`window`), notification permission, full screen, window frame (E09-05, E09-06). | 7     | 247    | 2     |
+| `workspace`       | Workspace environment (local or WSL distro) store and scope keys.                                                                                                                  | 3     | 94     | 0     |
+| `sessions`        | Session reconciler: disposes the terminal session of every pane no tab holds any more.                                                                                             | 2     | 28     | 1     |
 
 ### Stores (zustand)
 
@@ -140,10 +146,11 @@ reads `window.__TAURI__`.
 
 **DOM custom events:** none since E05-06 removed `lut:ai-attach-file`.
 
-**Tauri window hooks:** `onCloseRequested` (`app/hooks/useAppCloseGuard.ts`), `onResized`
-(`components/WindowControls.tsx`), `onFocusChanged` (`modules/agents/lib/useWindowFocus.ts`,
-`modules/terminal/ghostty/renderScheduling.ts`), `onDragDropEvent` (`modules/explorer/lib/useExplorerFileDrop.ts`,
-`modules/terminal/lib/useTerminalFileDrop.ts`).
+**Tauri window hooks:** window calls and subscriptions go through `modules/platform/window.ts` (`onWindowCloseRequested`
+for `app/hooks/useAppCloseGuard.ts`, `onWindowResized` for `components/WindowControls.tsx`, `onWindowFocusChanged` for
+`modules/agents/lib/useWindowFocus.ts`); the terminal renderer keeps its own `onFocusChanged`
+(`modules/terminal/ghostty/renderScheduling.ts`). `onDragDropEvent`: `modules/explorer/lib/useExplorerFileDrop.ts`,
+`modules/terminal/lib/useTerminalFileDrop.ts`.
 
 ## Backend
 
@@ -211,28 +218,28 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 
 #### pty
 
-| Command                      | Handler | Frontend caller(s)                                                  |
-| ---------------------------- | ------- | ------------------------------------------------------------------- |
-| `pty_open`                   | `pty`   | `modules/terminal/lib/pty-bridge.ts`                                |
-| `pty_write`                  | `pty`   | `modules/terminal/lib/pty-bridge.ts`                                |
-| `pty_stream_open`            | `pty`   | `modules/terminal/lib/pty-bridge.ts`                                |
-| `pty_set_presentation`       | `pty`   | `modules/terminal/lib/ptyPresentation.ts`                           |
-| `pty_set_colors`             | `pty`   | `modules/terminal/lib/pty-bridge.ts`                                |
-| `pty_diagnostics`            | `pty`   | `modules/terminal/lib/terminalDiagnostics.ts`                       |
-| `pty_resize`                 | `pty`   | `modules/terminal/lib/pty-bridge.ts`                                |
-| `pty_close`                  | `pty`   | `modules/terminal/lib/pty-bridge.ts`                                |
-| `pty_close_all`              | `pty`   | `main.tsx`                                                          |
-| `pty_has_foreground_process` | `pty`   | `modules/terminal/ghostty/useGhosttyTerminalSession.ts`             |
-| `pty_has_foreground_job`     | `pty`   | **no caller**                                                       |
-| `pty_shell_name`             | `pty`   | `modules/statusbar/useSystemInfo.ts` (not mounted; kept for E12-06) |
-| `pty_session_shell`          | `pty`   | `modules/terminal/lib/useTerminalFileDrop.ts`                       |
-| `pty_list_shells`            | `pty`   | `settings/sections/GeneralSection.tsx`                              |
+| Command                      | Handler | Frontend caller(s)                                         |
+| ---------------------------- | ------- | ---------------------------------------------------------- |
+| `pty_open`                   | `pty`   | `modules/terminal/lib/pty-bridge.ts`                       |
+| `pty_write`                  | `pty`   | `modules/terminal/lib/pty-bridge.ts`                       |
+| `pty_stream_open`            | `pty`   | `modules/terminal/lib/pty-bridge.ts`                       |
+| `pty_set_presentation`       | `pty`   | `modules/terminal/lib/ptyPresentation.ts`                  |
+| `pty_set_colors`             | `pty`   | `modules/terminal/lib/pty-bridge.ts`                       |
+| `pty_diagnostics`            | `pty`   | `modules/terminal/lib/terminalDiagnostics.ts`              |
+| `pty_resize`                 | `pty`   | `modules/terminal/lib/pty-bridge.ts`                       |
+| `pty_close`                  | `pty`   | `modules/terminal/lib/pty-bridge.ts`                       |
+| `pty_close_all`              | `pty`   | `app/bootstrap.ts`                                         |
+| `pty_has_foreground_process` | `pty`   | `modules/terminal/ghostty/useGhosttyTerminalSession.ts`    |
+| `pty_has_foreground_job`     | `pty`   | **no caller**                                              |
+| `pty_shell_name`             | `pty`   | none since E12-06 removed the status bar (`useSystemInfo`) |
+| `pty_session_shell`          | `pty`   | `modules/terminal/lib/useTerminalFileDrop.ts`              |
+| `pty_list_shells`            | `pty`   | `settings/sections/GeneralSection.tsx`                     |
 
 #### fs
 
 | Command               | Handler         | Frontend caller(s)                                                                                                                                             |
 | --------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `list_subdirs`        | `fs::tree`      | `modules/statusbar/CwdBreadcrumb.tsx`                                                                                                                          |
+| `list_subdirs`        | `fs::tree`      | `modules/header/CwdBreadcrumb.tsx`                                                                                                                             |
 | `fs_read_dir`         | `fs::tree`      | `modules/explorer/lib/useFileTree.ts`                                                                                                                          |
 | `fs_read_file`        | `fs::file`      | `modules/editor/lib/externalFormat.ts`, `modules/editor/lib/useDocument.ts`, `modules/markdown/useMarkdownDocument.ts`, `modules/theme/useThemeFileEditing.ts` |
 | `asset_grant`         | `fs::assets`    | `lib/useAssetGrant.ts`                                                                                                                                         |
@@ -267,28 +274,28 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 
 #### git
 
-| Command                | Handler         | Frontend caller(s)                                                                                                                                               |
-| ---------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `git_resolve_repo`     | `git::commands` | `git.resolveRepo` → `modules/statusbar/useGitBranch.ts`, `modules/source-control/useRepositoryTargeting.ts`, `modules/source-control/useSourceControlContext.ts` |
-| `git_panel_snapshot`   | `git::commands` | `git.panelSnapshot` → `modules/source-control/useSourceControl.ts`                                                                                               |
-| `git_status`           | `git::commands` | `git.status` → `modules/source-control/useSourceControl.ts`                                                                                                      |
-| `git_diff`             | `git::commands` | `git.diff` → `modules/source-control/useSourceControlPanel.ts`                                                                                                   |
-| `git_diff_content`     | `git::commands` | `git.diffContent` → `modules/editor/lib/diffCache.ts`                                                                                                            |
-| `git_stage`            | `git::commands` | `git.stage` → `modules/source-control/useSourceControlPanel.ts`                                                                                                  |
-| `git_unstage`          | `git::commands` | `git.unstage` → `modules/source-control/useSourceControlPanel.ts`                                                                                                |
-| `git_discard`          | `git::commands` | `git.discard` → `modules/source-control/useSourceControlPanel.ts`                                                                                                |
-| `git_commit`           | `git::commands` | `git.commit` → `modules/source-control/useSourceControlPanel.ts`                                                                                                 |
-| `git_fetch`            | `git::commands` | `git.fetch` → `modules/source-control/useSourceControl.ts`                                                                                                       |
-| `git_pull_ff_only`     | `git::commands` | `git.pullFfOnly` → `modules/source-control/useSourceControl.ts`                                                                                                  |
-| `git_push`             | `git::commands` | `git.push` → `modules/source-control/useSourceControl.ts`                                                                                                        |
-| `git_log`              | `git::commands` | `git.log` → `modules/git-history/GitHistoryPane.tsx`                                                                                                             |
-| `git_commit_files`     | `git::commands` | `git.commitFiles` → `modules/git-history/GitHistoryPane.tsx`                                                                                                     |
-| `git_commit_file_diff` | `git::commands` | `git.commitFileDiff` → `modules/editor/lib/diffCache.ts`                                                                                                         |
-| `git_remote_url`       | `git::commands` | `git.remoteUrl` → `modules/git-history/GitHistoryPane.tsx`                                                                                                       |
-| `git_list_branches`    | `git::commands` | `git.listBranches` → `modules/source-control/SourceControlPanel.tsx`                                                                                             |
-| `git_checkout_branch`  | `git::commands` | `git.checkoutBranch` → `modules/source-control/SourceControlPanel.tsx`                                                                                           |
-| `git_watch`            | `git::commands` | `git.watch` → `modules/git/changes.ts`                                                                                                                           |
-| `git_unwatch`          | `git::commands` | `git.unwatch` → `modules/git/changes.ts`                                                                                                                         |
+| Command                | Handler         | Frontend caller(s)                                                                                                          |
+| ---------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `git_resolve_repo`     | `git::commands` | `git.resolveRepo` → `modules/source-control/useRepositoryTargeting.ts`, `modules/source-control/useSourceControlContext.ts` |
+| `git_panel_snapshot`   | `git::commands` | `git.panelSnapshot` → `modules/source-control/useSourceControl.ts`                                                          |
+| `git_status`           | `git::commands` | `git.status` → `modules/source-control/useSourceControl.ts`                                                                 |
+| `git_diff`             | `git::commands` | `git.diff` → `modules/source-control/useSourceControlPanel.ts`                                                              |
+| `git_diff_content`     | `git::commands` | `git.diffContent` → `modules/editor/lib/diffCache.ts`                                                                       |
+| `git_stage`            | `git::commands` | `git.stage` → `modules/source-control/useSourceControlPanel.ts`                                                             |
+| `git_unstage`          | `git::commands` | `git.unstage` → `modules/source-control/useSourceControlPanel.ts`                                                           |
+| `git_discard`          | `git::commands` | `git.discard` → `modules/source-control/useSourceControlPanel.ts`                                                           |
+| `git_commit`           | `git::commands` | `git.commit` → `modules/source-control/useSourceControlPanel.ts`                                                            |
+| `git_fetch`            | `git::commands` | `git.fetch` → `modules/source-control/useSourceControl.ts`                                                                  |
+| `git_pull_ff_only`     | `git::commands` | `git.pullFfOnly` → `modules/source-control/useSourceControl.ts`                                                             |
+| `git_push`             | `git::commands` | `git.push` → `modules/source-control/useSourceControl.ts`                                                                   |
+| `git_log`              | `git::commands` | `git.log` → `modules/git-history/GitHistoryPane.tsx`                                                                        |
+| `git_commit_files`     | `git::commands` | `git.commitFiles` → `modules/git-history/GitHistoryPane.tsx`                                                                |
+| `git_commit_file_diff` | `git::commands` | `git.commitFileDiff` → `modules/editor/lib/diffCache.ts`                                                                    |
+| `git_remote_url`       | `git::commands` | `git.remoteUrl` → `modules/git-history/GitHistoryPane.tsx`                                                                  |
+| `git_list_branches`    | `git::commands` | `git.listBranches` → `modules/source-control/SourceControlPanel.tsx`                                                        |
+| `git_checkout_branch`  | `git::commands` | `git.checkoutBranch` → `modules/source-control/SourceControlPanel.tsx`                                                      |
+| `git_watch`            | `git::commands` | `git.watch` → `modules/git/changes.ts`                                                                                      |
+| `git_unwatch`          | `git::commands` | `git.unwatch` → `modules/git/changes.ts`                                                                                    |
 
 #### shell
 
@@ -298,13 +305,13 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 
 #### workspace
 
-| Command                 | Handler          | Frontend caller(s)                                                                                                               |
-| ----------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `wsl_list_distros`      | `workspace`      | `modules/workspace/env.ts`, `settings/sections/GeneralSection.tsx`                                                               |
-| `wsl_default_distro`    | `workspace`      | **no caller**                                                                                                                    |
-| `wsl_home`              | `workspace::ipc` | `modules/workspace/env.ts`                                                                                                       |
-| `workspace_authorize`   | `workspace`      | `workspaceNative.workspaceAuthorize` → `app/App.tsx`, `app/hooks/useWorkspaceSwitcher.ts`, `modules/spaces/lib/useSpacesBoot.ts` |
-| `workspace_current_dir` | `workspace`      | `lib/launchDir.ts`, `workspaceNative.workspaceCurrentDir` → `app/hooks/useWorkspaceSwitcher.ts`                                  |
+| Command                 | Handler          | Frontend caller(s)                                                                                                                                 |
+| ----------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wsl_list_distros`      | `workspace`      | `modules/workspace/env.ts`, `settings/sections/GeneralSection.tsx`                                                                                 |
+| `wsl_default_distro`    | `workspace`      | **no caller**                                                                                                                                      |
+| `wsl_home`              | `workspace::ipc` | `modules/workspace/env.ts`                                                                                                                         |
+| `workspace_authorize`   | `workspace`      | `workspaceNative.workspaceAuthorize` → `app/hooks/useTerminalPanes.ts`, `app/hooks/useWorkspaceSwitcher.ts`, `modules/spaces/lib/useSpacesBoot.ts` |
+| `workspace_current_dir` | `workspace`      | `modules/platform/launchDir.ts`, `workspaceNative.workspaceCurrentDir` → `app/hooks/useWorkspaceSwitcher.ts`                                       |
 
 #### control
 
@@ -324,19 +331,19 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 
 | Command                | Handler  | Frontend caller(s)                       |
 | ---------------------- | -------- | ---------------------------------------- |
-| `get_launch_dir`       | `lib.rs` | `lib/launchDir.ts`                       |
-| `get_launch_files`     | `lib.rs` | `lib/launchDir.ts`                       |
+| `get_launch_dir`       | `lib.rs` | `modules/platform/launchDir.ts`          |
+| `get_launch_files`     | `lib.rs` | `modules/platform/launchDir.ts`          |
 | `open_settings_window` | `lib.rs` | `modules/settings/openSettingsWindow.ts` |
 
 #### agent
 
-| Command               | Handler | Frontend caller(s)                                                                                    |
-| --------------------- | ------- | ----------------------------------------------------------------------------------------------------- |
-| `agent_enable_hooks`  | `agent` | `app/App.tsx`, `modules/agents/components/NotificationBell.tsx`, `modules/control/lib/hooksConfig.ts` |
-| `agent_disable_hooks` | `agent` | `modules/control/lib/hooksConfig.ts`                                                                  |
-| `agent_hooks_plan`    | `agent` | `modules/control/lib/hooksConfig.ts`                                                                  |
-| `agent_hooks_apply`   | `agent` | `modules/control/lib/hooksConfig.ts`                                                                  |
-| `agent_hooks_status`  | `agent` | `modules/agents/components/NotificationBell.tsx`, `modules/control/lib/hooksConfig.ts`                |
+| Command               | Handler | Frontend caller(s)                                                                                                    |
+| --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------- |
+| `agent_enable_hooks`  | `agent` | `app/hooks/useAgentLaunch.ts`, `modules/agents/components/NotificationBell.tsx`, `modules/control/lib/hooksConfig.ts` |
+| `agent_disable_hooks` | `agent` | `modules/control/lib/hooksConfig.ts`                                                                                  |
+| `agent_hooks_plan`    | `agent` | `modules/control/lib/hooksConfig.ts`                                                                                  |
+| `agent_hooks_apply`   | `agent` | `modules/control/lib/hooksConfig.ts`                                                                                  |
+| `agent_hooks_status`  | `agent` | `modules/agents/components/NotificationBell.tsx`, `modules/control/lib/hooksConfig.ts`                                |
 
 #### vibrancy
 
@@ -363,7 +370,7 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 
 | Event                       | Emitted by                                                                     | Listened in                                                                                                              |
 | --------------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| `lut:open-file`             | `lib.rs` (macOS Open With), to all windows                                     | `app/App.tsx`                                                                                                            |
+| `lut:open-file`             | `lib.rs` (macOS Open With), to all windows                                     | `app/hooks/useLaunchFiles.ts`                                                                                            |
 | `lut:settings-tab`          | `lib.rs::open_settings_window`, to `settings`                                  | `settings/SettingsApp.tsx`                                                                                               |
 | `lut:control-request`       | `modules/control.rs`, to `main` (CLI `identify` and `open`)                    | `modules/control/useControlBridge.ts`                                                                                    |
 | `lut:agent-signal`          | `modules/pty/session.rs` (OSC detection) and `modules/agent_events.rs` (hooks) | `modules/terminal/lib/agentActivity.ts`                                                                                  |
@@ -407,7 +414,8 @@ Emitted with `emit` from `@tauri-apps/api/event` so that the other window (main 
 
 - The updater and process plugins are gone (#318): `backend-core.md` still lists them, and `app-shell.md` mentions
   `UpdaterDialog` in `App.tsx`.
-- `App.tsx` is 1484 lines, not 1695; most `App.tsx:<line>` references in `app-shell.md` have shifted.
+- `App.tsx` was 1484 lines, not 1695, and is about 250 since E09; the `App.tsx:<line>` references in `app-shell.md`
+  point to code that now lives in `app/hooks/`, `app/components/` and `modules/platform/`.
 - On `WindowEvent::Destroyed` the backend releases asset grants and PTYs; control sessions are not closed
   there (`backend-core.md` says they are). Agent-decision readiness is reset on page load instead.
 - `fs_grep`, `fs_glob`, `git_show_commit` and `shell_session_close` had no real caller (removed by E02-18 and E05-15);
