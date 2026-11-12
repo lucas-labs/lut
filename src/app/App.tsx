@@ -9,7 +9,6 @@ import {
   type AgentLaunchRequest,
   AgentNotificationsBridge,
   findAgentLauncher,
-  nextAttentionTarget,
   validateAgentLaunchCommand,
 } from '@/modules/agents';
 import {
@@ -36,13 +35,6 @@ import type { PreviewPaneHandle } from '@/modules/preview';
 import { openSettingsWindow } from '@/modules/settings/openSettingsWindow';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { setShowHidden, setTabOrientation } from '@/modules/settings/store';
-import {
-  type ShortcutHandlers,
-  type ShortcutId,
-  shouldDisablePaneSwapShortcut,
-  tabDigit,
-  useGlobalShortcuts,
-} from '@/modules/shortcuts';
 import { SidebarRail, useSidebarPanel } from '@/modules/sidebar';
 import { SourceControlPanel, useRepositoryTargeting, useSourceControlContext } from '@/modules/source-control';
 import { SpacesView, useSpacePersistence, useSpaces, useSpacesBoot } from '@/modules/spaces';
@@ -57,10 +49,8 @@ import {
   useWorkspaceCwd,
 } from '@/modules/tabs';
 import {
-  clearFocusedTerminal,
   findLeafCwd,
   hasLeaf,
-  isTerminalSurfaceTarget,
   leafIds,
   type PaneBounds,
   ptyIdForLeaf,
@@ -91,6 +81,7 @@ import { CloseDialogs } from './components/CloseDialogs';
 import { WorkspaceSurface } from './components/WorkspaceSurface';
 import { hasOpenPathTab, renamedPath, spacesEmptiedByTabs } from './hooks/tabCloseGuards';
 import { useAppCloseGuard } from './hooks/useAppCloseGuard';
+import { useAppShortcuts } from './hooks/useAppShortcuts';
 import { useFocusMode } from './hooks/useFocusMode';
 import { useTabCloseGuards } from './hooks/useTabCloseGuards';
 import { useWorkspaceSwitcher } from './hooks/useWorkspaceSwitcher';
@@ -361,19 +352,6 @@ export default function App() {
     const next = (idx + delta + spaces.length) % spaces.length;
     setActive(spaces[next].id);
   }, []);
-
-  const captureActiveSelection = useCallback((): string | null => {
-    const t = tabs.find((x) => x.id === activeId);
-    if (!t) return null;
-    if (t.kind === 'terminal') {
-      const lid = t.activeLeafId;
-      return terminalRefs.current.get(lid)?.getSelection() ?? null;
-    }
-    if (t.kind === 'editor') {
-      return editorRefs.current.get(activeId)?.getSelection() ?? null;
-    }
-    return null;
-  }, [tabs, activeId]);
 
   const openNewTab = useCallback(() => {
     newTab(inheritedCwdForNewTab());
@@ -685,124 +663,39 @@ export default function App() {
     [setActiveId, focusPane],
   );
 
-  const shortcutHandlers = useMemo<ShortcutHandlers>(
-    () => ({
-      'commandPalette.open': () => openCommandPalette('commands'),
-      'commandPalette.files': () => openCommandPalette('files'),
-      'commandPalette.content': () => openCommandPalette('content'),
-      'tab.new': openNewTab,
-      'tab.newPrivate': openNewPrivateTab,
-      'tab.newPreview': () => openPreviewTab(''),
-      'tab.newEditor': () => setNewEditorOpen(true),
-      'tab.close': handleCloseTabOrPane,
-      'tab.next': () => stepSwitcher(1),
-      'tab.prev': () => stepSwitcher(-1),
-      'tab.selectByIndex': (e) => selectByIndex((tabDigit(e, e.shiftKey) ?? 1) - 1, activeSpaceId ?? DEFAULT_SPACE_ID),
-      'space.next': () => cycleSpace(1),
-      'space.prev': () => cycleSpace(-1),
-      'space.overview': () => openSidebarView('spaces'),
-      'pane.splitRight': () => splitActivePaneInActiveTab('row'),
-      'pane.splitDown': () => splitActivePaneInActiveTab('col'),
-      'pane.focusNext': () => focusNextPaneInTab(activeId, 1),
-      'pane.focusPrev': () => focusNextPaneInTab(activeId, -1),
-      'pane.swapLeft': () => swapActivePane('left'),
-      'pane.swapRight': () => swapActivePane('right'),
-      'pane.swapUp': () => swapActivePane('up'),
-      'pane.swapDown': () => swapActivePane('down'),
-      'pane.moveToNewTab': () => moveActivePane('new'),
-      'pane.moveToNextTab': () => moveActivePane(1),
-      'pane.moveToPrevTab': () => moveActivePane(-1),
-      'pane.source': toggleSourceControl,
-      'terminal.clear': () => {
-        clearFocusedTerminal();
-      },
-      'search.focus': () => {
-        const editor = editorRefs.current.get(activeId);
-        if (editor) editor.openSearch();
-        else searchInlineRef.current?.focus();
-      },
-      'agent.focusAttention': () => {
-        const t = nextAttentionTarget();
-        if (t) activateAgentTarget(t.tabId, t.leafId);
-      },
-      'settings.open': () => void openSettingsWindow(),
-      'sidebar.toggle': toggleSidebar,
-      'explorer.focus': toggleExplorerFocus,
-      'explorer.toggleHidden': toggleHiddenFiles,
-      'view.zoomIn': zoomIn,
-      'view.zoomOut': zoomOut,
-      'view.zoomReset': zoomReset,
-      'view.focusMode': toggleFocusMode,
-      'view.fullScreen': toggleFullScreen,
-      'view.tabOrientation': toggleTabOrientation,
-      'view.tabsColumn': toggleTabsColumn,
-      'editor.undo': () => editorRefs.current.get(activeId)?.undo(),
-      'editor.redo': () => editorRefs.current.get(activeId)?.redo(),
-      'editor.save': () => {
-        void editorRefs.current.get(activeId)?.save();
-      },
-      'editor.codeComplete': () => editorRefs.current.get(activeId)?.triggerCodeComplete(),
-    }),
-    [
-      activeId,
-      moveActivePane,
-      openCommandPalette,
-      stepSwitcher,
-      cycleSpace,
-      handleCloseTabOrPane,
-      openNewTab,
-      openNewPrivateTab,
-      openPreviewTab,
-      activeSpaceId,
-      selectByIndex,
-      splitActivePaneInActiveTab,
-      focusNextPaneInTab,
-      swapActivePane,
-      toggleSourceControl,
-      toggleSidebar,
-      toggleExplorerFocus,
-      toggleHiddenFiles,
-      zoomIn,
-      zoomOut,
-      zoomReset,
-      activateAgentTarget,
-      toggleTabOrientation,
-      toggleTabsColumn,
-      openSidebarView,
-      toggleFocusMode,
-      toggleFullScreen,
-    ],
-  );
-
-  const shortcutsDisabled = useCallback(
-    (id: ShortcutId, e: KeyboardEvent) => {
-      const terminalPaneCount = activeTab?.kind === 'terminal' ? leafIds(activeTab.paneTree).length : null;
-      if (shouldDisablePaneSwapShortcut(id, terminalPaneCount)) return true;
-      if (id === 'editor.undo' || id === 'editor.redo' || id === 'editor.save' || id === 'editor.codeComplete') {
-        return activeTab?.kind !== 'editor';
-      }
-      if (id === 'terminal.clear') {
-        // Only intercept ⌘K while a terminal is focused; elsewhere let the key
-        // fall through (we never preventDefault when disabled).
-        const target = (e.target as HTMLElement | null) ?? document.activeElement;
-        return !isTerminalSurfaceTarget(target);
-      }
-      if (id === 'sidebar.toggle') {
-        // Ctrl+B is also Claude Code's "run in background" key. While a terminal
-        // is focused, let Ctrl+B reach the shell/Claude instead of toggling the
-        // sidebar. Ctrl+Shift+B (second binding) still toggles it from anywhere.
-        const target = (e.target as HTMLElement | null) ?? document.activeElement;
-        const inTerminal = isTerminalSurfaceTarget(target);
-        // Only defer the plain (no-shift) Ctrl/⌘+B binding; the Shift variant
-        // is the always-on toggle and is never claimed by the terminal.
-        return inTerminal && !e.shiftKey;
-      }
-      return false;
-    },
-    [activeTab, captureActiveSelection],
-  );
-
-  useGlobalShortcuts(shortcutHandlers, { isDisabled: shortcutsDisabled });
+  useAppShortcuts({
+    activeId,
+    activeSpaceId,
+    activeTab,
+    editorRefs,
+    searchInlineRef,
+    openCommandPalette,
+    openNewTab,
+    openNewPrivateTab,
+    openPreviewTab,
+    setNewEditorOpen,
+    handleCloseTabOrPane,
+    stepSwitcher,
+    selectByIndex,
+    cycleSpace,
+    openSidebarView,
+    splitActivePaneInActiveTab,
+    focusNextPaneInTab,
+    swapActivePane,
+    moveActivePane,
+    toggleSourceControl,
+    activateAgentTarget,
+    toggleSidebar,
+    toggleExplorerFocus,
+    toggleHiddenFiles,
+    zoomIn,
+    zoomOut,
+    zoomReset,
+    toggleFocusMode,
+    toggleFullScreen,
+    toggleTabOrientation,
+    toggleTabsColumn,
+  });
 
   const registerTerminalHandle = useCallback((leafId: number, h: TerminalPaneHandle | null) => {
     if (h) terminalRefs.current.set(leafId, h);
