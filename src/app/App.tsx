@@ -1,6 +1,6 @@
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { consumeLaunchFiles, getLaunchDir } from '@/lib/launchDir';
+import { getLaunchDir } from '@/lib/launchDir';
 import { IS_MAC } from '@/lib/platform';
 import { quoteShellArg } from '@/lib/shellQuote';
 import { useZoom } from '@/lib/useZoom';
@@ -72,7 +72,6 @@ import {
 } from '@/modules/theme';
 import { useWorkspaceEnvStore, workspaceNative, workspaceScopeKey } from '@/modules/workspace';
 import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -83,6 +82,7 @@ import { hasOpenPathTab, renamedPath, spacesEmptiedByTabs } from './hooks/tabClo
 import { useAppCloseGuard } from './hooks/useAppCloseGuard';
 import { useAppShortcuts } from './hooks/useAppShortcuts';
 import { useFocusMode } from './hooks/useFocusMode';
+import { useLaunchFiles } from './hooks/useLaunchFiles';
 import { useTabCloseGuards } from './hooks/useTabCloseGuards';
 import { useWorkspaceSwitcher } from './hooks/useWorkspaceSwitcher';
 import { registerTabPresenters } from './tabPresenters';
@@ -432,44 +432,7 @@ export default function App() {
     [openFileTab, newMarkdownTab],
   );
 
-  const openLaunchFiles = useCallback(
-    (paths: string[]) => {
-      for (const path of paths) handleOpenFile(path, true);
-    },
-    [handleOpenFile],
-  );
-
-  // Warm start: the backend emits once the window already exists. Attach on
-  // mount so an "Open With" that lands mid-restore isn't dropped — the backend
-  // also seeds the drain-once state, so the boot drain below is the safety net.
-  useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    let disposed = false;
-    (async () => {
-      const off = await listen<string[]>('lut:open-file', (e) => {
-        openLaunchFiles(e.payload);
-      });
-      if (disposed) off();
-      else unlisten = off;
-    })();
-    return () => {
-      disposed = true;
-      unlisten?.();
-    };
-  }, [openLaunchFiles]);
-
-  // Cold start: files arrive as CLI args (Linux/Windows) or the macOS open-files
-  // event, and get_launch_files drains them once. Wait for `booted` — the spaces
-  // restore ends in replaceTabs(), which overwrites the whole tab list and would
-  // discard a launch tab opened before it, making the file flash open and vanish.
-  // Booting first also lands the tab in the restored active space, and lets
-  // openFileTab dedupe against a session that already had the file open.
-  useEffect(() => {
-    if (!booted) return;
-    void (async () => {
-      openLaunchFiles(await consumeLaunchFiles());
-    })();
-  }, [booted, openLaunchFiles]);
+  useLaunchFiles({ booted, openFile: handleOpenFile });
 
   const handleExplorerPathRenamed = useCallback(
     (from: string, to: string) => {
