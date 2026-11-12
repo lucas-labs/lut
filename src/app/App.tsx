@@ -5,12 +5,7 @@ import { IS_MAC } from '@/lib/platform';
 import { quoteShellArg } from '@/lib/shellQuote';
 import { useZoom } from '@/lib/useZoom';
 import { isMarkdownPath } from '@/lib/utils';
-import {
-  type AgentLaunchRequest,
-  AgentNotificationsBridge,
-  findAgentLauncher,
-  validateAgentLaunchCommand,
-} from '@/modules/agents';
+import { AgentNotificationsBridge } from '@/modules/agents';
 import {
   CommandPalette,
   createCommandItems,
@@ -57,8 +52,6 @@ import {
   type TerminalPaneHandle,
   useAgentActivityStore,
   useTerminalFileDrop,
-  whenSessionReady,
-  writeToSession,
 } from '@/modules/terminal';
 import { bindTerminalWindowFocus } from '@/modules/terminal/ghostty/renderScheduling';
 import { subscribeWindowPresentation } from '@/modules/terminal/ghostty/windowPresentation';
@@ -71,7 +64,6 @@ import {
   WindowVibrancyBridge,
 } from '@/modules/theme';
 import { useWorkspaceEnvStore, workspaceNative, workspaceScopeKey } from '@/modules/workspace';
-import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -79,6 +71,7 @@ import { AppShell } from './AppShell';
 import { CloseDialogs } from './components/CloseDialogs';
 import { WorkspaceSurface } from './components/WorkspaceSurface';
 import { hasOpenPathTab, renamedPath, spacesEmptiedByTabs } from './hooks/tabCloseGuards';
+import { useAgentLaunch } from './hooks/useAgentLaunch';
 import { useAppCloseGuard } from './hooks/useAppCloseGuard';
 import { useAppShortcuts } from './hooks/useAppShortcuts';
 import { useFocusMode } from './hooks/useFocusMode';
@@ -361,32 +354,7 @@ export default function App() {
     newPrivateTab(inheritedCwdForNewTab());
   }, [newPrivateTab, inheritedCwdForNewTab]);
 
-  const launchAgentGroup = useCallback(
-    (request: AgentLaunchRequest) => {
-      const command = validateAgentLaunchCommand(request.command);
-      if (!command.ok) return;
-      const launcher = findAgentLauncher(request.agent);
-      const title = request.instances === 1 ? launcher.label : `${launcher.label} × ${request.instances}`;
-      const { leafIds: agentLeafIds } = newAgentGroupTab(inheritedCwdForNewTab(), title, request.instances);
-      const hooksReady = launcher.supportsHooks
-        ? invoke('agent_enable_hooks', {
-            agent: request.agent,
-          }).catch((error) => {
-            console.warn(`[lut] could not enable ${request.agent} notifications:`, error);
-          })
-        : Promise.resolve();
-
-      for (const leafId of agentLeafIds) {
-        void (async () => {
-          await Promise.all([whenSessionReady(leafId), hooksReady]);
-          if (!writeToSession(leafId, `${command.command}\r`)) {
-            console.error(`[lut] agent terminal ${leafId} closed before launch`);
-          }
-        })();
-      }
-    },
-    [inheritedCwdForNewTab, newAgentGroupTab],
-  );
+  const launchAgentGroup = useAgentLaunch({ inheritedCwdForNewTab, newAgentGroupTab });
 
   const sendCd = useCallback(
     (path: string) => {
