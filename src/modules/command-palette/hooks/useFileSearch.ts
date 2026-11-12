@@ -70,15 +70,11 @@ export function useFileSearch(
   // Without a query there is nothing to show; a reply still in flight is ignored (request id). A new search
   // loads, and keeps the previous hits on screen until its own land.
   const idle = !enabled || !root || !query;
-  const search = idle ? null : { root, query, showHidden };
-  const [shownSearch, setShownSearch] = useState<typeof search>(null);
-  if (
-    search?.root !== shownSearch?.root ||
-    search?.query !== shownSearch?.query ||
-    search?.showHidden !== shownSearch?.showHidden
-  ) {
-    setShownSearch(search);
-    setState(search ? (s) => ({ ...s, loading: true, error: null }) : IDLE);
+  const searchKey = idle ? null : JSON.stringify([root, query, showHidden]);
+  const [shownKey, setShownKey] = useState<string | null>(null);
+  if (searchKey !== shownKey) {
+    setShownKey(searchKey);
+    setState(searchKey === null ? IDLE : (s) => ({ ...s, loading: true, error: null }));
   }
 
   useEffect(() => {

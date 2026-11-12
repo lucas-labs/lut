@@ -31,6 +31,19 @@ function SidePanel({ defaultSize, ...props }: ComponentProps<typeof ResizablePan
 
 const SIDE_PANELS = ['sidebar', 'tabs-column'] as const;
 
+/**
+ * Sets a layout the app makes itself, flagged so the group's report of it is not taken for one to correct. Outside the
+ * component: the React Compiler does not compile a `try` without a `catch`.
+ */
+function applyOwnLayout(group: GroupImperativeHandle | null, layout: Layout, restoring: { current: boolean }) {
+  restoring.current = true;
+  try {
+    group?.setLayout(layout);
+  } finally {
+    restoring.current = false;
+  }
+}
+
 type Props = {
   /** Focus mode (E12-10): only the workspace shows; the chrome keeps its own state for when it comes back. */
   focusMode: boolean;
@@ -123,14 +136,7 @@ export function AppShell({
     const layout = lastLayout.current;
     if (!targets || !layout) return;
     const settled = settledLayout(targets, layout, group.current?.offsetWidth ?? 0, 'workspace');
-    if (settled) {
-      restoring.current = true;
-      try {
-        groupHandle.current?.setLayout(settled);
-      } finally {
-        restoring.current = false;
-      }
-    }
+    if (settled) applyOwnLayout(groupHandle.current, settled, restoring);
     // The settled layout, also when it needed no correction and the group reported nothing more.
     if (lastLayout.current) accept(lastLayout.current, false);
   };
