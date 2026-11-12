@@ -17,7 +17,8 @@ function handleClass(open: boolean) {
 }
 
 type Props = {
-  /** The title bar; null hides it (zen mode). */
+  /** Focus mode (E12-10): only the workspace shows; the chrome keeps its own state for when it comes back. */
+  focusMode: boolean;
   titleBar: ReactNode;
   /**
    * `inline`: above the workspace, beside the sidebar (horizontal tabs). `overlay`: over the whole window, laid
@@ -36,7 +37,7 @@ type Props = {
   /** Explorer / Source Control panel content. */
   sidebar: ReactNode;
   sidebarRef: RefObject<PanelImperativeHandle | null>;
-  /** Initial sidebar width in px; 0 starts collapsed. */
+  /** The sidebar's width in px when it mounts (on start and after focus mode); 0 is collapsed. */
   sidebarInitialWidth: number;
   onSidebarLayout: (width: number, isUserInteraction: boolean) => void;
   onSidebarCollapsedChange: (collapsed: boolean) => void;
@@ -52,9 +53,10 @@ type Props = {
  * empty: a region that comes and goes must not shift the workspace to another place in the tree.
  */
 export function AppShell({
-  titleBar,
+  focusMode,
+  titleBar: titleBarProp,
   titleBarPlacement,
-  tabsColumn,
+  tabsColumn: tabsColumnProp,
   tabsColumnRef,
   tabsColumnInitialWidth,
   onTabsColumnLayout,
@@ -68,6 +70,8 @@ export function AppShell({
   workspace,
   children,
 }: Props) {
+  const titleBar = focusMode ? null : titleBarProp;
+  const tabsColumn = focusMode ? null : tabsColumnProp;
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-frame text-foreground">
       <main className="zoom-content flex min-h-0 flex-1 flex-col">
@@ -75,27 +79,32 @@ export function AppShell({
           orientation="horizontal"
           className="min-h-0 flex-1"
           onLayoutChanged={(_, { isUserInteraction }) => {
+            // The side panels are gone in focus mode; their stored layout stays as it was.
+            if (focusMode) return;
             onSidebarLayout(sidebarRef.current?.getSize().inPixels ?? 0, isUserInteraction);
             if (tabsColumn) onTabsColumnLayout(tabsColumnRef.current?.getSize().inPixels ?? 0, isUserInteraction);
           }}
         >
-          <ResizablePanel
-            id="sidebar"
-            panelRef={sidebarRef}
-            defaultSize={`${sidebarInitialWidth}px`}
-            minSize={`${SIDEBAR_MIN_WIDTH}px`}
-            maxSize={`${SIDEBAR_MAX_WIDTH}px`}
-            collapsible
-            collapsedSize={0}
-            onResize={(size) => onSidebarCollapsedChange(size.inPixels <= 0)}
-          >
-            <div className="flex h-full min-h-0 flex-col">
-              {/* macOS draws its traffic lights over the window's top-left corner, which is the sidebar's. */}
-              {IS_MAC ? <div data-tauri-drag-region className="h-7 shrink-0" /> : null}
-              <div className="min-h-0 flex-1">{sidebar}</div>
-            </div>
-          </ResizablePanel>
-          <ResizableHandle className={handleClass(sidebarOpen)} />
+          {/* In focus mode the sidebar leaves its slot empty, as the tab column does; it comes back at its width. */}
+          {focusMode ? null : (
+            <ResizablePanel
+              id="sidebar"
+              panelRef={sidebarRef}
+              defaultSize={`${sidebarInitialWidth}px`}
+              minSize={`${SIDEBAR_MIN_WIDTH}px`}
+              maxSize={`${SIDEBAR_MAX_WIDTH}px`}
+              collapsible
+              collapsedSize={0}
+              onResize={(size) => onSidebarCollapsedChange(size.inPixels <= 0)}
+            >
+              <div className="flex h-full min-h-0 flex-col">
+                {/* macOS draws its traffic lights over the window's top-left corner, which is the sidebar's. */}
+                {IS_MAC ? <div data-tauri-drag-region className="h-7 shrink-0" /> : null}
+                <div className="min-h-0 flex-1">{sidebar}</div>
+              </div>
+            </ResizablePanel>
+          )}
+          {focusMode ? null : <ResizableHandle className={handleClass(sidebarOpen)} />}
           {/* The column and its handle keep their slots when absent, so the workspace never moves in the tree. */}
           {tabsColumn ? (
             <ResizablePanel

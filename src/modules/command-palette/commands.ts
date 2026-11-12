@@ -5,9 +5,11 @@ import { leafIds } from '@/modules/terminal';
 import {
   ArrowMoveUpRightIcon,
   Cancel01Icon,
+  CenterFocusIcon,
   DashboardSquare01Icon,
   FileEditIcon,
   FileSearchIcon,
+  FullScreenIcon,
   Globe02Icon,
   IncognitoIcon,
   KeyboardIcon,
@@ -59,6 +61,8 @@ export type CommandPaletteActionContext = {
   toggleSidebar: () => void;
   toggleTabOrientation: () => void;
   toggleTabsColumn: () => void;
+  toggleFocusMode: () => void;
+  toggleFullScreen: () => void;
   toggleHiddenFiles: () => void;
   openSettings: () => void;
   openKeyboardShortcuts: () => void;
@@ -315,6 +319,24 @@ export function createCommandItems(ctx: CommandPaletteActionContext): PaletteIte
       icon: LayoutLeftIcon,
       shortcutId: 'view.tabsColumn',
       run: ctx.toggleTabsColumn,
+    },
+    {
+      id: 'view.focusMode',
+      title: 'Toggle focus mode',
+      group: 'View',
+      keywords: ['zen', 'focus', 'distraction', 'chrome', 'hide', 'full screen'],
+      icon: CenterFocusIcon,
+      shortcutId: 'view.focusMode',
+      run: ctx.toggleFocusMode,
+    },
+    {
+      id: 'view.fullScreen',
+      title: 'Toggle full screen',
+      group: 'View',
+      keywords: ['full screen', 'fullscreen', 'window'],
+      icon: FullScreenIcon,
+      shortcutId: 'view.fullScreen',
+      run: ctx.toggleFullScreen,
     },
     {
       id: 'explorer.toggleHidden',

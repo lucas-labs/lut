@@ -386,7 +386,8 @@ export async function loadPreferences(): Promise<Preferences> {
     defaultWorkspaceEnv:
       get<string>(KEY_DEFAULT_WORKSPACE_ENV) ?? DEFAULT_PREFERENCES.defaultWorkspaceEnv,
     shortcuts:
-      get<Record<ShortcutId, KeyBinding[]>>(KEY_SHORTCUTS) ?? DEFAULT_PREFERENCES.shortcuts,
+      migrateShortcutIds(get<Record<string, KeyBinding[]>>(KEY_SHORTCUTS)) ??
+      DEFAULT_PREFERENCES.shortcuts,
     editorAutoSave: get<boolean>(KEY_EDITOR_AUTO_SAVE) ?? DEFAULT_PREFERENCES.editorAutoSave,
     editorAutoSaveDelay: clampAutoSaveDelay(
       get<number>(KEY_EDITOR_AUTO_SAVE_DELAY) ?? DEFAULT_PREFERENCES.editorAutoSaveDelay,
@@ -602,6 +603,25 @@ export async function setZoomLevel(value: number): Promise<void> {
 
 export const AUTO_SAVE_DELAY_MIN = 100;
 export const AUTO_SAVE_DELAY_MAX = 60000;
+
+/** Shortcut ids that were renamed: recorded bindings follow the command to its new id. */
+const RENAMED_SHORTCUTS: Readonly<Record<string, ShortcutId>> = {
+  'view.zenMode': 'view.focusMode', // E12-10
+};
+
+/** Recorded shortcuts as stored, with renamed ids moved to their current id (a binding already there wins). */
+export function migrateShortcutIds(
+  stored: Record<string, KeyBinding[]> | undefined,
+): Record<ShortcutId, KeyBinding[]> | undefined {
+  if (!stored) return stored;
+  const out: Record<string, KeyBinding[]> = { ...stored };
+  for (const [from, to] of Object.entries(RENAMED_SHORTCUTS)) {
+    if (!(from in out)) continue;
+    if (!(to in out)) out[to] = out[from];
+    delete out[from];
+  }
+  return out as Record<ShortcutId, KeyBinding[]>;
+}
 
 export function clampAutoSaveDelay(v: number): number {
   if (!Number.isFinite(v)) return 1000;

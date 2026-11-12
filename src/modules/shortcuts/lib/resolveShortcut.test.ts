@@ -105,7 +105,7 @@ describe('resolveShortcut', () => {
   ])('replays a recorded %s before any default fallback', (_, key, code) => {
     const event = press(key, 'CS', { code });
     const user = {
-      'view.zenMode': [
+      'view.focusMode': [
         {
           key: event.key,
           ctrl: event.ctrlKey,
@@ -115,21 +115,21 @@ describe('resolveShortcut', () => {
         },
       ],
     };
-    expect(run(other, event, { user })).toBe('view.zenMode');
-    expect(run(other, { ...event, shiftKey: false }, { user })).not.toBe('view.zenMode');
+    expect(run(other, event, { user })).toBe('view.focusMode');
+    expect(run(other, { ...event, shiftKey: false }, { user })).not.toBe('view.focusMode');
   });
 
   it('does not reinterpret a recorded symbol as a default base key', () => {
-    const user = { 'view.zenMode': [{ key: '/', ctrl: true, shift: true }] };
+    const user = { 'view.focusMode': [{ key: '/', ctrl: true, shift: true }] };
     expect(run(other, press('?', 'CS', { code: 'Slash' }), { user })).toBe('explorer.search');
   });
 
   it('continues to defaults when a recorded match is disabled', () => {
-    const user = { 'view.zenMode': [{ key: '/', ctrl: true, shift: true }] };
+    const user = { 'view.focusMode': [{ key: '/', ctrl: true, shift: true }] };
     expect(
       run(other, press('/', 'CS', { code: 'Period' }), {
         user,
-        disabled: ['view.zenMode'],
+        disabled: ['view.focusMode'],
       }),
     ).toBe('explorer.toggleHidden');
   });

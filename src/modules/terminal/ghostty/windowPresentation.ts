@@ -2,7 +2,10 @@ import {
   type WindowPresentation,
   WindowPresentationPolicy,
 } from '@/modules/terminal/ghostty/WindowPresentationPolicy';
-import { setNativeLiveResize } from '@/modules/terminal/lib/terminalResizeGesture';
+import {
+  noteWindowResize,
+  setNativeLiveResize,
+} from '@/modules/terminal/lib/terminalResizeGesture';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
@@ -82,6 +85,8 @@ function connect(): void {
     sync();
   };
   document.addEventListener('visibilitychange', sync);
+  // Renderers hold their grids while the window settles on a new size (full screen, maximize).
+  window.addEventListener?.('resize', noteWindowResize);
   sync();
   if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
     void getCurrentWindow()
@@ -102,6 +107,7 @@ function connect(): void {
   disconnect = () => {
     disposed = true;
     document.removeEventListener('visibilitychange', sync);
+    window.removeEventListener?.('resize', noteWindowResize);
     unlisten?.();
   };
 }

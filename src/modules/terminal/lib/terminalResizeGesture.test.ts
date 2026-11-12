@@ -3,8 +3,10 @@ import {
   GESTURE_GAP_MS,
   NATIVE_STALE_MS,
   noteTerminalHostResize,
+  noteWindowResize,
   resetTerminalResizeGestureForTest,
   setNativeLiveResize,
+  WINDOW_SETTLE_MS,
 } from './terminalResizeGesture';
 import {
   beginTerminalResizeInteraction,
@@ -177,5 +179,39 @@ describe('terminalResizeGesture', () => {
     expect(terminalResizeInteractionActive()).toBe(true);
     vi.advanceTimersByTime(GESTURE_GAP_MS);
     expect(terminalResizeInteractionActive()).toBe(false);
+  });
+
+  describe('window size changes', () => {
+    it('hold the grids from the first one until the window keeps one size', () => {
+      const changes: boolean[] = [];
+      const stop = subscribeTerminalResizeInteraction((active) => changes.push(active));
+      // Full screen: the styles change (one size), then the bounds (the final size).
+      noteWindowResize();
+      expect(terminalResizeInteractionActive()).toBe(true);
+      vi.advanceTimersByTime(25);
+      noteWindowResize();
+      vi.advanceTimersByTime(WINDOW_SETTLE_MS - 1);
+      expect(terminalResizeInteractionActive()).toBe(true);
+      vi.advanceTimersByTime(1);
+      expect(terminalResizeInteractionActive()).toBe(false);
+      expect(changes).toEqual([true, false]);
+      stop();
+    });
+
+    it('end after one quiet period for a single change', () => {
+      noteWindowResize();
+      vi.advanceTimersByTime(WINDOW_SETTLE_MS);
+      expect(terminalResizeInteractionActive()).toBe(false);
+    });
+
+    it('do not end a pane drag that is still going', () => {
+      const drag = {};
+      beginTerminalResizeInteraction(drag);
+      noteWindowResize();
+      vi.advanceTimersByTime(WINDOW_SETTLE_MS * 2);
+      expect(terminalResizeInteractionActive()).toBe(true);
+      endTerminalResizeInteraction(drag);
+      expect(terminalResizeInteractionActive()).toBe(false);
+    });
   });
 });

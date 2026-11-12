@@ -210,6 +210,7 @@ function shell(
     ThemeContext.Provider,
     { value: { resolvedMode: mode, activeTheme: theme } },
     createElement(AppShell, {
+      focusMode: false,
       titleBar: createElement('header', null, vertical ? null : strip),
       titleBarPlacement: vertical ? 'overlay' : 'inline',
       tabsColumn: vertical ? createElement('aside', null, strip) : null,

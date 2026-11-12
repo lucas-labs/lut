@@ -21,9 +21,18 @@ import {
 export const GESTURE_GAP_MS = 150;
 /** A native live resize with no host resize for this long is taken as ended or lost. */
 export const NATIVE_STALE_MS = 2_000;
+/**
+ * A window size change holds the grids until the window keeps one size this long. Full screen
+ * and maximize pass through intermediate sizes a few frames apart (the window's styles change,
+ * then its bounds), and each size the PTY is told about is repainted asynchronously (ConPTY
+ * repaints the whole screen): a repaint for a taller intermediate grid that lands after the
+ * final, shorter one scrolls its extra rows into the scrollback.
+ */
+export const WINDOW_SETTLE_MS = 100;
 
 const NATIVE_TOKEN = {};
 const BURST_TOKEN = {};
+const WINDOW_TOKEN = {};
 
 let nativeActive = false;
 let nativeSignalAt = Number.NEGATIVE_INFINITY;
@@ -33,6 +42,8 @@ let lastChangeAt = Number.NEGATIVE_INFINITY;
 let clock: () => number = () => performance.now();
 let lastBySurface = new WeakMap<object, number>();
 let lastInteractionEndAt = Number.NEGATIVE_INFINITY;
+let windowTimer: ReturnType<typeof setTimeout> | null = null;
+let windowChangedAt = Number.NEGATIVE_INFINITY;
 
 subscribeTerminalResizeInteraction((active) => {
   if (!active) lastInteractionEndAt = clock();
@@ -45,6 +56,28 @@ export function setNativeLiveResize(active: boolean): void {
   nativeActive = active;
   if (active) beginTerminalResizeInteraction(NATIVE_TOKEN);
   else endTerminalResizeInteraction(NATIVE_TOKEN);
+}
+
+/**
+ * The window changed size. Its `resize` event runs before the frame's resize observers, so the
+ * first size of a transition is held too, not only the ones after it.
+ */
+export function noteWindowResize(): void {
+  windowChangedAt = clock();
+  beginTerminalResizeInteraction(WINDOW_TOKEN);
+  if (windowTimer === null) armWindowTimer(WINDOW_SETTLE_MS);
+}
+
+function armWindowTimer(delay: number): void {
+  windowTimer = globalThis.setTimeout(() => {
+    windowTimer = null;
+    const quiet = clock() - windowChangedAt;
+    if (quiet < WINDOW_SETTLE_MS) {
+      armWindowTimer(WINDOW_SETTLE_MS - quiet);
+      return;
+    }
+    endTerminalResizeInteraction(WINDOW_TOKEN);
+  }, delay);
 }
 
 /** A surface saw its host change size. Cheap: no timers are created per call. */
@@ -98,6 +131,10 @@ export function resetTerminalResizeGestureForTest(now?: () => number): void {
   burstTimer = null;
   if (burstActive) endTerminalResizeInteraction(BURST_TOKEN);
   burstActive = false;
+  if (windowTimer !== null) globalThis.clearTimeout(windowTimer);
+  windowTimer = null;
+  windowChangedAt = Number.NEGATIVE_INFINITY;
+  endTerminalResizeInteraction(WINDOW_TOKEN);
   if (nativeActive) endTerminalResizeInteraction(NATIVE_TOKEN);
   nativeActive = false;
   nativeSignalAt = Number.NEGATIVE_INFINITY;

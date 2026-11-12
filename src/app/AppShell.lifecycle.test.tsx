@@ -24,12 +24,14 @@ let host: HTMLElement;
 const sidebarRef = createRef<PanelImperativeHandle>();
 
 function shell(props: {
+  focusMode?: boolean;
   titleBar?: ReactNode;
   placement?: 'inline' | 'overlay';
   sidebar?: ReactNode;
   tabsColumn?: ReactNode;
 }) {
   return createElement(AppShell, {
+    focusMode: props.focusMode ?? false,
     titleBar: props.titleBar ?? null,
     titleBarPlacement: props.placement ?? 'inline',
     tabsColumn: props.tabsColumn ?? null,
@@ -85,6 +87,27 @@ it('moves the title bar and the tabs between the layouts without remounting the 
   render(
     shell({ titleBar: createElement('header'), placement: 'overlay', tabsColumn: createElement('aside', null, strip) }),
   );
+  expect(mounts).toEqual(['workspace']);
+  expect(unmounts).toEqual([]);
+});
+
+it('hides every piece of chrome in focus mode and brings it back without remounting the workspace', () => {
+  for (const placement of ['inline', 'overlay'] as const) {
+    const chrome = {
+      placement,
+      titleBar: createElement('header', { 'data-chrome': 'bar' }),
+      sidebar: createElement('aside', { 'data-chrome': 'sidebar' }),
+      tabsColumn: placement === 'overlay' ? createElement('nav', { 'data-chrome': 'tabs' }) : null,
+    };
+    render(shell(chrome));
+    expect(host.querySelectorAll('[data-chrome]').length).toBeGreaterThan(1);
+    render(shell({ ...chrome, focusMode: true }));
+    expect(host.querySelectorAll('[data-chrome]')).toHaveLength(0);
+    expect(host.querySelectorAll('[role="separator"]')).toHaveLength(0);
+    render(shell(chrome));
+    expect(host.querySelector('[data-chrome="sidebar"]')).not.toBeNull();
+    expect(host.querySelector('[data-chrome="bar"]')).not.toBeNull();
+  }
   expect(mounts).toEqual(['workspace']);
   expect(unmounts).toEqual([]);
 });

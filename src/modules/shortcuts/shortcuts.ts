@@ -40,7 +40,8 @@ export type ShortcutId =
   | 'view.zoomIn'
   | 'view.zoomOut'
   | 'view.zoomReset'
-  | 'view.zenMode'
+  | 'view.focusMode'
+  | 'view.fullScreen'
   | 'view.tabOrientation'
   | 'view.tabsColumn'
   | 'agent.focusAttention'
@@ -264,8 +265,13 @@ const SHORTCUT_META: Omit<Shortcut, 'defaultBindings'>[] = [
     group: 'View',
   },
   {
-    id: 'view.zenMode',
-    label: 'Toggle zen mode',
+    id: 'view.focusMode',
+    label: 'Toggle focus mode',
+    group: 'View',
+  },
+  {
+    id: 'view.fullScreen',
+    label: 'Toggle full screen',
     group: 'View',
   },
   {
