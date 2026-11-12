@@ -4114,9 +4114,8 @@ dependencies = [
 
 [[package]]
 name = "tao"
-version = "0.37.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f37f381f4e048e6cdf038b5705f8cf14ad108279d46eb968140a7b291aba9400"
+version = "0.37.2"
+source = "git+https://github.com/lucas-labs/tao?rev=f016ed29355cb23497caafd83c312819f2dc1117#f016ed29355cb23497caafd83c312819f2dc1117"
 dependencies = [
  "bitflags 2.11.1",
  "block2",
@@ -4155,8 +4154,7 @@ dependencies = [
 [[package]]
 name = "tao-macros"
 version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f7eeb6d99155545da6150a1795945f16ac9c178deb2a5f2e74d776107bd5849"
+source = "git+https://github.com/lucas-labs/tao?rev=f016ed29355cb23497caafd83c312819f2dc1117#f016ed29355cb23497caafd83c312819f2dc1117"
 dependencies = [
  "proc-macro2",
  "quote",

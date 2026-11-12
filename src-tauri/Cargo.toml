@@ -136,3 +136,11 @@ strip = true
 # at compile time on macOS, reported as a bogus E0463. Never shipped, so nothing to strip.
 [profile.release.build-override]
 strip = false
+
+# tao 0.37.2 with one fix on top: a full-screen undecorated window no longer gets a native title bar
+# painted over it when it loses focus (tauri-apps/tao#1423, E12-10). Drop this once a tao release
+# carries the fix.
+[patch.crates-io]
+tao = { git = "https://github.com/lucas-labs/tao", rev = "f016ed29355cb23497caafd83c312819f2dc1117" }
+# Same repository, so wry's copy is the same crate as tao's.
+tao-macros = { git = "https://github.com/lucas-labs/tao", rev = "f016ed29355cb23497caafd83c312819f2dc1117" }
