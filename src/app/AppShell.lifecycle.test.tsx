@@ -13,7 +13,7 @@ vi.mock('react-resizable-panels', async (original) => {
   const { createElement } = await import('react');
   function Panel(props: Parameters<typeof lib.Panel>[0]) {
     const seen = panelSizes.get(props.id ?? '') ?? [];
-    if (seen.at(-1) !== props.defaultSize) panelSizes.set(props.id ?? '', [...seen, props.defaultSize]);
+    if (seen[seen.length - 1] !== props.defaultSize) panelSizes.set(props.id ?? '', [...seen, props.defaultSize]);
     return createElement(lib.Panel, props);
   }
   return { ...lib, Panel };
