@@ -25,17 +25,9 @@ const ALLOWED: Record<string, { allows: string[]; why: string }> = {
     allows: ['3D transform', 'filter blur'],
     why: 'user background image; layer only when blurred or animated (surfaceOwnsLayer)',
   },
-  'components/ui/dialog.tsx': {
-    allows: ['backdrop filter'],
-    why: 'modal scrim, mounted only while open',
-  },
-  'components/ui/alert-dialog.tsx': {
-    allows: ['backdrop filter'],
-    why: 'modal scrim, mounted only while open',
-  },
-  'components/ui/sheet.tsx': {
-    allows: ['backdrop filter'],
-    why: 'modal scrim, mounted only while open',
+  'styles/globals.css': {
+    allows: ['filter blur'],
+    why: 'page root blurred behind a modal, only while its overlay is open',
   },
   'modules/editor/lib/chromeTheme.ts': {
     allows: ['backdrop filter'],

@@ -250,7 +250,7 @@ html[data-vibrancy='on'] {
   --frame: color-mix(in srgb, var(--sidebar) 60%, transparent);
 }
 
-/* A modal blurs the page under it, not its own backdrop. `backdrop-filter`
+/* A modal blurs the page under it, not its own backdrop. A backdrop filter
  * paints a blurred copy over what is behind: where the page is translucent
  * (the vibrancy frame), that copy is translucent too and the sharp text
  * shows through it. A `filter` on the page root replaces its content with
