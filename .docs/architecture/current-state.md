@@ -218,22 +218,21 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 
 #### pty
 
-| Command                      | Handler | Frontend caller(s)                                         |
-| ---------------------------- | ------- | ---------------------------------------------------------- |
-| `pty_open`                   | `pty`   | `modules/terminal/lib/pty-bridge.ts`                       |
-| `pty_write`                  | `pty`   | `modules/terminal/lib/pty-bridge.ts`                       |
-| `pty_stream_open`            | `pty`   | `modules/terminal/lib/pty-bridge.ts`                       |
-| `pty_set_presentation`       | `pty`   | `modules/terminal/lib/ptyPresentation.ts`                  |
-| `pty_set_colors`             | `pty`   | `modules/terminal/lib/pty-bridge.ts`                       |
-| `pty_diagnostics`            | `pty`   | `modules/terminal/lib/terminalDiagnostics.ts`              |
-| `pty_resize`                 | `pty`   | `modules/terminal/lib/pty-bridge.ts`                       |
-| `pty_close`                  | `pty`   | `modules/terminal/lib/pty-bridge.ts`                       |
-| `pty_close_all`              | `pty`   | `app/bootstrap.ts`                                         |
-| `pty_has_foreground_process` | `pty`   | `modules/terminal/ghostty/useGhosttyTerminalSession.ts`    |
-| `pty_has_foreground_job`     | `pty`   | **no caller**                                              |
-| `pty_shell_name`             | `pty`   | none since E12-06 removed the status bar (`useSystemInfo`) |
-| `pty_session_shell`          | `pty`   | `modules/terminal/lib/useTerminalFileDrop.ts`              |
-| `pty_list_shells`            | `pty`   | `settings/sections/GeneralSection.tsx`                     |
+| Command                      | Handler | Frontend caller(s)                                      |
+| ---------------------------- | ------- | ------------------------------------------------------- |
+| `pty_open`                   | `pty`   | `modules/terminal/lib/pty-bridge.ts`                    |
+| `pty_write`                  | `pty`   | `modules/terminal/lib/pty-bridge.ts`                    |
+| `pty_stream_open`            | `pty`   | `modules/terminal/lib/pty-bridge.ts`                    |
+| `pty_set_presentation`       | `pty`   | `modules/terminal/lib/ptyPresentation.ts`               |
+| `pty_set_colors`             | `pty`   | `modules/terminal/lib/pty-bridge.ts`                    |
+| `pty_diagnostics`            | `pty`   | `modules/terminal/lib/terminalDiagnostics.ts`           |
+| `pty_resize`                 | `pty`   | `modules/terminal/lib/pty-bridge.ts`                    |
+| `pty_close`                  | `pty`   | `modules/terminal/lib/pty-bridge.ts`                    |
+| `pty_close_all`              | `pty`   | `app/bootstrap.ts`                                      |
+| `pty_has_foreground_process` | `pty`   | `modules/terminal/ghostty/useGhosttyTerminalSession.ts` |
+| `pty_has_foreground_job`     | `pty`   | **no caller**                                           |
+| `pty_session_shell`          | `pty`   | `modules/terminal/lib/useTerminalFileDrop.ts`           |
+| `pty_list_shells`            | `pty`   | `settings/sections/GeneralSection.tsx`                  |
 
 #### fs
 
