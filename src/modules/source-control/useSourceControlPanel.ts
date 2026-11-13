@@ -57,7 +57,7 @@ type PendingDiscard = {
   label: string;
 };
 
-type SourceControlPanelState = {
+export type SourceControlPanelState = {
   panelState: PanelState;
   repo: GitRepoInfo | null;
   status: GitStatusSnapshot | null;

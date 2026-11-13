@@ -14,7 +14,7 @@ const ALLOWED: { file: string; reason: string; why: string }[] = [
   ...[
     'src/modules/explorer/FileExplorer.tsx',
     'src/modules/git-history/GitHistoryPane.tsx',
-    'src/modules/source-control/SourceControlPanel.tsx',
+    'src/modules/source-control/ChangesList.tsx',
   ].map((file) => ({
     file,
     reason: 'Use of incompatible library',

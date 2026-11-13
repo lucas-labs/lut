@@ -16,7 +16,7 @@ vi.mock('@/modules/git', () => ({
   },
 }));
 
-const { BranchDropdown } = await import('./SourceControlPanel');
+const { BranchPicker } = await import('./BranchPicker');
 
 let host: HTMLDivElement;
 let root: Root;
@@ -34,7 +34,7 @@ afterEach(() => {
 const render = (repoRoot: string) =>
   act(() =>
     root.render(
-      createElement(BranchDropdown, {
+      createElement(BranchPicker, {
         repoRoot,
         repoLabel: 'main',
         displayRepoRoot: repoRoot,
