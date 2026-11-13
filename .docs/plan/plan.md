@@ -3710,7 +3710,7 @@ size: S
 
 ```yaml
 id: E12-08
-depends-on: [E11-02, E11-08, E12-03, E12-04, E12-06, E10-11]
+depends-on: [E11-02, E11-08, E12-03, E12-04, E12-06]
 refs: [UX-001, 5.10:8, 16:22, 10.2:5, .docs/plan/analysis/app-shell.md]
 covers: [app-shell/workspace-surface, UX-001, 5.10:8, 16:22]
 type: task
@@ -3718,15 +3718,19 @@ scope: ui
 size: M
 ```
 
-**Goal:** The workspace places the terminal as the central, predominant area and hosts secondary-tool surfaces only as designed in E11-08.
+**Goal:** The workspace places the terminal as the central, predominant area, with the secondary tools where E11-08 places
+them.
 
 **Acceptance criteria:**
 
-- [ ] `WorkspaceSurface.tsx` renders terminals by default; editor/diff/preview surfaces are placed per E11-08 and mounted only on demand.
+- [ ] The terminal is the default surface and takes the central area; Files and Git open in the sidebar, the editor and
+      the commit graph as tabs, as in the design. Each tool's own look is E10-13 to E10-21.
 - [ ] Header, navigator and sidebar are the recreated components (5.10:8); no Terax layout remains.
-- [ ] A test asserts the terminal is the default surface and that opening/closing a secondary surface does not unmount terminal leaves (16:22).
 
-**Verification:** `pnpm test`; manual on Windows: the default window shows the terminal occupying the central area; opening/closing the editor keeps sessions.
+**Verification:** manual on Windows: the default window shows the terminal occupying the central area.
+
+**Notes:** delivered by E12-03 to E12-06 and E12-10. Loading and mounting secondary tools only on demand is E10's
+(E10-11).
 
 ### E12-10 — Add focus mode (hide all chrome)
 
@@ -3753,38 +3757,11 @@ size: S
 
 **Verification:** `pnpm test`; manual: enter focus mode with two tabs and a split, switch tabs by shortcut, leave focus mode.
 
-### E12-12 — macOS and Linux title bars per the design
-
-```yaml
-id: E12-12
-depends-on: [E12-03]
-refs: [UX-011, .docs/plan/analysis/app-shell.md]
-covers: [app-shell/window-controls]
-type: task
-scope: ui
-size: S
-```
-
-**Goal:** E12-03 built the title bar and checked it on Windows only. On Linux the bar reuses the Windows caption
-buttons, and on macOS the native traffic lights neither sit in the 28px bar nor hide with the vertical-tabs bar.
-
-**Acceptance criteria:**
-
-- [ ] Linux: `WindowControls` gets the design's GNOME-style variant (round 20px buttons, minimize, maximize, close).
-- [ ] macOS: `trafficLightPosition` centres the traffic lights in the 28px bar; the space the bar and the sidebar keep
-      clear for them (E12-03) matches.
-- [ ] macOS, vertical tabs: the traffic lights hide and show with the hidden title bar, through a native call from
-      Rust (`standardWindowButton` `setHidden`), and are always visible while the bar is.
-- [ ] Checked on macOS and on a Linux desktop (GNOME and one other): both tab orientations, drag, min/max/close,
-      sidebar open and closed.
-
-**Verification:** `pnpm test`; `cargo test`; manual on macOS and Linux as listed.
-
 ### E12-11 — Close-out: app shell UI
 
 ```yaml
 id: E12-11
-depends-on: [E12-01, E12-02, E12-03, E12-04, E12-05, E12-06, E12-07, E12-08, E12-10, E12-12]
+depends-on: [E12-01, E12-02, E12-03, E12-04, E12-05, E12-06, E12-07, E12-08, E12-10]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
@@ -7254,11 +7231,38 @@ saying that "a process" is running.
 **Verification:** `pnpm test`, `cargo test --manifest-path src-tauri/Cargo.toml --locked`; manual on Windows: quit with
 an agent and a dev server running lists both.
 
-### E26-02 — Close-out: accessory improvements
+### E26-02 — macOS and Linux title bars per the design
 
 ```yaml
 id: E26-02
-depends-on: [E26-01]
+depends-on: [E12-03]
+refs: [UX-011, .docs/plan/analysis/app-shell.md]
+covers: [app-shell/window-controls]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** E12-03 built the title bar and checked it on Windows only. On Linux the bar reuses the Windows caption
+buttons, and on macOS the native traffic lights neither sit in the 28px bar nor hide with the vertical-tabs bar.
+
+**Acceptance criteria:**
+
+- [ ] Linux: `WindowControls` gets the design's GNOME-style variant (round 20px buttons, minimize, maximize, close).
+- [ ] macOS: `trafficLightPosition` centres the traffic lights in the 28px bar; the space the bar and the sidebar keep
+      clear for them (E12-03) matches.
+- [ ] macOS, vertical tabs: the traffic lights hide and show with the hidden title bar, through a native call from
+      Rust (`standardWindowButton` `setHidden`), and are always visible while the bar is.
+- [ ] Checked on macOS and on a Linux desktop (GNOME and one other): both tab orientations, drag, min/max/close,
+      sidebar open and closed.
+
+**Verification:** `pnpm test`; `cargo test`; manual on macOS and Linux as listed.
+
+### E26-03 — Close-out: accessory improvements
+
+```yaml
+id: E26-03
+depends-on: [E26-01, E26-02]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
