@@ -7,10 +7,12 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogWarning,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import { IS_WINDOWS } from '@/modules/platform';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { setShortcuts } from '@/modules/settings/store';
 import {
@@ -123,18 +125,16 @@ export function ShortcutsSection() {
       <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
+            <AlertDialogWarning />
             <AlertDialogTitle>Reset all shortcuts?</AlertDialogTitle>
             <AlertDialogDescription>
               This will revert all your custom keyboard shortcuts to their factory defaults. This action cannot be
               undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter actionFirst={IS_WINDOWS}>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={onResetAll}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
+            <AlertDialogAction tone="danger" onClick={onResetAll}>
               Reset All
             </AlertDialogAction>
           </AlertDialogFooter>

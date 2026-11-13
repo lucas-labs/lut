@@ -25,10 +25,6 @@ const ALLOWED: Record<string, { allows: string[]; why: string }> = {
     allows: ['3D transform', 'filter blur'],
     why: 'user background image; layer only when blurred or animated (surfaceOwnsLayer)',
   },
-  'styles/globals.css': {
-    allows: ['filter blur'],
-    why: 'page root blurred behind a modal, only while its overlay is open',
-  },
   'modules/editor/lib/chromeTheme.ts': {
     allows: ['backdrop filter'],
     why: 'CodeMirror tooltip, exists only while shown',
