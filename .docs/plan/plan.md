@@ -2798,8 +2798,8 @@ refs: [UX-009, .docs/plan/analysis/ide-tools.md]
 ```
 
 The IDE-like tools (Git panel and history, explorer, file icons, editor, markdown and web preview) take lut's design.
-They stay where they are: Files and Git in the sidebar, the rest as tabs, shown only when opened. Loading their code only
-when they are first opened is not planned here; E26-04 analyses it.
+They stay where they are: Files and Git in the sidebar, the rest as tabs, shown only when opened. The tools that already
+load on first open keep their `*Lazy.tsx` wrappers; changing how they load is E26-04's analysis.
 
 ### E10-13 — Rebuild the Git panel changes view on lut's design
 
@@ -2841,7 +2841,7 @@ Terax panel code.
 **Acceptance criteria:**
 
 - [ ] Commit, branch and sync actions match the design.
-- [ ] Terax `SourceControlPanel.tsx` and `SourceControlPanelLazy.tsx` removed.
+- [ ] Terax `SourceControlPanel.tsx` removed; the panel keeps loading on first open through its lazy wrapper, as before (E26-04 analyses loading).
 - [ ] Behaviour: commit calls the existing commit action with the typed message and is disabled with an empty message (component test).
 - [ ] A screenshot of the view is attached to the PR.
 

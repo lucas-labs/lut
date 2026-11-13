@@ -212,3 +212,26 @@ describe('the commit box', () => {
     expect(harness.scm.push).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('a fixed repository that does not load', () => {
+  it.each(['no-repo', 'error'] as const)('offers following the active context again (%s)', async (panelState) => {
+    harness.scm = state({ panelState });
+    act(() =>
+      root.render(
+        createElement(GitPanel, {
+          ...props,
+          sourceControl: { ...props.sourceControl, contextPath: '/gone' },
+          repositoryTarget: { mode: 'fixed', repoRoot: '/gone' },
+        }),
+      ),
+    );
+    await act(async () => button('Follow Active Context').click());
+    expect(props.onFollowRepositoryContext).toHaveBeenCalled();
+  });
+
+  it('is not offered while following the active context', () => {
+    harness.scm = state({ panelState: 'no-repo' });
+    render();
+    expect([...host.querySelectorAll('button')].some((b) => b.textContent === 'Follow Active Context')).toBe(false);
+  });
+});

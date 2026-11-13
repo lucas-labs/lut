@@ -298,7 +298,7 @@ const ChangeRow = memo(function ChangeRow({
           <button
             type="button"
             onClick={open}
-            className="flex min-w-0 flex-1 items-center gap-1.5 text-left outline-none"
+            className="flex min-w-0 flex-1 items-center gap-1.5 rounded-sm text-left outline-none focus-visible:ring-1 focus-visible:ring-ring"
           >
             <FileIcon name={fileName} className="size-3.5 shrink-0" />
             <span className="min-w-0 shrink truncate text-foreground">{fileName}</span>

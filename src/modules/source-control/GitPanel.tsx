@@ -117,6 +117,15 @@ export const GitPanel = memo(function GitPanel({
           ? 'Already up to date'
           : `Pull ${behind} commits (fast-forward)`;
 
+  // A fixed repository that cannot load would otherwise leave no way back: the branch box with its
+  // "Follow Active Context" item shows only once a repository is ready.
+  const followContext =
+    repositoryTarget.mode === 'fixed' ? (
+      <Button size="sm" variant="outline" onClick={onFollowRepositoryContext}>
+        Follow Active Context
+      </Button>
+    ) : null;
+
   return (
     <TooltipProvider delayDuration={800} skipDelayDuration={300}>
       <aside className="flex h-full min-w-0 flex-col [contain:layout_style]">
@@ -161,18 +170,25 @@ export const GitPanel = memo(function GitPanel({
           </HeaderAction>
         </SidebarViewHeader>
 
-        {panelState === 'loading' ? <PanelCenter title="Loading repository" /> : null}
+        {panelState === 'loading' ? <PanelCenter title="Loading repository" action={followContext} /> : null}
         {panelState === 'no-repo' ? (
-          <PanelCenter title="No repository" body="The active workspace is not inside a Git repository." />
+          <PanelCenter
+            title="No repository"
+            body="The active workspace is not inside a Git repository."
+            action={followContext}
+          />
         ) : null}
         {panelState === 'error' ? (
           <PanelCenter
             title="Source control error"
             body={scm.statusError ?? 'Unknown source control error'}
             action={
-              <Button size="sm" onClick={() => void scm.refresh()}>
-                Retry
-              </Button>
+              <>
+                <Button size="sm" onClick={() => void scm.refresh()}>
+                  Retry
+                </Button>
+                {followContext}
+              </>
             }
           />
         ) : null}
