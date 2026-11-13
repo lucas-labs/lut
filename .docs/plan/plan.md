@@ -7214,6 +7214,61 @@ size: XS
 
 **Goal:** Verify every item of this epic is delivered (validator coverage), run the epic's verification commands, and add any discovered work to plan.md (or state 'nothing new').
 
+## E26 — Accessory improvements
+
+```yaml
+id: E26
+depends-on: [E12]
+refs: [.docs/plan/README.md]
+```
+
+Changes that improve lut but are accessory: worth doing, not worth holding another epic for. Issues are added here as
+they come up and taken when there is room; none blocks another epic. The epic's `depends-on` grows with the epics its
+issues build on.
+
+### E26-01 — Quit confirmation lists the running processes, per the design
+
+```yaml
+id: E26-01
+depends-on: [E12-07]
+refs: [TER-011, 13.2:9, .docs/plan/analysis/app-shell.md]
+covers: [app-shell/close-dialogs]
+type: task
+scope: ui
+size: M
+```
+
+**Goal:** The quit confirmation matches the design's "Quit confirmation" board: it names what quitting stops instead of
+saying that "a process" is running.
+
+**Acceptance criteria:**
+
+- [ ] The backend reports the name of each pane's foreground process (today `pty_has_foreground_process` only answers
+      whether there is one); Rust tests for the new command.
+- [ ] The dialog lists one row per running process: the command, where it runs (space · tab) and its state (an agent's
+      working / needs approval from the agent activity store, otherwise running).
+- [ ] The description counts them ("3 processes are still running"); the title, verb and action follow the platform
+      (Close on Windows and Linux, Quit on macOS).
+- [ ] The opt-out and "close anyway" behave as before; component test for the list, the count and the platform texts.
+
+**Verification:** `pnpm test`, `cargo test --manifest-path src-tauri/Cargo.toml --locked`; manual on Windows: quit with
+an agent and a dev server running lists both.
+
+### E26-02 — Close-out: accessory improvements
+
+```yaml
+id: E26-02
+depends-on: [E26-01]
+refs: [.docs/plan/README.md]
+covers: []
+type: closeout
+scope: none
+size: XS
+```
+
+**Goal:** Verify every item of this epic is delivered (validator coverage), run the epic's verification commands, and
+add any discovered work to plan.md (or state 'nothing new').
+
 ## Not planned
 
 - `TER-010` — P2: moving sessions between windows needs multiwindow (post-v1).
