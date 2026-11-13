@@ -8,6 +8,11 @@ type CommitLogStatus = 'idle' | 'initial' | 'more' | 'error';
 type LogState = {
   /** The repo and scope these commits belong to. */
   key: string;
+  /**
+   * Grows with every new repo, scope or reload. A page answers only the generation that asked for it, so one still on
+   * its way from before a reload is dropped instead of landing at the wrong offset.
+   */
+  generation: number;
   commits: GitLogEntry[];
   status: CommitLogStatus;
   error: string | null;
@@ -22,8 +27,9 @@ type LogState = {
   failed: 'first' | 'more' | null;
 };
 
-const fresh = (key: string): LogState => ({
+const fresh = (key: string, generation: number): LogState => ({
   key,
+  generation,
   commits: [],
   status: 'initial',
   error: null,
@@ -48,14 +54,15 @@ export function normalizeError(error: unknown): string {
  */
 export function useCommitLog(repoRoot: string, scope: GitLogScope) {
   const key = `${repoRoot}\n${scope.kind === 'branch' ? `branch:${scope.name}` : scope.kind}`;
-  const [state, setState] = useState(() => fresh(key));
+  const [state, setState] = useState(() => fresh(key, 0));
   const [reloadToken, setReloadToken] = useState(0);
-  const inflightMoreRef = useRef(false);
+  /** The generation whose page is loading, so a double call (two scroll events) asks once. */
+  const pageInFlightRef = useRef<number | null>(null);
 
   // A new repo or scope resets the state while rendering, before its first page loads.
   const stale = state.key !== key;
-  if (stale) setState(fresh(key));
-  const current = stale ? fresh(key) : state;
+  const current = stale ? fresh(key, state.generation + 1) : state;
+  if (stale) setState(current);
 
   useEffect(() => {
     let cancelled = false;
@@ -89,19 +96,28 @@ export function useCommitLog(repoRoot: string, scope: GitLogScope) {
 
   /** Loads the first page again; the commits already shown stay until it arrives. */
   const reload = useCallback(() => {
-    setState((s) => ({ ...s, status: 'initial', error: null, failed: null, endReached: false }));
+    setState((s) => ({
+      ...s,
+      generation: s.generation + 1,
+      status: 'initial',
+      error: null,
+      failed: null,
+      endReached: false,
+    }));
     setReloadToken((t) => t + 1);
   }, []);
 
-  const { status, endReached, offset, failed } = current;
+  const { generation, status, endReached, offset, failed } = current;
   const loadPage = useCallback(
     async (retrying: boolean) => {
       const ready = status === 'idle' || (retrying && failed === 'more');
-      if (inflightMoreRef.current || endReached || !ready || offset === 0) return;
-      inflightMoreRef.current = true;
-      setState((s) => (s.key === key ? { ...s, status: 'more', error: null, failed: null } : s));
-      // A reload or another scope while this page loads moves the state off 'more', and the page is dropped.
-      const stillWanted = (s: LogState) => s.key === key && s.status === 'more';
+      if (pageInFlightRef.current === generation || endReached || !ready || offset === 0) return;
+      pageInFlightRef.current = generation;
+      // A reload or another scope while this page loads starts a new generation, and the page is dropped.
+      const stillWanted = (s: LogState) => s.generation === generation && s.status === 'more';
+      setState((s) =>
+        s.generation === generation ? { ...s, status: 'more', error: null, failed: null } : s,
+      );
       try {
         const entries = await git.log(repoRoot, { limit: PAGE_SIZE, skip: offset, scope });
         setState((s) => {
@@ -122,9 +138,10 @@ export function useCommitLog(repoRoot: string, scope: GitLogScope) {
           stillWanted(s) ? { ...s, status: 'error', error: message, failed: 'more' } : s,
         );
       }
-      inflightMoreRef.current = false;
+      // Only this page's own guard: a newer generation's page may be loading by now.
+      if (pageInFlightRef.current === generation) pageInFlightRef.current = null;
     },
-    [endReached, failed, key, offset, repoRoot, scope, status],
+    [endReached, failed, generation, offset, repoRoot, scope, status],
   );
 
   /** Loads the next page. */

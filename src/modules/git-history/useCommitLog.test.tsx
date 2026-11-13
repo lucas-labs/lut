@@ -17,9 +17,15 @@ let log: ReturnType<typeof useCommitLog>;
 const report = (latest: typeof log) => {
   log = latest;
 };
-function Probe({ onRender }: { onRender: typeof report }) {
-  onRender(useCommitLog('/repo', scope));
+function Probe({ onRender, scope: probed = scope }: { onRender: typeof report; scope?: GitLogScope }) {
+  onRender(useCommitLog('/repo', probed));
   return null;
+}
+/** A git.log answer the test resolves when it wants to. */
+function pendingLog() {
+  let resolve: (entries: GitLogEntry[]) => void = () => {};
+  api.log.mockReturnValueOnce(new Promise<GitLogEntry[]>((r) => (resolve = r)));
+  return (entries: GitLogEntry[]) => resolve(entries);
 }
 
 let host: HTMLDivElement;
@@ -67,6 +73,44 @@ describe('useCommitLog', () => {
     api.log.mockResolvedValueOnce(page(30));
     await act(async () => log.retry());
     expect(lastSkip()).toBe(30);
+    expect(log.commits).toHaveLength(60);
+  });
+
+  it('drops a page still loading from before a reload, without blocking the next one', async () => {
+    const stalePage = pendingLog();
+    let loading: Promise<void> = Promise.resolve();
+    act(() => {
+      loading = log.loadMore();
+    });
+    api.log.mockResolvedValueOnce(page(0));
+    await act(async () => log.reload());
+
+    api.log.mockResolvedValueOnce(page(30));
+    await act(async () => log.loadMore());
+    expect(lastSkip()).toBe(30);
+    expect(log.commits).toHaveLength(60);
+
+    await act(async () => {
+      stalePage(page(100));
+      await loading;
+    });
+    expect(log.commits).toHaveLength(60);
+    expect(log.offset).toBe(60);
+  });
+
+  it('loads the next page of a new scope while the old scope’s page is still on its way', async () => {
+    const stalePage = pendingLog();
+    act(() => void log.loadMore());
+    api.log.mockResolvedValueOnce(page(200));
+    await act(async () => root.render(createElement(Probe, { onRender: report, scope: { kind: 'head' } })));
+    expect(log.commits[0].sha).toBe(commit(200).sha);
+
+    api.log.mockResolvedValueOnce(page(230));
+    await act(async () => log.loadMore());
+    expect(api.log).toHaveBeenLastCalledWith('/repo', { limit: 30, skip: 30, scope: { kind: 'head' } });
+    expect(log.commits).toHaveLength(60);
+
+    await act(async () => stalePage(page(0)));
     expect(log.commits).toHaveLength(60);
   });
 });
