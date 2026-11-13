@@ -294,8 +294,8 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 | `git_commit_files`     | `git::commands` | `git.commitFiles` → `modules/git-history/GitHistoryPane.tsx`                                                                |
 | `git_commit_file_diff` | `git::commands` | `git.commitFileDiff` → `modules/editor/lib/diffCache.ts`                                                                    |
 | `git_remote_url`       | `git::commands` | `git.remoteUrl` → `modules/git-history/GitHistoryPane.tsx`                                                                  |
-| `git_list_branches`    | `git::commands` | `git.listBranches` → `modules/source-control/SourceControlPanel.tsx`                                                        |
-| `git_checkout_branch`  | `git::commands` | `git.checkoutBranch` → `modules/source-control/SourceControlPanel.tsx`                                                      |
+| `git_list_branches`    | `git::commands` | `git.listBranches` → `modules/source-control/BranchPicker.tsx`                                                              |
+| `git_checkout_branch`  | `git::commands` | `git.checkoutBranch` → `modules/source-control/BranchPicker.tsx`                                                            |
 | `git_watch`            | `git::commands` | `git.watch` → `modules/git/changes.ts`                                                                                      |
 | `git_unwatch`          | `git::commands` | `git.unwatch` → `modules/git/changes.ts`                                                                                    |
 

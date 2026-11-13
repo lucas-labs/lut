@@ -94,7 +94,7 @@ UX (badges, notifications, hooks manager with plan/apply), E21 resume and status
 ### 8. Design, settings, secondary tools and shell UI (F6): E11, E13, E10, E12, E15, E18, E22, E23
 
 E11 is the user's design and has no code dependency. E13 (settings, theming, fonts, shortcuts) needs it and the
-profiles. E10 rebuilds the IDE tools on the design; loading them only when opened is analysed by E26-04. E12
+profiles. E10 rebuilds the IDE tools on the design; how they load (most already load on first open) is analysed by E26-04. E12
 implements the app shell; E15 profiles UI, E18 project navigator, E22 palette and polish and E23 export and import
 follow.
 

@@ -1,7 +1,7 @@
 import { FileExplorer } from '@/modules/explorer';
 import { useNavigationStore } from '@/modules/navigation';
 import { SidebarRail } from '@/modules/sidebar';
-import { SourceControlPanel } from '@/modules/source-control';
+import { GitPanel } from '@/modules/source-control';
 import { SpacesView } from '@/modules/spaces';
 import type { Tab } from '@/modules/tabs';
 import type { TerminalPathDropTarget } from '@/modules/terminal';
@@ -97,7 +97,7 @@ export function AppSidebar({
               visible={!sidebarCollapsed}
             />
           ) : (
-            <SourceControlPanel
+            <GitPanel
               open
               sourceControl={git.sourceControl}
               onOpenDiff={openGitDiffTab}

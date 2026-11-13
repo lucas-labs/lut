@@ -2798,8 +2798,8 @@ refs: [UX-009, .docs/plan/analysis/ide-tools.md]
 ```
 
 The IDE-like tools (Git panel and history, explorer, file icons, editor, markdown and web preview) take lut's design.
-They stay where they are: Files and Git in the sidebar, the rest as tabs, shown only when opened. Loading their code only
-when they are first opened is not planned here; E26-04 analyses it.
+They stay where they are: Files and Git in the sidebar, the rest as tabs, shown only when opened. The tools that already
+load on first open keep their `*Lazy.tsx` wrappers; changing how they load is E26-04's analysis.
 
 ### E10-13 — Rebuild the Git panel changes view on lut's design
 
@@ -2841,7 +2841,7 @@ Terax panel code.
 **Acceptance criteria:**
 
 - [ ] Commit, branch and sync actions match the design.
-- [ ] Terax `SourceControlPanel.tsx` and `SourceControlPanelLazy.tsx` removed.
+- [ ] Terax `SourceControlPanel.tsx` removed; the panel keeps loading on first open through its lazy wrapper, as before (E26-04 analyses loading).
 - [ ] Behaviour: commit calls the existing commit action with the typed message and is disabled with an empty message (component test).
 - [ ] A screenshot of the view is attached to the PR.
 
@@ -6979,7 +6979,7 @@ buttons, and on macOS the native traffic lights neither sit in the 28px bar nor 
 
 **Verification:** `pnpm test`; `cargo test`; manual on macOS and Linux as listed.
 
-### E26-04 — Analyse loading the secondary tools only when opened
+### E26-04 — Analyse how the secondary tools load
 
 ```yaml
 id: E26-04
@@ -6991,17 +6991,19 @@ scope: ui
 size: S
 ```
 
-**Goal:** Decide, with numbers, whether the editor, LSP, Git, explorer and previews should load their code only when
-first opened. Today it all loads at startup. Doing it costs a delay between opening a tool and seeing it, and a registry
-the terminal opens files through; the gain (startup time and memory) is unmeasured.
+**Goal:** Decide, with numbers, whether to keep, extend or drop the lazy loading of the secondary tools. Today the Git
+panel, editor, Git diff, Git history and markdown preview (from Terax) and the web preview (E07) already load their code
+the first time they are opened, through their `*Lazy.tsx` wrappers. The explorer loads at startup, and the terminal
+imports the LSP navigator for Ctrl+click on paths. Lazy loading costs a short delay the first time a tool opens; its
+gain (startup time and memory) is unmeasured.
 
 **Acceptance criteria:**
 
-- [ ] Startup time, memory and startup bundle size measured on Windows as they are today, and with the secondary tools
-      split out of the startup bundle.
-- [ ] The first-open delay of each tool measured when loaded on demand, and with preloading while idle.
-- [ ] Recommendation recorded here: leave it as it is, or the issues to plan (what loads lazily, how terminal links and
-      `lut <file>` open files without the editor loaded).
+- [ ] Startup time, memory and startup bundle size measured on Windows as they are today, and with the lazy tools loaded
+      at startup.
+- [ ] The first-open delay of each lazy tool measured, with and without preloading while idle.
+- [ ] Recommendation recorded here: keep it as it is, load everything at startup, or extend lazy loading (explorer,
+      LSP navigator), with the issues to plan.
 
 **Verification:** the measurements and the recommendation in the issue.
 

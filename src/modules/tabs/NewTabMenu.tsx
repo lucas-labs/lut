@@ -3,6 +3,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
@@ -23,7 +24,6 @@ import {
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useRef, useState } from 'react';
-import { MENU_CONTENT, MENU_HINT, MENU_ITEM } from './navigatorMenu';
 
 type Props = {
   /** The strip's 22px button or the rail's 24px one. */
@@ -93,7 +93,7 @@ export function NewTabMenu({
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="start"
-              className={MENU_CONTENT}
+              className="min-w-56"
               onCloseAutoFocus={(event) => {
                 event.preventDefault();
                 if (!openLauncherAfterMenuClose.current) return;
@@ -102,32 +102,32 @@ export function NewTabMenu({
                 requestAnimationFrame(() => setLauncherOpen(true));
               }}
             >
-              <DropdownMenuItem className={MENU_ITEM} onSelect={onNew}>
+              <DropdownMenuItem onSelect={onNew}>
                 <HugeiconsIcon icon={ComputerTerminal02Icon} size={14} strokeWidth={1.5} />
                 <span className="flex-1">Terminal</span>
-                <span className={MENU_HINT}>{terminalHint}</span>
+                <DropdownMenuShortcut>{terminalHint}</DropdownMenuShortcut>
               </DropdownMenuItem>
-              <DropdownMenuItem className={MENU_ITEM} onSelect={openLauncher}>
+              <DropdownMenuItem onSelect={openLauncher}>
                 <HugeiconsIcon icon={AiBrowserIcon} size={14} strokeWidth={1.5} />
                 <span className="flex-1">Agents</span>
                 <HugeiconsIcon icon={ArrowRight01Icon} size={14} strokeWidth={1.5} className="text-muted-foreground" />
               </DropdownMenuItem>
-              <DropdownMenuItem className={MENU_ITEM} onSelect={onNewPrivate}>
+              <DropdownMenuItem onSelect={onNewPrivate}>
                 <HugeiconsIcon icon={IncognitoIcon} size={14} strokeWidth={1.5} />
                 <span className="flex-1">Privacy</span>
-                <span className={MENU_HINT}>{privateHint}</span>
+                <DropdownMenuShortcut>{privateHint}</DropdownMenuShortcut>
               </DropdownMenuItem>
-              <DropdownMenuItem className={MENU_ITEM} onSelect={onNewEditor}>
+              <DropdownMenuItem onSelect={onNewEditor}>
                 <HugeiconsIcon icon={PencilEdit02Icon} size={14} strokeWidth={1.5} />
                 <span className="flex-1">Editor</span>
-                <span className={MENU_HINT}>{editorHint}</span>
+                <DropdownMenuShortcut>{editorHint}</DropdownMenuShortcut>
               </DropdownMenuItem>
-              <DropdownMenuItem className={MENU_ITEM} onSelect={onNewPreview}>
+              <DropdownMenuItem onSelect={onNewPreview}>
                 <HugeiconsIcon icon={Globe02Icon} size={14} strokeWidth={1.5} />
                 <span className="flex-1">Preview</span>
-                <span className={MENU_HINT}>{previewHint}</span>
+                <DropdownMenuShortcut>{previewHint}</DropdownMenuShortcut>
               </DropdownMenuItem>
-              <DropdownMenuItem className={MENU_ITEM} onSelect={onNewGitGraph}>
+              <DropdownMenuItem onSelect={onNewGitGraph}>
                 <HugeiconsIcon icon={GitBranchIcon} size={14} strokeWidth={1.5} />
                 <span className="flex-1">Git Graph</span>
               </DropdownMenuItem>

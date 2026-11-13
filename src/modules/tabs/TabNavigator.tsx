@@ -3,6 +3,7 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
+  ContextMenuShortcut,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import { cn } from '@/lib/utils';
@@ -18,7 +19,6 @@ import { useShortcutHint } from '@/modules/shortcuts';
 import { ArrowRight01Icon, Cancel01Icon, CancelCircleIcon, PencilEdit02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Fragment, type KeyboardEvent, useEffect, useRef, useState } from 'react';
-import { MENU_CONTENT, MENU_HINT, MENU_ITEM, MENU_SEPARATOR } from './navigatorMenu';
 import { NewTabMenu } from './NewTabMenu';
 
 type Props = {
@@ -264,31 +264,27 @@ export function TabNavigator({
         {showGap(i) && <DropIndicator vertical={vertical} />}
         <ContextMenu>
           <ContextMenuTrigger asChild>{tab}</ContextMenuTrigger>
-          <ContextMenuContent className={MENU_CONTENT} onCloseAutoFocus={(e) => e.preventDefault()}>
+          <ContextMenuContent className="min-w-56" onCloseAutoFocus={(e) => e.preventDefault()}>
             {t.renamable && (
-              <ContextMenuItem className={MENU_ITEM} onSelect={() => setEditingId(t.id)}>
+              <ContextMenuItem onSelect={() => setEditingId(t.id)}>
                 <HugeiconsIcon icon={PencilEdit02Icon} size={14} strokeWidth={1.5} />
                 <span className="flex-1">Rename</span>
               </ContextMenuItem>
             )}
-            {t.renamable && <ContextMenuSeparator className={MENU_SEPARATOR} />}
-            <ContextMenuItem className={MENU_ITEM} disabled={!hasTabsAfter} onSelect={() => actions.closeToEnd(t.id)}>
+            {t.renamable && <ContextMenuSeparator />}
+            <ContextMenuItem disabled={!hasTabsAfter} onSelect={() => actions.closeToEnd(t.id)}>
               <HugeiconsIcon icon={ArrowRight01Icon} size={14} strokeWidth={1.5} />
               <span className="flex-1">{vertical ? 'Close tabs below' : 'Close tabs to the right'}</span>
             </ContextMenuItem>
-            <ContextMenuItem
-              className={MENU_ITEM}
-              disabled={items.length <= 1}
-              onSelect={() => actions.closeOthers(t.id)}
-            >
+            <ContextMenuItem disabled={items.length <= 1} onSelect={() => actions.closeOthers(t.id)}>
               <HugeiconsIcon icon={CancelCircleIcon} size={14} strokeWidth={1.5} />
               <span className="flex-1">Close other tabs</span>
             </ContextMenuItem>
-            <ContextMenuSeparator className={MENU_SEPARATOR} />
-            <ContextMenuItem className={MENU_ITEM} disabled={items.length <= 1} onSelect={() => actions.close(t.id)}>
+            <ContextMenuSeparator />
+            <ContextMenuItem disabled={items.length <= 1} onSelect={() => actions.close(t.id)}>
               <HugeiconsIcon icon={Cancel01Icon} size={14} strokeWidth={1.75} />
               <span className="flex-1">Close tab</span>
-              {t.active && closeHint ? <span className={MENU_HINT}>{closeHint}</span> : null}
+              {t.active && closeHint ? <ContextMenuShortcut>{closeHint}</ContextMenuShortcut> : null}
             </ContextMenuItem>
           </ContextMenuContent>
         </ContextMenu>
