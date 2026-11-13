@@ -34,7 +34,6 @@ import { InlineInput } from './InlineInput';
 import { isPasteShortcut, parentDir as parentOf, pasteClipboardFiles, pasteTargetDir } from './lib/clipboardPaste';
 import { copyToClipboard, relativePath, revealInFinder } from './lib/contextActions';
 import type { GitStatusCode } from './lib/gitStatusUtils';
-import { COMPACT_CONTENT, COMPACT_ITEM } from './lib/menuItemClass';
 import { useExplorerDnd } from './lib/useExplorerDnd';
 import { useExplorerFileDrop } from './lib/useExplorerFileDrop';
 import { useFileTree } from './lib/useFileTree';
@@ -761,14 +760,13 @@ export const FileExplorer = memo(
             </ContextMenuTrigger>
             <ContextMenuContent
               key={menuNonce}
-              className={COMPACT_CONTENT}
+
               onCloseAutoFocus={(e) => {
                 if (tree.renaming || tree.pendingCreate) e.preventDefault();
               }}
             >
               {menuTarget && menuIsBatch ? (
                 <ContextMenuItem
-                  className={COMPACT_ITEM}
                   variant="destructive"
                   onSelect={(e) => {
                     if (deleteConfirm) {
@@ -786,31 +784,28 @@ export const FileExplorer = memo(
               ) : menuTarget ? (
                 <>
                   {!menuTarget.isDir && (
-                    <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onOpenFile(menuTarget.path, true)}>
-                      Open
-                    </ContextMenuItem>
+                    <ContextMenuItem onSelect={() => onOpenFile(menuTarget.path, true)}>Open</ContextMenuItem>
                   )}
                   {menuTarget.isDir && onRevealInTerminal && (
-                    <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onRevealInTerminal(menuTarget.path)}>
+                    <ContextMenuItem onSelect={() => onRevealInTerminal(menuTarget.path)}>
                       Open in Terminal
                     </ContextMenuItem>
                   )}
                   {menuTarget.isDir && onOpenInSourceControl && (
-                    <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onOpenInSourceControl(menuTarget.path)}>
+                    <ContextMenuItem onSelect={() => onOpenInSourceControl(menuTarget.path)}>
                       Open in Source Control
                     </ContextMenuItem>
                   )}
                   {menuTarget.isDir && onOpenGitHistory && (
-                    <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onOpenGitHistory(menuTarget.path)}>
+                    <ContextMenuItem onSelect={() => onOpenGitHistory(menuTarget.path)}>
                       Open Git History
                     </ContextMenuItem>
                   )}
-                  <ContextMenuItem className={COMPACT_ITEM} onSelect={() => void revealInFinder(menuTarget.path)}>
+                  <ContextMenuItem onSelect={() => void revealInFinder(menuTarget.path)}>
                     Reveal in Finder
                   </ContextMenuItem>
                   <ContextMenuSeparator />
                   <ContextMenuItem
-                    className={COMPACT_ITEM}
                     onSelect={() =>
                       tree.beginCreate(menuTarget.isDir ? menuTarget.path : parentOf(menuTarget.path, rootPath), 'file')
                     }
@@ -818,7 +813,6 @@ export const FileExplorer = memo(
                     New File
                   </ContextMenuItem>
                   <ContextMenuItem
-                    className={COMPACT_ITEM}
                     onSelect={() =>
                       tree.beginCreate(menuTarget.isDir ? menuTarget.path : parentOf(menuTarget.path, rootPath), 'dir')
                     }
@@ -826,7 +820,6 @@ export const FileExplorer = memo(
                     New Folder
                   </ContextMenuItem>
                   <ContextMenuItem
-                    className={COMPACT_ITEM}
                     onSelect={() =>
                       void pasteInto(menuTarget.isDir ? menuTarget.path : parentOf(menuTarget.path, rootPath))
                     }
@@ -835,22 +828,14 @@ export const FileExplorer = memo(
                     <ContextMenuShortcut>{PASTE_HINT}</ContextMenuShortcut>
                   </ContextMenuItem>
                   <ContextMenuSeparator />
-                  <ContextMenuItem className={COMPACT_ITEM} onSelect={() => void copyToClipboard(menuTarget.path)}>
-                    Copy Path
-                  </ContextMenuItem>
-                  <ContextMenuItem
-                    className={COMPACT_ITEM}
-                    onSelect={() => void copyToClipboard(relativePath(rootPath, menuTarget.path))}
-                  >
+                  <ContextMenuItem onSelect={() => void copyToClipboard(menuTarget.path)}>Copy Path</ContextMenuItem>
+                  <ContextMenuItem onSelect={() => void copyToClipboard(relativePath(rootPath, menuTarget.path))}>
                     Copy Relative Path
                   </ContextMenuItem>
                   <ContextMenuSeparator />
-                  <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onAttachToAgent?.(menuTarget.path)}>
-                    Attach to Agent
-                  </ContextMenuItem>
+                  <ContextMenuItem onSelect={() => onAttachToAgent?.(menuTarget.path)}>Attach to Agent</ContextMenuItem>
                   <ContextMenuSeparator />
                   <ContextMenuItem
-                    className={COMPACT_ITEM}
                     variant="destructive"
                     onSelect={(e) => {
                       if (deleteConfirm) {
@@ -869,41 +854,27 @@ export const FileExplorer = memo(
               ) : (
                 <>
                   {onRevealInTerminal && (
-                    <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onRevealInTerminal(rootPath)}>
-                      Open in Terminal
-                    </ContextMenuItem>
+                    <ContextMenuItem onSelect={() => onRevealInTerminal(rootPath)}>Open in Terminal</ContextMenuItem>
                   )}
                   {onOpenInSourceControl && (
-                    <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onOpenInSourceControl(rootPath)}>
+                    <ContextMenuItem onSelect={() => onOpenInSourceControl(rootPath)}>
                       Open in Source Control
                     </ContextMenuItem>
                   )}
                   {onOpenGitHistory && (
-                    <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onOpenGitHistory(rootPath)}>
-                      Open Git History
-                    </ContextMenuItem>
+                    <ContextMenuItem onSelect={() => onOpenGitHistory(rootPath)}>Open Git History</ContextMenuItem>
                   )}
-                  <ContextMenuItem className={COMPACT_ITEM} onSelect={() => void revealInFinder(rootPath)}>
-                    Reveal in Finder
-                  </ContextMenuItem>
+                  <ContextMenuItem onSelect={() => void revealInFinder(rootPath)}>Reveal in Finder</ContextMenuItem>
                   <ContextMenuSeparator />
-                  <ContextMenuItem className={COMPACT_ITEM} onSelect={() => tree.beginCreate(rootPath, 'file')}>
-                    New File
-                  </ContextMenuItem>
-                  <ContextMenuItem className={COMPACT_ITEM} onSelect={() => tree.beginCreate(rootPath, 'dir')}>
-                    New Folder
-                  </ContextMenuItem>
-                  <ContextMenuItem className={COMPACT_ITEM} onSelect={() => void pasteInto(rootPath)}>
+                  <ContextMenuItem onSelect={() => tree.beginCreate(rootPath, 'file')}>New File</ContextMenuItem>
+                  <ContextMenuItem onSelect={() => tree.beginCreate(rootPath, 'dir')}>New Folder</ContextMenuItem>
+                  <ContextMenuItem onSelect={() => void pasteInto(rootPath)}>
                     Paste
                     <ContextMenuShortcut>{PASTE_HINT}</ContextMenuShortcut>
                   </ContextMenuItem>
                   <ContextMenuSeparator />
-                  <ContextMenuItem className={COMPACT_ITEM} onSelect={() => void copyToClipboard(rootPath)}>
-                    Copy Path
-                  </ContextMenuItem>
-                  <ContextMenuItem className={COMPACT_ITEM} onSelect={() => tree.refresh(rootPath)}>
-                    Refresh
-                  </ContextMenuItem>
+                  <ContextMenuItem onSelect={() => void copyToClipboard(rootPath)}>Copy Path</ContextMenuItem>
+                  <ContextMenuItem onSelect={() => tree.refresh(rootPath)}>Refresh</ContextMenuItem>
                 </>
               )}
             </ContextMenuContent>

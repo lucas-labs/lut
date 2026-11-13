@@ -16,7 +16,6 @@ import { invoke } from '@tauri-apps/api/core';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { FileIcon } from './FileIcon';
 import { copyToClipboard, revealInFinder } from './lib/contextActions';
-import { COMPACT_CONTENT, COMPACT_ITEM } from './lib/menuItemClass';
 
 type SearchHit = {
   path: string;
@@ -255,38 +254,26 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
                         <span className="ml-auto truncate text-[10px] text-muted-foreground">{hit.rel}</span>
                       </button>
                     </ContextMenuTrigger>
-                    <ContextMenuContent className={COMPACT_CONTENT}>
-                      {!hit.is_dir && (
-                        <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onOpenFile(hit.path)}>
-                          Open
-                        </ContextMenuItem>
-                      )}
+                    <ContextMenuContent>
+                      {!hit.is_dir && <ContextMenuItem onSelect={() => onOpenFile(hit.path)}>Open</ContextMenuItem>}
                       {hit.is_dir && onRevealInTerminal && (
-                        <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onRevealInTerminal(hit.path)}>
+                        <ContextMenuItem onSelect={() => onRevealInTerminal(hit.path)}>
                           Open in Terminal
                         </ContextMenuItem>
                       )}
                       {hit.is_dir && onOpenInSourceControl && (
-                        <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onOpenInSourceControl(hit.path)}>
+                        <ContextMenuItem onSelect={() => onOpenInSourceControl(hit.path)}>
                           Open in Source Control
                         </ContextMenuItem>
                       )}
                       {hit.is_dir && onOpenGitHistory && (
-                        <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onOpenGitHistory(hit.path)}>
-                          Open Git History
-                        </ContextMenuItem>
+                        <ContextMenuItem onSelect={() => onOpenGitHistory(hit.path)}>Open Git History</ContextMenuItem>
                       )}
-                      <ContextMenuItem className={COMPACT_ITEM} onSelect={() => void revealInFinder(hit.path)}>
-                        Reveal in Finder
-                      </ContextMenuItem>
+                      <ContextMenuItem onSelect={() => void revealInFinder(hit.path)}>Reveal in Finder</ContextMenuItem>
                       <ContextMenuSeparator />
-                      <ContextMenuItem className={COMPACT_ITEM} onSelect={() => void copyToClipboard(hit.path)}>
-                        Copy Path
-                      </ContextMenuItem>
+                      <ContextMenuItem onSelect={() => void copyToClipboard(hit.path)}>Copy Path</ContextMenuItem>
                       <ContextMenuSeparator />
-                      <ContextMenuItem className={COMPACT_ITEM} onSelect={() => onAttachToAgent?.(hit.path)}>
-                        Attach to Agent
-                      </ContextMenuItem>
+                      <ContextMenuItem onSelect={() => onAttachToAgent?.(hit.path)}>Attach to Agent</ContextMenuItem>
                     </ContextMenuContent>
                   </ContextMenu>
                 );
