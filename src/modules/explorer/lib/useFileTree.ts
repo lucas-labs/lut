@@ -62,6 +62,14 @@ function recallExpansion(root: string): string[] {
   return v;
 }
 
+/**
+ * Whether a listing read with `showHidden` can include `child`: with hidden entries off, the backend leaves out every
+ * dot-prefixed name, so such a child missing from the listing is not gone.
+ */
+function listingCovers(child: string, showHidden: boolean): boolean {
+  return showHidden || !child.slice(child.lastIndexOf('/') + 1).startsWith('.');
+}
+
 function isUnder(key: string, root: string): boolean {
   return key === root || key.startsWith(`${root}/`);
 }
@@ -115,6 +123,8 @@ export function useFileTree(rootPath: string | null, options?: Options) {
   const scopeKey = `${workspaceKey}\u0000${rootPath ?? ''}`;
   const scopeKeyRef = useRef(scopeKey);
   const scopeGenerationRef = useRef(0);
+  // The newest read started for each directory.
+  const readsRef = useRef<Map<string, Promise<boolean>>>(new Map());
   const conflictPromptsRef = useRef<Map<string | number, () => void>>(new Map());
 
   const cancelConflictPrompts = useCallback(() => {
@@ -167,11 +177,17 @@ export function useFileTree(rootPath: string | null, options?: Options) {
   const addWatch = watches.add;
   const removeWatch = watches.remove;
 
-  const fetchChildren = useCallback(
-    async (path: string) => {
+  /**
+   * Reads one directory and applies its listing. `isLatest` says whether this is still the newest read of the
+   * directory; a superseded read applies nothing and answers with the newer read's result, whichever lands first.
+   */
+  const readChildren = useCallback(
+    async (path: string, isLatest: () => boolean): Promise<boolean> => {
       if (scopeKeyRef.current !== scopeKey) return false;
       const generation = scopeGenerationRef.current;
       const isCurrent = () => generation === scopeGenerationRef.current;
+      const superseded = () => readsRef.current.get(path) ?? false;
+      const showHidden = showHiddenRef.current;
       if (nodesRef.current[path]?.status !== 'loaded') {
         setNodes((s) => ({ ...s, [path]: { status: 'loading' } }));
       }
@@ -179,12 +195,13 @@ export function useFileTree(rootPath: string | null, options?: Options) {
       try {
         entries = await invoke<DirEntry[]>('fs_read_dir', {
           path,
-          showHidden: showHiddenRef.current,
+          showHidden,
           gitDecorations: gitDecorationsRef.current,
           workspace,
         });
       } catch (e) {
         if (!isCurrent()) return false;
+        if (!isLatest()) return superseded();
         const message = String(e);
         setNodes((s) => ({
           ...s,
@@ -193,18 +210,25 @@ export function useFileTree(rootPath: string | null, options?: Options) {
         return false;
       }
       if (!isCurrent()) return false;
-
-      const prev = nodesRef.current[path];
-      if (prev?.status === 'loaded' && sameDirListing(prev.entries, entries)) {
-        return true;
-      }
+      if (!isLatest()) return superseded();
 
       const liveDirs = new Set(
         entries.filter((e) => e.kind === 'dir').map((e) => joinPath(path, e.name)),
       );
       const removedRoots: string[] = [];
       for (const key of Object.keys(nodesRef.current)) {
-        if (dirname(key) === path && !liveDirs.has(key)) removedRoots.push(key);
+        if (dirname(key) === path && !liveDirs.has(key) && listingCovers(key, showHidden))
+          removedRoots.push(key);
+      }
+      // Same listing and nothing to drop: nothing changed. A child the listing now covers can still be gone (a hidden
+      // folder deleted while hidden entries were off).
+      const prev = nodesRef.current[path];
+      if (
+        removedRoots.length === 0 &&
+        prev?.status === 'loaded' &&
+        sameDirListing(prev.entries, entries)
+      ) {
+        return true;
       }
       const dead = new Set<string>();
       if (removedRoots.length > 0) {
@@ -237,6 +261,15 @@ export function useFileTree(rootPath: string | null, options?: Options) {
       return true;
     },
     [scopeKey, workspace, watches],
+  );
+
+  const fetchChildren = useCallback(
+    (path: string): Promise<boolean> => {
+      const read: Promise<boolean> = readChildren(path, () => readsRef.current.get(path) === read);
+      readsRef.current.set(path, read);
+      return read;
+    },
+    [readChildren],
   );
 
   // A new scope (root or workspace) starts empty, with the root's cached expansion; the same root keeps what is
