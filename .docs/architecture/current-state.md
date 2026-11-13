@@ -92,6 +92,7 @@ Sizes count non-test `.ts`/`.tsx` files; tests are the `*.test.*` files in the m
 
 | Store                   | File                                     | Holds                                              |
 | ----------------------- | ---------------------------------------- | -------------------------------------------------- |
+| `useNavigationStore`    | `modules/navigation/store.ts`            | Tabs, active tab and space, MRU, tab/pane actions  |
 | `usePreferencesStore`   | `modules/settings/preferences.ts`        | User preferences, mirrored from the settings store |
 | `useSpaces`             | `modules/spaces/lib/useSpaces.ts`        | Spaces and the active space                        |
 | `useWorkspaceEnvStore`  | `modules/workspace/env.ts`               | Current workspace environment (local / WSL)        |
@@ -101,8 +102,10 @@ Sizes count non-test `.ts`/`.tsx` files; tests are the `*.test.*` files in the m
 | `useDiagnosticsStore`   | `modules/editor/lib/diagnosticsStore.ts` | LSP diagnostics per file                           |
 | `useLspRuntimeStore`    | `modules/lsp/lib/runtimeStore.ts`        | LSP server status                                  |
 
-The tab model is not a store: `useTabs` keeps `tabs` and `activeId` in React state inside `App`. The terminal sessions
-live in a module-level map keyed by leaf id (`modules/terminal/ghostty/useGhosttyTerminalSession.ts`).
+The tab model lives in `useNavigationStore` (`modules/navigation/store.ts`): tabs, the active tab, the active space, the
+MRU order and every tab and pane action. `useTabs` (`modules/tabs/lib/useTabs.ts`) reads it for `App` and owns no tab
+state. The terminal sessions live in a module-level map keyed by leaf id
+(`modules/terminal/ghostty/useGhosttyTerminalSession.ts`).
 
 ### Persisted state
 
