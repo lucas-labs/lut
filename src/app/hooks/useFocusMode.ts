@@ -1,8 +1,5 @@
-import { getCurrentWindow } from '@tauri-apps/api/window';
+import { isWindowFullScreen, setWindowFullScreen } from '@/modules/platform';
 import { useCallback, useRef, useState } from 'react';
-
-const isFullScreen = () => getCurrentWindow().isFullscreen();
-const setFullScreen = (on: boolean) => getCurrentWindow().setFullscreen(on);
 
 function logWindowError(action: string) {
   return (error: unknown) => console.error(`[focus mode] ${action} failed`, error);
@@ -36,12 +33,12 @@ export function useFocusMode() {
     setFocusMode(entering);
     enqueue(entering ? 'entering full screen' : 'leaving full screen', async () => {
       if (entering) {
-        if (await isFullScreen()) return;
-        await setFullScreen(true);
+        if (await isWindowFullScreen()) return;
+        await setWindowFullScreen(true);
         enteredFullScreenRef.current = true;
       } else if (enteredFullScreenRef.current) {
         enteredFullScreenRef.current = false;
-        await setFullScreen(false);
+        await setWindowFullScreen(false);
       }
     });
   }, [enqueue]);
@@ -49,7 +46,7 @@ export function useFocusMode() {
   const toggleFullScreen = useCallback(() => {
     enqueue('toggling full screen', async () => {
       enteredFullScreenRef.current = false;
-      await setFullScreen(!(await isFullScreen()));
+      await setWindowFullScreen(!(await isWindowFullScreen()));
     });
   }, [enqueue]);
 

@@ -39,11 +39,11 @@ export const PreviewPane = forwardRef<PreviewPaneHandle, Props>(function Preview
   const [dismissedCookieOrigin, setDismissedCookieOrigin] = useState<string | null>(null);
   const addressRef = useRef<PreviewAddressBarHandle>(null);
 
+  // Showing the pane loads the page again if it was suspended.
+  if (visible && !loaded) setLoaded(true);
+
   useEffect(() => {
-    if (visible) {
-      setLoaded(true);
-      return;
-    }
+    if (visible) return;
     const t = setTimeout(() => setLoaded(false), SUSPEND_AFTER_MS);
     return () => clearTimeout(t);
   }, [visible]);

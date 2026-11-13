@@ -82,6 +82,9 @@ type Props = {
 // parse tree and a didOpen of that size cost far more than they give.
 const SYNTAX_MAX_BYTES = 4 * 1024 * 1024;
 
+/** The preferences as they are now, for the editor's first configuration (later changes reconfigure it). */
+const prefsNow = () => usePreferencesStore.getState();
+
 function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
@@ -102,9 +105,7 @@ export const EditorPane = memo(
       (doc.status === 'binary' || doc.status === 'toolarge') && mediaPreviewKind(path) ? path : null,
     );
     const reloadRef = useRef(reload);
-    reloadRef.current = reload;
     const adoptDiskTextRef = useRef(adoptDiskText);
-    adoptDiskTextRef.current = adoptDiskText;
     const cmRef = useRef<ReactCodeMirrorRef>(null);
     const [cursor] = useState(() => new CursorStore());
     const themeExt = useEditorThemeExt();
@@ -116,11 +117,9 @@ export const EditorPane = memo(
     // identity — a new identity makes @uiw/react-codemirror reconfigure the
     // whole state, wiping the language compartment.
     const saveRef = useRef(save);
-    saveRef.current = save;
     const onSavedRef = useRef(onSaved);
-    onSavedRef.current = onSaved;
     const onCloseRef = useRef(onClose);
-    onCloseRef.current = onClose;
+    const pathRef = useRef(path);
     const lspActiveRef = useRef(false);
     const warnedNoLspRef = useRef(false);
     const warnedNoFormatRef = useRef(false);
@@ -173,10 +172,17 @@ export const EditorPane = memo(
       onSavedRef.current?.();
     }, []);
     const performSaveRef = useRef(performSave);
-    performSaveRef.current = performSave;
-
-    const pathRef = useRef(path);
-    pathRef.current = path;
+    // The latest props and callbacks for the editor's own handlers (CodeMirror keymaps, the save pipeline), set after
+    // each commit rather than during render.
+    useLayoutEffect(() => {
+      reloadRef.current = reload;
+      adoptDiskTextRef.current = adoptDiskText;
+      saveRef.current = save;
+      onSavedRef.current = onSaved;
+      onCloseRef.current = onClose;
+      pathRef.current = path;
+      performSaveRef.current = performSave;
+    });
 
     const pendingLineRef = useRef<{
       path: string;
@@ -242,12 +248,8 @@ export const EditorPane = memo(
       () => [
         // basicSetup is added before user extensions by @uiw/react-codemirror,
         // so we must elevate vim's precedence to win the keymap.
-        vimCompartment.of(usePreferencesStore.getState().vimMode ? Prec.highest(vim()) : []),
-        wrapCompartment.of(
-          wordWrapExtension(
-            usePreferencesStore.getState().editorWordWrap ? usePreferencesStore.getState().editorWordWrapColumn : null,
-          ),
-        ),
+        vimCompartment.of(prefsNow().vimMode ? Prec.highest(vim()) : []),
+        wrapCompartment.of(wordWrapExtension(prefsNow().editorWordWrap ? prefsNow().editorWordWrapColumn : null)),
         vimHandlersExtension(() => ({
           save: () => {
             void performSaveRef.current();
@@ -319,11 +321,13 @@ export const EditorPane = memo(
       void resolveLanguage(resolvePath).catch(() => {});
     }, [path, overrideLanguage]);
 
+    const docReady = doc.status === 'ready';
+    const syntaxTooLarge = doc.status === 'ready' && doc.size > SYNTAX_MAX_BYTES;
     useEffect(() => {
       const ext = overrideLanguage || (path.split('.').pop()?.toLowerCase() ?? null);
       languageRef.current = ext;
-      if (doc.status !== 'ready') return;
-      if (doc.size > SYNTAX_MAX_BYTES) {
+      if (!docReady) return;
+      if (syntaxTooLarge) {
         setLangId(null);
         const view = cmRef.current?.view;
         view?.dispatch({ effects: languageCompartment.reconfigure([]) });
@@ -347,7 +351,7 @@ export const EditorPane = memo(
       return () => {
         cancelled = true;
       };
-    }, [path, doc.status, overrideLanguage]);
+    }, [path, docReady, syntaxTooLarge, overrideLanguage]);
 
     useImperativeHandle(
       ref,

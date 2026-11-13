@@ -1,3 +1,4 @@
+import { useLatest } from '@/lib/useLatest';
 import { notifyDocumentSaved } from '@/modules/lsp';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { currentWorkspaceEnv } from '@/modules/workspace';
@@ -44,8 +45,7 @@ export function useDocument({ path, onDirtyChange }: Options) {
     dirtyRef.current = dirty;
   }, [dirty]);
 
-  const autoSaveRef = useRef({ autoSave, autoSaveDelay });
-  autoSaveRef.current = { autoSave, autoSaveDelay };
+  const autoSaveRef = useLatest({ autoSave, autoSaveDelay });
 
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -137,13 +137,19 @@ export function useDocument({ path, onDirtyChange }: Options) {
     [path],
   );
 
+  // A new path starts loading, with nothing unsaved.
+  const [shownPath, setShownPath] = useState(path);
+  if (path !== shownPath) {
+    setShownPath(path);
+    setDoc({ status: 'loading' });
+    setDirty(false);
+  }
+
   // Load on path change.
   useEffect(() => {
     let cancelled = false;
     // "Open anyway" is a per-file decision; a new path starts unforced.
     forceRef.current = false;
-    setDoc({ status: 'loading' });
-    setDirty(false);
 
     readFromDisk(forceRef.current)
       .then((res) => {
@@ -215,7 +221,7 @@ export function useDocument({ path, onDirtyChange }: Options) {
         }, delay);
       }
     },
-    [clearAutoSaveTimer, saveNow],
+    [clearAutoSaveTimer, saveNow, autoSaveRef],
   );
 
   useEffect(() => clearAutoSaveTimer, [path, clearAutoSaveTimer]);

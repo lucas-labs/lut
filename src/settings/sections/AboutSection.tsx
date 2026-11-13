@@ -1,3 +1,4 @@
+import { AppLogo } from '@/components/AppLogo';
 import { Button } from '@/components/ui/button';
 import { GithubIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -18,22 +19,24 @@ const PLATFORM_LABEL: Record<string, string> = {
   freebsd: 'FreeBSD',
 };
 
+/** The platform and architecture lut runs on, e.g. "Windows · x86_64". */
+function buildLabel(): string {
+  try {
+    const p = platform();
+    return `${PLATFORM_LABEL[p] ?? p} · ${arch()}`;
+  } catch {
+    return '';
+  }
+}
+
 export function AboutSection() {
   const [version, setVersion] = useState('');
   const [name, setName] = useState('lut');
-  const [build, setBuild] = useState('');
+  const [build] = useState(buildLabel);
 
   useEffect(() => {
     void getVersion().then(setVersion);
     void getName().then(setName);
-    try {
-      const p = platform();
-      const a = arch();
-      const platformLabel = PLATFORM_LABEL[p] ?? p;
-      setBuild(`${platformLabel} · ${a}`);
-    } catch {
-      setBuild('');
-    }
   }, []);
 
   return (
@@ -41,7 +44,7 @@ export function AboutSection() {
       <SectionHeader title="About" description="" />
 
       <div className="flex items-center gap-4 rounded-xl border border-border/60 bg-card/60 p-5">
-        <img src="/logo.png" alt="" className="size-12" draggable={false} />
+        <AppLogo size={48} />
         <div className="flex min-w-0 flex-col">
           <span className="text-[15px] font-semibold tracking-tight">{name}</span>
           <span className="text-[11px] text-muted-foreground">

@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { KEY_SEP } from '@/lib/platform';
 import type { EditorPaneHandle } from '@/modules/editor';
+import { KEY_SEP } from '@/modules/platform';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { getBindingTokens, SHORTCUTS } from '@/modules/shortcuts/shortcuts';
 import type { TerminalSearchController } from '@/modules/terminal/search/TerminalSearchController';

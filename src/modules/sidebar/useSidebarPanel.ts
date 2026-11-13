@@ -42,6 +42,15 @@ export function sidebarStartsCollapsed(stored: string | null): boolean {
   return stored !== '0';
 }
 
+/** Saves a sidebar setting; storage may be unavailable (private mode), and the setting then lasts this session. */
+function storeSidebarItem(key: string, value: string): void {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // keep the in-memory value
+  }
+}
+
 function readSidebarCollapsed(): boolean {
   try {
     return sidebarStartsCollapsed(window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY));
@@ -69,22 +78,14 @@ export function useSidebarPanel(explorerRef: RefObject<FocusableExplorer | null>
 
   const persistSidebarView = useCallback((view: SidebarViewId) => {
     setSidebarViewState(view);
-    try {
-      window.localStorage.setItem(SIDEBAR_VIEW_STORAGE_KEY, view);
-    } catch {
-      // storage may fail in private mode
-    }
+    storeSidebarItem(SIDEBAR_VIEW_STORAGE_KEY, view);
   }, []);
 
   const persistSidebarCollapsed = useCallback((collapsed: boolean) => {
     if (collapsedRef.current === collapsed) return;
     collapsedRef.current = collapsed;
     setSidebarCollapsed(collapsed);
-    try {
-      window.localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, collapsed ? '1' : '0');
-    } catch {
-      // storage may fail in private mode
-    }
+    storeSidebarItem(SIDEBAR_COLLAPSED_STORAGE_KEY, collapsed ? '1' : '0');
   }, []);
 
   const isSidebarOpen = useCallback(() => {
@@ -142,11 +143,7 @@ export function useSidebarPanel(explorerRef: RefObject<FocusableExplorer | null>
     }
     sidebarWidthWriteTimerRef.current = window.setTimeout(() => {
       sidebarWidthWriteTimerRef.current = 0;
-      try {
-        window.localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(next));
-      } catch {
-        // ignore
-      }
+      storeSidebarItem(SIDEBAR_WIDTH_STORAGE_KEY, String(next));
     }, 200);
   }, []);
 

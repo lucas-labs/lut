@@ -42,6 +42,7 @@ import { useAssetGrant } from './useAssetGrant';
 
 function render(path: string | null = '/repo/image.png') {
   harness.cursor = 0;
+  // eslint-disable-next-line react-hooks/rules-of-hooks -- drives the hook through the mocked React above, outside a component.
   const result = useAssetGrant(path);
   if (harness.effect) {
     harness.cleanup?.();

@@ -2,9 +2,9 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-import { IS_MAC } from '@/lib/platform';
 import { cn } from '@/lib/utils';
 import { type OsNotificationResult, testAgentOsNotification } from '@/modules/agents/lib/notify';
+import { IS_MAC } from '@/modules/platform';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import type { ThemePref } from '@/modules/settings/store';
 import {
@@ -495,10 +495,12 @@ function notificationTestTitle(status: NotificationTestState): string {
 
 function FontFamilyInput({ value, onCommit }: { value: string; onCommit: (v: string) => void }) {
   const [draft, setDraft] = useState(value);
-
-  useEffect(() => {
+  // A change saved elsewhere replaces the draft.
+  const [draftOf, setDraftOf] = useState(value);
+  if (value !== draftOf) {
+    setDraftOf(value);
     setDraft(value);
-  }, [value]);
+  }
 
   // Commit (and trim) only on blur/Enter so a trailing space can be typed
   // mid-edit, e.g. "JetBrains Mono ".

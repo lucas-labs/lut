@@ -132,6 +132,7 @@ async fn open_settings_window(app: tauri::AppHandle, tab: Option<String>) -> Res
 
     let window = builder.build().map_err(|e| e.to_string())?;
     modules::browser_features::disable(&window);
+    modules::window_icon::install(&window);
 
     // Some Linux compositors (GNOME/Mutter with CSD-by-default) ignore the
     // builder-time decorations flag — re-assert it after realize.
@@ -239,6 +240,7 @@ pub fn run() {
             }
             if let Some(main) = _app.get_webview_window("main") {
                 modules::browser_features::disable(&main);
+                modules::window_icon::install(&main);
             }
             #[cfg(target_os = "macos")]
             if let Some(main) = _app.get_webview_window("main") {
@@ -285,7 +287,6 @@ pub fn run() {
             pty::pty_close_all,
             pty::pty_has_foreground_process,
             pty::pty_has_foreground_job,
-            pty::pty_shell_name,
             pty::pty_session_shell,
             pty::pty_list_shells,
             fs::tree::list_subdirs,

@@ -1,4 +1,4 @@
-import { IS_WINDOWS } from '@/lib/platform';
+import { IS_WINDOWS } from '@/modules/platform';
 
 const MAX_OSC52_CLIPBOARD_BYTES = 1024 * 1024;
 

@@ -7,19 +7,16 @@ import { firstLeafSlotId, type PaneNode } from './lib/panes';
 import { beginTerminalResizeInteraction, endTerminalResizeInteraction } from './lib/terminalResizeInteraction';
 import { TerminalPane, type TerminalPaneHandle } from './TerminalPane';
 
-type LeafBundle = {
-  setRef: (h: TerminalPaneHandle | null) => void;
-  onSearchReady: (leafId: number, addon: TerminalSearchController) => void;
-  onCwd: (leafId: number, cwd: string) => void;
-  onExit: (leafId: number, code: number) => void;
-};
-
 type Props = {
   node: PaneNode;
   tabVisible: boolean;
   activeLeafId: number;
   onFocusLeaf: (leafId: number) => void;
-  getBundle: (leafId: number) => LeafBundle;
+  /** Register/unregister a pane's handle by leaf id. */
+  registerHandle: (leafId: number, handle: TerminalPaneHandle | null) => void;
+  onSearchReady: (leafId: number, addon: TerminalSearchController) => void;
+  onCwd: (leafId: number, cwd: string) => void;
+  onExit: (leafId: number, code: number) => void;
   /** The user resized a split: its children's new shares, in child order. */
   onSplitRatios?: (splitId: number, ratios: number[]) => void;
   /** The node sits inside a split, so the tab has more than one pane. */
@@ -27,45 +24,58 @@ type Props = {
 };
 
 type SplitNode = Extract<PaneNode, { kind: 'split' }>;
+type LeafNode = Extract<PaneNode, { kind: 'leaf' }>;
 
 const panelId = (child: PaneNode) => `pane-slot-${firstLeafSlotId(child)}`;
 
 export function PaneTreeView(props: Props) {
   const { node } = props;
-  if (node.kind === 'leaf') {
-    const { tabVisible, activeLeafId, onFocusLeaf, getBundle, inSplit = false } = props;
-    const focused = node.id === activeLeafId;
-    const b = getBundle(node.id);
-    return (
-      <div
-        onMouseDownCapture={() => {
-          if (!focused) onFocusLeaf(node.id);
-        }}
-        // Catches focus from Tab, programmatic focus, or any path that
-        // skips mousedown — keeps activeLeafId in sync with DOM focus.
-        onFocus={() => {
-          if (!focused) onFocusLeaf(node.id);
-        }}
-        data-pane-leaf={node.id}
-        className="relative h-full w-full"
-      >
-        <TerminalPane
-          leafId={node.id}
-          visible={tabVisible}
-          focused={focused}
-          initialCwd={node.cwd}
-          ref={b.setRef}
-          onSearchReady={b.onSearchReady}
-          onCwd={b.onCwd}
-          onExit={b.onExit}
-        />
-        {focused && inSplit ? <ActivePaneMark /> : null}
-        <DropOverlay leafId={node.id} />
-      </div>
-    );
-  }
-
+  if (node.kind === 'leaf') return <PaneLeaf {...props} node={node} />;
   return <SplitView {...props} node={node} />;
+}
+
+function PaneLeaf({
+  node,
+  tabVisible,
+  activeLeafId,
+  onFocusLeaf,
+  registerHandle,
+  onSearchReady,
+  onCwd,
+  onExit,
+  inSplit = false,
+}: Props & { node: LeafNode }) {
+  const leafId = node.id;
+  const focused = leafId === activeLeafId;
+  // One ref callback per pane for its whole life: a new one would make React detach and attach the handle.
+  const setRef = useCallback((h: TerminalPaneHandle | null) => registerHandle(leafId, h), [registerHandle, leafId]);
+  return (
+    <div
+      onMouseDownCapture={() => {
+        if (!focused) onFocusLeaf(leafId);
+      }}
+      // Catches focus from Tab, programmatic focus, or any path that
+      // skips mousedown — keeps activeLeafId in sync with DOM focus.
+      onFocus={() => {
+        if (!focused) onFocusLeaf(leafId);
+      }}
+      data-pane-leaf={leafId}
+      className="relative h-full w-full"
+    >
+      <TerminalPane
+        leafId={leafId}
+        visible={tabVisible}
+        focused={focused}
+        initialCwd={node.cwd}
+        ref={setRef}
+        onSearchReady={onSearchReady}
+        onCwd={onCwd}
+        onExit={onExit}
+      />
+      {focused && inSplit ? <ActivePaneMark /> : null}
+      <DropOverlay leafId={leafId} />
+    </div>
+  );
 }
 
 /**
@@ -99,14 +109,14 @@ function SplitView(props: Props & { node: SplitNode }) {
     // A closed pane's panel unregisters after this effect may run; apply the layout once the
     // group holds exactly this split's panels, a few frames at most.
     let frame = 0;
-    let tries = 0;
+    const attempts = { count: 0 };
     const apply = () => {
       const group = groupRef.current;
       if (!group) return;
       const live = group.getLayout();
       const liveIds = Object.keys(live);
       if (liveIds.length !== ids.length || ids.some((id) => !(id in live))) {
-        if (++tries <= 3) frame = requestAnimationFrame(apply);
+        if (++attempts.count <= 3) frame = requestAnimationFrame(apply);
         return;
       }
       if (ids.some((id) => Math.abs(live[id] - wanted[id]) > 0.5)) group.setLayout(wanted);

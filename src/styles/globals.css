@@ -250,6 +250,19 @@ html[data-vibrancy='on'] {
   --frame: color-mix(in srgb, var(--sidebar) 60%, transparent);
 }
 
+/* A modal blurs the page under it, not its own backdrop. A backdrop filter
+ * paints a blurred copy over what is behind: where the page is translucent
+ * (the vibrancy frame), that copy is translucent too and the sharp text
+ * shows through it. A `filter` on the page root replaces its content with
+ * the blurred one. Modals render in portals outside the root. */
+#root,
+#settings-root {
+  transition: filter var(--dur-fast);
+}
+body:has(> [data-slot$='-overlay'][data-state='open']) > :is(#root, #settings-root) {
+  filter: blur(8px);
+}
+
 html[data-chrome='borderless'] .lut-bg-surface {
   border-radius: 12px;
 }
@@ -276,7 +289,7 @@ html[data-live-resize] body::after {
   zoom: calc(1 / var(--app-zoom));
 }
 
-/* Custom window chrome (Linux; lib/windowFrame.ts): the OS gives us a transparent
+/* Custom window chrome (Linux; modules/platform/windowFrame.ts): the OS gives us a transparent
  * borderless window, and we paint the rounded corners + border ourselves so the
  * app doesn't look naked on GNOME/KDE/Hyprland. A maximized or full-screen window
  * fills the screen edge to edge, so it drops both. */

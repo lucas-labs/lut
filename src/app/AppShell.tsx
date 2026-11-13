@@ -1,11 +1,12 @@
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { IS_MAC } from '@/lib/platform';
 import { cn } from '@/lib/utils';
 import type { TitleBarPlacement } from '@/modules/header';
+import { IS_MAC } from '@/modules/platform';
 import { SIDEBAR_MAX_WIDTH, SIDEBAR_MIN_WIDTH } from '@/modules/sidebar';
 import { TABS_COLUMN_MAX_WIDTH, TABS_COLUMN_MIN_WIDTH } from '@/modules/tabs';
-import type { ReactNode, RefObject } from 'react';
-import type { PanelImperativeHandle } from 'react-resizable-panels';
+import { type ComponentProps, type ReactNode, type RefObject, useRef, useState } from 'react';
+import type { GroupImperativeHandle, Layout, PanelImperativeHandle } from 'react-resizable-panels';
+import { foldSideLayoutChange, settledLayout, sideLayoutChange } from './lib/sidePanelRestore';
 
 /**
  * A side panel's resize handle is the 1px line between it and what follows. Its negative margin lets it overlap the
@@ -14,6 +15,33 @@ import type { PanelImperativeHandle } from 'react-resizable-panels';
  */
 function handleClass(open: boolean) {
   return cn('-mr-px transition-colors duration-[var(--dur-fast)]', open ? 'bg-border' : 'bg-transparent');
+}
+
+/**
+ * A side panel: it keeps its width in pixels when the window resizes, and the workspace takes the difference.
+ *
+ * Its `defaultSize` is the one it mounted with. The panel library re-registers a panel and lays its group out again
+ * whenever `defaultSize` changes, so a size that follows the panel's own state (collapsed or not) feeds back into
+ * itself.
+ */
+function SidePanel({ defaultSize, ...props }: ComponentProps<typeof ResizablePanel>) {
+  const [mountedSize] = useState(defaultSize);
+  return <ResizablePanel groupResizeBehavior="preserve-pixel-size" defaultSize={mountedSize} {...props} />;
+}
+
+const SIDE_PANELS = ['sidebar', 'tabs-column'] as const;
+
+/**
+ * Sets a layout the app makes itself, flagged so the group's report of it is not taken for one to correct. Outside the
+ * component: the React Compiler does not compile a `try` without a `catch`.
+ */
+function applyOwnLayout(group: GroupImperativeHandle | null, layout: Layout, restoring: { current: boolean }) {
+  restoring.current = true;
+  try {
+    group?.setLayout(layout);
+  } finally {
+    restoring.current = false;
+  }
 }
 
 type Props = {
@@ -28,6 +56,7 @@ type Props = {
   /** Vertical tab column right of the sidebar; null when the tabs are in the title bar (E07-05). */
   tabsColumn: ReactNode;
   tabsColumnRef: RefObject<PanelImperativeHandle | null>;
+  /** The tab column's width in px as the app keeps it; 0 is collapsed. */
   tabsColumnInitialWidth: number;
   onTabsColumnLayout: (width: number, isUserInteraction: boolean) => void;
   /** Whether the sidebar is open (its handle then draws the line beside it). */
@@ -37,7 +66,7 @@ type Props = {
   /** Explorer / Source Control panel content. */
   sidebar: ReactNode;
   sidebarRef: RefObject<PanelImperativeHandle | null>;
-  /** The sidebar's width in px when it mounts (on start and after focus mode); 0 is collapsed. */
+  /** The sidebar's width in px as the app keeps it; 0 is collapsed. */
   sidebarInitialWidth: number;
   onSidebarLayout: (width: number, isUserInteraction: boolean) => void;
   onSidebarCollapsedChange: (collapsed: boolean) => void;
@@ -72,22 +101,78 @@ export function AppShell({
 }: Props) {
   const titleBar = focusMode ? null : titleBarProp;
   const tabsColumn = focusMode ? null : tabsColumnProp;
+
+  // The side panels' own widths as of the last layout the app accepted, and the group's last layout: when the group
+  // lays itself out (a panel set change, a panel opening or closing), the side panels that should not have moved go
+  // back to their width.
+  const sizes = useRef<Record<string, number>>({
+    sidebar: sidebarInitialWidth,
+    'tabs-column': tabsColumnInitialWidth,
+  });
+  const lastLayout = useRef<Layout | null>(null);
+  // The widths the side panels should end at once the current batch of layout changes settles; null when none is
+  // pending.
+  const pending = useRef<Record<string, number> | null>(null);
+  const restoring = useRef(false);
+  const group = useRef<HTMLDivElement | null>(null);
+  const groupHandle = useRef<GroupImperativeHandle | null>(null);
+  // From the layout, not the panels' elements: a layout set from code is reported before it renders.
+  const widthIn = (layout: Layout) => (id: string) =>
+    Math.round(((layout[id] ?? 0) / 100) * (group.current?.offsetWidth ?? 0));
+
+  const accept = (layout: Layout, isUserInteraction: boolean) => {
+    // The side panels are gone in focus mode; their stored layout stays as it was.
+    if (focusMode) return;
+    const width = widthIn(layout);
+    for (const id of SIDE_PANELS) if (id in layout) sizes.current[id] = width(id);
+    onSidebarLayout(width('sidebar'), isUserInteraction);
+    if (tabsColumn) onTabsColumnLayout(width('tabs-column'), isUserInteraction);
+  };
+
+  // After the group's own layout pass, not inside it; every change one command made has been reported by then.
+  const settle = () => {
+    const targets = pending.current;
+    pending.current = null;
+    const layout = lastLayout.current;
+    if (!targets || !layout) return;
+    const settled = settledLayout(targets, layout, group.current?.offsetWidth ?? 0, 'workspace');
+    if (settled) applyOwnLayout(groupHandle.current, settled, restoring);
+    // The settled layout, also when it needed no correction and the group reported nothing more.
+    if (lastLayout.current) accept(lastLayout.current, false);
+  };
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-frame text-foreground">
       <main className="zoom-content flex min-h-0 flex-1 flex-col">
         <ResizablePanelGroup
           orientation="horizontal"
           className="min-h-0 flex-1"
-          onLayoutChanged={(_, { isUserInteraction }) => {
-            // The side panels are gone in focus mode; their stored layout stays as it was.
-            if (focusMode) return;
-            onSidebarLayout(sidebarRef.current?.getSize().inPixels ?? 0, isUserInteraction);
-            if (tabsColumn) onTabsColumnLayout(tabsColumnRef.current?.getSize().inPixels ?? 0, isUserInteraction);
+          elementRef={group}
+          groupRef={groupHandle}
+          onLayoutChanged={(layout, { isUserInteraction }) => {
+            const prev = lastLayout.current;
+            lastLayout.current = layout;
+            // A layout the settling itself causes is the intended one; it starts nothing new.
+            if (!restoring.current) {
+              const change = sideLayoutChange(prev, layout, isUserInteraction, SIDE_PANELS);
+              if (pending.current || change.restore.length > 0) {
+                const first = pending.current === null;
+                pending.current = foldSideLayoutChange(
+                  pending.current ?? {},
+                  change,
+                  widthIn(layout),
+                  (id) => sizes.current[id] ?? 0,
+                );
+                if (first) queueMicrotask(settle);
+                // This layout is about to be corrected: the app records the settled one, not this.
+                return;
+              }
+            }
+            accept(layout, isUserInteraction);
           }}
         >
           {/* In focus mode the sidebar leaves its slot empty, as the tab column does; it comes back at its width. */}
           {focusMode ? null : (
-            <ResizablePanel
+            <SidePanel
               id="sidebar"
               panelRef={sidebarRef}
               defaultSize={`${sidebarInitialWidth}px`}
@@ -102,12 +187,12 @@ export function AppShell({
                 {IS_MAC ? <div data-tauri-drag-region className="h-7 shrink-0" /> : null}
                 <div className="min-h-0 flex-1">{sidebar}</div>
               </div>
-            </ResizablePanel>
+            </SidePanel>
           )}
           {focusMode ? null : <ResizableHandle className={handleClass(sidebarOpen)} />}
           {/* The column and its handle keep their slots when absent, so the workspace never moves in the tree. */}
           {tabsColumn ? (
-            <ResizablePanel
+            <SidePanel
               id="tabs-column"
               panelRef={tabsColumnRef}
               defaultSize={`${tabsColumnInitialWidth}px`}
@@ -117,7 +202,7 @@ export function AppShell({
               collapsedSize={0}
             >
               {tabsColumn}
-            </ResizablePanel>
+            </SidePanel>
           ) : null}
           {tabsColumn ? <ResizableHandle className={handleClass(tabsColumnOpen)} /> : null}
           <ResizablePanel id="workspace" defaultSize="78%" minSize="30%">

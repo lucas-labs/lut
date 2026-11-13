@@ -1,8 +1,7 @@
 import '../styles/globals.css';
 
-import { initWindowFrame } from '@/lib/windowFrame';
+import { initWindowFrame, showHiddenWindow } from '@/modules/platform';
 import { ThemeProvider } from '@/modules/theme';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 import ReactDOM from 'react-dom/client';
 import { SettingsApp } from './SettingsApp';
 
@@ -14,10 +13,4 @@ ReactDOM.createRoot(document.getElementById('settings-root') as HTMLElement).ren
   </ThemeProvider>,
 );
 
-const showWindow = () => {
-  getCurrentWindow()
-    .show()
-    .catch((e) => console.error('settings show failed:', e));
-};
-setTimeout(showWindow, 50);
-setTimeout(showWindow, 500);
+showHiddenWindow('settings show');

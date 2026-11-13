@@ -1,11 +1,11 @@
+import { AppLogo } from '@/components/AppLogo';
 import { WindowControls } from '@/components/WindowControls';
-import { IS_MAC, USE_CUSTOM_WINDOW_CONTROLS } from '@/lib/platform';
 import { TitleBarHoldProvider } from '@/lib/titleBarHold';
-import { dragRegion, useWindowFullScreen } from '@/lib/useWindowFullScreen';
 import { cn } from '@/lib/utils';
 import { NotificationBell } from '@/modules/agents';
 import type { AgentLaunchRequest } from '@/modules/agents/lib/launcher';
 import type { TabNavigatorActions, TabNavigatorItem } from '@/modules/navigation';
+import { dragRegion, IS_MAC, USE_CUSTOM_WINDOW_CONTROLS, useWindowFullScreen } from '@/modules/platform';
 import { TabNavigator } from '@/modules/tabs';
 import { SidebarLeftIcon, SlidersHorizontalIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -115,7 +115,7 @@ function TitleBarRow({
   const clearTrafficLights = IS_MAC && (!inline || !sidePanelsOpen);
   const appMark = (
     <span className="flex shrink-0 items-center gap-1.5 px-2 text-xs text-muted-foreground">
-      <img src="/logo.png" alt="" className="size-4" draggable={false} />
+      <AppLogo size={16} />
       lut
     </span>
   );

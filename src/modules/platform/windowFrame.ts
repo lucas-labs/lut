@@ -1,5 +1,5 @@
-import { getCurrentWindow } from '@tauri-apps/api/window';
-import { IS_WINDOWS, USE_CUSTOM_WINDOW_CONTROLS } from './platform';
+import { IS_WINDOWS, USE_CUSTOM_WINDOW_CONTROLS } from './os';
+import { isWindowFullScreen, isWindowMaximized, onWindowResized } from './window';
 
 /** Set on `<html>` while the window is maximized or full screen. */
 const WINDOW_MAXIMIZED_ATTR = 'data-window-maximized';
@@ -16,14 +16,13 @@ const WINDOW_MAXIMIZED_ATTR = 'data-window-maximized';
 export function initWindowFrame(root: HTMLElement = document.documentElement): void {
   if (!USE_CUSTOM_WINDOW_CONTROLS || IS_WINDOWS) return;
   root.dataset.chrome = 'borderless';
-  const window = getCurrentWindow();
   const sync = () => {
-    void Promise.all([window.isMaximized(), window.isFullscreen()])
+    void Promise.all([isWindowMaximized(), isWindowFullScreen()])
       .then(([maximized, fullscreen]) =>
         root.toggleAttribute(WINDOW_MAXIMIZED_ATTR, maximized || fullscreen),
       )
       .catch(() => {});
   };
   sync();
-  void window.onResized(sync);
+  onWindowResized(sync);
 }

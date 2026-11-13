@@ -1,4 +1,4 @@
-import { MOD_PROP } from '@/lib/platform';
+import { MOD_PROP } from '@/modules/platform';
 import { describe, expect, it } from 'vitest';
 import {
   buildShortcuts,

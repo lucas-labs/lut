@@ -7,9 +7,9 @@ import {
   ContextMenuShortcut,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import { IS_MAC } from '@/lib/platform';
 import { cn } from '@/lib/utils';
 import type { GitStatusSnapshot } from '@/modules/git';
+import { IS_MAC } from '@/modules/platform';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { useGlobalShortcuts } from '@/modules/shortcuts';
 import type { TerminalPathDropTarget } from '@/modules/terminal';
@@ -110,7 +110,7 @@ function basename(path: string): string {
 
 function buildRows(
   rootPath: string,
-  tree: ReturnType<typeof useFileTree>,
+  tree: Pick<ReturnType<typeof useFileTree>, 'nodes' | 'expanded' | 'renaming' | 'pendingCreate' | 'joinPath'>,
   lookup: (path: string) => GitStatusCode | null,
 ): { rows: Row[]; entryIndexByPath: Map<string, number> } {
   const rows: Row[] = [];
@@ -244,17 +244,15 @@ export const FileExplorer = memo(
     const containerRef = useRef<HTMLDivElement>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
 
+    const { nodes, expanded, renaming, pendingCreate, joinPath } = tree;
     const { rows, entryIndexByPath } = useMemo(() => {
       if (!rootPath)
         return {
           rows: [] as Row[],
           entryIndexByPath: new Map<string, number>(),
         };
-      return buildRows(rootPath, tree, lookupGitStatus);
-      // `tree` is intentionally omitted: its identity changes every render, but
-      // the listed fields are the only inputs buildRows actually reads.
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [rootPath, tree.nodes, tree.expanded, tree.renaming, tree.pendingCreate, lookupGitStatus]);
+      return buildRows(rootPath, { nodes, expanded, renaming, pendingCreate, joinPath }, lookupGitStatus);
+    }, [rootPath, nodes, expanded, renaming, pendingCreate, joinPath, lookupGitStatus]);
 
     const rowActions = useMemo<RowActions>(
       () => ({
@@ -355,12 +353,13 @@ export const FileExplorer = memo(
 
     const dropTargetDir = dnd.dropTargetDir ?? fileDrop.externalTargetDir;
     const rootIsDropTarget = dropTargetDir != null && dropTargetDir === rootPath;
+    const { expanded: expandedDirs, expand: expandDir, refresh: refreshTree } = tree;
     useEffect(() => {
       if (!dropTargetDir || dropTargetDir === rootPath) return;
-      if (tree.expanded.has(dropTargetDir)) return;
-      const id = window.setTimeout(() => tree.expand(dropTargetDir), 700);
+      if (expandedDirs.has(dropTargetDir)) return;
+      const id = window.setTimeout(() => expandDir(dropTargetDir), 700);
       return () => window.clearTimeout(id);
-    }, [dropTargetDir, rootPath, tree.expanded, tree.expand]);
+    }, [dropTargetDir, rootPath, expandedDirs, expandDir]);
 
     const pasteInto = useCallback(
       async (destDir: string) => {
@@ -368,19 +367,20 @@ export const FileExplorer = memo(
         pasteBusyRef.current = true;
         const scope = pasteScopeRef.current;
         const isCurrent = () => pasteScopeRef.current === scope;
-        try {
-          const paths = await pasteClipboardFiles(destDir, {
-            root: rootPath,
-            workspace,
-            isCurrent,
-            refresh: (path) => tree.refresh(path, true),
+        await pasteClipboardFiles(destDir, {
+          root: rootPath,
+          workspace,
+          isCurrent,
+          refresh: (path) => refreshTree(path, true),
+        })
+          .then((paths) => {
+            if (isCurrent() && paths.length > 0) setPastedSelection({ scope, paths });
+          })
+          .finally(() => {
+            pasteBusyRef.current = false;
           });
-          if (isCurrent() && paths.length > 0) setPastedSelection({ scope, paths });
-        } finally {
-          pasteBusyRef.current = false;
-        }
       },
-      [rootPath, workspace, tree.refresh],
+      [rootPath, workspace, refreshTree],
     );
 
     useEffect(() => {

@@ -2745,11 +2745,41 @@ size: M
 
 **Notes:** At E01-16 there were 105 such warnings (ai 20, settings 17, terminal 13, tabs 10, app 7, spaces 6, source-control 6, others ≤5). Many disappear with E05 (AI), E06 (blocks) and the E08/E09 refactors. If the remaining count is large, split this issue by module before starting.
 
+### E09-11 — Compile every component with the React Compiler
+
+```yaml
+id: E09-11
+depends-on: [E09-10]
+refs: [ADR-007, .docs/testing/baseline.md]
+covers: [ADR-007]
+type: task
+scope: ui
+size: M
+```
+
+**Goal:** The React Compiler compiles every component and hook. Today it skips some silently: syntax it does not
+support yet or a pattern it cannot prove safe makes it leave the whole function unoptimized, and the lint rules do not
+report that (found in E09-09: 23 functions, 32 errors).
+
+**Acceptance criteria:**
+
+- [ ] A test runs the compiler (the same Babel plugin and target as `vite.config.ts`) over `src/` and fails on any
+      function it does not compile, except an allowlist where each entry gives its reason (TanStack Virtual's
+      `useVirtualizer`).
+- [ ] The skipped functions compile: `try`/`finally` without `catch`, `import()` inside a component, `++` on a variable
+      a closure captures, conditional or optional expressions inside `try`/`catch`, a store hook used as an object
+      (`useX.getState()`) inside a component, and an `eslint-disable` of a React rule inside a component.
+- [ ] Each rewrite keeps the behaviour; existing tests pass unchanged.
+- [ ] `.docs/testing/baseline.md` records the check.
+
+**Verification:** `pnpm test`; `pnpm check-types`; `pnpm lint`; manual: tabs, splits, explorer, Git panel, settings and
+a background image behave as before.
+
 ### E09-09 — Close-out: App coordinator split
 
 ```yaml
 id: E09-09
-depends-on: [E09-01, E09-02, E09-03, E09-04, E09-05, E09-06, E09-07, E09-08, E09-10]
+depends-on: [E09-01, E09-02, E09-03, E09-04, E09-05, E09-06, E09-07, E09-08, E09-10, E09-11]
 refs: []
 covers: []
 type: closeout
@@ -4163,14 +4193,14 @@ Persistence comes in E14-04.
 **Acceptance criteria:**
 
 - [ ] `src-tauri/src/modules/profiles/` with a serde model (camelCase) and a stable `profileId` per profile; `closeBehavior` is `ask | close | keepOpen`.
-- [ ] Validation returns field-level errors: empty name, empty executable, invalid env names, duplicate ids, unknown schemaVersion (PRO-010).
+- [ ] Validation returns field-level errors: empty name, empty executable, invalid env names, duplicate ids (PRO-010).
 - [ ] Unit tests for every validation error and for serde round trip of a full profile.
 
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml profiles`.
 
 **Out of scope:** storage (E14-04), UI (E15), export/import (E23).
 
-### E14-04 — Persist profiles in a versioned store with corruption handling
+### E14-04 — Persist profiles in a store with corruption handling
 
 ```yaml
 id: E14-04
@@ -4182,14 +4212,14 @@ scope: be
 size: S
 ```
 
-**Goal:** Profiles are stored by the backend in lut's app config dir with a `schemaVersion`, written atomically, and a corrupt file never loses the user's data silently.
+**Goal:** Profiles are stored by the backend in lut's app config dir, written atomically, and a corrupt file never loses the user's data silently. No `schemaVersion` or migrations before the first release (no user data exists).
 
 **Acceptance criteria:**
 
 - [ ] Store file in the app config dir (lut bundle id), written atomically (temp file + rename).
-- [ ] The store carries `schemaVersion` and a migration hook; an unknown newer version is refused with a typed error; no Terax data is read.
+- [ ] No Terax data is read.
 - [ ] A corrupt file is backed up next to the store and replaced by defaults, and the error is reported to the frontend.
-- [ ] Unit tests: load/save round trip, corrupt file backup, unknown version.
+- [ ] Unit tests: load/save round trip, corrupt file backup.
 
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml profiles`.
 
@@ -4725,8 +4755,8 @@ depends-on: [E14, E02, E08]
 refs: [ADR-006, F4, 6.4, 6.5, .docs/plan/analysis/state-settings.md, .docs/plan/analysis/decisions.md]
 ```
 
-Evolve Spaces into versioned projects whose saved state is their live state (decision 26: no presets),
-`schemaVersion` migrations between lut versions only (decision 4: no Terax data), and stable ids reconciled at hydration.
+Evolve Spaces into projects whose saved state is their live state (decision 26: no presets), with stable ids
+reconciled at hydration. lut has no releases: a shape change drops the old data, nothing is migrated.
 
 ### E16-01 — Spike: Project and saved-state schema
 
@@ -4740,12 +4770,12 @@ scope: none
 size: S
 ```
 
-**Goal:** Fix the versioned schema and its storage before code changes.
+**Goal:** Fix the schema and its storage before code changes.
 
 **Acceptance criteria:**
 
 - [ ] Written schema in `.docs/` with `projectId`, `windowId`, `tabId`, `paneId`/runtime ids, pane tree with ratios, `profileId`, cwd, the still-running command, the per-project relaunch approvals, and `windows[]` from v1 (IR-71).
-- [ ] Storage decision: JSON via Tauri Store with `schemaVersion` (IR-73), file layout, owner (TS with Zod; Serde only where it crosses IPC).
+- [ ] Storage decision: JSON via Tauri Store (IR-73; no `schemaVersion` before the first release), file layout, owner (TS with Zod; Serde only where it crosses IPC).
 - [ ] Ratio validation rule (sum 1, one per child; IR-70) documented.
 - [ ] Pane/leaf id semantics of the current code are investigated and written down (IR-60: which ids are stable across restarts, splits and moves) before persisted pane ids are fixed.
 - [ ] The running command is stored as the line the user typed, only while it runs (decision 26), and the 4-pane-per-tab limit is a schema rule (IR-48).
@@ -4771,34 +4801,33 @@ size-exception: mechanical move/rename of src/modules/spaces to src/modules/proj
 **Acceptance criteria:**
 
 - [ ] `src/modules/spaces/` moved to `src/modules/projects/`; `SpaceMeta` → `ProjectMeta`, hooks renamed; importers updated.
-- [ ] Persisted file name and keys unchanged in this PR (data compatibility handled by E16-03).
+- [ ] Persisted file name and keys unchanged in this PR.
 - [ ] No behaviour change: existing tests pass unchanged except renames.
 
 **Verification:** `pnpm test`; `pnpm typecheck`; manual: existing spaces still load after the rename.
 
-### E16-03 — Versioned projects store with tested migrations and rollback
+### E16-03 — Projects store validated on load
 
 ```yaml
 id: E16-03
 depends-on: [E16-02]
-refs: [PRJ-014, 6.5:5, 13.5:9, F4:2, .docs/plan/analysis/state-settings.md]
-covers: [PRJ-014, 6.5:5, 13.5:9, F4:2, ADR-006, state-settings/spaces-persistence]
+refs: [13.5:9, .docs/plan/analysis/state-settings.md]
+covers: [13.5:9, ADR-006, state-settings/spaces-persistence]
 type: task
 scope: ui
 size: M
 ```
 
-**Goal:** The projects store carries `schemaVersion`, validates on load with Zod and runs ordered migrations; lut's own unversioned spaces data becomes v1 without loss.
+**Goal:** The projects store validates on load with Zod and never drops data silently. lut has no releases, so there
+are no migrations: data saved in an older shape is dropped.
 
 **Acceptance criteria:**
 
-- [ ] Migration runner: ordered pure `vN → vN+1` functions; the original file is backed up before writing; on failure the backup is kept and the app starts with the last valid data (rollback).
-- [ ] Unversioned (v0, current spaces) data migrates to v1 keeping names, roots, env, colors and tab trees (F4:2); no Terax data is read.
+- [ ] A file that fails validation is backed up next to the store and replaced by defaults, and the error is reported; no Terax data is read.
 - [ ] Corrupt or partial entries are skipped per entry and reported (not silently swallowed, `serialize.ts:220-236`).
-- [ ] A future (newer) `schemaVersion` is not overwritten.
-- [ ] Unit tests: v0 → v1 fixture, corrupt file, partial entry, newer version.
+- [ ] Unit tests: valid file round trip, corrupt file, partial entry.
 
-**Verification:** `pnpm test`; manual: start with an existing store, restart, data intact and backup present.
+**Verification:** `pnpm test`; manual: corrupt the store file, start, defaults loaded and backup present.
 
 ### E16-04 — Project and saved-state model
 
@@ -4817,8 +4846,7 @@ size: M
 **Acceptance criteria:**
 
 - [ ] Zod schemas and types for `Project`, its saved state and `RunningWorkspace` with `projectId`, `windowId`, `tabId`, `paneId`.
-- [ ] Project list API (create, rename, archive flag per decision 19, delete) backed by the versioned store.
-- [ ] v1 → v2 migration if the shape changes, with a fixture test.
+- [ ] Project list API (create, rename, archive flag per decision 19, delete) backed by the projects store.
 
 **Verification:** `pnpm test`; `pnpm typecheck`.
 
@@ -4883,7 +4911,7 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] Leaves store `profileId` (migrated from the E14-17 interim field).
+- [ ] Leaves store `profileId` (replacing the E14-17 interim field).
 - [ ] Hydrating a leaf whose profile no longer exists opens with the default profile and reports a repairable error (13.2:12).
 - [ ] Tests for mixed profiles and a missing profile.
 
@@ -4982,13 +5010,12 @@ has one, so they stay put while panes move between folders.
       preview, graph), they keep the last focused terminal pane of the Space.
 - [ ] A Space can pin a folder (and unpin it) from its menu; while pinned, the tools use it whatever pane has focus. The
       pin is its own field (`pinnedFolder`): the existing `root` (launch directory or home for the default Space) stays
-      the Space's base directory and is never migrated into a pin.
-- [ ] The stored `env` is migrated away without losing WSL: in a WSL Space, every pane saved without a profile gets the
-      detected profile of that distro; panes with an explicit profile keep it.
+      the Space's base directory and is never turned into a pin.
+- [ ] The Spaces' stored `env` and the `defaultWorkspaceEnv` preference (and its Settings control) are removed, with
+      nothing migrated: lut has no releases. A pane without a profile opens with the default profile.
 - [ ] ADR-009 records the change to the Space model and to where the tools take their location from.
 - [ ] `WorkspaceEnvSelector`, the window-wide env store and the interactive local⇄WSL switch are removed.
-- [ ] Tests: tool location for a focused pwsh pane, a focused WSL pane, an active editor tab and a pinned folder;
-      migration of a local and a WSL Space (profiles assigned, `root` kept, no pin).
+- [ ] Tests: tool location for a focused pwsh pane, a focused WSL pane, an active editor tab and a pinned folder.
 
 **Verification:** `pnpm test`; manual on Windows with WSL: a Space with a pwsh pane and an Ubuntu pane, focus each and
 check Files and Git; pin a folder and focus both again.
@@ -5086,12 +5113,12 @@ size: M
 
 **Acceptance criteria:**
 
-- [ ] `restoreProject(id)` loads metadata and saved state, validates `schemaVersion` and profile existence, and returns a typed plan plus a list of per-pane problems.
+- [ ] `restoreProject(id)` loads metadata and saved state, validates the saved state and profile existence, and returns a typed plan plus a list of per-pane problems.
 - [ ] A missing profile / distro / cwd / executable yields a repairable per-pane problem with a fallback suggestion, not an exception.
 - [ ] One failing project never blocks the app or other projects (16:13).
 - [ ] No PTY is spawned and no command runs in these stages.
 
-**Verification:** `pnpm test` (orchestrator tests with missing profile, missing cwd, bad schemaVersion); `pnpm typecheck`.
+**Verification:** `pnpm test` (orchestrator tests with missing profile, missing cwd, invalid saved state); `pnpm typecheck`.
 
 ### E17-03 — Build layout and spawn sessions without running commands
 
@@ -5310,12 +5337,12 @@ after E17-19); panes without it (cmd, nu, profiles without integration) keep no 
 
 **Acceptance criteria:**
 
-- [ ] The pane records the command text at command start and clears it at command end (133;D); the saved state holds it only while it runs, with a `schemaVersion` bump and migration.
+- [ ] The pane records the command text at command start and clears it at command end (133;D); the saved state holds it only while it runs.
 - [ ] Relaunch sends the captured line to the same profile's shell as typed input after the E17-11 ready event; it is never rebuilt by concatenating parts (14.1:2).
 - [ ] A user-triggered "Relaunch" action runs the pane's command once (P0 manual); it is offered only for panes with
       a saved command, so only while command saving is on (decision 28).
 
-**Verification:** `pnpm test` (capture and clear on 133;C/D, schema migration test); manual: run a command containing quotes in pwsh and bash, restart, relaunch it.
+**Verification:** `pnpm test` (capture and clear on 133;C/D); manual: run a command containing quotes in pwsh and bash, restart, relaunch it.
 
 ### E17-13 — Ask before relaunching: run, always in this Space, or don't run
 
@@ -7205,6 +7232,9 @@ size: XS
 - `9.8:5` — Rules for AGT-011 (P2, post-v1).
 - `9.8:6` — Rules for AGT-011 (P2, post-v1).
 - `9.8:7` — Rules for AGT-011 (P2, post-v1).
+- `PRJ-014` — P1: schema migrations start with the first release; lut has no releases or user data yet.
+- `6.5:5` — Schema migrations (PRJ-014) start with the first release.
+- `F4:2` — No Spaces data to keep: lut has no releases.
 - `F0:1` — Done before planning (commit 611f9e3: Terax snapshot imported).
 - `F0:3` — Done before planning (commit 5409728: Terax docs moved to .docs/origin-terax).
 - `F7:1` — Multiwindow (post-v1).

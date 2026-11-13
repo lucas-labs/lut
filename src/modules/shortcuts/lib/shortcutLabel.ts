@@ -1,4 +1,4 @@
-import { fmtShortcut } from '@/lib/platform';
+import { fmtShortcut } from '@/modules/platform';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { getBindingTokens, type ShortcutId, SHORTCUTS } from '../shortcuts';
 

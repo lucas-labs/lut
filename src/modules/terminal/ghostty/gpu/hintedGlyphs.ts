@@ -1,7 +1,7 @@
 import cyrillicUrl from '@/assets/fonts/source-code-pro-cyrillic.ttf?url';
 import latinUrl from '@/assets/fonts/source-code-pro-latin.ttf?url';
 import { BUNDLED_MONO_FAMILY, isFontAvailable } from '@/lib/fonts';
-import { IS_MAC } from '@/lib/platform';
+import { IS_MAC } from '@/modules/platform';
 import {
   FLAG_EMBOLDEN,
   FLAG_HINT,

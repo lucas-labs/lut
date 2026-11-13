@@ -8,7 +8,7 @@ beforeEach(() => {
   native.ptyId.mockReset().mockReturnValue(9);
 });
 
-vi.mock('@/lib/platform', () => ({ IS_WINDOWS: false }));
+vi.mock('@/modules/platform', () => ({ IS_WINDOWS: false }));
 
 import { createTerminalPathDropTarget } from './useTerminalFileDrop';
 

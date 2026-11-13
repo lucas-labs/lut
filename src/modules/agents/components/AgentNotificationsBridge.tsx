@@ -1,6 +1,6 @@
 import type { Tab } from '@/modules/tabs';
 import { hasLeaf, leafIdForPty, subscribeAgentSignals } from '@/modules/terminal';
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 import { displayAgent } from '../lib/format';
 import { routeAgentNotification } from '../lib/route';
 import type { AgentSession, AgentSignal } from '../lib/types';
@@ -88,11 +88,12 @@ export function AgentNotificationsBridge({
   onActivate: Activate;
 }) {
   const focused = useWindowFocus();
-  const ctxRef = useRef<Ctx>({ tabs, activeId, focused, onActivate });
-  ctxRef.current = { tabs, activeId, focused, onActivate };
+  const onSignal = useEffectEvent((signal: AgentSignal) =>
+    handleSignal(signal, { tabs, activeId, focused, onActivate }),
+  );
 
   // Shares the terminal module's single `lut:agent-signal` listener.
-  useEffect(() => subscribeAgentSignals((signal) => handleSignal(signal as AgentSignal, ctxRef.current)), []);
+  useEffect(() => subscribeAgentSignals((signal) => onSignal(signal as AgentSignal)), []);
 
   return null;
 }

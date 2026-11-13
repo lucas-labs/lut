@@ -2,8 +2,22 @@
 import { act, createElement, createRef, type ReactNode, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import type { PanelImperativeHandle } from 'react-resizable-panels';
-import { afterEach, beforeEach, expect, it } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { AppShell } from './AppShell';
+
+/** Each panel's distinct `defaultSize` values, in the order the library's `Panel` received them. */
+const panelSizes = vi.hoisted(() => new Map<string, unknown[]>());
+
+vi.mock('react-resizable-panels', async (original) => {
+  const lib = await original<typeof import('react-resizable-panels')>();
+  const { createElement } = await import('react');
+  function Panel(props: Parameters<typeof lib.Panel>[0]) {
+    const seen = panelSizes.get(props.id ?? '') ?? [];
+    if (seen[seen.length - 1] !== props.defaultSize) panelSizes.set(props.id ?? '', [...seen, props.defaultSize]);
+    return createElement(lib.Panel, props);
+  }
+  return { ...lib, Panel };
+});
 
 const mounts: string[] = [];
 const unmounts: string[] = [];
@@ -28,7 +42,9 @@ function shell(props: {
   titleBar?: ReactNode;
   placement?: 'inline' | 'overlay';
   sidebar?: ReactNode;
+  sidebarWidth?: number;
   tabsColumn?: ReactNode;
+  tabsColumnWidth?: number;
 }) {
   return createElement(AppShell, {
     focusMode: props.focusMode ?? false,
@@ -38,11 +54,11 @@ function shell(props: {
     sidebarOpen: true,
     tabsColumnOpen: true,
     tabsColumnRef: createRef<PanelImperativeHandle>(),
-    tabsColumnInitialWidth: 200,
+    tabsColumnInitialWidth: props.tabsColumnWidth ?? 200,
     onTabsColumnLayout: () => {},
     sidebar: props.sidebar ?? null,
     sidebarRef,
-    sidebarInitialWidth: 0,
+    sidebarInitialWidth: props.sidebarWidth ?? 0,
     onSidebarLayout: () => {},
     onSidebarCollapsedChange: () => {},
     workspace: createElement(Probe, { name: 'workspace' }),
@@ -56,6 +72,7 @@ function render(node: ReactNode) {
 beforeEach(() => {
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   mounts.length = 0;
+  panelSizes.clear();
   unmounts.length = 0;
   host = document.createElement('div');
   document.body.append(host);
@@ -110,4 +127,20 @@ it('hides every piece of chrome in focus mode and brings it back without remount
   }
   expect(mounts).toEqual(['workspace']);
   expect(unmounts).toEqual([]);
+});
+
+it('keeps each side panel on the size it mounted with, and takes the new one when it mounts again', () => {
+  const column = createElement('nav');
+  render(shell({ sidebar: createElement('aside'), sidebarWidth: 220, tabsColumn: column, tabsColumnWidth: 146 }));
+  // The sidebar collapsing (0) and the column being dragged must not reach their own panels: the library
+  // re-registers a panel and lays its group out again whenever its defaultSize changes.
+  render(shell({ sidebar: createElement('aside'), sidebarWidth: 0, tabsColumn: column, tabsColumnWidth: 300 }));
+  expect(panelSizes.get('sidebar')).toEqual(['220px']);
+  expect(panelSizes.get('tabs-column')).toEqual(['146px']);
+
+  // Focus mode unmounts both; they come back at the sizes they have then.
+  render(shell({ focusMode: true, sidebar: createElement('aside'), sidebarWidth: 0, tabsColumn: column }));
+  render(shell({ sidebar: createElement('aside'), sidebarWidth: 0, tabsColumn: column, tabsColumnWidth: 300 }));
+  expect(panelSizes.get('sidebar')).toEqual(['220px', '0px']);
+  expect(panelSizes.get('tabs-column')).toEqual(['146px', '300px']);
 });

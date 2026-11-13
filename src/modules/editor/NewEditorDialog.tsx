@@ -31,10 +31,18 @@ export function NewEditorDialog({ open, onOpenChange, rootPath, onCreated }: Pro
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Each opening starts with the default name and no error.
+  const [openedAt, setOpenedAt] = useState(open);
+  if (open !== openedAt) {
+    setOpenedAt(open);
+    if (open) {
+      setName('untitled.txt');
+      setError(null);
+    }
+  }
+
   useEffect(() => {
     if (!open) return;
-    setName('untitled.txt');
-    setError(null);
     // Pre-select the basename so the user can quickly retype the filename
     // while keeping the extension handy.
     setTimeout(() => {

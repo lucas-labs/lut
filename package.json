@@ -25,7 +25,7 @@
     "profile:ghostty": "node scripts/ghostty-profile.mjs",
     "soak:ghostty": "vitest run --config scripts/ghostty-soak.config.ts",
     "check-types": "tsc --noEmit",
-    "lint": "eslint src --max-warnings 170",
+    "lint": "eslint src --max-warnings 36",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx}\" \".docs/**/*.md\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \".docs/**/*.md\"",

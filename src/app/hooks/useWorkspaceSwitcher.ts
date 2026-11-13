@@ -5,7 +5,7 @@ import {
   workspaceNative,
 } from '@/modules/workspace';
 import { homeDir } from '@tauri-apps/api/path';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 async function resolveEnvHome(env: WorkspaceEnv): Promise<string> {
   return env.kind === 'wsl' ? getWslHome(env.distro) : (await homeDir()).replace(/\\/g, '/');
@@ -23,6 +23,8 @@ export function useWorkspaceSwitcher({ setWorkspaceEnv }: Params) {
   const [home, setHome] = useState<string | null>(null);
   const [launchCwd, setLaunchCwd] = useState<string | null>(null);
   const [launchCwdResolved, setLaunchCwdResolved] = useState(false);
+  // The latest adoption: one that resolves after a newer one started (a quick second space switch) leaves home alone.
+  const latestAdoption = useRef(0);
 
   useEffect(() => {
     homeDir()
@@ -58,6 +60,7 @@ export function useWorkspaceSwitcher({ setWorkspaceEnv }: Params) {
 
   const adoptWorkspaceEnv = useCallback(
     async (env: WorkspaceEnv): Promise<string | null> => {
+      const adoption = ++latestAdoption.current;
       setWorkspaceEnv(env.kind === 'local' ? LOCAL_WORKSPACE : env);
       let nextHome: string;
       try {
@@ -65,7 +68,7 @@ export function useWorkspaceSwitcher({ setWorkspaceEnv }: Params) {
       } catch {
         return null;
       }
-      await authorizeHome(nextHome);
+      if (adoption === latestAdoption.current) await authorizeHome(nextHome);
       return nextHome;
     },
     [setWorkspaceEnv, authorizeHome],

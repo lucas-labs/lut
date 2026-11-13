@@ -10,7 +10,7 @@ import {
   PlusSignIcon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { InlineRename } from './components/InlineRename';
 import { accentFor } from './lib/spaceColor';
@@ -101,10 +101,12 @@ export function SpacesView({
   const draggedTab = dragging?.kind === 'tab' ? (tabs.find((t) => t.id === dragging.id) ?? null) : null;
   const draggedSpace = dragging?.kind === 'space' ? (spaces.find((s) => s.id === dragging.id) ?? null) : null;
 
-  useEffect(() => {
-    if (!activeId) return;
-    setExpanded((prev) => (prev.has(activeId) ? prev : new Set(prev).add(activeId)));
-  }, [activeId]);
+  // The space that becomes active opens; collapsing it afterwards is the user's call.
+  const [revealedId, setRevealedId] = useState<string | null>(null);
+  if (activeId && activeId !== revealedId) {
+    setRevealedId(activeId);
+    if (!expanded.has(activeId)) setExpanded(new Set(expanded).add(activeId));
+  }
 
   const toggleExpand = (id: string) =>
     setExpanded((prev) => {

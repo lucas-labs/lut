@@ -1,6 +1,5 @@
 import type { TerminalSearchController } from '@/modules/terminal/search/TerminalSearchController';
-import { useEffect, useRef } from 'react';
-import { leafIds, type PaneNode } from './lib/panes';
+import type { PaneNode } from './lib/panes';
 import { PaneTreeView } from './PaneTreeView';
 import type { TerminalPaneHandle } from './TerminalPane';
 
@@ -21,13 +20,6 @@ type Props = {
   onSplitRatios?: (tabId: number, splitId: number, ratios: number[]) => void;
 };
 
-type Bundle = {
-  setRef: (h: TerminalPaneHandle | null) => void;
-  onSearchReady: (leafId: number, addon: TerminalSearchController) => void;
-  onCwd: (leafId: number, cwd: string) => void;
-  onExit: (leafId: number, code: number) => void;
-};
-
 export function TerminalStack({
   terminals,
   activeId,
@@ -38,46 +30,6 @@ export function TerminalStack({
   onFocusLeaf,
   onSplitRatios,
 }: Props) {
-  const registerRef = useRef(registerHandle);
-  const searchReadyRef = useRef(onSearchReady);
-  const cwdRef = useRef(onCwd);
-  const exitRef = useRef(onExit);
-  useEffect(() => {
-    registerRef.current = registerHandle;
-  }, [registerHandle]);
-  useEffect(() => {
-    searchReadyRef.current = onSearchReady;
-  }, [onSearchReady]);
-  useEffect(() => {
-    cwdRef.current = onCwd;
-  }, [onCwd]);
-  useEffect(() => {
-    exitRef.current = onExit;
-  }, [onExit]);
-
-  const bundles = useRef(new Map<number, Bundle>());
-  const getBundle = (leafId: number): Bundle => {
-    let b = bundles.current.get(leafId);
-    if (!b) {
-      b = {
-        setRef: (h) => registerRef.current(leafId, h),
-        onSearchReady: (id, addon) => searchReadyRef.current(id, addon),
-        onCwd: (id, cwd) => cwdRef.current(id, cwd),
-        onExit: (id, code) => exitRef.current(id, code),
-      };
-      bundles.current.set(leafId, b);
-    }
-    return b;
-  };
-
-  useEffect(() => {
-    const live = new Set<number>();
-    for (const t of terminals) for (const id of leafIds(t.paneTree)) live.add(id);
-    for (const id of bundles.current.keys()) {
-      if (!live.has(id)) bundles.current.delete(id);
-    }
-  }, [terminals]);
-
   return (
     <div data-terminal-stack="" className="relative h-full w-full">
       {/*
@@ -108,7 +60,10 @@ export function TerminalStack({
               tabVisible={tabVisible}
               activeLeafId={t.activeLeafId}
               onFocusLeaf={(leafId) => onFocusLeaf(t.id, leafId)}
-              getBundle={getBundle}
+              registerHandle={registerHandle}
+              onSearchReady={onSearchReady}
+              onCwd={onCwd}
+              onExit={onExit}
               onSplitRatios={onSplitRatios && ((splitId, ratios) => onSplitRatios(t.id, splitId, ratios))}
             />
           </div>

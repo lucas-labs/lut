@@ -10,7 +10,7 @@ const harness = vi.hoisted(() => ({
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: harness.invoke }));
-vi.mock('@/lib/platform', () => ({ IS_MAC: false }));
+vi.mock('@/modules/platform', () => ({ IS_MAC: false }));
 vi.mock('@/lib/fonts', () => ({
   BUNDLED_MONO_FAMILY: 'Source Code Pro',
   isFontAvailable: (name: string) => harness.available.has(name),

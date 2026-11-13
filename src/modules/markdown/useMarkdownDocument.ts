@@ -17,6 +17,8 @@ export type MarkdownStatus =
   | { kind: 'toolarge'; size: number; limit: number }
   | { kind: 'error'; message: string };
 
+const LOADING: MarkdownStatus = { kind: 'loading' };
+
 function toStatus(res: ReadResult): MarkdownStatus {
   if (res.kind === 'text') return { kind: 'ready', content: res.content };
   if (res.kind === 'binary') return { kind: 'binary' };
@@ -32,7 +34,8 @@ function toStatus(res: ReadResult): MarkdownStatus {
  * remembers that it is stale and catches up when shown.
  */
 export function useMarkdownDocument(path: string, visible: boolean): MarkdownStatus {
-  const [status, setStatus] = useState<MarkdownStatus>({ kind: 'loading' });
+  // The status belongs to the path that read it: another path shows loading until its own read lands.
+  const [shown, setShown] = useState<{ path: string; status: MarkdownStatus } | null>(null);
   const visibleRef = useRef(visible);
   const reloadRef = useRef<(() => void) | null>(null);
   const staleRef = useRef(false);
@@ -47,33 +50,38 @@ export function useMarkdownDocument(path: string, visible: boolean): MarkdownSta
 
   useEffect(() => {
     let alive = true;
-    let requestId = 0;
+    const requests = { latest: 0 };
     const workspace = currentWorkspaceEnv();
     // The watcher reports canonical paths; the tab may hold an alias spelling.
     let canonical: string | null = null;
     staleRef.current = false;
-    setStatus({ kind: 'loading' });
+
+    const show = (update: (prev: MarkdownStatus) => MarkdownStatus) =>
+      setShown((current) => {
+        const own = current?.path === path ? current : null;
+        const prev = own?.status ?? LOADING;
+        const next = update(prev);
+        return own && next === prev ? own : { path, status: next };
+      });
 
     const read = () => {
-      const id = ++requestId;
+      const id = ++requests.latest;
       invoke<ReadResult>('fs_read_file', {
         path,
         workspace,
       })
         .then((res) => {
-          if (!alive || id !== requestId) return;
+          if (!alive || id !== requests.latest) return;
           const next = toStatus(res);
-          setStatus((prev) =>
+          show((prev) =>
             prev.kind === 'ready' && next.kind === 'ready' && prev.content === next.content
               ? prev
               : next,
           );
         })
         .catch((e) => {
-          if (!alive || id !== requestId) return;
-          setStatus((prev) =>
-            prev.kind === 'loading' ? { kind: 'error', message: String(e) } : prev,
-          );
+          if (!alive || id !== requests.latest) return;
+          show((prev) => (prev.kind === 'loading' ? { kind: 'error', message: String(e) } : prev));
         });
     };
 
@@ -119,5 +127,5 @@ export function useMarkdownDocument(path: string, visible: boolean): MarkdownSta
     };
   }, [path]);
 
-  return status;
+  return shown?.path === path ? shown.status : LOADING;
 }

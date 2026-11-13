@@ -39,11 +39,11 @@ export function useFileSearch(
   const [state, setState] = useState<Snapshot>(IDLE);
   const requestIdRef = useRef(0);
 
-  const execute = useCallback(
+  /** Asks the backend; the caller has already marked the search as loading. */
+  const request = useCallback(
     (q: string) => {
       if (!root) return;
       const requestId = ++requestIdRef.current;
-      setState((s) => ({ ...s, loading: true, error: null }));
       invoke<SearchResponse>('fs_search', {
         root,
         query: q,
@@ -67,10 +67,19 @@ export function useFileSearch(
     [root, showHidden],
   );
 
+  // Without a query there is nothing to show; a reply still in flight is ignored (request id). A new search
+  // loads, and keeps the previous hits on screen until its own land.
+  const idle = !enabled || !root || !query;
+  const searchKey = idle ? null : JSON.stringify([root, query, showHidden]);
+  const [shownKey, setShownKey] = useState<string | null>(null);
+  if (searchKey !== shownKey) {
+    setShownKey(searchKey);
+    setState(searchKey === null ? IDLE : (s) => ({ ...s, loading: true, error: null }));
+  }
+
   useEffect(() => {
     requestIdRef.current += 1;
     if (!enabled || !root || !query) {
-      setState(IDLE);
       if (enabled && root) {
         void invoke('fs_search', {
           root,
@@ -80,11 +89,11 @@ export function useFileSearch(
       }
       return;
     }
-    execute(query);
+    request(query);
     return () => {
       requestIdRef.current += 1;
     };
-  }, [enabled, root, query, execute]);
+  }, [enabled, root, query, request]);
 
   // Building the index is the slow part of the first search in a project; do
   // it while the user is still typing the first character.
@@ -108,8 +117,10 @@ export function useFileSearch(
   }, [enabled, root, showHidden]);
 
   const retry = useCallback(() => {
-    if (enabled && root && query) execute(query);
-  }, [enabled, root, query, execute]);
+    if (!enabled || !root || !query) return;
+    setState((s) => ({ ...s, loading: true, error: null }));
+    request(query);
+  }, [enabled, root, query, request]);
 
   return { ...state, retry };
 }

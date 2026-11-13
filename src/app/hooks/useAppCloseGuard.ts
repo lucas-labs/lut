@@ -1,8 +1,8 @@
 import { hasUnsavedChanges, useNavigationStore } from '@/modules/navigation';
+import { closeWindow as closeAppWindow, onWindowCloseRequested } from '@/modules/platform';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import type { Tab } from '@/modules/tabs';
 import { leafHasForegroundProcess, leafIds } from '@/modules/terminal';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -33,7 +33,7 @@ export function useAppCloseGuard() {
   const closeWindow = useCallback(async () => {
     forceClose.current = true;
     try {
-      await getCurrentWindow().close();
+      await closeAppWindow();
     } catch (error) {
       forceClose.current = false;
       toast.error('Could not close the window', {
@@ -44,41 +44,28 @@ export function useAppCloseGuard() {
   const finishClose = useCallback(async () => {
     if (closing.current) return;
     closing.current = true;
-    try {
-      await closeWindow();
-    } finally {
+    await closeWindow().finally(() => {
       closing.current = false;
-    }
+    });
   }, [closeWindow]);
 
   useEffect(() => {
-    let unlisten: (() => void) | undefined;
-    let disposed = false;
-    void getCurrentWindow()
-      .onCloseRequested(async (event) => {
-        if (forceClose.current) return;
-        event.preventDefault();
-        // Opting out skips the per-leaf IPC entirely; it never relaxes the
-        // unsaved-changes guard below.
-        const busyTerminal =
-          usePreferencesStore.getState().confirmCloseRunningTerminal &&
-          (await anyTerminalBusy(useNavigationStore.getState().tabs));
-        // Count after the await so edits made during the IPC check are seen.
-        const dirtyEditors = useNavigationStore.getState().tabs.filter(hasUnsavedChanges).length;
-        if (dirtyEditors > 0 || busyTerminal) {
-          setPendingAppClose({ dirtyEditors, busyTerminal });
-        } else {
-          void finishClose();
-        }
-      })
-      .then((un) => {
-        if (disposed) un();
-        else unlisten = un;
-      });
-    return () => {
-      disposed = true;
-      unlisten?.();
-    };
+    return onWindowCloseRequested(async (event) => {
+      if (forceClose.current) return;
+      event.preventDefault();
+      // Opting out skips the per-leaf IPC entirely; it never relaxes the
+      // unsaved-changes guard below.
+      const busyTerminal =
+        usePreferencesStore.getState().confirmCloseRunningTerminal &&
+        (await anyTerminalBusy(useNavigationStore.getState().tabs));
+      // Count after the await so edits made during the IPC check are seen.
+      const dirtyEditors = useNavigationStore.getState().tabs.filter(hasUnsavedChanges).length;
+      if (dirtyEditors > 0 || busyTerminal) {
+        setPendingAppClose({ dirtyEditors, busyTerminal });
+      } else {
+        void finishClose();
+      }
+    });
   }, [finishClose]);
 
   const confirmAppClose = useCallback(() => {

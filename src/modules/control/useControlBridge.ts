@@ -1,8 +1,8 @@
 import { DEFAULT_SPACE_ID, useNavigationStore } from '@/modules/navigation';
+import { bringWindowToFront } from '@/modules/platform';
 import { useSpaces } from '@/modules/spaces';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useEffect } from 'react';
 import { resolveControlContext } from './lib/context';
 import { createReadinessQueue } from './lib/readiness';
@@ -88,70 +88,72 @@ async function respond(requestId: string, response: FrontendResponse): Promise<v
   }
 }
 
+/** Answers one request from the CLI: who is calling (`identify`) or open a file (`open`). */
+async function handleRequest(
+  request: ControlRequest,
+  onOpen: UseControlBridgeOptions['onOpen'],
+): Promise<void> {
+  try {
+    const { tabs, activeId } = useNavigationStore.getState();
+    const context = resolveControlContext(
+      tabs,
+      activeId,
+      useSpaces.getState().activeId ?? DEFAULT_SPACE_ID,
+      request.caller.pane_id,
+    );
+    if (request.method === 'identify') {
+      await respond(request.id, { ok: true, result: context });
+      return;
+    }
+    if (request.method === 'open') {
+      const open = parseOpenRequest(request.params);
+      let focused = false;
+      if (open.focus) {
+        try {
+          await bringWindowToFront();
+          focused = true;
+        } catch (error) {
+          console.warn('[lut] could not focus control target:', error);
+        }
+      }
+      const tabId = onOpen({ ...open, spaceId: context.space_id });
+      if (tabId === null) {
+        throw new RequestError('open_failed', 'lut could not create an editor tab');
+      }
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      await respond(request.id, {
+        ok: true,
+        result: {
+          path: open.path,
+          line: open.line ?? null,
+          tab_id: tabId,
+          space_id: context.space_id,
+          focus_requested: open.focus,
+          focused,
+        },
+      });
+      return;
+    }
+    throw new RequestError('unknown_method', `unsupported frontend method '${request.method}'`);
+  } catch (error) {
+    const responseError =
+      error instanceof RequestError
+        ? { code: error.code, message: error.message }
+        : { code: 'frontend_error', message: String(error) };
+    await respond(request.id, { ok: false, error: responseError }).catch((responseError) => {
+      console.error('[lut] control response failed:', responseError);
+    });
+  }
+}
+
 export function useControlBridge({ ready, onOpen }: UseControlBridgeOptions): void {
   useEffect(() => {
     if (!ready) return;
     let disposed = false;
     let unlisten: (() => void) | undefined;
 
-    const handleRequest = async (request: ControlRequest) => {
-      try {
-        const { tabs, activeId } = useNavigationStore.getState();
-        const context = resolveControlContext(
-          tabs,
-          activeId,
-          useSpaces.getState().activeId ?? DEFAULT_SPACE_ID,
-          request.caller.pane_id,
-        );
-        if (request.method === 'identify') {
-          await respond(request.id, { ok: true, result: context });
-          return;
-        }
-        if (request.method === 'open') {
-          const open = parseOpenRequest(request.params);
-          let focused = false;
-          if (open.focus) {
-            const window = getCurrentWindow();
-            try {
-              await window.show();
-              await window.setFocus();
-              focused = true;
-            } catch (error) {
-              console.warn('[lut] could not focus control target:', error);
-            }
-          }
-          const tabId = onOpen({ ...open, spaceId: context.space_id });
-          if (tabId === null) {
-            throw new RequestError('open_failed', 'lut could not create an editor tab');
-          }
-          await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
-          await respond(request.id, {
-            ok: true,
-            result: {
-              path: open.path,
-              line: open.line ?? null,
-              tab_id: tabId,
-              space_id: context.space_id,
-              focus_requested: open.focus,
-              focused,
-            },
-          });
-          return;
-        }
-        throw new RequestError('unknown_method', `unsupported frontend method '${request.method}'`);
-      } catch (error) {
-        const responseError =
-          error instanceof RequestError
-            ? { code: error.code, message: error.message }
-            : { code: 'frontend_error', message: String(error) };
-        await respond(request.id, { ok: false, error: responseError }).catch((responseError) => {
-          console.error('[lut] control response failed:', responseError);
-        });
-      }
-    };
-
     void listen<ControlRequest>('lut:control-request', (event) => {
-      void handleRequest(event.payload);
+      void handleRequest(event.payload, onOpen);
     })
       .then((stop) => {
         if (disposed) {

@@ -22,8 +22,8 @@ beforeEach(() => {
 });
 
 function mount(query: string) {
-  const useSearch = useFileSearch;
-  useSearch('/repo', query, true, false);
+  // eslint-disable-next-line react-hooks/rules-of-hooks -- drives the hook through the mocked React above, outside a component.
+  useFileSearch('/repo', query, true, false);
   return harness.effects.map((effect) => effect());
 }
 

@@ -1,7 +1,7 @@
 import { GhosttySemanticEventRouter } from '@/modules/terminal/ghostty/core/GhosttySemanticEventRouter';
 import { describe, expect, it, vi } from 'vitest';
 import { parseOsc7, parseOsc52Clipboard } from './osc-handlers';
-vi.mock('@/lib/platform', () => ({ IS_WINDOWS: true }));
+vi.mock('@/modules/platform', () => ({ IS_WINDOWS: true }));
 
 describe('terminal semantic boundaries', () => {
   it.each([

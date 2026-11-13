@@ -3,6 +3,7 @@ import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, Sele
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
+import { closeWindow } from '@/modules/platform';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import {
   EDITOR_THEME_AUTO,
@@ -27,10 +28,22 @@ import { validateTheme } from '@/modules/theme/validateTheme';
 import { type Backdrop, getBackdropKind } from '@/modules/theme/vibrancy';
 import { Edit02Icon, PlusSignIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { SectionHeader } from '../components/SectionHeader';
 import { SettingRow } from '../components/SettingRow';
+
+/** Makes `file` the background image and deletes the one it replaces; returns the error to show, or null. */
+async function replaceBackgroundImage(file: File, previousId: string | null): Promise<string | null> {
+  try {
+    const { id } = await importBgImageFromFile(file);
+    await setBackgroundImageId(id);
+    await setBackgroundKind('image');
+    if (previousId && previousId !== id) await deleteBgImage(previousId).catch(() => undefined);
+    return null;
+  } catch (e) {
+    return e instanceof Error ? e.message : 'failed to import image';
+  }
+}
 
 export function ThemesSection() {
   const { themeId, setThemeId, resolvedMode, customThemes } = useTheme();
@@ -45,7 +58,7 @@ export function ThemesSection() {
 
   // Editing happens in the main window's code editor, so Settings closes
   // (destroying its WebContent process) rather than hiding and staying resident.
-  const startThemeEdit = (req: ThemeEditRequest) => void handOffThemeEdit(req, () => getCurrentWindow().close());
+  const startThemeEdit = (req: ThemeEditRequest) => void handOffThemeEdit(req, closeWindow);
   const onCreateTheme = () => startThemeEdit({ action: 'create' });
   const onEditTheme = (id: string) => startThemeEdit({ action: 'edit', id });
 
@@ -106,15 +119,7 @@ export function ThemesSection() {
       setBgError(`${file.name}: not an image`);
       return;
     }
-    try {
-      const prev = backgroundImageId;
-      const { id } = await importBgImageFromFile(file);
-      await setBackgroundImageId(id);
-      await setBackgroundKind('image');
-      if (prev && prev !== id) await deleteBgImage(prev).catch(() => undefined);
-    } catch (e) {
-      setBgError(e instanceof Error ? e.message : 'failed to import image');
-    }
+    setBgError(await replaceBackgroundImage(file, backgroundImageId));
   };
 
   const onRemoveBackground = async () => {

@@ -1,5 +1,5 @@
 import { usePreferencesStore } from '@/modules/settings/preferences';
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 import { type ShortcutId, SHORTCUTS } from '../shortcuts';
 import { resolveShortcut } from './resolveShortcut';
 
@@ -14,15 +14,14 @@ export function useGlobalShortcuts(
   handlers: ShortcutHandlers,
   options?: UseGlobalShortcutsOptions,
 ) {
-  const latest = useRef({ handlers, options });
-  latest.current = { handlers, options };
+  const current = useEffectEvent(() => ({ handlers, options }));
 
   // Access the shortcuts from the store
   const userShortcuts = usePreferencesStore((s) => s.shortcuts);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const { handlers, options } = latest.current;
+      const { handlers, options } = current();
       const id = resolveShortcut(e, {
         shortcuts: SHORTCUTS,
         user: userShortcuts,

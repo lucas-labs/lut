@@ -123,22 +123,33 @@ function loadStateFromCache(source: WorkingSource | CommitSource): LoadState {
   };
 }
 
+/** Where an active diff starts: its cached contents, or loading them. */
+function startState(source: WorkingSource | CommitSource): LoadState {
+  const cached = loadStateFromCache(source);
+  return cached.kind === 'loaded' ? cached : { kind: 'loading' };
+}
+
 export function GitDiffPane({ source, chipLabel, active }: Props) {
   const cmRef = useRef<ReactCodeMirrorRef>(null);
   const themeExt = useEditorThemeExt();
-  const [state, setState] = useState<LoadState>(() => (active ? loadStateFromCache(source) : { kind: 'idle' }));
+  const [state, setState] = useState<LoadState>(() => (active ? startState(source) : { kind: 'idle' }));
 
   const key = cacheKey(source);
 
+  // Each activation, and each new diff while active, starts from the cache, or loading.
+  const loadKey = active ? key : null;
+  const [startedKey, setStartedKey] = useState(loadKey);
+  if (loadKey !== startedKey) {
+    setStartedKey(loadKey);
+    if (loadKey !== null) setState(startState(source));
+  }
+
+  // A pane still loading fetches its diff: a cache hit or the request already in flight returns at once, so a load
+  // cancelled by a new `source` object finishes on the next run.
+  const loading = state.kind === 'loading';
   useEffect(() => {
-    if (!active) return;
-    const cached = loadStateFromCache(source);
-    if (cached.kind === 'loaded') {
-      setState(cached);
-      return;
-    }
+    if (!active || !loading) return;
     let cancelled = false;
-    setState({ kind: 'loading' });
     const promise =
       source.kind === 'working'
         ? fetchWorkingDiff(source.repoRoot, source.path, source.mode, source.originalPath)
@@ -168,7 +179,7 @@ export function GitDiffPane({ source, chipLabel, active }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [active, key, source]);
+  }, [active, loading, source]);
 
   const path = source.path;
   const repoRoot = source.repoRoot;

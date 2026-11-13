@@ -1,5 +1,5 @@
 import type { Tab } from '@/modules/navigation';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 type Result = {
   explorerRoot: string | null;
@@ -11,29 +11,26 @@ export function useWorkspaceCwd(
   tabs: Tab[],
   home: string | null,
 ): Result {
-  const lastTerminalCwd = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (activeTab?.kind === 'terminal' && activeTab.cwd) {
-      lastTerminalCwd.current = activeTab.cwd;
-    }
-  }, [activeTab]);
+  const activeCwd = activeTab?.kind === 'terminal' ? (activeTab.cwd ?? null) : null;
+  // The last directory a terminal tab was active in: an editor tab keeps showing (and opening new tabs in) it.
+  const [lastTerminalCwd, setLastTerminalCwd] = useState<string | null>(null);
+  if (activeCwd && activeCwd !== lastTerminalCwd) setLastTerminalCwd(activeCwd);
 
   const explorerRoot = useMemo<string | null>(() => {
-    if (activeTab?.kind === 'terminal' && activeTab.cwd) return activeTab.cwd;
-    if (lastTerminalCwd.current) return lastTerminalCwd.current;
+    if (activeCwd) return activeCwd;
+    if (lastTerminalCwd) return lastTerminalCwd;
     const anyTerm = tabs.find((t) => t.kind === 'terminal' && t.cwd);
     if (anyTerm?.kind === 'terminal' && anyTerm.cwd) return anyTerm.cwd;
     return home;
-  }, [activeTab, tabs, home]);
+  }, [activeCwd, lastTerminalCwd, tabs, home]);
 
   const inheritedCwdForNewTab = useCallback((): string | undefined => {
-    if (activeTab?.kind === 'terminal' && activeTab.cwd) return activeTab.cwd;
+    if (activeCwd) return activeCwd;
     // Editor tabs inherit the last terminal's cwd (or workspace home), not
     // the file's folder — opening a new terminal from a file shouldn't
     // hijack the user's working directory context.
-    return lastTerminalCwd.current ?? home ?? undefined;
-  }, [activeTab, home]);
+    return lastTerminalCwd ?? home ?? undefined;
+  }, [activeCwd, lastTerminalCwd, home]);
 
   return { explorerRoot, inheritedCwdForNewTab };
 }

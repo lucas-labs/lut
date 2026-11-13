@@ -29,13 +29,13 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { IS_MAC } from '@/lib/platform';
 import { cn } from '@/lib/utils';
 import { FileIcon } from '@/modules/explorer/FileIcon';
 import { copyToClipboard, revealInFinder } from '@/modules/explorer/lib/contextActions';
 import { COMPACT_CONTENT, COMPACT_ITEM } from '@/modules/explorer/lib/menuItemClass';
 import { joinPath } from '@/modules/explorer/lib/useFileTree';
 import { git, type GitBranchEntry } from '@/modules/git';
+import { IS_MAC } from '@/modules/platform';
 import {
   Alert02Icon,
   ArrowDown01Icon,
@@ -135,7 +135,9 @@ function checkboxValue(state: CheckState): boolean | 'indeterminate' {
   return false;
 }
 
-function BranchDropdown({
+const NO_BRANCHES: GitBranchEntry[] = [];
+
+export function BranchDropdown({
   repoRoot,
   repoLabel,
   displayRepoRoot,
@@ -153,43 +155,39 @@ function BranchDropdown({
   onRefresh: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [branches, setBranches] = useState<GitBranchEntry[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // The branches listed for a repository at this opening of the menu; another repository lists its own.
+  const [listing, setListing] = useState<{ root: string; branches: GitBranchEntry[]; error: string | null } | null>(
+    null,
+  );
   const [checkingOut, setCheckingOut] = useState(false);
-  const requestRef = useRef(0);
   const checkoutInFlight = useRef(false);
 
-  const loadBranches = useCallback(async () => {
-    const id = ++requestRef.current;
-    if (!repoRoot) {
-      setBranches([]);
-      setError(null);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await git.listBranches(repoRoot);
-      if (id !== requestRef.current) return;
-      setBranches(result.branches);
-    } catch (e) {
-      if (id !== requestRef.current) return;
-      setError(String(e));
-      setBranches([]);
-    } finally {
-      if (id === requestRef.current) {
-        setLoading(false);
-      }
-    }
-  }, [repoRoot]);
-
   useEffect(() => {
-    if (open) {
-      void loadBranches();
-    }
-  }, [open, loadBranches]);
+    if (!open || !repoRoot) return;
+    let current = true;
+    git.listBranches(repoRoot).then(
+      (result) => {
+        if (current) setListing({ root: repoRoot, branches: result.branches, error: null });
+      },
+      (e) => {
+        if (current) setListing({ root: repoRoot, branches: [], error: String(e) });
+      },
+    );
+    return () => {
+      current = false;
+    };
+  }, [open, repoRoot]);
+
+  const listed = listing?.root === repoRoot ? listing : null;
+  const branches = listed?.branches ?? NO_BRANCHES;
+  const error = listed?.error ?? null;
+  const loading = repoRoot !== null && listed === null;
+
+  // Each opening lists the branches afresh.
+  const onOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (next) setListing(null);
+  };
 
   const handleCheckout = useCallback(
     async (branch: string) => {
@@ -198,15 +196,13 @@ function BranchDropdown({
       setCheckingOut(true);
       try {
         await git.checkoutBranch(repoRoot, branch);
-        setBranches([]);
         setOpen(false);
         onRefresh();
       } catch (e) {
         toast.error(String(e));
-      } finally {
-        checkoutInFlight.current = false;
-        setCheckingOut(false);
       }
+      checkoutInFlight.current = false;
+      setCheckingOut(false);
     },
     [repoRoot, onRefresh],
   );
@@ -215,7 +211,7 @@ function BranchDropdown({
   const worktrees = useMemo(() => branches.filter((b) => b.kind === 'worktree'), [branches]);
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
@@ -502,6 +498,7 @@ export const SourceControlPanel = memo(function SourceControlPanel({
     [rows],
   );
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual returns a mutable instance the compiler cannot memoize, so this component stays uncompiled.
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollRef.current,
@@ -1196,14 +1193,16 @@ function IconActionButton({
 function CommitFeedback({ feedback }: { feedback: { tone: 'error' | 'success'; message: string } | null }) {
   const [visibleFeedback, setVisibleFeedback] = useState(feedback);
   const [isVisible, setIsVisible] = useState(false);
+  // New feedback shows at once; no feedback fades out what is shown.
+  const [shownFor, setShownFor] = useState<typeof feedback | undefined>(undefined);
+  if (feedback !== shownFor) {
+    setShownFor(feedback);
+    if (feedback) setVisibleFeedback(feedback);
+    setIsVisible(feedback !== null);
+  }
 
   useEffect(() => {
-    if (!feedback) {
-      setIsVisible(false);
-      return;
-    }
-    setVisibleFeedback(feedback);
-    setIsVisible(true);
+    if (!feedback) return;
     const hideTimer = window.setTimeout(() => setIsVisible(false), 3600);
     const clearTimer = window.setTimeout(() => {
       setVisibleFeedback((current) =>

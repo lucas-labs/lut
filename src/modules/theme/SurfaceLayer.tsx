@@ -1,11 +1,13 @@
 import { readBgFastPath, usePreferencesStore } from '@/modules/settings/preferences';
 import { BG_OPACITY_RENDER_FACTOR } from '@/modules/settings/store';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { renderStillFrame, surfaceFrame, surfaceOwnsLayer } from './surfaceFrame';
 import { useWindowInactive } from './WindowActivityBridge';
 
 const OVERLAY_Z = 2147483646;
+/** Loaded only when a background image is set. */
+const loadBgImageStore = () => import('./bgImageStore');
 const RESIZE_IDLE_MS = 280;
 const FADE_IN_MS = 200;
 
@@ -25,7 +27,9 @@ function BackgroundImage({ fastImageId }: { fastImageId: string | null }) {
   const opacity = usePreferencesStore((s) => s.backgroundOpacity);
   const blur = usePreferencesStore((s) => s.backgroundBlur);
   const [state, setState] = useState<{ url: string; animated: boolean } | null>(null);
-  const [visible, setVisible] = useState(false);
+  // The image that finished loading and fades in; a new image starts hidden until it loads.
+  const [shownImageId, setShownImageId] = useState<string | null>(null);
+  const visible = shownImageId !== null && shownImageId === imageId;
   const lastUrlRef = useRef<string | null>(null);
   const blobRef = useRef<Blob | null>(null);
   const resizing = useWindowResizing(RESIZE_IDLE_MS);
@@ -37,9 +41,8 @@ function BackgroundImage({ fastImageId }: { fastImageId: string | null }) {
     if (!imageId) return;
     let alive = true;
     let rafId: number | null = null;
-    setVisible(false);
     void (async () => {
-      const { getBgImage } = await import('./bgImageStore');
+      const { getBgImage } = await loadBgImageStore();
       const blob = await getBgImage(imageId).catch(() => null);
       if (!alive || !blob) return;
       const url = URL.createObjectURL(blob);
@@ -51,7 +54,7 @@ function BackgroundImage({ fastImageId }: { fastImageId: string | null }) {
       setState({ url, animated });
       rafId = requestAnimationFrame(() => {
         rafId = null;
-        if (alive) setVisible(true);
+        if (alive) setShownImageId(imageId);
       });
     })();
     return () => {
@@ -113,11 +116,10 @@ function BackgroundImage({ fastImageId }: { fastImageId: string | null }) {
  */
 function useStillFrame(sourceUrl: string | null, blobRef: React.RefObject<Blob | null>): string | null {
   const [still, setStill] = useState<{ source: string; url: string } | null>(null);
-  const stillRef = useRef(still);
-  stillRef.current = still;
+  const hasStillFor = useEffectEvent((source: string) => still?.source === source);
 
   useEffect(() => {
-    if (!sourceUrl || stillRef.current?.source === sourceUrl) return;
+    if (!sourceUrl || hasStillFor(sourceUrl)) return;
     const blob = blobRef.current;
     if (!blob) return;
     let alive = true;

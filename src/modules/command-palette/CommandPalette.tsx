@@ -83,12 +83,14 @@ export function CommandPalette({
   }, [filesActive, workspaceRoot, fileTarget.query, recent, files.hits]);
 
   // The first row is selected whenever the rows change, not only on the next
-  // keystroke: results arrive after the query that asked for them.
-  const firstFilePath = fileRows[0]?.path;
-  // fileRows re-arms the selection when a new result set lands with the same first file.
-  useEffect(() => {
-    if (filesActive) setValue(firstFilePath ? `file:${firstFilePath}` : '');
-  }, [filesActive, firstFilePath, fileRows]);
+  // keystroke: results arrive after the query that asked for them. A new result
+  // set re-arms the selection even when its first file is the same.
+  const [selectedRows, setSelectedRows] = useState<FileHit[] | null>(null);
+  if (filesActive && selectedRows !== fileRows) {
+    setSelectedRows(fileRows);
+    const firstFilePath = fileRows[0]?.path;
+    setValue(firstFilePath ? `file:${firstFilePath}` : '');
+  }
 
   const rankedCommands = useMemo(() => {
     if (inThemes || parsed.mode !== 'commands') return [];
@@ -124,11 +126,20 @@ export function CommandPalette({
     [onOpenChange, resetPalette],
   );
 
+  // Each opening starts in the mode it was opened with.
+  const opening = open ? (initialMode ?? 'commands') : null;
+  const [openedAs, setOpenedAs] = useState<PaletteInitialMode | null>(null);
+  if (opening !== openedAs) {
+    setOpenedAs(opening);
+    if (opening) {
+      setQuery(opening === 'content' ? '#' : '');
+      setBase(opening === 'files' ? 'files' : 'commands');
+      setPage('root');
+    }
+  }
+
   useEffect(() => {
     if (!open) return;
-    setQuery(initialMode === 'content' ? '#' : '');
-    setBase(initialMode === 'files' ? 'files' : 'commands');
-    setPage('root');
     const handle = window.setTimeout(() => {
       document.getElementById('lut-command-palette-input')?.focus();
     }, 0);

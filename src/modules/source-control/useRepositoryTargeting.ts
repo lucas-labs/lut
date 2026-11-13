@@ -45,17 +45,18 @@ export function useRepositoryTargeting({
   const resolveRepository = useCallback(
     async (path: string, requestRef: RequestCounter) => {
       const requestId = ++requestRef.current;
+      // Still the latest request, in the space and workspace that asked.
+      const isCurrent = () =>
+        requestId === requestRef.current && isContextCurrent(spaceId, workspaceKey);
       try {
         const repo = await git.resolveRepo(path);
-        if (requestId !== requestRef.current || !isContextCurrent(spaceId, workspaceKey)) {
-          return null;
-        }
+        if (!isCurrent()) return null;
         if (!repo) {
           toast.info('No Git repository contains this folder.');
         }
         return repo;
       } catch (error) {
-        if (requestId === requestRef.current && isContextCurrent(spaceId, workspaceKey)) {
+        if (isCurrent()) {
           toast.error('Could not resolve Git repository', {
             description: String(error),
           });

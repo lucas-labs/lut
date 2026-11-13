@@ -1,5 +1,5 @@
-import { IS_WINDOWS } from '@/lib/platform';
 import { quotePathArg, type ShellDialect } from '@/lib/shellQuote';
+import { IS_WINDOWS } from '@/modules/platform';
 
 export function quoteShellPath(path: string, windows: boolean | ShellDialect = IS_WINDOWS): string {
   return quotePathArg(

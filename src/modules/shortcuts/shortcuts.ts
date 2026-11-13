@@ -1,4 +1,4 @@
-import { IS_MAC } from '@/lib/platform';
+import { IS_MAC } from '@/modules/platform';
 import { MAC_DEFAULTS, WIN_LINUX_DEFAULTS } from './shortcutDefaults';
 
 /**

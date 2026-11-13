@@ -8,7 +8,7 @@ const harness = vi.hoisted(() => ({
   onResized: null as (() => void) | null,
 }));
 
-vi.mock('./platform', () => ({
+vi.mock('./os', () => ({
   get IS_WINDOWS() {
     return harness.platform.IS_WINDOWS;
   },

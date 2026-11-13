@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import type { PreviewTab, Tab } from '@/modules/tabs';
-import { useEffect, useRef } from 'react';
+import { useCallback } from 'react';
 import { PreviewPane, type PreviewPaneHandle } from './PreviewPane';
 
 type Props = {
@@ -13,45 +13,6 @@ type Props = {
 export function PreviewStack({ tabs, activeId, onUrlChange, registerHandle }: Props) {
   const previews = tabs.filter((t): t is PreviewTab => t.kind === 'preview' && !t.cold);
 
-  const registerRef = useRef(registerHandle);
-  const urlChangeRef = useRef(onUrlChange);
-  useEffect(() => {
-    registerRef.current = registerHandle;
-  }, [registerHandle]);
-  useEffect(() => {
-    urlChangeRef.current = onUrlChange;
-  }, [onUrlChange]);
-
-  const refCallbacks = useRef(new Map<number, (h: PreviewPaneHandle | null) => void>());
-  const urlCallbacks = useRef(new Map<number, (url: string) => void>());
-
-  const getRefCallback = (id: number) => {
-    let cb = refCallbacks.current.get(id);
-    if (!cb) {
-      cb = (h: PreviewPaneHandle | null) => registerRef.current(id, h);
-      refCallbacks.current.set(id, cb);
-    }
-    return cb;
-  };
-  const getUrlCallback = (id: number) => {
-    let cb = urlCallbacks.current.get(id);
-    if (!cb) {
-      cb = (url: string) => urlChangeRef.current(id, url);
-      urlCallbacks.current.set(id, cb);
-    }
-    return cb;
-  };
-
-  useEffect(() => {
-    const live = new Set(previews.map((t) => t.id));
-    for (const id of refCallbacks.current.keys()) {
-      if (!live.has(id)) refCallbacks.current.delete(id);
-    }
-    for (const id of urlCallbacks.current.keys()) {
-      if (!live.has(id)) urlCallbacks.current.delete(id);
-    }
-  }, [previews]);
-
   if (previews.length === 0) return null;
   return (
     <div className="relative h-full w-full">
@@ -63,10 +24,25 @@ export function PreviewStack({ tabs, activeId, onUrlChange, registerHandle }: Pr
             className={cn('absolute inset-0', !visible && 'invisible pointer-events-none')}
             aria-hidden={!visible}
           >
-            <PreviewPane ref={getRefCallback(t.id)} url={t.url} visible={visible} onUrlChange={getUrlCallback(t.id)} />
+            <PreviewSlot
+              id={t.id}
+              url={t.url}
+              visible={visible}
+              registerHandle={registerHandle}
+              onUrlChange={onUrlChange}
+            />
           </div>
         );
       })}
     </div>
   );
+}
+
+type SlotProps = Pick<Props, 'registerHandle' | 'onUrlChange'> & { id: number; url: string; visible: boolean };
+
+/** One preview tab's pane, with callbacks that keep their identity while the tab lives. */
+function PreviewSlot({ id, url, visible, registerHandle, onUrlChange }: SlotProps) {
+  const ref = useCallback((h: PreviewPaneHandle | null) => registerHandle(id, h), [registerHandle, id]);
+  const urlChange = useCallback((next: string) => onUrlChange(id, next), [onUrlChange, id]);
+  return <PreviewPane ref={ref} url={url} visible={visible} onUrlChange={urlChange} />;
 }

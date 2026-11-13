@@ -26,8 +26,6 @@ afterEach(() => {
   host.remove();
 });
 
-const bundle = { setRef: () => {}, onSearchReady: () => {}, onCwd: () => {}, onExit: () => {} };
-
 function render(node: PaneNode, activeLeafId: number) {
   act(() =>
     root.render(
@@ -36,7 +34,10 @@ function render(node: PaneNode, activeLeafId: number) {
         tabVisible: true,
         activeLeafId,
         onFocusLeaf: () => {},
-        getBundle: () => bundle,
+        registerHandle: () => {},
+        onSearchReady: () => {},
+        onCwd: () => {},
+        onExit: () => {},
       }),
     ),
   );

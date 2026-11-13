@@ -126,22 +126,6 @@ fn sanitize_shell_override(shell: Option<String>) -> Option<String> {
     }
 }
 
-pub fn detect_shell_name() -> String {
-    #[cfg(unix)]
-    {
-        let (_, path) = unix::Shell::detect();
-        path.rsplit('/').next().unwrap_or("").to_string()
-    }
-    #[cfg(windows)]
-    {
-        windows_shell_path()
-            .file_stem()
-            .and_then(|s| s.to_str())
-            .map(|s| s.to_ascii_lowercase())
-            .unwrap_or_default()
-    }
-}
-
 #[derive(serde::Serialize)]
 pub struct ShellInfo {
     pub name: String,
