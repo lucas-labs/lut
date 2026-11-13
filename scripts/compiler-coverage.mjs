@@ -9,6 +9,8 @@ const require = createRequire(import.meta.url);
 const babel = require('@babel/core');
 const compilerPlugin = require.resolve('babel-plugin-react-compiler');
 
+const SKIP_EVENTS = new Set(['CompileError', 'PipelineError', 'CompileSkip']);
+
 /** The non-test `.ts`/`.tsx` files under `dir`. */
 function sourceFiles(dir) {
   return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -29,9 +31,12 @@ export function compilerSkips(root) {
     const file = relative(root, path).split(sep).join('/');
     const logger = {
       logEvent(_filename, event) {
-        if (event.kind !== 'CompileError' && event.kind !== 'PipelineError') return;
+        // A `'use no memo'` opt-out is a skip too; its reason is on the event itself.
+        if (!SKIP_EVENTS.has(event.kind)) return;
         const detail = event.detail ?? {};
-        const reason = String(detail.reason ?? detail.options?.reason ?? event.data ?? event.kind);
+        const reason = String(
+          event.reason ?? detail.reason ?? detail.options?.reason ?? event.data ?? event.kind,
+        );
         skips.push({ file, line: event.fnLoc?.start?.line ?? null, reason });
       },
     };
