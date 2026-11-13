@@ -144,8 +144,11 @@ export function GitDiffPane({ source, chipLabel, active }: Props) {
     if (loadKey !== null) setState(startState(source));
   }
 
+  // A pane still loading fetches its diff: a cache hit or the request already in flight returns at once, so a load
+  // cancelled by a new `source` object finishes on the next run.
+  const loading = state.kind === 'loading';
   useEffect(() => {
-    if (!active || loadStateFromCache(source).kind === 'loaded') return;
+    if (!active || !loading) return;
     let cancelled = false;
     const promise =
       source.kind === 'working'
@@ -176,7 +179,7 @@ export function GitDiffPane({ source, chipLabel, active }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [active, key, source]);
+  }, [active, loading, source]);
 
   const path = source.path;
   const repoRoot = source.repoRoot;

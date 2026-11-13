@@ -17,7 +17,7 @@ import {
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { invoke } from '@tauri-apps/api/core';
-import { type ReactNode, useCallback, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { type Segment, segmentsFromCwd } from './lib/pathUtils';
 
 type Props = {
@@ -168,33 +168,32 @@ function CurrentSegmentDropdown({ segment, onCd }: { segment: Segment; onCd: (p:
   const closeFocus = useMenuCloseFocus();
   const [open, setOpen] = useState(false);
   useHoldTitleBar(open);
-  const [children, setChildren] = useState<string[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const path = segment.fullPath;
+  // The folders listed for a path; a new path (a `cd` while the menu is open) lists its own.
+  const [listing, setListing] = useState<{ path: string; dirs: string[]; error: string | null } | null>(null);
 
-  const load = useCallback(async () => {
-    setError(null);
-    try {
-      const dirs = await invoke<string[]>('list_subdirs', {
-        path,
-        showHidden,
-        workspace: currentWorkspaceEnv(),
-      });
-      setChildren(dirs);
-    } catch (e) {
-      setError(String(e));
-      setChildren([]);
-    }
-  }, [path, showHidden]);
+  useEffect(() => {
+    if (!open) return;
+    let current = true;
+    invoke<string[]>('list_subdirs', { path, showHidden, workspace: currentWorkspaceEnv() }).then(
+      (dirs) => {
+        if (current) setListing({ path, dirs, error: null });
+      },
+      (e) => {
+        if (current) setListing({ path, dirs: [], error: String(e) });
+      },
+    );
+    return () => {
+      current = false;
+    };
+  }, [open, path, showHidden]);
 
-  // The folders are listed each time the menu opens.
-  const onOpenChange = (next: boolean) => {
-    setOpen(next);
-    if (next) void load();
-  };
+  const listed = listing?.path === path ? listing : null;
+  const children = listed?.dirs ?? null;
+  const error = listed?.error ?? null;
 
   return (
-    <DropdownMenu open={open} onOpenChange={onOpenChange}>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button type="button" aria-current="location" className={cn(SEGMENT_CLASS, 'text-foreground')}>
           <SegmentLabel segment={segment} />

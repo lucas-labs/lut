@@ -135,7 +135,9 @@ function checkboxValue(state: CheckState): boolean | 'indeterminate' {
   return false;
 }
 
-function BranchDropdown({
+const NO_BRANCHES: GitBranchEntry[] = [];
+
+export function BranchDropdown({
   repoRoot,
   repoLabel,
   displayRepoRoot,
@@ -153,40 +155,38 @@ function BranchDropdown({
   onRefresh: () => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [branches, setBranches] = useState<GitBranchEntry[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // The branches listed for a repository at this opening of the menu; another repository lists its own.
+  const [listing, setListing] = useState<{ root: string; branches: GitBranchEntry[]; error: string | null } | null>(
+    null,
+  );
   const [checkingOut, setCheckingOut] = useState(false);
-  const requestRef = useRef(0);
   const checkoutInFlight = useRef(false);
 
-  const loadBranches = useCallback(async () => {
-    const id = ++requestRef.current;
-    if (!repoRoot) {
-      setBranches([]);
-      setError(null);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await git.listBranches(repoRoot);
-      if (id !== requestRef.current) return;
-      setBranches(result.branches);
-    } catch (e) {
-      if (id !== requestRef.current) return;
-      setError(String(e));
-      setBranches([]);
-    }
-    // Only this request's own result reaches here: a superseded one returned above.
-    setLoading(false);
-  }, [repoRoot]);
+  useEffect(() => {
+    if (!open || !repoRoot) return;
+    let current = true;
+    git.listBranches(repoRoot).then(
+      (result) => {
+        if (current) setListing({ root: repoRoot, branches: result.branches, error: null });
+      },
+      (e) => {
+        if (current) setListing({ root: repoRoot, branches: [], error: String(e) });
+      },
+    );
+    return () => {
+      current = false;
+    };
+  }, [open, repoRoot]);
 
-  // The branches are listed each time the menu opens.
+  const listed = listing?.root === repoRoot ? listing : null;
+  const branches = listed?.branches ?? NO_BRANCHES;
+  const error = listed?.error ?? null;
+  const loading = repoRoot !== null && listed === null;
+
+  // Each opening lists the branches afresh.
   const onOpenChange = (next: boolean) => {
     setOpen(next);
-    if (next) void loadBranches();
+    if (next) setListing(null);
   };
 
   const handleCheckout = useCallback(
@@ -196,7 +196,6 @@ function BranchDropdown({
       setCheckingOut(true);
       try {
         await git.checkoutBranch(repoRoot, branch);
-        setBranches([]);
         setOpen(false);
         onRefresh();
       } catch (e) {
