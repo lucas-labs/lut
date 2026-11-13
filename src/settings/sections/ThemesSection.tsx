@@ -32,6 +32,19 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { SectionHeader } from '../components/SectionHeader';
 import { SettingRow } from '../components/SettingRow';
 
+/** Makes `file` the background image and deletes the one it replaces; returns the error to show, or null. */
+async function replaceBackgroundImage(file: File, previousId: string | null): Promise<string | null> {
+  try {
+    const { id } = await importBgImageFromFile(file);
+    await setBackgroundImageId(id);
+    await setBackgroundKind('image');
+    if (previousId && previousId !== id) await deleteBgImage(previousId).catch(() => undefined);
+    return null;
+  } catch (e) {
+    return e instanceof Error ? e.message : 'failed to import image';
+  }
+}
+
 export function ThemesSection() {
   const { themeId, setThemeId, resolvedMode, customThemes } = useTheme();
   const builtinThemes = listBuiltinThemes();
@@ -106,15 +119,7 @@ export function ThemesSection() {
       setBgError(`${file.name}: not an image`);
       return;
     }
-    try {
-      const prev = backgroundImageId;
-      const { id } = await importBgImageFromFile(file);
-      await setBackgroundImageId(id);
-      await setBackgroundKind('image');
-      if (prev && prev !== id) await deleteBgImage(prev).catch(() => undefined);
-    } catch (e) {
-      setBgError(e instanceof Error ? e.message : 'failed to import image');
-    }
+    setBgError(await replaceBackgroundImage(file, backgroundImageId));
   };
 
   const onRemoveBackground = async () => {

@@ -323,9 +323,8 @@ export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: P
     } catch (err) {
       setError(normalizeError(err));
       setLoadStatus('error');
-    } finally {
-      inflightMoreRef.current = false;
     }
+    inflightMoreRef.current = false;
   }, [commits, endReached, loadStatus, repoRoot]);
 
   useEffect(() => {
@@ -400,9 +399,8 @@ export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: P
         cacheFiles(sha, { state: 'loaded', files });
       } catch (err) {
         cacheFiles(sha, { state: 'error', error: normalizeError(err) });
-      } finally {
-        filesInflightRef.current.delete(sha);
       }
+      filesInflightRef.current.delete(sha);
     },
     [repoRoot, filesCache, cacheFiles],
   );

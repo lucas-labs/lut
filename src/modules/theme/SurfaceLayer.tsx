@@ -6,6 +6,8 @@ import { renderStillFrame, surfaceFrame, surfaceOwnsLayer } from './surfaceFrame
 import { useWindowInactive } from './WindowActivityBridge';
 
 const OVERLAY_Z = 2147483646;
+/** Loaded only when a background image is set. */
+const loadBgImageStore = () => import('./bgImageStore');
 const RESIZE_IDLE_MS = 280;
 const FADE_IN_MS = 200;
 
@@ -40,7 +42,7 @@ function BackgroundImage({ fastImageId }: { fastImageId: string | null }) {
     let alive = true;
     let rafId: number | null = null;
     void (async () => {
-      const { getBgImage } = await import('./bgImageStore');
+      const { getBgImage } = await loadBgImageStore();
       const blob = await getBgImage(imageId).catch(() => null);
       if (!alive || !blob) return;
       const url = URL.createObjectURL(blob);

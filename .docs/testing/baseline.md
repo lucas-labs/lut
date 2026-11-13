@@ -195,6 +195,14 @@ budget (`--max-warnings 36`):
 | `jsx-a11y/no-static-element-interactions`, `jsx-a11y/no-noninteractive-tabindex`                                                                                                                                       | 2 each |
 | `jsx-a11y/no-autofocus`, `jsx-a11y/label-has-associated-control`, `jsx-a11y/no-noninteractive-element-interactions`, `prefer-const`, `no-empty`, `@typescript-eslint/no-empty-object-type`, `react/no-array-index-key` | 1 each |
 
+**Since E09-11 (#406)** `src/app/compiler-coverage.test.ts` runs the React Compiler over `src/` as the build does
+(`scripts/compiler-coverage.mjs`) and fails on any function it does not compile: the build skips those silently and
+no lint rule reports syntax the compiler does not support. Before E09-11 it skipped 23 functions (32 errors), for a
+`try`/`finally`, an `import()` or a `++` on a captured variable inside a component, a store hook used as an object
+(`useX.getState()`), and the hidden rule violations behind them. Four stay uncompiled, each with its reason in the
+test's allowlist: `EditorPane` (CodeMirror's extensions call the pane's latest handlers through refs) and the three
+TanStack Virtual lists (`FileExplorer`, `GitHistoryPane`, `SourceControlPanel`).
+
 ### Smoke test: zoom shortcuts depend on the keyboard layout
 
 - **Reproduce:** Windows with a Spanish layout. `Ctrl++` (main row or numpad) types `+` into the prompt;

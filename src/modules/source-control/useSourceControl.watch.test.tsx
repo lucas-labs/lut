@@ -39,6 +39,19 @@ vi.mock('react', async (original) => {
     }
     return cell.value as T;
   }
+  function effectHook(effect: () => undefined | (() => void), deps: readonly unknown[]) {
+    const cell = slot<{ deps?: readonly unknown[]; cleanup?: () => void }>(() => ({}));
+    if (same(cell.deps, deps)) return;
+    cell.deps = deps;
+    harness.effects.push(() => {
+      if (cell.cleanup) {
+        cell.cleanup();
+        harness.cleanups.delete(cell.cleanup);
+      }
+      cell.cleanup = effect() || undefined;
+      if (cell.cleanup) harness.cleanups.add(cell.cleanup);
+    });
+  }
   return {
     ...(await original<typeof import('react')>()),
     useState: <T,>(initial: T) => {
@@ -58,19 +71,9 @@ vi.mock('react', async (original) => {
       cell.callback = callback;
       return cell.call;
     },
-    useEffect: (effect: () => undefined | (() => void), deps: readonly unknown[]) => {
-      const cell = slot<{ deps?: readonly unknown[]; cleanup?: () => void }>(() => ({}));
-      if (same(cell.deps, deps)) return;
-      cell.deps = deps;
-      harness.effects.push(() => {
-        if (cell.cleanup) {
-          cell.cleanup();
-          harness.cleanups.delete(cell.cleanup);
-        }
-        cell.cleanup = effect() || undefined;
-        if (cell.cleanup) harness.cleanups.add(cell.cleanup);
-      });
-    },
+    useEffect: effectHook,
+    // Layout effects run with the others, in order: the harness has no layout phase.
+    useLayoutEffect: effectHook,
   };
 });
 

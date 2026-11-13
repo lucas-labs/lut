@@ -1,6 +1,16 @@
 import { git, type GitRepoInfo, type GitStatusSnapshot } from '@/modules/git';
 import { useWorkspaceEnvStore, workspaceScopeKey } from '@/modules/workspace';
-import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
+import {
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { watchSourceControl } from './watchSourceControl';
 
 const AUTO_FETCH_THROTTLE_MS = 5 * 60_000;
@@ -211,6 +221,137 @@ export type UseSourceControlOptions = {
   live?: boolean;
 };
 
+type LoadContext = {
+  contextPath: string;
+  /** A repository the context already showed, refreshed with a plain `git status`. */
+  reusableRoot: string | null;
+  remoteMode: SourceControlRefreshMode;
+  /** Whether this load is still the one the panel waits for. */
+  isCurrentRequest: () => boolean;
+  setState: Dispatch<SetStateAction<SourceControlSummaryState>>;
+  /** The remote error on screen, read when the load gets to it. */
+  lastRemoteError: () => string | null;
+  autoFetchByRepo: Map<string, number>;
+};
+
+/**
+ * Loads the repository and status for a context, fetching from the remote when due, and stores the result unless a
+ * newer request took over.
+ */
+async function loadSourceControl({
+  contextPath,
+  reusableRoot,
+  remoteMode,
+  isCurrentRequest,
+  setState,
+  lastRemoteError,
+  autoFetchByRepo,
+}: LoadContext): Promise<void> {
+  try {
+    let repo: GitRepoInfo | null;
+    let status: GitStatusSnapshot | null;
+
+    if (reusableRoot) {
+      try {
+        status = await git.status(reusableRoot);
+        if (!isCurrentRequest()) return;
+        repo = {
+          repoRoot: reusableRoot,
+          branch: status.branch,
+          upstream: status.upstream,
+          isDetached: status.isDetached,
+        };
+      } catch {
+        const snapshot = await git.panelSnapshot(contextPath);
+        if (!isCurrentRequest()) return;
+        if (!snapshot.repo) {
+          setState((current) => ({
+            ...current,
+            repo: null,
+            status: null,
+            hasRepo: false,
+            isLoading: false,
+            localError: null,
+          }));
+          return;
+        }
+        repo = snapshot.repo;
+        status = snapshot.status ?? null;
+      }
+    } else {
+      const snapshot = await git.panelSnapshot(contextPath);
+      if (!isCurrentRequest()) return;
+      if (!snapshot.repo) {
+        setState((current) => ({
+          ...current,
+          repo: null,
+          status: null,
+          hasRepo: false,
+          isLoading: false,
+          localError: null,
+        }));
+        return;
+      }
+      repo = snapshot.repo;
+      status = snapshot.status ?? null;
+    }
+
+    if (!repo) {
+      setState((current) => ({
+        ...current,
+        repo: null,
+        status: null,
+        hasRepo: false,
+        isLoading: false,
+        localError: null,
+      }));
+      return;
+    }
+
+    let nextRemoteError = lastRemoteError();
+    const shouldAutoFetch =
+      repo.upstream &&
+      remoteMode !== 'never' &&
+      (remoteMode === 'always' ||
+        Date.now() - (autoFetchByRepo.get(repo.repoRoot) ?? 0) >= AUTO_FETCH_THROTTLE_MS);
+
+    if (shouldAutoFetch) {
+      try {
+        await git.fetch(repo.repoRoot);
+        touchAutoFetch(autoFetchByRepo, repo.repoRoot);
+        nextRemoteError = null;
+        if (!isCurrentRequest()) return;
+        status = await git.status(repo.repoRoot);
+        if (!isCurrentRequest()) return;
+      } catch (error) {
+        nextRemoteError = normalizeError(error);
+      }
+    }
+
+    if (!isCurrentRequest()) return;
+    setState((current) => ({
+      ...current,
+      repo,
+      status,
+      hasRepo: true,
+      isLoading: false,
+      localError: null,
+      lastRemoteError: nextRemoteError,
+    }));
+  } catch (error) {
+    if (!isCurrentRequest()) return;
+    const localError = normalizeError(error);
+    setState((current) => ({
+      ...current,
+      repo: reusableRoot ? current.repo : null,
+      hasRepo: !!reusableRoot,
+      status: reusableRoot ? current.status : null,
+      isLoading: false,
+      localError,
+    }));
+  }
+}
+
 export function useSourceControl(
   contextPath: string | null,
   enabled: boolean = true,
@@ -237,7 +378,10 @@ export function useSourceControl(
   const resetWorkspaceKeyRef = useRef(workspaceKey);
   const contextKey = sourceControlContextKey(workspaceKey, contextPath);
   const contextKeyRef = useRef(contextKey);
-  contextKeyRef.current = contextKey;
+  // Before any effect of the same commit asks whether its request is still current.
+  useLayoutEffect(() => {
+    contextKeyRef.current = contextKey;
+  }, [contextKey]);
 
   useEffect(() => {
     stateRef.current = state;
@@ -265,14 +409,17 @@ export function useSourceControl(
     });
   }, [workspaceKey]);
 
-  const applyStatus = useCallback((updater: (status: GitStatusSnapshot) => GitStatusSnapshot) => {
-    setState((current) => {
-      if (!current.status) return current;
-      const next = updater(current.status);
-      if (next === current.status) return current;
-      return { ...current, status: next };
-    });
-  }, []);
+  const applyStatus = useCallback(
+    (updater: (status: GitStatusSnapshot) => GitStatusSnapshot) => {
+      setState((current) => {
+        if (!current.status) return current;
+        const next = updater(current.status);
+        if (next === current.status) return current;
+        return { ...current, status: next };
+      });
+    },
+    [setState],
+  );
 
   const doRefresh = useCallback(
     async (remoteMode: SourceControlRefreshMode): Promise<void> => {
@@ -308,115 +455,21 @@ export function useSourceControl(
 
       setState((current) => beginSourceControlRefresh(current, contextPath, !!reusableRoot));
 
-      try {
-        let repo: GitRepoInfo | null;
-        let status: GitStatusSnapshot | null;
-
-        if (reusableRoot) {
-          try {
-            status = await git.status(reusableRoot);
-            if (!isCurrentRequest()) return;
-            repo = {
-              repoRoot: reusableRoot,
-              branch: status.branch,
-              upstream: status.upstream,
-              isDetached: status.isDetached,
-            };
-          } catch {
-            const snapshot = await git.panelSnapshot(contextPath);
-            if (!isCurrentRequest()) return;
-            if (!snapshot.repo) {
-              setState((current) => ({
-                ...current,
-                repo: null,
-                status: null,
-                hasRepo: false,
-                isLoading: false,
-                localError: null,
-              }));
-              return;
-            }
-            repo = snapshot.repo;
-            status = snapshot.status ?? null;
-          }
-        } else {
-          const snapshot = await git.panelSnapshot(contextPath);
-          if (!isCurrentRequest()) return;
-          if (!snapshot.repo) {
-            setState((current) => ({
-              ...current,
-              repo: null,
-              status: null,
-              hasRepo: false,
-              isLoading: false,
-              localError: null,
-            }));
-            return;
-          }
-          repo = snapshot.repo;
-          status = snapshot.status ?? null;
-        }
-
-        if (!repo) {
-          setState((current) => ({
-            ...current,
-            repo: null,
-            status: null,
-            hasRepo: false,
-            isLoading: false,
-            localError: null,
-          }));
-          return;
-        }
-
-        let nextRemoteError = stateRef.current.lastRemoteError;
-        const shouldAutoFetch =
-          repo.upstream &&
-          remoteMode !== 'never' &&
-          (remoteMode === 'always' ||
-            Date.now() - (autoFetchByRepoRef.current.get(repo.repoRoot) ?? 0) >=
-              AUTO_FETCH_THROTTLE_MS);
-
-        if (shouldAutoFetch) {
-          try {
-            await git.fetch(repo.repoRoot);
-            touchAutoFetch(autoFetchByRepoRef.current, repo.repoRoot);
-            nextRemoteError = null;
-            if (!isCurrentRequest()) return;
-            status = await git.status(repo.repoRoot);
-            if (!isCurrentRequest()) return;
-          } catch (error) {
-            nextRemoteError = normalizeError(error);
-          }
-        }
-
-        if (!isCurrentRequest()) return;
-        setState((current) => ({
-          ...current,
-          repo,
-          status,
-          hasRepo: true,
-          isLoading: false,
-          localError: null,
-          lastRemoteError: nextRemoteError,
-        }));
-      } catch (error) {
-        if (!isCurrentRequest()) return;
-        setState((current) => ({
-          ...current,
-          repo: reusableRoot ? current.repo : null,
-          hasRepo: !!reusableRoot,
-          status: reusableRoot ? current.status : null,
-          isLoading: false,
-          localError: normalizeError(error),
-        }));
-      } finally {
+      await loadSourceControl({
+        contextPath,
+        reusableRoot,
+        remoteMode,
+        isCurrentRequest,
+        setState,
+        lastRemoteError: () => stateRef.current.lastRemoteError,
+        autoFetchByRepo: autoFetchByRepoRef.current,
+      }).finally(() => {
         if (isCurrentRequest()) {
           lastRefreshAtRef.current = Date.now();
         }
-      }
+      });
     },
-    [contextKey, contextPath],
+    [contextKey, contextPath, setState],
   );
 
   const refresh = useCallback(
@@ -462,43 +515,52 @@ export function useSourceControl(
       const actionContextKey = contextKeyRef.current;
       const isCurrentContext = () => actionContextKey === contextKeyRef.current;
 
-      try {
-        if (action === 'fetch') {
-          await git.fetch(repo.repoRoot);
-          touchAutoFetch(autoFetchByRepoRef.current, repo.repoRoot);
-        } else if (action === 'pull') {
-          await git.fetch(repo.repoRoot);
-          touchAutoFetch(autoFetchByRepoRef.current, repo.repoRoot);
-          await git.pullFfOnly(repo.repoRoot);
-        } else {
-          await git.push(repo.repoRoot);
+      const perform = async () => {
+        try {
+          if (action === 'fetch') {
+            await git.fetch(repo.repoRoot);
+            touchAutoFetch(autoFetchByRepoRef.current, repo.repoRoot);
+          } else if (action === 'pull') {
+            await git.fetch(repo.repoRoot);
+            touchAutoFetch(autoFetchByRepoRef.current, repo.repoRoot);
+            await git.pullFfOnly(repo.repoRoot);
+          } else {
+            await git.push(repo.repoRoot);
+          }
+          if (isCurrentContext()) {
+            setState((current) => ({ ...current, lastRemoteError: null }));
+            await refresh({ remote: 'never' });
+          }
+          return { ok: true, action };
+        } catch (error) {
+          const message = normalizeError(error);
+          if (isCurrentContext()) {
+            setState((current) => ({ ...current, lastRemoteError: message }));
+            await refresh({ remote: 'never' }).catch(() => {});
+          }
+          return { ok: false, action, error: message };
         }
-        if (isCurrentContext()) {
-          setState((current) => ({ ...current, lastRemoteError: null }));
-          await refresh({ remote: 'never' });
-        }
-        return { ok: true, action };
-      } catch (error) {
-        const message = normalizeError(error);
-        if (isCurrentContext()) {
-          setState((current) => ({ ...current, lastRemoteError: message }));
-          await refresh({ remote: 'never' }).catch(() => {});
-        }
-        return { ok: false, action, error: message };
-      } finally {
+      };
+      return perform().finally(() => {
         setState((current) => ({ ...current, busyAction: null }));
-      }
+      });
     },
-    [refresh],
+    [refresh, setState],
   );
+
+  // A new context (or turning off) drops the last remote error; turned off, the summary empties.
+  const followKey = JSON.stringify([enabled, live, contextKey]);
+  const [followedKey, setFollowedKey] = useState<string | null>(null);
+  if (followKey !== followedKey) {
+    setFollowedKey(followKey);
+    setState(enabled ? (current) => ({ ...current, lastRemoteError: null }) : EMPTY_STATE);
+  }
 
   useEffect(() => {
     if (!enabled) {
       requestIdRef.current++;
-      setState(EMPTY_STATE);
       return;
     }
-    setState((current) => ({ ...current, lastRemoteError: null }));
     const run = () => {
       const current = stateRef.current;
       const plan = planContextRefresh({

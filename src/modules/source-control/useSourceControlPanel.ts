@@ -515,9 +515,8 @@ export function useSourceControlPanel(
         setActionError(normalizeError(error));
         cancelReconcile();
         await summary.refresh({ remote: 'never' }).catch(() => {});
-      } finally {
-        setLocalActionBusy(null);
       }
+      setLocalActionBusy(null);
     },
     [cancelReconcile, repo, scheduleReconcile, summary],
   );
@@ -690,9 +689,8 @@ export function useSourceControlPanel(
       await summary.refresh({ remote: 'never' });
     } catch (error) {
       setActionError(normalizeError(error));
-    } finally {
-      setLocalActionBusy(null);
     }
+    setLocalActionBusy(null);
   }, [commitMessage, repo, summary]);
 
   const upstream = status?.upstream;

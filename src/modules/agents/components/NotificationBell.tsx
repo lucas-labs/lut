@@ -166,9 +166,8 @@ export function NotificationBell({ onActivate }: Props) {
       setHooks((h) => ({ ...h, [id]: true }));
     } catch {
       setHooks((h) => ({ ...h, [id]: false }));
-    } finally {
-      setInstalling(null);
     }
+    setInstalling(null);
   };
 
   const activate = (tabId: number, leafId: number) => {

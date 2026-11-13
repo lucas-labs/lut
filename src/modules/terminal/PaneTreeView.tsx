@@ -109,14 +109,14 @@ function SplitView(props: Props & { node: SplitNode }) {
     // A closed pane's panel unregisters after this effect may run; apply the layout once the
     // group holds exactly this split's panels, a few frames at most.
     let frame = 0;
-    let tries = 0;
+    const attempts = { count: 0 };
     const apply = () => {
       const group = groupRef.current;
       if (!group) return;
       const live = group.getLayout();
       const liveIds = Object.keys(live);
       if (liveIds.length !== ids.length || ids.some((id) => !(id in live))) {
-        if (++tries <= 3) frame = requestAnimationFrame(apply);
+        if (++attempts.count <= 3) frame = requestAnimationFrame(apply);
         return;
       }
       if (ids.some((id) => Math.abs(live[id] - wanted[id]) > 0.5)) group.setLayout(wanted);

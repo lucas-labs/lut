@@ -125,9 +125,8 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
           setTruncated(false);
           setSelectedIndex(0);
         }
-      } finally {
-        if (alive) setSearching(false);
       }
+      if (alive) setSearching(false);
     }, DEBOUNCE_MS);
 
     return () => {

@@ -131,6 +131,9 @@ type Options = {
   onSearchReady?: (search: TerminalSearchController) => void;
 };
 
+/** Loaded on first use: only agent launches write at the prompt. */
+const loadPromptInjection = () => import('../lib/promptInjection');
+
 export function useGhosttyTerminalSession({
   leafId,
   backend,
@@ -247,7 +250,7 @@ export function useGhosttyTerminalSession({
       const expected = sessions.get(leafId);
       const pty = expected?.pty;
       if (!pty) return false;
-      const { writeAtShellPrompt } = await import('../lib/promptInjection');
+      const { writeAtShellPrompt } = await loadPromptInjection();
       const session = sessions.get(leafId);
       if (!session || session !== expected || session.pty !== pty) return false;
       return writeAtShellPrompt(

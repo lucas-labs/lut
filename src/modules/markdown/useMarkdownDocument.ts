@@ -53,20 +53,20 @@ export function useMarkdownDocument(path: string, visible: boolean): MarkdownSta
 
   useEffect(() => {
     let alive = true;
-    let requestId = 0;
+    const requests = { latest: 0 };
     const workspace = currentWorkspaceEnv();
     // The watcher reports canonical paths; the tab may hold an alias spelling.
     let canonical: string | null = null;
     staleRef.current = false;
 
     const read = () => {
-      const id = ++requestId;
+      const id = ++requests.latest;
       invoke<ReadResult>('fs_read_file', {
         path,
         workspace,
       })
         .then((res) => {
-          if (!alive || id !== requestId) return;
+          if (!alive || id !== requests.latest) return;
           const next = toStatus(res);
           setStatus((prev) =>
             prev.kind === 'ready' && next.kind === 'ready' && prev.content === next.content
@@ -75,7 +75,7 @@ export function useMarkdownDocument(path: string, visible: boolean): MarkdownSta
           );
         })
         .catch((e) => {
-          if (!alive || id !== requestId) return;
+          if (!alive || id !== requests.latest) return;
           setStatus((prev) =>
             prev.kind === 'loading' ? { kind: 'error', message: String(e) } : prev,
           );

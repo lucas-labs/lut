@@ -44,11 +44,9 @@ export function useAppCloseGuard() {
   const finishClose = useCallback(async () => {
     if (closing.current) return;
     closing.current = true;
-    try {
-      await closeWindow();
-    } finally {
+    await closeWindow().finally(() => {
       closing.current = false;
-    }
+    });
   }, [closeWindow]);
 
   useEffect(() => {

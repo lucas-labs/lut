@@ -2745,11 +2745,41 @@ size: M
 
 **Notes:** At E01-16 there were 105 such warnings (ai 20, settings 17, terminal 13, tabs 10, app 7, spaces 6, source-control 6, others ≤5). Many disappear with E05 (AI), E06 (blocks) and the E08/E09 refactors. If the remaining count is large, split this issue by module before starting.
 
+### E09-11 — Compile every component with the React Compiler
+
+```yaml
+id: E09-11
+depends-on: [E09-10]
+refs: [ADR-007, .docs/testing/baseline.md]
+covers: [ADR-007]
+type: task
+scope: ui
+size: M
+```
+
+**Goal:** The React Compiler compiles every component and hook. Today it skips some silently: syntax it does not
+support yet or a pattern it cannot prove safe makes it leave the whole function unoptimized, and the lint rules do not
+report that (found in E09-09: 23 functions, 32 errors).
+
+**Acceptance criteria:**
+
+- [ ] A test runs the compiler (the same Babel plugin and target as `vite.config.ts`) over `src/` and fails on any
+      function it does not compile, except an allowlist where each entry gives its reason (TanStack Virtual's
+      `useVirtualizer`).
+- [ ] The skipped functions compile: `try`/`finally` without `catch`, `import()` inside a component, `++` on a variable
+      a closure captures, conditional or optional expressions inside `try`/`catch`, a store hook used as an object
+      (`useX.getState()`) inside a component, and an `eslint-disable` of a React rule inside a component.
+- [ ] Each rewrite keeps the behaviour; existing tests pass unchanged.
+- [ ] `.docs/testing/baseline.md` records the check.
+
+**Verification:** `pnpm test`; `pnpm check-types`; `pnpm lint`; manual: tabs, splits, explorer, Git panel, settings and
+a background image behave as before.
+
 ### E09-09 — Close-out: App coordinator split
 
 ```yaml
 id: E09-09
-depends-on: [E09-01, E09-02, E09-03, E09-04, E09-05, E09-06, E09-07, E09-08, E09-10]
+depends-on: [E09-01, E09-02, E09-03, E09-04, E09-05, E09-06, E09-07, E09-08, E09-10, E09-11]
 refs: []
 covers: []
 type: closeout

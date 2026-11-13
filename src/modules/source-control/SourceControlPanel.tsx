@@ -178,11 +178,9 @@ function BranchDropdown({
       if (id !== requestRef.current) return;
       setError(String(e));
       setBranches([]);
-    } finally {
-      if (id === requestRef.current) {
-        setLoading(false);
-      }
     }
+    // Only this request's own result reaches here: a superseded one returned above.
+    setLoading(false);
   }, [repoRoot]);
 
   // The branches are listed each time the menu opens.
@@ -203,10 +201,9 @@ function BranchDropdown({
         onRefresh();
       } catch (e) {
         toast.error(String(e));
-      } finally {
-        checkoutInFlight.current = false;
-        setCheckingOut(false);
       }
+      checkoutInFlight.current = false;
+      setCheckingOut(false);
     },
     [repoRoot, onRefresh],
   );

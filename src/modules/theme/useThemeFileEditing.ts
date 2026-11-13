@@ -18,6 +18,25 @@ type Params = {
   openFileTab: (path: string) => void;
 };
 
+/** Applies a theme file the editor just saved; a file that does not parse leaves the theme as it was. */
+async function ingestThemeFile(path: string): Promise<void> {
+  try {
+    const res = await invoke<{ kind: string; content?: string }>('fs_read_file', {
+      path,
+      workspace: currentWorkspaceEnv(),
+    });
+    if (res.kind !== 'text' || typeof res.content !== 'string') return;
+    const parsed = parseThemeFile(res.content);
+    if (!parsed.ok) {
+      console.warn('[lut] theme not applied:', parsed.error);
+      return;
+    }
+    await saveCustomTheme(parsed.theme);
+  } catch (e) {
+    console.warn('[lut] theme ingest failed:', e);
+  }
+}
+
 /**
  * A custom theme is materialized to a real file and edited in the code editor.
  * Saving it re-ingests into the runtime store + applies live; the edit request
@@ -31,23 +50,7 @@ export function useThemeFileEditing({ openFileTab }: Params) {
       (event) => {
         if (event.payload.source !== 'editor') return;
         if (!isThemeFilePath(event.payload.path)) return;
-        void (async () => {
-          try {
-            const res = await invoke<{ kind: string; content?: string }>('fs_read_file', {
-              path: event.payload.path,
-              workspace: currentWorkspaceEnv(),
-            });
-            if (res.kind !== 'text' || typeof res.content !== 'string') return;
-            const parsed = parseThemeFile(res.content);
-            if (!parsed.ok) {
-              console.warn('[lut] theme not applied:', parsed.error);
-              return;
-            }
-            await saveCustomTheme(parsed.theme);
-          } catch (e) {
-            console.warn('[lut] theme ingest failed:', e);
-          }
-        })();
+        void ingestThemeFile(event.payload.path);
       },
     );
     return () => {

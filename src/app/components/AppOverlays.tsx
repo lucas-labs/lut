@@ -17,6 +17,9 @@ import { CloseDialogs } from './CloseDialogs';
 
 // Real-application benchmark driver (scripts/app-lab). `__LUT_BENCH__` is the literal `false`
 // in a normal build, so this is `null` and neither the import nor its chunk is emitted.
+/** The navigation store's actions; their identity never changes. */
+const nav = () => useNavigationStore.getState();
+
 const BenchBridge = __LUT_BENCH__ ? lazy(() => import('@/bench/BenchBridge')) : null;
 
 type Props = {
@@ -61,7 +64,7 @@ export function AppOverlays({
   closeGuards,
   appClose,
 }: Props) {
-  const store = useNavigationStore.getState();
+  const store = nav();
   // `target.side` (open to the side) has no host support yet: plain open.
   const openPaletteFile = useCallback(
     (path: string, target: OpenFileTarget) => {

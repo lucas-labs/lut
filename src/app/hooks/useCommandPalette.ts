@@ -68,6 +68,7 @@ export function useCommandPalette({
   switchSpace,
 }: CommandPaletteArgs) {
   const [open, setOpen] = useState(false);
+  const spaces = useSpaces((s) => s.spaces);
   const [initialMode, setInitialMode] = useState<PaletteInitialMode>('commands');
   const openCommandPalette = useCallback((mode: PaletteInitialMode = 'commands') => {
     setInitialMode(mode);
@@ -105,7 +106,7 @@ export function useCommandPalette({
             toggleHiddenFiles,
             openSettings: () => void openSettingsWindow(),
             openKeyboardShortcuts: () => void openSettingsWindow('shortcuts'),
-            spaces: useSpaces.getState().spaces,
+            spaces,
             activeSpaceId,
             openSpacesOverview: () => openSidebarView('spaces'),
             newSpace: () => void newSpace(),
@@ -137,6 +138,7 @@ export function useCommandPalette({
       toggleFullScreen,
       toggleHiddenFiles,
       openSidebarView,
+      spaces,
       activeSpaceId,
       newSpace,
       switchSpace,

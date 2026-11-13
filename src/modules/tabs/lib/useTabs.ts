@@ -12,10 +12,13 @@ const selectView = (s: NavigationState) => ({
  * The window's tabs as a hook: the navigation store's state plus its actions. Actions are the
  * store's own functions, so their identity never changes.
  */
+/** The navigation store's current state, for its actions. */
+const nav = () => useNavigationStore.getState();
+
 export function useTabs(initial?: Partial<TerminalTab>) {
   useState(() => useNavigationStore.getState().seedLaunchTab(initial));
   const view = useNavigationStore(useShallow(selectView));
-  const s = useNavigationStore.getState();
+  const s = nav();
   return {
     ...view,
     setActiveId: s.setActiveId,
