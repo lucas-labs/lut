@@ -8,6 +8,7 @@ import type {
   GitDiffResult,
   GitDiscardEntry,
   GitLogEntry,
+  GitLogScope,
   GitPanelSnapshot,
   GitPushResult,
   GitRepoInfo,
@@ -86,11 +87,18 @@ export const git = {
       setUpstream: options?.setUpstream ?? null,
       workspace: currentWorkspaceEnv(),
     }),
-  log: (repoRoot: string, options?: { limit?: number; beforeSha?: string }) =>
+  log: (repoRoot: string, options?: { limit?: number; skip?: number; scope?: GitLogScope }) =>
     invoke<GitLogEntry[]>('git_log', {
       repoRoot,
       limit: options?.limit ?? null,
-      beforeSha: options?.beforeSha ?? null,
+      skip: options?.skip ?? null,
+      scope: options?.scope ?? null,
+      workspace: currentWorkspaceEnv(),
+    }),
+  commitCount: (repoRoot: string, scope?: GitLogScope) =>
+    invoke<number>('git_commit_count', {
+      repoRoot,
+      scope: scope ?? null,
       workspace: currentWorkspaceEnv(),
     }),
   commitFiles: (repoRoot: string, sha: string) =>

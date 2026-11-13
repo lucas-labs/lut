@@ -2851,7 +2851,7 @@ Terax panel code.
 
 ```yaml
 id: E10-15
-depends-on: [E11-08]
+depends-on: [E11-08, E10-23]
 refs: [F6:3]
 covers: [ide-tools/git-history-ui]
 type: task
@@ -2863,8 +2863,12 @@ size: M
 
 **Acceptance criteria:**
 
-- [ ] Graph, commit list and commit details match the design; Terax views removed.
-- [ ] Behaviour: selecting a commit loads its details through `git-history/lib` (component test with the lib mocked).
+- [ ] Graph, commit list and commit details match the design; Terax views removed; the view keeps loading on first open
+      through `GitHistoryStackLazy`.
+- [ ] The toolbar has the branch scope (E10-23), the commit filter (the same one the title bar search drives), the
+      commit and branch counts and Fetch; rows show the commit's refs.
+- [ ] Behaviour: selecting a commit loads its files through the Git API, and changing the scope reloads the log with it
+      (component test with the API mocked).
 - [ ] A screenshot of the view is attached to the PR.
 
 **Verification:** `pnpm test src/modules/git-history`, `pnpm check-types`; manual: browse the history of a test repo.
@@ -3008,11 +3012,37 @@ size: M
 
 **Verification:** `pnpm test src/modules/preview`; manual: preview a local dev server.
 
+### E10-23 — Git log scope, refs and commit count
+
+```yaml
+id: E10-23
+depends-on: []
+refs: [F6:3]
+covers: [ide-tools/git-history-ui]
+type: task
+scope: be
+size: S
+```
+
+**Goal:** Give the history view (E10-15) what its design shows: the log of the current branch, of all branches or of
+one local branch, the refs pointing at each commit, and the number of commits in that scope.
+
+**Acceptance criteria:**
+
+- [ ] `git_log` takes a scope (current branch, all branches without stashes, one local branch) and pages with a skip
+      count, so later pages of an all-branches log keep the other branches' commits.
+- [ ] Each log entry carries its refs, each one marked as the checked-out branch (or detached HEAD), a local branch, a
+      remote branch or a tag; remote `HEAD` aliases are left out.
+- [ ] A command returns the number of commits in a scope.
+- [ ] Behaviour: integration tests over a fixture repo for each scope, the refs of a commit and paging.
+
+**Verification:** `cargo test --test git_operations`, `cargo clippy`.
+
 ### E10-22 — Close-out: secondary tools on the design
 
 ```yaml
 id: E10-22
-depends-on: [E10-13, E10-14, E10-15, E10-16, E10-17, E10-18, E10-19, E10-20, E10-21]
+depends-on: [E10-13, E10-14, E10-15, E10-16, E10-17, E10-18, E10-19, E10-20, E10-21, E10-23]
 refs: []
 covers: []
 type: closeout

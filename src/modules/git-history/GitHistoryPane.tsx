@@ -310,7 +310,7 @@ export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: P
     try {
       const entries = await git.log(repoRoot, {
         limit: PAGE_SIZE,
-        beforeSha: last.sha,
+        skip: commits.length,
       });
       setCommits((prev) => {
         const seen = new Set(prev.map((c) => c.sha));

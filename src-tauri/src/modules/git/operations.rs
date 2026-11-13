@@ -9,8 +9,9 @@ use crate::modules::git::process::{
 };
 use crate::modules::git::types::{
     DiscardEntry, GitBranchEntry, GitBranchListResult, GitCommitFileChange, GitCommitResult,
-    GitDiffContentResult, GitDiffResult, GitLogEntry, GitOutput, GitPanelSnapshot, GitPushResult,
-    GitRepoInfo, GitStatusSnapshot, TextSource, DEFAULT_TIMEOUT_SECS, NETWORK_TIMEOUT_SECS,
+    GitDiffContentResult, GitDiffResult, GitLogEntry, GitLogRef, GitLogRefKind, GitLogScope,
+    GitOutput, GitPanelSnapshot, GitPushResult, GitRepoInfo, GitStatusSnapshot, TextSource,
+    DEFAULT_TIMEOUT_SECS, NETWORK_TIMEOUT_SECS,
 };
 use crate::modules::git::untracked;
 use crate::modules::git::utils::{
@@ -554,56 +555,74 @@ fn set_upstream_args(remote: &str, branch: &str) -> Vec<String> {
         .collect()
 }
 
-const LOG_FORMAT: &str = "%H%x1f%an%x1f%ae%x1f%at%x1f%P%x1f%s";
+const LOG_FORMAT: &str = "%H%x1f%an%x1f%ae%x1f%at%x1f%P%x1f%D%x1f%s";
 const MAX_LOG_LIMIT: u32 = 200;
+
+/// The revisions a scope walks, followed by `--` so none of them can be read as a path. "All branches" is local and
+/// remote branches plus `HEAD` (a detached checkout); `--all` would also walk the stash.
+fn log_scope_args(scope: &GitLogScope) -> Result<Vec<String>> {
+    let mut args = match scope {
+        GitLogScope::Head => vec!["HEAD".to_string()],
+        GitLogScope::All => vec![
+            "--branches".to_string(),
+            "--remotes".to_string(),
+            "HEAD".to_string(),
+        ],
+        GitLogScope::Branch { name } => {
+            if name.is_empty() || name.starts_with('-') || name.chars().any(char::is_whitespace) {
+                return Err(GitError::InvalidPath(name.into()));
+            }
+            vec![format!("refs/heads/{name}")]
+        }
+    };
+    args.push("--".to_string());
+    Ok(args)
+}
+
+/// An unborn `HEAD` (a repository without commits) has no history to show; any other failure is an error.
+fn is_empty_history(stderr: &[u8]) -> bool {
+    let stderr = String::from_utf8_lossy(stderr).to_ascii_lowercase();
+    stderr.contains("does not have any commits yet")
+        || stderr.contains("bad default revision")
+        || stderr.contains("bad revision 'head'")
+        || stderr.contains("ambiguous argument 'head'")
+}
 
 pub fn log(
     registry: &WorkspaceRegistry,
     repo_root: &str,
     limit: u32,
-    before_sha: Option<&str>,
+    skip: u32,
+    scope: &GitLogScope,
     workspace: &WorkspaceEnv,
 ) -> Result<Vec<GitLogEntry>> {
     let repo_root = authorized_repo_root(registry, repo_root, workspace)?;
     ensure_git_available(&repo_root.workspace)?;
     let bounded = limit.clamp(1, MAX_LOG_LIMIT);
-    let count_arg = format!("--max-count={bounded}");
-    let format_arg = format!("--format={LOG_FORMAT}");
-    let cursor = match before_sha {
-        Some(sha) if !sha.is_empty() => {
-            if !sha_is_safe(sha) {
-                return Err(GitError::command("git log", "invalid cursor sha"));
-            }
-            Some(format!("{sha}^"))
-        }
-        _ => None,
-    };
-    let mut args: Vec<&OsStr> = vec![
-        OsStr::new("log"),
-        OsStr::new("--no-color"),
-        OsStr::new("--shortstat"),
-        OsStr::new(&count_arg),
-        OsStr::new(&format_arg),
-    ];
-    if let Some(spec) = cursor.as_deref() {
-        args.push(OsStr::new(spec));
-    }
+    let mut args: Vec<String> = [
+        "log",
+        "--no-color",
+        "--shortstat",
+        "--decorate=full",
+        &format!("--max-count={bounded}"),
+        &format!("--skip={skip}"),
+        &format!("--format={LOG_FORMAT}"),
+    ]
+    .into_iter()
+    .map(str::to_string)
+    .collect();
+    args.extend(log_scope_args(scope)?);
     let output = run_git(
         &repo_root.workspace,
         Some(&repo_root.git_path),
-        args,
+        &args,
         DEFAULT_TIMEOUT_SECS,
     )?;
     if output.timed_out {
         return Err(GitError::TimedOut("git log"));
     }
     if output.exit_code != Some(0) {
-        let stderr = String::from_utf8_lossy(&output.stderr).to_ascii_lowercase();
-        if stderr.contains("does not have any commits yet")
-            || stderr.contains("bad default revision")
-            || stderr.contains("unknown revision")
-            || stderr.contains("ambiguous argument 'head'")
-        {
+        if is_empty_history(&output.stderr) {
             return Ok(Vec::new());
         }
         return ensure_success(&output, "git log failed").map(|_| Vec::new());
@@ -611,7 +630,7 @@ pub fn log(
     let stdout = std::str::from_utf8(&output.stdout).unwrap_or("");
     let mut entries: Vec<GitLogEntry> = Vec::with_capacity(bounded as usize);
     // Lines we get back interleave:
-    //   <sha>\x1f<author>\x1f<email>\x1f<ts>\x1f<parents>\x1f<subject>
+    //   <sha>\x1f<author>\x1f<email>\x1f<ts>\x1f<parents>\x1f<refs>\x1f<subject>
     //   <blank>
     //    5 files changed, 12 insertions(+), 3 deletions(-)
     // Commits without diffstats (root commits, merges with no changes) just
@@ -623,7 +642,7 @@ pub fn log(
             continue;
         }
         if line.contains('\x1f') {
-            let mut fields = line.splitn(6, '\x1f');
+            let mut fields = line.splitn(7, '\x1f');
             let sha = fields.next().unwrap_or("").to_string();
             if !sha_is_safe(&sha) {
                 continue;
@@ -636,6 +655,7 @@ pub fn log(
                 .split_ascii_whitespace()
                 .map(|s| s.to_string())
                 .collect();
+            let refs = parse_log_refs(fields.next().unwrap_or(""));
             let subject = fields.next().unwrap_or("").to_string();
             let short_sha = sha.chars().take(7).collect::<String>();
             entries.push(GitLogEntry {
@@ -645,6 +665,7 @@ pub fn log(
                 author_email,
                 timestamp_secs: timestamp,
                 parents,
+                refs,
                 subject,
                 files_changed: 0,
                 insertions: 0,
@@ -662,6 +683,74 @@ pub fn log(
         }
     }
     Ok(entries)
+}
+
+/// The `%D` decoration of a commit under `--decorate=full`, e.g.
+/// `HEAD -> refs/heads/main, refs/remotes/origin/main, tag: refs/tags/v1`. Remote `HEAD` aliases and other refs
+/// (stash, notes) are left out; ref names cannot contain spaces, so `, ` separates them safely.
+fn parse_log_refs(decoration: &str) -> Vec<GitLogRef> {
+    let mut refs = Vec::new();
+    for part in decoration.split(", ").map(str::trim) {
+        let (name, kind) = if part == "HEAD" {
+            ("HEAD", GitLogRefKind::Head)
+        } else if let Some(target) = part.strip_prefix("HEAD -> ") {
+            (
+                target.strip_prefix("refs/heads/").unwrap_or(target),
+                GitLogRefKind::Head,
+            )
+        } else if let Some(tag) = part.strip_prefix("tag: ") {
+            (
+                tag.strip_prefix("refs/tags/").unwrap_or(tag),
+                GitLogRefKind::Tag,
+            )
+        } else if let Some(branch) = part.strip_prefix("refs/heads/") {
+            (branch, GitLogRefKind::Branch)
+        } else if let Some(remote) = part.strip_prefix("refs/remotes/") {
+            if remote.ends_with("/HEAD") {
+                continue;
+            }
+            (remote, GitLogRefKind::Remote)
+        } else {
+            continue;
+        };
+        refs.push(GitLogRef {
+            name: name.to_string(),
+            kind,
+        });
+    }
+    refs
+}
+
+/// How many commits the history view's scope holds (its toolbar count).
+pub fn commit_count(
+    registry: &WorkspaceRegistry,
+    repo_root: &str,
+    scope: &GitLogScope,
+    workspace: &WorkspaceEnv,
+) -> Result<u32> {
+    let repo_root = authorized_repo_root(registry, repo_root, workspace)?;
+    ensure_git_available(&repo_root.workspace)?;
+    let mut args = vec!["rev-list".to_string(), "--count".to_string()];
+    args.extend(log_scope_args(scope)?);
+    let output = run_git(
+        &repo_root.workspace,
+        Some(&repo_root.git_path),
+        &args,
+        DEFAULT_TIMEOUT_SECS,
+    )?;
+    if output.timed_out {
+        return Err(GitError::TimedOut("git rev-list"));
+    }
+    if output.exit_code != Some(0) {
+        if is_empty_history(&output.stderr) {
+            return Ok(0);
+        }
+        return ensure_success(&output, "git rev-list failed").map(|_| 0);
+    }
+    Ok(String::from_utf8_lossy(&output.stdout)
+        .trim()
+        .parse::<u32>()
+        .unwrap_or(0))
 }
 
 fn parse_shortstat(tail: &str) -> (u32, u32, u32) {
