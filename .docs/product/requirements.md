@@ -75,13 +75,13 @@ columns are out of date.
 | ------ | -------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------- | -------------- | ----- |
 | UX-001 | P0       | Terminal ocupa el área central y predominante                                         | E12-08                                                  |                |       |
 | UX-002 | P0       | Navegación de tabs vertical, horizontal, o auto si se agrega más adelante             | E11-02, E12-05                                          |                |       |
-| UX-003 | P0       | Sidebar de proyectos opcional, colapsable y con ancho persistido                      | E11-05, E18-01                                          |                |       |
+| UX-003 | P0       | Sidebar de proyectos opcional, colapsable y con ancho persistido                      | E11-05, E18-02                                          |                |       |
 | UX-004 | P0       | Temas claros/oscuros y temas personalizados mediante tokens                           | E11-03, E13-05, E13-08                                  |                |       |
 | UX-005 | P0       | Fuentes configurables y soporte de Nerd Fonts/powerline cuando el renderer lo permita | E11-03, E13-04                                          |                |       |
 | UX-006 | P1       | UI minimalista, densidad compacta/normal, iconografía coherente                       | E22-07                                                  |                |       |
 | UX-007 | P1       | Menús contextuales para tabs/panes/proyectos                                          | E11-07, E22-04, E22-05                                  |                |       |
 | UX-008 | P1       | Command palette orientado a acciones de terminal/proyectos                            | E11-07, E22-02                                          |                |       |
-| UX-009 | P1       | Paneles secundarios opcionales: explorer, Git, diff, logs de agentes                  | E10-12, E11-08                                          |                |       |
+| UX-009 | P1       | Paneles secundarios opcionales: explorer, Git, diff, logs de agentes                  | E11-08, E12-08                                          |                |       |
 | UX-010 | P1       | Estados de carga/error/falta de permisos accesibles y no intrusivos                   | E22-10                                                  |                |       |
 | UX-011 | P1       | Layout compatible con DPI, tamaño mínimo, pantallas de alta densidad y teclado        | E22-11, E22-12, E22-13, E22-14                          |                |       |
 | UX-012 | P2       | Interfaz visual de edición de layout y gestión de ventanas                            | Not planned: P2: visual layout/window editor (post-v1). |                |       |

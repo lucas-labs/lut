@@ -2789,304 +2789,23 @@ size: XS
 
 **Goal:** Verify every item of this epic is delivered (validator coverage), run the epic's verification commands, and add any discovered work to plan.md (or state 'nothing new').
 
-## E10 — Secondary tools on demand (editor, Git, explorer, previews)
+## E10 — Secondary tools on the design (Git, explorer, editor, previews)
 
 ```yaml
 id: E10
-depends-on: [E08, E09, E01, E02, E05, E13]
-refs: [UX-009, 5.10:12, 6.2:8, 10.3:4, F2:6, F6:3, F6:gate, .docs/plan/analysis/ide-tools.md, .docs/plan/analysis/decisions.md]
-```
-
-Every IDE-like tool (editor, LSP, explorer, Git panel, history, diff, markdown and web preview, palette file search) is kept
-but becomes a lazy, on-demand capability (ContentTab/ToolWindow) hidden until invoked. Terminal links and the `lut <file>`
-CLI open files through an injected navigator instead of importing the editor/LSP modules.
-
-### E10-01 — Move the open-file navigator out of the LSP module
-
-```yaml
-id: E10-01
-depends-on: [E09-08]
-refs: [F2:6, .docs/plan/analysis/ide-tools.md]
-covers: [ide-tools/file-navigator]
-type: task
-scope: ui
-size: S
-```
-
-**Goal:** Terminal link activation and the app must not depend on `@/modules/lsp` to open a file. Pure move, no behaviour change.
-
-**Acceptance criteria:**
-
-- [ ] `src/modules/lsp/lib/navigator.ts` moved to a neutral module (e.g. `src/modules/workspace/navigator.ts`); the app
-      coordinator and `src/modules/terminal/lib/terminalLinks.ts` (+ test mock) import the new path.
-- [ ] No import of `@/modules/lsp` remains in `src/modules/terminal/`.
-- [ ] No behaviour change.
-
-**Verification:** `pnpm test src/modules/terminal/lib/terminalLinks.test.ts`, `pnpm check-types`; manual: ctrl-click a
-`src/foo.ts:10` path in the terminal opens it in the editor as before.
-
-**Notes:** navigator registered at App.tsx:1395; used at terminalLinks.ts:17,175,202.
-
-### E10-02 — Inject the file opener into terminal links with an OS-opener fallback
-
-```yaml
-id: E10-02
-depends-on: [E10-01]
-refs: [14.1:9, 5.10:12, .docs/plan/analysis/terminal.md]
-covers: [terminal/links, 14.1:9]
-type: task
-scope: ui
-size: S
-```
-
-**Goal:** Terminal file links call an injected "open path" navigator; when no editor capability is registered, file
-links fall back to the OS default app/reveal, keeping the existing path protections.
-
-**Acceptance criteria:**
-
-- [ ] `terminalLinks.ts` receives the navigator through injection, with no static import of the editor.
-- [ ] With no editor registered, `file:line` links open via the OS opener after the existing confirm/safety rules.
-- [ ] Path protections (`fs_stat`/`fs_canonicalize` checks, confirm rules) unchanged and covered by tests, including a
-      link outside the cwd and a non-existent path.
-- [ ] The link guard in `useGhosttyTerminalSession.ts` has no import from `@/modules/spaces`.
-
-**Verification:** `pnpm test src/modules/terminal/lib/terminalLinks.test.ts src/modules/terminal/ghostty/core`,
-`pnpm check-types`; manual: ctrl-click a path with the editor capability disabled opens the OS app.
-
-### E10-03 — Introduce the optional-tool capability registry (ContentTab / ToolWindow)
-
-```yaml
-id: E10-03
-depends-on: [E08-09, E09-08]
-refs: [10.3:4, 6.2:8, 10.2:5, .docs/plan/analysis/ide-tools.md]
-covers: [10.3:4, 6.2:8]
-type: task
-scope: ui
-size: M
-```
-
-**Goal:** Add a non-visual registry where secondary tools declare themselves as `ContentTab` or `ToolWindow` capabilities
-with a lazy loader (dynamic `import()`), so the workspace surface mounts them only when invoked.
-
-**Acceptance criteria:**
-
-- [ ] Registry API: register(id, kind, load), open(id, args), isAvailable(id); loaders are dynamic imports only.
-- [ ] The workspace surface renders tool tab kinds through the registry instead of static imports (no visual change).
-- [ ] The file navigator from E10-01 is resolved through the registry (the editor capability provides `openFile`).
-- [ ] Unit tests: a registered tool's module is not imported until `open` is called.
-
-**Verification:** `pnpm test`, `pnpm check-types`; manual: open editor, diff, history, markdown and preview tabs as before.
-
-### E10-04 — Register the editor and LSP as a lazy capability
-
-```yaml
-id: E10-04
-depends-on: [E10-03, E05-08, E05-09]
-refs: [F2:6, 5.10:12, .docs/plan/analysis/ide-tools.md]
-covers: [ide-tools/editor-core, ide-tools/lsp]
-type: task
-scope: ui
-size: M
-```
-
-**Goal:** The editor is a ContentTab capability loaded on first use; LSP code, diagnostics and language servers load and
-start only after an editor tab is opened.
-
-**Acceptance criteria:**
-
-- [ ] `src/modules/editor` and `src/modules/lsp` are reachable only through the registry loader (no static import from
-      the app shell, status bar or settings at startup).
-- [ ] No language server process is spawned and no LSP state is initialised until an editor tab is opened.
-- [ ] Closing the last editor tab leaves the terminal unaffected.
-
-**Verification:** `pnpm test`, `pnpm check-types`, `cargo test --manifest-path src-tauri/Cargo.toml --locked`; manual:
-cold start shows no language server process; opening a `.ts` file starts it.
-
-### E10-05 — Register the Git diff view as a lazy capability
-
-```yaml
-id: E10-05
-depends-on: [E10-03]
-refs: [6.2:8, F6:3]
-covers: [ide-tools/editor-git-diff]
-type: task
-scope: ui
-size: S
-```
-
-**Goal:** `GitDiffStack`/`GitDiffPane` and the diff cache load only when a diff is requested.
-
-**Acceptance criteria:**
-
-- [ ] Diff opens through the registry; `GitDiffStackLazy` replaced by the registry loader.
-- [ ] `diffCache` is not initialised at startup.
-
-**Verification:** `pnpm test`, `pnpm check-types`; manual: open a diff from the Git panel.
-
-### E10-06 — Make source control and Git history lazy capabilities
-
-```yaml
-id: E10-06
-depends-on: [E10-03, E02-04, E05-10]
-refs: [UX-009, F6:3, 10.2:6]
-covers: [ide-tools/source-control-logic, ide-tools/git-history-logic]
-type: task
-scope: ui
-size: M
-```
-
-**Goal:** The Git panel (ToolWindow) and Git history (ContentTab) are registry capabilities loaded on demand. E07-04 already
-hid them from startup; this issue only switches them to registry loaders.
-
-**Acceptance criteria:**
-
-- [ ] Source-control hooks and `git-history/lib` are reached only through registry loaders.
-- [ ] The sidebar no longer imports source control directly (10.2:6); it is opened via command/shortcut through the registry.
-- [ ] `git_watch` keeps refreshing the Git panel when it is open.
-
-**Verification:** `pnpm test`, `pnpm check-types`; manual: cold start mounts no source-control component; open the Git
-panel by command and stage/commit on a test repo.
-
-### E10-07 — Move the explorer file watcher to a neutral module
-
-```yaml
-id: E10-07
-depends-on: []
+depends-on: [E11, E05]
 refs: [UX-009, .docs/plan/analysis/ide-tools.md]
-covers: [ide-tools/explorer-logic]
-type: task
-scope: ui
-size: XS
 ```
 
-**Goal:** Pure move: `src/modules/explorer/lib/watch.ts` moves to a neutral module (e.g. `src/lib/fsWatch.ts`) because the editor and markdown preview also use it, so they stop importing the explorer.
-
-**Acceptance criteria:**
-
-- [ ] `watch.ts` (and its test, if any) moved unchanged; explorer, editor and markdown import it from the new path.
-- [ ] No behaviour change.
-
-**Verification:** `pnpm check-types && pnpm test`; `rg "explorer/lib/watch" src` is empty.
-
-### E10-08 — Make the explorer a lazy capability off the default sidebar
-
-```yaml
-id: E10-08
-depends-on: [E10-03, E10-07]
-refs: [UX-009, 10.2:6]
-covers: [ide-tools/explorer-logic]
-type: task
-scope: ui
-size: M
-```
-
-**Goal:** The explorer is a ToolWindow capability loaded on demand. E07-04 already hid it from startup; this issue only
-switches it to a registry loader and removes it from the sidebar's direct imports.
-
-**Acceptance criteria:**
-
-- [ ] Explorer hooks/libs are loaded only via the registry; the sidebar no longer imports the explorer.
-- [ ] Paste/drop/batch-move behaviour unchanged when the explorer is open.
-
-**Verification:** `pnpm test`, `pnpm check-types`; manual: app starts with no explorer mounted; open it by command.
-
-### E10-09 — Make markdown and web preview lazy ContentTab capabilities
-
-```yaml
-id: E10-09
-depends-on: [E10-03]
-refs: [10.3:4, UX-009]
-covers: [ide-tools/markdown-logic, ide-tools/preview-logic]
-type: task
-scope: ui
-size: S
-```
-
-**Goal:** Markdown preview and web preview tabs load through the registry only when opened.
-
-**Acceptance criteria:**
-
-- [ ] `useMarkdownDocument`/`markdown/lib` and `preview/lib` are reached only via registry loaders.
-- [ ] `previewUrl.ts` still blocks app-internal hosts; `devFramePolicy.test.ts` passes.
-
-**Verification:** `pnpm test src/modules/preview src/modules/markdown`, `pnpm check-types`.
-
-### E10-10 — Route CLI open/identify through the capability registry
-
-```yaml
-id: E10-10
-depends-on: [E10-04, E02-12]
-refs: [.docs/plan/analysis/agents.md]
-covers: [agents/control-frontend-bridge]
-type: task
-scope: ui
-size: S
-```
-
-**Goal:** `useControlBridge` answers the `lut <file>` `open` request by opening the editor capability through the registry
-(lazy-loading it) and keeps `identify`; the user-visible error says lut.
-
-**Acceptance criteria:**
-
-- [ ] `open` resolves the caller pane context and opens the file via the registry; no static editor import.
-- [ ] If the editor capability fails to load, the CLI receives a clear error (no hang).
-- [ ] "Terax could not create an editor tab" (useControlBridge.ts:140) replaced with a lut message.
-- [ ] `useControlBridge.test.ts` / `context.test.ts` updated.
-
-**Verification:** `pnpm test src/modules/control`; manual: `lut README.md` in a lut pane opens it in the editor.
-
-### E10-11 — Enforce on-demand loading with startup and tab-switch tests
-
-```yaml
-id: E10-11
-depends-on: [E10-02, E10-04, E10-05, E10-06, E10-08, E10-09, E10-10, E01-11, E01-12]
-refs: [F6:gate, 16:23, 13.5:10, 5.10:12, F2:6]
-covers: [F2:6, 5.10:12, F6:gate, 16:23, 13.5:10]
-type: task
-scope: ui
-size: M
-```
-
-**Goal:** Prove that no secondary tool is needed to open a terminal and that none is loaded or mounted at startup or on tab
-switches while closed.
-
-**Acceptance criteria:**
-
-- [ ] `src/app/eager-budget.test.ts` (or equivalent) asserts the startup bundle has no editor/LSP/explorer/git/markdown/
-      preview chunk.
-- [ ] A test switches tabs with all tools closed and asserts none of their modules is mounted (13.5:10).
-- [ ] Startup time and memory with no tools open are measured and compared with the Phase 0 baseline; result recorded in
-      the PR.
-
-**Verification:** `pnpm test src/app/eager-budget.test.ts`, `pnpm build && pnpm size`; manual: cold start shows only a terminal.
-
-### E10-12 — Add on-demand entry points for secondary tools
-
-```yaml
-id: E10-12
-depends-on: [E10-03, E11-08]
-refs: [UX-009, F6:3, 10.2:5]
-covers: [UX-009, F6:3]
-type: task
-scope: ui
-size: M
-```
-
-**Goal:** Implement the designed invocation of each secondary tool (commands, shortcuts, buttons, ToolWindow/ContentTab
-placement) per E11-08.
-
-**Acceptance criteria:**
-
-- [ ] Each tool (editor, Git panel, history, diff, explorer, markdown, web preview) is reachable as designed.
-- [ ] Nothing is visible by default.
-
-**Verification:** `pnpm test`, `pnpm check-types`; manual: open and close each tool from its entry point.
+The IDE-like tools (Git panel and history, explorer, file icons, editor, markdown and web preview) take lut's design.
+They stay where they are: Files and Git in the sidebar, the rest as tabs, shown only when opened. Loading their code only
+when they are first opened is not planned here; E26-04 analyses it.
 
 ### E10-13 — Rebuild the Git panel changes view on lut's design
 
 ```yaml
 id: E10-13
-depends-on: [E10-06, E11-08]
+depends-on: [E11-08]
 refs: [UX-009, F6:3]
 covers: [ide-tools/source-control-ui]
 type: task
@@ -3099,8 +2818,7 @@ size: M
 **Acceptance criteria:**
 
 - [ ] Change list and stage/unstage/discard match the design.
-- [ ] Not mounted at startup.
-- [ ] Behaviour: stage/unstage/discard call the existing source-control hooks (component test with mocked hooks); the startup import test of E10-11 still shows no source-control chunk.
+- [ ] Behaviour: stage/unstage/discard call the existing source-control hooks (component test with mocked hooks).
 - [ ] A screenshot of the view is attached to the PR.
 
 **Verification:** `pnpm test`; manual: stage/unstage/discard on a test repo.
@@ -3133,7 +2851,7 @@ Terax panel code.
 
 ```yaml
 id: E10-15
-depends-on: [E10-06, E11-08]
+depends-on: [E11-08]
 refs: [F6:3]
 covers: [ide-tools/git-history-ui]
 type: task
@@ -3146,7 +2864,7 @@ size: M
 **Acceptance criteria:**
 
 - [ ] Graph, commit list and commit details match the design; Terax views removed.
-- [ ] Behaviour: selecting a commit loads its details through `git-history/lib` (component test with the lib mocked); the view is not imported at startup.
+- [ ] Behaviour: selecting a commit loads its details through `git-history/lib` (component test with the lib mocked).
 - [ ] A screenshot of the view is attached to the PR.
 
 **Verification:** `pnpm test src/modules/git-history`, `pnpm check-types`; manual: browse the history of a test repo.
@@ -3155,7 +2873,7 @@ size: M
 
 ```yaml
 id: E10-16
-depends-on: [E10-08, E11-08]
+depends-on: [E11-08]
 refs: [UX-009, 10.2:6]
 covers: [ide-tools/explorer-ui]
 type: task
@@ -3168,7 +2886,7 @@ size: M
 **Acceptance criteria:**
 
 - [ ] Tree navigation, opening files and drag-a-path-into-terminal work as designed.
-- [ ] Behaviour: expanding a folder calls the existing tree loader once per folder (component test); the explorer is not imported at startup.
+- [ ] Behaviour: expanding a folder calls the existing tree loader once per folder (component test).
 - [ ] A screenshot of the view is attached to the PR.
 
 **Verification:** `pnpm test src/modules/explorer`; manual: browse and open files.
@@ -3226,7 +2944,7 @@ size: M
 
 ```yaml
 id: E10-19
-depends-on: [E10-04, E11-08]
+depends-on: [E11-08]
 refs: [UX-004]
 covers: [ide-tools/editor-themes]
 type: task
@@ -3250,7 +2968,7 @@ size: M
 
 ```yaml
 id: E10-20
-depends-on: [E10-09, E11-08]
+depends-on: [E11-08]
 refs: [UX-009]
 covers: [ide-tools/markdown-ui]
 type: task
@@ -3263,7 +2981,7 @@ size: M
 **Acceptance criteria:**
 
 - [ ] Rendering, links and local images (through the asset policy) work as designed; Terax views removed.
-- [ ] Behaviour: relative image paths resolve through the asset policy (component test); the preview is not imported at startup.
+- [ ] Behaviour: relative image paths resolve through the asset policy (component test).
 - [ ] A screenshot of the view is attached to the PR.
 
 **Verification:** `pnpm test src/modules/markdown`; manual: preview a README with images.
@@ -3272,7 +2990,7 @@ size: M
 
 ```yaml
 id: E10-21
-depends-on: [E10-09, E11-08]
+depends-on: [E11-08]
 refs: [10.3:4]
 covers: [ide-tools/preview-ui]
 type: task
@@ -3290,11 +3008,11 @@ size: M
 
 **Verification:** `pnpm test src/modules/preview`; manual: preview a local dev server.
 
-### E10-22 — Close-out: secondary tools on demand
+### E10-22 — Close-out: secondary tools on the design
 
 ```yaml
 id: E10-22
-depends-on: [E10-01, E10-02, E10-03, E10-04, E10-05, E10-06, E10-07, E10-08, E10-09, E10-10, E10-11, E10-12, E10-13, E10-14, E10-15, E10-16, E10-17, E10-18, E10-19, E10-20, E10-21]
+depends-on: [E10-13, E10-14, E10-15, E10-16, E10-17, E10-18, E10-19, E10-20, E10-21]
 refs: []
 covers: []
 type: closeout
@@ -3507,7 +3225,7 @@ any discovered work to plan.md (or state 'nothing new').
 
 ```yaml
 id: E12
-depends-on: [E11, E08, E09, E07, E10]
+depends-on: [E11, E08, E09, E07]
 refs: [ADR-002, 10.2, UX-001, UX-002, .docs/plan/analysis/app-shell.md]
 ```
 
@@ -3712,7 +3430,7 @@ size: S
 id: E12-08
 depends-on: [E11-02, E11-08, E12-03, E12-04, E12-06]
 refs: [UX-001, 5.10:8, 16:22, 10.2:5, .docs/plan/analysis/app-shell.md]
-covers: [app-shell/workspace-surface, UX-001, 5.10:8, 16:22]
+covers: [app-shell/workspace-surface, UX-001, 5.10:8, 16:22, 16:23, UX-009, F6:3]
 type: task
 scope: ui
 size: M
@@ -3729,8 +3447,8 @@ them.
 
 **Verification:** manual on Windows: the default window shows the terminal occupying the central area.
 
-**Notes:** delivered by E12-03 to E12-06 and E12-10. Loading and mounting secondary tools only on demand is E10's
-(E10-11).
+**Notes:** delivered by E12-03 to E12-06 and E12-10. Loading the secondary tools' code only when first opened is
+analysed by E26-04.
 
 ### E12-10 — Add focus mode (hide all chrome)
 
@@ -5451,47 +5169,51 @@ size: XS
 
 ```yaml
 id: E18
-depends-on: [E11, E16, E17, E10, E13]
+depends-on: [E11, E16, E17, E13]
 refs: [UX-003, 10.2, 8.5, F4, .docs/plan/analysis/app-shell.md, .docs/plan/analysis/state-settings.md]
 ```
 
 Projects sidebar navigator, archive, relaunch consent modal and restore error surfaces, built on the user's E11 designs.
 
-### E18-01 — Retarget sidebar panel state from explorer/source-control to projects
+### E18-09 — Spaces sidebar view on the design
 
 ```yaml
-id: E18-01
-depends-on: [E10-06, E10-08, E10-12, E11-05]
-refs: [UX-003, 10.2:6, .docs/plan/analysis/app-shell.md]
-covers: [app-shell/sidebar-logic, UX-003]
+id: E18-09
+depends-on: [E11-05]
+refs: [.docs/plan/analysis/app-shell.md]
+covers: [app-shell/sidebar-ui]
 type: task
 scope: ui
 size: S
 ```
 
-**Goal:** Retarget the sidebar state hook so the sidebar hosts the projects view; explorer and source control are on-demand tools (decision 2). This is a visible change: explorer and Source Control leave the sidebar, so it lands only after their on-demand entry points exist (E10-06, E10-08, E10-12).
+**Goal:** The Spaces view of the sidebar takes the design's look ("Main window" boards, Spaces view) over today's spaces
+store. Look only: the projects model and its actions come with E18-02.
 
 **Acceptance criteria:**
 
-- [ ] `src/modules/sidebar/types.ts` no longer has `explorer`/`source-control` as permanent sidebar views; a `spaces` view exists (added by E07-06; E18-02 renders the navigator in it).
-- [ ] Explorer and Git panel stay reachable through the E10-12 entry points (command, shortcut, button).
-- [ ] Collapsed state and width persistence (`useSidebarPanel.ts:14-60`) keep working; a stored `explorer`/`source-control` active view loads as `projects`; tests updated.
+- [ ] Header (view title and the new-space button), rows (height, active row, name) and the Spaces / Files / Git
+      switcher follow the design.
+- [ ] What the view does today keeps working: switch, create, rename, delete and reorder spaces, open a tab in a
+      space, move tabs between spaces.
+- [ ] Component test for the active row and the actions above.
 
-**Verification:** `pnpm test` (`useSidebarPanel.test.ts`); `pnpm typecheck`; manual: open the explorer and the Git panel from their entry points after the change.
+**Verification:** `pnpm test`; manual on Windows: both tab orientations, sidebar open and closed.
 
 ### E18-02 — Implement the projects sidebar navigator
 
 ```yaml
 id: E18-02
-depends-on: [E18-01, E11-05, E16-04, E17-09, E16-13]
+depends-on: [E18-09, E11-05, E16-04, E17-09, E16-13]
 refs: [10.2:6, PRJ-017, .docs/plan/analysis/state-settings.md]
-covers: [app-shell/sidebar-ui, state-settings/spaces-ui, 10.2:6]
+covers: [app-shell/sidebar-logic, state-settings/spaces-ui, 10.2:6, UX-003]
 type: task
 scope: ui
 size: M
 ```
 
-**Goal:** Replace `SidebarRail` and `SpaceSwitcher` with the projects navigator designed in E11-05.
+**Goal:** The Spaces view (E18-09) becomes the projects navigator: it lists projects and acts on them through the E17
+store actions, keeping the E18-09 look.
 
 **Acceptance criteria:**
 
@@ -5499,7 +5221,6 @@ size: M
 - [ ] Create, rename, reorder and remove go through the projects store; pinning and unpinning the Space's folder
       (E16-13) stays available from the navigator.
 - [ ] `SidebarRail.tsx`, `SpaceSwitcher.tsx`, `SpaceAvatar.tsx` and `src/modules/projects/components/` (the former `spaces/components/`, renamed by E16-02) are removed or replaced.
-- [ ] Matches the E11-05 design.
 
 **Verification:** `pnpm test`; `pnpm typecheck`; manual: open two projects from the sidebar, collapse/resize, restart → width and collapsed state persisted.
 
@@ -5594,7 +5315,7 @@ size: S
 
 ```yaml
 id: E18-08
-depends-on: [E18-01, E18-02, E18-03, E18-05, E18-06, E18-07]
+depends-on: [E18-09, E18-02, E18-03, E18-05, E18-06, E18-07]
 refs: []
 type: closeout
 scope: none
@@ -6066,7 +5787,7 @@ size: M
 - [ ] Event lists follow the E19-02 table; undocumented events are never installed (IR-80); tool/subagent events stay off until a consumer asks.
 - [ ] Plan returns a textual diff per file; apply refuses if the file changed since the plan.
 - [ ] Uninstall per agent removes only lut-owned groups; mixed and third-party groups preserved byte-for-byte outside lut groups.
-- [ ] Consent (IR-75) covers writing hook commands that call `lut-cli` into agent configs; the pane launcher `lut` (open/identify, decision 21c, used by E10-10) stays on PATH in lut panes by default and is not gated by hook consent.
+- [ ] Consent (IR-75) covers writing hook commands that call `lut-cli` into agent configs; the pane launcher `lut` (open/identify, decision 21c, used by `lut <file>`) stays on PATH in lut panes by default and is not gated by hook consent.
 - [ ] Tests for Claude, Codex and Gemini configs with third-party hooks.
 
 **Verification:** `cargo test --locked --workspace` in `src-tauri`.
@@ -7258,11 +6979,37 @@ buttons, and on macOS the native traffic lights neither sit in the 28px bar nor 
 
 **Verification:** `pnpm test`; `cargo test`; manual on macOS and Linux as listed.
 
+### E26-04 — Analyse loading the secondary tools only when opened
+
+```yaml
+id: E26-04
+depends-on: []
+refs: [.docs/plan/analysis/ide-tools.md]
+covers: [6.2:8, 10.3:4, F2:6, 5.10:12, F6:gate, 13.5:10, 14.1:9, ide-tools/file-navigator, terminal/links, ide-tools/editor-core, ide-tools/lsp, ide-tools/editor-git-diff, ide-tools/source-control-logic, ide-tools/git-history-logic, ide-tools/explorer-logic, ide-tools/markdown-logic, ide-tools/preview-logic, agents/control-frontend-bridge]
+type: spike
+scope: ui
+size: S
+```
+
+**Goal:** Decide, with numbers, whether the editor, LSP, Git, explorer and previews should load their code only when
+first opened. Today it all loads at startup. Doing it costs a delay between opening a tool and seeing it, and a registry
+the terminal opens files through; the gain (startup time and memory) is unmeasured.
+
+**Acceptance criteria:**
+
+- [ ] Startup time, memory and startup bundle size measured on Windows as they are today, and with the secondary tools
+      split out of the startup bundle.
+- [ ] The first-open delay of each tool measured when loaded on demand, and with preloading while idle.
+- [ ] Recommendation recorded here: leave it as it is, or the issues to plan (what loads lazily, how terminal links and
+      `lut <file>` open files without the editor loaded).
+
+**Verification:** the measurements and the recommendation in the issue.
+
 ### E26-03 — Close-out: accessory improvements
 
 ```yaml
 id: E26-03
-depends-on: [E26-01, E26-02]
+depends-on: [E26-01, E26-02, E26-04]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
