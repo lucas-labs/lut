@@ -17,7 +17,14 @@ const SHIFT_MASK: CSSProperties = {
 /** One key of a shortcut as it reads on screen: off macOS, Ctrl is the caret terminals print (`^C`) and Shift its arrow. */
 export function ShortcutKey({ token }: { token: string }) {
   if (IS_MAC) return token;
-  if (token === 'Ctrl') return '^';
+  if (token === 'Ctrl') {
+    return (
+      <>
+        <span aria-hidden>^</span>
+        <span className="sr-only">Ctrl</span>
+      </>
+    );
+  }
   if (token === 'Shift') {
     return (
       <>

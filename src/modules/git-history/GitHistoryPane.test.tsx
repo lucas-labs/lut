@@ -54,6 +54,8 @@ const api = vi.hoisted(() => ({
 }));
 vi.mock('@/modules/git', () => ({ git: api }));
 vi.mock('@tauri-apps/plugin-opener', () => ({ openUrl: vi.fn() }));
+const toast = vi.hoisted(() => ({ error: vi.fn() }));
+vi.mock('sonner', () => ({ toast }));
 // happy-dom lays nothing out, so the virtual list would render no rows: render them all.
 vi.mock('@tanstack/react-virtual', () => ({
   useVirtualizer: ({ count, getItemKey }: { count: number; getItemKey: (i: number) => string | number }) => ({
@@ -176,5 +178,13 @@ describe('GitHistoryPane', () => {
     expect(api.fetch).toHaveBeenCalledWith('/repo');
     expect(api.log).toHaveBeenCalledTimes(2);
     expect(api.listBranches).toHaveBeenCalledTimes(2);
+  });
+
+  it('reloads the log after a failed Fetch too, and reports the failure', async () => {
+    api.fetch.mockRejectedValueOnce(new Error('no remote'));
+    await render();
+    await act(async () => button('Fetch')?.click());
+    expect(toast.error).toHaveBeenCalledWith('Fetch failed', { description: 'no remote' });
+    expect(api.log).toHaveBeenCalledTimes(2);
   });
 });

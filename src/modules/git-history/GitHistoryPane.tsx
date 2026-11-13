@@ -70,6 +70,7 @@ export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: P
     totalCount,
     loadMore,
     reload,
+    retry,
   } = useCommitLog(repoRoot, scope);
 
   const [searchInput, setSearchInput] = useState('');
@@ -108,11 +109,12 @@ export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: P
     setFetching(true);
     try {
       await git.fetch(repoRoot);
-      reload();
-      setBranchesToken((t) => t + 1);
     } catch (err) {
       toast.error('Fetch failed', { description: normalizeError(err) });
     }
+    // Reload either way: without a remote or a network, Fetch is still how the view picks up local commits.
+    reload();
+    setBranchesToken((t) => t + 1);
     setFetching(false);
   }, [reload, repoRoot]);
 
@@ -310,7 +312,7 @@ export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: P
         <CenterPlaceholder>
           <div className="text-[13px] font-medium">Could not load history</div>
           <div className="max-w-md text-[11px] leading-relaxed text-muted-foreground">{error ?? 'Unknown error'}</div>
-          <Button size="sm" onClick={reload}>
+          <Button size="sm" onClick={retry}>
             Retry
           </Button>
         </CenterPlaceholder>
@@ -379,7 +381,7 @@ export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: P
             {loadStatus === 'error' ? (
               <div className="flex items-center justify-center gap-2 py-3 text-xs text-destructive">
                 {error ?? 'Failed to load more'}
-                <Button size="xs" variant="ghost" onClick={() => void loadMore()}>
+                <Button size="xs" variant="ghost" onClick={retry}>
                   Retry
                 </Button>
               </div>

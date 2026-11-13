@@ -13,6 +13,13 @@ type LogState = {
   error: string | null;
   endReached: boolean;
   totalCount: number | null;
+  /**
+   * How many commits git has returned for this scope so far, the next page's skip. It counts the duplicates dropped
+   * from `commits` too: commits added on top shift git's list, and skipping only the shown ones would ask for them again.
+   */
+  offset: number;
+  /** Which request the error belongs to, so Retry repeats that one. */
+  failed: 'first' | 'more' | null;
 };
 
 const fresh = (key: string): LogState => ({
@@ -22,6 +29,8 @@ const fresh = (key: string): LogState => ({
   error: null,
   endReached: false,
   totalCount: null,
+  offset: 0,
+  failed: null,
 });
 
 export function normalizeError(error: unknown): string {
@@ -65,11 +74,13 @@ export function useCommitLog(repoRoot: string, scope: GitLogScope) {
           commits,
           status: 'idle',
           error: null,
+          failed: null,
           endReached: commits.length < PAGE_SIZE,
+          offset: commits.length,
         })),
       )
       .catch((err: unknown) =>
-        apply((s) => ({ ...s, status: 'error', error: normalizeError(err) })),
+        apply((s) => ({ ...s, status: 'error', error: normalizeError(err), failed: 'first' })),
       );
     return () => {
       cancelled = true;
@@ -78,37 +89,52 @@ export function useCommitLog(repoRoot: string, scope: GitLogScope) {
 
   /** Loads the first page again; the commits already shown stay until it arrives. */
   const reload = useCallback(() => {
-    setState((s) => ({ ...s, status: 'initial', error: null, endReached: false }));
+    setState((s) => ({ ...s, status: 'initial', error: null, failed: null, endReached: false }));
     setReloadToken((t) => t + 1);
   }, []);
 
-  const { commits, status, endReached } = current;
-  /** Loads the next page; after a failed page this is its retry. */
-  const loadMore = useCallback(async () => {
-    const ready = status === 'idle' || status === 'error';
-    if (inflightMoreRef.current || endReached || !ready || commits.length === 0) return;
-    inflightMoreRef.current = true;
-    setState((s) => (s.key === key ? { ...s, status: 'more' } : s));
-    // A reload or another scope while this page loads moves the state off 'more', and the page is dropped.
-    const stillWanted = (s: LogState) => s.key === key && s.status === 'more';
-    try {
-      const entries = await git.log(repoRoot, { limit: PAGE_SIZE, skip: commits.length, scope });
-      setState((s) => {
-        if (!stillWanted(s)) return s;
-        const seen = new Set(s.commits.map((c) => c.sha));
-        return {
-          ...s,
-          commits: s.commits.concat(entries.filter((e) => !seen.has(e.sha))),
-          status: 'idle',
-          endReached: entries.length < PAGE_SIZE,
-        };
-      });
-    } catch (err) {
-      const message = normalizeError(err);
-      setState((s) => (stillWanted(s) ? { ...s, status: 'error', error: message } : s));
-    }
-    inflightMoreRef.current = false;
-  }, [commits.length, endReached, key, repoRoot, scope, status]);
+  const { status, endReached, offset, failed } = current;
+  const loadPage = useCallback(
+    async (retrying: boolean) => {
+      const ready = status === 'idle' || (retrying && failed === 'more');
+      if (inflightMoreRef.current || endReached || !ready || offset === 0) return;
+      inflightMoreRef.current = true;
+      setState((s) => (s.key === key ? { ...s, status: 'more', error: null, failed: null } : s));
+      // A reload or another scope while this page loads moves the state off 'more', and the page is dropped.
+      const stillWanted = (s: LogState) => s.key === key && s.status === 'more';
+      try {
+        const entries = await git.log(repoRoot, { limit: PAGE_SIZE, skip: offset, scope });
+        setState((s) => {
+          if (!stillWanted(s)) return s;
+          const seen = new Set(s.commits.map((c) => c.sha));
+          return {
+            ...s,
+            commits: s.commits.concat(entries.filter((e) => !seen.has(e.sha))),
+            status: 'idle',
+            endReached: entries.length < PAGE_SIZE,
+            offset: s.offset + entries.length,
+          };
+        });
+      } catch (err) {
+        const message = normalizeError(err);
+        // The offset stays, so the retry asks for the same page.
+        setState((s) =>
+          stillWanted(s) ? { ...s, status: 'error', error: message, failed: 'more' } : s,
+        );
+      }
+      inflightMoreRef.current = false;
+    },
+    [endReached, failed, key, offset, repoRoot, scope, status],
+  );
 
-  return { ...current, loadMore, reload };
+  /** Loads the next page. */
+  const loadMore = useCallback(() => loadPage(false), [loadPage]);
+
+  /** Repeats the request that failed: the first page, or the page after the ones shown. */
+  const retry = useCallback(() => {
+    if (failed === 'first') reload();
+    else void loadPage(true);
+  }, [failed, loadPage, reload]);
+
+  return { ...current, loadMore, reload, retry };
 }
