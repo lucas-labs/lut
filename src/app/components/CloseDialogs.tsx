@@ -9,9 +9,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogWarning,
 } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { IS_WINDOWS } from '@/modules/platform';
 import { setConfirmCloseRunningTerminal } from '@/modules/settings/store';
 import type { Tab } from '@/modules/tabs';
 import { useId, useState } from 'react';
@@ -51,9 +53,9 @@ function appCloseMessage(blocker: AppCloseBlocker): string {
 function OptOutRow({ checked, onCheckedChange }: { checked: boolean; onCheckedChange: (value: boolean) => void }) {
   const id = useId();
   return (
-    <div className="-mt-3 flex items-center justify-center gap-2 sm:justify-start">
+    <div className="flex items-center gap-2">
       <Checkbox id={id} checked={checked} onCheckedChange={(value) => onCheckedChange(value === true)} />
-      <Label htmlFor={id} className="font-normal text-[12px] text-muted-foreground">
+      <Label htmlFor={id} className="text-xs font-normal text-muted-foreground">
         Don't ask again about running processes
       </Label>
     </div>
@@ -145,6 +147,7 @@ export function CloseDialogs({
       <AlertDialog open={pendingCloseTab !== null} onOpenChange={(open) => !open && onCancelClose()}>
         <AlertDialogContent>
           <AlertDialogHeader>
+            <AlertDialogWarning />
             <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
             <AlertDialogDescription>
               {tabs.find((t) => t.id === pendingCloseTab)?.title
@@ -152,9 +155,11 @@ export function CloseDialogs({
                 : 'This file has unsaved changes. Close anyway?'}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter actionFirst={IS_WINDOWS}>
             <AlertDialogCancel onClick={onCancelClose}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={onConfirmClose}>Close Anyway</AlertDialogAction>
+            <AlertDialogAction tone="danger" onClick={onConfirmClose}>
+              Close Anyway
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -162,13 +167,16 @@ export function CloseDialogs({
       <AlertDialog open={pendingTerminalCloseTab !== null} onOpenChange={(open) => !open && cancelTerminalClose()}>
         <AlertDialogContent>
           <AlertDialogHeader>
+            <AlertDialogWarning />
             <AlertDialogTitle>Close Terminal?</AlertDialogTitle>
             <AlertDialogDescription>A process is running. Closing this tab will terminate it.</AlertDialogDescription>
           </AlertDialogHeader>
           <OptOutRow checked={optOutTerminalClose} onCheckedChange={setOptOutTerminalClose} />
-          <AlertDialogFooter>
+          <AlertDialogFooter actionFirst={IS_WINDOWS}>
             <AlertDialogCancel onClick={cancelTerminalClose}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmTerminalClose}>Close Anyway</AlertDialogAction>
+            <AlertDialogAction tone="danger" onClick={confirmTerminalClose}>
+              Close Anyway
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -176,6 +184,7 @@ export function CloseDialogs({
       <AlertDialog open={pendingDeleteTabs !== null} onOpenChange={(open) => !open && onCancelDeleteClose()}>
         <AlertDialogContent>
           <AlertDialogHeader>
+            <AlertDialogWarning />
             <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
             <AlertDialogDescription>
               {pendingDeleteTabs?.length === 1
@@ -188,9 +197,11 @@ export function CloseDialogs({
                 : `${pendingDeleteTabs?.length ?? 0} files have unsaved changes. They have been deleted. Close all anyway?`}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter actionFirst={IS_WINDOWS}>
             <AlertDialogCancel onClick={onCancelDeleteClose}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={onConfirmDeleteClose}>Close Anyway</AlertDialogAction>
+            <AlertDialogAction tone="danger" onClick={onConfirmDeleteClose}>
+              Close Anyway
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -198,6 +209,7 @@ export function CloseDialogs({
       <AlertDialog open={pendingCloseMany !== null} onOpenChange={(open) => !open && onCancelCloseMany()}>
         <AlertDialogContent>
           <AlertDialogHeader>
+            <AlertDialogWarning />
             <AlertDialogTitle>
               {pendingCloseMany?.kind === 'right' ? 'Close Tabs to the Right' : 'Close Other Tabs'}
             </AlertDialogTitle>
@@ -205,9 +217,10 @@ export function CloseDialogs({
               {pendingCloseMany ? closeManyMessage(pendingCloseMany, tabs) : ''}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter actionFirst={IS_WINDOWS}>
             <AlertDialogCancel onClick={onCancelCloseMany}>Cancel</AlertDialogCancel>
             <AlertDialogAction
+              tone="danger"
               disabled={closeManyConfirming}
               onClick={(event) => {
                 event.preventDefault();
@@ -223,13 +236,16 @@ export function CloseDialogs({
       <AlertDialog open={pendingAppClose !== null} onOpenChange={(open) => !open && cancelAppClose()}>
         <AlertDialogContent>
           <AlertDialogHeader>
+            <AlertDialogWarning />
             <AlertDialogTitle>Quit lut?</AlertDialogTitle>
             <AlertDialogDescription>{pendingAppClose ? appCloseMessage(pendingAppClose) : ''}</AlertDialogDescription>
           </AlertDialogHeader>
           {appCloseCanOptOut ? <OptOutRow checked={optOutAppClose} onCheckedChange={setOptOutAppClose} /> : null}
-          <AlertDialogFooter>
+          <AlertDialogFooter actionFirst={IS_WINDOWS}>
             <AlertDialogCancel onClick={cancelAppClose}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void confirmAppClose()}>Quit Anyway</AlertDialogAction>
+            <AlertDialogAction tone="danger" onClick={() => void confirmAppClose()}>
+              Quit Anyway
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

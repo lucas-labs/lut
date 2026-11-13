@@ -7,6 +7,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogWarning,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -35,7 +36,7 @@ import { copyToClipboard, revealInFinder } from '@/modules/explorer/lib/contextA
 import { COMPACT_CONTENT, COMPACT_ITEM } from '@/modules/explorer/lib/menuItemClass';
 import { joinPath } from '@/modules/explorer/lib/useFileTree';
 import { git, type GitBranchEntry } from '@/modules/git';
-import { IS_MAC } from '@/modules/platform';
+import { IS_MAC, IS_WINDOWS } from '@/modules/platform';
 import {
   Alert02Icon,
   ArrowDown01Icon,
@@ -876,6 +877,7 @@ export const SourceControlPanel = memo(function SourceControlPanel({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
+            <AlertDialogWarning />
             <AlertDialogTitle>Discard changes?</AlertDialogTitle>
             <AlertDialogDescription>
               {scm.pendingDiscard?.scope === 'all'
@@ -885,9 +887,11 @@ export const SourceControlPanel = memo(function SourceControlPanel({
                   : null}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter actionFirst={IS_WINDOWS}>
             <AlertDialogCancel onClick={() => scm.cancelPendingDiscard()}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void scm.confirmPendingDiscard()}>Discard</AlertDialogAction>
+            <AlertDialogAction tone="danger" onClick={() => void scm.confirmPendingDiscard()}>
+              Discard
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
