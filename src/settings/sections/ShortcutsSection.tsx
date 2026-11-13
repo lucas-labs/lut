@@ -15,6 +15,7 @@ import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { IS_WINDOWS } from '@/modules/platform';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { setShortcuts } from '@/modules/settings/store';
+import { ShortcutKey } from '@/modules/shortcuts/ShortcutKeys';
 import {
   getBindingTokens,
   type KeyBinding,
@@ -186,7 +187,7 @@ function ShortcutRow({
                 <KbdGroup>
                   {getBindingTokens(bindings[0]).map((t, i) => (
                     <Kbd key={i} className="group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
-                      {t}
+                      <ShortcutKey token={t} />
                     </Kbd>
                   ))}
                 </KbdGroup>

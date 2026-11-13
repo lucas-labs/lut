@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import type { GitStatusSnapshot } from '@/modules/git';
 import { IS_MAC } from '@/modules/platform';
 import { usePreferencesStore } from '@/modules/settings/preferences';
-import { useGlobalShortcuts } from '@/modules/shortcuts';
+import { ShortcutKeys, useGlobalShortcuts } from '@/modules/shortcuts';
 import type { TerminalPathDropTarget } from '@/modules/terminal';
 import { useWorkspaceEnvStore } from '@/modules/workspace';
 import { FileAddIcon, Folder01Icon, FolderAddIcon, Refresh01Icon, Search01Icon } from '@hugeicons/core-free-icons';
@@ -99,7 +99,7 @@ type Row =
     };
 
 const ROW_HEIGHT = 24;
-const PASTE_HINT = IS_MAC ? '⌘V' : 'Ctrl+V';
+const PASTE_KEYS = IS_MAC ? '⌘ V' : 'Ctrl V';
 const OVERSCAN = 8;
 
 function basename(path: string): string {
@@ -825,7 +825,9 @@ export const FileExplorer = memo(
                     }
                   >
                     Paste
-                    <ContextMenuShortcut>{PASTE_HINT}</ContextMenuShortcut>
+                    <ContextMenuShortcut>
+                      <ShortcutKeys label={PASTE_KEYS} />
+                    </ContextMenuShortcut>
                   </ContextMenuItem>
                   <ContextMenuSeparator />
                   <ContextMenuItem onSelect={() => void copyToClipboard(menuTarget.path)}>Copy Path</ContextMenuItem>
@@ -870,7 +872,9 @@ export const FileExplorer = memo(
                   <ContextMenuItem onSelect={() => tree.beginCreate(rootPath, 'dir')}>New Folder</ContextMenuItem>
                   <ContextMenuItem onSelect={() => void pasteInto(rootPath)}>
                     Paste
-                    <ContextMenuShortcut>{PASTE_HINT}</ContextMenuShortcut>
+                    <ContextMenuShortcut>
+                      <ShortcutKeys label={PASTE_KEYS} />
+                    </ContextMenuShortcut>
                   </ContextMenuItem>
                   <ContextMenuSeparator />
                   <ContextMenuItem onSelect={() => void copyToClipboard(rootPath)}>Copy Path</ContextMenuItem>

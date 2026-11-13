@@ -11,7 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { FileIcon } from '@/modules/explorer/FileIcon';
 import { usePreferencesStore } from '@/modules/settings/preferences';
-import { getBindingTokens, type KeyBinding, type ShortcutId, SHORTCUTS } from '@/modules/shortcuts';
+import { getBindingTokens, type KeyBinding, type ShortcutId, ShortcutKeys, SHORTCUTS } from '@/modules/shortcuts';
 import { listBuiltinThemes, useTheme } from '@/modules/theme';
 import { AlertCircleIcon, ArrowTurnBackwardIcon, CommandIcon, Tick02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -506,7 +506,8 @@ function ActionItem({
   shortcutLabel: string | null;
   onRun: () => void;
 }) {
-  const rightLabel = item.disabledReason ?? item.trailing ?? shortcutLabel;
+  const rightLabel =
+    item.disabledReason ?? item.trailing ?? (shortcutLabel ? <ShortcutKeys label={shortcutLabel} /> : null);
   return (
     <CommandItem value={`cmd:${item.id}`} disabled={!!item.disabledReason} onSelect={onRun} className="text-[12.5px]">
       {item.icon ? (

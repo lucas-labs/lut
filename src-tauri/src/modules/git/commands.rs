@@ -3,7 +3,8 @@ use tauri::{AppHandle, Manager};
 use crate::modules::git::operations;
 use crate::modules::git::types::{
     DiscardEntry, GitBranchListResult, GitCommitFileChange, GitCommitResult, GitDiffContentResult,
-    GitDiffResult, GitLogEntry, GitPanelSnapshot, GitPushResult, GitRepoInfo, GitStatusSnapshot,
+    GitDiffResult, GitLogEntry, GitLogScope, GitPanelSnapshot, GitPushResult, GitRepoInfo,
+    GitStatusSnapshot,
 };
 use crate::modules::git::watch::{GitWatchInfo, GitWatchState};
 use crate::modules::workspace::{WorkspaceEnv, WorkspaceRegistry};
@@ -200,20 +201,38 @@ pub async fn git_push(
 pub async fn git_log(
     repo_root: String,
     limit: Option<u32>,
-    before_sha: Option<String>,
+    skip: Option<u32>,
+    scope: Option<GitLogScope>,
     workspace: Option<WorkspaceEnv>,
     app: AppHandle,
 ) -> Result<Vec<GitLogEntry>, String> {
     let workspace = WorkspaceEnv::from_option(workspace);
+    let scope = scope.unwrap_or_default();
     blocking(app, move |r| {
         operations::log(
             r,
             &repo_root,
             limit.unwrap_or(30),
-            before_sha.as_deref(),
+            skip.unwrap_or(0),
+            &scope,
             &workspace,
         )
         .map_err(Into::into)
+    })
+    .await
+}
+
+#[tauri::command]
+pub async fn git_commit_count(
+    repo_root: String,
+    scope: Option<GitLogScope>,
+    workspace: Option<WorkspaceEnv>,
+    app: AppHandle,
+) -> Result<u32, String> {
+    let workspace = WorkspaceEnv::from_option(workspace);
+    let scope = scope.unwrap_or_default();
+    blocking(app, move |r| {
+        operations::commit_count(r, &repo_root, &scope, &workspace).map_err(Into::into)
     })
     .await
 }

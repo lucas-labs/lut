@@ -11,7 +11,7 @@ export function useShortcutLabel(id: ShortcutId): string {
   return getBindingTokens(bindings?.[0]).join(' ');
 }
 
-/** The inline form of useShortcutLabel: `Ctrl+Shift+T` or `⇧⌘T`. */
+/** The inline form of useShortcutLabel: `Ctrl+Shift+T` or `⇧⌘T`. Plain text, for titles and prose. */
 export function useShortcutHint(id: ShortcutId): string {
   return labelToHint(useShortcutLabel(id));
 }

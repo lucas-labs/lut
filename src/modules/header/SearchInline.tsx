@@ -1,9 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { EditorPaneHandle } from '@/modules/editor';
-import { KEY_SEP } from '@/modules/platform';
-import { usePreferencesStore } from '@/modules/settings/preferences';
-import { getBindingTokens, SHORTCUTS } from '@/modules/shortcuts/shortcuts';
+import { ShortcutKeys, useShortcutHint, useShortcutLabel } from '@/modules/shortcuts';
 import type { TerminalSearchController } from '@/modules/terminal/search/TerminalSearchController';
 import { Cancel01Icon, Search01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -48,22 +46,15 @@ export const SearchInline = forwardRef<SearchInlineHandle, Props>(function Searc
     el.focus();
   }, []);
 
-  const userShortcuts = usePreferencesStore((s) => s.shortcuts);
+  const shortcutLabel = useShortcutLabel('search.focus');
+  const shortcutText = useShortcutHint('search.focus');
 
-  const shortcutText = useMemo(() => {
-    const s = SHORTCUTS.find((s) => s.id === 'search.focus');
-    if (!s) return '';
-    const bindings = userShortcuts['search.focus'] || s.defaultBindings;
-    if (!bindings || bindings.length === 0) return '';
-    const tokens = getBindingTokens(bindings[0]);
-    return tokens.join(KEY_SEP);
-  }, [userShortcuts]);
-
-  const baseLabel = target?.kind === 'git-history' ? 'Git search' : 'Search';
+  // One label for every target: the shortcut hint beside it leaves no room for a longer one.
+  const baseLabel = 'Search';
 
   const tooltipTitle = useMemo(() => {
     return shortcutText ? `${baseLabel} (${shortcutText})` : baseLabel;
-  }, [baseLabel, shortcutText]);
+  }, [shortcutText]);
 
   const expanded = !compact || openInCompact;
 
@@ -134,7 +125,7 @@ export const SearchInline = forwardRef<SearchInlineHandle, Props>(function Searc
           />
           {!q && shortcutText ? (
             <span className="pointer-events-none absolute top-1/2 right-1 -translate-y-1/2 rounded-sm bg-accent px-1 font-mono text-[11px] leading-4 text-muted-foreground">
-              {shortcutText}
+              <ShortcutKeys label={shortcutLabel} />
             </span>
           ) : null}
           <Input

@@ -13,21 +13,22 @@
 //      possible — keeps history visually consistent).
 //
 // Lane colors are stable per slot index. This keeps the rail readable when
-// you load more pages, since lane indices don't shift retroactively.
+// you load more pages, since lane indices don't shift retroactively. They are
+// the theme's ANSI colors, so the graph follows the terminal palette.
 
 import type { GitLogEntry } from '@/modules/git';
 
 export type LaneColor = string;
 
 export const LANE_COLORS: LaneColor[] = [
-  '#60a5fa', // blue-400
-  '#c084fc', // purple-400
-  '#34d399', // emerald-400
-  '#fbbf24', // amber-400
-  '#f472b6', // pink-400
-  '#22d3ee', // cyan-400
-  '#fb923c', // orange-400
-  '#a3e635', // lime-400
+  'var(--terminal-ansi-blue)',
+  'var(--terminal-ansi-magenta)',
+  'var(--terminal-ansi-cyan)',
+  'var(--terminal-ansi-yellow)',
+  'var(--terminal-ansi-green)',
+  'var(--terminal-ansi-red)',
+  'var(--terminal-ansi-bright-blue)',
+  'var(--terminal-ansi-bright-magenta)',
 ];
 
 export function laneColor(index: number): LaneColor {

@@ -51,6 +51,17 @@ export type GitPushResult = {
   pushed: boolean;
 };
 
+/** Which commits the history view walks: the checked-out branch, local and remote branches, or one local branch. */
+export type GitLogScope = { kind: 'head' } | { kind: 'all' } | { kind: 'branch'; name: string };
+
+/** `head` is the checked-out branch, or `HEAD` itself when detached. */
+type GitLogRefKind = 'head' | 'branch' | 'remote' | 'tag';
+
+export type GitLogRef = {
+  name: string;
+  kind: GitLogRefKind;
+};
+
 export type GitLogEntry = {
   sha: string;
   shortSha: string;
@@ -58,6 +69,7 @@ export type GitLogEntry = {
   authorEmail: string;
   timestampSecs: number;
   parents: string[];
+  refs: GitLogRef[];
   subject: string;
   filesChanged: number;
   insertions: number;

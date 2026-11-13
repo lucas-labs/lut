@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 pub(crate) const DEFAULT_TIMEOUT_SECS: u64 = 30;
 pub(crate) const NETWORK_TIMEOUT_SECS: u64 = 120;
@@ -92,6 +92,36 @@ pub struct GitCommitFileChange {
     pub is_binary: bool,
 }
 
+/// Which commits the history view walks (E10-23).
+#[derive(Deserialize, Debug, Clone, PartialEq, Eq, Default)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum GitLogScope {
+    /// The checked-out branch (or detached `HEAD`).
+    #[default]
+    Head,
+    /// Local and remote branches plus `HEAD`.
+    All,
+    /// One local branch.
+    Branch { name: String },
+}
+
+/// A ref pointing at a commit; `Head` is the checked-out branch, or `HEAD` itself when detached.
+#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum GitLogRefKind {
+    Head,
+    Branch,
+    Remote,
+    Tag,
+}
+
+#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct GitLogRef {
+    pub name: String,
+    pub kind: GitLogRefKind,
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GitLogEntry {
@@ -101,6 +131,7 @@ pub struct GitLogEntry {
     pub author_email: String,
     pub timestamp_secs: i64,
     pub parents: Vec<String>,
+    pub refs: Vec<GitLogRef>,
     pub subject: String,
     pub files_changed: u32,
     pub insertions: u32,
@@ -308,6 +339,10 @@ mod serde_shape_tests {
             author_email: "a@example.com".into(),
             timestamp_secs: 1_700_000_000,
             parents: vec!["p0".into()],
+            refs: vec![GitLogRef {
+                name: "origin/main".into(),
+                kind: GitLogRefKind::Remote,
+            }],
             subject: "s".into(),
             files_changed: 2,
             insertions: 10,
@@ -325,6 +360,26 @@ mod serde_shape_tests {
             assert!(json.get(key).is_some(), "missing key {key}");
         }
         assert_eq!(json["parents"], serde_json::json!(["p0"]));
+        assert_eq!(
+            json["refs"],
+            serde_json::json!([{ "name": "origin/main", "kind": "remote" }])
+        );
+    }
+
+    #[test]
+    fn log_scope_reads_the_frontend_shape() {
+        let read = |v: serde_json::Value| serde_json::from_value::<GitLogScope>(v).unwrap();
+        assert_eq!(
+            read(serde_json::json!({ "kind": "head" })),
+            GitLogScope::Head
+        );
+        assert_eq!(read(serde_json::json!({ "kind": "all" })), GitLogScope::All);
+        assert_eq!(
+            read(serde_json::json!({ "kind": "branch", "name": "feature/x" })),
+            GitLogScope::Branch {
+                name: "feature/x".into()
+            }
+        );
     }
 
     #[test]

@@ -4,7 +4,7 @@ use common::{git_available, GitRepoFixture};
 use lut_lib::modules::fs::to_canon;
 use lut_lib::modules::git::errors::GitError;
 use lut_lib::modules::git::operations;
-use lut_lib::modules::git::types::DiscardEntry;
+use lut_lib::modules::git::types::{DiscardEntry, GitLogRefKind, GitLogScope};
 use lut_lib::modules::workspace::{WorkspaceEnv, WorkspaceRegistry};
 use tempfile::TempDir;
 
@@ -191,8 +191,15 @@ fn stage_then_commit_produces_log_entry() {
     assert_eq!(commit.summary, "add a");
     assert_eq!(commit.commit_sha.len(), 40);
 
-    let entries =
-        operations::log(&fx.registry, &fx.repo_str(), 10, None, &fx.workspace).expect("log");
+    let entries = operations::log(
+        &fx.registry,
+        &fx.repo_str(),
+        10,
+        0,
+        &GitLogScope::Head,
+        &fx.workspace,
+    )
+    .expect("log");
     assert_eq!(entries.len(), 1);
     assert_eq!(entries[0].sha, commit.commit_sha);
     assert_eq!(entries[0].subject, "add a");
@@ -256,9 +263,14 @@ fn log_on_empty_repo_returns_empty_list() {
         return;
     }
     let fx = GitRepoFixture::new();
-    let entries =
-        operations::log(&fx.registry, &fx.repo_str(), 10, None, &fx.workspace).expect("log");
-    assert!(entries.is_empty());
+    for scope in [GitLogScope::Head, GitLogScope::All] {
+        let entries = operations::log(&fx.registry, &fx.repo_str(), 10, 0, &scope, &fx.workspace)
+            .expect("log");
+        assert!(entries.is_empty());
+        let count = operations::commit_count(&fx.registry, &fx.repo_str(), &scope, &fx.workspace)
+            .expect("count");
+        assert_eq!(count, 0);
+    }
 }
 
 #[test]
@@ -379,54 +391,187 @@ fn panel_snapshot_outside_repo_is_empty() {
     assert!(snap.status.is_none());
 }
 
-#[test]
-fn log_paginates_with_before_sha_cursor() {
-    if skip_if_no_git() {
-        return;
-    }
-    let fx = GitRepoFixture::new();
-    for i in 0..3 {
-        fx.write_file(&format!("f{i}.txt"), &format!("v{i}\n"));
-        fx.run_git(&["add", &format!("f{i}.txt")]);
-        fx.run_git(&["commit", "-q", "-m", &format!("c{i}")]);
-    }
+fn commit(fx: &GitRepoFixture, file: &str, message: &str) {
+    fx.write_file(file, &format!("{message}\n"));
+    fx.run_git(&["add", file]);
+    fx.run_git(&["commit", "-q", "-m", message]);
+}
 
-    let first_page = operations::log(&fx.registry, &fx.repo_str(), 1, None, &fx.workspace).unwrap();
-    assert_eq!(first_page.len(), 1);
-    let cursor = first_page[0].sha.clone();
-
-    let second_page = operations::log(
+fn subjects(fx: &GitRepoFixture, limit: u32, skip: u32, scope: &GitLogScope) -> Vec<String> {
+    operations::log(
         &fx.registry,
         &fx.repo_str(),
-        10,
-        Some(&cursor),
+        limit,
+        skip,
+        scope,
         &fx.workspace,
     )
-    .unwrap();
-    assert!(second_page.iter().all(|e| e.sha != cursor));
-    assert_eq!(second_page.len(), 2);
+    .expect("log")
+    .into_iter()
+    .map(|e| e.subject)
+    .collect()
+}
+
+/// `main` has c0 and c1, `feature` forks at c0 with f1, and a stash sits on `main`.
+fn branched_fixture() -> GitRepoFixture {
+    let fx = GitRepoFixture::new();
+    commit(&fx, "a.txt", "c0");
+    fx.run_git(&["branch", "-M", "main"]);
+    fx.run_git(&["checkout", "-q", "-b", "feature"]);
+    commit(&fx, "f.txt", "f1");
+    fx.run_git(&["checkout", "-q", "main"]);
+    commit(&fx, "b.txt", "c1");
+    fx.write_file("b.txt", "dirty\n");
+    fx.run_git(&["stash", "-q"]);
+    fx
 }
 
 #[test]
-fn log_with_invalid_cursor_sha_errors() {
+fn log_walks_the_current_branch_all_branches_or_one_branch() {
     if skip_if_no_git() {
         return;
     }
-    let fx = GitRepoFixture::new();
-    fx.write_file("a.txt", "x\n");
-    fx.run_git(&["add", "a.txt"]);
-    fx.run_git(&["commit", "-q", "-m", "seed"]);
+    let fx = branched_fixture();
+    let feature = GitLogScope::Branch {
+        name: "feature".into(),
+    };
 
-    match operations::log(
+    assert_eq!(subjects(&fx, 10, 0, &GitLogScope::Head), ["c1", "c0"]);
+    assert_eq!(subjects(&fx, 10, 0, &feature), ["f1", "c0"]);
+    let mut all = subjects(&fx, 10, 0, &GitLogScope::All);
+    all.sort();
+    // The stash commits stay out of "all branches".
+    assert_eq!(all, ["c0", "c1", "f1"]);
+
+    let count = |scope: &GitLogScope| {
+        operations::commit_count(&fx.registry, &fx.repo_str(), scope, &fx.workspace).unwrap()
+    };
+    assert_eq!(count(&GitLogScope::Head), 2);
+    assert_eq!(count(&feature), 2);
+    assert_eq!(count(&GitLogScope::All), 3);
+}
+
+#[test]
+fn log_pages_with_a_skip_count_in_every_scope() {
+    if skip_if_no_git() {
+        return;
+    }
+    let fx = branched_fixture();
+
+    assert_eq!(subjects(&fx, 1, 0, &GitLogScope::Head), ["c1"]);
+    assert_eq!(subjects(&fx, 10, 1, &GitLogScope::Head), ["c0"]);
+
+    // One commit per page still reaches the other branch's commits.
+    let mut paged: Vec<String> = (0..3)
+        .flat_map(|skip| subjects(&fx, 1, skip, &GitLogScope::All))
+        .collect();
+    paged.sort();
+    assert_eq!(paged, ["c0", "c1", "f1"]);
+    assert!(subjects(&fx, 1, 3, &GitLogScope::All).is_empty());
+}
+
+#[test]
+fn log_entries_carry_their_refs() {
+    if skip_if_no_git() {
+        return;
+    }
+    let fx = branched_fixture();
+    // A user's config that hides remote refs from decorations must not hide them here.
+    fx.run_git(&["config", "log.excludeDecoration", "refs/remotes/*"]);
+    fx.run_git(&["tag", "v1"]);
+    fx.run_git(&["update-ref", "refs/remotes/origin/main", "HEAD"]);
+    fx.run_git(&[
+        "symbolic-ref",
+        "refs/remotes/origin/HEAD",
+        "refs/remotes/origin/main",
+    ]);
+
+    let entries = operations::log(
         &fx.registry,
         &fx.repo_str(),
         10,
-        Some("not-hex"),
+        0,
+        &GitLogScope::All,
         &fx.workspace,
-    ) {
-        Err(GitError::CommandFailed { .. }) => {}
-        Err(other) => panic!("expected CommandFailed, got {other}"),
-        Ok(_) => panic!("expected error for bad cursor"),
+    )
+    .unwrap();
+    let refs_of = |subject: &str| {
+        let mut refs: Vec<(String, GitLogRefKind)> = entries
+            .iter()
+            .find(|e| e.subject == subject)
+            .unwrap()
+            .refs
+            .iter()
+            .map(|r| (r.name.clone(), r.kind.clone()))
+            .collect();
+        refs.sort_by(|a, b| a.0.cmp(&b.0));
+        refs
+    };
+
+    // origin/HEAD is an alias of origin/main and is left out.
+    assert_eq!(
+        refs_of("c1"),
+        [
+            ("main".to_string(), GitLogRefKind::Head),
+            ("origin/main".to_string(), GitLogRefKind::Remote),
+            ("v1".to_string(), GitLogRefKind::Tag),
+        ]
+    );
+    assert_eq!(
+        refs_of("f1"),
+        [("feature".to_string(), GitLogRefKind::Branch)]
+    );
+    assert!(refs_of("c0").is_empty());
+
+    fx.run_git(&["checkout", "-q", "--detach", "HEAD~1"]);
+    let detached = operations::log(
+        &fx.registry,
+        &fx.repo_str(),
+        1,
+        0,
+        &GitLogScope::Head,
+        &fx.workspace,
+    )
+    .unwrap();
+    assert_eq!(detached[0].subject, "c0");
+    assert_eq!(detached[0].refs[0].name, "HEAD");
+    assert_eq!(detached[0].refs[0].kind, GitLogRefKind::Head);
+}
+
+#[test]
+fn all_branches_still_walks_the_branches_from_an_unborn_head() {
+    if skip_if_no_git() {
+        return;
+    }
+    let fx = branched_fixture();
+    fx.run_git(&["checkout", "-q", "--orphan", "fresh"]);
+
+    let mut all = subjects(&fx, 10, 0, &GitLogScope::All);
+    all.sort();
+    assert_eq!(all, ["c0", "c1", "f1"]);
+    let count = operations::commit_count(
+        &fx.registry,
+        &fx.repo_str(),
+        &GitLogScope::All,
+        &fx.workspace,
+    )
+    .unwrap();
+    assert_eq!(count, 3);
+    assert!(subjects(&fx, 10, 0, &GitLogScope::Head).is_empty());
+}
+
+#[test]
+fn log_rejects_unsafe_branch_scopes() {
+    if skip_if_no_git() {
+        return;
+    }
+    let fx = branched_fixture();
+    for name in ["", "--all", "a b"] {
+        let scope = GitLogScope::Branch { name: name.into() };
+        let err = operations::log(&fx.registry, &fx.repo_str(), 10, 0, &scope, &fx.workspace)
+            .err()
+            .expect("unsafe branch scope");
+        assert!(matches!(err, GitError::InvalidPath(p) if p == name));
     }
 }
 
@@ -444,7 +589,15 @@ fn commit_files_reports_added_and_modified() {
     fx.run_git(&["add", "a.txt"]);
     fx.run_git(&["commit", "-q", "-m", "modify"]);
 
-    let entries = operations::log(&fx.registry, &fx.repo_str(), 10, None, &fx.workspace).unwrap();
+    let entries = operations::log(
+        &fx.registry,
+        &fx.repo_str(),
+        10,
+        0,
+        &GitLogScope::Head,
+        &fx.workspace,
+    )
+    .unwrap();
     let head = &entries[0].sha;
 
     let files =
@@ -468,7 +621,15 @@ fn commit_file_diff_returns_original_and_modified_text() {
     fx.run_git(&["add", "a.txt"]);
     fx.run_git(&["commit", "-q", "-m", "v2"]);
 
-    let entries = operations::log(&fx.registry, &fx.repo_str(), 10, None, &fx.workspace).unwrap();
+    let entries = operations::log(
+        &fx.registry,
+        &fx.repo_str(),
+        10,
+        0,
+        &GitLogScope::Head,
+        &fx.workspace,
+    )
+    .unwrap();
     let head = &entries[0].sha;
 
     let diff = operations::commit_file_diff(

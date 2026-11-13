@@ -1,6 +1,7 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { IS_MAC } from '@/modules/platform';
+import { ShortcutKeys } from '@/modules/shortcuts';
 import { type KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import type { SourceControlPanelState } from './useSourceControlPanel';
 
@@ -20,7 +21,9 @@ function syncLabel(ahead: number, behind: number, upstream: string | null | unde
 
 /** The commit message, the staged and sync state, and the Commit and Push actions (E10-14 design). */
 export function CommitBox({ scm, blocked }: { scm: SourceControlPanelState; blocked: boolean }) {
+  // Plain text for the tooltips; the hint under the message draws the keys.
   const shortcut = IS_MAC ? '⌘↩' : 'Ctrl+Enter';
+  const shortcutKeys = IS_MAC ? '⌘ ↩' : 'Ctrl Enter';
   const stagedCount = scm.stagedEntries.length;
   const hasMessage = scm.commitMessage.trim().length > 0;
   const canCommit = stagedCount > 0 && hasMessage && !blocked && !scm.actionBusy;
@@ -72,7 +75,13 @@ export function CommitBox({ scm, blocked }: { scm: SourceControlPanelState; bloc
           className="block h-[46px] w-full resize-none bg-transparent px-2.5 pt-2 text-[13px] leading-[18px] text-foreground outline-none placeholder:text-muted-foreground"
         />
         <div className="px-2.5 pt-0.5 pb-1.5 text-[11px] leading-[14px] tabular-nums text-muted-foreground">
-          {scm.commitMessage.length > 0 ? `Ch: ${scm.commitMessage.length}` : `${shortcut} to commit`}
+          {scm.commitMessage.length > 0 ? (
+            `Ch: ${scm.commitMessage.length}`
+          ) : (
+            <>
+              <ShortcutKeys label={shortcutKeys} /> to commit
+            </>
+          )}
         </div>
       </div>
 

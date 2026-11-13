@@ -11,7 +11,7 @@ import { useHoldTitleBar } from '@/lib/titleBarHold';
 import { cn } from '@/lib/utils';
 import { AgentLauncherPanel } from '@/modules/agents/components/AgentLauncherPanel';
 import type { AgentLaunchRequest } from '@/modules/agents/lib/launcher';
-import { useShortcutHint } from '@/modules/shortcuts';
+import { ShortcutKeys, useShortcutLabel } from '@/modules/shortcuts';
 import {
   AiBrowserIcon,
   ArrowRight01Icon,
@@ -45,10 +45,10 @@ export function NewTabMenu({
   onNewGitGraph,
   onLaunchAgents,
 }: Props) {
-  const terminalHint = useShortcutHint('tab.new');
-  const privateHint = useShortcutHint('tab.newPrivate');
-  const editorHint = useShortcutHint('tab.newEditor');
-  const previewHint = useShortcutHint('tab.newPreview');
+  const terminalHint = useShortcutLabel('tab.new');
+  const privateHint = useShortcutLabel('tab.newPrivate');
+  const editorHint = useShortcutLabel('tab.newEditor');
+  const previewHint = useShortcutLabel('tab.newPreview');
   const [menuOpen, setMenuOpen] = useState(false);
   const [launcherOpen, setLauncherOpen] = useState(false);
   const openLauncherAfterMenuClose = useRef(false);
@@ -105,7 +105,9 @@ export function NewTabMenu({
               <DropdownMenuItem onSelect={onNew}>
                 <HugeiconsIcon icon={ComputerTerminal02Icon} size={14} strokeWidth={1.5} />
                 <span className="flex-1">Terminal</span>
-                <DropdownMenuShortcut>{terminalHint}</DropdownMenuShortcut>
+                <DropdownMenuShortcut>
+                  <ShortcutKeys label={terminalHint} />
+                </DropdownMenuShortcut>
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={openLauncher}>
                 <HugeiconsIcon icon={AiBrowserIcon} size={14} strokeWidth={1.5} />
@@ -115,17 +117,23 @@ export function NewTabMenu({
               <DropdownMenuItem onSelect={onNewPrivate}>
                 <HugeiconsIcon icon={IncognitoIcon} size={14} strokeWidth={1.5} />
                 <span className="flex-1">Privacy</span>
-                <DropdownMenuShortcut>{privateHint}</DropdownMenuShortcut>
+                <DropdownMenuShortcut>
+                  <ShortcutKeys label={privateHint} />
+                </DropdownMenuShortcut>
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={onNewEditor}>
                 <HugeiconsIcon icon={PencilEdit02Icon} size={14} strokeWidth={1.5} />
                 <span className="flex-1">Editor</span>
-                <DropdownMenuShortcut>{editorHint}</DropdownMenuShortcut>
+                <DropdownMenuShortcut>
+                  <ShortcutKeys label={editorHint} />
+                </DropdownMenuShortcut>
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={onNewPreview}>
                 <HugeiconsIcon icon={Globe02Icon} size={14} strokeWidth={1.5} />
                 <span className="flex-1">Preview</span>
-                <DropdownMenuShortcut>{previewHint}</DropdownMenuShortcut>
+                <DropdownMenuShortcut>
+                  <ShortcutKeys label={previewHint} />
+                </DropdownMenuShortcut>
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={onNewGitGraph}>
                 <HugeiconsIcon icon={GitBranchIcon} size={14} strokeWidth={1.5} />
