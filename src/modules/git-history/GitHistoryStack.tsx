@@ -22,7 +22,7 @@ export function GitHistoryStack({ tabs, activeId, onOpenCommitFile, onSearchHand
   if (!active) return null;
   return (
     <GitHistoryPane
-      key={active.id}
+      key={`${active.id}:${active.repoRoot}`}
       repoRoot={active.repoRoot}
       onOpenCommitFile={onOpenCommitFile}
       onSearchHandle={onSearchHandle}

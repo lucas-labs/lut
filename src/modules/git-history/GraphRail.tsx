@@ -1,12 +1,11 @@
 import { memo, type ReactElement } from 'react';
 import type { GraphEdge, GraphRow } from './lib/graph';
 
-const LANE_WIDTH = 14;
-const RAIL_PADDING_X = 8;
+const LANE_WIDTH = 20;
+const RAIL_PADDING_X = 18;
 export const MAX_VISIBLE_LANES = 6;
 
-const STRAIGHT_WIDTH = 1.5;
-const CURVE_WIDTH = 1.5;
+const STROKE_WIDTH = 2;
 
 function laneX(lane: number): number {
   return RAIL_PADDING_X + lane * LANE_WIDTH;
@@ -14,31 +13,21 @@ function laneX(lane: number): number {
 
 export function railWidth(maxLane: number): number {
   const visible = Math.min(maxLane, MAX_VISIBLE_LANES);
-  return RAIL_PADDING_X * 2 + Math.max(0, visible - 1) * LANE_WIDTH + 6;
+  return RAIL_PADDING_X * 2 + Math.max(0, visible - 1) * LANE_WIDTH;
 }
 
 type Props = {
   row: GraphRow;
   rowHeight: number;
   maxLaneCount: number;
-  active?: boolean;
+  /** The checked-out commit: a filled, larger node. */
+  head?: boolean;
 };
 
 function renderTopEdge(edge: GraphEdge, midY: number): ReactElement | null {
   if (edge.kind === 'straight') {
     const x = laneX(edge.lane);
-    return (
-      <line
-        key={`t-s-${edge.lane}`}
-        x1={x}
-        y1={0}
-        x2={x}
-        y2={midY}
-        stroke={edge.color}
-        strokeWidth={STRAIGHT_WIDTH}
-        strokeLinecap="round"
-      />
-    );
+    return <line key={`t-s-${edge.lane}`} x1={x} y1={0} x2={x} y2={midY} stroke={edge.color} />;
   }
   if (edge.kind === 'merge') {
     const xFrom = laneX(edge.fromLane);
@@ -50,8 +39,6 @@ function renderTopEdge(edge: GraphEdge, midY: number): ReactElement | null {
         d={`M ${xFrom} 0 C ${xFrom} ${c1y}, ${xTo} ${c1y}, ${xTo} ${midY}`}
         fill="none"
         stroke={edge.color}
-        strokeWidth={CURVE_WIDTH}
-        strokeLinecap="round"
       />
     );
   }
@@ -61,18 +48,7 @@ function renderTopEdge(edge: GraphEdge, midY: number): ReactElement | null {
 function renderBottomEdge(edge: GraphEdge, midY: number, bottomY: number): ReactElement | null {
   if (edge.kind === 'straight') {
     const x = laneX(edge.lane);
-    return (
-      <line
-        key={`b-s-${edge.lane}`}
-        x1={x}
-        y1={midY}
-        x2={x}
-        y2={bottomY}
-        stroke={edge.color}
-        strokeWidth={STRAIGHT_WIDTH}
-        strokeLinecap="round"
-      />
-    );
+    return <line key={`b-s-${edge.lane}`} x1={x} y1={midY} x2={x} y2={bottomY} stroke={edge.color} />;
   }
   if (edge.kind === 'branch') {
     const xFrom = laneX(edge.fromLane);
@@ -84,15 +60,14 @@ function renderBottomEdge(edge: GraphEdge, midY: number, bottomY: number): React
         d={`M ${xFrom} ${midY} C ${xFrom} ${c1y}, ${xTo} ${c1y}, ${xTo} ${bottomY}`}
         fill="none"
         stroke={edge.color}
-        strokeWidth={CURVE_WIDTH}
-        strokeLinecap="round"
       />
     );
   }
   return null;
 }
 
-export const GraphRail = memo(function GraphRail({ row, rowHeight, maxLaneCount, active }: Props) {
+/** One row's slice of the commit graph: the lanes passing through and the commit's node. */
+export const GraphRail = memo(function GraphRail({ row, rowHeight, maxLaneCount, head }: Props) {
   const width = railWidth(maxLaneCount);
   const midY = Math.round(rowHeight / 2);
   const nodeX = laneX(row.lane);
@@ -107,31 +82,27 @@ export const GraphRail = memo(function GraphRail({ row, rowHeight, maxLaneCount,
       viewBox={`0 0 ${width} ${rowHeight}`}
       aria-hidden
       className="shrink-0 overflow-visible"
+      strokeWidth={STROKE_WIDTH}
+      strokeLinecap="round"
     >
       {row.topEdges.map((e) => renderTopEdge(e, midY))}
       {row.bottomEdges.map((e) => renderBottomEdge(e, midY, rowHeight))}
-      {/* Commit node */}
       <circle
         cx={nodeX}
         cy={midY}
-        r={active ? 4.6 : 3.6}
-        fill={row.nodeColor}
-        stroke="var(--background)"
-        strokeWidth={1.5}
+        r={head ? 5 : 4}
+        fill={head ? row.nodeColor : 'var(--background)'}
+        stroke={row.nodeColor}
       />
-      {active ? (
-        <circle
-          cx={nodeX}
-          cy={midY}
-          r={6.5}
-          fill="none"
-          stroke={row.nodeColor}
-          strokeOpacity={0.35}
-          strokeWidth={1.4}
-        />
-      ) : null}
       {overflow ? (
-        <text x={width - 4} y={midY + 3} textAnchor="end" className="fill-muted-foreground" style={{ fontSize: 8 }}>
+        <text
+          x={width - 4}
+          y={midY + 3}
+          textAnchor="end"
+          stroke="none"
+          className="fill-muted-foreground"
+          style={{ fontSize: 9 }}
+        >
           +{row.laneCount - visible}
         </text>
       ) : null}

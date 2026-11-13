@@ -290,7 +290,8 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 | `git_fetch`            | `git::commands` | `git.fetch` → `modules/source-control/useSourceControl.ts`                                                                  |
 | `git_pull_ff_only`     | `git::commands` | `git.pullFfOnly` → `modules/source-control/useSourceControl.ts`                                                             |
 | `git_push`             | `git::commands` | `git.push` → `modules/source-control/useSourceControl.ts`                                                                   |
-| `git_log`              | `git::commands` | `git.log` → `modules/git-history/GitHistoryPane.tsx`                                                                        |
+| `git_log`              | `git::commands` | `git.log` → `modules/git-history/useCommitLog.ts`                                                                           |
+| `git_commit_count`     | `git::commands` | `git.commitCount` → `modules/git-history/useCommitLog.ts`                                                                   |
 | `git_commit_files`     | `git::commands` | `git.commitFiles` → `modules/git-history/GitHistoryPane.tsx`                                                                |
 | `git_commit_file_diff` | `git::commands` | `git.commitFileDiff` → `modules/editor/lib/diffCache.ts`                                                                    |
 | `git_remote_url`       | `git::commands` | `git.remoteUrl` → `modules/git-history/GitHistoryPane.tsx`                                                                  |

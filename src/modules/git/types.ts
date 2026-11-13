@@ -57,7 +57,7 @@ export type GitLogScope = { kind: 'head' } | { kind: 'all' } | { kind: 'branch';
 /** `head` is the checked-out branch, or `HEAD` itself when detached. */
 type GitLogRefKind = 'head' | 'branch' | 'remote' | 'tag';
 
-type GitLogRef = {
+export type GitLogRef = {
   name: string;
   kind: GitLogRefKind;
 };

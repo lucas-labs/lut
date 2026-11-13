@@ -1,29 +1,33 @@
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { Spinner } from '@/components/ui/spinner';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
-import { FileIcon } from '@/modules/explorer/FileIcon';
-import { git, type GitCommitFileChange, type GitLogEntry } from '@/modules/git';
-import { Copy01Icon, File02Icon, LinkSquare02Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { git, type GitBranchEntry, type GitCommitFileChange, type GitLogEntry, type GitLogScope } from '@/modules/git';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { openUrl } from '@tauri-apps/plugin-opener';
-import { memo, type ReactNode, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type MouseEvent,
+  type ReactNode,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { createPortal } from 'react-dom';
-import { GraphRail, MAX_VISIBLE_LANES, railWidth } from './GraphRail';
+import { toast } from 'sonner';
+import { CommitDetail, type FilesEntry } from './CommitDetail';
+import { CommitRow, gridTemplate as makeGridTemplate, ROW_HEIGHT } from './CommitRow';
+import { railWidth } from './GraphRail';
+import { HistoryToolbar } from './HistoryToolbar';
 import { EMPTY_GRAPH_STATE, type GraphRow, type GraphState, layoutGraph } from './lib/graph';
-import { commitWebUrl, hostLabel, parseRemoteWebUrl, type RemoteWebInfo } from './lib/remoteWebUrl';
+import { parseRemoteWebUrl, type RemoteWebInfo } from './lib/remoteWebUrl';
+import { normalizeError, useCommitLog } from './useCommitLog';
 
-const RAIL_RESERVED_PX = railWidth(MAX_VISIBLE_LANES);
-// rail | sha | subject(capped) | spacer(absorbs slack) | author(hugs) | date | changes
-const GRID_TEMPLATE = `${RAIL_RESERVED_PX + 4}px 60px minmax(0, 560px) minmax(12px, 1fr) minmax(140px, max-content) 96px 116px`;
-
-const PAGE_SIZE = 30;
-const ROW_HEIGHT = 32;
-const TABLE_HEADER_HEIGHT = 24;
+/** The design's graph column; it widens when more lanes need room. */
+const MIN_RAIL_COLUMN_PX = 64;
 const NEAR_BOTTOM_PX = 240;
 const FILES_CACHE_LIMIT = 16;
+const POPOVER_WIDTH = 420;
 
 type CommitFileDiffOpenInput = {
   repoRoot: string;
@@ -46,119 +50,28 @@ type Props = {
   onSearchHandle?: (handle: GitHistorySearchHandle | null) => void;
 };
 
-type LoadStatus = 'idle' | 'initial' | 'more' | 'error';
+type GraphCache = {
+  byCommit: Map<string, GraphRow>;
+  tail: GraphState;
+  len: number;
+  /** The last commit laid out: a longer list extends the layout only while it still holds this commit there. */
+  last: GitLogEntry | null;
+  maxLaneCount: number;
+};
 
-type FilesEntry =
-  { state: 'loading' } | { state: 'loaded'; files: GitCommitFileChange[] } | { state: 'error'; error: string };
-
-function basename(path: string): string {
-  const parts = path.split(/[\\/]/).filter(Boolean);
-  return parts.length > 0 ? parts[parts.length - 1] : path;
-}
-
-function dirname(path: string): string {
-  const normalized = path.replace(/\\/g, '/');
-  const index = normalized.lastIndexOf('/');
-  if (index <= 0) return '';
-  return normalized.slice(0, index);
-}
-
-function normalizeError(error: unknown): string {
-  if (typeof error === 'string') return error;
-  if (error && typeof error === 'object' && 'message' in error) {
-    const message = (error as { message?: unknown }).message;
-    if (typeof message === 'string') return message;
-  }
-  return 'Unknown error';
-}
-
-function absoluteTime(secs: number): string {
-  if (!secs) return '';
-  return new Date(secs * 1000).toLocaleString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
-function authorInitials(name: string): string {
-  const trimmed = (name ?? '').trim();
-  if (!trimmed) return '?';
-  const parts = trimmed.split(/\s+/);
-  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
-}
-
-const AUTHOR_TINTS = [
-  '#7aa2f7', // soft blue
-  '#bb9af7', // soft purple
-  '#9ece6a', // soft green
-  '#e0af68', // soft amber
-  '#f7768e', // soft rose
-  '#73daca', // soft teal
-  '#ff9e64', // soft orange
-  '#b4f9f8', // pale cyan
-];
-
-function authorTint(key: string): string {
-  let hash = 0;
-  for (let i = 0; i < key.length; i++) {
-    hash = (hash * 31 + key.charCodeAt(i)) | 0;
-  }
-  return AUTHOR_TINTS[Math.abs(hash) % AUTHOR_TINTS.length];
-}
-
-function compactDate(secs: number): string {
-  if (!secs) return '';
-  const d = new Date(secs * 1000);
-  const now = new Date();
-  const sameYear = d.getFullYear() === now.getFullYear();
-  const month = d.toLocaleString(undefined, { month: 'short' });
-  const day = String(d.getDate()).padStart(2, '0');
-  if (sameYear) {
-    const hh = String(d.getHours()).padStart(2, '0');
-    const mm = String(d.getMinutes()).padStart(2, '0');
-    return `${month} ${day}  ${hh}:${mm}`;
-  }
-  return `${month} ${day} ${d.getFullYear()}`;
-}
-
-function statusTone(code: string): string {
-  switch (code.toUpperCase()) {
-    case 'A':
-      return 'text-emerald-600 dark:text-emerald-400';
-    case 'M':
-      return 'text-amber-600 dark:text-amber-300';
-    case 'D':
-      return 'text-rose-600 dark:text-rose-400';
-    case 'R':
-    case 'C':
-      return 'text-sky-600 dark:text-sky-300';
-    default:
-      return 'text-muted-foreground';
-  }
-}
-
-function highlight(text: string, query: string): ReactNode {
-  if (!query) return text;
-  const idx = text.toLowerCase().indexOf(query.toLowerCase());
-  if (idx === -1) return text;
-  return (
-    <>
-      {text.slice(0, idx)}
-      <mark className="rounded-sm bg-primary/25 px-0.5 text-foreground">{text.slice(idx, idx + query.length)}</mark>
-      {text.slice(idx + query.length)}
-    </>
-  );
-}
-
+/** The Git history tab (E10-15 design): scope, filter and Fetch, then the commit graph and table. */
 export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: Props) {
-  const [commits, setCommits] = useState<GitLogEntry[]>([]);
-  const [loadStatus, setLoadStatus] = useState<LoadStatus>('idle');
-  const [error, setError] = useState<string | null>(null);
-  const [endReached, setEndReached] = useState(false);
+  const [scope, setScope] = useState<GitLogScope>({ kind: 'head' });
+  const {
+    commits,
+    status: loadStatus,
+    error,
+    endReached,
+    totalCount,
+    loadMore,
+    reload,
+  } = useCommitLog(repoRoot, scope);
+
   const [searchInput, setSearchInput] = useState('');
   const deferredSearch = useDeferredValue(searchInput.trim());
   // Require at least 2 characters before filtering to avoid noisy single-char
@@ -172,13 +85,38 @@ export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: P
     });
     return () => onSearchHandle?.(null);
   }, [onSearchHandle]);
-  const [openAnchor, setOpenAnchor] = useState<{
-    sha: string;
-    top: number;
-    left: number;
-    width: number;
-    height: number;
-  } | null>(null);
+
+  const [branches, setBranches] = useState<GitBranchEntry[] | null>(null);
+  const [branchesToken, setBranchesToken] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    git
+      .listBranches(repoRoot)
+      .then((result) => {
+        if (!cancelled) setBranches(result.branches);
+      })
+      .catch(() => {
+        if (!cancelled) setBranches([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [repoRoot, branchesToken]);
+
+  const [fetching, setFetching] = useState(false);
+  const handleFetch = useCallback(async () => {
+    setFetching(true);
+    try {
+      await git.fetch(repoRoot);
+      reload();
+      setBranchesToken((t) => t + 1);
+    } catch (err) {
+      toast.error('Fetch failed', { description: normalizeError(err) });
+    }
+    setFetching(false);
+  }, [reload, repoRoot]);
+
+  const [openAnchor, setOpenAnchor] = useState<{ sha: string; top: number; left: number } | null>(null);
   const [remoteWeb, setRemoteWeb] = useState<RemoteWebInfo | null>(null);
   // Each opened commit's changed files, newest last, at most FILES_CACHE_LIMIT.
   const [filesCache, setFilesCache] = useState<ReadonlyMap<string, FilesEntry>>(() => new Map());
@@ -196,71 +134,40 @@ export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: P
     });
   }, []);
 
-  const requestIdRef = useRef(0);
-  const inflightMoreRef = useRef(false);
   const filesInflightRef = useRef(new Set<string>());
   const scrollRef = useRef<HTMLDivElement>(null);
-  const graphCacheRef = useRef<{
-    rows: GraphRow[];
-    byCommit: Map<string, GraphRow>;
-    tail: GraphState;
-    firstSha: string | null;
-    len: number;
-    maxLaneCount: number;
-  }>({
-    rows: [],
+  const graphCacheRef = useRef<GraphCache>({
     byCommit: new Map(),
     tail: EMPTY_GRAPH_STATE,
-    firstSha: null,
     len: 0,
+    last: null,
     maxLaneCount: 1,
   });
 
+  // Loading more pages extends the layout from where it stopped; any other change (a reload, another scope) lays the
+  // whole list out again.
   const { graphByCommit, maxLaneCount } = useMemo(() => {
     const cache = graphCacheRef.current;
-    if (commits.length === 0) {
-      cache.rows = [];
-      cache.byCommit = new Map();
-      cache.tail = EMPTY_GRAPH_STATE;
-      cache.firstSha = null;
-      cache.len = 0;
-      cache.maxLaneCount = 1;
-      return { graphByCommit: cache.byCommit, maxLaneCount: 1 };
-    }
-    const firstSha = commits[0].sha;
-    const canAppend = cache.firstSha === firstSha && commits.length >= cache.len;
-    if (!canAppend) {
-      const { rows, state } = layoutGraph(commits);
-      const byCommit = new Map<string, GraphRow>();
-      let max = 1;
+    const lastOf = (len: number) => (len > 0 ? commits[len - 1] : null);
+    const unchanged = commits.length === cache.len && lastOf(cache.len) === cache.last;
+    if (!unchanged) {
+      const appends = cache.len > 0 && commits.length > cache.len && lastOf(cache.len) === cache.last;
+      const { rows, state } = appends ? layoutGraph(commits.slice(cache.len), cache.tail) : layoutGraph(commits);
+      if (!appends) {
+        cache.byCommit = new Map();
+        cache.maxLaneCount = 1;
+      }
       for (const row of rows) {
-        byCommit.set(row.sha, row);
-        if (row.laneCount > max) max = row.laneCount;
-      }
-      cache.rows = rows;
-      cache.byCommit = byCommit;
-      cache.tail = state;
-      cache.firstSha = firstSha;
-      cache.len = commits.length;
-      cache.maxLaneCount = max;
-      return { graphByCommit: byCommit, maxLaneCount: max };
-    }
-    if (commits.length > cache.len) {
-      const delta = commits.slice(cache.len);
-      const { rows: newRows, state } = layoutGraph(delta, cache.tail);
-      let max = cache.maxLaneCount;
-      for (const row of newRows) {
         cache.byCommit.set(row.sha, row);
-        if (row.laneCount > max) max = row.laneCount;
+        if (row.laneCount > cache.maxLaneCount) cache.maxLaneCount = row.laneCount;
       }
-      cache.rows = cache.rows.concat(newRows);
       cache.tail = state;
       cache.len = commits.length;
-      cache.maxLaneCount = max;
+      cache.last = lastOf(commits.length);
     }
     return { graphByCommit: cache.byCommit, maxLaneCount: cache.maxLaneCount };
   }, [commits]);
-  const gridTemplate = GRID_TEMPLATE;
+  const gridTemplate = makeGridTemplate(Math.max(MIN_RAIL_COLUMN_PX, railWidth(maxLaneCount)));
 
   const filtered = useMemo(() => {
     const q = activeSearch.toLowerCase();
@@ -282,70 +189,15 @@ export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: P
     getItemKey: (index) => filtered[index]?.sha ?? index,
   });
 
-  const loadInitial = useCallback(async () => {
-    const requestId = ++requestIdRef.current;
-    setLoadStatus('initial');
-    setError(null);
-    setEndReached(false);
-    try {
-      const entries = await git.log(repoRoot, { limit: PAGE_SIZE });
-      if (requestId !== requestIdRef.current) return;
-      setCommits(entries);
-      setLoadStatus('idle');
-      if (entries.length < PAGE_SIZE) setEndReached(true);
-    } catch (err) {
-      if (requestId !== requestIdRef.current) return;
-      setError(normalizeError(err));
-      setLoadStatus('error');
-    }
-  }, [repoRoot]);
-
-  const loadMore = useCallback(async () => {
-    if (inflightMoreRef.current || endReached) return;
-    if (loadStatus !== 'idle') return;
-    const last = commits[commits.length - 1];
-    if (!last) return;
-    inflightMoreRef.current = true;
-    setLoadStatus('more');
-    try {
-      const entries = await git.log(repoRoot, {
-        limit: PAGE_SIZE,
-        skip: commits.length,
-      });
-      setCommits((prev) => {
-        const seen = new Set(prev.map((c) => c.sha));
-        const merged = [...prev];
-        for (const e of entries) if (!seen.has(e.sha)) merged.push(e);
-        return merged;
-      });
-      if (entries.length < PAGE_SIZE) setEndReached(true);
-      setLoadStatus('idle');
-    } catch (err) {
-      setError(normalizeError(err));
-      setLoadStatus('error');
-    }
-    inflightMoreRef.current = false;
-  }, [commits, endReached, loadStatus, repoRoot]);
-
-  useEffect(() => {
-    filesInflightRef.current.clear();
-    setFilesCache(new Map());
-    setCommits([]);
-    setOpenAnchor(null);
-    void loadInitial();
-  }, [loadInitial]);
-
   useEffect(() => {
     let cancelled = false;
     git
       .remoteUrl(repoRoot)
       .then((url) => {
-        if (cancelled) return;
-        setRemoteWeb(parseRemoteWebUrl(url));
+        if (!cancelled) setRemoteWeb(parseRemoteWebUrl(url));
       })
       .catch(() => {
-        if (cancelled) return;
-        setRemoteWeb(null);
+        if (!cancelled) setRemoteWeb(null);
       });
     return () => {
       cancelled = true;
@@ -356,36 +208,27 @@ export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: P
     const el = scrollRef.current;
     if (!el) return;
     setOpenAnchor((prev) => (prev ? null : prev));
-    if (activeSearch) return;
+    if (activeSearch || loadStatus !== 'idle') return;
     const remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
-    if (remaining < NEAR_BOTTOM_PX) {
-      void loadMore();
-    }
-  }, [activeSearch, loadMore]);
+    if (remaining < NEAR_BOTTOM_PX) void loadMore();
+  }, [activeSearch, loadMore, loadStatus]);
 
   // Auto-fill: if the list doesn't fill the viewport (no scroll possible)
   // after a load, keep pulling pages until it does or the end is reached.
   // Scheduled async so we don't fight ongoing state transitions.
   useEffect(() => {
-    if (loadStatus !== 'idle') return;
-    if (endReached) return;
-    if (activeSearch) return;
-    if (commits.length === 0) return;
+    if (loadStatus !== 'idle' || endReached || activeSearch || commits.length === 0) return;
     const el = scrollRef.current;
     if (!el) return;
-    const scrollable = el.scrollHeight - el.clientHeight;
-    if (scrollable > NEAR_BOTTOM_PX) return;
-    const id = window.setTimeout(() => {
-      void loadMore();
-    }, 0);
+    if (el.scrollHeight - el.clientHeight > NEAR_BOTTOM_PX) return;
+    const id = window.setTimeout(() => void loadMore(), 0);
     return () => window.clearTimeout(id);
   }, [commits.length, activeSearch, endReached, loadMore, loadStatus]);
 
-  const handleRefresh = useCallback(() => {
-    filesInflightRef.current.clear();
-    setFilesCache(new Map());
-    void loadInitial();
-  }, [loadInitial]);
+  const handleScopeChange = useCallback((next: GitLogScope) => {
+    setOpenAnchor(null);
+    setScope(next);
+  }, []);
 
   const fetchFiles = useCallback(
     async (sha: string) => {
@@ -406,32 +249,20 @@ export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: P
   );
 
   const handleRowClick = useCallback(
-    (sha: string, event: React.MouseEvent<HTMLElement>) => {
+    (sha: string, event: MouseEvent<HTMLElement>) => {
       if (openAnchor?.sha === sha) {
         setOpenAnchor(null);
         return;
       }
       // Anchor at the cursor so the popover opens where the user clicked,
       // but clamp X so it never gets pushed off-screen on the right.
-      const POPOVER_WIDTH = 420;
       const PADDING = 16;
       const maxLeft = window.innerWidth - POPOVER_WIDTH - PADDING;
-      const left = Math.max(PADDING, Math.min(event.clientX, maxLeft));
-      setOpenAnchor({
-        sha,
-        top: event.clientY,
-        left,
-        width: 1,
-        height: 1,
-      });
+      setOpenAnchor({ sha, top: event.clientY, left: Math.max(PADDING, Math.min(event.clientX, maxLeft)) });
       void fetchFiles(sha);
     },
     [fetchFiles, openAnchor?.sha],
   );
-
-  const closePopover = useCallback(() => setOpenAnchor(null), []);
-
-  const openFilesEntry = openAnchor ? (filesCache.get(openAnchor.sha) ?? null) : null;
 
   const handleFileOpen = useCallback(
     (commit: GitLogEntry, file: GitCommitFileChange) => {
@@ -456,435 +287,153 @@ export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: P
     }
   }, []);
 
+  const openCommit = openAnchor ? commits.find((c) => c.sha === openAnchor.sha) : undefined;
+
   return (
-    <TooltipProvider delayDuration={500} skipDelayDuration={200}>
-      <div className="flex h-full min-h-0 flex-col bg-background [contain:layout_style]">
-        {loadStatus === 'initial' && commits.length === 0 ? (
-          <CenterPlaceholder>
-            <Spinner className="size-4" />
-            <span className="text-[11.5px] text-muted-foreground">Loading commits…</span>
-          </CenterPlaceholder>
-        ) : loadStatus === 'error' && commits.length === 0 ? (
-          <CenterPlaceholder>
-            <div className="text-[13px] font-medium">Could not load history</div>
-            <div className="max-w-md text-[11px] leading-relaxed text-muted-foreground">{error ?? 'Unknown error'}</div>
-            <Button size="sm" onClick={handleRefresh}>
-              Retry
-            </Button>
-          </CenterPlaceholder>
-        ) : commits.length === 0 ? (
-          <CenterPlaceholder>
-            <div className="text-[13px] font-medium">No commits yet</div>
-            <div className="max-w-md text-[11px] leading-relaxed text-muted-foreground">
-              This branch has no commits.
-            </div>
-          </CenterPlaceholder>
-        ) : (
-          <>
-            <div
-              className="grid shrink-0 items-center gap-3 border-b border-border/40 bg-card/55 pr-3 text-[9.5px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/70"
-              style={{
-                height: TABLE_HEADER_HEIGHT,
-                gridTemplateColumns: gridTemplate,
-              }}
-            >
-              <div />
-              <div className="pl-px">SHA</div>
-              <div className="min-w-0">Subject</div>
-              <div />
-              <div className="ml-2">Author</div>
-              <div className="text-right">Date</div>
-              <div className="text-right">Changes</div>
-            </div>
-            <div
-              ref={scrollRef}
-              onScroll={handleScroll}
-              className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]"
-            >
-              <div
-                style={{
-                  height: virtualizer.getTotalSize(),
-                  position: 'relative',
-                  width: '100%',
-                }}
-              >
-                {virtualizer.getVirtualItems().map((virtualRow) => {
-                  const commit = filtered[virtualRow.index];
-                  if (!commit) return null;
-                  return (
-                    <div
-                      key={virtualRow.key}
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: virtualRow.size,
-                        transform: `translateY(${virtualRow.start}px)`,
-                      }}
-                    >
-                      <CommitRow
-                        commit={commit}
-                        query={activeSearch}
-                        active={openAnchor?.sha === commit.sha}
-                        graphRow={graphByCommit.get(commit.sha) ?? null}
-                        maxLaneCount={maxLaneCount}
-                        gridTemplate={gridTemplate}
-                        onClick={handleRowClick}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-
-              {loadStatus === 'more' ? (
-                <div className="flex items-center justify-center gap-2 py-3 text-[11px] text-muted-foreground">
-                  <Spinner className="size-3" />
-                  Loading more…
-                </div>
-              ) : null}
-              {endReached && !activeSearch ? (
-                <div className="py-3 text-center text-[10.5px] text-muted-foreground/65">End of history</div>
-              ) : null}
-              {loadStatus === 'error' && commits.length > 0 ? (
-                <div className="flex items-center justify-center gap-2 py-3 text-[11px] text-destructive">
-                  {error ?? 'Failed to load more'}
-                  <Button
-                    size="xs"
-                    variant="ghost"
-                    className="h-6 cursor-pointer text-[11px]"
-                    onClick={() => void loadMore()}
-                  >
-                    Retry
-                  </Button>
-                </div>
-              ) : null}
-            </div>
-          </>
-        )}
-
-        <Popover
-          open={!!openAnchor}
-          onOpenChange={(next) => {
-            if (!next) closePopover();
-          }}
-        >
-          {typeof document !== 'undefined'
-            ? createPortal(
-                <PopoverAnchor asChild>
-                  <div
-                    aria-hidden
-                    style={{
-                      position: 'fixed',
-                      top: openAnchor?.top ?? -9999,
-                      left: openAnchor?.left ?? -9999,
-                      width: openAnchor?.width ?? 0,
-                      height: openAnchor?.height ?? 0,
-                      pointerEvents: 'none',
-                    }}
-                  />
-                </PopoverAnchor>,
-                document.body,
-              )
-            : null}
-          <PopoverContent
-            side="bottom"
-            align="start"
-            sideOffset={4}
-            alignOffset={0}
-            collisionPadding={16}
-            avoidCollisions
-            onOpenAutoFocus={(e) => e.preventDefault()}
-            className="flex w-[420px] max-w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden rounded-xl p-0 shadow-xl"
+    <div className="flex h-full min-h-0 flex-col bg-background [contain:layout_style]">
+      <HistoryToolbar
+        scope={scope}
+        onScopeChange={handleScopeChange}
+        branches={branches}
+        query={searchInput}
+        onQueryChange={setSearchInput}
+        totalCount={totalCount}
+        fetching={fetching}
+        onFetch={() => void handleFetch()}
+      />
+      {loadStatus === 'initial' && commits.length === 0 ? (
+        <CenterPlaceholder>
+          <Spinner className="size-4" />
+          <span className="text-xs text-muted-foreground">Loading commits…</span>
+        </CenterPlaceholder>
+      ) : loadStatus === 'error' && commits.length === 0 ? (
+        <CenterPlaceholder>
+          <div className="text-[13px] font-medium">Could not load history</div>
+          <div className="max-w-md text-[11px] leading-relaxed text-muted-foreground">{error ?? 'Unknown error'}</div>
+          <Button size="sm" onClick={reload}>
+            Retry
+          </Button>
+        </CenterPlaceholder>
+      ) : commits.length === 0 ? (
+        <CenterPlaceholder>
+          <div className="text-[13px] font-medium">No commits yet</div>
+          <div className="max-w-md text-[11px] leading-relaxed text-muted-foreground">This branch has no commits.</div>
+        </CenterPlaceholder>
+      ) : (
+        <>
+          <div
+            className="grid h-[30px] shrink-0 items-center gap-x-3 overflow-hidden border-b border-border pr-4 text-[11px] leading-[14px] text-muted-foreground [scrollbar-gutter:stable]"
+            style={{ gridTemplateColumns: gridTemplate }}
           >
-            {openAnchor
-              ? (() => {
-                  const commit = commits.find((c) => c.sha === openAnchor.sha);
-                  if (!commit) return null;
-                  return (
-                    <CommitDetail
+            <span />
+            <span>SHA</span>
+            <span>Subject</span>
+            <span>Author</span>
+            <span>Date</span>
+            <span className="text-right">Changes</span>
+          </div>
+          <div
+            ref={scrollRef}
+            onScroll={handleScroll}
+            className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto [scrollbar-gutter:stable]"
+          >
+            <div style={{ height: virtualizer.getTotalSize(), position: 'relative', width: '100%' }}>
+              {virtualizer.getVirtualItems().map((virtualRow) => {
+                const commit = filtered[virtualRow.index];
+                if (!commit) return null;
+                return (
+                  <div
+                    key={virtualRow.key}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: virtualRow.size,
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                  >
+                    <CommitRow
                       commit={commit}
-                      filesEntry={openFilesEntry}
-                      remoteWeb={remoteWeb}
-                      onCopySha={copyToClipboard}
-                      onOpenFile={handleFileOpen}
-                      onRetryFiles={() => void fetchFiles(openAnchor.sha)}
+                      query={activeSearch}
+                      active={openAnchor?.sha === commit.sha}
+                      graphRow={graphByCommit.get(commit.sha) ?? null}
+                      maxLaneCount={maxLaneCount}
+                      gridTemplate={gridTemplate}
+                      onClick={handleRowClick}
                     />
-                  );
-                })()
-              : null}
-          </PopoverContent>
-        </Popover>
-      </div>
-    </TooltipProvider>
+                  </div>
+                );
+              })}
+            </div>
+
+            {loadStatus === 'more' ? (
+              <div className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground">
+                <Spinner className="size-3" />
+                Loading more…
+              </div>
+            ) : null}
+            {endReached && !activeSearch ? (
+              <div className="py-3 text-center text-[11px] text-muted-foreground">End of history</div>
+            ) : null}
+            {loadStatus === 'error' ? (
+              <div className="flex items-center justify-center gap-2 py-3 text-xs text-destructive">
+                {error ?? 'Failed to load more'}
+                <Button size="xs" variant="ghost" onClick={() => void loadMore()}>
+                  Retry
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        </>
+      )}
+
+      <Popover
+        open={!!openCommit}
+        onOpenChange={(next) => {
+          if (!next) setOpenAnchor(null);
+        }}
+      >
+        {createPortal(
+          <PopoverAnchor asChild>
+            <div
+              aria-hidden
+              style={{
+                position: 'fixed',
+                top: openAnchor?.top ?? -9999,
+                left: openAnchor?.left ?? -9999,
+                width: 1,
+                height: 1,
+                pointerEvents: 'none',
+              }}
+            />
+          </PopoverAnchor>,
+          document.body,
+        )}
+        <PopoverContent
+          side="bottom"
+          align="start"
+          sideOffset={4}
+          collisionPadding={16}
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          className="w-[420px] max-w-[calc(100vw-2rem)] gap-0 overflow-hidden rounded-[8px] border border-border p-0 shadow-[0_12px_32px_rgba(0,0,0,0.4)] ring-0 dark:ring-0"
+        >
+          {openCommit ? (
+            <CommitDetail
+              commit={openCommit}
+              filesEntry={filesCache.get(openCommit.sha) ?? null}
+              remoteWeb={remoteWeb}
+              onCopySha={copyToClipboard}
+              onOpenFile={handleFileOpen}
+              onRetryFiles={() => void fetchFiles(openCommit.sha)}
+            />
+          ) : null}
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 }
 
 function CenterPlaceholder({ children }: { children: ReactNode }) {
   return <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">{children}</div>;
 }
-
-type CommitRowProps = {
-  commit: GitLogEntry;
-  query: string;
-  active: boolean;
-  graphRow: GraphRow | null;
-  maxLaneCount: number;
-  gridTemplate: string;
-  onClick: (sha: string, event: React.MouseEvent<HTMLElement>) => void;
-};
-
-const CommitRow = memo(function CommitRow({
-  commit,
-  query,
-  active,
-  graphRow,
-  maxLaneCount,
-  gridTemplate,
-  onClick,
-}: CommitRowProps) {
-  const date = compactDate(commit.timestampSecs);
-  const initials = authorInitials(commit.author);
-  const totalStat = commit.insertions + commit.deletions;
-  return (
-    <button
-      type="button"
-      onClick={(event) => onClick(commit.sha, event)}
-      className={cn(
-        'group relative grid h-full w-full cursor-pointer items-center gap-3 border-l-2 border-transparent pr-3 text-left transition-colors',
-        active ? 'border-l-primary/70 bg-accent/45' : 'hover:bg-accent/25',
-      )}
-      style={{ gridTemplateColumns: gridTemplate }}
-    >
-      <div className="flex items-center justify-start pl-1">
-        {graphRow ? (
-          <GraphRail row={graphRow} rowHeight={ROW_HEIGHT} maxLaneCount={maxLaneCount} active={active} />
-        ) : null}
-      </div>
-      <span className="pl-px font-mono text-[10.5px] tabular-nums text-muted-foreground/80">{commit.shortSha}</span>
-      <span
-        className={cn(
-          'min-w-0 truncate text-[12px] leading-tight',
-          active ? 'font-semibold text-foreground' : 'font-medium text-foreground/95',
-        )}
-      >
-        {commit.subject ? (
-          highlight(commit.subject, query)
-        ) : (
-          <span className="text-muted-foreground">(no subject)</span>
-        )}
-      </span>
-      <span aria-hidden />
-      <span
-        className="ml-2 inline-flex h-[18px] max-w-full min-w-0 items-center gap-1.5 justify-self-start self-center overflow-hidden rounded-md bg-foreground/6 pl-1 pr-1.5 text-[10.5px] font-medium text-foreground/85"
-        title={commit.authorEmail || commit.author}
-      >
-        <span
-          className="inline-flex size-3.5 shrink-0 items-center justify-center rounded-[3px] font-mono text-[8.5px] font-bold uppercase tabular-nums text-background"
-          style={{
-            backgroundColor: authorTint(commit.authorEmail || commit.author),
-          }}
-        >
-          {initials}
-        </span>
-        <span className="min-w-0 truncate">{commit.author ? highlight(commit.author, query) : 'Unknown'}</span>
-      </span>
-      <span className="text-right font-mono text-[10.5px] tabular-nums text-muted-foreground/75">{date}</span>
-      <span className="flex min-w-0 items-center justify-end gap-1.5 font-mono text-[10px] tabular-nums">
-        {commit.filesChanged > 0 ? (
-          <span
-            className="inline-flex items-center gap-1 text-muted-foreground/75"
-            title={`${commit.filesChanged} ${commit.filesChanged === 1 ? 'file' : 'files'} changed`}
-          >
-            <HugeiconsIcon icon={File02Icon} size={10.5} strokeWidth={1.7} className="opacity-70" />
-            <span className="font-medium">{commit.filesChanged}</span>
-          </span>
-        ) : null}
-        {commit.filesChanged > 0 && totalStat > 0 ? (
-          <span aria-hidden className="size-[3px] shrink-0 rounded-full bg-muted-foreground/30" />
-        ) : null}
-        {totalStat > 0 ? (
-          <span className="inline-flex items-center gap-1">
-            {commit.insertions > 0 ? (
-              <span className="font-semibold text-emerald-600/85 dark:text-emerald-400/85">+{commit.insertions}</span>
-            ) : null}
-            {commit.deletions > 0 ? (
-              <span className="font-semibold text-rose-600/85 dark:text-rose-400/85">−{commit.deletions}</span>
-            ) : null}
-          </span>
-        ) : commit.filesChanged === 0 ? (
-          <span className="text-muted-foreground/40">—</span>
-        ) : null}
-      </span>
-    </button>
-  );
-});
-
-type CommitDetailProps = {
-  commit: GitLogEntry;
-  filesEntry: FilesEntry | null;
-  remoteWeb: RemoteWebInfo | null;
-  onCopySha: (value: string) => Promise<void> | void;
-  onOpenFile: (commit: GitLogEntry, file: GitCommitFileChange) => Promise<void> | void;
-  onRetryFiles: () => void;
-};
-
-function CommitDetail({ commit, filesEntry, remoteWeb, onCopySha, onOpenFile, onRetryFiles }: CommitDetailProps) {
-  const absolute = absoluteTime(commit.timestampSecs);
-  const webUrl = remoteWeb ? commitWebUrl(remoteWeb, commit.sha) : null;
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (!copied) return;
-    const t = window.setTimeout(() => setCopied(false), 1100);
-    return () => window.clearTimeout(t);
-  }, [copied]);
-
-  return (
-    <div className="flex max-h-[60vh] min-h-0 flex-col">
-      <div className="shrink-0 border-b border-border/45 p-3">
-        <div className="flex items-start gap-2">
-          <span className="mt-px shrink-0 rounded bg-muted/65 px-1.5 py-0.5 font-mono text-[10.5px] leading-none tabular-nums text-muted-foreground">
-            {commit.shortSha}
-          </span>
-          <div className="min-w-0 flex-1 text-[12.5px] font-semibold leading-snug text-foreground">
-            {commit.subject || <span className="text-muted-foreground">(no subject)</span>}
-          </div>
-        </div>
-        <div className="mt-2 flex min-w-0 items-center gap-1.5 text-[10.5px] text-muted-foreground">
-          <span className="truncate">{commit.author || 'Unknown'}</span>
-          {commit.authorEmail ? (
-            <>
-              <span className="text-muted-foreground/45">·</span>
-              <span className="truncate text-muted-foreground/85">{commit.authorEmail}</span>
-            </>
-          ) : null}
-          <span className="text-muted-foreground/45">·</span>
-          <span className="shrink-0 tabular-nums">{absolute}</span>
-        </div>
-
-        <div className="mt-2.5 flex items-center gap-1">
-          <Button
-            size="xs"
-            variant="ghost"
-            className="h-6 cursor-pointer gap-1.5 px-1.5 text-[11px] text-muted-foreground hover:text-foreground"
-            onClick={() => {
-              void onCopySha(commit.sha);
-              setCopied(true);
-            }}
-          >
-            <HugeiconsIcon icon={Copy01Icon} size={11} strokeWidth={1.9} />
-            {copied ? 'Copied' : 'Copy SHA'}
-          </Button>
-          {webUrl ? (
-            <Button
-              size="xs"
-              variant="ghost"
-              className="h-6 cursor-pointer gap-1.5 px-1.5 text-[11px] text-muted-foreground hover:text-foreground"
-              onClick={() => void openUrl(webUrl).catch(console.error)}
-            >
-              <HugeiconsIcon icon={LinkSquare02Icon} size={11} strokeWidth={1.9} />
-              {hostLabel(remoteWeb!)}
-            </Button>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <CommitFiles commit={commit} filesEntry={filesEntry} onOpenFile={onOpenFile} onRetry={onRetryFiles} />
-      </div>
-    </div>
-  );
-}
-
-function CommitFiles({
-  commit,
-  filesEntry,
-  onOpenFile,
-  onRetry,
-}: {
-  commit: GitLogEntry;
-  filesEntry: FilesEntry | null;
-  onOpenFile: (commit: GitLogEntry, file: GitCommitFileChange) => Promise<void> | void;
-  onRetry: () => void;
-}) {
-  if (!filesEntry || filesEntry.state === 'loading') {
-    return (
-      <div className="flex items-center gap-2 px-3 py-3 text-[11px] text-muted-foreground">
-        <Spinner className="size-3" />
-        Loading files…
-      </div>
-    );
-  }
-  if (filesEntry.state === 'error') {
-    return (
-      <div className="flex items-center justify-between gap-2 px-3 py-3 text-[11px] text-destructive">
-        <span className="truncate">{filesEntry.error}</span>
-        <Button size="xs" variant="ghost" className="h-6 cursor-pointer text-[11px]" onClick={onRetry}>
-          Retry
-        </Button>
-      </div>
-    );
-  }
-  if (filesEntry.files.length === 0) {
-    return <div className="px-3 py-3 text-[11px] text-muted-foreground">No file changes.</div>;
-  }
-  return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex shrink-0 items-center justify-between px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/85">
-        <span>Files</span>
-        <span className="rounded-sm bg-muted/55 px-1 py-px text-[9.5px] tabular-nums text-muted-foreground/85 normal-case tracking-normal">
-          {filesEntry.files.length}
-        </span>
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]">
-        <ul className="space-y-px px-1.5 pb-2">
-          {filesEntry.files.map((file) => (
-            <li key={file.path}>
-              <FileRow file={file} onOpen={() => void onOpenFile(commit, file)} />
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
-}
-
-const FileRow = memo(function FileRow({ file, onOpen }: { file: GitCommitFileChange; onOpen: () => void }) {
-  const fileName = basename(file.path);
-  const dir = dirname(file.path);
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="group flex h-7 w-full cursor-pointer items-center gap-2 rounded-md px-1.5 text-left transition-colors hover:bg-accent/40"
-    >
-      <FileIcon name={fileName} className="size-3.5 shrink-0" />
-      <div className="flex min-w-0 flex-1 items-baseline gap-1.5 leading-none">
-        <span className="truncate text-[11.5px] font-medium leading-tight">{fileName}</span>
-        {dir ? (
-          <span className="min-w-0 flex-1 truncate text-[10px] leading-tight text-muted-foreground/80">{dir}</span>
-        ) : null}
-      </div>
-      <div className="flex shrink-0 items-center gap-1 text-[10px] tabular-nums">
-        {file.isBinary ? (
-          <span className="text-muted-foreground/70">binary</span>
-        ) : (
-          <>
-            {file.added > 0 ? <span className="text-emerald-600 dark:text-emerald-400">+{file.added}</span> : null}
-            {file.removed > 0 ? <span className="text-rose-600 dark:text-rose-400">−{file.removed}</span> : null}
-          </>
-        )}
-      </div>
-      <span
-        className={cn(
-          'inline-flex w-4 shrink-0 justify-center text-[9.5px] font-bold leading-none tabular-nums',
-          statusTone(file.status),
-        )}
-        title={file.statusLabel}
-      >
-        {file.status.toUpperCase()}
-      </span>
-    </button>
-  );
-});
