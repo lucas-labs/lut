@@ -15,7 +15,7 @@ import {
   type TabNavigatorOrientation,
   TabStatus,
 } from '@/modules/navigation';
-import { useShortcutHint } from '@/modules/shortcuts';
+import { ShortcutKeys, useShortcutLabel } from '@/modules/shortcuts';
 import { ArrowRight01Icon, Cancel01Icon, CancelCircleIcon, PencilEdit02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Fragment, type KeyboardEvent, useEffect, useRef, useState } from 'react';
@@ -63,7 +63,7 @@ export function TabNavigator({
 }: Props) {
   const vertical = orientation === 'vertical';
   const activeId = items.find((t) => t.active)?.id;
-  const closeHint = useShortcutHint('tab.close');
+  const closeHint = useShortcutLabel('tab.close');
   const scrollRef = useRef<HTMLDivElement>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draggingId, setDraggingId] = useState<number | null>(null);
@@ -284,7 +284,11 @@ export function TabNavigator({
             <ContextMenuItem disabled={items.length <= 1} onSelect={() => actions.close(t.id)}>
               <HugeiconsIcon icon={Cancel01Icon} size={14} strokeWidth={1.75} />
               <span className="flex-1">Close tab</span>
-              {t.active && closeHint ? <ContextMenuShortcut>{closeHint}</ContextMenuShortcut> : null}
+              {t.active && closeHint ? (
+                <ContextMenuShortcut>
+                  <ShortcutKeys label={closeHint} />
+                </ContextMenuShortcut>
+              ) : null}
             </ContextMenuItem>
           </ContextMenuContent>
         </ContextMenu>

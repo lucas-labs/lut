@@ -20,7 +20,7 @@ function syncLabel(ahead: number, behind: number, upstream: string | null | unde
 
 /** The commit message, the staged and sync state, and the Commit and Push actions (E10-14 design). */
 export function CommitBox({ scm, blocked }: { scm: SourceControlPanelState; blocked: boolean }) {
-  const shortcut = IS_MAC ? '⌘↩' : 'Ctrl+Enter';
+  const shortcut = IS_MAC ? '⌘↩' : '^+Enter';
   const stagedCount = scm.stagedEntries.length;
   const hasMessage = scm.commitMessage.trim().length > 0;
   const canCommit = stagedCount > 0 && hasMessage && !blocked && !scm.actionBusy;

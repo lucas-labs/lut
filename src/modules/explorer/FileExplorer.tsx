@@ -99,7 +99,7 @@ type Row =
     };
 
 const ROW_HEIGHT = 24;
-const PASTE_HINT = IS_MAC ? '⌘V' : 'Ctrl+V';
+const PASTE_HINT = IS_MAC ? '⌘V' : '^+V';
 const OVERSCAN = 8;
 
 function basename(path: string): string {
