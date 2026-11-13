@@ -476,6 +476,8 @@ fn log_entries_carry_their_refs() {
         return;
     }
     let fx = branched_fixture();
+    // A user's config that hides remote refs from decorations must not hide them here.
+    fx.run_git(&["config", "log.excludeDecoration", "refs/remotes/*"]);
     fx.run_git(&["tag", "v1"]);
     fx.run_git(&["update-ref", "refs/remotes/origin/main", "HEAD"]);
     fx.run_git(&[
@@ -534,6 +536,28 @@ fn log_entries_carry_their_refs() {
     assert_eq!(detached[0].subject, "c0");
     assert_eq!(detached[0].refs[0].name, "HEAD");
     assert_eq!(detached[0].refs[0].kind, GitLogRefKind::Head);
+}
+
+#[test]
+fn all_branches_still_walks_the_branches_from_an_unborn_head() {
+    if skip_if_no_git() {
+        return;
+    }
+    let fx = branched_fixture();
+    fx.run_git(&["checkout", "-q", "--orphan", "fresh"]);
+
+    let mut all = subjects(&fx, 10, 0, &GitLogScope::All);
+    all.sort();
+    assert_eq!(all, ["c0", "c1", "f1"]);
+    let count = operations::commit_count(
+        &fx.registry,
+        &fx.repo_str(),
+        &GitLogScope::All,
+        &fx.workspace,
+    )
+    .unwrap();
+    assert_eq!(count, 3);
+    assert!(subjects(&fx, 10, 0, &GitLogScope::Head).is_empty());
 }
 
 #[test]

@@ -559,15 +559,23 @@ const LOG_FORMAT: &str = "%H%x1f%an%x1f%ae%x1f%at%x1f%P%x1f%D%x1f%s";
 const MAX_LOG_LIMIT: u32 = 200;
 
 /// The revisions a scope walks, followed by `--` so none of them can be read as a path. "All branches" is local and
-/// remote branches plus `HEAD` (a detached checkout); `--all` would also walk the stash.
-fn log_scope_args(scope: &GitLogScope) -> Result<Vec<String>> {
+/// remote branches plus `HEAD` (a detached checkout); `--all` would also walk the stash. `HEAD` joins only when it
+/// names a commit: on an unborn branch (`git init` then fetch, `checkout --orphan`) git would reject the whole walk.
+fn log_scope_args(repo_root: &ResolvedGitDirectory, scope: &GitLogScope) -> Result<Vec<String>> {
     let mut args = match scope {
         GitLogScope::Head => vec!["HEAD".to_string()],
-        GitLogScope::All => vec![
-            "--branches".to_string(),
-            "--remotes".to_string(),
-            "HEAD".to_string(),
-        ],
+        GitLogScope::All => {
+            let mut revs = vec!["--branches".to_string(), "--remotes".to_string()];
+            let head = git_stdout_line_opt(
+                &repo_root.workspace,
+                &repo_root.git_path,
+                ["rev-parse", "--verify", "--quiet", "HEAD^{commit}"],
+            )?;
+            if head.is_some() {
+                revs.push("HEAD".to_string());
+            }
+            revs
+        }
         GitLogScope::Branch { name } => {
             if name.is_empty() || name.starts_with('-') || name.chars().any(char::is_whitespace) {
                 return Err(GitError::InvalidPath(name.into()));
@@ -604,6 +612,11 @@ pub fn log(
         "--no-color",
         "--shortstat",
         "--decorate=full",
+        // Explicit patterns override `log.excludeDecoration`, so a user's config cannot hide the refs the view shows.
+        "--decorate-refs=refs/heads/",
+        "--decorate-refs=refs/remotes/",
+        "--decorate-refs=refs/tags/",
+        "--decorate-refs=HEAD",
         &format!("--max-count={bounded}"),
         &format!("--skip={skip}"),
         &format!("--format={LOG_FORMAT}"),
@@ -611,7 +624,7 @@ pub fn log(
     .into_iter()
     .map(str::to_string)
     .collect();
-    args.extend(log_scope_args(scope)?);
+    args.extend(log_scope_args(&repo_root, scope)?);
     let output = run_git(
         &repo_root.workspace,
         Some(&repo_root.git_path),
@@ -731,7 +744,7 @@ pub fn commit_count(
     let repo_root = authorized_repo_root(registry, repo_root, workspace)?;
     ensure_git_available(&repo_root.workspace)?;
     let mut args = vec!["rev-list".to_string(), "--count".to_string()];
-    args.extend(log_scope_args(scope)?);
+    args.extend(log_scope_args(&repo_root, scope)?);
     let output = run_git(
         &repo_root.workspace,
         Some(&repo_root.git_path),
