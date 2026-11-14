@@ -7,6 +7,8 @@ import { type LocalImagesOptions, previewBoundary, rehypeLocalImages } from './l
 import { rehypeGithubAlerts } from './lib/githubAlerts';
 import { rehypeImageCaptions } from './lib/imageCaptions';
 import { rehypeImageSize } from './lib/imageSize';
+import { type LocalLinksOptions, rehypeHeadingIds, rehypeLocalLinks } from './lib/localLinks';
+import { MarkdownLinkContext } from './lib/openLocalLink';
 import { markdownComponents } from './MarkdownElements';
 import { MarkdownViewToggle } from './MarkdownViewToggle';
 import { PreviewStatusLine } from './PreviewStatusLine';
@@ -18,6 +20,8 @@ type Props = {
   workspaceRoot?: string | null;
   visible: boolean;
   onSetView: (mode: 'rendered' | 'raw') => void;
+  /** Opens a file the document links to, in a tab, as the explorer does. */
+  onOpenFile?: (path: string) => void;
 };
 
 /** What a local image shows while its asset grant is on its way: nothing, rather than harden's "blocked" text. */
@@ -36,8 +40,9 @@ function identityOf(value: object): number {
   return id;
 }
 
-export function MarkdownPreviewPane({ path, workspaceRoot = null, visible, onSetView }: Props) {
+export function MarkdownPreviewPane({ path, workspaceRoot = null, visible, onSetView, onOpenFile }: Props) {
   const status = useMarkdownDocument(path, visible);
+  const links = useMemo(() => ({ openFile: onOpenFile }), [onOpenFile]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollTopRef = useRef(0);
   const content = status.kind === 'ready' ? status.content : null;
@@ -85,7 +90,9 @@ export function MarkdownPreviewPane({ path, workspaceRoot = null, visible, onSet
             </p>
           )}
           {content !== null && (
-            <MarkdownBody path={path} boundary={previewBoundary(path, workspaceRoot)} content={content} />
+            <MarkdownLinkContext.Provider value={links}>
+              <MarkdownBody path={path} boundary={previewBoundary(path, workspaceRoot)} content={content} />
+            </MarkdownLinkContext.Provider>
           )}
         </article>
       </div>
@@ -122,6 +129,8 @@ const MarkdownBody = memo(function MarkdownBody({
       ],
       rehypeImageCaptions,
       rehypeImageSize,
+      [rehypeLocalLinks, { basePath: path } satisfies LocalLinksOptions],
+      rehypeHeadingIds,
       d.harden,
     ];
   }, [path, boundary, assetUrlFor]);

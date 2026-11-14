@@ -44,6 +44,9 @@ vi.mock('@/lib/useAssetGrant', async () => {
   };
 });
 vi.mock('@/lib/security/security', () => ({ checkReadable: () => ({ ok: true }) }));
+// fs_stat for a linked path: every linked path exists as a file.
+vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn(async () => ({ kind: 'file' })) }));
+const openFile = vi.fn();
 const LOGO_DOC = '# Title\n\n![Logo](./.github/logo.svg)\n';
 const doc = vi.hoisted(() => ({ content: '' }));
 vi.mock('./useMarkdownDocument', () => ({
@@ -71,7 +74,13 @@ afterEach(() => {
 const render = (path = DOC) =>
   act(() =>
     root.render(
-      createElement(MarkdownPreviewPane, { path, workspaceRoot: 'C:/proj', visible: true, onSetView: () => {} }),
+      createElement(MarkdownPreviewPane, {
+        path,
+        workspaceRoot: 'C:/proj',
+        visible: true,
+        onSetView: () => {},
+        onOpenFile: openFile,
+      }),
     ),
   );
 
@@ -147,6 +156,34 @@ describe('MarkdownPreviewPane on the design', () => {
     await render();
     expect(host.textContent).toContain('$pnpm test restore --watch');
     expect([...host.querySelectorAll('button')].map((b) => b.textContent)).toContain('Copy');
+  });
+
+  it('opens a relative link in lut instead of navigating the webview', async () => {
+    openFile.mockClear();
+    doc.content = 'More info in [UI/UX Guide](./src/components/UI-UX-GUIDE.md).\n';
+    await render();
+    const link = host.querySelector('a');
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    await act(async () => {
+      link?.dispatchEvent(click);
+    });
+    expect(click.defaultPrevented).toBe(true);
+    expect(openFile).toHaveBeenCalledWith('C:/proj/src/components/UI-UX-GUIDE.md');
+  });
+
+  it('scrolls to the heading a #section link names, inside the preview', async () => {
+    doc.content = '[Go](#schema-versions)\n\n## Schema versions\n';
+    await render();
+    const heading = host.querySelector('h2');
+    expect(heading?.id).toBe('schema-versions');
+    const scroll = vi.fn();
+    if (heading) heading.scrollIntoView = scroll;
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    await act(async () => {
+      host.querySelector('a')?.dispatchEvent(click);
+    });
+    expect(click.defaultPrevented).toBe(true);
+    expect(scroll).toHaveBeenCalled();
   });
 
   it('shows the file and that it is a preview under the document', async () => {

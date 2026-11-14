@@ -1,3 +1,4 @@
+import { isExternalUrl } from '@/lib/external-link';
 import { cn } from '@/lib/utils';
 import {
   Alert02Icon,
@@ -9,10 +10,11 @@ import {
   Tick02Icon,
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react';
-import type { ComponentProps, CSSProperties, ReactNode } from 'react';
+import { type ComponentProps, type CSSProperties, type MouseEvent, type ReactNode, useContext } from 'react';
 import { MarkdownCode } from './code/markdown-code';
 import { REFUSED_IMAGE_TAG } from './lib/assetPath';
 import type { AlertKind } from './lib/githubAlerts';
+import { localLinkDeps, MarkdownLinkContext, openLocalLink } from './lib/openLocalLink';
 import { MarkdownImage } from './MarkdownImage';
 import { MarkdownLink } from './MarkdownLink';
 
@@ -153,10 +155,40 @@ function Rule({ node: _node, className, ...props }: HastProps<'hr'>) {
   return <hr {...props} className={cn('my-7 h-px border-0 bg-border', className)} />;
 }
 
-function Link({ node: _node, className, ...props }: HastProps<'a'>) {
+/** Scrolls the preview holding `from` to the heading a `#section` link names. */
+function scrollToAnchor(from: HTMLElement, fragment: string) {
+  let id = fragment;
+  try {
+    id = decodeURIComponent(fragment);
+  } catch {
+    /* keep the raw fragment */
+  }
+  const preview = from.closest('.lut-md');
+  const target =
+    preview?.querySelector(`[id="${CSS.escape(id)}"]`) ??
+    preview?.querySelector(`[id="${CSS.escape(id.toLowerCase())}"]`);
+  target?.scrollIntoView({ block: 'start' });
+}
+
+/**
+ * A link in the preview. Remote ones open in the browser (`MarkdownLink`); a relative path opens that file in lut;
+ * `#section` scrolls to the heading. Nothing navigates the app's own webview.
+ */
+function Link({ node: _node, className, onClick, ...props }: HastProps<'a'>) {
+  const { openFile } = useContext(MarkdownLinkContext);
+  const localPath = (props as Record<string, unknown>)['data-local-path'];
+  const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    onClick?.(event);
+    const href = props.href ?? '';
+    if (event.defaultPrevented || isExternalUrl(href)) return;
+    event.preventDefault();
+    if (typeof localPath === 'string' && openFile) void openLocalLink(localPath, localLinkDeps(openFile));
+    else if (href.startsWith('#')) scrollToAnchor(event.currentTarget, href.slice(1));
+  };
   return (
     <MarkdownLink
       {...props}
+      onClick={handleClick}
       className={cn(
         'cursor-pointer text-primary underline decoration-1 underline-offset-2 hover:text-foreground',
         className,

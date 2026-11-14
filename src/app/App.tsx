@@ -225,6 +225,7 @@ export default function App() {
               onOpenCommitFile={openCommitFileDiffTab}
               onGitHistorySearchHandle={onGitHistorySearchHandle}
               onSetMarkdownView={setMarkdownView}
+              onOpenFile={commands.openFile}
             />
           }
         >
