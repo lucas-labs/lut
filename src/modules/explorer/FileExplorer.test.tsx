@@ -18,14 +18,30 @@ const entry = (name: string, kind: DirEntry['kind'] = 'file'): DirEntry => ({
 const disk = vi.hoisted(() => ({
   dirs: new Map<string, DirEntry[]>(),
   reads: [] as string[],
+  searches: [] as string[],
+  /** The file operations asked for, without the workspace each one carries. */
+  ops: [] as { command: string; args: Record<string, unknown> }[],
 }));
 vi.mock('@tauri-apps/api/core', () => ({
-  invoke: (command: string, args: { path: string }) => {
+  invoke: (command: string, args: { path: string; workspace?: unknown }) => {
     if (command === 'fs_read_dir') {
       disk.reads.push(args.path);
       return Promise.resolve(disk.dirs.get(args.path) ?? []);
     }
     if (command === 'fs_canonicalize') return Promise.resolve(args.path);
+    if (command === 'fs_search') {
+      const { root, query } = args as unknown as { root: string; query: string };
+      disk.searches.push(query);
+      return Promise.resolve({
+        hits: [{ path: `${root}/src/app.ts`, rel: 'src/app.ts', name: 'app.ts', is_dir: false }],
+        truncated: false,
+      });
+    }
+    if (command === 'fs_rename' || command === 'fs_delete') {
+      const { workspace: _workspace, ...rest } = args;
+      disk.ops.push({ command, args: rest });
+      return Promise.resolve();
+    }
     return Promise.reject(new Error(`unexpected ${command}`));
   },
 }));
@@ -70,6 +86,8 @@ beforeEach(() => {
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   rootPath = `/repo${++rootCount}`;
   disk.reads = [];
+  disk.ops = [];
+  disk.searches = [];
   disk.dirs = new Map([
     [rootPath, [entry('src', 'dir'), entry('README.md')]],
     [`${rootPath}/src`, [entry('lib', 'dir'), entry('app.ts')]],
@@ -152,5 +170,75 @@ describe('FileExplorer', () => {
     expect(row('src')?.getAttribute('aria-expanded')).toBe('false');
     expect(row('src/app.ts')).toBeNull();
     expect(row('src/lib/util.ts')).toBeNull();
+  });
+});
+
+/** Types into a React-controlled input. */
+function type(input: HTMLInputElement, value: string) {
+  const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+  setValue?.call(input, value);
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+const menuItem = (label: string) =>
+  [...document.querySelectorAll<HTMLElement>('[role="menuitem"]')].find((el) => el.textContent === label) ?? null;
+
+describe('FileExplorer search', () => {
+  const searchInput = () => host.querySelector<HTMLInputElement>('input[aria-label="Search files"]');
+  /** Types a query and waits out the search's debounce. */
+  const search = (query: string) =>
+    act(async () => {
+      const input = searchInput();
+      if (input) type(input, query);
+      await new Promise((resolve) => setTimeout(resolve, 350));
+    });
+
+  it('searches once the query is long enough, opens a hit, and starts empty after closing', async () => {
+    await render();
+    await click(host.querySelector('button[aria-label="Search files"]'));
+    await search('a');
+    expect(disk.searches).toEqual([]);
+
+    await search('app');
+    expect(disk.searches).toEqual(['app']);
+    const hit = host.querySelector<HTMLElement>(`[title="${rootPath}/src/app.ts"]`);
+    expect(hit?.textContent).toContain('app.ts');
+    await click(hit);
+    expect(onOpenFile).toHaveBeenCalledWith(`${rootPath}/src/app.ts`);
+
+    await click(host.querySelector('button[aria-label="Search files"]'));
+    expect(searchInput()).toBeNull();
+    await click(host.querySelector('button[aria-label="Search files"]'));
+    expect(searchInput()?.value).toBe('');
+  });
+});
+
+describe('FileExplorer file operations', () => {
+  it('renames a file in its folder', async () => {
+    await render();
+    await click(row('src'));
+    await act(async () => {
+      row('src/app.ts')?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }));
+    });
+    const input = host.querySelector<HTMLInputElement>('input[value="app.ts"]');
+    expect(input).not.toBeNull();
+    await act(async () => {
+      if (!input) return;
+      type(input, 'main.ts');
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    });
+    expect(disk.ops).toEqual([
+      { command: 'fs_rename', args: { from: `${rootPath}/src/app.ts`, to: `${rootPath}/src/main.ts` } },
+    ]);
+  });
+
+  it('deletes a file from its menu after the confirming click', async () => {
+    await render();
+    await act(async () => {
+      row('README.md')?.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 10, clientY: 10 }));
+    });
+    await click(menuItem('Delete'));
+    expect(disk.ops).toEqual([]);
+    await click(menuItem('Click again to confirm'));
+    expect(disk.ops).toEqual([{ command: 'fs_delete', args: { path: `${rootPath}/README.md` } }]);
   });
 });

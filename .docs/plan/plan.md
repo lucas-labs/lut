@@ -2917,6 +2917,8 @@ remaining Terax explorer views.
 **Acceptance criteria:**
 
 - [ ] Create/rename/delete/copy/paste and explorer search work as designed.
+- [ ] The shared `Input` takes the design's text field look (28 px, 1 px border, 6 px radius, accent border on focus),
+      and its users drop the overrides that only undid the old look.
 - [ ] Remaining Terax explorer components removed.
 - [ ] Behaviour: rename and delete call the existing fs commands with the expected paths (component test with mocked `invoke`).
 - [ ] A screenshot of the view is attached to the PR.
