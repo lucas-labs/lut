@@ -44,7 +44,8 @@ type Props = {
   onAttachToAgent?: (path: string) => void;
 };
 
-type Found = { key: string; hits: SearchHit[]; truncated: boolean };
+/** A search's answer, with what it searched: `scope` (the root and whether hidden entries count) and `query`. */
+type Found = { scope: string; query: string; hits: SearchHit[]; truncated: boolean };
 const NO_HITS: SearchHit[] = [];
 
 /** A line about the search itself, set like the tree's loading and error rows. */
@@ -73,7 +74,7 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
 ) {
   const showHidden = usePreferencesStore((s) => s.showHidden);
   const [query, setQuery] = useState('');
-  /** The last search's answer, with the search it answers; the results stay shown while the next one runs. */
+  /** The last search's answer; its hits stay shown while a new query in the same scope runs. */
   const [found, setFound] = useState<Found | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -82,10 +83,13 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
 
   const q = query.trim();
   const active = q.length > 0;
-  const searchKey = q.length >= MIN_QUERY_LEN ? `${rootPath}\n${showHidden}\n${q}` : null;
-  const results = searchKey && found ? found.hits : NO_HITS;
-  const truncated = searchKey !== null && !!found?.truncated;
-  const searching = searchKey !== null && found?.key !== searchKey;
+  const searchable = q.length >= MIN_QUERY_LEN;
+  const scope = `${rootPath}\n${showHidden}`;
+  // Another root, or hidden entries turned off, would leave hits that are no longer there: those wait for the answer.
+  const shown = searchable && found?.scope === scope ? found : null;
+  const results = shown?.hits ?? NO_HITS;
+  const truncated = !!shown?.truncated;
+  const searching = searchable && (shown === null || shown.query !== q);
 
   // Closing clears the search, while rendering, so it opens empty next time.
   const [shownOpen, setShownOpen] = useState(open);
@@ -116,7 +120,7 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
   }, [open]);
 
   useEffect(() => {
-    if (!searchKey) return;
+    if (!searchable) return;
     let alive = true;
     const handle = setTimeout(async () => {
       try {
@@ -128,11 +132,11 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
           requestKey: 'explorer-search',
           workspace: currentWorkspaceEnv(),
         });
-        if (alive) setFound({ key: searchKey, hits: res.hits, truncated: res.truncated });
+        if (alive) setFound({ scope, query: q, hits: res.hits, truncated: res.truncated });
       } catch (e) {
         if (alive) {
           console.error('fs_search failed:', e);
-          setFound({ key: searchKey, hits: [], truncated: false });
+          setFound({ scope, query: q, hits: [], truncated: false });
         }
       }
       if (alive) setSelectedIndex(0);
@@ -142,7 +146,7 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
       alive = false;
       clearTimeout(handle);
     };
-  }, [searchKey, q, rootPath, showHidden]);
+  }, [searchable, scope, q, rootPath, showHidden]);
 
   useImperativeHandle(
     ref,

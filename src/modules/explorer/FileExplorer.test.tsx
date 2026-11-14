@@ -19,6 +19,9 @@ const disk = vi.hoisted(() => ({
   dirs: new Map<string, DirEntry[]>(),
   reads: [] as string[],
   searches: [] as string[],
+  /** Holds the next searches until `releaseSearch`, to see what shows while they run. */
+  holdSearch: false,
+  releaseSearch: () => {},
   /** The file operations asked for, without the workspace each one carries. */
   ops: [] as { command: string; args: Record<string, unknown> }[],
 }));
@@ -30,11 +33,16 @@ vi.mock('@tauri-apps/api/core', () => ({
     }
     if (command === 'fs_canonicalize') return Promise.resolve(args.path);
     if (command === 'fs_search') {
-      const { root, query } = args as unknown as { root: string; query: string };
+      const { root, query, showHidden } = args as unknown as { root: string; query: string; showHidden: boolean };
       disk.searches.push(query);
-      return Promise.resolve({
-        hits: [{ path: `${root}/src/app.ts`, rel: 'src/app.ts', name: 'app.ts', is_dir: false }],
+      const hit = (rel: string) => ({ path: `${root}/${rel}`, rel, name: rel.split('/').pop(), is_dir: false });
+      const answer = {
+        hits: showHidden ? [hit('.app/secret'), hit('src/app.ts')] : [hit('src/app.ts')],
         truncated: false,
+      };
+      if (!disk.holdSearch) return Promise.resolve(answer);
+      return new Promise((resolve) => {
+        disk.releaseSearch = () => resolve(answer);
       });
     }
     if (command === 'fs_rename' || command === 'fs_delete') {
@@ -88,6 +96,7 @@ beforeEach(() => {
   disk.reads = [];
   disk.ops = [];
   disk.searches = [];
+  disk.holdSearch = false;
   disk.dirs = new Map([
     [rootPath, [entry('src', 'dir'), entry('README.md')]],
     [`${rootPath}/src`, [entry('lib', 'dir'), entry('app.ts')]],
@@ -209,6 +218,27 @@ describe('FileExplorer search', () => {
     expect(searchInput()).toBeNull();
     await click(host.querySelector('button[aria-label="Search files"]'));
     expect(searchInput()?.value).toBe('');
+  });
+
+  it('drops hidden hits as soon as hidden entries are turned off, before the new answer', async () => {
+    usePreferencesStore.setState({ showHidden: true });
+    await render();
+    await click(host.querySelector('button[aria-label="Search files"]'));
+    await search('app');
+    const hidden = () => host.querySelector(`[title="${rootPath}/.app/secret"]`);
+    expect(hidden()).not.toBeNull();
+
+    disk.holdSearch = true;
+    await act(async () => {
+      usePreferencesStore.setState({ showHidden: false });
+      await new Promise((resolve) => setTimeout(resolve, 350));
+    });
+    expect(hidden()).toBeNull();
+    expect(host.textContent).toContain('Searching…');
+
+    await act(async () => disk.releaseSearch());
+    expect(host.querySelector(`[title="${rootPath}/src/app.ts"]`)).not.toBeNull();
+    expect(hidden()).toBeNull();
   });
 });
 
