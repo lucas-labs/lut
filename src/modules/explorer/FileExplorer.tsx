@@ -1,4 +1,3 @@
-import { Button } from '@/components/ui/button';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -12,9 +11,10 @@ import type { GitStatusSnapshot } from '@/modules/git';
 import { IS_MAC } from '@/modules/platform';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { ShortcutKeys, useGlobalShortcuts } from '@/modules/shortcuts';
+import { SidebarHeaderAction, SidebarViewHeader } from '@/modules/sidebar';
 import type { TerminalPathDropTarget } from '@/modules/terminal';
 import { useWorkspaceEnvStore } from '@/modules/workspace';
-import { FileAddIcon, Folder01Icon, FolderAddIcon, Refresh01Icon, Search01Icon } from '@hugeicons/core-free-icons';
+import { CollapseIcon, FileAddIcon, FolderAddIcon, Refresh01Icon, Search01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
@@ -29,8 +29,6 @@ import {
   useState,
 } from 'react';
 import { ExplorerSearch, type ExplorerSearchHandle } from './ExplorerSearch';
-import { FileIcon, FolderIcon } from './FileIcon';
-import { InlineInput } from './InlineInput';
 import { isPasteShortcut, parentDir as parentOf, pasteClipboardFiles, pasteTargetDir } from './lib/clipboardPaste';
 import { copyToClipboard, relativePath, revealInFinder } from './lib/contextActions';
 import type { GitStatusCode } from './lib/gitStatusUtils';
@@ -472,9 +470,8 @@ export const FileExplorer = memo(
 
     if (!rootPath) {
       return (
-        <div className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
-          <HugeiconsIcon icon={Folder01Icon} size={24} strokeWidth={1.5} className="text-muted-foreground" />
-          <div className="text-xs text-muted-foreground">No current directory</div>
+        <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+          <div className="text-[13px] font-medium text-foreground">No current directory</div>
         </div>
       );
     }
@@ -603,51 +600,23 @@ export const FileExplorer = memo(
 
     return (
       <div ref={containerRef} className="flex h-full flex-col outline-none" tabIndex={0} onKeyDown={handleKeyDown}>
-        <div className="flex h-8 shrink-0 items-center gap-1 border-b border-border/60 px-2">
-          <span className="flex flex-1 items-center truncate text-xs font-medium text-foreground/80" title={rootPath}>
-            <FolderIcon name={basename(rootPath)} height={15} width={15} className="mx-1.5" />
-            {basename(rootPath)}
-          </span>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-6 text-muted-foreground hover:text-foreground"
-            onClick={() => setIsSearchOpen((v) => !v)}
-            title="Search files"
-            aria-label="Search files"
-          >
-            <HugeiconsIcon icon={Search01Icon} size={13} strokeWidth={2} />
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-6 text-muted-foreground hover:text-foreground"
-            onClick={() => tree.beginCreate(rootPath, 'file')}
-            title="New file"
-          >
-            <HugeiconsIcon icon={FileAddIcon} size={13} strokeWidth={2} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-6 text-muted-foreground hover:text-foreground"
-            onClick={() => tree.beginCreate(rootPath, 'dir')}
-            title="New folder"
-          >
-            <HugeiconsIcon icon={FolderAddIcon} size={13} strokeWidth={2} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-6 text-muted-foreground hover:text-foreground"
-            onClick={() => tree.refresh(rootPath)}
-            title="Refresh"
-          >
-            <HugeiconsIcon icon={Refresh01Icon} size={12} strokeWidth={2} />
-          </Button>
-        </div>
+        <SidebarViewHeader title={basename(rootPath)} titleHint={rootPath}>
+          <SidebarHeaderAction label="Search files" onClick={() => setIsSearchOpen((v) => !v)}>
+            <HugeiconsIcon icon={Search01Icon} size={15} strokeWidth={1.5} />
+          </SidebarHeaderAction>
+          <SidebarHeaderAction label="New file" onClick={() => tree.beginCreate(rootPath, 'file')}>
+            <HugeiconsIcon icon={FileAddIcon} size={15} strokeWidth={1.5} />
+          </SidebarHeaderAction>
+          <SidebarHeaderAction label="New folder" onClick={() => tree.beginCreate(rootPath, 'dir')}>
+            <HugeiconsIcon icon={FolderAddIcon} size={15} strokeWidth={1.5} />
+          </SidebarHeaderAction>
+          <SidebarHeaderAction label="Collapse folders" onClick={tree.collapseAll}>
+            <HugeiconsIcon icon={CollapseIcon} size={15} strokeWidth={1.5} />
+          </SidebarHeaderAction>
+          <SidebarHeaderAction label="Refresh" onClick={() => tree.refresh(rootPath)}>
+            <HugeiconsIcon icon={Refresh01Icon} size={15} strokeWidth={1.5} />
+          </SidebarHeaderAction>
+        </SidebarViewHeader>
 
         <ExplorerSearch
           ref={searchRef}
@@ -673,7 +642,7 @@ export const FileExplorer = memo(
                 ref={scrollRef}
                 data-explorer-drop=""
                 className={cn(
-                  'min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]',
+                  'min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-1.5 pt-0.5 pb-1.5 [scrollbar-gutter:stable]',
                   rootIsDropTarget && 'rounded-sm ring-1 ring-inset ring-primary/50',
                 )}
                 onPointerDown={dnd.onPointerDown}
@@ -702,30 +671,15 @@ export const FileExplorer = memo(
                 }}
               >
                 {pendingAtRoot ? (
-                  <div
-                    className="flex h-6 w-full min-w-0 items-center gap-2 px-1.5 text-[13px]"
-                    style={{ paddingLeft: 6 }}
-                  >
-                    <span className="size-3.5 shrink-0" />
-                    {pendingAtRoot.kind === 'dir' ? (
-                      <FolderIcon name="" className="size-4 shrink-0 opacity-70" />
-                    ) : (
-                      <FileIcon name="untitled" className="size-4 shrink-0 opacity-70" />
-                    )}
-                    <InlineInput
-                      initial=""
-                      placeholder={pendingAtRoot.kind === 'dir' ? 'New folder' : 'New file'}
-                      onCommit={tree.commitCreate}
-                      onCancel={tree.cancelCreate}
-                    />
-                  </div>
+                  <PendingRow
+                    depth={0}
+                    kind={pendingAtRoot.kind}
+                    onCommit={tree.commitCreate}
+                    onCancel={tree.cancelCreate}
+                  />
                 ) : null}
-                {root?.status === 'loading' && (
-                  <div className="px-3 py-2 text-[11px] text-muted-foreground">Loading…</div>
-                )}
-                {root?.status === 'error' && (
-                  <div className="px-3 py-2 text-[11px] text-destructive">{root.message}</div>
-                )}
+                {root?.status === 'loading' && <StatusRow depth={0} tone="muted" message="Loading…" />}
+                {root?.status === 'error' && <StatusRow depth={0} tone="error" message={root.message} />}
                 {root?.status === 'loaded' ? (
                   <div
                     style={{
@@ -888,7 +842,7 @@ export const FileExplorer = memo(
         {dnd.dragLabel ? (
           <div
             ref={dnd.ghostRef}
-            className="pointer-events-none fixed left-0 top-0 z-50 flex items-center gap-1.5 rounded-sm border border-border/70 bg-card/95 px-2 py-1 text-[12px] text-foreground shadow-md"
+            className="pointer-events-none fixed top-0 left-0 z-50 flex items-center gap-1.5 rounded-[8px] border border-border bg-popover px-2 py-1 text-xs text-popover-foreground shadow-[0_12px_32px_rgba(0,0,0,0.4)]"
           >
             {dnd.dragLabel}
           </div>

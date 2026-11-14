@@ -10,11 +10,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { currentWorkspaceEnv } from '@/modules/workspace';
-import { Cancel01Icon, Folder01Icon, Search01Icon } from '@hugeicons/core-free-icons';
+import { Cancel01Icon, Search01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { invoke } from '@tauri-apps/api/core';
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import { FileIcon } from './FileIcon';
+import { forwardRef, type ReactNode, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { FileIcon, FolderIcon } from './FileIcon';
 import { copyToClipboard, revealInFinder } from './lib/contextActions';
 
 type SearchHit = {
@@ -44,6 +44,15 @@ type Props = {
   onAttachToAgent?: (path: string) => void;
 };
 
+/** A search's answer, with what it searched: `scope` (the root and whether hidden entries count) and `query`. */
+type Found = { scope: string; query: string; hits: SearchHit[]; truncated: boolean };
+const NO_HITS: SearchHit[] = [];
+
+/** A line about the search itself, set like the tree's loading and error rows. */
+function SearchStatus({ children }: { children: ReactNode }) {
+  return <div className="h-6 truncate px-2 text-[11px] leading-6 text-muted-foreground">{children}</div>;
+}
+
 export type ExplorerSearchHandle = {
   focus: () => void;
   isFocused: () => boolean;
@@ -65,42 +74,53 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
 ) {
   const showHidden = usePreferencesStore((s) => s.showHidden);
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchHit[]>([]);
+  /** The last search's answer; its hits stay shown while a new query in the same scope runs. */
+  const [found, setFound] = useState<Found | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [searching, setSearching] = useState(false);
-  const [truncated, setTruncated] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const lastKeyboardNavAt = useRef(0);
 
-  const active = query.trim().length > 0;
+  const q = query.trim();
+  const active = q.length > 0;
+  const searchable = q.length >= MIN_QUERY_LEN;
+  const scope = `${rootPath}\n${showHidden}`;
+  // Another root, or hidden entries turned off, would leave hits that are no longer there: those wait for the answer.
+  const shown = searchable && found?.scope === scope ? found : null;
+  const results = shown?.hits ?? NO_HITS;
+  const truncated = !!shown?.truncated;
+  const searching = searchable && (shown === null || shown.query !== q);
+
+  // Closing clears the search, while rendering, so it opens empty next time.
+  const [shownOpen, setShownOpen] = useState(open);
+  if (shownOpen !== open) {
+    setShownOpen(open);
+    if (!open) {
+      setQuery('');
+      setFound(null);
+      setSelectedIndex(0);
+    }
+  }
+
+  /** A query too short to search drops the last answer, so a new search starts from "Searching…". */
+  const changeQuery = (next: string) => {
+    setQuery(next);
+    if (next.trim().length < MIN_QUERY_LEN) {
+      setFound(null);
+      setSelectedIndex(0);
+    }
+  };
 
   useEffect(() => {
     onActiveChange?.(active);
   }, [active, onActiveChange]);
 
   useEffect(() => {
-    if (open) {
-      inputRef.current?.focus();
-    } else {
-      setQuery('');
-      setResults([]);
-      setSelectedIndex(0);
-      setSearching(false);
-      setTruncated(false);
-    }
+    if (open) inputRef.current?.focus();
   }, [open]);
 
   useEffect(() => {
-    const q = query.trim();
-    if (q.length < MIN_QUERY_LEN) {
-      setResults([]);
-      setSelectedIndex(0);
-      setSearching(false);
-      setTruncated(false);
-      return;
-    }
-    setSearching(true);
+    if (!searchable) return;
     let alive = true;
     const handle = setTimeout(async () => {
       try {
@@ -112,27 +132,21 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
           requestKey: 'explorer-search',
           workspace: currentWorkspaceEnv(),
         });
-        if (alive) {
-          setResults(res.hits);
-          setTruncated(res.truncated);
-          setSelectedIndex(0);
-        }
+        if (alive) setFound({ scope, query: q, hits: res.hits, truncated: res.truncated });
       } catch (e) {
         if (alive) {
           console.error('fs_search failed:', e);
-          setResults([]);
-          setTruncated(false);
-          setSelectedIndex(0);
+          setFound({ scope, query: q, hits: [], truncated: false });
         }
       }
-      if (alive) setSearching(false);
+      if (alive) setSelectedIndex(0);
     }, DEBOUNCE_MS);
 
     return () => {
       alive = false;
       clearTimeout(handle);
     };
-  }, [query, rootPath, showHidden]);
+  }, [searchable, scope, q, rootPath, showHidden]);
 
   useImperativeHandle(
     ref,
@@ -163,17 +177,17 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
   return (
     <div className={cn('flex flex-col', active && 'min-h-0 flex-1')}>
       {open ? (
-        <div className="relative shrink-0 px-2 py-1.5 animate-in fade-in-0 slide-in-from-top-3 duration-200 ease-out">
+        <div className="relative shrink-0 px-1.5 pb-1.5 animate-in fade-in-0 slide-in-from-top-3 duration-200 ease-out">
           <HugeiconsIcon
             icon={Search01Icon}
             size={13}
-            strokeWidth={2}
-            className="absolute top-1/2 left-4 -translate-y-1/2 text-muted-foreground"
+            strokeWidth={1.75}
+            className="pointer-events-none absolute top-3.5 left-3.5 -translate-y-1/2 text-muted-foreground"
           />
           <Input
             ref={inputRef}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => changeQuery(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Escape') {
                 e.preventDefault();
@@ -197,13 +211,15 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
               }
             }}
             placeholder="Search files…"
-            className="h-7 pr-7 pl-6.5 text-xs"
+            aria-label="Search files"
+            spellCheck={false}
+            className="pr-7 pl-[27px]"
           />
           {query ? (
             <button
               type="button"
-              onClick={() => setQuery('')}
-              className="absolute top-1/2 right-3.5 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+              onClick={() => changeQuery('')}
+              className="absolute top-3.5 right-2.5 -translate-y-1/2 rounded-sm p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
               aria-label="Clear search"
             >
               <HugeiconsIcon icon={Cancel01Icon} size={11} strokeWidth={2} />
@@ -214,11 +230,11 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
 
       {active ? (
         <ScrollArea className="min-h-0 flex-1">
-          <div className="py-1" ref={scrollRef}>
+          <div className="px-1.5 pb-1.5" ref={scrollRef}>
             {searching && results.length === 0 ? (
-              <div className="px-3 py-2 text-[11px] text-muted-foreground">Searching…</div>
+              <SearchStatus>Searching…</SearchStatus>
             ) : results.length === 0 ? (
-              <div className="px-3 py-2 text-[11px] text-muted-foreground">No matches</div>
+              <SearchStatus>No matches</SearchStatus>
             ) : (
               results.map((hit, index) => {
                 const isSelected = index === selectedIndex;
@@ -235,23 +251,18 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
                           }
                         }}
                         className={cn(
-                          'flex w-full items-center gap-1.5 px-2 py-1 text-left text-xs transition-colors',
-                          isSelected ? 'bg-accent text-foreground' : 'hover:bg-accent/50 text-foreground/80',
+                          'flex h-6 w-full min-w-0 items-center gap-[5px] rounded-sm px-2 text-left text-[13px] leading-[18px] text-foreground',
+                          isSelected && 'bg-accent',
                         )}
                         title={hit.path}
                       >
-                        {!hit.is_dir ? (
-                          <FileIcon name={hit.name} className="size-3.5 shrink-0" />
+                        {hit.is_dir ? (
+                          <FolderIcon name={hit.name} className="size-3.5 shrink-0" />
                         ) : (
-                          <HugeiconsIcon
-                            icon={Folder01Icon}
-                            size={13}
-                            strokeWidth={1.75}
-                            className="shrink-0 text-muted-foreground"
-                          />
+                          <FileIcon name={hit.name} className="size-3.5 shrink-0" />
                         )}
                         <span className="truncate">{hit.name}</span>
-                        <span className="ml-auto truncate text-[10px] text-muted-foreground">{hit.rel}</span>
+                        <span className="ml-auto truncate text-[11px] text-muted-foreground">{hit.rel}</span>
                       </button>
                     </ContextMenuTrigger>
                     <ContextMenuContent>
@@ -280,9 +291,7 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
               })
             )}
             {truncated && results.length > 0 ? (
-              <div className="px-3 py-1.5 text-[10px] text-muted-foreground">
-                Showing partial results — refine your query.
-              </div>
+              <SearchStatus>Showing partial results — refine your query.</SearchStatus>
             ) : null}
           </div>
         </ScrollArea>

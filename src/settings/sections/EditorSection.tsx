@@ -159,7 +159,7 @@ function CustomFormatCommandInput() {
         onKeyDown={(e) => {
           if (e.key === 'Enter') e.currentTarget.blur();
         }}
-        className="h-8 w-64 font-mono text-[12px] md:text-[12px]"
+        className="w-64 font-mono"
       />
     </SettingRow>
   );
@@ -275,7 +275,7 @@ function AutoSaveDelayInput({ value, onChange }: { value: number; onChange: (v: 
               e.currentTarget.blur();
             }
           }}
-          className="h-8 w-20 rounded-md border border-border bg-background px-2.5 text-right text-[12px] md:text-[12px] tabular-nums outline-none focus:border-foreground/40 focus-visible:ring-0 focus-visible:border-foreground/40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          className="w-20 text-right tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
         />
         <span className="text-[11px] text-muted-foreground">ms</span>
       </div>
@@ -317,7 +317,7 @@ function WordWrapColumnInput({ value, onChange }: { value: number; onChange: (v:
           onKeyDown={(e) => {
             if (e.key === 'Enter') e.currentTarget.blur();
           }}
-          className="h-8 w-20 rounded-md border border-border bg-background px-2.5 text-right text-[12px] md:text-[12px] tabular-nums outline-none focus:border-foreground/40 focus-visible:ring-0 focus-visible:border-foreground/40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          className="w-20 text-right tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
         />
         <span className="text-[11px] text-muted-foreground">columns</span>
       </div>

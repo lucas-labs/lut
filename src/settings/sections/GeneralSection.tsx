@@ -181,7 +181,7 @@ export function GeneralSection() {
         </SettingRow>
         <SettingRow
           title="Git decorations"
-          description="Tint changed files and dim gitignored entries in the file explorer."
+          description="Show the Git status of changed files and dim gitignored entries in the file explorer."
         >
           <Switch checked={explorerGitDecorations} onCheckedChange={(v) => void setExplorerGitDecorations(v)} />
         </SettingRow>

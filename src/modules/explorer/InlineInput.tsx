@@ -1,3 +1,4 @@
+import { Input } from '@/components/ui/input';
 import { useLayoutEffect, useRef, useState } from 'react';
 
 type Props = {
@@ -63,7 +64,7 @@ export function InlineInput({ initial, placeholder, onCommit, onCancel }: Props)
   };
 
   return (
-    <input
+    <Input
       ref={ref}
       value={value}
       placeholder={placeholder}
@@ -84,7 +85,8 @@ export function InlineInput({ initial, placeholder, onCommit, onCancel }: Props)
         }
         commit();
       }}
-      className="flex-1 min-w-0 truncate rounded-sm border border-border bg-background px-1.5 py-0.5 text-xs text-foreground outline-none ring-0 focus:border-ring"
+      // A row's height and type, so the name does not move as it turns into a field.
+      className="h-5 flex-1 rounded-sm px-1 text-[13px] leading-[18px]"
     />
   );
 }

@@ -172,7 +172,6 @@ function AddCustomServerDialog({ customServers }: { customServers: LspCustomServ
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="h-7 text-xs"
       />
     </div>
   );

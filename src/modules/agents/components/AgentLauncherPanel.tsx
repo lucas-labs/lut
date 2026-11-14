@@ -197,7 +197,7 @@ export function AgentLauncherPanel({ onBack, onLaunch }: Props) {
             }))
           }
           onBlur={() => persist(agentId, command)}
-          className="h-8 rounded-xl bg-input/40 px-2.5 font-mono text-xs"
+          className="font-mono"
           placeholder={launcher.defaultCommand}
         />
         <div className={cn('mt-1 min-h-4 text-[10px]', validation.ok ? 'text-muted-foreground' : 'text-destructive')}>

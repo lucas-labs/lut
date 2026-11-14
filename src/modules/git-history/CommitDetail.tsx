@@ -1,6 +1,7 @@
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { FileIcon } from '@/modules/explorer/FileIcon';
+import { gitStatusTextClass } from '@/modules/explorer/lib/gitStatusColor';
 import type { GitCommitFileChange, GitLogEntry } from '@/modules/git';
 import { Copy01Icon, LinkSquare02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -33,22 +34,6 @@ function absoluteTime(secs: number): string {
     hour: '2-digit',
     minute: '2-digit',
   });
-}
-
-function statusClass(code: string): string {
-  switch (code.toUpperCase()) {
-    case 'A':
-      return 'text-[var(--terminal-ansi-green)]';
-    case 'M':
-      return 'text-warning';
-    case 'D':
-      return 'text-[var(--terminal-ansi-red)]';
-    case 'R':
-    case 'C':
-      return 'text-[var(--terminal-ansi-blue)]';
-    default:
-      return 'text-muted-foreground';
-  }
 }
 
 type Props = {
@@ -204,7 +189,7 @@ const FileRow = memo(function FileRow({ file, onOpen }: { file: GitCommitFileCha
         )}
       </span>
       <span
-        className={cn('w-3 shrink-0 text-center font-mono text-[11px] font-medium', statusClass(file.status))}
+        className={cn('w-3 shrink-0 text-center font-mono text-[11px] font-medium', gitStatusTextClass(file.status))}
         title={file.statusLabel}
       >
         {file.status.toUpperCase()}
