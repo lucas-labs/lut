@@ -108,7 +108,9 @@ describe('rehypeLocalImages', () => {
   const run = (src: string, doc = '/w/p/docs/readme.md', root = '/w/p') => {
     const node = img(src);
     const t = { type: 'root', children: [{ type: 'element', tagName: 'p', children: [node] }] };
-    rehypeLocalImages(doc, (p) => `asset://${p}`, policy(root))()(t);
+    rehypeLocalImages({ basePath: doc, toUrl: (p) => `asset://${p}`, grant: '', ...policy(root) })(
+      t,
+    );
     return node.properties.src;
   };
 

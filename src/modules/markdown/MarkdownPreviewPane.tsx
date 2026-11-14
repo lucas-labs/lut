@@ -2,9 +2,9 @@ import { checkReadable } from '@/lib/security/security';
 import { useAssetGrant } from '@/lib/useAssetGrant';
 import { cn } from '@/lib/utils';
 import { memo, useCallback, useLayoutEffect, useMemo, useRef } from 'react';
-import { defaultRehypePlugins, Streamdown } from 'streamdown';
+import { defaultRehypePlugins, Streamdown, type StreamdownProps } from 'streamdown';
 import { MarkdownCode } from './code/markdown-code';
-import { previewBoundary, rehypeLocalImages } from './lib/assetPath';
+import { type LocalImagesOptions, previewBoundary, rehypeLocalImages } from './lib/assetPath';
 import { MarkdownLink } from './MarkdownLink';
 import { MarkdownViewToggle } from './MarkdownViewToggle';
 import { useMarkdownDocument } from './useMarkdownDocument';
@@ -18,6 +18,22 @@ type Props = {
 };
 
 const components = { a: MarkdownLink, code: MarkdownCode };
+
+/** What a local image shows while its asset grant is on its way: nothing, rather than harden's "blocked" text. */
+const PENDING_IMAGE = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+
+const identities = new WeakMap<object, number>();
+let lastIdentity = 0;
+
+/** A stable number per object, to tell Streamdown that a function or plugin list is a new one. */
+function identityOf(value: object): number {
+  let id = identities.get(value);
+  if (id === undefined) {
+    id = ++lastIdentity;
+    identities.set(value, id);
+  }
+  return id;
+}
 
 export function MarkdownPreviewPane({ path, workspaceRoot = null, visible, onSetView }: Props) {
   const status = useMarkdownDocument(path, visible);
@@ -86,15 +102,21 @@ const MarkdownBody = memo(function MarkdownBody({
   content: string;
 }) {
   const { urlFor: assetUrlFor, error: assetError, retry } = useAssetGrant(boundary);
-  const rehypePlugins = useMemo(() => {
+  const rehypePlugins = useMemo((): NonNullable<StreamdownProps['rehypePlugins']> => {
     const d = defaultRehypePlugins;
     return [
       d.raw,
       d.sanitize,
-      rehypeLocalImages(path, (abs) => assetUrlFor(abs) ?? 'data:,', {
-        boundary,
-        isReadable: (abs) => checkReadable(abs).ok,
-      }),
+      [
+        rehypeLocalImages,
+        {
+          basePath: path,
+          boundary,
+          grant: String(identityOf(assetUrlFor)),
+          toUrl: (abs: string) => assetUrlFor(abs) ?? PENDING_IMAGE,
+          isReadable: (abs: string) => checkReadable(abs).ok,
+        } satisfies LocalImagesOptions,
+      ],
       d.harden,
     ];
   }, [path, boundary, assetUrlFor]);
@@ -109,7 +131,10 @@ const MarkdownBody = memo(function MarkdownBody({
           </button>
         </div>
       )}
+      {/* Streamdown's memo ignores rehypePlugins: without a new key a grant that lands after the first render
+          would never reach the images. */}
       <Streamdown
+        key={identityOf(rehypePlugins)}
         className="select-text [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
         components={components}
         rehypePlugins={rehypePlugins}

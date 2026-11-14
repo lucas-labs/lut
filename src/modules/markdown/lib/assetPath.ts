@@ -106,18 +106,25 @@ type HastNode = {
   children?: HastNode[];
 };
 
+export type LocalImagesOptions = LocalImagePolicy & {
+  /** The markdown file the relative paths are relative to. */
+  basePath: string;
+  toUrl: (absolutePath: string) => string;
+  /**
+   * Changes whenever `toUrl` would answer differently (the asset grant landing or being retried). Streamdown caches
+   * its processor by plugin name and options JSON, so every input that changes the output must show up here as data;
+   * the functions do not.
+   */
+  grant: string;
+};
+
 /**
- * Rehype plugin that rewrites relative `<img src>` to `toUrl(absolutePath)` when
- * `policy` allows it. A relative path it refuses stays as written (it will not
- * load), and a document-supplied asset-protocol URL is dropped outright.
- * It has to run after sanitize (which strips the asset scheme) and before
- * harden (which would block a relative URL it cannot resolve).
+ * Rehype plugin (pass it as `[rehypeLocalImages, options]`) that rewrites relative `<img src>` to
+ * `toUrl(absolutePath)` when the policy allows it. A relative path it refuses stays as written (it will not load),
+ * and a document-supplied asset-protocol URL is dropped outright. It has to run after sanitize (which strips the
+ * asset scheme) and before harden (which would block a relative URL it cannot resolve).
  */
-export function rehypeLocalImages(
-  basePath: string,
-  toUrl: (absolutePath: string) => string,
-  policy: LocalImagePolicy,
-) {
+export function rehypeLocalImages({ basePath, toUrl, ...policy }: LocalImagesOptions) {
   const rewrite = (node: HastNode): void => {
     if (node.type === 'element' && node.tagName === 'img') {
       const src = node.properties?.src;
@@ -134,5 +141,5 @@ export function rehypeLocalImages(
     }
     node.children?.forEach(rewrite);
   };
-  return () => (tree: unknown) => rewrite(tree as HastNode);
+  return (tree: unknown) => rewrite(tree as HastNode);
 }
