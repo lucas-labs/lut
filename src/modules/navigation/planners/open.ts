@@ -1,6 +1,9 @@
 import { basename } from '../tabTitles';
 import type { EditorTab, GitDiffOpenInput, GitDiffTab, GitHistoryTab, Tab } from '../types';
 
+/** One file reached through `\` or `/` (a Windows path from the explorer, or one a markdown link resolved). */
+const samePath = (a: string, b: string) => a.replace(/\\/g, '/') === b.replace(/\\/g, '/');
+
 export function planMarkdownTabOpen(
   tabs: Tab[],
   path: string,
@@ -41,7 +44,7 @@ export function planFileTabOpen(
 ): { tabs: Tab[]; tabId: number } {
   if (pin) {
     const existing = tabs.find(
-      (tab) => tab.kind === 'editor' && tab.spaceId === spaceId && tab.path === path,
+      (tab) => tab.kind === 'editor' && tab.spaceId === spaceId && samePath(tab.path, path),
     );
     if (existing?.kind === 'editor') {
       return {
@@ -71,12 +74,14 @@ export function planFileTabOpen(
   }
 
   const persistent = tabs.find(
-    (tab) => tab.kind === 'editor' && tab.spaceId === spaceId && tab.path === path && !tab.preview,
+    (tab) =>
+      tab.kind === 'editor' && tab.spaceId === spaceId && samePath(tab.path, path) && !tab.preview,
   );
   if (persistent) return { tabs, tabId: persistent.id };
 
   const existingPreview = tabs.find(
-    (tab) => tab.kind === 'editor' && tab.spaceId === spaceId && tab.path === path && tab.preview,
+    (tab) =>
+      tab.kind === 'editor' && tab.spaceId === spaceId && samePath(tab.path, path) && tab.preview,
   );
   if (existingPreview) return { tabs, tabId: existingPreview.id };
 

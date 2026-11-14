@@ -6,6 +6,8 @@ type Props = {
   tabs: Tab[];
   activeId: number;
   onSetMarkdownView: (id: number, mode: 'rendered' | 'raw') => void;
+  /** Opens a file a document links to. */
+  onOpenFile?: (path: string) => void;
 };
 
 /** The folder the explorer shows: the active terminal's cwd, else any terminal's. */
@@ -16,7 +18,7 @@ function workspaceRootOf(tabs: Tab[], activeId: number): string | null {
   return null;
 }
 
-export function MarkdownStack({ tabs, activeId, onSetMarkdownView }: Props) {
+export function MarkdownStack({ tabs, activeId, onSetMarkdownView, onOpenFile }: Props) {
   const markdowns = tabs.filter((t): t is MarkdownTab => t.kind === 'markdown' && !t.cold);
   if (markdowns.length === 0) return null;
   const workspaceRoot = workspaceRootOf(tabs, activeId);
@@ -35,6 +37,7 @@ export function MarkdownStack({ tabs, activeId, onSetMarkdownView }: Props) {
               workspaceRoot={workspaceRoot}
               visible={visible}
               onSetView={(mode) => onSetMarkdownView(t.id, mode)}
+              onOpenFile={onOpenFile}
             />
           </div>
         );

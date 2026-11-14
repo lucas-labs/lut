@@ -18,20 +18,34 @@ export function markdownCodeText(children?: ReactNode): string {
 }
 
 /**
- * Streamdown `components.code` override. Handles both inline (`code`) and
- * fenced blocks (className "language-X"). Fenced blocks delegate to the
- * Lezer-based renderer; inline stays a plain pill.
+ * Streamdown `components.code` override. Handles both inline (`code`) and fenced blocks: Streamdown's `pre` marks the
+ * code inside it with `data-block`, with or without a language ("language-X"). Fenced blocks delegate to the
+ * Lezer-based renderer (plain text without a language); inline stays a plain pill.
  */
-export function MarkdownCode({ className, children, ...rest }: { className?: string; children?: ReactNode }) {
-  const match = className?.match(/language-(\w+)/);
-  if (!match) {
+export function MarkdownCode({
+  className,
+  children,
+  node: _node,
+  ...rest
+}: {
+  className?: string;
+  children?: ReactNode;
+  node?: unknown;
+  'data-block'?: string;
+}) {
+  const match = className?.match(/language-([\w+#.-]+)/);
+  const { 'data-block': block, ...props } = rest;
+  if (!match && block === undefined) {
     return (
-      <code className="rounded bg-muted/70 px-1.5 py-0.5 font-mono text-[0.875em] text-foreground" {...rest}>
+      <code
+        className="rounded-[4px] border border-border bg-card px-[5px] py-px font-mono text-[12.5px] text-foreground"
+        {...props}
+      >
         {children}
       </code>
     );
   }
 
   const code = markdownCodeText(children).replace(/\n$/, '');
-  return <ChatCodeBlock code={code} lang={match[1] ?? null} />;
+  return <ChatCodeBlock code={code} lang={match?.[1] ?? null} />;
 }

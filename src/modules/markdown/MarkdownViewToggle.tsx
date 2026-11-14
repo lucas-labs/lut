@@ -1,4 +1,7 @@
 import { cn } from '@/lib/utils';
+import { CodeIcon, ViewIcon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react';
+import { useId } from 'react';
 
 type Mode = 'rendered' | 'raw';
 
@@ -9,32 +12,44 @@ type Props = {
   renderedHint?: string;
 };
 
+const OPTIONS: readonly { mode: Mode; label: string; icon: IconSvgElement }[] = [
+  { mode: 'raw', label: 'Raw', icon: CodeIcon },
+  { mode: 'rendered', label: 'Rendered', icon: ViewIcon },
+];
+
+/** Switches a markdown file between its source and its rendered view, at the top right of the tab. */
 export function MarkdownViewToggle({ mode, onChange, renderedDisabled, renderedHint }: Props) {
+  const name = useId();
   return (
-    <div className="absolute right-3 top-3 z-10 inline-flex items-center gap-0.5 rounded-md border border-border/60 bg-card p-0.5 text-[11px] shadow-sm">
-      <button
-        type="button"
-        onClick={() => onChange('rendered')}
-        disabled={renderedDisabled}
-        title={renderedDisabled ? renderedHint : undefined}
-        className={cn(
-          'rounded px-2 py-0.5 transition-colors',
-          mode === 'rendered' ? 'bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground',
-          renderedDisabled && 'cursor-not-allowed opacity-40 hover:text-muted-foreground',
-        )}
-      >
-        Rendered
-      </button>
-      <button
-        type="button"
-        onClick={() => onChange('raw')}
-        className={cn(
-          'rounded px-2 py-0.5 transition-colors',
-          mode === 'raw' ? 'bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground',
-        )}
-      >
-        Raw
-      </button>
-    </div>
+    <fieldset className="absolute top-2.5 right-3.5 z-10 m-0 flex min-w-0 rounded-[7px] border border-border bg-card p-0.5">
+      <legend className="sr-only">Markdown view</legend>
+      {OPTIONS.map((option) => {
+        const checked = option.mode === mode;
+        const disabled = option.mode === 'rendered' && renderedDisabled;
+        return (
+          <label
+            key={option.mode}
+            title={disabled ? renderedHint : undefined}
+            className={cn(
+              'flex h-[22px] cursor-pointer items-center gap-[5px] rounded-[5px] px-[9px] text-[12px] leading-4 has-focus-visible:ring-2 has-focus-visible:ring-ring/50',
+              checked ? 'bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground',
+              disabled && 'cursor-not-allowed opacity-40 hover:text-muted-foreground',
+            )}
+          >
+            <input
+              type="radio"
+              name={name}
+              value={option.mode}
+              checked={checked}
+              disabled={disabled}
+              onChange={() => onChange(option.mode)}
+              className="sr-only"
+            />
+            <HugeiconsIcon icon={option.icon} size={13} strokeWidth={1.75} aria-hidden />
+            {option.label}
+          </label>
+        );
+      })}
+    </fieldset>
   );
 }

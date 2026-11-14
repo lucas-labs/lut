@@ -1,6 +1,5 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { CheckmarkCircle01Icon, CopyIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -39,11 +38,14 @@ export function ChatCodeBlock({ code, lang }: ChatCodeBlockProps) {
   return <FinalizedCodeBlock code={code} lang={label} />;
 }
 
+const CODE_BODY = 'm-0 px-3.5 py-2.5 font-mono text-[12.5px] leading-5 text-foreground';
+
+/** Every code block's frame: the language and a Copy button over the code. */
 function BlockChrome({ label, code, children }: { label: string; code: string; children: React.ReactNode }) {
   return (
-    <div className="not-prose my-2 overflow-hidden rounded-lg border border-border/50 bg-muted/30">
-      <div className="flex items-center justify-between gap-2 border-b border-border/40 bg-muted/20 px-3 py-1">
-        <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">{label}</span>
+    <div className="not-prose mt-2 mb-3.5 overflow-hidden rounded-lg border border-border bg-card">
+      <div className="flex h-7 items-center justify-between gap-2 border-b border-border pr-2 pl-3.5 text-[11px] text-muted-foreground">
+        <span>{label}</span>
         <CopyButton text={code} />
       </div>
       <div className="overflow-x-auto">{children}</div>
@@ -55,7 +57,7 @@ function FinalizedCodeBlock({ code, lang }: { code: string; lang: string }) {
   if (!isHighlightable(lang)) {
     return (
       <BlockChrome label={lang} code={code}>
-        <pre className="m-0 px-3 py-2.5 font-mono text-[11.5px] leading-relaxed text-foreground">{code}</pre>
+        <pre className={CODE_BODY}>{code}</pre>
       </BlockChrome>
     );
   }
@@ -89,11 +91,11 @@ const HighlightedPre = memo(function HighlightedPre({ code, lang }: { code: stri
   }, [code, lang]);
 
   if (!nodes) {
-    return <pre className="m-0 px-3 py-2.5 font-mono text-[11.5px] leading-relaxed text-foreground">{code}</pre>;
+    return <pre className={CODE_BODY}>{code}</pre>;
   }
 
   return (
-    <pre className="m-0 px-3 py-2.5 font-mono text-[11.5px] leading-relaxed text-foreground">
+    <pre className={CODE_BODY}>
       {nodes.map((node, i) =>
         node.kind === 'break' ? (
           // eslint-disable-next-line react/no-array-index-key
@@ -109,36 +111,22 @@ const HighlightedPre = memo(function HighlightedPre({ code, lang }: { code: stri
   );
 });
 
+/** A shell block: the same frame, with the shell's prompt before each line. */
 function CommandCard({ code, lang }: { code: string; lang: string }) {
   const isMultiline = code.includes('\n');
   const prompt = shellPrompt(lang);
   return (
-    <div className="not-prose my-2 overflow-hidden rounded-lg border border-border/50 bg-muted/40">
-      <div className="flex items-center justify-between gap-2 px-3 py-1.5">
-        <span className="font-mono text-[10px] uppercase tracking-wide text-muted-foreground">
-          {normalizeLangLabel(lang)}
-        </span>
-        <div className="flex items-center gap-1">
-          <CopyButton text={code} />
-        </div>
-      </div>
-      <div className="border-t border-border/40 bg-background/40">
-        <pre
-          className={cn(
-            'm-0 overflow-x-auto px-3 py-2 font-mono text-[12px] leading-relaxed text-foreground',
-            isMultiline ? 'whitespace-pre' : 'whitespace-pre-wrap',
-          )}
-        >
-          {code.split('\n').map((line, i) => (
-            // eslint-disable-next-line react/no-array-index-key
-            <span key={i} className="flex">
-              <span className="mr-2 select-none text-muted-foreground/70">{prompt}</span>
-              <span>{line}</span>
-            </span>
-          ))}
-        </pre>
-      </div>
-    </div>
+    <BlockChrome label={normalizeLangLabel(lang)} code={code}>
+      <pre className={cn(CODE_BODY, isMultiline ? 'whitespace-pre' : 'whitespace-pre-wrap')}>
+        {code.split('\n').map((line, i) => (
+          // eslint-disable-next-line react/no-array-index-key
+          <span key={i} className="flex">
+            <span className="mr-2 select-none text-muted-foreground/70">{prompt}</span>
+            <span>{line}</span>
+          </span>
+        ))}
+      </pre>
+    </BlockChrome>
   );
 }
 
@@ -160,15 +148,13 @@ function CopyButton({ text }: { text: string }) {
   };
 
   return (
-    <Button
+    <button
       type="button"
-      size="icon"
-      variant="ghost"
       onClick={onCopy}
-      className="size-5 shrink-0 text-muted-foreground hover:text-foreground"
-      aria-label="Copy code"
+      className="flex h-5 shrink-0 items-center gap-1 rounded-[4px] px-1.5 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground"
     >
-      <HugeiconsIcon icon={copied ? CheckmarkCircle01Icon : CopyIcon} size={11} strokeWidth={1.75} />
-    </Button>
+      <HugeiconsIcon icon={copied ? CheckmarkCircle01Icon : CopyIcon} size={12} strokeWidth={1.5} aria-hidden />
+      {copied ? 'Copied' : 'Copy'}
+    </button>
   );
 }

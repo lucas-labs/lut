@@ -1,0 +1,32 @@
+/* The markdown preview's tables. They keep Streamdown's own components (and their copy, download and fullscreen
+ * controls), so their look is set here, on Streamdown's data attributes, inside `.lut-md` only.
+ * Unlayered, so it wins over the utility classes Streamdown puts on them. */
+
+.lut-md div:has(> [data-streamdown='table']) {
+  margin: 8px 0 14px;
+  border-radius: 8px;
+  background: transparent;
+}
+
+.lut-md [data-streamdown='table'] {
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.lut-md [data-streamdown='table-header'] {
+  background: var(--card);
+}
+
+.lut-md [data-streamdown='table-header-cell'] {
+  padding: 7px 12px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--muted-foreground);
+}
+
+.lut-md [data-streamdown='table-cell'] {
+  padding: 7px 12px;
+  font-size: 13px;
+  line-height: 18px;
+}

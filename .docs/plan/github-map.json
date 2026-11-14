@@ -1404,6 +1404,10 @@
     "E10-23": {
       "number": 416,
       "id": "I_kwDOVncI8M8AAAABe3DsrQ"
+    },
+    "E10-24": {
+      "number": 421,
+      "id": "I_kwDOVncI8M8AAAABfUIfIw"
     }
   },
   "edges": [
@@ -2216,7 +2220,9 @@
     "E18-02<-E18-09",
     "E18-08<-E18-09",
     "E10-15<-E10-23",
-    "E10-22<-E10-23"
+    "E10-22<-E10-23",
+    "E10-24<-E10-20",
+    "E10-22<-E10-24"
   ],
   "repoId": "R_kgDOVncI8A",
   "labels": {

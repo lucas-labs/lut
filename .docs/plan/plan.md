@@ -2990,12 +2990,21 @@ scope: ui
 size: M
 ```
 
-**Goal:** Replace `MarkdownPreviewPane`/`MarkdownStack` with the designed preview.
+**Goal:** Rebuild the markdown preview (`MarkdownPreviewPane`, the Raw/Rendered switch, code blocks) on the
+designed look, keeping its behaviour: live reload, the asset policy for local images, external links and Streamdown's
+table controls.
 
 **Acceptance criteria:**
 
-- [ ] Rendering, links and local images (through the asset policy) work as designed; Terax views removed.
-- [ ] Behaviour: relative image paths resolve through the asset policy (component test).
+- [ ] Rendering, links and local images (through the asset policy) work as designed; the Terax look is gone.
+- [ ] Behaviour: relative image paths resolve through the asset policy, also when the asset grant lands after the
+      first render, and each document resolves against its own folder (component tests).
+- [ ] A local image the policy refuses shows as the designed placeholder with its path, not as a "blocked" notice.
+- [ ] GitHub alerts (`> [!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, `[!CAUTION]`) render as designed (a test
+      per kind); an image alone in its paragraph shows its alt as a caption.
+- [ ] Shell code blocks keep their prompt inside the common code-block frame.
+- [ ] Clicking an image opens it enlarged in a dialog; Streamdown's image download button (which failed on local
+      images) is gone.
 - [ ] A screenshot of the view is attached to the PR.
 
 **Verification:** `pnpm test src/modules/markdown`; manual: preview a README with images.
@@ -3048,11 +3057,40 @@ one local branch, the refs pointing at each commit, and the number of commits in
 
 **Verification:** `cargo test --test git_operations`, `cargo clippy`.
 
+### E10-24 — Render mermaid diagrams in the markdown preview
+
+```yaml
+id: E10-24
+depends-on: [E10-20]
+refs: [UX-009]
+covers: [ide-tools/markdown-ui]
+type: task
+scope: ui
+size: M
+```
+
+**Goal:** A ` ```mermaid ` block in the markdown preview shows its diagram instead of its source. Mermaid never
+shipped in lut: no renderer is installed, and the preview's own code component takes every fenced block.
+
+**Acceptance criteria:**
+
+- [ ] Before building, compare rendering in the backend with a Rust renderer
+      ([mermaid-rs-renderer](https://github.com/1jehuang/mermaid-rs-renderer)) against rendering in the frontend with
+      the `mermaid` package (loaded only when a diagram appears): diagram coverage, fidelity, theme colours, bundle and
+      binary size, startup cost and safety of the produced SVG. The choice and its reasons go in the PR.
+- [ ] Diagrams follow the app theme and show a readable error for an invalid diagram, keeping its source visible.
+- [ ] The startup bundle is unchanged (`eager-budget`, `dist-budget`).
+- [ ] Behaviour: a valid diagram renders as SVG and an invalid one shows the error (component tests).
+- [ ] A screenshot of a diagram in a light and a dark theme is attached to the PR.
+
+**Verification:** `pnpm test src/modules/markdown src/app`; manual: preview a README with a flowchart and a sequence
+diagram.
+
 ### E10-22 — Close-out: secondary tools on the design
 
 ```yaml
 id: E10-22
-depends-on: [E10-13, E10-14, E10-15, E10-16, E10-17, E10-18, E10-19, E10-20, E10-21, E10-23]
+depends-on: [E10-13, E10-14, E10-15, E10-16, E10-17, E10-18, E10-19, E10-20, E10-21, E10-23, E10-24]
 refs: []
 covers: []
 type: closeout

@@ -30,6 +30,8 @@ type Props = {
   onOpenCommitFile: GitHistoryStackProps['onOpenCommitFile'];
   onGitHistorySearchHandle: GitHistoryStackProps['onSearchHandle'];
   onSetMarkdownView: EditorStackProps['onSetMarkdownView'];
+  /** Opens a file a markdown document links to, as the explorer does. */
+  onOpenFile?: (path: string) => void;
   /**
    * A panel (sidebar or vertical tab rail) is open on the terminals' left: the terminal layer then keeps a gap from
    * it. With nothing beside them, terminals reach the window's edge (full-screen programs like nvim fill it).
@@ -65,6 +67,7 @@ export function WorkspaceSurface({
   onOpenCommitFile,
   onGitHistorySearchHandle,
   onSetMarkdownView,
+  onOpenFile,
   insetFromSidePanel = false,
 }: Props) {
   const terminals = useMemo(() => selectLiveTerminals(tabs), [tabs]);
@@ -112,7 +115,7 @@ export function WorkspaceSurface({
         />
       </div>
       <div className={cn(LAYER, !isMarkdownTab && 'invisible pointer-events-none')} aria-hidden={!isMarkdownTab}>
-        <MarkdownStack tabs={tabs} activeId={activeId} onSetMarkdownView={onSetMarkdownView} />
+        <MarkdownStack tabs={tabs} activeId={activeId} onSetMarkdownView={onSetMarkdownView} onOpenFile={onOpenFile} />
       </div>
       <div className={cn(LAYER, !isGitDiffTab && 'invisible pointer-events-none')} aria-hidden={!isGitDiffTab}>
         <GitDiffStack tabs={tabs} activeId={activeId} />
