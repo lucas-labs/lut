@@ -1,4 +1,3 @@
-import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -6,7 +5,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { ArrowReloadHorizontalIcon, Globe02Icon, LinkSquare02Icon } from '@hugeicons/core-free-icons';
+import { ArrowDown01Icon, ArrowReloadHorizontalIcon, Globe02Icon, LinkSquare02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
@@ -36,6 +35,11 @@ const PORT_PRESETS: readonly PortPreset[] = [
   { port: 7860, label: 'Gradio', hint: 'gradio' },
   { port: 11434, label: 'Ollama', hint: 'ollama api' },
 ];
+
+/** The toolbar controls of the redesigned tools (as the git history toolbar). */
+const TOOL =
+  'flex h-[26px] shrink-0 items-center gap-1.5 rounded-md border border-border px-2 text-xs whitespace-nowrap text-foreground outline-none hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50';
+const ICON_TOOL = `${TOOL} w-[26px] justify-center px-0`;
 
 export type PreviewAddressBarHandle = {
   focus: () => void;
@@ -102,30 +106,18 @@ export const PreviewAddressBar = forwardRef<PreviewAddressBarHandle, Props>(func
   };
 
   return (
-    <div className="shrink-0 border-b border-border/60">
-      <div className="flex h-9 items-center gap-1 bg-card/40 px-1.5">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={onReload}
-          title="Reload"
-          className="size-7 shrink-0 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-        >
-          <HugeiconsIcon icon={ArrowReloadHorizontalIcon} size={14} strokeWidth={1.75} />
-        </Button>
+    <div className="shrink-0 border-b border-border">
+      <div className="flex h-11 items-center gap-2 px-4">
+        <button type="button" onClick={onReload} title="Reload" aria-label="Reload" className={ICON_TOOL}>
+          <HugeiconsIcon icon={ArrowReloadHorizontalIcon} size={13} strokeWidth={1.5} />
+        </button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              title="Common dev-server ports"
-              className="h-7 shrink-0 gap-1 rounded-md px-1.5 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground"
-            >
-              <HugeiconsIcon icon={Globe02Icon} size={13} strokeWidth={1.75} />
+            <button type="button" title="Common dev-server ports" className={TOOL}>
+              <HugeiconsIcon icon={Globe02Icon} size={13} strokeWidth={1.5} className="shrink-0" />
               <span className="hidden sm:inline">Ports</span>
-            </Button>
+              <HugeiconsIcon icon={ArrowDown01Icon} size={12} strokeWidth={1.75} className="shrink-0" />
+            </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="max-h-80 min-w-56 overflow-y-auto">
             {PORT_PRESETS.map((p) => (
@@ -144,47 +136,46 @@ export const PreviewAddressBar = forwardRef<PreviewAddressBarHandle, Props>(func
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-        <div className="flex min-w-0 flex-1 items-center">
-          <Input
-            ref={inputRef}
-            value={draft}
-            placeholder="http://localhost:3000"
-            spellCheck={false}
-            autoComplete="off"
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                submit();
-              } else if (e.key === 'Escape') {
-                e.preventDefault();
-                setDraft(url);
-                inputRef.current?.blur();
-              }
-            }}
-          />
-        </div>
-        <Button
+        <Input
+          ref={inputRef}
+          value={draft}
+          placeholder="http://localhost:3000"
+          aria-label="Preview URL"
+          spellCheck={false}
+          autoComplete="off"
+          className="h-[26px] min-w-0 flex-1 border-border"
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              submit();
+            } else if (e.key === 'Escape') {
+              e.preventDefault();
+              setDraft(url);
+              inputRef.current?.blur();
+            }
+          }}
+        />
+        <button
           type="button"
-          variant="ghost"
-          size="icon"
           onClick={() => {
             if (url) void openUrl(url).catch(console.error);
           }}
           title="Open in system browser"
-          className="size-7 shrink-0 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+          aria-label="Open in system browser"
+          className={ICON_TOOL}
           disabled={!url}
         >
-          <HugeiconsIcon icon={LinkSquare02Icon} size={14} strokeWidth={1.75} />
-        </Button>
+          <HugeiconsIcon icon={LinkSquare02Icon} size={13} strokeWidth={1.5} />
+        </button>
       </div>
       {notice ? (
-        <div className="flex items-center gap-1.5 bg-amber-500/8 px-3 py-1 text-[11px] text-amber-600 dark:text-amber-400">
+        <div className="flex items-center gap-1.5 border-t border-border bg-warning/10 px-4 py-1 text-[11px] text-warning">
           <span className="truncate">{notice}</span>
           <button
             type="button"
             onClick={() => setNotice(null)}
-            className="ml-auto rounded px-1 text-[10px] opacity-80 hover:bg-accent hover:opacity-100"
+            className="ml-auto rounded px-1 text-[11px] opacity-80 hover:bg-warning/15 hover:opacity-100"
           >
             Dismiss
           </button>

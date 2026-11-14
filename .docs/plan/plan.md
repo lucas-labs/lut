@@ -3021,11 +3021,14 @@ scope: ui
 size: M
 ```
 
-**Goal:** Replace `PreviewPane`/`PreviewAddressBar`/`PreviewStack` with the designed web preview.
+**Goal:** Restyle `PreviewPane`/`PreviewAddressBar` on lut's design. The canvas has no web preview board, so the view
+follows the redesigned tools: the git history toolbar's controls, theme colours for the notices and the centred in-pane
+states.
 
 **Acceptance criteria:**
 
-- [ ] Address bar, reload and dev-server preview work as designed; internal hosts still blocked; Terax views removed.
+- [ ] Address bar, ports, reload and dev-server preview keep working with the redesigned tools' look; internal hosts
+      still blocked; Terax views (hard-coded notice colours, icon-tile states) removed.
 - [ ] Behaviour: navigating to a blocked internal host is refused (test) and reload re-requests the current URL (component test).
 - [ ] A screenshot of the view is attached to the PR.
 
