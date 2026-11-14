@@ -30,6 +30,8 @@ export type TerminalCursorStyle = 'bar' | 'block' | 'underline';
 export type FileIconColors = 'theme' | 'original' | 'monochrome';
 
 export const EDITOR_THEMES = [
+  'lut-dark',
+  'lut-light',
   'kanagawa',
   'kanagawa-lotus',
   'kanagawa-dragon',
@@ -65,6 +67,8 @@ export function isEditorThemeId(v: unknown): v is EditorThemeId {
 }
 
 export const EDITOR_THEME_MODE: Record<EditorThemeId, 'light' | 'dark'> = {
+  'lut-dark': 'dark',
+  'lut-light': 'light',
   kanagawa: 'dark',
   'kanagawa-lotus': 'light',
   'kanagawa-dragon': 'dark',
@@ -90,6 +94,8 @@ export const EDITOR_THEME_MODE: Record<EditorThemeId, 'light' | 'dark'> = {
 };
 
 export const EDITOR_THEME_LABELS: Record<EditorThemeId, string> = {
+  'lut-dark': 'Lut Dark',
+  'lut-light': 'Lut Light',
   kanagawa: 'Kanagawa Wave',
   'kanagawa-lotus': 'Kanagawa Lotus',
   'kanagawa-dragon': 'Kanagawa Dragon',

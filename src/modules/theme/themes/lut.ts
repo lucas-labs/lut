@@ -10,7 +10,7 @@ export const lut: Theme = {
   id: 'lut',
   name: 'Lut',
   description: "Lut's own palette: deep green-greys with a lime accent.",
-  editorTheme: { dark: 'github-dark', light: 'github-light' },
+  editorTheme: { dark: 'lut-dark', light: 'lut-light' },
   variants: {
     light: {},
     dark: {},
