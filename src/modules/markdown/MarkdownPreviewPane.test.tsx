@@ -186,6 +186,13 @@ describe('MarkdownPreviewPane on the design', () => {
     expect(scroll).toHaveBeenCalled();
   });
 
+  it('draws a fenced block without a language as a block, not inline code', async () => {
+    doc.content = '```\nHello!\n```\n';
+    await render();
+    expect(host.querySelector('pre')?.textContent).toBe('Hello!');
+    expect([...host.querySelectorAll('button')].map((b) => b.textContent)).toContain('Copy');
+  });
+
   it('shows the file and that it is a preview under the document', async () => {
     await render();
     expect(host.querySelector('[aria-label="Preview status"]')?.textContent).toBe(`${DOC}Preview`);
