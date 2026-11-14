@@ -442,6 +442,68 @@ html *::-webkit-scrollbar {
   animation: lut-tab-in var(--dur-base) var(--ease-premium);
 }
 
+/* File icon colours (E10-18). The icon engine draws each Catppuccin colour as
+ * `var(--file-icon-<name>, <its own colour>)`; the "File icon colors" setting
+ * picks what these point at through `data-file-icons` on the root. Theme is the
+ * default, so it also holds before the preferences load. */
+:root {
+  --file-icon-text: var(--muted-foreground);
+  --file-icon-overlay1: var(--terminal-ansi-bright-black);
+  --file-icon-blue: var(--terminal-ansi-blue);
+  --file-icon-sapphire: var(--terminal-ansi-bright-blue);
+  --file-icon-lavender: var(--terminal-ansi-bright-blue);
+  --file-icon-sky: var(--terminal-ansi-bright-cyan);
+  --file-icon-teal: var(--terminal-ansi-cyan);
+  --file-icon-green: var(--terminal-ansi-green);
+  --file-icon-yellow: var(--terminal-ansi-yellow);
+  --file-icon-peach: var(--terminal-ansi-bright-red);
+  --file-icon-maroon: var(--terminal-ansi-bright-red);
+  --file-icon-red: var(--terminal-ansi-red);
+  --file-icon-mauve: var(--terminal-ansi-magenta);
+  --file-icon-rosewater: var(--terminal-ansi-bright-magenta);
+  --file-icon-pink: var(--terminal-ansi-bright-magenta);
+  --file-icon-flamingo: var(--terminal-ansi-bright-magenta);
+}
+
+:root[data-file-icons='monochrome'] {
+  --file-icon-text: var(--muted-foreground);
+  --file-icon-overlay1: var(--muted-foreground);
+  --file-icon-blue: var(--muted-foreground);
+  --file-icon-sapphire: var(--muted-foreground);
+  --file-icon-lavender: var(--muted-foreground);
+  --file-icon-sky: var(--muted-foreground);
+  --file-icon-teal: var(--muted-foreground);
+  --file-icon-green: var(--muted-foreground);
+  --file-icon-yellow: var(--muted-foreground);
+  --file-icon-peach: var(--muted-foreground);
+  --file-icon-maroon: var(--muted-foreground);
+  --file-icon-red: var(--muted-foreground);
+  --file-icon-mauve: var(--muted-foreground);
+  --file-icon-rosewater: var(--muted-foreground);
+  --file-icon-pink: var(--muted-foreground);
+  --file-icon-flamingo: var(--muted-foreground);
+}
+
+/* `initial` leaves each variable unset, so every icon takes its own colour. */
+:root[data-file-icons='original'] {
+  --file-icon-text: initial;
+  --file-icon-overlay1: initial;
+  --file-icon-blue: initial;
+  --file-icon-sapphire: initial;
+  --file-icon-lavender: initial;
+  --file-icon-sky: initial;
+  --file-icon-teal: initial;
+  --file-icon-green: initial;
+  --file-icon-yellow: initial;
+  --file-icon-peach: initial;
+  --file-icon-maroon: initial;
+  --file-icon-red: initial;
+  --file-icon-mauve: initial;
+  --file-icon-rosewater: initial;
+  --file-icon-pink: initial;
+  --file-icon-flamingo: initial;
+}
+
 /* File icons load lazily; a slot that was blank at mount fades its icon in. */
 @keyframes lut-icon-in {
   from {

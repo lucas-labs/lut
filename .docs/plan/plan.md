@@ -2926,7 +2926,7 @@ remaining Terax explorer views.
 **Verification:** `pnpm test src/modules/explorer`, `cargo test --manifest-path src-tauri/Cargo.toml --locked`; manual:
 file operations on a scratch folder.
 
-### E10-18 — Replace the Catppuccin file icon theme with lut's file icons
+### E10-18 — File icon colors that follow the theme
 
 ```yaml
 id: E10-18
@@ -2938,15 +2938,18 @@ scope: ui
 size: M
 ```
 
-**Goal:** Replace `FileIcon.tsx` and the icon mapping with a file icon set consistent with lut's UI icons and drop
-`@iconify-json/catppuccin` if unused.
+**Goal:** Keep the Catppuccin file icons and let their colors follow lut: a "File icon colors" setting picks the
+theme's colors (the default), the icon set's own colors, or the muted text color.
 
 **Acceptance criteria:**
 
-- [ ] All `FileIcon` consumers (explorer, palette, git views) use the new iconography.
-- [ ] Unused icon packages removed from `package.json`.
-- [ ] Behaviour: a test maps known names (`.ts`, `.rs`, `.md`, folder, unknown) to the new icons; `rg -i catppuccin src` is empty.
-- [ ] A screenshot of the explorer with the new icons is attached to the PR.
+- [ ] Every `FileIcon` consumer (explorer, search, tabs, palette, Git views) draws the icon inline, its colors through
+      CSS variables; changing the theme or the setting recolors the icons without re-rendering them.
+- [ ] Settings › General › Explorer has "File icon colors": Theme (default), Original and Monochrome.
+- [ ] Behaviour: a test over the whole icon set fails on a color that is neither mapped nor only inside a mask, clip
+      path or gradient; a test maps known names (`.ts`, `.rs`, `.md`, folder, unknown) to their icons; two copies of
+      an icon with ids get distinct ids.
+- [ ] Screenshots of the explorer in the three modes are attached to the PR.
 
 **Verification:** `pnpm check-types`, `pnpm test`, `pnpm knip`.
 

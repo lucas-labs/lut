@@ -43,11 +43,11 @@ export function subscribeFileIcons(listener: () => void): () => void {
 
 function noop(): void {}
 
-/** Pure read of the current icon URL: "" until the icon set has loaded. */
-export function peekFileIconUrl(name: string): string {
-  return engine ? engine.fileIconUrl(name) : '';
+/** Pure read of the current icon markup: "" until the icon set has loaded. */
+export function peekFileIconSvg(name: string): string {
+  return engine ? engine.fileIconSvg(name) : '';
 }
 
-export function peekFolderIconUrl(name: string, expanded: boolean): string {
-  return engine ? engine.folderIconUrl(name, expanded) : '';
+export function peekFolderIconSvg(name: string, expanded: boolean): string {
+  return engine ? engine.folderIconSvg(name, expanded) : '';
 }

@@ -1,62 +1,47 @@
 import { cn } from '@/lib/utils';
-import { type ImgHTMLAttributes, useState, useSyncExternalStore } from 'react';
-import { peekFileIconUrl, peekFolderIconUrl, subscribeFileIcons } from './lib/iconResolver';
+import { type SVGProps, useId, useState, useSyncExternalStore } from 'react';
+import { ICON_VIEWBOX, scopeIconIds } from './lib/iconMarkup';
+import { peekFileIconSvg, peekFolderIconSvg, subscribeFileIcons } from './lib/iconResolver';
 
-type IconImgProps = Omit<ImgHTMLAttributes<HTMLImageElement>, 'src' | 'alt'>;
+type IconSvgProps = Omit<SVGProps<SVGSVGElement>, 'children' | 'dangerouslySetInnerHTML' | 'viewBox'>;
 
 const serverSnapshot = () => '';
 
 /**
- * Renders an icon URL, or - while the lazily loaded icon set is still on its
- * way - an empty slot with the exact same box, so nothing shifts when it lands.
- * A slot that was blank at mount fades the icon in instead of popping it.
+ * Draws an icon's markup inline, so its colours follow the "File icon colors"
+ * setting and the theme through CSS. While the lazily loaded icon set is still
+ * on its way it is an empty slot with the same box, so nothing shifts when it
+ * lands; a slot that was blank at mount fades the icon in instead of popping it.
+ * The markup comes from the bundled icon set, never from user input.
  */
-function IconSlot({ url, className, width, height, onError, ...rest }: IconImgProps & { url: string }) {
-  const [arrivedLate] = useState(url === '');
-  if (!url) {
-    return <span aria-hidden className={cn('block', className)} style={{ width, height }} />;
+function IconSlot({ markup, className, width, height, style, ...rest }: IconSvgProps & { markup: string }) {
+  const [arrivedLate] = useState(markup === '');
+  const uid = useId();
+  if (!markup) {
+    return <span aria-hidden className={cn('block', className)} style={{ width, height, ...style }} />;
   }
   return (
-    <img
+    <svg
       {...rest}
-      src={url}
-      alt=""
       width={width}
       height={height}
+      style={style}
+      viewBox={ICON_VIEWBOX}
+      aria-hidden
       className={cn(className, arrivedLate && 'lut-icon-in')}
-      onError={onError}
+      dangerouslySetInnerHTML={{ __html: scopeIconIds(markup, uid) }}
     />
   );
 }
 
 /** Icon for a file name (extension / well-known name aware). */
-export function FileIcon({
-  name,
-  onError,
-  ...props
-}: IconImgProps & {
-  name: string;
-}) {
-  const url = useSyncExternalStore(subscribeFileIcons, () => peekFileIconUrl(name), serverSnapshot);
-  return (
-    <IconSlot
-      {...props}
-      url={url}
-      onError={(e) => {
-        // A decode failure must not leave a broken-image glyph in the chrome.
-        const img = e.currentTarget;
-        if (!img.dataset.fallback) {
-          img.dataset.fallback = '1';
-          img.src = peekFileIconUrl('dummy.txt');
-        }
-        onError?.(e);
-      }}
-    />
-  );
+export function FileIcon({ name, ...props }: IconSvgProps & { name: string }) {
+  const markup = useSyncExternalStore(subscribeFileIcons, () => peekFileIconSvg(name), serverSnapshot);
+  return <IconSlot {...props} markup={markup} />;
 }
 
 /** Icon for a folder name, open or closed. */
-export function FolderIcon({ name, expanded = false, ...props }: IconImgProps & { name: string; expanded?: boolean }) {
-  const url = useSyncExternalStore(subscribeFileIcons, () => peekFolderIconUrl(name, expanded), serverSnapshot);
-  return <IconSlot {...props} url={url} />;
+export function FolderIcon({ name, expanded = false, ...props }: IconSvgProps & { name: string; expanded?: boolean }) {
+  const markup = useSyncExternalStore(subscribeFileIcons, () => peekFolderIconSvg(name, expanded), serverSnapshot);
+  return <IconSlot {...props} markup={markup} />;
 }
