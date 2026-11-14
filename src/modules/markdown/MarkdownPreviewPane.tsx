@@ -5,6 +5,7 @@ import { memo, useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { defaultRehypePlugins, Streamdown, type StreamdownProps } from 'streamdown';
 import { MarkdownCode } from './code/markdown-code';
 import { type LocalImagesOptions, previewBoundary, rehypeLocalImages } from './lib/assetPath';
+import { rehypeImageSize } from './lib/imageSize';
 import { MarkdownLink } from './MarkdownLink';
 import { MarkdownViewToggle } from './MarkdownViewToggle';
 import { useMarkdownDocument } from './useMarkdownDocument';
@@ -117,6 +118,7 @@ const MarkdownBody = memo(function MarkdownBody({
           isReadable: (abs: string) => checkReadable(abs).ok,
         } satisfies LocalImagesOptions,
       ],
+      rehypeImageSize,
       d.harden,
     ];
   }, [path, boundary, assetUrlFor]);

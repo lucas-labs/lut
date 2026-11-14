@@ -82,6 +82,9 @@
 /* Baseline tokens mirror the built-in default theme, so the first paint already
  * matches what `applyTheme` writes a frame later. */
 :root {
+  /* Native controls, scrollbars and SVG images that ask `prefers-color-scheme` follow the
+   * theme's mode, not the OS's. */
+  color-scheme: light;
   --background: #fbfbf9;
   --foreground: #161a19;
   --card: #f1f2ef;
@@ -115,6 +118,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --background: #0f1211;
   --foreground: #e6eae8;
   --card: #161a19;
