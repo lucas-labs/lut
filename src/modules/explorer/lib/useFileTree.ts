@@ -393,6 +393,14 @@ export function useFileTree(rootPath: string | null, options?: Options) {
     [fetchChildren, addWatch, removeWatch],
   );
 
+  /** Closes every open folder and stops watching them; their listings stay cached, as a toggle leaves them. */
+  const collapseAll = useCallback(() => {
+    const open = [...expandedRef.current];
+    if (open.length === 0) return;
+    setExpanded(new Set());
+    watches.removeMany(open);
+  }, [watches]);
+
   const expand = useCallback(
     (path: string) => {
       if (expandedRef.current.has(path)) return;
@@ -613,6 +621,7 @@ export function useFileTree(rootPath: string | null, options?: Options) {
     renaming,
     toggle,
     expand,
+    collapseAll,
     refresh,
     beginCreate,
     cancelCreate,

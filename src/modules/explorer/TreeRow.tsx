@@ -5,7 +5,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { memo } from 'react';
 import { FileIcon, FolderIcon } from './FileIcon';
 import { InlineInput } from './InlineInput';
-import { explorerGitTextClass } from './lib/gitStatusColor';
+import { gitStatusTextClass } from './lib/gitStatusColor';
 import type { GitStatusCode } from './lib/gitStatusUtils';
 
 export type SelectModifiers = { shift: boolean; mod: boolean };
@@ -37,6 +37,64 @@ export type EntryRowProps = {
   gitignored?: boolean;
 };
 
+/** Left padding of a row at a depth: 8 px, then 12 px a level. */
+const rowIndent = (depth: number) => 8 + depth * 12;
+
+const ROW = 'flex h-6 w-full min-w-0 items-center gap-[5px] rounded-sm pr-2 text-left text-[13px] leading-[18px]';
+
+/** The chevron's slot: a folder's chevron, or the same empty width for a file so names line up. */
+function Chevron({ isDir, expanded }: { isDir: boolean; expanded: boolean }) {
+  return (
+    <span className="flex size-3 shrink-0 items-center justify-center text-muted-foreground">
+      {isDir ? (
+        <HugeiconsIcon
+          icon={ArrowRight01Icon}
+          size={12}
+          strokeWidth={2}
+          className={cn('transition-transform', expanded && 'rotate-90')}
+        />
+      ) : null}
+    </span>
+  );
+}
+
+function EntryIcon({
+  name,
+  isDir,
+  expanded,
+  className,
+}: {
+  name: string;
+  isDir: boolean;
+  expanded: boolean;
+  className?: string;
+}) {
+  return isDir ? (
+    <FolderIcon name={name} expanded={expanded} className={cn('size-3.5 shrink-0', className)} />
+  ) : (
+    <FileIcon name={name} className={cn('size-3.5 shrink-0', className)} />
+  );
+}
+
+/**
+ * The Git mark at the end of a row: a file's status letter, or a dot on a closed folder with changes inside. An open
+ * folder shows its changes on its rows instead.
+ */
+function GitMark({ code, isDir, expanded }: { code: GitStatusCode | null; isDir: boolean; expanded: boolean }) {
+  const mark = !code ? '' : isDir ? (expanded ? '' : '•') : code;
+  return (
+    <span
+      aria-hidden={mark === ''}
+      className={cn(
+        'w-3 shrink-0 text-center font-mono text-[11px] leading-4',
+        isDir ? 'text-warning' : code && gitStatusTextClass(code),
+      )}
+    >
+      {mark}
+    </span>
+  );
+}
+
 function EntryRowImpl(props: EntryRowProps) {
   const {
     path,
@@ -52,21 +110,15 @@ function EntryRowImpl(props: EntryRowProps) {
     multiSelectActive = false,
     onOpenFile,
     onSelectPath,
-    gitStatusCode,
+    gitStatusCode = null,
     gitignored = false,
   } = props;
 
-  const paddingLeft = 6 + depth * 12;
-
   if (isRenaming) {
     return (
-      <div className="flex h-6 w-full min-w-0 items-center gap-2 px-1.5 text-[13px]" style={{ paddingLeft }}>
-        <span className="size-3.5 shrink-0" />
-        {isDir ? (
-          <FolderIcon name={name} expanded={isExpanded} className="size-4 shrink-0" />
-        ) : (
-          <FileIcon name={name} className="size-4 shrink-0" />
-        )}
+      <div className={ROW} style={{ paddingLeft: rowIndent(depth) }}>
+        <Chevron isDir={false} expanded={false} />
+        <EntryIcon name={name} isDir={isDir} expanded={isExpanded} />
         <InlineInput initial={name} onCommit={actions.commitRename} onCancel={actions.cancelRename} />
       </div>
     );
@@ -90,38 +142,29 @@ function EntryRowImpl(props: EntryRowProps) {
     <button
       type="button"
       data-fs-path={path}
+      aria-expanded={isDir ? isExpanded : undefined}
       onClick={handleClick}
       onDoubleClick={() => !isDir && !multiSelectActive && actions.beginRename(path)}
       className={cn(
-        'group flex h-6 w-full min-w-0 cursor-pointer items-center gap-2 rounded-sm px-1.5 text-left text-[13px] transition-colors hover:bg-accent/70',
-        isSelected ? 'bg-accent text-foreground' : gitignored ? 'text-muted-foreground/70' : 'text-foreground/85',
-        isDropTarget && 'bg-primary/10 ring-1 ring-inset ring-primary/60',
+        ROW,
+        'group cursor-pointer outline-none hover:bg-accent focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring',
+        isSelected && 'bg-accent',
+        gitignored ? 'text-muted-foreground' : 'text-foreground',
+        isDropTarget && 'bg-primary/10 ring-1 ring-primary/60 ring-inset',
       )}
-      style={{ paddingLeft }}
+      style={{ paddingLeft: rowIndent(depth) }}
     >
-      <span className="flex size-3.5 shrink-0 items-center justify-center text-muted-foreground">
-        {isDir ? (
-          <HugeiconsIcon
-            icon={ArrowRight01Icon}
-            size={12}
-            strokeWidth={2.25}
-            className={cn('transition-transform', isExpanded && 'rotate-90')}
-          />
-        ) : null}
-      </span>
-      {isDir ? (
-        <FolderIcon name={name} expanded={isExpanded} className="size-4 shrink-0" />
-      ) : (
-        <FileIcon name={name} className="size-4 shrink-0" />
-      )}
+      <Chevron isDir={isDir} expanded={isExpanded} />
+      <EntryIcon name={name} isDir={isDir} expanded={isExpanded} />
       <span
         className={cn(
           'min-w-0 flex-1 truncate',
-          !isSelected && !gitignored && gitStatusCode && explorerGitTextClass(gitStatusCode),
+          !isSelected && !gitignored && gitStatusCode && gitStatusTextClass(gitStatusCode),
         )}
       >
         {name}
       </span>
+      <GitMark code={gitignored ? null : gitStatusCode} isDir={isDir} expanded={isExpanded} />
     </button>
   );
 }
@@ -137,16 +180,14 @@ export type PendingRowProps = {
 
 export function PendingRow({ depth, kind, onCommit, onCancel }: PendingRowProps) {
   return (
-    <div
-      className="flex h-6 w-full min-w-0 items-center gap-2 px-1.5 text-[13px]"
-      style={{ paddingLeft: 6 + depth * 12 }}
-    >
-      <span className="size-3.5 shrink-0" />
-      {kind === 'dir' ? (
-        <FolderIcon name="" className="size-4 shrink-0 opacity-70" />
-      ) : (
-        <FileIcon name="untitled" className="size-4 shrink-0 opacity-70" />
-      )}
+    <div className={ROW} style={{ paddingLeft: rowIndent(depth) }}>
+      <Chevron isDir={false} expanded={false} />
+      <EntryIcon
+        name={kind === 'dir' ? '' : 'untitled'}
+        isDir={kind === 'dir'}
+        expanded={false}
+        className="opacity-70"
+      />
       <InlineInput
         initial=""
         placeholder={kind === 'dir' ? 'New folder' : 'New file'}
@@ -161,10 +202,11 @@ export function StatusRow({ depth, message, tone }: { depth: number; message: st
   return (
     <div
       className={cn(
-        'h-6 truncate px-2 text-[11px] leading-6',
+        'h-6 truncate pr-2 text-[11px] leading-6',
         tone === 'error' ? 'text-destructive' : 'text-muted-foreground',
       )}
-      style={{ paddingLeft: 6 + depth * 12 + 18 }}
+      // Lined up with the icons: the indent, then the chevron's 12 px and the 5 px gap.
+      style={{ paddingLeft: rowIndent(depth) + 17 }}
     >
       {message}
     </div>

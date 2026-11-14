@@ -1,16 +1,20 @@
-import type { GitStatusCode } from './gitStatusUtils';
-
-// Soft filename tint, new-VS-Code direction: color the name, no badges.
-export function explorerGitTextClass(code: GitStatusCode): string {
-  switch (code) {
+/**
+ * The colour of a Git status in the explorer, the Git panel and the history: modified in the attention colour, added
+ * and untracked green, deleted red, renamed and copied blue, anything else muted.
+ */
+export function gitStatusTextClass(code: string): string {
+  switch (code.toUpperCase()) {
     case 'M':
-      return 'text-amber-200/85';
+      return 'text-warning';
     case 'A':
     case 'U':
-      return 'text-[#73C991]/90';
-    case 'R':
-      return 'text-sky-300/85';
+      return 'text-[var(--terminal-ansi-green)]';
     case 'D':
-      return 'text-rose-200/80';
+      return 'text-[var(--terminal-ansi-red)]';
+    case 'R':
+    case 'C':
+      return 'text-[var(--terminal-ansi-blue)]';
+    default:
+      return 'text-muted-foreground';
   }
 }

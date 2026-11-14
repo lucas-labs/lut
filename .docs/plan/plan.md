@@ -2890,6 +2890,10 @@ size: M
 **Acceptance criteria:**
 
 - [ ] Tree navigation, opening files and drag-a-path-into-terminal work as designed.
+- [ ] The header has the sidebar view look with Search files, New file, New folder, Collapse folders (closes every open
+      folder) and Refresh.
+- [ ] Changed files show their Git status letter and keep the tinted name, in the theme's colours; a closed folder
+      with changes inside shows a dot.
 - [ ] Behaviour: expanding a folder calls the existing tree loader once per folder (component test).
 - [ ] A screenshot of the view is attached to the PR.
 

@@ -11,10 +11,10 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { IS_WINDOWS } from '@/modules/platform';
-import { SidebarHeaderButton, SidebarViewHeader } from '@/modules/sidebar';
+import { SidebarHeaderAction, SidebarViewHeader } from '@/modules/sidebar';
 import {
   ArrowDown02Icon,
   ArrowRight01Icon,
@@ -130,7 +130,7 @@ export const GitPanel = memo(function GitPanel({
     <TooltipProvider delayDuration={800} skipDelayDuration={300}>
       <aside className="flex h-full min-w-0 flex-col [contain:layout_style]">
         <SidebarViewHeader title="Source control">
-          <HeaderAction
+          <SidebarHeaderAction
             label={fetchBusy ? 'Fetching…' : 'Fetch from remote'}
             disabled={!canFetch}
             onClick={() => void sourceControl.runRemoteAction('fetch')}
@@ -140,8 +140,8 @@ export const GitPanel = memo(function GitPanel({
             ) : (
               <HugeiconsIcon icon={Download01Icon} size={15} strokeWidth={1.5} />
             )}
-          </HeaderAction>
-          <HeaderAction
+          </SidebarHeaderAction>
+          <SidebarHeaderAction
             label={pullLabel}
             disabled={!canPull}
             onClick={() => void sourceControl.runRemoteAction('pull')}
@@ -151,8 +151,8 @@ export const GitPanel = memo(function GitPanel({
             ) : (
               <HugeiconsIcon icon={ArrowDown02Icon} size={15} strokeWidth={1.5} />
             )}
-          </HeaderAction>
-          <HeaderAction
+          </SidebarHeaderAction>
+          <SidebarHeaderAction
             label="Refresh source control"
             disabled={isRefreshing || !!scm.actionBusy}
             onClick={handleRefresh}
@@ -167,7 +167,7 @@ export const GitPanel = memo(function GitPanel({
                 className={cn(refreshAnimating && 'animate-spin')}
               />
             )}
-          </HeaderAction>
+          </SidebarHeaderAction>
         </SidebarViewHeader>
 
         {panelState === 'loading' ? <PanelCenter title="Loading repository" action={followContext} /> : null}
@@ -282,29 +282,6 @@ export const GitPanel = memo(function GitPanel({
     </TooltipProvider>
   );
 });
-
-function HeaderAction({
-  label,
-  disabled,
-  onClick,
-  children,
-}: {
-  label: string;
-  disabled?: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <SidebarHeaderButton aria-label={label} disabled={disabled} onClick={onClick}>
-          {children}
-        </SidebarHeaderButton>
-      </TooltipTrigger>
-      <TooltipContent side="bottom">{label}</TooltipContent>
-    </Tooltip>
-  );
-}
 
 function PanelCenter({ title, body, action }: { title: string; body?: string; action?: ReactNode }) {
   return (

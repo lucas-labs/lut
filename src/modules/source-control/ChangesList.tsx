@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils';
 import { FileIcon } from '@/modules/explorer/FileIcon';
 import { copyToClipboard, revealInFinder } from '@/modules/explorer/lib/contextActions';
+import { gitStatusTextClass } from '@/modules/explorer/lib/gitStatusColor';
 import { joinPath } from '@/modules/explorer/lib/useFileTree';
 import { IS_MAC } from '@/modules/platform';
 import { Alert02Icon, RemoveSquareIcon } from '@hugeicons/core-free-icons';
@@ -51,23 +52,6 @@ function dirname(path: string): string {
 function entryPathLabel(entry: SourceControlFileEntry): string {
   if (entry.originalPath) return `${entry.originalPath} → ${entry.path}`;
   return dirname(entry.path);
-}
-
-/** The colour of a status letter: modified in the attention colour, added green, deleted red, renamed blue. */
-function statusClass(code: string): string {
-  switch (code) {
-    case 'M':
-      return 'text-warning';
-    case 'A':
-    case 'U':
-      return 'text-[var(--terminal-ansi-green)]';
-    case 'D':
-      return 'text-[var(--terminal-ansi-red)]';
-    case 'R':
-      return 'text-[var(--terminal-ansi-blue)]';
-    default:
-      return 'text-muted-foreground';
-  }
 }
 
 function checkboxValue(state: CheckState): boolean | 'indeterminate' {
@@ -329,7 +313,10 @@ const ChangeRow = memo(function ChangeRow({
           ) : null}
           <span
             title={entry.statusLabel}
-            className={cn('w-3 shrink-0 text-center font-mono text-[11px] leading-4', statusClass(entry.statusCode))}
+            className={cn(
+              'w-3 shrink-0 text-center font-mono text-[11px] leading-4',
+              gitStatusTextClass(entry.statusCode),
+            )}
           >
             {entry.statusCode}
           </span>
