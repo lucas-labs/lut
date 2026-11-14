@@ -26,6 +26,9 @@ export type BackgroundKind = 'none' | 'image';
 
 export type TerminalCursorStyle = 'bar' | 'block' | 'underline';
 
+/** How file icons are coloured (E10-18): the theme's colours, the icon set's own, or the muted text colour. */
+export type FileIconColors = 'theme' | 'original' | 'monochrome';
+
 export const EDITOR_THEMES = [
   'kanagawa',
   'kanagawa-lotus',
@@ -129,6 +132,7 @@ export type Preferences = {
   editorWordWrapColumn: number;
   showHidden: boolean;
   explorerGitDecorations: boolean;
+  fileIconColors: FileIconColors;
   terminalRenderer: TerminalRendererSetting;
   terminalScreenReader: boolean;
   terminalCursorBlink: boolean;
@@ -204,6 +208,7 @@ const KEY_EDITOR_WORD_WRAP_COLUMN = 'editorWordWrapColumn';
 const KEY_SHOW_HIDDEN = 'showHidden';
 const LEGACY_KEY_SHOW_HIDDEN_DIRS = 'showHiddenDirectories';
 const KEY_EXPLORER_GIT_DECORATIONS = 'explorerGitDecorations';
+const KEY_FILE_ICON_COLORS = 'fileIconColors';
 const KEY_TERMINAL_RENDERER = 'terminalRenderer';
 const KEY_TERMINAL_SCREEN_READER = 'terminalScreenReader';
 const KEY_TERMINAL_CURSOR_BLINK = 'terminalCursorBlink';
@@ -273,6 +278,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   editorWordWrapColumn: EDITOR_WORD_WRAP_COLUMN_DEFAULT,
   showHidden: false,
   explorerGitDecorations: true,
+  fileIconColors: 'theme',
   terminalRenderer: 'auto',
   terminalScreenReader: false,
   terminalCursorBlink: true,
@@ -354,6 +360,7 @@ export async function loadPreferences(): Promise<Preferences> {
       DEFAULT_PREFERENCES.showHidden,
     explorerGitDecorations:
       get<boolean>(KEY_EXPLORER_GIT_DECORATIONS) ?? DEFAULT_PREFERENCES.explorerGitDecorations,
+    fileIconColors: coerceFileIconColors(get<unknown>(KEY_FILE_ICON_COLORS)),
     terminalRenderer: coerceTerminalRenderer(get<string>(KEY_TERMINAL_RENDERER)),
     terminalScreenReader: get<boolean>(KEY_TERMINAL_SCREEN_READER) === true,
     terminalCursorBlink:
@@ -510,6 +517,16 @@ export async function setShowHidden(value: boolean): Promise<void> {
 
 export async function setExplorerGitDecorations(value: boolean): Promise<void> {
   await writePref(KEY_EXPLORER_GIT_DECORATIONS, value);
+}
+
+export function coerceFileIconColors(value: unknown): FileIconColors {
+  return value === 'theme' || value === 'original' || value === 'monochrome'
+    ? value
+    : DEFAULT_PREFERENCES.fileIconColors;
+}
+
+export async function setFileIconColors(value: unknown): Promise<void> {
+  await writePref(KEY_FILE_ICON_COLORS, coerceFileIconColors(value));
 }
 
 export async function setTerminalRenderer(value: TerminalRendererSetting): Promise<void> {
@@ -697,6 +714,7 @@ export async function onPreferencesChange(
     [KEY_EDITOR_WORD_WRAP_COLUMN]: 'editorWordWrapColumn',
     [KEY_SHOW_HIDDEN]: 'showHidden',
     [KEY_EXPLORER_GIT_DECORATIONS]: 'explorerGitDecorations',
+    [KEY_FILE_ICON_COLORS]: 'fileIconColors',
     [KEY_TERMINAL_RENDERER]: 'terminalRenderer',
     [KEY_TERMINAL_SCREEN_READER]: 'terminalScreenReader',
     [KEY_TERMINAL_CURSOR_BLINK]: 'terminalCursorBlink',

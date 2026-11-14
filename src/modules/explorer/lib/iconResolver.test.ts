@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const fakeEngine = {
-  fileIconUrl: (name: string) => `file:${name}`,
-  folderIconUrl: (name: string, open: boolean) => `folder:${name}:${open}`,
+  fileIconSvg: (name: string) => `file:${name}`,
+  folderIconSvg: (name: string, open: boolean) => `folder:${name}:${open}`,
 };
 const loads = vi.hoisted(() => ({ count: 0, fail: 0 }));
 
@@ -36,8 +36,8 @@ describe('iconResolver (lazy shell)', () => {
   it('costs nothing until something asks: no engine import on module load', async () => {
     const r = await load();
     expect(loads.count).toBe(0);
-    expect(r.peekFileIconUrl('a.ts')).toBe('');
-    expect(r.peekFolderIconUrl('src', false)).toBe('');
+    expect(r.peekFileIconSvg('a.ts')).toBe('');
+    expect(r.peekFolderIconSvg('src', false)).toBe('');
     expect(loads.count).toBe(0);
   });
 
@@ -47,15 +47,15 @@ describe('iconResolver (lazy shell)', () => {
     const b = vi.fn();
     r.subscribeFileIcons(a);
     r.subscribeFileIcons(b);
-    expect(r.peekFileIconUrl('x.ts')).toBe('');
+    expect(r.peekFileIconSvg('x.ts')).toBe('');
 
     await r.preloadFileIcons();
 
     expect(loads.count).toBe(1);
     expect(a).toHaveBeenCalledTimes(1);
     expect(b).toHaveBeenCalledTimes(1);
-    expect(r.peekFileIconUrl('x.ts')).toBe('file:x.ts');
-    expect(r.peekFolderIconUrl('src', true)).toBe('folder:src:true');
+    expect(r.peekFileIconSvg('x.ts')).toBe('file:x.ts');
+    expect(r.peekFolderIconSvg('src', true)).toBe('folder:src:true');
   });
 
   it('does not keep listener slots for subscribers that arrive after the load', async () => {
@@ -84,10 +84,10 @@ describe('iconResolver (lazy shell)', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     loads.fail = 1;
     await r.preloadFileIcons();
-    expect(r.peekFileIconUrl('a.ts')).toBe('');
+    expect(r.peekFileIconSvg('a.ts')).toBe('');
     expect(warn).toHaveBeenCalled();
 
     await r.preloadFileIcons();
-    expect(r.peekFileIconUrl('a.ts')).toBe('file:a.ts');
+    expect(r.peekFileIconSvg('a.ts')).toBe('file:a.ts');
   });
 });

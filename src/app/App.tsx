@@ -1,6 +1,7 @@
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useZoom } from '@/lib/useZoom';
 import { useControlBridge } from '@/modules/control';
+import { useApplyFileIconColors } from '@/modules/explorer';
 import { type SearchInlineHandle, TitleBar } from '@/modules/header';
 import { DEFAULT_SPACE_ID, useNavigatorItems } from '@/modules/navigation';
 import { getLaunchDir } from '@/modules/platform';
@@ -70,6 +71,7 @@ export default function App() {
   const editors = useEditorPanes({ tabs, activeId });
   const previews = usePreviewPanes();
   useThemeFileEditing({ openFileTab });
+  useApplyFileIconColors();
   const { explorerRoot, inheritedCwdForNewTab } = useWorkspaceCwd(activeTab, tabs, launchCwd ?? home);
   useWindowTitle(activeTab, explorerRoot);
   const zoom = useZoom();
