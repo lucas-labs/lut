@@ -15,7 +15,7 @@ import { MarkdownCode } from './code/markdown-code';
 import { REFUSED_IMAGE_TAG } from './lib/assetPath';
 import type { AlertKind } from './lib/githubAlerts';
 import { localLinkDeps, MarkdownLinkContext, openLocalLink } from './lib/openLocalLink';
-import { MarkdownImage } from './MarkdownImage';
+import { InsideLinkContext, MarkdownImage } from './MarkdownImage';
 import { MarkdownLink } from './MarkdownLink';
 
 /** Streamdown hands every component its hast node; it never goes to the DOM. */
@@ -186,14 +186,16 @@ function Link({ node: _node, className, onClick, ...props }: HastProps<'a'>) {
     else if (href.startsWith('#')) scrollToAnchor(event.currentTarget, href.slice(1));
   };
   return (
-    <MarkdownLink
-      {...props}
-      onClick={handleClick}
-      className={cn(
-        'cursor-pointer text-primary underline decoration-1 underline-offset-2 hover:text-foreground',
-        className,
-      )}
-    />
+    <InsideLinkContext.Provider value={true}>
+      <MarkdownLink
+        {...props}
+        onClick={handleClick}
+        className={cn(
+          'cursor-pointer text-primary underline decoration-1 underline-offset-2 hover:text-foreground',
+          className,
+        )}
+      />
+    </InsideLinkContext.Provider>
   );
 }
 

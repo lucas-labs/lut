@@ -175,6 +175,20 @@ describe('MarkdownPreviewPane on the design', () => {
     expect(openFile).toHaveBeenCalledWith(expected);
   });
 
+  it('leaves the click on a linked image to the link, without a zoom button', async () => {
+    openFile.mockClear();
+    doc.content = '[![CI](https://example.com/badge.svg)](./docs/ci.md)\n';
+    await render();
+    const anchor = host.querySelector('article a');
+    expect(anchor?.querySelector('button')).toBeNull();
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    await act(async () => {
+      anchor?.querySelector('img')?.dispatchEvent(click);
+    });
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+    expect(openFile).toHaveBeenCalledWith('C:/proj/docs/ci.md');
+  });
+
   it('opens a relative link in lut instead of navigating the webview', async () => {
     openFile.mockClear();
     doc.content = 'More info in [UI/UX Guide](./src/components/UI-UX-GUIDE.md).\n';
