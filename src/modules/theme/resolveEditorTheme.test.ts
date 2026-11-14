@@ -30,18 +30,24 @@ describe('resolveEditorThemeId', () => {
     expect(resolveEditorThemeId('auto', 'my-theme', [custom], 'light')).toBe('github-light');
   });
 
-  it('auto with an unknown app theme uses the default theme pairing', () => {
-    expect(resolveEditorThemeId('auto', 'does-not-exist', [], 'dark')).toBe('github-dark');
+  it('auto pairs the Lut app theme with the Lut scheme', () => {
+    expect(resolveEditorThemeId('auto', 'lut', [], 'dark')).toBe('lut-dark');
+    expect(resolveEditorThemeId('auto', 'lut', [], 'light')).toBe('lut-light');
   });
 
-  it('auto falls back to a neutral theme when the pairing is invalid', () => {
+  it('auto with an unknown app theme uses the default theme pairing', () => {
+    expect(resolveEditorThemeId('auto', 'does-not-exist', [], 'dark')).toBe('lut-dark');
+    expect(resolveEditorThemeId('auto', 'does-not-exist', [], 'light')).toBe('lut-light');
+  });
+
+  it('auto falls back to the Lut scheme when the pairing is invalid', () => {
     const bad: Theme = {
       id: 'bad',
       name: 'Bad',
       editorTheme: { dark: 'not-a-real-theme' },
       variants: { dark: {} },
     };
-    expect(resolveEditorThemeId('auto', 'bad', [bad], 'dark')).toBe('atomone');
-    expect(resolveEditorThemeId('auto', 'bad', [bad], 'light')).toBe('github-light');
+    expect(resolveEditorThemeId('auto', 'bad', [bad], 'dark')).toBe('lut-dark');
+    expect(resolveEditorThemeId('auto', 'bad', [bad], 'light')).toBe('lut-light');
   });
 });

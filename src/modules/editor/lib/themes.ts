@@ -17,6 +17,8 @@ import {
   kanagawa,
   kanagawaDragon,
   kanagawaLotus,
+  lutDark,
+  lutLight,
   rosePine,
   rosePineDawn,
   solarizedDark,
@@ -24,6 +26,8 @@ import {
 } from './cmThemes';
 
 export const EDITOR_THEME_EXT: Record<EditorThemeId, Extension> = {
+  'lut-dark': lutDark,
+  'lut-light': lutLight,
   kanagawa,
   'kanagawa-lotus': kanagawaLotus,
   'kanagawa-dragon': kanagawaDragon,

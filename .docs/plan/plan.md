@@ -2953,7 +2953,7 @@ theme's colors (the default), the icon set's own colors, or the muted text color
 
 **Verification:** `pnpm check-types`, `pnpm test`, `pnpm knip`.
 
-### E10-19 — Theme the editor from lut theme tokens
+### E10-19 — Add a Lut colour scheme to the editor
 
 ```yaml
 id: E10-19
@@ -2965,17 +2965,18 @@ scope: ui
 size: M
 ```
 
-**Goal:** The editor follows the designed look and lut's theme tokens; Terax CodeMirror themes and the
-`@uiw/codemirror-theme-*` packages are removed.
+**Goal:** The editor gets Lut Dark and Lut Light, syntax colour schemes drawn from lut's own palette, selectable under
+any app theme. Lut becomes the default scheme; the existing schemes stay.
 
 **Acceptance criteria:**
 
-- [ ] `cmThemes.ts`, `chromeTheme.ts`, `themes.ts` replaced; `compositingBudget.test.ts` updated.
-- [ ] Switching the app theme updates an open editor.
-- [ ] Unused theme packages removed.
-- [ ] A screenshot of the editor in a light and a dark theme is attached to the PR.
+- [ ] Lut Dark and Lut Light are listed in Settings → Editor theme, alongside the existing schemes.
+- [ ] Lut is the default: Auto uses it with the Lut app theme and with any theme without a valid pairing.
+- [ ] No scheme or theme package is removed.
+- [ ] A screenshot of the editor in Lut Dark and Lut Light is attached to the PR.
 
-**Verification:** `pnpm test`, `pnpm build`.
+**Verification:** `pnpm test src/modules/theme src/modules/editor`; manual: open a `.ts`, `.rs` and `.md` file in
+both schemes.
 
 ### E10-20 — Rebuild the markdown preview on lut's design
 
