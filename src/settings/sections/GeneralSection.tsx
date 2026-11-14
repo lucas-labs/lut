@@ -8,12 +8,14 @@ import { IS_MAC } from '@/modules/platform';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import type { ThemePref } from '@/modules/settings/store';
 import {
+  coerceFileIconColors,
   coerceTerminalRenderer,
   setAgentNotifications,
   setAgentNotificationSound,
   setConfirmCloseRunningTerminal,
   setDefaultWorkspaceEnv,
   setExplorerGitDecorations,
+  setFileIconColors,
   setRestoreWindowState,
   setShowHidden,
   setTerminalCursorBlink,
@@ -62,6 +64,11 @@ const TERMINAL_CURSOR_STYLES = [
   { value: 'block', label: 'Block' },
   { value: 'underline', label: 'Underline' },
 ] as const;
+const FILE_ICON_COLORS = [
+  { value: 'theme', label: 'Theme' },
+  { value: 'original', label: 'Original' },
+  { value: 'monochrome', label: 'Monochrome' },
+] as const;
 const LETTER_SPACINGS = [-4, -3, -2, -1, 0, 1, 2, 3, 4] as const;
 const OPTION_AS_ALT_CHOICES = [
   ['off', 'Off'],
@@ -86,6 +93,7 @@ export function GeneralSection() {
   const restoreWindowState = usePreferencesStore((s) => s.restoreWindowState);
   const showHidden = usePreferencesStore((s) => s.showHidden);
   const explorerGitDecorations = usePreferencesStore((s) => s.explorerGitDecorations);
+  const fileIconColors = usePreferencesStore((s) => coerceFileIconColors(s.fileIconColors));
   const terminalRenderer = usePreferencesStore((s) => s.terminalRenderer);
   const terminalScreenReader = usePreferencesStore((s) => s.terminalScreenReader);
   const terminalCursorBlink = usePreferencesStore((s) => s.terminalCursorBlink);
@@ -184,6 +192,23 @@ export function GeneralSection() {
           description="Show the Git status of changed files and dim gitignored entries in the file explorer."
         >
           <Switch checked={explorerGitDecorations} onCheckedChange={(v) => void setExplorerGitDecorations(v)} />
+        </SettingRow>
+        <SettingRow
+          title="File icon colors"
+          description="Theme uses the theme's colors, Original the icon set's own, Monochrome the muted text color."
+        >
+          <Select value={fileIconColors} onValueChange={(v) => void setFileIconColors(v)}>
+            <SelectTrigger value={fileIconColors} className="h-8 w-36 text-[12px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {FILE_ICON_COLORS.map((option) => (
+                <SelectItem key={option.value} value={option.value} className="text-[12px]">
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </SettingRow>
       </div>
 

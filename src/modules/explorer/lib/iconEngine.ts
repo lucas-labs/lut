@@ -6,13 +6,70 @@ import catppuccinIcons from '@iconify-json/catppuccin/icons.json';
 import { EXT_TO_LANGUAGE_ID } from './constants';
 import * as fileIconsMod from './fileIcons';
 import * as folderIconsMod from './folderIcons';
+import { ICON_ID_TOKEN } from './iconMarkup';
 
 export type IconifySet = {
   icons: Record<string, { body: string }>;
   aliases?: Record<string, { parent: string }>;
-  width?: number;
-  height?: number;
 };
+
+/**
+ * The Catppuccin (Macchiato) colours the icons are drawn with, by name. Each one
+ * becomes `--file-icon-<name>`, which `globals.css` points at the theme, the
+ * muted text colour, or nothing (the colour itself) per the "File icon colors"
+ * setting. Colours outside it only paint inside masks, clip paths and gradients.
+ */
+export const CATPPUCCIN_PALETTE: Readonly<Record<string, string>> = {
+  '#cad3f5': 'text',
+  '#8087a2': 'overlay1',
+  '#8aadf4': 'blue',
+  '#7dc4e4': 'sapphire',
+  '#91d7e3': 'sky',
+  '#8bd5ca': 'teal',
+  '#a6da95': 'green',
+  '#eed49f': 'yellow',
+  '#f5a97f': 'peach',
+  '#c6a0f6': 'mauve',
+  '#b7bdf8': 'lavender',
+  '#f4dbd6': 'rosewater',
+  '#ed8796': 'red',
+  '#f5bde6': 'pink',
+  '#ee99a0': 'maroon',
+  '#f0c6c6': 'flamingo',
+};
+
+const TAG = /<[a-zA-Z][^>]*>/g;
+const PAINT = /\s(stroke|fill|stop-color)="(#[0-9a-fA-F]{3,8})"/g;
+const STYLE = /\sstyle="([^"]*)"/;
+
+/**
+ * Moves each palette colour of an icon's markup into its style as
+ * `var(--file-icon-<name>, <colour>)` (presentation attributes cannot read CSS
+ * variables), and marks its ids with `ICON_ID_TOKEN` for `scopeIconIds`.
+ */
+export function recolor(body: string): string {
+  const painted = body.replace(TAG, (tag) => {
+    const declarations: string[] = [];
+    const rest = tag.replace(PAINT, (attr: string, property: string, hex: string) => {
+      const name = CATPPUCCIN_PALETTE[hex.toLowerCase()];
+      if (!name) return attr;
+      declarations.push(`${property}:var(--file-icon-${name},${hex})`);
+      return '';
+    });
+    if (declarations.length === 0) return tag;
+    const style = declarations.join(';');
+    if (STYLE.test(rest)) {
+      return rest.replace(
+        STYLE,
+        (_, own: string) => ` style="${own.replace(/;?\s*$/, ';')}${style}"`,
+      );
+    }
+    return rest.replace(/\s*(\/?)>$/, ` style="${style}"$1>`);
+  });
+  return painted
+    .replace(/\sid="([^"]+)"/g, ` id="${ICON_ID_TOKEN}-$1"`)
+    .replace(/url\(#([^)]+)\)/g, `url(#${ICON_ID_TOKEN}-$1)`);
+}
 
 export type IconMaps = {
   /** exact (lowercased) file name -> icon name */
@@ -27,9 +84,10 @@ export type IconMaps = {
   folderNames: Record<string, string>;
 };
 
+/** Each lookup returns an icon's markup for a 16 × 16 `<svg>` (see `iconMarkup.ts`). */
 export type IconEngine = {
-  fileIconUrl: (name: string) => string;
-  folderIconUrl: (name: string, expanded: boolean) => string;
+  fileIconSvg: (name: string) => string;
+  folderIconSvg: (name: string, expanded: boolean) => string;
 };
 
 const DEFAULT_FILE = 'file';
@@ -51,9 +109,7 @@ function extOf(name: string): string {
 
 /** Pure factory so the resolution rules are testable against tiny fixtures. */
 export function createIconEngine(set: IconifySet, maps: IconMaps): IconEngine {
-  const width = set.width ?? 16;
-  const height = set.height ?? 16;
-  const dataUrlCache = new Map<string, string>();
+  const markupCache = new Map<string, string>();
 
   function body(iconName: string): string | null {
     const slug = toIconifySlug(iconName);
@@ -67,43 +123,38 @@ export function createIconEngine(set: IconifySet, maps: IconMaps): IconEngine {
     return null;
   }
 
-  function dataUrl(iconName: string): string | null {
-    const cached = dataUrlCache.get(iconName);
+  function markup(iconName: string): string | null {
+    const cached = markupCache.get(iconName);
     if (cached !== undefined) return cached || null;
     const svgBody = body(iconName);
-    if (!svgBody) {
-      dataUrlCache.set(iconName, '');
-      return null;
-    }
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}">${svgBody}</svg>`;
-    const url = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-    dataUrlCache.set(iconName, url);
-    return url;
+    const recolored = svgBody ? recolor(svgBody) : '';
+    markupCache.set(iconName, recolored);
+    return recolored || null;
   }
 
   return {
-    fileIconUrl(name) {
+    fileIconSvg(name) {
       const lower = name.toLowerCase();
 
       const byName = maps.fileNames[lower];
       if (byName) {
-        const url = dataUrl(byName);
-        if (url) return url;
+        const svg = markup(byName);
+        if (svg) return svg;
       }
 
       let ext = extOf(lower);
       while (ext) {
         const iconName = maps.fileExtensions[ext];
         if (iconName) {
-          const url = dataUrl(iconName);
-          if (url) return url;
+          const svg = markup(iconName);
+          if (svg) return svg;
         }
         const langId = maps.extToLanguageId[ext];
         if (langId) {
           const iconByLang = maps.languageIds[langId];
           if (iconByLang) {
-            const url = dataUrl(iconByLang);
-            if (url) return url;
+            const svg = markup(iconByLang);
+            if (svg) return svg;
           }
         }
         const nextDot = ext.indexOf('.');
@@ -111,17 +162,17 @@ export function createIconEngine(set: IconifySet, maps: IconMaps): IconEngine {
         ext = ext.slice(nextDot + 1);
       }
 
-      return dataUrl(DEFAULT_FILE) ?? '';
+      return markup(DEFAULT_FILE) ?? '';
     },
 
-    folderIconUrl(name, expanded) {
+    folderIconSvg(name, expanded) {
       const mapped = maps.folderNames[name.toLowerCase()];
       if (mapped) {
         const slug = toIconifySlug(mapped);
-        const url = dataUrl(expanded ? `${slug}-open` : slug);
-        if (url) return url;
+        const svg = markup(expanded ? `${slug}-open` : slug);
+        if (svg) return svg;
       }
-      return dataUrl(expanded ? DEFAULT_FOLDER_OPEN : DEFAULT_FOLDER) ?? '';
+      return markup(expanded ? DEFAULT_FOLDER_OPEN : DEFAULT_FOLDER) ?? '';
     },
   };
 }
