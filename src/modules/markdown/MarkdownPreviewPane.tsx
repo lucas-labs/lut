@@ -3,11 +3,13 @@ import { useAssetGrant } from '@/lib/useAssetGrant';
 import { cn } from '@/lib/utils';
 import { memo, useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { defaultRehypePlugins, Streamdown, type StreamdownProps } from 'streamdown';
-import { MarkdownCode } from './code/markdown-code';
 import { type LocalImagesOptions, previewBoundary, rehypeLocalImages } from './lib/assetPath';
+import { rehypeGithubAlerts } from './lib/githubAlerts';
+import { rehypeImageCaptions } from './lib/imageCaptions';
 import { rehypeImageSize } from './lib/imageSize';
-import { MarkdownLink } from './MarkdownLink';
+import { markdownComponents } from './MarkdownElements';
 import { MarkdownViewToggle } from './MarkdownViewToggle';
+import { PreviewStatusLine } from './PreviewStatusLine';
 import { useMarkdownDocument } from './useMarkdownDocument';
 
 type Props = {
@@ -17,8 +19,6 @@ type Props = {
   visible: boolean;
   onSetView: (mode: 'rendered' | 'raw') => void;
 };
-
-const components = { a: MarkdownLink, code: MarkdownCode };
 
 /** What a local image shows while its asset grant is on its way: nothing, rather than harden's "blocked" text. */
 const PENDING_IMAGE = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
@@ -70,8 +70,8 @@ export function MarkdownPreviewPane({ path, workspaceRoot = null, visible, onSet
       )}
     >
       <MarkdownViewToggle mode="rendered" onChange={onSetView} />
-      <div ref={scrollRef} onScroll={onScroll} className="flex-1 overflow-auto">
-        <div className="px-8 py-6">
+      <div ref={scrollRef} onScroll={onScroll} className="min-h-0 flex-1 overflow-y-auto">
+        <article className="lut-md mx-auto max-w-[880px] px-12 pt-11 pb-12 font-sans text-[14px] leading-[22px] text-foreground">
           {status.kind === 'loading' && <p className="text-[12px] text-muted-foreground">Loading…</p>}
           {status.kind === 'error' && (
             <p className="text-[12px] text-destructive">Failed to read file: {status.message}</p>
@@ -87,8 +87,9 @@ export function MarkdownPreviewPane({ path, workspaceRoot = null, visible, onSet
           {content !== null && (
             <MarkdownBody path={path} boundary={previewBoundary(path, workspaceRoot)} content={content} />
           )}
-        </div>
+        </article>
       </div>
+      <PreviewStatusLine path={path} />
     </div>
   );
 }
@@ -108,6 +109,7 @@ const MarkdownBody = memo(function MarkdownBody({
     return [
       d.raw,
       d.sanitize,
+      rehypeGithubAlerts,
       [
         rehypeLocalImages,
         {
@@ -118,6 +120,7 @@ const MarkdownBody = memo(function MarkdownBody({
           isReadable: (abs: string) => checkReadable(abs).ok,
         } satisfies LocalImagesOptions,
       ],
+      rehypeImageCaptions,
       rehypeImageSize,
       d.harden,
     ];
@@ -137,8 +140,8 @@ const MarkdownBody = memo(function MarkdownBody({
           would never reach the images. */}
       <Streamdown
         key={identityOf(rehypePlugins)}
-        className="select-text [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
-        components={components}
+        className="space-y-0 select-text [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+        components={markdownComponents}
         rehypePlugins={rehypePlugins}
         mode="static"
         parseIncompleteMarkdown={false}

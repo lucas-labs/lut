@@ -26,7 +26,10 @@ export function MarkdownCode({ className, children, ...rest }: { className?: str
   const match = className?.match(/language-(\w+)/);
   if (!match) {
     return (
-      <code className="rounded bg-muted/70 px-1.5 py-0.5 font-mono text-[0.875em] text-foreground" {...rest}>
+      <code
+        className="rounded-[4px] border border-border bg-card px-[5px] py-px font-mono text-[12.5px] text-foreground"
+        {...rest}
+      >
         {children}
       </code>
     );

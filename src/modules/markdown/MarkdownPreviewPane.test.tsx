@@ -44,8 +44,10 @@ vi.mock('@/lib/useAssetGrant', async () => {
   };
 });
 vi.mock('@/lib/security/security', () => ({ checkReadable: () => ({ ok: true }) }));
+const LOGO_DOC = '# Title\n\n![Logo](./.github/logo.svg)\n';
+const doc = vi.hoisted(() => ({ content: '' }));
 vi.mock('./useMarkdownDocument', () => ({
-  useMarkdownDocument: () => ({ kind: 'ready', content: '# Title\n\n![Logo](./.github/logo.svg)\n' }),
+  useMarkdownDocument: () => ({ kind: 'ready', content: doc.content }),
 }));
 
 const { MarkdownPreviewPane } = await import('./MarkdownPreviewPane');
@@ -56,6 +58,7 @@ let root: Root;
 beforeEach(() => {
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   grant.reset();
+  doc.content = LOGO_DOC;
   host = document.createElement('div');
   document.body.append(host);
   root = createRoot(host);
@@ -93,6 +96,62 @@ describe('MarkdownPreviewPane local images', () => {
     // Same text, another folder: the image is the other document's.
     await render(OTHER_DOC);
     expect(host.querySelector('img')?.getAttribute('src')).toBe(OTHER_GRANTED);
+  });
+});
+
+describe('MarkdownPreviewPane on the design', () => {
+  it('draws a GitHub alert with its title, without the marker', async () => {
+    doc.content = '> [!WARNING]\n> Never drop `ratio` when migrating.\n';
+    await render();
+    const alert = host.querySelector('[data-alert="warning"]');
+    expect(alert?.getAttribute('role')).toBe('note');
+    expect(alert?.textContent).toContain('Warning');
+    expect(alert?.textContent).toContain('Never drop ratio when migrating.');
+    expect(host.textContent).not.toContain('[!WARNING]');
+  });
+
+  it('shows a refused local image as a placeholder with its path and caption', async () => {
+    doc.content = '![Secret](../../outside/logo.png)\n';
+    await render();
+    expect(host.textContent).not.toContain('Image blocked');
+    expect(host.querySelector('[data-image-placeholder]')?.textContent).toBe(
+      'Image not loaded: ../../outside/logo.png',
+    );
+    expect(host.querySelector('figcaption')?.textContent).toBe('Secret');
+  });
+
+  it('captions an image with its alt', async () => {
+    grant.land({ [LOGO]: GRANTED });
+    await render();
+    expect(host.querySelector('figure img')?.getAttribute('src')).toBe(GRANTED);
+    expect(host.querySelector('figure figcaption')?.textContent).toBe('Logo');
+  });
+
+  it('opens an image enlarged when clicked, with no download button', async () => {
+    grant.land({ [LOGO]: GRANTED });
+    await render();
+    expect(host.querySelector('[data-streamdown="image-wrapper"]')).toBeNull();
+    const open = host.querySelector<HTMLButtonElement>('button[aria-label="Enlarge image: Logo"]');
+    expect(open?.querySelector('img')?.getAttribute('src')).toBe(GRANTED);
+    await act(async () => open?.click());
+    const dialog = document.querySelector('[role="dialog"]');
+    expect(dialog?.querySelector('img')?.getAttribute('src')).toBe(GRANTED);
+    await act(async () => {
+      dialog?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    });
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it('keeps the prompt on shell blocks, in the same frame with Copy', async () => {
+    doc.content = '```sh\npnpm test restore --watch\n```\n';
+    await render();
+    expect(host.textContent).toContain('$pnpm test restore --watch');
+    expect([...host.querySelectorAll('button')].map((b) => b.textContent)).toContain('Copy');
+  });
+
+  it('shows the file and that it is a preview under the document', async () => {
+    await render();
+    expect(host.querySelector('[aria-label="Preview status"]')?.textContent).toBe(`${DOC}Preview`);
   });
 });
 

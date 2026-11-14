@@ -4,6 +4,7 @@ import {
   isAllowedLocalImage,
   isInsideRoot,
   previewBoundary,
+  REFUSED_IMAGE_TAG,
   rehypeLocalImages,
   resolveRelativeAsset,
 } from './assetPath';
@@ -113,6 +114,15 @@ describe('rehypeLocalImages', () => {
     );
     return node.properties.src;
   };
+  /** The path a refused image keeps once it became the placeholder tag. */
+  const refused = (src: string, doc = '/w/p/docs/readme.md', root = '/w/p') => {
+    const node: { tagName: string; properties: Record<string, unknown> } = img(src);
+    const t = { type: 'root', children: [{ type: 'element', tagName: 'p', children: [node] }] };
+    rehypeLocalImages({ basePath: doc, toUrl: (p) => `asset://${p}`, grant: '', ...policy(root) })(
+      t,
+    );
+    return node.tagName === REFUSED_IMAGE_TAG ? node.properties.dataSrc : `kept as ${node.tagName}`;
+  };
 
   it('rewrites allowed relative images at any depth', () => {
     expect(run('./a.png')).toBe('asset:///w/p/docs/a.png');
@@ -123,20 +133,41 @@ describe('rehypeLocalImages', () => {
     expect(run('https://example.com/b.png')).toBe('https://example.com/b.png');
   });
 
-  it('does not rewrite traversal out of the workspace', () => {
-    expect(run('../../../../.ssh/id_rsa.png')).toBe('../../../../.ssh/id_rsa.png');
-    expect(run('../../../etc/logo.png')).toBe('../../../etc/logo.png');
+  it('turns traversal out of the workspace into a placeholder', () => {
+    expect(refused('../../../../.ssh/id_rsa.png')).toBe('../../../../.ssh/id_rsa.png');
+    expect(refused('../../../etc/logo.png')).toBe('../../../etc/logo.png');
   });
 
-  it('does not rewrite non-image files or secret paths', () => {
-    expect(run('../notes.md')).toBe('../notes.md');
-    expect(run('../.ssh/id_rsa')).toBe('../.ssh/id_rsa');
-    expect(run('../.env.png')).toBe('../.env.png');
+  it('turns non-image files and secret paths into a placeholder', () => {
+    expect(refused('../notes.md')).toBe('../notes.md');
+    expect(refused('../.ssh/id_rsa')).toBe('../.ssh/id_rsa');
+    expect(refused('../.env.png')).toBe('../.env.png');
   });
 
-  it('never rewrites absolute references', () => {
-    expect(run('/etc/passwd')).toBe('/etc/passwd');
-    expect(run('C:\\Users\\me\\a.png')).toBe('C:\\Users\\me\\a.png');
+  it('never loads absolute references, showing them as a placeholder', () => {
+    expect(refused('/etc/passwd')).toBe('/etc/passwd');
+    expect(refused('C:\\Users\\me\\a.png')).toBe('C:\\Users\\me\\a.png');
+  });
+
+  it('keeps the alt of a refused image', () => {
+    const node = {
+      type: 'element',
+      tagName: 'img',
+      properties: { src: '../../../x.png', alt: 'Logo' },
+    };
+    rehypeLocalImages({
+      basePath: '/w/p/docs/r.md',
+      toUrl: (p) => p,
+      grant: '',
+      ...policy('/w/p'),
+    })({
+      type: 'root',
+      children: [node],
+    });
+    expect(node).toMatchObject({
+      tagName: REFUSED_IMAGE_TAG,
+      properties: { dataSrc: '../../../x.png', alt: 'Logo' },
+    });
   });
 
   it('drops asset-protocol URLs written in the document', () => {
@@ -147,6 +178,6 @@ describe('rehypeLocalImages', () => {
 
   it('confines a document outside the workspace to its own folder', () => {
     expect(run('./a.png', '/elsewhere/d/r.md', '/elsewhere/d')).toBe('asset:///elsewhere/d/a.png');
-    expect(run('../a.png', '/elsewhere/d/r.md', '/elsewhere/d')).toBe('../a.png');
+    expect(refused('../a.png', '/elsewhere/d/r.md', '/elsewhere/d')).toBe('../a.png');
   });
 });

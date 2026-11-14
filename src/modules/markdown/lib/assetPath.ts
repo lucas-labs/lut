@@ -119,10 +119,19 @@ export type LocalImagesOptions = LocalImagePolicy & {
 };
 
 /**
+ * Element a local image the policy refuses becomes: the preview draws it as a placeholder with the path as written
+ * (`data-src`) instead of harden's "blocked" text. It keeps the image's `alt`.
+ */
+export const REFUSED_IMAGE_TAG = 'md-image-placeholder';
+
+const LOCAL_PATH = /^(?:[a-zA-Z]:[\\/]|[\\/])/;
+
+/**
  * Rehype plugin (pass it as `[rehypeLocalImages, options]`) that rewrites relative `<img src>` to
- * `toUrl(absolutePath)` when the policy allows it. A relative path it refuses stays as written (it will not load),
- * and a document-supplied asset-protocol URL is dropped outright. It has to run after sanitize (which strips the
- * asset scheme) and before harden (which would block a relative URL it cannot resolve).
+ * `toUrl(absolutePath)` when the policy allows it. A local path it refuses (outside the boundary, not an image, a
+ * secret, or absolute) becomes a {@link REFUSED_IMAGE_TAG} placeholder that loads nothing, and a document-supplied
+ * asset-protocol URL is dropped outright. It has to run after sanitize (which strips the asset scheme) and before
+ * harden (which would block a relative URL it cannot resolve).
  */
 export function rehypeLocalImages({ basePath, toUrl, ...policy }: LocalImagesOptions) {
   const rewrite = (node: HastNode): void => {
@@ -130,12 +139,13 @@ export function rehypeLocalImages({ basePath, toUrl, ...policy }: LocalImagesOpt
       const src = node.properties?.src;
       if (typeof src === 'string' && node.properties) {
         const abs = resolveRelativeAsset(basePath, src);
-        if (abs) {
-          if (isAllowedLocalImage(abs, policy)) {
-            node.properties.src = toUrl(abs);
-          }
-        } else if (ASSET_URL.test(src.trim())) {
+        if (ASSET_URL.test(src.trim())) {
           delete node.properties.src;
+        } else if (abs && isAllowedLocalImage(abs, policy)) {
+          node.properties.src = toUrl(abs);
+        } else if (abs || LOCAL_PATH.test(src.trim())) {
+          node.tagName = REFUSED_IMAGE_TAG;
+          node.properties = { dataSrc: src, alt: node.properties.alt };
         }
       }
     }
