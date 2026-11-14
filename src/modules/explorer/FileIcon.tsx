@@ -14,15 +14,18 @@ const serverSnapshot = () => '';
  * lands; a slot that was blank at mount fades the icon in instead of popping it.
  * The markup comes from the bundled icon set, never from user input.
  */
-function IconSlot({ markup, className, ...rest }: IconSvgProps & { markup: string }) {
+function IconSlot({ markup, className, width, height, style, ...rest }: IconSvgProps & { markup: string }) {
   const [arrivedLate] = useState(markup === '');
   const uid = useId();
   if (!markup) {
-    return <span aria-hidden className={cn('block', className)} />;
+    return <span aria-hidden className={cn('block', className)} style={{ width, height, ...style }} />;
   }
   return (
     <svg
       {...rest}
+      width={width}
+      height={height}
+      style={style}
       viewBox={ICON_VIEWBOX}
       aria-hidden
       className={cn(className, arrivedLate && 'lut-icon-in')}

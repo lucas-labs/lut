@@ -26,16 +26,19 @@ afterEach(() => {
 });
 
 describe('FileIcon', () => {
-  it('holds a blank slot until the icon set lands, then draws the icon inline', async () => {
-    act(() => root.render(createElement(FileIcon, { name: 'index.ts', className: 'size-3.5' })));
+  it('holds a blank slot of the same box until the icon set lands, then draws the icon inline', async () => {
+    act(() => root.render(createElement(FileIcon, { name: 'index.ts', className: 'size-3.5', width: 16, height: 16 })));
     // The icon set is still on its way: the slot keeps the icon's box.
-    expect(host.querySelector('span')?.classList.contains('size-3.5')).toBe(true);
+    const slot = host.querySelector('span');
+    expect(slot?.classList.contains('size-3.5')).toBe(true);
+    expect([slot?.style.width, slot?.style.height]).toEqual(['16px', '16px']);
     expect(host.querySelector('svg')).toBeNull();
 
     await act(() => preloadFileIcons());
     const svg = host.querySelector('svg');
     expect(svg?.getAttribute('viewBox')).toBe('0 0 16 16');
     expect(svg?.classList.contains('size-3.5')).toBe(true);
+    expect([svg?.getAttribute('width'), svg?.getAttribute('height')]).toEqual(['16', '16']);
     expect(svg?.innerHTML).toContain('var(--file-icon-');
   });
 
