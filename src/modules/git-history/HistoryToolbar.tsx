@@ -7,6 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import type { GitBranchEntry, GitLogScope } from '@/modules/git';
 import { ArrowDown01Icon, Download01Icon, GitBranchIcon, Search01Icon } from '@hugeicons/core-free-icons';
@@ -99,11 +100,14 @@ export function HistoryToolbar({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <label
-        className={`${TOOL} w-60 min-w-0 text-muted-foreground focus-within:border-primary focus-within:text-foreground`}
-      >
-        <HugeiconsIcon icon={Search01Icon} size={13} strokeWidth={1.75} className="shrink-0" />
-        <input
+      <div className="relative w-60 min-w-0 shrink-0">
+        <HugeiconsIcon
+          icon={Search01Icon}
+          size={13}
+          strokeWidth={1.75}
+          className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-muted-foreground"
+        />
+        <Input
           type="text"
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
@@ -116,9 +120,9 @@ export function HistoryToolbar({
           placeholder="Filter by message, author or SHA"
           aria-label="Filter commits"
           spellCheck={false}
-          className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+          className="h-[26px] border-border pl-[27px]"
         />
-      </label>
+      </div>
 
       <span className="flex-1" />
       {summary ? <span className="truncate text-xs text-muted-foreground">{summary}</span> : null}

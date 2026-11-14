@@ -84,14 +84,14 @@ export function ShortcutsSection() {
         <HugeiconsIcon
           icon={Search01Icon}
           size={14}
-          strokeWidth={2}
-          className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground"
+          strokeWidth={1.75}
+          className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted-foreground"
         />
         <Input
           placeholder="Search shortcuts..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="h-9 pl-9 text-[12.5px]"
+          className="h-[30px] pl-8"
         />
       </div>
 
