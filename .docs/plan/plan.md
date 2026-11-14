@@ -6997,7 +6997,7 @@ size: XS
 
 ```yaml
 id: E26
-depends-on: [E12]
+depends-on: [E10, E12]
 refs: [.docs/plan/README.md]
 ```
 
@@ -7088,11 +7088,40 @@ gain (startup time and memory) is unmeasured.
 
 **Verification:** the measurements and the recommendation in the issue.
 
+### E26-05 — Analyse a native child webview for the web preview
+
+```yaml
+id: E26-05
+depends-on: [E10-21]
+refs: [10.3:4, .docs/plan/analysis/ide-tools.md]
+covers: [ide-tools/preview-ui]
+type: spike
+scope: ui
+size: M
+```
+
+**Goal:** Decide whether the web preview keeps its sandboxed iframe or moves to a native child webview
+(`Window::add_child`, Tauri's `unstable` feature). The iframe cannot show sites that refuse to be framed
+(`X-Frame-Options`, `frame-ancestors`: most public sites, and local servers such as Gitea), shows the webview's own error
+page for them, cannot load `file://` URLs, and sends no `SameSite=Lax` cookies, so sign-in fails inside it.
+
+**Acceptance criteria:**
+
+- [ ] Both options compared with a prototype on Windows, and checked on macOS and Linux: framed-refusing sites,
+      `file://`, sign-in cookies, IPC isolation of the previewed page, overlays drawn above the preview (menus, palette,
+      toasts, dialogs), keeping the view's bounds and visibility in step with its pane and tab, keyboard shortcuts while
+      the page has focus, and memory per preview.
+- [ ] If the iframe stays: the cost of detecting a page that refuses to be framed before loading it (its response
+      headers) to show lut's own state instead of the webview's error page.
+- [ ] Recommendation recorded here, with the issues to plan.
+
+**Verification:** the comparison and the recommendation in the issue.
+
 ### E26-03 — Close-out: accessory improvements
 
 ```yaml
 id: E26-03
-depends-on: [E26-01, E26-02, E26-04]
+depends-on: [E26-01, E26-02, E26-04, E26-05]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
