@@ -14,9 +14,18 @@ export type LocalLinksOptions = {
 };
 
 /**
+ * A relative link in the one form harden lets through without a base URL (`./` or `../` first, `/` separators):
+ * `docs/guide.md`, `..\x.md` or `guide.md#setup` would otherwise be replaced by its "[blocked]" text.
+ */
+function hardenSafeHref(href: string): string {
+  const posix = href.trim().replace(/\\/g, '/');
+  return posix.startsWith('./') || posix.startsWith('../') ? posix : `./${posix}`;
+}
+
+/**
  * Rehype plugin (pass it as `[rehypeLocalLinks, options]`) that marks a link to a relative path with the file it
  * points at (`data-local-path`, absolute), so the preview opens it in lut instead of letting the webview navigate.
- * Remote links, mailto and the like, and links within the page (`#section`) are left alone.
+ * Remote links, mailto and the like, and links within the page (`#section`) are left alone. It runs before harden.
  */
 export function rehypeLocalLinks({ basePath }: LocalLinksOptions) {
   const visit = (node: HastNode): void => {
@@ -24,7 +33,10 @@ export function rehypeLocalLinks({ basePath }: LocalLinksOptions) {
       const href = node.properties.href;
       if (typeof href === 'string' && !href.startsWith('#')) {
         const path = resolveRelativeAsset(basePath, href);
-        if (path) node.properties.dataLocalPath = path;
+        if (path) {
+          node.properties.dataLocalPath = path;
+          node.properties.href = hardenSafeHref(href);
+        }
       }
     }
     node.children?.forEach(visit);

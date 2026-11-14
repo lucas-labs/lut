@@ -158,6 +158,23 @@ describe('MarkdownPreviewPane on the design', () => {
     expect([...host.querySelectorAll('button')].map((b) => b.textContent)).toContain('Copy');
   });
 
+  it.each([
+    ['a bare relative path', '[Guide](docs/guide.md)', 'C:/proj/docs/guide.md'],
+    ['a Windows-style path', '[Guide](docs\\guide.md)', 'C:/proj/docs/guide.md'],
+    ['a path with a section', '[Guide](docs/guide.md#setup)', 'C:/proj/docs/guide.md'],
+  ])('opens %s in lut instead of blocking it', async (_name, markdown, expected) => {
+    openFile.mockClear();
+    doc.content = `${markdown}\n`;
+    await render();
+    expect(host.textContent).not.toContain('[blocked]');
+    const click = new MouseEvent('click', { bubbles: true, cancelable: true });
+    await act(async () => {
+      host.querySelector('article a')?.dispatchEvent(click);
+    });
+    expect(click.defaultPrevented).toBe(true);
+    expect(openFile).toHaveBeenCalledWith(expected);
+  });
+
   it('opens a relative link in lut instead of navigating the webview', async () => {
     openFile.mockClear();
     doc.content = 'More info in [UI/UX Guide](./src/components/UI-UX-GUIDE.md).\n';

@@ -1,8 +1,9 @@
+import { invoke } from '@tauri-apps/api/core';
 import { describe, expect, it, vi } from 'vitest';
 import { headingSlug, rehypeHeadingIds, rehypeLocalLinks } from './localLinks';
-import { openLocalLink } from './openLocalLink';
+import { localLinkDeps, openLocalLink } from './openLocalLink';
 
-vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn() }));
+vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn(async () => ({ kind: 'file' })) }));
 vi.mock('@tauri-apps/plugin-opener', () => ({ revealItemInDir: vi.fn() }));
 
 type Node = {
@@ -38,6 +39,19 @@ describe('rehypeLocalLinks', () => {
     expect(localPath('guide.md', 'D:\\w\\p\\README.md')).toBe('D:\\w\\p\\guide.md');
   });
 
+  it('rewrites a local link to the form harden lets through', () => {
+    const hrefOf = (href: string) => {
+      const node = link(href);
+      rehypeLocalLinks({ basePath: '/w/p/readme.md' })({ type: 'root', children: [node] });
+      return node.properties?.href;
+    };
+    expect(hrefOf('docs/guide.md')).toBe('./docs/guide.md');
+    expect(hrefOf('guide.md#setup')).toBe('./guide.md#setup');
+    expect(hrefOf('..\\x.md')).toBe('../x.md');
+    expect(hrefOf('./ok.md')).toBe('./ok.md');
+    expect(hrefOf('https://example.com')).toBe('https://example.com');
+  });
+
   it('leaves remote links, mail and in-page anchors alone', () => {
     expect(localPath('https://example.com/a.md')).toBeUndefined();
     expect(localPath('mailto:me@example.com')).toBeUndefined();
@@ -70,6 +84,16 @@ describe('rehypeHeadingIds', () => {
   it('drops punctuation like GitHub does', () => {
     expect(headingSlug('1. Station / Client Application')).toBe('1-station--client-application');
     expect(headingSlug("What's new?")).toBe('whats-new');
+  });
+});
+
+describe('localLinkDeps', () => {
+  it('asks fs_stat for local paths only, as terminal links do', async () => {
+    await localLinkDeps(() => {}).stat('//host/share/a.md');
+    expect(invoke).toHaveBeenCalledWith(
+      'fs_stat',
+      expect.objectContaining({ path: '//host/share/a.md', localOnly: true }),
+    );
   });
 });
 

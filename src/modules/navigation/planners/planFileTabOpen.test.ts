@@ -55,6 +55,18 @@ describe('planFileTabOpen', () => {
     expect(plan.tabs).toBe(tabs);
   });
 
+  it('reuses a tab for the same file whichever separator the path uses', () => {
+    const tabs: Tab[] = [
+      terminal,
+      editor(3, 'D:\\repo\\main.rs', 'one', false),
+      editor(4, 'D:/repo/notes.txt', 'one', true),
+    ];
+
+    expect(planFileTabOpen(tabs, 'D:/repo/main.rs', true, 'one', () => 9).tabId).toBe(3);
+    expect(planFileTabOpen(tabs, 'D:/repo/main.rs', false, 'one', () => 9).tabId).toBe(3);
+    expect(planFileTabOpen(tabs, 'D:\\repo\\notes.txt', false, 'one', () => 9).tabId).toBe(4);
+  });
+
   it('promotes an existing preview only in the requested space', () => {
     const preview = editor(3, '/repo/main.rs', 'one', true);
     const otherPreview = editor(4, '/repo/main.rs', 'two', true);

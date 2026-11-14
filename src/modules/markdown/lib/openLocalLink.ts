@@ -28,7 +28,8 @@ export function localLinkDeps(openFile: (path: string) => void): LocalLinkDeps {
   const workspace = currentWorkspaceEnv();
   return {
     stat: (path) =>
-      invoke<{ kind: StatKind }>('fs_stat', { path, workspace })
+      // localOnly: a link in a document on a network share must not reach out to another host (as terminal links).
+      invoke<{ kind: StatKind }>('fs_stat', { path, workspace, localOnly: true })
         .then((stat) => stat.kind)
         .catch(() => null),
     openFile,
