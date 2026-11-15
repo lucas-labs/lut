@@ -3682,11 +3682,15 @@ size: M
 **Acceptance criteria:**
 
 - [ ] `GeneralSection`, `ThemesSection` and `AboutSection` rebuilt per design; About shows lut identity (no Terax repo/site).
-- [ ] Theme picker (built-in + custom, import/export/edit) and font picker apply live.
+- [ ] Theme picker (built-in + custom, import/edit; an edited theme's `.lut-theme` file is its export) and font picker
+      apply live.
 - [ ] A custom theme file saved with an error in the editor keeps the previous theme and shows the error (file, field,
-      message) next to the theme; today it is only logged. Import errors keep showing as they do.
+      message) in a toast in the main window and on the theme's card in Settings; today it is only logged. Changing the
+      file's `id` is an error too. Import errors keep showing as they do.
+- [ ] About's author, licence and repository come from `Cargo.toml` (`app_about`), the bundle id from the app config.
 
-**Verification:** `pnpm test`; manual: pick a theme and font; terminals update without restart.
+**Verification:** `pnpm test`; manual: pick a theme and font; terminals update without restart; save a broken theme
+file and see the toast and the card error.
 
 ### E13-09 — Implement the shortcuts editor
 

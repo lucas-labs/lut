@@ -23,6 +23,30 @@ fn get_launch_dir(state: State<'_, LaunchDir>) -> Option<String> {
     state.0.lock().expect("LaunchDir mutex poisoned").take()
 }
 
+/// What Settings > About shows about the package, from `Cargo.toml`.
+#[derive(serde::Serialize, Debug)]
+struct AppAbout {
+    authors: Vec<&'static str>,
+    license: &'static str,
+    repository: &'static str,
+}
+
+fn app_about_info() -> AppAbout {
+    AppAbout {
+        authors: env!("CARGO_PKG_AUTHORS")
+            .split(':')
+            .filter(|a| !a.is_empty())
+            .collect(),
+        license: env!("CARGO_PKG_LICENSE"),
+        repository: env!("CARGO_PKG_REPOSITORY"),
+    }
+}
+
+#[tauri::command]
+fn app_about() -> AppAbout {
+    app_about_info()
+}
+
 #[tauri::command]
 fn get_launch_files(state: State<'_, LaunchFiles>) -> Vec<String> {
     std::mem::take(&mut *state.0.lock().expect("LaunchFiles mutex poisoned"))
@@ -349,6 +373,7 @@ pub fn run() {
             modules::agent_events::agent_decision_respond,
             get_launch_dir,
             get_launch_files,
+            app_about,
             open_settings_window,
             agent::agent_enable_hooks,
             agent::agent_disable_hooks,
@@ -483,5 +508,18 @@ mod launch_target_tests {
     fn settings_float_only_outside_macos() {
         assert!(!settings_always_on_top(true));
         assert!(settings_always_on_top(false));
+    }
+}
+
+#[cfg(test)]
+mod app_about_tests {
+    use super::app_about_info;
+
+    #[test]
+    fn about_comes_from_the_package_metadata() {
+        let about = app_about_info();
+        assert_eq!(about.authors, vec!["lucode"]);
+        assert_eq!(about.license, "Apache-2.0");
+        assert_eq!(about.repository, "https://github.com/lucas-labs/lut");
     }
 }

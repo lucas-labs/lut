@@ -81,8 +81,10 @@
 }
 
 /* Baseline tokens mirror the built-in default theme, so the first paint already
- * matches what `applyTheme` writes a frame later. */
-:root {
+ * matches what `applyTheme` writes a frame later. `.light`, like `.dark`, also
+ * scopes them to an element, e.g. Settings' light mode preview in dark mode. */
+:root,
+.light {
   /* Native controls, scrollbars and SVG images that ask `prefers-color-scheme` follow the
    * theme's mode, not the OS's. */
   color-scheme: light;

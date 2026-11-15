@@ -50,7 +50,22 @@ export async function deleteThemeFile(id: string): Promise<void> {
   }
 }
 
-export function parseThemeFile(text: string): ValidationResult {
+/** A theme file's name, e.g. `my-theme.lut-theme`. */
+export function themeFileName(path: string): string {
+  return path.split(/[\\/]/).pop() ?? path;
+}
+
+/** The theme id a theme file belongs to: its name without `.lut-theme`. */
+function themeIdFromPath(path: string): string {
+  const name = themeFileName(path);
+  return name.slice(0, name.length - THEME_FILE_EXT.length);
+}
+
+/**
+ * Parses and validates a theme file's text. Its id must stay the one in the file name, or saving it would add a
+ * second theme instead of updating this one.
+ */
+export function parseThemeFile(text: string, id: string): ValidationResult {
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
@@ -60,7 +75,42 @@ export function parseThemeFile(text: string): ValidationResult {
       error: e instanceof Error ? e.message : 'invalid JSON',
     };
   }
-  return validateTheme(parsed);
+  const result = validateTheme(parsed);
+  if (result.ok && result.theme.id !== id) {
+    return { ok: false, error: `id must stay "${id}", the file's name` };
+  }
+  return result;
+}
+
+/** Reads a theme file and parses it; an error when it cannot be read as text. */
+export async function readThemeFile(path: string): Promise<ValidationResult> {
+  try {
+    const res = await invoke<{ kind: string; content?: string }>('fs_read_file', {
+      path,
+      workspace: currentWorkspaceEnv(),
+    });
+    if (res.kind !== 'text' || typeof res.content !== 'string')
+      return { ok: false, error: 'not a text file' };
+    return parseThemeFile(res.content, themeIdFromPath(path));
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/**
+ * Why a custom theme's file is not applied (its name and the error), or null when it is valid or was never written
+ * because the theme was never edited.
+ */
+export async function readThemeFileError(
+  id: string,
+): Promise<{ file: string; error: string } | null> {
+  const path = await themeFilePath(id);
+  const exists = await invoke('fs_stat', { path, workspace: currentWorkspaceEnv() })
+    .then(() => true)
+    .catch(() => false);
+  if (!exists) return null;
+  const result = await readThemeFile(path);
+  return result.ok ? null : { file: themeFileName(path), error: result.error };
 }
 
 export function starterTheme(): Theme {

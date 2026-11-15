@@ -19,7 +19,15 @@ vi.mock('@/modules/settings/preferences', () => ({
 vi.mock('@/modules/theme', () => ({ WindowActivityBridge: () => null, WindowVibrancyBridge: () => null }));
 vi.mock('@/components/ui/sonner', () => ({ Toaster: () => null }));
 vi.mock('@/components/WindowControls', () => ({ WindowControls: () => null }));
-vi.mock('./sections/GeneralSection', () => ({ GeneralSection: () => createElement('p', null, 'general section') }));
+vi.mock('./sections/GeneralSection', () => ({
+  GeneralSection: ({ openTab }: { openTab: (tab: string) => void }) =>
+    createElement(
+      'p',
+      null,
+      'general section',
+      createElement('button', { type: 'button', 'aria-label': 'Open Themes', onClick: () => openTab('themes') }),
+    ),
+}));
 vi.mock('./sections/EditorSection', () => ({ EditorSection: () => createElement('p', null, 'editor section') }));
 vi.mock('./sections/ThemesSection', () => ({ ThemesSection: () => createElement('p', null, 'themes section') }));
 vi.mock('./sections/ShortcutsSection', () => ({
@@ -106,6 +114,13 @@ describe('SettingsApp', () => {
     });
     expect(document.activeElement).toBe(tab('Editor'));
     expect(shown()).toBe('editor section');
+  });
+
+  it('lets a section open another one', () => {
+    open('');
+    act(() => host.querySelector<HTMLButtonElement>('[aria-label="Open Themes"]')?.click());
+    expect(shown()).toBe('themes section');
+    expect(selected()).toBe('Themes');
   });
 
   it('follows a section request sent to the open window, unknown ones to general', () => {

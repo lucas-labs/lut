@@ -54,28 +54,30 @@ export function EditorSection() {
       <div className="flex flex-col gap-2">
         <Label>Appearance</Label>
         <SettingRow title="Font size" description="Code editor text size.">
-          <Select value={String(editorFontSize)} onValueChange={(v) => void setEditorFontSize(Number(v))}>
-            <SelectTrigger size="sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {EDITOR_FONT_SIZES.map((size) => (
-                <SelectItem key={size} value={String(size)}>
-                  {size} px
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {(a11y) => (
+            <Select value={String(editorFontSize)} onValueChange={(v) => void setEditorFontSize(Number(v))}>
+              <SelectTrigger {...a11y} size="sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {EDITOR_FONT_SIZES.map((size) => (
+                  <SelectItem key={size} value={String(size)}>
+                    {size} px
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </SettingRow>
       </div>
 
       <div className="flex flex-col gap-2">
         <Label>Editing</Label>
         <SettingRow title="Vim mode" description="Enable Vim keybindings in the code editor.">
-          <Switch checked={vimMode} onCheckedChange={(v) => void setVimMode(v)} />
+          {(a11y) => <Switch {...a11y} checked={vimMode} onCheckedChange={(v) => void setVimMode(v)} />}
         </SettingRow>
         <SettingRow title="Word wrap" description="Wrap long lines instead of scrolling horizontally.">
-          <Switch checked={editorWordWrap} onCheckedChange={(v) => void setEditorWordWrap(v)} />
+          {(a11y) => <Switch {...a11y} checked={editorWordWrap} onCheckedChange={(v) => void setEditorWordWrap(v)} />}
         </SettingRow>
         {editorWordWrap && (
           <WordWrapColumnInput value={editorWordWrapColumn} onChange={(v) => void setEditorWordWrapColumn(v)} />
@@ -85,7 +87,7 @@ export function EditorSection() {
       <div className="flex flex-col gap-2">
         <Label>Saving</Label>
         <SettingRow title="Auto save" description="Automatically save files after a delay when changes are detected.">
-          <Switch checked={editorAutoSave} onCheckedChange={(v) => void setEditorAutoSave(v)} />
+          {(a11y) => <Switch {...a11y} checked={editorAutoSave} onCheckedChange={(v) => void setEditorAutoSave(v)} />}
         </SettingRow>
         {editorAutoSave && (
           <AutoSaveDelayInput value={editorAutoSaveDelay} onChange={(v) => void setEditorAutoSaveDelay(v)} />
@@ -94,7 +96,9 @@ export function EditorSection() {
           title="Format on save"
           description={`Format the file on explicit save (${saveHint} / :w) with the formatter below.`}
         >
-          <Switch checked={editorFormatOnSave} onCheckedChange={(v) => void setEditorFormatOnSave(v)} />
+          {(a11y) => (
+            <Switch {...a11y} checked={editorFormatOnSave} onCheckedChange={(v) => void setEditorFormatOnSave(v)} />
+          )}
         </SettingRow>
         {editorFormatOnSave && (
           <>
@@ -149,18 +153,21 @@ function CustomFormatCommandInput() {
       title="Custom command"
       description="Runs on the saved file; {file} is replaced with the quoted path (appended when omitted)."
     >
-      <Input
-        value={draft}
-        placeholder="mytool --fix {file}"
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={() => {
-          if (draft !== stored) void setEditorCustomFormatCommand(draft);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') e.currentTarget.blur();
-        }}
-        className="w-64 font-mono"
-      />
+      {(a11y) => (
+        <Input
+          {...a11y}
+          value={draft}
+          placeholder="mytool --fix {file}"
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => {
+            if (draft !== stored) void setEditorCustomFormatCommand(draft);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.blur();
+          }}
+          className="w-64 font-mono"
+        />
+      )}
     </SettingRow>
   );
 }
@@ -261,24 +268,27 @@ function AutoSaveDelayInput({ value, onChange }: { value: number; onChange: (v: 
 
   return (
     <SettingRow title="Auto save delay" description="Delay before unsaved changes are saved automatically.">
-      <div className="flex items-center gap-2">
-        <Input
-          type="number"
-          min={AUTO_SAVE_DELAY_MIN}
-          max={AUTO_SAVE_DELAY_MAX}
-          step={AUTO_SAVE_STEP}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.currentTarget.blur();
-            }
-          }}
-          className="w-20 text-right tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-        />
-        <span className="text-[11px] text-muted-foreground">ms</span>
-      </div>
+      {(a11y) => (
+        <div className="flex items-center gap-2">
+          <Input
+            {...a11y}
+            type="number"
+            min={AUTO_SAVE_DELAY_MIN}
+            max={AUTO_SAVE_DELAY_MAX}
+            step={AUTO_SAVE_STEP}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.currentTarget.blur();
+              }
+            }}
+            className="w-20 text-right tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          />
+          <span className="text-[11px] text-muted-foreground">ms</span>
+        </div>
+      )}
     </SettingRow>
   );
 }
@@ -305,22 +315,25 @@ function WordWrapColumnInput({ value, onChange }: { value: number; onChange: (v:
 
   return (
     <SettingRow title="Wrap column" description="Soft-wrap at this column, or earlier when the editor is narrower.">
-      <div className="flex items-center gap-2">
-        <Input
-          type="number"
-          min={EDITOR_WORD_WRAP_COLUMN_MIN}
-          max={EDITOR_WORD_WRAP_COLUMN_MAX}
-          step={1}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') e.currentTarget.blur();
-          }}
-          className="w-20 text-right tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-        />
-        <span className="text-[11px] text-muted-foreground">columns</span>
-      </div>
+      {(a11y) => (
+        <div className="flex items-center gap-2">
+          <Input
+            {...a11y}
+            type="number"
+            min={EDITOR_WORD_WRAP_COLUMN_MIN}
+            max={EDITOR_WORD_WRAP_COLUMN_MAX}
+            step={1}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.currentTarget.blur();
+            }}
+            className="w-20 text-right tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          />
+          <span className="text-[11px] text-muted-foreground">columns</span>
+        </div>
+      )}
     </SettingRow>
   );
 }

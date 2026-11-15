@@ -1,15 +1,15 @@
 import { useNavigationStore } from '@/modules/navigation';
 import { setThemeId as persistThemeId } from '@/modules/settings/store';
-import { currentWorkspaceEnv } from '@/modules/workspace';
-import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { useEffect } from 'react';
+import { toast } from 'sonner';
 import { listCustomThemes, saveCustomTheme } from './customThemes';
 import {
   isThemeFilePath,
   onThemeEdit,
-  parseThemeFile,
+  readThemeFile,
   starterTheme,
+  themeFileName,
   themeFilePath,
   writeThemeFile,
 } from './themeFiles';
@@ -18,23 +18,19 @@ type Params = {
   openFileTab: (path: string) => void;
 };
 
-/** Applies a theme file the editor just saved; a file that does not parse leaves the theme as it was. */
+/**
+ * Applies a theme file the editor just saved. A file that does not parse leaves the theme as it was and says why in
+ * a toast; Settings shows the same error on the theme's card.
+ */
 async function ingestThemeFile(path: string): Promise<void> {
-  try {
-    const res = await invoke<{ kind: string; content?: string }>('fs_read_file', {
-      path,
-      workspace: currentWorkspaceEnv(),
-    });
-    if (res.kind !== 'text' || typeof res.content !== 'string') return;
-    const parsed = parseThemeFile(res.content);
-    if (!parsed.ok) {
-      console.warn('[lut] theme not applied:', parsed.error);
-      return;
-    }
-    await saveCustomTheme(parsed.theme);
-  } catch (e) {
-    console.warn('[lut] theme ingest failed:', e);
-  }
+  const parsed = await readThemeFile(path);
+  const error = parsed.ok
+    ? await saveCustomTheme(parsed.theme).then(
+        () => null,
+        (e: unknown) => (e instanceof Error ? e.message : String(e)),
+      )
+    : parsed.error;
+  if (error) toast.error(`Couldn't apply ${themeFileName(path)}`, { description: error });
 }
 
 /**

@@ -16,6 +16,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { Tabs as TabsPrimitive } from 'radix-ui';
 import { type JSX, useEffect, useState } from 'react';
+import type { SectionProps } from './sectionProps';
 import { AboutSection } from './sections/AboutSection';
 import { EditorSection } from './sections/EditorSection';
 import { GeneralSection } from './sections/GeneralSection';
@@ -26,7 +27,7 @@ const TABS: {
   id: SettingsTab;
   label: string;
   icon: typeof SlidersHorizontalIcon;
-  component: () => JSX.Element;
+  component: (props: SectionProps) => JSX.Element;
 }[] = [
   { id: 'general', label: 'General', icon: SlidersHorizontalIcon, component: GeneralSection },
   { id: 'editor', label: 'Editor', icon: PencilEdit02Icon, component: EditorSection },
@@ -109,7 +110,7 @@ export function SettingsApp() {
           <div className="mx-auto w-full max-w-170">
             {TABS.map(({ id, component: Section }) => (
               <TabsPrimitive.Content key={id} value={id} className="focus-visible:outline-none">
-                <Section />
+                <Section openTab={setActive} />
               </TabsPrimitive.Content>
             ))}
           </div>
