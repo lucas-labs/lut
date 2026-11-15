@@ -38,10 +38,10 @@ export function ChatCodeBlock({ code, lang }: ChatCodeBlockProps) {
   return <FinalizedCodeBlock code={code} lang={label} />;
 }
 
-const CODE_BODY = 'm-0 px-3.5 py-2.5 font-mono text-[12.5px] leading-5 text-foreground';
+export const CODE_BODY = 'm-0 px-3.5 py-2.5 font-mono text-[12.5px] leading-5 text-foreground';
 
 /** Every code block's frame: the language and a Copy button over the code. */
-function BlockChrome({ label, code, children }: { label: string; code: string; children: React.ReactNode }) {
+export function BlockChrome({ label, code, children }: { label: string; code: string; children: React.ReactNode }) {
   return (
     <div className="not-prose mt-2 mb-3.5 overflow-hidden rounded-lg border border-border bg-card">
       <div className="flex h-7 items-center justify-between gap-2 border-b border-border pr-2 pl-3.5 text-[11px] text-muted-foreground">
