@@ -26,6 +26,19 @@ import {
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
 
+/**
+ * Second copies mermaid 12 brings, in its lazy chunks only (~90 kB). Its layouts need different majors, which an
+ * override would break: cytoscape-cose-bilkent uses cose-base 1 and fcose 2, and d3-sankey 0.12 uses d3-array 2,
+ * d3-path 1 and d3-shape 1 beside mermaid's d3 3. Exact pairs, so any other copy still fails.
+ */
+const MERMAID_DUPLICATES: Record<string, string> = {
+  'cose-base': '1.0.3 2.2.0',
+  'layout-base': '1.0.2 2.0.1',
+  'd3-array': '2.12.1 3.2.5',
+  'd3-path': '1.0.9 3.1.1',
+  'd3-shape': '1.3.7 3.2.1',
+};
+
 describe('dist graph analyzer', () => {
   it('reads only static import edges, not dynamic ones', () => {
     const code = [
@@ -219,7 +232,10 @@ describe('built startup graph', () => {
     // A second copy is pure download and parse cost. Typical cause: a library
     // pinning an old marked.
     // Fix with `pnpm why <name>` and a pnpm override (pnpm-workspace.yaml).
-    expect(findDuplicatePackagesInDist(outDir)).toEqual([]);
+    const duplicates = (findDuplicatePackagesInDist(outDir) ?? []).filter(
+      ({ name, versions }) => MERMAID_DUPLICATES[name] !== versions.join(' '),
+    );
+    expect(duplicates).toEqual([]);
   });
 
   it('bundles one shared Lezer highlighter for parsers and themes', () => {

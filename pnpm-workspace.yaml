@@ -16,6 +16,8 @@ overrides:
   # to ship a second copy. Scoped to the current major so a major bump drops the
   # override; re-check with `pnpm why` when bumping it.
   'codemirror-languageserver@1>marked': 17.0.6
+  # mermaid 12 pins marked 16 too and only calls its lexer, as above.
+  'mermaid@12>marked': 17.0.6
 allowBuilds:
   esbuild: true
   msgpackr-extract: false
