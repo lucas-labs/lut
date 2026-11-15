@@ -4,6 +4,7 @@ version = "0.9.0"
 description = "lut — a cross-platform terminal built around projects, profiles and CLI coding agents"
 authors = ["lucode"]
 license = "Apache-2.0"
+repository = "https://github.com/lucas-labs/lut"
 edition = "2021"
 default-run = "lut"
 

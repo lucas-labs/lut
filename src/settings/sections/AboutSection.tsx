@@ -1,14 +1,17 @@
 import { AppLogo } from '@/components/AppLogo';
 import { Button } from '@/components/ui/button';
-import { GithubIcon } from '@hugeicons/core-free-icons';
+import { AlertCircleIcon, LinkSquare02Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { getName, getVersion } from '@tauri-apps/api/app';
+import { getIdentifier, getName, getVersion } from '@tauri-apps/api/app';
+import { invoke } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { arch, platform } from '@tauri-apps/plugin-os';
-import { useEffect, useState } from 'react';
-import { SectionHeader } from '../components/SectionHeader';
+import { type ReactNode, useEffect, useState } from 'react';
+import { SettingRow } from '../components/SettingRow';
+import { SettingsGroup } from '../components/SettingsGroup';
 
-const REPO_URL = 'https://github.com/lucas-labs/lut';
+/** The package metadata from `Cargo.toml`, via the `app_about` command. */
+type AppAbout = { authors: string[]; license: string; repository: string };
 
 const PLATFORM_LABEL: Record<string, string> = {
   macos: 'macOS',
@@ -29,65 +32,85 @@ function buildLabel(): string {
   }
 }
 
+/** The repository's GitHub path, e.g. "lucas-labs/lut". */
+function repoLabel(url: string): string {
+  return url.replace(/^https?:\/\/(www\.)?github\.com\//, '').replace(/\/$/, '');
+}
+
 export function AboutSection() {
   const [version, setVersion] = useState('');
   const [name, setName] = useState('lut');
+  const [identifier, setIdentifier] = useState('');
+  const [about, setAbout] = useState<AppAbout | null>(null);
   const [build] = useState(buildLabel);
 
   useEffect(() => {
     void getVersion().then(setVersion);
     void getName().then(setName);
+    void getIdentifier().then(setIdentifier);
+    void invoke<AppAbout>('app_about')
+      .then(setAbout)
+      .catch(() => {});
   }, []);
 
-  return (
-    <div className="flex flex-col gap-6">
-      <SectionHeader title="About" description="" />
+  const repository = about?.repository ?? '';
 
-      <div className="flex items-center gap-4 rounded-xl border border-border/60 bg-card/60 p-5">
-        <AppLogo size={48} />
-        <div className="flex min-w-0 flex-col">
-          <span className="text-[15px] font-semibold tracking-tight">{name}</span>
-          <span className="text-[11px] text-muted-foreground">
-            A terminal built around projects, profiles and CLI agents
-          </span>
-          <span className="mt-1 font-mono text-[11px] text-muted-foreground">v{version || '—'}</span>
+  return (
+    <div className="flex flex-col">
+      <div className="mt-2 flex items-center gap-5 rounded-[10px] border border-border bg-card p-6">
+        <AppLogo size={72} />
+        <div className="flex min-w-0 flex-col gap-1">
+          <h1 className="text-[20px] leading-7 font-semibold">{name}</h1>
+          <span className="text-muted-foreground">A terminal built around projects, profiles and CLI agents</span>
+          <span className="font-mono text-[12px] leading-4 text-muted-foreground">Version {version || '—'}</span>
         </div>
       </div>
 
-      <dl className="grid grid-cols-[110px_1fr] gap-y-2.5 text-[12px]">
-        <dt className="text-muted-foreground">Build</dt>
-        <dd className="font-mono text-[11.5px]">{build ? `${build} · v${version}` : `v${version}`}</dd>
+      <SettingsGroup title="Details">
+        <SettingRow title="Build">
+          <Value mono>{build ? `${build} · ${version}` : version}</Value>
+        </SettingRow>
+        <SettingRow title="Bundle ID">
+          <Value mono>{identifier}</Value>
+        </SettingRow>
+        <SettingRow title="License">
+          <Value>{about?.license}</Value>
+        </SettingRow>
+        <SettingRow title="Author">
+          <Value>{about?.authors.join(', ')}</Value>
+        </SettingRow>
+        <SettingRow title="Source code">
+          {repository ? (
+            <span className="font-mono text-[12px]">
+              <Button variant="link" size="inline" onClick={() => void openUrl(repository)}>
+                {repoLabel(repository)}
+              </Button>
+            </span>
+          ) : (
+            <Value />
+          )}
+        </SettingRow>
+      </SettingsGroup>
 
-        <dt className="text-muted-foreground">Bundle ID</dt>
-        <dd className="font-mono text-[11.5px]">dev.lucode.lut</dd>
-
-        <dt className="text-muted-foreground">License</dt>
-        <dd>Apache 2.0</dd>
-
-        <dt className="text-muted-foreground">Source code</dt>
-        <dd>
-          <button
-            type="button"
-            onClick={() => void openUrl(REPO_URL)}
-            className="inline-flex items-center gap-1.5 rounded-md text-[12px] underline-offset-2 hover:text-foreground hover:underline"
-          >
-            <HugeiconsIcon icon={GithubIcon} size={12} strokeWidth={1.75} />
-            lucas-labs/lut
-          </button>
-        </dd>
-      </dl>
-
-      <div className="flex flex-col gap-1.5">
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => void openUrl(REPO_URL)}>
-            <HugeiconsIcon icon={GithubIcon} size={12} strokeWidth={1.75} />
-            View on GitHub
-          </Button>
-          <Button variant="ghost" onClick={() => void openUrl(`${REPO_URL}/issues/new`)}>
-            Report an issue
-          </Button>
-        </div>
+      <div className="mt-5 flex gap-2">
+        <Button variant="outline" disabled={!repository} onClick={() => void openUrl(repository)}>
+          <HugeiconsIcon icon={LinkSquare02Icon} strokeWidth={1.5} />
+          View on GitHub
+        </Button>
+        <Button variant="outline" disabled={!repository} onClick={() => void openUrl(`${repository}/issues/new`)}>
+          <HugeiconsIcon icon={AlertCircleIcon} strokeWidth={1.5} />
+          Report an issue
+        </Button>
       </div>
     </div>
+  );
+}
+
+/** A detail's value, on the row's right; a dash until it loads. */
+function Value({ children, mono }: { children?: ReactNode; mono?: boolean }) {
+  return (
+    <span className={mono ? 'font-mono text-[12px] text-muted-foreground' : 'text-[12px] text-muted-foreground'}>
+      {children || '—'}
+    </span>
   );
 }
