@@ -29,7 +29,7 @@ type HastElement = {
 };
 
 const ALERTS: Record<AlertKind, { title: string; icon: IconSvgElement; color: string }> = {
-  note: { title: 'Note', icon: InformationCircleIcon, color: 'var(--success)' },
+  note: { title: 'Note', icon: InformationCircleIcon, color: 'var(--info)' },
   tip: { title: 'Tip', icon: BulbIcon, color: 'var(--terminal-ansi-green)' },
   important: { title: 'Important', icon: AlertDiamondIcon, color: 'var(--terminal-ansi-magenta)' },
   warning: { title: 'Warning', icon: Alert02Icon, color: 'var(--warning)' },
