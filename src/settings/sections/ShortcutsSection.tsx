@@ -86,7 +86,7 @@ export function ShortcutsSection() {
           placeholder="Search shortcuts..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="h-[30px] pl-8"
+          className="pl-8"
         />
       </div>
 

@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
@@ -535,7 +536,7 @@ function FontFamilyInput({ value, onCommit }: { value: string; onCommit: (v: str
       title="Font family"
       description='Terminal font (e.g. "CaskaydiaCove Nerd Font Mono"). Icons render without a Nerd Font; leave blank to use an installed one when found.'
     >
-      <input
+      <Input
         type="text"
         value={draft}
         placeholder="Auto-detect"
@@ -544,7 +545,7 @@ function FontFamilyInput({ value, onCommit }: { value: string; onCommit: (v: str
         onKeyDown={(e) => {
           if (e.key === 'Enter') e.currentTarget.blur();
         }}
-        className="h-8 w-48 rounded-md border border-border bg-background px-2.5 text-[12px] outline-none focus:border-foreground/40"
+        className="w-55 font-mono"
       />
     </SettingRow>
   );

@@ -94,6 +94,7 @@ export function NewEditorDialog({ open, onOpenChange, rootPath, onCreated }: Pro
           </DialogDescription>
         </DialogHeader>
         <Input
+          variant="subtle"
           ref={inputRef}
           value={name}
           onChange={(e) => {

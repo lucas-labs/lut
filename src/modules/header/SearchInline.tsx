@@ -129,12 +129,14 @@ export const SearchInline = forwardRef<SearchInlineHandle, Props>(function Searc
             </span>
           ) : null}
           <Input
+            variant="subtle"
+            size="xs"
             ref={setInputRef}
             value={q}
             placeholder={baseLabel}
             aria-label={tooltipTitle}
             title={tooltipTitle}
-            className="h-[22px] border-border pr-6 pl-[26px] hover:border-ring/60"
+            className="pr-6 pl-[26px] hover:border-ring/60"
             onChange={(e) => {
               const next = e.target.value;
               setQ(next);

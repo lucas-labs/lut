@@ -108,6 +108,8 @@ export function HistoryToolbar({
           className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-muted-foreground"
         />
         <Input
+          variant="subtle"
+          size="sm"
           type="text"
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
@@ -120,7 +122,7 @@ export function HistoryToolbar({
           placeholder="Filter by message, author or SHA"
           aria-label="Filter commits"
           spellCheck={false}
-          className="h-[26px] border-border pl-[27px]"
+          className="pl-[27px]"
         />
       </div>
 

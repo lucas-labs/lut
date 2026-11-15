@@ -65,6 +65,7 @@ export function InlineInput({ initial, placeholder, onCommit, onCancel }: Props)
 
   return (
     <Input
+      variant="subtle"
       ref={ref}
       value={value}
       placeholder={placeholder}

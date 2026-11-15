@@ -176,6 +176,7 @@ export function AgentLauncherPanel({ onBack, onLaunch }: Props) {
           </button>
         </div>
         <Input
+          variant="subtle"
           id="agent-start-command"
           disabled={!hydrated}
           value={command}
