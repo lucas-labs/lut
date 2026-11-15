@@ -3829,11 +3829,12 @@ Today only `pane.focusNext`/`pane.focusPrev` (order) and `pane.swap*` exist.
 
 - [ ] `pane.focusLeft/Right/Up/Down` focus the pane beside the active one in that direction, picked from the pane
       rectangles (`paneRects`); nothing happens at an edge. Default: Alt+arrows.
-- [ ] `pane.resizeLeft/Right/Up/Down` move the edge of the active pane on that side through `setSplitRatios`, within
-      the split's minimum size. Default: Alt+Shift+arrows (Ctrl+Shift+arrows stays with the shells' word selection).
+- [ ] `pane.resizeLeft/Right/Up/Down` move the divider on that side of the active pane (the opposite one when the
+      pane touches the edge) in the arrow's direction through `setSplitRatios`, 5% of the split per press, never below
+      the split's minimum (10%). Default: Alt+Shift+arrows (Ctrl+Shift+arrows stays with the shells' word selection).
 - [ ] Both are configurable in Settings → Shortcuts and appear in the command palette.
-- [ ] The Alt+arrow defaults no longer reach the shell (its Alt+Left/Right word moves); this is stated in the
-      shortcut's description, and rebinding it gives them back.
+- [ ] The Alt+arrow and Alt+Shift+arrow defaults only act in a terminal tab with two or more panes, like the swap
+      shortcuts; elsewhere the keys reach the terminal or the editor. The shortcut's description says so.
 - [ ] Tests: focus picks the right neighbour in nested splits; resize respects the minimum and keeps ratios summing 1.
 
 **Verification:** `pnpm test`; manual: a 2×2 split, move around with Alt+arrows and resize with Alt+Shift+arrows.

@@ -24,6 +24,12 @@ export type PaneNode =
 /** Matches the renderer slot pool size — over this we'd evict an active leaf. */
 export const MAX_PANES_PER_TAB = 4;
 
+/** The smallest share a pane keeps of its split, dragged or resized from the keyboard. */
+export const MIN_PANE_SHARE = 0.1;
+
+/** How far one keyboard resize moves a divider, as a share of its split. */
+const RESIZE_STEP = 0.05;
+
 /** Whether one more pane fits in the tree. */
 export function canAddPane(tree: PaneNode): boolean {
   return leafIds(tree).length < MAX_PANES_PER_TAB;
@@ -245,10 +251,15 @@ function paneRects(node: PaneNode, x = 0, y = 0, width = 1, height = 1): PaneRec
   });
 }
 
+/**
+ * The pane beside `active` in `direction`. With nothing that way, `wrap` takes the farthest pane the other way (a swap
+ * goes round); without it there is no target.
+ */
 function directionalTarget(
   rects: PaneRect[],
   active: PaneRect,
   direction: PaneDirection,
+  wrap: boolean,
 ): PaneId | null {
   const horizontal = direction === 'left' || direction === 'right';
   const forward = direction === 'right' || direction === 'down';
@@ -264,6 +275,7 @@ function directionalTarget(
   const ahead = others.filter((r) =>
     forward ? center(r) > center(active) : center(r) < center(active),
   );
+  if (ahead.length === 0 && !wrap) return null;
   const candidates = ahead.length > 0 ? ahead : others;
   candidates.sort((a, b) => {
     const axisA =
@@ -317,21 +329,84 @@ function rectsFromBounds(bounds: PaneBounds[]): PaneRect[] {
     }));
 }
 
+/** The panes as laid out on screen when all of them are, else as the model lays them out. */
+function resolveRects(tree: PaneNode, liveBounds?: PaneBounds[]): PaneRect[] {
+  const liveRects = liveBounds ? rectsFromBounds(liveBounds) : [];
+  const liveIds = new Set(liveRects.map((rect) => rect.id));
+  return leafIds(tree).every((id) => liveIds.has(id)) ? liveRects : paneRects(tree);
+}
+
+/** The pane beside `activeId` in `direction`, or `null` at an edge. */
+export function leafInDirection(
+  tree: PaneNode,
+  activeId: PaneId,
+  direction: PaneDirection,
+  liveBounds?: PaneBounds[],
+): PaneId | null {
+  const rects = resolveRects(tree, liveBounds);
+  const active = rects.find((rect) => rect.id === activeId);
+  return active ? directionalTarget(rects, active, direction, false) : null;
+}
+
 export function swapLeafInDirection(
   tree: PaneNode,
   activeId: PaneId,
   direction: PaneDirection,
   liveBounds?: PaneBounds[],
 ): PaneNode {
-  const liveRects = liveBounds ? rectsFromBounds(liveBounds) : [];
-  const liveIds = new Set(liveRects.map((rect) => rect.id));
-  const hasCompleteLiveLayout = leafIds(tree).every((id) => liveIds.has(id));
-  const rects = hasCompleteLiveLayout ? liveRects : paneRects(tree);
+  const rects = resolveRects(tree, liveBounds);
   const active = rects.find((rect) => rect.id === activeId);
   if (!active || rects.length < 2) return tree;
-  const targetId = directionalTarget(rects, active, direction);
+  const targetId = directionalTarget(rects, active, direction, true);
   if (targetId === null) return tree;
   const first = findLeaf(tree, activeId);
   const second = findLeaf(tree, targetId);
   return first && second ? swapLeaves(tree, first, second) : tree;
+}
+
+type SplitNode = Extract<PaneNode, { kind: 'split' }>;
+
+/** The innermost split along `axis` that holds `leafId`, with the index of the child holding it. */
+function closestSplitOnAxis(
+  node: PaneNode,
+  leafId: PaneId,
+  axis: SplitDir,
+): { split: SplitNode; index: number } | null {
+  if (isLeaf(node)) return null;
+  const index = node.children.findIndex((child) => hasLeaf(child, leafId));
+  if (index < 0) return null;
+  return (
+    closestSplitOnAxis(node.children[index], leafId, axis) ??
+    (node.dir === axis ? { split: node, index } : null)
+  );
+}
+
+/**
+ * Moves a divider of the active pane in `direction`, as Windows Terminal does: the divider on that side of the pane,
+ * or the opposite one when the pane touches that edge, in the innermost split along the arrow's axis. It moves
+ * `step` of the split, less when a pane beside it would go under MIN_PANE_SHARE; the tree is returned as is when
+ * nothing moves.
+ */
+export function resizeLeafInDirection(
+  tree: PaneNode,
+  activeId: PaneId,
+  direction: PaneDirection,
+  step = RESIZE_STEP,
+): PaneNode {
+  const axis: SplitDir = direction === 'left' || direction === 'right' ? 'row' : 'col';
+  const found = closestSplitOnAxis(tree, activeId, axis);
+  if (!found) return tree;
+  const { split, index } = found;
+  const forward = direction === 'right' || direction === 'down';
+  const last = split.children.length - 1;
+  // The divider between children `before` and `before + 1`.
+  const before = forward ? Math.min(index, last - 1) : Math.max(index - 1, 0);
+  // A positive shift moves the divider right or down, giving `before` more room.
+  const room = forward ? split.ratios[before + 1] : split.ratios[before];
+  const shift = Math.min(step, room - MIN_PANE_SHARE) * (forward ? 1 : -1);
+  if (forward ? shift <= 1e-6 : shift >= -1e-6) return tree;
+  const ratios = [...split.ratios];
+  ratios[before] += shift;
+  ratios[before + 1] -= shift;
+  return setSplitRatios(tree, split.id, ratios);
 }

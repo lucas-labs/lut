@@ -35,6 +35,8 @@ function baseContext(over: Partial<CommandPaletteActionContext> = {}): CommandPa
     movePaneToNewTab: noop,
     movePaneToNextTab: noop,
     movePaneToPrevTab: noop,
+    focusPaneInDirection: noop,
+    resizeActivePane: noop,
     focusSearch: noop,
     focusExplorerSearch: noop,
     toggleSidebar: noop,
@@ -69,8 +71,20 @@ describe('createCommandItems', () => {
     expect(reasonById({ tabs: [editorTab] }, 'pane.splitRight')).toBe('No terminal tab');
   });
 
-  it('moves a pane to a new tab only when its tab has another pane', () => {
-    expect(reasonById({}, 'pane.moveToNewTab')).toBe('Only pane');
+  it.each([
+    'pane.moveToNewTab',
+    'pane.focusLeft',
+    'pane.focusRight',
+    'pane.focusUp',
+    'pane.focusDown',
+    'pane.resizeLeft',
+    'pane.resizeRight',
+    'pane.resizeUp',
+    'pane.resizeDown',
+  ])('offers %s only when the terminal tab has another pane', (id) => {
+    const editorTab = { ...terminalTab(1), kind: 'editor' } as unknown as Tab;
+    expect(reasonById({ tabs: [editorTab] }, id)).toBe('No terminal tab');
+    expect(reasonById({}, id)).toBe('Only pane');
     const split = {
       ...terminalTab(1),
       paneTree: {
@@ -84,7 +98,34 @@ describe('createCommandItems', () => {
         ],
       },
     } as unknown as Tab;
-    expect(reasonById({ tabs: [split] }, 'pane.moveToNewTab')).toBeUndefined();
+    expect(reasonById({ tabs: [split] }, id)).toBeUndefined();
+  });
+
+  it('runs the directional pane commands with their direction', () => {
+    const focused: string[] = [];
+    const resized: string[] = [];
+    const items = createCommandItems(
+      baseContext({
+        focusPaneInDirection: (d) => focused.push(d),
+        resizeActivePane: (d) => resized.push(d),
+      }),
+    );
+    for (const id of ['pane.focusLeft', 'pane.focusDown', 'pane.resizeRight', 'pane.resizeUp']) {
+      items.find((i) => i.id === id)?.run();
+    }
+    expect(focused).toEqual(['left', 'down']);
+    expect(resized).toEqual(['right', 'up']);
+    const titles = items.filter((i) => /^pane\.(focus|resize)[A-Z]/.test(i.id)).map((i) => i.title);
+    expect(titles).toEqual([
+      'Focus pane left',
+      'Resize pane left',
+      'Focus pane right',
+      'Resize pane right',
+      'Focus pane up',
+      'Resize pane up',
+      'Focus pane down',
+      'Resize pane down',
+    ]);
   });
 
   it('moves a pane to a neighbouring terminal tab only when there is one', () => {

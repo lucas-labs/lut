@@ -59,6 +59,23 @@ describe('ShortcutsSection', () => {
     );
   });
 
+  it('says under a pane layout shortcut that it only acts in a split', () => {
+    render();
+    const description = rowOf('Focus pane left')?.querySelector('[id$="-description"]');
+    expect(description?.textContent).toBe(
+      'Only in a tab split into panes; elsewhere the keys reach the terminal or the editor.',
+    );
+    expect(rowOf('New tab')?.querySelector('[id$="-description"]')).toBeNull();
+  });
+
+  it('describes the key button with its keys and then the row description', () => {
+    render();
+    const ids = keysOf('Focus pane left').getAttribute('aria-describedby')?.split(' ') ?? [];
+    expect(ids).toHaveLength(2);
+    expect(document.getElementById(ids[1])?.textContent).toContain('Only in a tab split into panes');
+    expect(keysOf('New tab').getAttribute('aria-describedby')?.split(' ')).toHaveLength(1);
+  });
+
   it('records the next key press with a modifier as the binding', () => {
     render();
     act(() => keysOf('New tab').click());

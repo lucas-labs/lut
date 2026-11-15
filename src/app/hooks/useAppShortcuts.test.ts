@@ -51,6 +51,8 @@ function args(over: Partial<AppShortcutArgs> = {}): AppShortcutArgs {
     splitActivePaneInActiveTab: vi.fn(),
     focusNextPaneInTab: vi.fn(),
     swapActivePane: vi.fn(),
+    focusPaneInDirection: vi.fn(),
+    resizeActivePane: vi.fn(),
     moveActivePane: vi.fn(),
     toggleSourceControl: vi.fn(),
     activateAgentTarget: vi.fn(),
@@ -118,6 +120,14 @@ describe('createAppShortcutHandlers', () => {
       'pane.swapRight',
       'pane.swapUp',
       'pane.swapDown',
+      'pane.focusLeft',
+      'pane.focusRight',
+      'pane.focusUp',
+      'pane.focusDown',
+      'pane.resizeLeft',
+      'pane.resizeRight',
+      'pane.resizeUp',
+      'pane.resizeDown',
       'pane.moveToNewTab',
       'pane.moveToNextTab',
       'pane.moveToPrevTab',
@@ -130,6 +140,18 @@ describe('createAppShortcutHandlers', () => {
       [7, -1],
     ]);
     expect(vi.mocked(a.swapActivePane).mock.calls).toEqual([['left'], ['right'], ['up'], ['down']]);
+    expect(vi.mocked(a.focusPaneInDirection).mock.calls).toEqual([
+      ['left'],
+      ['right'],
+      ['up'],
+      ['down'],
+    ]);
+    expect(vi.mocked(a.resizeActivePane).mock.calls).toEqual([
+      ['left'],
+      ['right'],
+      ['up'],
+      ['down'],
+    ]);
     expect(vi.mocked(a.moveActivePane).mock.calls).toEqual([['new'], [1], [-1]]);
   });
 });
@@ -137,10 +159,14 @@ describe('createAppShortcutHandlers', () => {
 describe('isAppShortcutDisabled', () => {
   const e = key({});
 
-  it('turns pane swaps off with a single pane and on with two', () => {
-    expect(isAppShortcutDisabled('pane.swapLeft', e, terminalTab(1))).toBe(true);
-    expect(isAppShortcutDisabled('pane.swapLeft', e, terminalTab(2))).toBe(false);
-  });
+  it.each(['pane.swapLeft', 'pane.focusLeft', 'pane.resizeLeft'] as const)(
+    'turns %s off with a single pane or in an editor tab, and on with two panes',
+    (id) => {
+      expect(isAppShortcutDisabled(id, e, terminalTab(1))).toBe(true);
+      expect(isAppShortcutDisabled(id, e, editorTab)).toBe(true);
+      expect(isAppShortcutDisabled(id, e, terminalTab(2))).toBe(false);
+    },
+  );
 
   it('keeps the editor shortcuts to editor tabs', () => {
     expect(isAppShortcutDisabled('editor.save', e, terminalTab(1))).toBe(true);

@@ -6,13 +6,18 @@ import { openSettingsWindow } from '@/modules/settings/openSettingsWindow';
 import {
   type ShortcutHandlers,
   type ShortcutId,
-  shouldDisablePaneSwapShortcut,
+  shouldDisablePaneLayoutShortcut,
   tabDigit,
   useGlobalShortcuts,
 } from '@/modules/shortcuts';
 import type { SidebarViewId } from '@/modules/sidebar';
 import type { Tab } from '@/modules/tabs';
-import { clearFocusedTerminal, isTerminalSurfaceTarget, leafIds } from '@/modules/terminal';
+import {
+  clearFocusedTerminal,
+  isTerminalSurfaceTarget,
+  leafIds,
+  type PaneDirection,
+} from '@/modules/terminal';
 import type { RefObject } from 'react';
 
 type Step = 1 | -1;
@@ -37,7 +42,9 @@ export type AppShortcutArgs = {
   openSidebarView: (view: SidebarViewId) => void;
   splitActivePaneInActiveTab: (dir: 'row' | 'col') => void;
   focusNextPaneInTab: (tabId: number, delta: Step) => void;
-  swapActivePane: (direction: 'left' | 'right' | 'up' | 'down') => void;
+  swapActivePane: (direction: PaneDirection) => void;
+  focusPaneInDirection: (direction: PaneDirection) => void;
+  resizeActivePane: (direction: PaneDirection) => void;
   moveActivePane: (target: 'new' | Step) => void;
   toggleSourceControl: () => void;
   activateAgentTarget: (tabId: number, leafId: number) => void;
@@ -72,6 +79,8 @@ export function createAppShortcutHandlers({
   splitActivePaneInActiveTab,
   focusNextPaneInTab,
   swapActivePane,
+  focusPaneInDirection,
+  resizeActivePane,
   moveActivePane,
   toggleSourceControl,
   activateAgentTarget,
@@ -110,6 +119,14 @@ export function createAppShortcutHandlers({
     'pane.swapRight': () => swapActivePane('right'),
     'pane.swapUp': () => swapActivePane('up'),
     'pane.swapDown': () => swapActivePane('down'),
+    'pane.focusLeft': () => focusPaneInDirection('left'),
+    'pane.focusRight': () => focusPaneInDirection('right'),
+    'pane.focusUp': () => focusPaneInDirection('up'),
+    'pane.focusDown': () => focusPaneInDirection('down'),
+    'pane.resizeLeft': () => resizeActivePane('left'),
+    'pane.resizeRight': () => resizeActivePane('right'),
+    'pane.resizeUp': () => resizeActivePane('up'),
+    'pane.resizeDown': () => resizeActivePane('down'),
     'pane.moveToNewTab': () => moveActivePane('new'),
     'pane.moveToNextTab': () => moveActivePane(1),
     'pane.moveToPrevTab': () => moveActivePane(-1),
@@ -154,7 +171,7 @@ export function isAppShortcutDisabled(
 ): boolean {
   const terminalPaneCount =
     activeTab?.kind === 'terminal' ? leafIds(activeTab.paneTree).length : null;
-  if (shouldDisablePaneSwapShortcut(id, terminalPaneCount)) return true;
+  if (shouldDisablePaneLayoutShortcut(id, terminalPaneCount)) return true;
   if (
     id === 'editor.undo' ||
     id === 'editor.redo' ||

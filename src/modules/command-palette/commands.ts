@@ -1,9 +1,15 @@
 import type { SearchTarget } from '@/modules/header';
 import { neighborTerminalTab } from '@/modules/navigation';
 import { MAX_PANES_PER_TAB, type Tab } from '@/modules/tabs';
-import { leafIds } from '@/modules/terminal';
+import { leafIds, type PaneDirection } from '@/modules/terminal';
 import {
+  ArrowDown02Icon,
+  ArrowHorizontalIcon,
+  ArrowLeft02Icon,
   ArrowMoveUpRightIcon,
+  ArrowRight02Icon,
+  ArrowUp02Icon,
+  ArrowVerticalIcon,
   Cancel01Icon,
   CenterFocusIcon,
   DashboardSquare01Icon,
@@ -56,6 +62,8 @@ export type CommandPaletteActionContext = {
   movePaneToNewTab: () => void;
   movePaneToNextTab: () => void;
   movePaneToPrevTab: () => void;
+  focusPaneInDirection: (direction: PaneDirection) => void;
+  resizeActivePane: (direction: PaneDirection) => void;
   focusSearch: () => void;
   focusExplorerSearch: () => void;
   toggleSidebar: () => void;
@@ -75,6 +83,18 @@ export type CommandPaletteActionContext = {
 
 const noop = () => {};
 
+const PANE_DIRECTIONS = [
+  { direction: 'left', name: 'Left', focusIcon: ArrowLeft02Icon, resizeIcon: ArrowHorizontalIcon },
+  {
+    direction: 'right',
+    name: 'Right',
+    focusIcon: ArrowRight02Icon,
+    resizeIcon: ArrowHorizontalIcon,
+  },
+  { direction: 'up', name: 'Up', focusIcon: ArrowUp02Icon, resizeIcon: ArrowVerticalIcon },
+  { direction: 'down', name: 'Down', focusIcon: ArrowDown02Icon, resizeIcon: ArrowVerticalIcon },
+] as const;
+
 export function createCommandItems(ctx: CommandPaletteActionContext): PaletteItem[] {
   const activeTab = ctx.tabs.find((tab) => tab.id === ctx.activeId);
   const activeTerminalTab = activeTab?.kind === 'terminal' ? activeTab : null;
@@ -87,7 +107,8 @@ export function createCommandItems(ctx: CommandPaletteActionContext): PaletteIte
       ? 'Pane limit'
       : undefined;
   const closeDisabled = onlyOneTab && activePaneCount < 2 ? 'Last tab' : undefined;
-  const moveToNewDisabled = !activeTerminalTab
+  // Moving a pane out, or focusing or resizing one by direction, needs a split terminal tab.
+  const multiPaneDisabled = !activeTerminalTab
     ? 'No terminal tab'
     : activePaneCount < 2
       ? 'Only pane'
@@ -224,7 +245,7 @@ export function createCommandItems(ctx: CommandPaletteActionContext): PaletteIte
       keywords: ['terminal', 'pane', 'move', 'detach', 'tab'],
       icon: ArrowMoveUpRightIcon,
       shortcutId: 'pane.moveToNewTab',
-      disabledReason: moveToNewDisabled,
+      disabledReason: multiPaneDisabled,
       run: ctx.movePaneToNewTab,
     },
     {
@@ -247,6 +268,28 @@ export function createCommandItems(ctx: CommandPaletteActionContext): PaletteIte
       disabledReason: moveToNeighborDisabled(-1),
       run: ctx.movePaneToPrevTab,
     },
+    ...PANE_DIRECTIONS.flatMap(({ direction, name, focusIcon, resizeIcon }) => [
+      {
+        id: `pane.focus${name}`,
+        title: `Focus pane ${direction}`,
+        group: 'Panes' as const,
+        keywords: ['terminal', 'pane', 'focus', 'move', direction],
+        icon: focusIcon,
+        shortcutId: `pane.focus${name}` as const,
+        disabledReason: multiPaneDisabled,
+        run: () => ctx.focusPaneInDirection(direction),
+      },
+      {
+        id: `pane.resize${name}`,
+        title: `Resize pane ${direction}`,
+        group: 'Panes' as const,
+        keywords: ['terminal', 'pane', 'resize', 'size', 'divider', direction],
+        icon: resizeIcon,
+        shortcutId: `pane.resize${name}` as const,
+        disabledReason: multiPaneDisabled,
+        run: () => ctx.resizeActivePane(direction),
+      },
+    ]),
     {
       id: 'git.graph',
       title: 'Open git graph',

@@ -5,8 +5,17 @@ import { lintKeymap } from '@codemirror/lint';
 import { searchKeymap } from '@codemirror/search';
 import type { KeyBinding as CodeMirrorBinding } from '@codemirror/view';
 import { describe, expect, it } from 'vitest';
+import { resolveShortcut } from './lib/resolveShortcut';
+import { isPaneLayoutShortcut } from './lib/shortcutScope';
 import { MAC_DEFAULTS, WIN_LINUX_DEFAULTS } from './shortcutDefaults';
-import { type KeyBinding, matchBinding, type ShortcutId, SHORTCUTS, tabDigit } from './shortcuts';
+import {
+  buildShortcuts,
+  type KeyBinding,
+  matchBinding,
+  type ShortcutId,
+  SHORTCUTS,
+  tabDigit,
+} from './shortcuts';
 
 // Both tables are tested regardless of the platform the tests run on.
 
@@ -28,6 +37,14 @@ pane.swapLeft: Alt+Cmd+ArrowLeft
 pane.swapRight: Alt+Cmd+ArrowRight
 pane.swapUp: Alt+Cmd+ArrowUp
 pane.swapDown: Alt+Cmd+ArrowDown
+pane.focusLeft: Alt+ArrowLeft
+pane.focusRight: Alt+ArrowRight
+pane.focusUp: Alt+ArrowUp
+pane.focusDown: Alt+ArrowDown
+pane.resizeLeft: Alt+Shift+ArrowLeft
+pane.resizeRight: Alt+Shift+ArrowRight
+pane.resizeUp: Alt+Shift+ArrowUp
+pane.resizeDown: Alt+Shift+ArrowDown
 pane.moveToNewTab: 
 pane.moveToNextTab: 
 pane.moveToPrevTab: 
@@ -44,7 +61,7 @@ agent.focusAttention: Shift+Cmd+a
 sidebar.toggle: Cmd+b, Shift+Cmd+b
 explorer.focus: Shift+Cmd+e
 explorer.toggleHidden: Shift+Cmd+.
-view.zoomIn: Cmd+=, Shift+Cmd++
+view.zoomIn: Cmd+=, Cmd++, Shift+Cmd++
 view.zoomOut: Cmd+-, Shift+Cmd+_
 view.zoomReset: Cmd+0
 view.focusMode: Shift+Cmd+'
@@ -88,8 +105,17 @@ const accepted = (id: ShortcutId, binding: KeyBinding): KeyBinding[] =>
 const group = (id: string) => SHORTCUTS.find((s) => s.id === id)?.group;
 const isEditor = (id: string) => group(id) === 'Editor';
 
+/**
+ * Chords a terminal program reads that a default takes on purpose, as Windows Terminal does: Ctrl+- zooms out (the
+ * undo of readline stays on Ctrl+_), and Alt+arrows focus and resize panes, which only act in a tab split into panes
+ * (shouldDisablePaneLayoutShortcut), so a terminal on its own still gets them.
+ */
+const takesTerminalChord = (id: ShortcutId, b: KeyBinding): boolean =>
+  (id === 'view.zoomOut' && !!b.ctrl && !b.shift && !b.alt && !b.meta && b.key === '-') ||
+  isPaneLayoutShortcut(id);
+
 describe('macOS defaults', () => {
-  it('are exactly what shipped before the Windows and Linux map was split', () => {
+  it('are the expected table', () => {
     const text = SHORTCUTS.map(
       (s) => `${s.id}: ${MAC_DEFAULTS[s.id].map(describeBinding).join(', ')}`,
     ).join('\n');
@@ -172,8 +198,15 @@ const ids = SHORTCUTS.map((s) => s.id);
 
 describe('Windows and Linux defaults', () => {
   const table = WIN_LINUX_DEFAULTS;
-  /** More than one chord on purpose: the shifted symbol of a key on the US layout. */
-  const TWO_BINDINGS: ReadonlySet<ShortcutId> = new Set(['view.zoomIn', 'editor.redo']);
+  /**
+   * More than one chord on purpose: redo has the shifted spelling of the US layout, and zoom takes the keys `+` and `-`
+   * of any layout and the numpad besides the US chords.
+   */
+  const BINDING_COUNT: Partial<Record<ShortcutId, number>> = {
+    'view.zoomIn': 3,
+    'view.zoomOut': 2,
+    'editor.redo': 2,
+  };
   /** Deliberately unbound: Ctrl+K is readline's kill-line; moving a pane has no default. */
   const UNBOUND: ReadonlySet<ShortcutId> = new Set([
     'terminal.clear',
@@ -186,13 +219,13 @@ describe('Windows and Linux defaults', () => {
     expect(Object.keys(table).sort()).toEqual([...ids].sort());
   });
 
-  it('gives every shortcut exactly one default (zoom in and redo have the shifted spelling too)', () => {
+  it('gives every shortcut exactly one default (zoom and redo have more spellings)', () => {
     for (const id of ids) {
       if (UNBOUND.has(id)) {
         expect(table[id], id).toEqual([]);
         continue;
       }
-      expect(table[id].length, id).toBe(TWO_BINDINGS.has(id) ? 2 : 1);
+      expect(table[id].length, id).toBe(BINDING_COUNT[id] ?? 1);
     }
   });
 
@@ -214,6 +247,7 @@ describe('Windows and Linux defaults', () => {
     for (const id of ids) {
       if (isEditor(id)) continue;
       for (const binding of table[id]) {
+        if (takesTerminalChord(id, binding)) continue;
         for (const tui of TUI_EVENTS)
           expect(
             matchBinding(tui.event as KeyboardEvent, binding, id),
@@ -227,6 +261,7 @@ describe('Windows and Linux defaults', () => {
     for (const id of ids) {
       if (isEditor(id)) continue;
       for (const binding of table[id].flatMap((b) => accepted(id, b))) {
+        if (takesTerminalChord(id, binding)) continue;
         const text = `${id}: ${describeBinding(binding)}`;
         const plainCtrl = !!binding.ctrl && !binding.shift && !binding.alt && !binding.meta;
         expect(plainCtrl && /^[a-z@[\\\]^_/\- 2-8]$/i.test(binding.key), text).toBe(false);
@@ -345,6 +380,42 @@ describe('Windows and Linux shifted punctuation layout audit', () => {
   });
 });
 
+describe.each([
+  ['Windows and Linux', false],
+  ['macOS', true],
+])('%s: zoom on any layout', (_, isMac) => {
+  const shortcuts = buildShortcuts(isMac);
+  it.each([
+    ['US =', '=', 'Equal', false, 'view.zoomIn'],
+    ['US Shift+= (+)', '+', 'Equal', true, 'view.zoomIn'],
+    ['Spanish +', '+', 'BracketRight', false, 'view.zoomIn'],
+    ['numpad +', '+', 'NumpadAdd', false, 'view.zoomIn'],
+    ['US -', '-', 'Minus', false, 'view.zoomOut'],
+    ['US Shift+- (_)', '_', 'Minus', true, 'view.zoomOut'],
+    ['Spanish -', '-', 'Slash', false, 'view.zoomOut'],
+    ['Spanish Shift+- (_)', '_', 'Slash', true, 'view.zoomOut'],
+    ['numpad -', '-', 'NumpadSubtract', false, 'view.zoomOut'],
+    ['main row 0', '0', 'Digit0', false, 'view.zoomReset'],
+    ['numpad 0', '0', 'Numpad0', false, 'view.zoomReset'],
+  ] as const)('%s fires its zoom shortcut only', (_, key, code, shiftKey, expected) => {
+    const event = {
+      key,
+      code,
+      ctrlKey: !isMac,
+      metaKey: isMac,
+      shiftKey,
+      altKey: false,
+      repeat: false,
+    } as KeyboardEvent;
+    const matches = shortcuts
+      .filter((s) => s.defaultBindings.some((b) => matchBinding(event, b, s.id)))
+      .map((s) => s.id);
+    expect(matches).toEqual([expected]);
+    // What the window's key listener acts on (and cancels, so the key never reaches the terminal).
+    expect(resolveShortcut(event, { shortcuts, user: {}, hasHandler: () => true })).toBe(expected);
+  });
+});
+
 describe('Windows and Linux: Jump to tab', () => {
   const binding = WIN_LINUX_DEFAULTS['tab.selectByIndex'][0];
   const press = (key: string, code: string, extra: Partial<KeyboardEvent>) =>
@@ -427,9 +498,10 @@ describe("Windows and Linux defaults against the editor's CodeMirror keymaps", (
   it('never shares a chord with an application shortcut outside the editor', () => {
     const shared: string[] = [];
     for (const id of ids) {
-      // The editor keeps the editor group; pane swaps only run in a terminal tab
-      // with two panes (shouldDisablePaneSwapShortcut), which holds no editor.
-      if (isEditor(id) || id.startsWith('pane.swap')) continue;
+      // The editor keeps the editor group; pane swaps, focus and resize only run in
+      // a terminal tab with two panes (shouldDisablePaneLayoutShortcut), which holds
+      // no editor.
+      if (isEditor(id) || isPaneLayoutShortcut(id)) continue;
       for (const binding of WIN_LINUX_DEFAULTS[id].flatMap((b) => accepted(id, b))) {
         const name = codeMirrorChords.get(chord(binding));
         if (name) shared.push(`${id} ${describeBinding(binding)} = ${name}`);

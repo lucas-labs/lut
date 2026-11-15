@@ -2,9 +2,12 @@ import {
   canAddPane,
   firstLeafSlotId,
   leafIds,
+  leafInDirection,
+  MIN_PANE_SHARE,
   normaliseRatios,
   type PaneNode,
   removeLeaf,
+  resizeLeafInDirection,
   setSplitRatios,
   splitLeaf,
   swapLeafInDirection,
@@ -223,5 +226,151 @@ describe('split ratios', () => {
   it('caps a tab at four panes', () => {
     expect(canAddPane(row(1, 2, 3))).toBe(true);
     expect(canAddPane(row(1, 2, 3, 4))).toBe(false);
+  });
+});
+
+/** A 2x2 grid: 1 top left, 2 bottom left, 3 top right, 4 bottom right. */
+const grid: PaneNode = {
+  kind: 'split',
+  id: 300,
+  dir: 'row',
+  ratios: [0.5, 0.5],
+  children: [
+    { ...col(1, 2), id: 301 },
+    { ...col(3, 4), id: 302 },
+  ],
+};
+
+/** 1 on the left; 2 over 3 on the right, 2 the smaller. */
+const nested: PaneNode = {
+  kind: 'split',
+  id: 100,
+  dir: 'row',
+  ratios: [0.5, 0.5],
+  children: [
+    { kind: 'leaf', id: 1 },
+    {
+      kind: 'split',
+      id: 200,
+      dir: 'col',
+      ratios: [0.4, 0.6],
+      children: [
+        { kind: 'leaf', id: 2 },
+        { kind: 'leaf', id: 3 },
+      ],
+    },
+  ],
+};
+
+function ratiosOf(node: PaneNode, splitId: number): number[] | undefined {
+  if (node.kind === 'leaf') return undefined;
+  if (node.id === splitId) return node.ratios;
+  for (const child of node.children) {
+    const found = ratiosOf(child, splitId);
+    if (found) return found;
+  }
+  return undefined;
+}
+
+const third = 1 / 3;
+
+describe('leafInDirection', () => {
+  it('picks the pane beside the active one', () => {
+    expect(leafInDirection(grid, 1, 'right')).toBe(3);
+    expect(leafInDirection(grid, 1, 'down')).toBe(2);
+    expect(leafInDirection(grid, 4, 'left')).toBe(2);
+    expect(leafInDirection(grid, 4, 'up')).toBe(3);
+  });
+
+  it('does nothing at an edge, where a swap goes round', () => {
+    expect(leafInDirection(grid, 1, 'left')).toBeNull();
+    expect(leafInDirection(grid, 1, 'up')).toBeNull();
+    expect(leafInDirection(row(1, 2, 3), 3, 'right')).toBeNull();
+    expect(leafIds(swapLeafInDirection(row(1, 2, 3), 3, 'right'))).toEqual([3, 2, 1]);
+  });
+
+  it('picks the overlapping neighbour nearest the active pane in nested splits', () => {
+    expect(leafInDirection(nested, 2, 'left')).toBe(1);
+    expect(leafInDirection(nested, 3, 'left')).toBe(1);
+    expect(leafInDirection(nested, 2, 'down')).toBe(3);
+    // 1 is centred at 0.5: 3 (0.4 to 1) is nearer than 2 (0 to 0.4).
+    expect(leafInDirection(nested, 1, 'right')).toBe(3);
+  });
+
+  it('reads the live layout when every pane is on screen', () => {
+    const bounds = [
+      { id: 1, left: 0, right: 100, top: 0, bottom: 100 },
+      { id: 2, left: 100, right: 200, top: 0, bottom: 20 },
+      { id: 3, left: 100, right: 200, top: 20, bottom: 100 },
+    ];
+    expect(leafInDirection(nested, 3, 'up', bounds)).toBe(2);
+    expect(leafInDirection(nested, 1, 'right', bounds)).toBe(3);
+  });
+});
+
+describe('resizeLeafInDirection', () => {
+  it('moves the divider on that side of the pane in the arrow direction', () => {
+    const right = ratiosOf(resizeLeafInDirection(row(1, 2, 3), 2, 'right'), 100);
+    expect(right?.[0]).toBeCloseTo(third);
+    expect(right?.[1]).toBeCloseTo(third + 0.05);
+    expect(right?.[2]).toBeCloseTo(third - 0.05);
+    const left = ratiosOf(resizeLeafInDirection(row(1, 2, 3), 2, 'left'), 100);
+    expect(left?.[0]).toBeCloseTo(third - 0.05);
+    expect(left?.[1]).toBeCloseTo(third + 0.05);
+    expect(left?.[2]).toBeCloseTo(third);
+  });
+
+  it('moves the opposite divider when the pane touches that edge', () => {
+    const right = ratiosOf(resizeLeafInDirection(row(1, 2, 3), 3, 'right'), 100);
+    expect(right?.[1]).toBeCloseTo(third + 0.05);
+    expect(right?.[2]).toBeCloseTo(third - 0.05);
+    const up = ratiosOf(resizeLeafInDirection(col(1, 2), 1, 'up'), 200);
+    expect(up?.[0]).toBeCloseTo(0.45);
+    expect(up?.[1]).toBeCloseTo(0.55);
+  });
+
+  it('takes the innermost split along the arrow axis', () => {
+    const up = resizeLeafInDirection(nested, 3, 'up');
+    expect(ratiosOf(up, 200)?.[0]).toBeCloseTo(0.35);
+    expect(ratiosOf(up, 100)).toEqual([0.5, 0.5]);
+    const left = resizeLeafInDirection(nested, 3, 'left');
+    expect(ratiosOf(left, 100)?.[0]).toBeCloseTo(0.45);
+    expect(ratiosOf(left, 200)).toEqual([0.4, 0.6]);
+  });
+
+  it('stops at the minimum share and then leaves the tree as it is', () => {
+    const tree: PaneNode = {
+      kind: 'split',
+      id: 100,
+      dir: 'row',
+      ratios: [0.12, 0.88],
+      children: [
+        { kind: 'leaf', id: 1 },
+        { kind: 'leaf', id: 2 },
+      ],
+    };
+    const once = resizeLeafInDirection(tree, 1, 'left');
+    expect(ratiosOf(once, 100)?.[0]).toBeCloseTo(MIN_PANE_SHARE);
+    expect(resizeLeafInDirection(once, 1, 'left')).toBe(once);
+  });
+
+  it('leaves the tree as it is with no split along the arrow axis', () => {
+    const tree = col(1, 2);
+    expect(resizeLeafInDirection(tree, 1, 'right')).toBe(tree);
+    const leaf: PaneNode = { kind: 'leaf', id: 1 };
+    expect(resizeLeafInDirection(leaf, 1, 'up')).toBe(leaf);
+  });
+
+  it('keeps the shares summing 1 and above the minimum over many presses', () => {
+    let tree: PaneNode = grid;
+    const presses = ['right', 'right', 'up', 'left', 'down', 'down', 'down'] as const;
+    for (let i = 0; i < 40; i++) {
+      tree = resizeLeafInDirection(tree, (i % 4) + 1, presses[i % presses.length]);
+      for (const id of [300, 301, 302]) {
+        const ratios = ratiosOf(tree, id) ?? [];
+        expect(ratios.reduce((sum, r) => sum + r, 0)).toBeCloseTo(1);
+        for (const r of ratios) expect(r).toBeGreaterThanOrEqual(MIN_PANE_SHARE - 1e-9);
+      }
+    }
   });
 });
