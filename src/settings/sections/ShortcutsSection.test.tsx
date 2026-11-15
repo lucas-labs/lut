@@ -137,6 +137,22 @@ describe('ShortcutsSection', () => {
     expect(byLabel('Record shortcut for New tab')).toBeNull();
   });
 
+  it('describes the key button with the keys it holds, and keeps it current', () => {
+    const description = () => {
+      const id = keysOf('New tab').getAttribute('aria-describedby');
+      return id ? document.getElementById(id)?.textContent : undefined;
+    };
+    render();
+    // Off macOS, Ctrl and Shift read as words to screen readers (ShortcutKey's hidden text).
+    expect(description()).toContain('Ctrl');
+    act(() => keysOf('New tab').click());
+    expect(description()).toBe('Recording... (Esc to cancel)');
+    prefs.shortcuts = { 'tab.new': [] };
+    act(() => keysOf('New tab').click());
+    render();
+    expect(description()).toBe('Unassigned');
+  });
+
   it('names every button', () => {
     prefs.shortcuts = { 'tab.new': [] };
     render();

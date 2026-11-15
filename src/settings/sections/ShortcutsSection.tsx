@@ -27,7 +27,7 @@ import {
 } from '@/modules/shortcuts/shortcuts';
 import { ArrowTurnBackwardIcon, Cancel01Icon, Search01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { SectionHeader } from '../components/SectionHeader';
 import { SettingRow, SettingRowList } from '../components/SettingRow';
 import { SettingsGroup } from '../components/SettingsGroup';
@@ -164,6 +164,8 @@ function ShortcutRow({
   const bindings = userBindings !== undefined ? userBindings : shortcut.defaultBindings;
   const isModified = userBindings !== undefined;
   const hasBindings = bindings && bindings.length > 0;
+  // The button's name says what it does; its description reads the keys it holds, "Unassigned" or the recording note.
+  const keysId = useId();
   useShortcutRecorder(isRecording, onRecord, onStopRecording);
 
   return (
@@ -205,22 +207,25 @@ function ShortcutRow({
           variant="outline-hover"
           size="keys"
           aria-label={`Record shortcut for ${shortcut.label}`}
+          aria-describedby={keysId}
           aria-pressed={isRecording}
           onClick={onToggleRecording}
         >
-          {isRecording ? (
-            'Recording... (Esc to cancel)'
-          ) : hasBindings ? (
-            <KbdGroup>
-              {getBindingTokens(bindings[0]).map((t) => (
-                <Kbd key={t}>
-                  <ShortcutKey token={t} />
-                </Kbd>
-              ))}
-            </KbdGroup>
-          ) : (
-            'Unassigned'
-          )}
+          <span id={keysId} className="contents">
+            {isRecording ? (
+              'Recording... (Esc to cancel)'
+            ) : hasBindings ? (
+              <KbdGroup>
+                {getBindingTokens(bindings[0]).map((t) => (
+                  <Kbd key={t}>
+                    <ShortcutKey token={t} />
+                  </Kbd>
+                ))}
+              </KbdGroup>
+            ) : (
+              'Unassigned'
+            )}
+          </span>
         </Button>
       </div>
     </SettingRow>
