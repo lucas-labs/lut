@@ -1,6 +1,6 @@
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { type ComponentProps, createContext, useContext, useState } from 'react';
+import { Enlargeable, ENLARGED_SIZE } from './Enlargeable';
 
 type Props = ComponentProps<'img'> & { node?: unknown };
 
@@ -16,7 +16,6 @@ export const InsideLinkContext = createContext(false);
  */
 export function MarkdownImage({ node: _node, className, alt, src, style, ...props }: Props) {
   const insideLink = useContext(InsideLinkContext);
-  const [open, setOpen] = useState(false);
   // The source that failed, not a flag: a live reload that fixes the path, or another image taking this element's
   // place, must load again (preview tabs stay mounted while hidden).
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
@@ -40,30 +39,20 @@ export function MarkdownImage({ node: _node, className, alt, src, style, ...prop
   if (insideLink) return image;
   const label = alt ? `Enlarge image: ${alt}` : 'Enlarge image';
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label={label}
-        title={label}
-        className="inline-block max-w-full cursor-zoom-in rounded-lg align-top focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
-      >
-        {image}
-      </button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent
-          className="w-auto max-w-[calc(100vw-4rem)] gap-0 rounded-xl bg-card p-3 sm:max-w-[calc(100vw-4rem)]"
-          showCloseButton
-        >
-          <DialogTitle className="sr-only">{alt || 'Image'}</DialogTitle>
-          <DialogDescription className="sr-only">The image at full size.</DialogDescription>
-          <img
-            src={src}
-            alt={alt}
-            className="h-[calc(100vh-6rem)] max-h-[calc(100vh-6rem)] w-[calc(100vw-5.5rem)] max-w-[calc(100vw-5.5rem)] object-contain"
-          />
-        </DialogContent>
-      </Dialog>
-    </>
+    <Enlargeable
+      label={label}
+      title={alt || 'Image'}
+      description="The image at full size."
+      className="inline-block"
+      enlarged={
+        <img
+          src={src}
+          alt={alt}
+          className={cn(ENLARGED_SIZE, 'max-h-[calc(100vh-6rem)] max-w-[calc(100vw-5.5rem)] object-contain')}
+        />
+      }
+    >
+      {image}
+    </Enlargeable>
   );
 }
