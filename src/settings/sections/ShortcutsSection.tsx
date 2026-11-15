@@ -164,70 +164,73 @@ function ShortcutRow({
   const bindings = userBindings !== undefined ? userBindings : shortcut.defaultBindings;
   const isModified = userBindings !== undefined;
   const hasBindings = bindings && bindings.length > 0;
-  // The button's name says what it does; its description reads the keys it holds, "Unassigned" or the recording note.
+  // The button's name says what it does; its description reads the keys it holds, "Unassigned" or the recording note,
+  // then the row's description when it has one.
   const keysId = useId();
   useShortcutRecorder(isRecording, onRecord, onStopRecording);
 
   return (
     <SettingRow title={shortcut.label} description={shortcut.description}>
-      <div className="flex items-center gap-1">
-        {isModified && !isRecording && (
-          <Button variant="link" onClick={onReset}>
-            Reset to default
-          </Button>
-        )}
-        {/* While recording, the ✕ cancels like Esc, and stays visible. */}
-        {isRecording ? (
+      {(a11y) => (
+        <div className="flex items-center gap-1">
+          {isModified && !isRecording && (
+            <Button variant="link" onClick={onReset}>
+              Reset to default
+            </Button>
+          )}
+          {/* While recording, the ✕ cancels like Esc, and stays visible. */}
+          {isRecording ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onStopRecording}
+              aria-label="Cancel recording"
+              title="Cancel recording"
+            >
+              <HugeiconsIcon icon={Cancel01Icon} strokeWidth={1.75} />
+            </Button>
+          ) : hasBindings ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              // A changed shortcut shows it with its reset; the others on hover or focus.
+              className={cn(
+                !isModified &&
+                  'opacity-0 transition-opacity group-focus-within/row:opacity-100 group-hover/row:opacity-100',
+              )}
+              onClick={onClear}
+              aria-label="Clear shortcut"
+              title="Clear shortcut"
+            >
+              <HugeiconsIcon icon={Cancel01Icon} strokeWidth={1.75} />
+            </Button>
+          ) : null}
           <Button
-            variant="ghost"
-            size="icon"
-            onClick={onStopRecording}
-            aria-label="Cancel recording"
-            title="Cancel recording"
+            variant="outline-hover"
+            size="keys"
+            aria-label={`Record shortcut for ${shortcut.label}`}
+            aria-describedby={[keysId, a11y['aria-describedby']].filter(Boolean).join(' ')}
+            aria-pressed={isRecording}
+            onClick={onToggleRecording}
           >
-            <HugeiconsIcon icon={Cancel01Icon} strokeWidth={1.75} />
+            <span id={keysId} className="contents">
+              {isRecording ? (
+                'Recording... (Esc to cancel)'
+              ) : hasBindings ? (
+                <KbdGroup>
+                  {getBindingTokens(bindings[0]).map((t) => (
+                    <Kbd key={t}>
+                      <ShortcutKey token={t} />
+                    </Kbd>
+                  ))}
+                </KbdGroup>
+              ) : (
+                'Unassigned'
+              )}
+            </span>
           </Button>
-        ) : hasBindings ? (
-          <Button
-            variant="ghost"
-            size="icon"
-            // A changed shortcut shows it with its reset; the others on hover or focus.
-            className={cn(
-              !isModified &&
-                'opacity-0 transition-opacity group-focus-within/row:opacity-100 group-hover/row:opacity-100',
-            )}
-            onClick={onClear}
-            aria-label="Clear shortcut"
-            title="Clear shortcut"
-          >
-            <HugeiconsIcon icon={Cancel01Icon} strokeWidth={1.75} />
-          </Button>
-        ) : null}
-        <Button
-          variant="outline-hover"
-          size="keys"
-          aria-label={`Record shortcut for ${shortcut.label}`}
-          aria-describedby={keysId}
-          aria-pressed={isRecording}
-          onClick={onToggleRecording}
-        >
-          <span id={keysId} className="contents">
-            {isRecording ? (
-              'Recording... (Esc to cancel)'
-            ) : hasBindings ? (
-              <KbdGroup>
-                {getBindingTokens(bindings[0]).map((t) => (
-                  <Kbd key={t}>
-                    <ShortcutKey token={t} />
-                  </Kbd>
-                ))}
-              </KbdGroup>
-            ) : (
-              'Unassigned'
-            )}
-          </span>
-        </Button>
-      </div>
+        </div>
+      )}
     </SettingRow>
   );
 }
