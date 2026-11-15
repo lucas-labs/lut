@@ -12,7 +12,6 @@ import {
   SCREEN_UNIFORM_BYTES,
 } from './shaders';
 import { NO_SELECTION } from './terminalGeometry';
-import { DWRITE_GAMMA_RATIOS } from './textContrast';
 
 const STATE: ScreenUniformState = {
   cols: 120,
@@ -33,7 +32,6 @@ const STATE: ScreenUniformState = {
   selectionAlpha: 0.5,
   decoration: { baseline: 16, thickness: 1, strikeY: 10 },
   leftOverhangPadding: 1,
-  contrast: { enhancedContrast: 0.5, alphaCorrection: 0.25 },
 };
 
 function view(uniform: ScreenUniform) {
@@ -97,11 +95,6 @@ describe('ScreenUniform', () => {
     expect([...u.slice(at(SCREEN_OFFSET.decoration), at(SCREEN_OFFSET.decoration) + 4)]).toEqual([
       16, 1, 10, 1,
     ]);
-    expect(f[at(SCREEN_OFFSET.contrast)]).toBe(0.5);
-    expect(f[at(SCREEN_OFFSET.contrast, 1)]).toBe(0.25);
-    expect([...f.slice(at(SCREEN_OFFSET.gamma), at(SCREEN_OFFSET.gamma) + 4)]).toEqual(
-      DWRITE_GAMMA_RATIOS.map(Math.fround),
-    );
     expect(uniform.data.byteLength).toBe(SCREEN_UNIFORM_BYTES);
   });
 
@@ -207,8 +200,6 @@ describe('shader uniform layout', () => {
       selection_lines: SCREEN_OFFSET.selectionLines,
       selection_columns: SCREEN_OFFSET.selectionColumns,
       decoration: SCREEN_OFFSET.decoration,
-      contrast: SCREEN_OFFSET.contrast,
-      gamma: SCREEN_OFFSET.gamma,
       cursor_text: SCREEN_OFFSET.cursorText,
     });
   });

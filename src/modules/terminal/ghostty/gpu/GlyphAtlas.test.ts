@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   ATLAS_FULL,
   GLYPH_ENTRY_FLAG_COLOR,
-  GLYPH_ENTRY_FLAG_EXACT,
   GLYPH_ENTRY_FLAG_NEIGHBOUR,
   GLYPH_ENTRY_FLAG_SYMBOL,
   GLYPH_ENTRY_WORDS,
@@ -275,7 +274,7 @@ describe('GlyphAtlas', () => {
     atlas.dispose();
   });
 
-  it('shares one cell-sized exact entry between styles for procedural glyphs', () => {
+  it('shares one cell-sized entry between styles for procedural glyphs', () => {
     const h = createHarness();
     const atlas = new GlyphAtlas(h.device, METRICS);
     const regular = atlas.resolve('┼', 0);
@@ -292,7 +291,7 @@ describe('GlyphAtlas', () => {
     expect(entry[1]).toBe(METRICS.deviceCellWidth | (METRICS.deviceCellHeight << 16));
     // Zero bearing: the quad covers the whole cell.
     expect(entry[2]).toBe(0);
-    expect(entry[3]).toBe(GLYPH_ENTRY_FLAG_EXACT);
+    expect(entry[3]).toBe(0);
     const [, pixels, layout, size] = h.writeTexture.mock.calls[0];
     expect(size).toEqual([METRICS.deviceCellWidth, METRICS.deviceCellHeight, 1]);
     expect(layout.bytesPerRow).toBe(METRICS.deviceCellWidth);

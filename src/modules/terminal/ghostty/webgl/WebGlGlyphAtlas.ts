@@ -38,8 +38,6 @@ export type WebGlGlyphEntry = {
   readonly uvMaxX: number;
   readonly uvMaxY: number;
   readonly intrinsicColor: boolean;
-  /** Coverage is final (cell-exact shapes): no text contrast may reshape it. */
-  readonly exact: boolean;
 };
 
 type DirtyRectangle = {
@@ -59,7 +57,6 @@ const NULL_GLYPH: WebGlGlyphEntry = {
   uvMaxX: 0,
   uvMaxY: 0,
   intrinsicColor: false,
-  exact: false,
 };
 
 /**
@@ -387,7 +384,6 @@ export class WebGlGlyphAtlas {
       uvMaxX: (region.x + width) / atlasSize,
       uvMaxY: (region.y + height) / atlasSize,
       intrinsicColor,
-      exact: layout.exact,
     };
   }
 
@@ -402,7 +398,7 @@ export class WebGlGlyphAtlas {
     const mask = renderer.render(codepoint);
     if (!mask) return null;
     const { width, height } = renderer.spec;
-    return this.storeCoverage(mask, width, height, 0, 0, true);
+    return this.storeCoverage(mask, width, height, 0, 0);
   }
 
   /** `text` from the hinted rasterizer, or null when the canvas draws it. */
@@ -417,7 +413,6 @@ export class WebGlGlyphAtlas {
       mask.height,
       mask.left,
       deviceBaseline + mask.top,
-      false,
     );
   }
 
@@ -428,7 +423,6 @@ export class WebGlGlyphAtlas {
     height: number,
     originOffsetX: number,
     originOffsetY: number,
-    exact: boolean,
   ): WebGlGlyphEntry {
     let region = this.coverageAllocator.allocate(width, height);
     if (!region) {
@@ -455,7 +449,6 @@ export class WebGlGlyphAtlas {
       uvMaxX: (region.x + width) / ATLAS_SIZE,
       uvMaxY: (region.y + height) / ATLAS_SIZE,
       intrinsicColor: false,
-      exact,
     };
   }
 

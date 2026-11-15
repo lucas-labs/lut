@@ -394,5 +394,4 @@ const PROFILE: WebGlRendererProfile = {
   metrics: METRICS,
   theme: THEME,
   scale: 1,
-  contrast: { enhancedContrast: 0, alphaCorrection: 0 },
 };

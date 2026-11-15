@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { GLYPH_SHADER } from '../gpu/shaders';
 import type { TerminalGpuTheme } from '../gpu/terminalVisuals';
 import {
   COLOR_FRAGMENT_SHADER,
@@ -41,7 +40,6 @@ function profile(scale = 2): WebGlRendererProfile {
     },
     theme,
     scale,
-    contrast: { enhancedContrast: 0, alphaCorrection: 0 },
   };
 }
 
@@ -167,24 +165,5 @@ describe('WebGL shaders', () => {
     );
     expect(recolour).toBeGreaterThan(0);
     expect(blink).toBeGreaterThan(recolour);
-  });
-
-  it('applies the same contrast curve as the WebGPU shader, never to cell-exact or colour glyphs', () => {
-    expect(GLYPH_FRAGMENT_SHADER).toMatch(/uniform vec2 u_contrast;/);
-    expect(GLYPH_FRAGMENT_SHADER).toMatch(/uniform vec4 u_gamma;/);
-    for (const constant of [
-      'vec3(0.30, 0.59, 0.11)',
-      'vec3(0.25, 0.5, 0.25)',
-      '4.0 * (0.75 - lightness)',
-    ]) {
-      expect(GLYPH_FRAGMENT_SHADER).toContain(constant);
-      expect(GLYPH_SHADER).toContain(
-        constant.replace('vec3(', 'vec3f(').replace(/\bvec3f\(/, 'vec3f('),
-      );
-    }
-    expect(GLYPH_FRAGMENT_SHADER).toMatch(
-      /v_intrinsic_color < 1\.5 && \(u_contrast\.x > 0\.0 \|\| u_contrast\.y > 0\.0\)/,
-    );
-    expect(GLYPH_FRAGMENT_SHADER).toMatch(/v_intrinsic_color > 0\.5 && v_intrinsic_color < 1\.5/);
   });
 });

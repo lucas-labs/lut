@@ -7,7 +7,7 @@
  * All coordinates are integer device pixels; nothing is filtered.
  */
 
-export const SCREEN_UNIFORM_BYTES = 208;
+export const SCREEN_UNIFORM_BYTES = 176;
 
 /** Byte offsets of `Screen` fields; the TypeScript packer mirrors this layout. */
 export const SCREEN_OFFSET = {
@@ -33,9 +33,7 @@ export const SCREEN_OFFSET = {
   /** Device pixels of the pane cut off at the canvas's left and top edge (viewport starts there). */
   clip: 128,
   decoration: 144,
-  contrast: 160,
-  gamma: 176,
-  cursorText: 192,
+  cursorText: 160,
 } as const;
 
 export const SCREEN_FLAG_TEXT_BLINK_VISIBLE = 1;
@@ -53,7 +51,6 @@ export const SCREEN_FLAG_CURSOR_BLOCK = 16;
  * - Fragment coordinates are relative to the window canvas, not to the pane's viewport.
  * - A glyph that overhangs to the left is clipped where the neighbour's background differs,
  *   so it cannot paint over a selection or a coloured cell.
- * - Cell-exact shapes (box drawing, shades) keep their coverage as drawn, without contrast.
  */
 const COMMON = /* wgsl */ `
 struct Screen {
@@ -72,8 +69,6 @@ struct Screen {
   origin: vec2i,
   clip: vec2u,
   decoration: vec4u,
-  contrast: vec4f,
-  gamma: vec4f,
   cursor_text: vec4f,
 }
 
@@ -377,20 +372,6 @@ fn vertex_main(
   return output;
 }
 
-fn apply_contrast(coverage: f32, foreground: vec3f) -> f32 {
-  let enhanced_contrast = screen.contrast.x;
-  let correction = screen.contrast.y;
-  if (enhanced_contrast <= 0.0 && correction <= 0.0) { return coverage; }
-  let lightness = dot(foreground, vec3f(0.30, 0.59, 0.11));
-  let k = enhanced_contrast * saturate(4.0 * (0.75 - lightness));
-  let enhanced = coverage * (k + 1.0) / (coverage * k + 1.0);
-  let intensity = dot(foreground, vec3f(0.25, 0.5, 0.25));
-  let g = screen.gamma;
-  let corrected = enhanced + enhanced * (1.0 - enhanced) *
-    ((g.x * intensity + g.y) * enhanced + (g.z * intensity + g.w));
-  return saturate(mix(enhanced, corrected, correction));
-}
-
 @fragment
 fn fragment_main(
   @builtin(position) position: vec4f,
@@ -413,7 +394,6 @@ fn fragment_main(
     return vec4f(sample.rgb, sample.a * color.a);
   }
   let coverage = textureLoad(coverage_texture, texel, 0).r;
-  if ((glyph_flags & 2u) != 0u) { return vec4f(color.rgb, color.a * coverage); }
-  return vec4f(color.rgb, color.a * apply_contrast(coverage, color.rgb));
+  return vec4f(color.rgb, color.a * coverage);
 }
 `;

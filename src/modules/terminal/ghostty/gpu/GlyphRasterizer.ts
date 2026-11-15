@@ -23,7 +23,6 @@ const EMPTY_GLYPH: RasterizedGlyph = {
   bearingX: 0,
   bearingY: 0,
   intrinsicColor: false,
-  exact: false,
   pixels: new Uint8Array(1),
 };
 
@@ -34,12 +33,6 @@ export type RasterizedGlyph = {
   readonly bearingX: number;
   readonly bearingY: number;
   readonly intrinsicColor: boolean;
-  /**
-   * The coverage is final: procedurally drawn cell shapes whose partial values
-   * (shades, anti-aliased edges) are intended, so no text contrast adjustment
-   * may reshape them.
-   */
-  readonly exact: boolean;
   /**
    * `width * height` coverage bytes, or `width * height * 4` RGBA bytes for an
    * intrinsic-colour glyph. Borrowed scratch memory: valid until the next call.
@@ -147,7 +140,6 @@ export class GlyphRasterizer {
       bearingX: layout.bearingX,
       bearingY: layout.bearingY,
       intrinsicColor,
-      exact: layout.exact,
       pixels,
     };
   }
@@ -166,7 +158,6 @@ export class GlyphRasterizer {
       bearingX: mask.left,
       bearingY: deviceBaseline + mask.top,
       intrinsicColor: false,
-      exact: false,
       pixels,
     };
   }
@@ -187,7 +178,6 @@ export class GlyphRasterizer {
       bearingX: 0,
       bearingY: 0,
       intrinsicColor: false,
-      exact: true,
       pixels,
     };
   }

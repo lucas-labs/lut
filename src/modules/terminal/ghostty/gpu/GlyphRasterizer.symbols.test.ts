@@ -105,7 +105,7 @@ describe('GlyphRasterizer private-use symbols', () => {
     expect(transforms).toEqual([]);
   });
 
-  it('stretches a Powerline Extra over exactly two cells, clipped and exact', () => {
+  it('stretches a Powerline Extra over exactly two cells, clipped', () => {
     const { transforms } = stub({ left: 0, right: 21, advance: 8.4 });
     const glyph = new GlyphRasterizer(METRICS).rasterize('\ue0c0', 0);
     expect(transforms).toContain('clip');
@@ -115,7 +115,6 @@ describe('GlyphRasterizer private-use symbols', () => {
       height: METRICS.deviceCellHeight + 4,
       bearingX: -2,
       bearingY: -2,
-      exact: true,
     });
   });
 

@@ -8,8 +8,6 @@ import type { TerminalFontMetrics } from './terminalVisuals';
 export const GLYPH_ENTRY_WORDS = 4;
 const GLYPH_ENTRY_BYTES = GLYPH_ENTRY_WORDS * 4;
 export const GLYPH_ENTRY_FLAG_COLOR = 1;
-/** Coverage is final (cell-exact shapes): the shader applies no contrast. */
-export const GLYPH_ENTRY_FLAG_EXACT = 2;
 /**
  * The glyph may take two cells: this entry is the constrained form and the next entry the
  * roomy one. The shader picks the roomy one when the next cell is blank, the cell is not the
@@ -217,10 +215,7 @@ export class GlyphAtlas {
     this.tableData[base] = region.x | (region.y << 16);
     this.tableData[base + 1] = glyph.width | (glyph.height << 16);
     this.tableData[base + 2] = (glyph.bearingX & 0xffff) | ((glyph.bearingY & 0xffff) << 16);
-    this.tableData[base + 3] =
-      (glyph.intrinsicColor ? GLYPH_ENTRY_FLAG_COLOR : 0) |
-      (glyph.exact ? GLYPH_ENTRY_FLAG_EXACT : 0) |
-      extraFlags;
+    this.tableData[base + 3] = (glyph.intrinsicColor ? GLYPH_ENTRY_FLAG_COLOR : 0) | extraFlags;
     this.tableDirtyStart = Math.min(this.tableDirtyStart, index);
     this.tableDirtyEnd = Math.max(this.tableDirtyEnd, index);
     return true;

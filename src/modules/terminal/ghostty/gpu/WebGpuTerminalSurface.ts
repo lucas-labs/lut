@@ -46,7 +46,6 @@ import {
   type TerminalFontMetrics,
   type TerminalGpuTheme,
 } from './terminalVisuals';
-import { currentTextContrast, type TextContrast } from './textContrast';
 import {
   CELL_RECORD_BYTES,
   compactWebGpuCellCapacity,
@@ -154,7 +153,6 @@ export class WebGpuTerminalSurface implements TerminalSurface, WebGpuRuntimeSurf
   private blinkingCells = 0;
   private theme: TerminalGpuTheme;
   private metrics: TerminalFontMetrics;
-  private contrast: TextContrast;
   private cellCapacity = 0;
   private host: HTMLElement | null = null;
   private visible = true;
@@ -197,7 +195,6 @@ export class WebGpuTerminalSurface implements TerminalSurface, WebGpuRuntimeSurf
     private readonly options: WebGpuTerminalSurfaceOptions,
   ) {
     this.metrics = metricsForScale(options.metrics, devicePixelScale());
-    this.contrast = currentTextContrast();
     this.pixelRatioMonitor = new DevicePixelRatioMonitor(() => this.resizeToHost());
     this.resizeSync = new TerminalResizeSync({
       model: {
@@ -818,7 +815,6 @@ export class WebGpuTerminalSurface implements TerminalSurface, WebGpuRuntimeSurf
     if (!this.host) return;
     try {
       this.metrics = metricsForScale(this.metrics, devicePixelScale());
-      this.contrast = currentTextContrast();
       this.atlasLease = this.runtime.acquireGlyphAtlas(this.metrics, this);
       this.glyphMap = new TerminalGlyphMap();
       this.atlasBlocked = false;
@@ -1291,7 +1287,6 @@ export class WebGpuTerminalSurface implements TerminalSurface, WebGpuRuntimeSurf
       selectionAlpha: theme.selection.alpha,
       decoration: decorationMetrics(this.metrics),
       leftOverhangPadding: leftOverhangPadding(this.metrics.font.letterSpacing, this.metrics.scale),
-      contrast: this.contrast,
     };
     const shiftY = this.gridShift(state, cursor);
     if (__LUT_BENCH__ && this.nativeCursorVisible) {
