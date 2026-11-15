@@ -6,12 +6,13 @@ import { Switch } from '@/components/ui/switch';
 import { allServers, detectBinary, type LspPreset, redetectBinary, useLspRuntimeStore } from '@/modules/lsp';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { type LspCustomServer, setLspActivation, setLspCustomServers } from '@/modules/settings/store';
-import { Delete02Icon, Refresh01Icon } from '@hugeicons/core-free-icons';
+import { Delete02Icon, PlusSignIcon, Refresh01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useEffect, useId, useState } from 'react';
 import { LspInstallDialog } from './LspInstallDialog';
 import { resolveLspSwitchState } from './lspSwitchState';
 import { SettingRow } from './SettingRow';
+import { SettingsGroup } from './SettingsGroup';
 
 export function LspServersGroup() {
   const activation = usePreferencesStore((s) => s.lspActivation);
@@ -20,11 +21,7 @@ export function LspServersGroup() {
   const servers = allServers(customServers);
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between">
-        <Label>Language servers</Label>
-        <AddCustomServerDialog customServers={customServers} />
-      </div>
+    <SettingsGroup title="Language servers" actions={<AddCustomServerDialog customServers={customServers} />}>
       {servers.map((server) => (
         <ServerRow
           key={server.id}
@@ -40,7 +37,7 @@ export function LspServersGroup() {
         server={installTarget}
         onClose={() => setInstallTarget(null)}
       />
-    </div>
+    </SettingsGroup>
   );
 }
 
@@ -72,32 +69,39 @@ function ServerRow({
       title={
         <span className="flex items-center gap-1.5">
           {server.name}
-          {detected ? <span className="size-1.5 rounded-full bg-emerald-500" /> : null}
+          {custom ? <span className="text-[11px]">· custom</span> : null}
+          {detected ? <span data-slot="lsp-detected" className="size-1.5 rounded-full bg-success" /> : null}
         </span>
       }
-      description={`${server.command} (${langs}) - ${status}`}
+      description={
+        <>
+          <span className="font-mono">{server.command}</span> ({langs}) - {status}
+        </>
+      }
     >
-      <div className="flex items-center gap-1.5">
-        <button
-          type="button"
-          className="cursor-pointer rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => void redetectBinary(server.command)}
+          aria-label="Detect again"
           title="Detect again"
         >
-          <HugeiconsIcon icon={Refresh01Icon} size={12} strokeWidth={1.75} />
-        </button>
+          <HugeiconsIcon icon={Refresh01Icon} strokeWidth={1.75} />
+        </Button>
         {custom ? (
-          <button
-            type="button"
-            className="cursor-pointer rounded p-1 text-muted-foreground hover:bg-accent hover:text-destructive"
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => {
               void setLspActivation(server.id, null);
               void setLspCustomServers(customServers.filter((c) => c.id !== server.id));
             }}
+            aria-label="Remove server"
             title="Remove server"
           >
-            <HugeiconsIcon icon={Delete02Icon} size={12} strokeWidth={1.75} />
-          </button>
+            <HugeiconsIcon icon={Delete02Icon} strokeWidth={1.75} />
+          </Button>
         ) : null}
         <Switch
           checked={switchState.checked}
@@ -164,9 +168,7 @@ function AddCustomServerDialog({ customServers }: { customServers: LspCustomServ
 
   const field = (label: string, value: string, onChange: (v: string) => void, placeholder: string) => (
     <div className="flex flex-col gap-1">
-      <Label htmlFor={`${formId}-${label}`} className="text-[11px]">
-        {label}
-      </Label>
+      <Label htmlFor={`${formId}-${label}`}>{label}</Label>
       <Input
         id={`${formId}-${label}`}
         value={value}
@@ -179,11 +181,14 @@ function AddCustomServerDialog({ customServers }: { customServers: LspCustomServ
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Add custom server</Button>
+        <Button variant="outline">
+          <HugeiconsIcon icon={PlusSignIcon} strokeWidth={1.5} />
+          Add custom server
+        </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-sm">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle className="text-sm">Custom language server</DialogTitle>
+          <DialogTitle>Custom language server</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-2.5">
           {field('Name', name, setName, 'Zig')}

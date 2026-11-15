@@ -58,8 +58,8 @@ function TerminalTabStatus({ tab }: { tab: Tab }) {
           strokeWidth={2.5}
           strokeLinecap="round"
         >
-          <circle cx="12" cy="12" r="8" className="stroke-info/25" />
-          <path d="M12 4a8 8 0 0 1 8 8" className="stroke-info" />
+          <circle cx="12" cy="12" r="8" className="stroke-primary/25" />
+          <path d="M12 4a8 8 0 0 1 8 8" className="stroke-primary" />
           <title>Working</title>
         </svg>
         <span className="sr-only">Working</span>

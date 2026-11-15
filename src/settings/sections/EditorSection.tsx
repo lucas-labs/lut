@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
@@ -25,12 +26,14 @@ import {
   setVimMode,
 } from '@/modules/settings/store';
 import { useShortcutHint } from '@/modules/shortcuts';
-import { Cancel01Icon } from '@hugeicons/core-free-icons';
+import { Cancel01Icon, PlusSignIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useState } from 'react';
 import { LspServersGroup } from '../components/LspServersGroup';
+import { NumberControl } from '../components/NumberControl';
 import { SectionHeader } from '../components/SectionHeader';
-import { SettingRow } from '../components/SettingRow';
+import { SettingExpander, SettingRow, type SettingRowA11y } from '../components/SettingRow';
+import { SettingsGroup } from '../components/SettingsGroup';
 
 const AUTO_SAVE_STEP = 100;
 
@@ -48,11 +51,10 @@ export function EditorSection() {
   const usesCustom = editorFormatter === 'custom' || Object.values(editorFormatterByLang).includes('custom');
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col">
       <SectionHeader title="Editor" description="Editing behavior, saving, and language servers." />
 
-      <div className="flex flex-col gap-2">
-        <Label>Appearance</Label>
+      <SettingsGroup title="Appearance">
         <SettingRow title="Font size" description="Code editor text size.">
           {(a11y) => (
             <Select value={String(editorFontSize)} onValueChange={(v) => void setEditorFontSize(Number(v))}>
@@ -69,50 +71,96 @@ export function EditorSection() {
             </Select>
           )}
         </SettingRow>
-      </div>
+      </SettingsGroup>
 
-      <div className="flex flex-col gap-2">
-        <Label>Editing</Label>
+      <SettingsGroup title="Editing">
         <SettingRow title="Vim mode" description="Enable Vim keybindings in the code editor.">
           {(a11y) => <Switch {...a11y} checked={vimMode} onCheckedChange={(v) => void setVimMode(v)} />}
         </SettingRow>
-        <SettingRow title="Word wrap" description="Wrap long lines instead of scrolling horizontally.">
-          {(a11y) => <Switch {...a11y} checked={editorWordWrap} onCheckedChange={(v) => void setEditorWordWrap(v)} />}
-        </SettingRow>
-        {editorWordWrap && (
-          <WordWrapColumnInput value={editorWordWrapColumn} onChange={(v) => void setEditorWordWrapColumn(v)} />
-        )}
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <Label>Saving</Label>
-        <SettingRow title="Auto save" description="Automatically save files after a delay when changes are detected.">
-          {(a11y) => <Switch {...a11y} checked={editorAutoSave} onCheckedChange={(v) => void setEditorAutoSave(v)} />}
-        </SettingRow>
-        {editorAutoSave && (
-          <AutoSaveDelayInput value={editorAutoSaveDelay} onChange={(v) => void setEditorAutoSaveDelay(v)} />
-        )}
-        <SettingRow
-          title="Format on save"
-          description={`Format the file on explicit save (${saveHint} / :w) with the formatter below.`}
-        >
-          {(a11y) => (
-            <Switch {...a11y} checked={editorFormatOnSave} onCheckedChange={(v) => void setEditorFormatOnSave(v)} />
-          )}
-        </SettingRow>
-        {editorFormatOnSave && (
-          <>
-            <SettingRow
-              title="Formatter"
-              description="Language server formats the buffer before writing; external tools run on the saved file from your PATH."
-            >
-              <FormatterSelect value={editorFormatter} onChange={(v) => void setEditorFormatter(v)} />
+        <SettingExpander
+          open={editorWordWrap}
+          setting={
+            <SettingRow title="Word wrap" description="Wrap long lines instead of scrolling horizontally.">
+              {(a11y) => (
+                <Switch {...a11y} checked={editorWordWrap} onCheckedChange={(v) => void setEditorWordWrap(v)} />
+              )}
             </SettingRow>
-            {usesCustom && <CustomFormatCommandInput />}
-            <FormatterOverrides />
-          </>
-        )}
-      </div>
+          }
+        >
+          <SettingRow
+            title="Wrap column"
+            description="Soft-wrap at this column, or earlier when the editor is narrower."
+          >
+            {(a11y) => (
+              <NumberControl
+                {...a11y}
+                value={editorWordWrapColumn}
+                min={EDITOR_WORD_WRAP_COLUMN_MIN}
+                max={EDITOR_WORD_WRAP_COLUMN_MAX}
+                step={1}
+                clamp={clampEditorWordWrapColumn}
+                onChange={(v) => void setEditorWordWrapColumn(v)}
+                unit="columns"
+              />
+            )}
+          </SettingRow>
+        </SettingExpander>
+      </SettingsGroup>
+
+      <SettingsGroup title="Saving">
+        <SettingExpander
+          open={editorAutoSave}
+          setting={
+            <SettingRow
+              title="Auto save"
+              description="Automatically save files after a delay when changes are detected."
+            >
+              {(a11y) => (
+                <Switch {...a11y} checked={editorAutoSave} onCheckedChange={(v) => void setEditorAutoSave(v)} />
+              )}
+            </SettingRow>
+          }
+        >
+          <SettingRow title="Auto save delay" description="Delay before unsaved changes are saved automatically.">
+            {(a11y) => (
+              <NumberControl
+                {...a11y}
+                value={editorAutoSaveDelay}
+                min={AUTO_SAVE_DELAY_MIN}
+                max={AUTO_SAVE_DELAY_MAX}
+                step={AUTO_SAVE_STEP}
+                clamp={clampAutoSaveDelay}
+                onChange={(v) => void setEditorAutoSaveDelay(v)}
+                unit="ms"
+              />
+            )}
+          </SettingRow>
+        </SettingExpander>
+        <SettingExpander
+          open={editorFormatOnSave}
+          setting={
+            <SettingRow
+              title="Format on save"
+              description={`Format the file on explicit save (${saveHint} / :w) with the formatter below.`}
+            >
+              {(a11y) => (
+                <Switch {...a11y} checked={editorFormatOnSave} onCheckedChange={(v) => void setEditorFormatOnSave(v)} />
+              )}
+            </SettingRow>
+          }
+        >
+          <SettingRow
+            title="Formatter"
+            description="Language server formats the buffer before writing; external tools run on the saved file from your PATH."
+          >
+            {(a11y) => (
+              <FormatterSelect {...a11y} value={editorFormatter} onChange={(v) => void setEditorFormatter(v)} />
+            )}
+          </SettingRow>
+          <FormatterOverrides />
+          {usesCustom && <CustomFormatCommandInput />}
+        </SettingExpander>
+      </SettingsGroup>
 
       <LspServersGroup />
     </div>
@@ -121,10 +169,16 @@ export function EditorSection() {
 
 const FORMATTER_OPTIONS: EditorFormatter[] = ['lsp', ...(Object.keys(FORMATTERS) as EditorFormatter[]), 'custom'];
 
-function FormatterSelect({ value, onChange }: { value: EditorFormatter; onChange: (v: EditorFormatter) => void }) {
+type FormatterSelectProps = Partial<SettingRowA11y> & {
+  value: EditorFormatter;
+  onChange: (v: EditorFormatter) => void;
+  'aria-label'?: string;
+};
+
+function FormatterSelect({ value, onChange, ...a11y }: FormatterSelectProps) {
   return (
     <Select value={value} onValueChange={(v) => onChange(v as EditorFormatter)}>
-      <SelectTrigger>
+      <SelectTrigger {...a11y}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
@@ -165,12 +219,14 @@ function CustomFormatCommandInput() {
           onKeyDown={(e) => {
             if (e.key === 'Enter') e.currentTarget.blur();
           }}
-          className="w-64 font-mono"
+          className="w-55 font-mono"
         />
       )}
     </SettingRow>
   );
 }
+
+const languageName = (ext: string) => EXPOSED_LANGUAGES.find((l) => l.ext === ext)?.name ?? ext;
 
 function FormatterOverrides() {
   const byLang = usePreferencesStore((s) => s.editorFormatterByLang);
@@ -180,160 +236,70 @@ function FormatterOverrides() {
   const update = (next: Record<string, EditorFormatter>) => void setEditorFormatterByLang(next);
 
   return (
-    <>
-      <SettingRow
-        title="Language overrides"
-        description="Use a different formatter for specific languages (e.g. Ruff for Python)."
+    <SettingRow
+      title="Language overrides"
+      description="Use a different formatter for specific languages (e.g. Ruff for Python)."
+      details={
+        entries.length > 0 ? (
+          <div className="flex flex-col gap-2">
+            {entries.map(([lang, formatter]) => (
+              <div key={lang} className="flex items-center gap-2">
+                <Select
+                  value={lang}
+                  onValueChange={(nextLang) => {
+                    if (nextLang === lang) return;
+                    const next = { ...byLang };
+                    delete next[lang];
+                    next[nextLang] = formatter;
+                    update(next);
+                  }}
+                >
+                  <SelectTrigger size="sm" aria-label="Language">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {EXPOSED_LANGUAGES.filter((l) => l.ext === lang || !(l.ext in byLang)).map((l) => (
+                      <SelectItem key={l.ext} value={l.ext}>
+                        {l.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormatterSelect
+                  aria-label={`Formatter for ${languageName(lang)}`}
+                  value={formatter}
+                  onChange={(v) => update({ ...byLang, [lang]: v })}
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Remove ${languageName(lang)} override`}
+                  title="Remove override"
+                  onClick={() => {
+                    const next = { ...byLang };
+                    delete next[lang];
+                    update(next);
+                  }}
+                >
+                  <HugeiconsIcon icon={Cancel01Icon} strokeWidth={1.75} />
+                </Button>
+              </div>
+            ))}
+          </div>
+        ) : undefined
+      }
+    >
+      <Button
+        variant="outline"
+        disabled={unused.length === 0}
+        onClick={() => {
+          const first = unused[0];
+          if (first) update({ ...byLang, [first.ext]: 'lsp' });
+        }}
       >
-        <button
-          type="button"
-          disabled={unused.length === 0}
-          className="h-8 rounded-md border border-border px-3 text-[12px] text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50"
-          onClick={() => {
-            const first = unused[0];
-            if (first) update({ ...byLang, [first.ext]: 'lsp' });
-          }}
-        >
-          Add override
-        </button>
-      </SettingRow>
-      {entries.map(([lang, formatter]) => (
-        <div
-          key={lang}
-          className="flex items-center justify-end gap-2 rounded-md border border-border/50 bg-muted/20 px-3 py-1.5"
-        >
-          <Select
-            value={lang}
-            onValueChange={(nextLang) => {
-              if (nextLang === lang) return;
-              const next = { ...byLang };
-              delete next[lang];
-              next[nextLang] = formatter;
-              update(next);
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {EXPOSED_LANGUAGES.filter((l) => l.ext === lang || !(l.ext in byLang)).map((l) => (
-                <SelectItem key={l.ext} value={l.ext}>
-                  {l.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <FormatterSelect value={formatter} onChange={(v) => update({ ...byLang, [lang]: v })} />
-          <button
-            type="button"
-            className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
-            title="Remove override"
-            onClick={() => {
-              const next = { ...byLang };
-              delete next[lang];
-              update(next);
-            }}
-          >
-            <HugeiconsIcon icon={Cancel01Icon} size={12} strokeWidth={2} />
-          </button>
-        </div>
-      ))}
-    </>
-  );
-}
-
-function Label({ children }: { children: React.ReactNode }) {
-  return <span className="text-[11px] font-medium tracking-tight text-muted-foreground">{children}</span>;
-}
-
-function AutoSaveDelayInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-  const [draft, setDraft] = useState(String(value));
-  // A change saved elsewhere replaces the draft.
-  const [draftOf, setDraftOf] = useState(value);
-  if (value !== draftOf) {
-    setDraftOf(value);
-    setDraft(String(value));
-  }
-
-  const commit = () => {
-    const n = Number(draft);
-    if (!Number.isFinite(n)) {
-      setDraft(String(value));
-      return;
-    }
-    const clamped = clampAutoSaveDelay(n);
-    setDraft(String(clamped));
-    if (clamped !== value) onChange(clamped);
-  };
-
-  return (
-    <SettingRow title="Auto save delay" description="Delay before unsaved changes are saved automatically.">
-      {(a11y) => (
-        <div className="flex items-center gap-2">
-          <Input
-            {...a11y}
-            type="number"
-            min={AUTO_SAVE_DELAY_MIN}
-            max={AUTO_SAVE_DELAY_MAX}
-            step={AUTO_SAVE_STEP}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={commit}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.currentTarget.blur();
-              }
-            }}
-            className="w-20 text-right tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-          />
-          <span className="text-[11px] text-muted-foreground">ms</span>
-        </div>
-      )}
-    </SettingRow>
-  );
-}
-
-function WordWrapColumnInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
-  const [draft, setDraft] = useState(String(value));
-  // A change saved elsewhere replaces the draft.
-  const [draftOf, setDraftOf] = useState(value);
-  if (value !== draftOf) {
-    setDraftOf(value);
-    setDraft(String(value));
-  }
-
-  const commit = () => {
-    const n = Number(draft);
-    if (!Number.isFinite(n)) {
-      setDraft(String(value));
-      return;
-    }
-    const clamped = clampEditorWordWrapColumn(n);
-    setDraft(String(clamped));
-    if (clamped !== value) onChange(clamped);
-  };
-
-  return (
-    <SettingRow title="Wrap column" description="Soft-wrap at this column, or earlier when the editor is narrower.">
-      {(a11y) => (
-        <div className="flex items-center gap-2">
-          <Input
-            {...a11y}
-            type="number"
-            min={EDITOR_WORD_WRAP_COLUMN_MIN}
-            max={EDITOR_WORD_WRAP_COLUMN_MAX}
-            step={1}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={commit}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') e.currentTarget.blur();
-            }}
-            className="w-20 text-right tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-          />
-          <span className="text-[11px] text-muted-foreground">columns</span>
-        </div>
-      )}
+        <HugeiconsIcon icon={PlusSignIcon} strokeWidth={1.5} />
+        Add override
+      </Button>
     </SettingRow>
   );
 }

@@ -97,4 +97,12 @@ describe('GeneralSection', () => {
     expect(document.getElementById(zoom?.getAttribute('aria-labelledby') ?? '')?.textContent).toBe('UI zoom level');
     expect(zoom?.closest('[data-slot="slider"]')?.parentElement?.textContent).toBe('125%');
   });
+
+  it('hides the notification sound while agent notifications are off', () => {
+    const sound = [...host.querySelectorAll('[data-slot="setting-row"]')].find((r) =>
+      r.textContent?.startsWith('Notification sound'),
+    );
+    expect(sound?.getAttribute('data-variant')).toBe('nested');
+    expect(sound?.closest('[data-slot="setting-expander-body"]')?.hasAttribute('inert')).toBe(true);
+  });
 });
