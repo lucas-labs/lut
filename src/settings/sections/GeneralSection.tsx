@@ -41,7 +41,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useState } from 'react';
 import { RangeControl } from '../components/RangeControl';
 import { SectionHeader } from '../components/SectionHeader';
-import { SettingRow } from '../components/SettingRow';
+import { SettingExpander, SettingRow } from '../components/SettingRow';
 import { SettingsGroup } from '../components/SettingsGroup';
 import type { SectionProps } from '../sectionProps';
 
@@ -461,43 +461,49 @@ export function GeneralSection({ openTab }: SectionProps) {
       </SettingsGroup>
 
       <SettingsGroup title="Agents">
-        <SettingRow
-          title="Coding agent notifications"
-          description="Alert when a coding agent needs your input or finishes. Native notification when lut is unfocused, in-app otherwise."
+        <SettingExpander
+          open={agentNotifications}
+          setting={
+            <SettingRow
+              title="Coding agent notifications"
+              description="Alert when a coding agent needs your input or finishes. Native notification when lut is unfocused, in-app otherwise."
+            >
+              {(a11y) => (
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={!agentNotifications || notificationTestPending}
+                    title={notificationTestTitle(notificationTest)}
+                    onClick={() => void testNotification()}
+                  >
+                    {notificationTestLabel(notificationTest)}
+                  </Button>
+                  <Switch
+                    {...a11y}
+                    checked={agentNotifications}
+                    disabled={notificationTestPending}
+                    onCheckedChange={(v) => {
+                      setNotificationTest('idle');
+                      void setAgentNotifications(v);
+                    }}
+                  />
+                </div>
+              )}
+            </SettingRow>
+          }
         >
-          {(a11y) => (
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                disabled={!agentNotifications || notificationTestPending}
-                title={notificationTestTitle(notificationTest)}
-                onClick={() => void testNotification()}
-              >
-                {notificationTestLabel(notificationTest)}
-              </Button>
+          <SettingRow title="Notification sound" description="Play a sound with agent notifications and in-app alerts.">
+            {(a11y) => (
               <Switch
                 {...a11y}
-                checked={agentNotifications}
+                checked={agentNotificationSound}
                 disabled={notificationTestPending}
-                onCheckedChange={(v) => {
-                  setNotificationTest('idle');
-                  void setAgentNotifications(v);
-                }}
+                onCheckedChange={(v) => void setAgentNotificationSound(v)}
               />
-            </div>
-          )}
-        </SettingRow>
-        <SettingRow title="Notification sound" description="Play a sound with agent notifications and in-app alerts.">
-          {(a11y) => (
-            <Switch
-              {...a11y}
-              checked={agentNotificationSound}
-              disabled={!agentNotifications || notificationTestPending}
-              onCheckedChange={(v) => void setAgentNotificationSound(v)}
-            />
-          )}
-        </SettingRow>
+            )}
+          </SettingRow>
+        </SettingExpander>
       </SettingsGroup>
 
       <SettingsGroup title="Startup">

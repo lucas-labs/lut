@@ -2,7 +2,7 @@
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { SettingRow, SettingRowList } from './SettingRow';
+import { SettingExpander, SettingRow, SettingRowList } from './SettingRow';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -71,5 +71,66 @@ describe('SettingRow', () => {
       'card',
       'listed',
     ]);
+  });
+
+  it('describes the control with a description that is markup', () => {
+    act(() =>
+      root.render(
+        createElement(SettingRow, {
+          title: 'Rust',
+          description: createElement('span', null, createElement('code', null, 'rust-analyzer'), ' (rs)'),
+          children: (a11y) => createElement('button', { type: 'button', role: 'switch', ...a11y }),
+        }),
+      ),
+    );
+    const control = host.querySelector('[role="switch"]');
+    expect(text(control?.getAttribute('aria-describedby') ?? null)).toBe('rust-analyzer (rs)');
+  });
+
+  it('puts its details under the title and control', () => {
+    act(() =>
+      root.render(
+        createElement(SettingRow, {
+          title: 'Language overrides',
+          children: 'add',
+          details: createElement('p', { id: 'details' }, 'Python'),
+        }),
+      ),
+    );
+    const row = host.querySelector('[data-slot="setting-row"]');
+    expect(row?.lastElementChild?.id).toBe('details');
+    expect(row?.className).toContain('flex-col');
+  });
+});
+
+describe('SettingExpander', () => {
+  const render = (open: boolean) =>
+    act(() =>
+      root.render(
+        createElement(SettingExpander, {
+          open,
+          setting: createElement(SettingRow, { title: 'Word wrap', children: 'switch' }),
+          children: createElement(SettingRow, { title: 'Wrap column', children: 'input' }),
+        }),
+      ),
+    );
+  const body = () => host.querySelector('[data-slot="setting-expander-body"]');
+
+  it('shows the switch row and nests the rows that depend on it', () => {
+    render(true);
+    expect([...host.querySelectorAll('[data-slot="setting-row"]')].map((r) => r.getAttribute('data-variant'))).toEqual([
+      'expander',
+      'nested',
+    ]);
+  });
+
+  it('keeps the dependent rows inert while closed', () => {
+    render(false);
+    expect(body()?.getAttribute('data-state')).toBe('closed');
+    expect(body()?.hasAttribute('inert')).toBe(true);
+    expect(body()?.textContent).toContain('Wrap column');
+    render(true);
+    expect(body()?.getAttribute('data-state')).toBe('open');
+    expect(body()?.hasAttribute('inert')).toBe(false);
   });
 });
