@@ -2,7 +2,7 @@
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { SettingRow } from './SettingRow';
+import { SettingRow, SettingRowList } from './SettingRow';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -53,5 +53,23 @@ describe('SettingRow', () => {
   it('still takes a plain value', () => {
     act(() => root.render(createElement(SettingRow, { title: 'License', children: 'MIT' })));
     expect(host.textContent).toBe('LicenseMIT');
+  });
+
+  it('stands alone as a card, and joins the others inside a list', () => {
+    act(() =>
+      root.render(
+        createElement('div', null, [
+          createElement(SettingRow, { key: 'a', title: 'Alone', children: 'x' }),
+          createElement(SettingRowList, {
+            key: 'b',
+            children: createElement(SettingRow, { title: 'Listed', children: 'y' }),
+          }),
+        ]),
+      ),
+    );
+    expect([...host.querySelectorAll('[data-slot="setting-row"]')].map((r) => r.getAttribute('data-variant'))).toEqual([
+      'card',
+      'listed',
+    ]);
   });
 });
