@@ -57,7 +57,7 @@ export function LspInstallDialog({ server, onClose }: Props) {
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Install {server.name} language server</DialogTitle>
           <DialogDescription>
@@ -69,14 +69,15 @@ export function LspInstallDialog({ server, onClose }: Props) {
         {server.install ? (
           <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 font-mono text-[11px]">
             <span className="min-w-0 flex-1 select-text break-all">{server.install.command}</span>
-            <button
-              type="button"
-              className="shrink-0 cursor-pointer rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+            <Button
+              variant="ghost"
+              size="icon-sm"
               onClick={() => void copyInstallCommand()}
+              aria-label="Copy install command"
               title="Copy install command"
             >
-              <HugeiconsIcon icon={copied ? Tick02Icon : Copy01Icon} size={13} strokeWidth={2} />
-            </button>
+              <HugeiconsIcon icon={copied ? Tick02Icon : Copy01Icon} strokeWidth={2} />
+            </Button>
           </div>
         ) : (
           <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
@@ -104,12 +105,7 @@ export function LspInstallDialog({ server, onClose }: Props) {
             <span />
           )}
           <Button size="lg" disabled={checking} onClick={() => void checkAgain()}>
-            <HugeiconsIcon
-              icon={Refresh01Icon}
-              size={12}
-              strokeWidth={1.9}
-              className={checking ? 'animate-spin' : undefined}
-            />
+            <HugeiconsIcon icon={Refresh01Icon} strokeWidth={1.75} className={checking ? 'animate-spin' : undefined} />
             {checking ? 'Checking...' : 'Check again'}
           </Button>
         </DialogFooter>
