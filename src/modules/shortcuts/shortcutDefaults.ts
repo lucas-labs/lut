@@ -22,6 +22,11 @@ import type { KeyBinding, ShortcutId } from './shortcuts';
  * and Ctrl+Shift+U/E belong to the GTK and IBus input methods. Editor
  * shortcuts keep their plain Ctrl chords: the host only runs them in editor
  * tabs, which never hold a terminal.
+ *
+ * Zoom is the one exception to the control-byte rule: Ctrl+- and Ctrl++ zoom
+ * out and in as in Windows Terminal, from the main row of any layout and from
+ * the numpad (`+` is its own key on Spanish or German layouts, so Ctrl+= alone
+ * misses it).
  */
 
 export const MAC_DEFAULTS: Readonly<Record<ShortcutId, readonly KeyBinding[]>> = {
@@ -67,6 +72,7 @@ export const MAC_DEFAULTS: Readonly<Record<ShortcutId, readonly KeyBinding[]>> =
   'explorer.toggleHidden': [{ shift: true, meta: true, key: '.' }],
   'view.zoomIn': [
     { meta: true, key: '=' },
+    { meta: true, key: '+' },
     { shift: true, meta: true, key: '+' },
   ],
   'view.zoomOut': [
@@ -126,9 +132,13 @@ export const WIN_LINUX_DEFAULTS: Readonly<Record<ShortcutId, readonly KeyBinding
   'explorer.toggleHidden': [{ ...CS, key: '.' }],
   'view.zoomIn': [
     { ctrl: true, key: '=' },
+    { ctrl: true, key: '+' },
     { ...CS, key: '+' },
   ],
-  'view.zoomOut': [{ ...CS, key: '-' }],
+  'view.zoomOut': [
+    { ctrl: true, key: '-' },
+    { ...CS, key: '-' },
+  ],
   'view.zoomReset': [{ ctrl: true, key: '0' }],
   'view.focusMode': [{ ...CS, key: "'" }],
   // The one function key: F11 is full screen in Windows Terminal, GNOME Terminal and Konsole alike.
