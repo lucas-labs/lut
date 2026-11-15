@@ -3894,7 +3894,9 @@ and +1.4 KB in the release binary.
 
 **Acceptance criteria:**
 
-- [ ] Settings → General → Terminal has a toggle that turns subpixel text on and off, off by default; changing it
+- [ ] Settings has a Terminal section with the terminal settings that were under General (grouped as Rendering,
+      Text, Cursor, Shell, and Scrolling & input; titles and descriptions unchanged).
+- [ ] Settings → Terminal → Rendering has a toggle that turns subpixel text on and off, off by default; changing it
       redraws open terminals without restarting the app.
 - [ ] The stripe order (RGB or BGR) follows Windows' ClearType setting, read by the backend; RGB elsewhere.
 - [ ] Where it cannot draw (WebGL renderer, no `dual-source-blending`, macOS) the toggle is disabled and its
