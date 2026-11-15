@@ -13,7 +13,12 @@ vi.mock('@/modules/theme', () => ({
   useTheme: () => ({ themeId: 'lut', setThemeId: theme.setThemeId, resolvedMode: 'dark', customThemes: custom }),
 }));
 vi.mock('@/modules/theme/themes', () => ({ listBuiltinThemes: () => builtin }));
-vi.mock('@/modules/theme/themeFiles', () => ({ deleteThemeFile: vi.fn(), handOffThemeEdit: vi.fn() }));
+const files = vi.hoisted(() => ({ readThemeFileError: vi.fn() }));
+vi.mock('@/modules/theme/themeFiles', () => ({
+  deleteThemeFile: vi.fn(),
+  handOffThemeEdit: vi.fn(),
+  readThemeFileError: files.readThemeFileError,
+}));
 vi.mock('@/modules/theme/customThemes', () => ({ deleteCustomTheme: vi.fn(), saveCustomTheme: vi.fn() }));
 vi.mock('@/modules/theme/bgImageStore', () => ({
   deleteBgImage: vi.fn(),
@@ -49,6 +54,8 @@ const card = (name: string) => {
 
 beforeEach(() => {
   theme.setThemeId.mockReset();
+  files.readThemeFileError.mockReset();
+  files.readThemeFileError.mockResolvedValue(null);
   host = document.createElement('div');
   document.body.append(host);
   root = createRoot(host);
@@ -77,5 +84,15 @@ describe('ThemesSection', () => {
     }
     expect(host.querySelector('button[aria-label="Edit lut"]')).toBeNull();
     expect(host.querySelector('[role="button"]')).toBeNull();
+  });
+
+  it('shows why an edited theme file was not applied on its card', async () => {
+    files.readThemeFileError.mockImplementation(async (id: string) =>
+      id === 'mine' ? { file: 'mine.lut-theme', error: 'name must be a non-empty string' } : null,
+    );
+    await render();
+    expect(files.readThemeFileError).toHaveBeenCalledWith('mine');
+    expect(card('Mine').textContent).toContain('mine.lut-theme: name must be a non-empty string');
+    expect(card('lut').textContent).not.toContain('lut-theme');
   });
 });

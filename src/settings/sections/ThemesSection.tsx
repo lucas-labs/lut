@@ -20,12 +20,24 @@ import {
 import { useTheme } from '@/modules/theme';
 import { deleteBgImage, getBgImage, importBgImageFromFile } from '@/modules/theme/bgImageStore';
 import { deleteCustomTheme, saveCustomTheme } from '@/modules/theme/customThemes';
-import { deleteThemeFile, handOffThemeEdit, type ThemeEditRequest } from '@/modules/theme/themeFiles';
+import {
+  deleteThemeFile,
+  handOffThemeEdit,
+  readThemeFileError,
+  type ThemeEditRequest,
+} from '@/modules/theme/themeFiles';
 import { listBuiltinThemes } from '@/modules/theme/themes';
 import { DEFAULT_THEME_ID, type Theme, type ThemeMode } from '@/modules/theme/types';
 import { validateTheme } from '@/modules/theme/validateTheme';
 import { type Backdrop, getBackdropKind } from '@/modules/theme/vibrancy';
-import { Delete02Icon, Download01Icon, Edit02Icon, Image02Icon, PlusSignIcon } from '@hugeicons/core-free-icons';
+import {
+  AlertCircleIcon,
+  Delete02Icon,
+  Download01Icon,
+  Edit02Icon,
+  Image02Icon,
+  PlusSignIcon,
+} from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { RangeControl } from '../components/RangeControl';
@@ -65,6 +77,7 @@ export function ThemesSection() {
   const builtinThemes = listBuiltinThemes();
   const themes = useMemo(() => [...builtinThemes, ...customThemes], [builtinThemes, customThemes]);
   const customIds = useMemo(() => new Set(customThemes.map((t) => t.id)), [customThemes]);
+  const fileErrors = useThemeFileErrors(customThemes);
 
   const [importError, setImportError] = useState<string | null>(null);
   const [bgError, setBgError] = useState<string | null>(null);
@@ -203,6 +216,7 @@ export function ThemesSection() {
                 onSelect={() => setThemeId(t.id)}
                 onEdit={() => onEditTheme(t.id)}
                 onRemove={() => void onRemoveCustomTheme(t.id)}
+                fileError={fileErrors.get(t.id)}
               />
             ))}
           </div>
@@ -310,10 +324,15 @@ type ThemeCardProps = {
   onSelect: () => void;
   onEdit: () => void;
   onRemove: () => void;
+  /** Why the theme's file, as last saved in the editor, is not applied. */
+  fileError?: string;
 };
 
-/** A theme to pick: its swatch, name and description. Custom themes add edit and remove, shown on hover or focus. */
-function ThemeCard({ theme, mode, selected, custom, onSelect, onEdit, onRemove }: ThemeCardProps) {
+/**
+ * A theme to pick: its swatch, name and description. Custom themes add edit and remove, shown on hover or focus, and
+ * the error of a file the editor saved that could not be applied.
+ */
+function ThemeCard({ theme, mode, selected, custom, onSelect, onEdit, onRemove, fileError }: ThemeCardProps) {
   const c = (theme.variants[mode] ?? theme.variants.dark ?? theme.variants.light)?.colors;
   return (
     <div className="group/card relative min-w-0">
@@ -323,7 +342,11 @@ function ThemeCard({ theme, mode, selected, custom, onSelect, onEdit, onRemove }
         onClick={onSelect}
         className={cn(
           'flex w-full min-w-0 items-center gap-3 rounded-lg border bg-card p-2.5 text-left text-foreground transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
-          selected ? 'border-primary ring-1 ring-primary' : 'border-border hover:border-muted-foreground/75',
+          selected
+            ? 'border-primary ring-1 ring-primary'
+            : fileError
+              ? 'border-destructive'
+              : 'border-border hover:border-muted-foreground/75',
         )}
       >
         <span
@@ -343,6 +366,12 @@ function ThemeCard({ theme, mode, selected, custom, onSelect, onEdit, onRemove }
           {theme.description ? (
             <span className="truncate text-[12px] leading-4 text-muted-foreground">{theme.description}</span>
           ) : null}
+          {fileError ? (
+            <span className="flex min-w-0 items-center gap-1 text-[12px] leading-4 text-destructive" title={fileError}>
+              <HugeiconsIcon icon={AlertCircleIcon} size={12} strokeWidth={1.75} className="shrink-0" />
+              <span className="truncate">{fileError}</span>
+            </span>
+          ) : null}
         </span>
       </button>
       {custom ? (
@@ -357,6 +386,30 @@ function ThemeCard({ theme, mode, selected, custom, onSelect, onEdit, onRemove }
       ) : null}
     </div>
   );
+}
+
+/**
+ * Why each custom theme's file is not applied, as "file: message", by theme id. Read when Settings opens: editing a
+ * theme closes Settings, so reopening it reads what the editor last saved.
+ */
+function useThemeFileErrors(customThemes: readonly Theme[]): ReadonlyMap<string, string> {
+  const ids = customThemes.map((t) => t.id).join('\n');
+  const [errors, setErrors] = useState<ReadonlyMap<string, string>>(() => new Map());
+  useEffect(() => {
+    let alive = true;
+    void Promise.all(
+      (ids ? ids.split('\n') : []).map(async (id) => [id, await readThemeFileError(id).catch(() => null)] as const),
+    ).then((found) => {
+      if (!alive) return;
+      const next = new Map<string, string>();
+      for (const [id, problem] of found) if (problem) next.set(id, `${problem.file}: ${problem.error}`);
+      setErrors(next);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [ids]);
+  return errors;
 }
 
 /** The background image, small; an image icon when none is set. */
