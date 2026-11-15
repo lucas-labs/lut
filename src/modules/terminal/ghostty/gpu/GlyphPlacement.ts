@@ -177,8 +177,6 @@ export type GlyphLayout = {
   readonly baselineY: number;
   readonly scaleX: number;
   readonly scaleY: number;
-  /** The ink fills its cell box exactly, so its coverage is final (no text contrast). */
-  readonly exact: boolean;
   /** Bitmap-space clip box; null: unclipped. */
   readonly clip: {
     readonly x: number;
@@ -218,7 +216,6 @@ export function layoutGlyph(
       baselineY: padding + placement.baselineY,
       scaleX,
       scaleY,
-      exact: true,
       clip: { x: padding, y: padding, width, height },
     };
   }
@@ -235,7 +232,6 @@ export function layoutGlyph(
     baselineY: padding + ascent,
     scaleX,
     scaleY,
-    exact: false,
     clip: placement.clip
       ? { x: padding + left, y: 0, width: placement.clip.width, height: limit }
       : null,

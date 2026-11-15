@@ -116,7 +116,6 @@ describe('GlyphRasterizer', () => {
     expect(regular.bearingX).toBe(0);
     expect(regular.bearingY).toBe(0);
     expect(regular.intrinsicColor).toBe(false);
-    expect(regular.exact).toBe(true);
     expect(regular.pixels).toHaveLength(METRICS.deviceCellWidth * METRICS.deviceCellHeight);
     // The light line weight is whole pixels: 14px * 1.5 = 21 device pixels.
     const middle = regular.pixels[Math.floor(METRICS.deviceCellHeight / 2) * regular.width];
@@ -136,10 +135,9 @@ describe('GlyphRasterizer', () => {
   it('leaves text and sequences that merely start with a box character to the font', () => {
     const s = stub();
     const rasterizer = new GlyphRasterizer(METRICS);
-    const sequence = rasterizer.rasterize('┼\u0301', 0);
-    expect(sequence.exact).toBe(false);
-    expect(rasterizer.rasterize('a', 0).exact).toBe(false);
-    expect(rasterizer.rasterize('■', 0).exact).toBe(false);
+    rasterizer.rasterize('┼\u0301', 0);
+    rasterizer.rasterize('a', 0);
+    rasterizer.rasterize('■', 0);
     expect(s.texts).toEqual(['┼\u0301', 'a', '■']);
   });
 

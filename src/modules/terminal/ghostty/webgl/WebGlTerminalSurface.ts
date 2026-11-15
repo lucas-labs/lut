@@ -29,7 +29,6 @@ import { fitTerminalViewport, TERMINAL_RIGHT_GUTTER_CSS_PX } from '../gpu/Termin
 import { TerminalFitQueue, type TerminalFitQueueDiagnostics } from '../gpu/TerminalFitQueue';
 import type { TerminalFontMetrics, TerminalGpuTheme } from '../gpu/terminalVisuals';
 import { devicePixelScale, metricsEqual, metricsForScale, rgbToCss } from '../gpu/terminalVisuals';
-import { currentTextContrast } from '../gpu/textContrast';
 import { GhosttySearchController } from '../search/GhosttySearchController';
 import { TerminalSelectionController } from '../selection/TerminalSelectionController';
 import type { WebGlCellRenderer, WebGlCellRendererStats } from './WebGlCellRenderer';
@@ -595,7 +594,6 @@ export class WebGlTerminalSurface implements TerminalSurface, WebGlRuntimeSurfac
       metrics: this.metrics,
       theme: this.theme,
       scale: this.scale,
-      contrast: currentTextContrast(),
     } as const;
   }
 

@@ -14,7 +14,9 @@ import {
 import { GcPressureMirror, gcPressureOptionsFromStorage, type GcPressureStats } from './GcPressure';
 import { GlyphAtlas } from './GlyphAtlas';
 import type { RasterBudget } from './GlyphMap';
-import { BACKGROUND_SHADER, GLYPH_SHADER } from './shaders';
+import { hintingEnabled } from './hintedGlyphs';
+import { BACKGROUND_SHADER, GLYPH_SHADER, GLYPH_SUBPIXEL_SHADER } from './shaders';
+import { currentSubpixelOrder, resolveSubpixelOrder, type SubpixelOrder } from './subpixelText';
 import type { TerminalFontMetrics } from './terminalVisuals';
 import {
   findTerminalArea,
@@ -36,6 +38,14 @@ export const RASTER_BUDGET_MS = 2;
 /** Larger allowance for a surface's first frame, so text appears whole. */
 export const FIRST_FRAME_RASTER_BUDGET_MS = 8;
 const ATLAS_FLUSH_COOLDOWN_MS = 250;
+/**
+ * Subpixel text blends each colour channel by its own coverage, the glyph shader's second source.
+ * TypeScript's DOM `GPUBlendFactor` predates dual-source blending, hence the cast.
+ */
+const SUBPIXEL_COLOR_BLEND = {
+  srcFactor: 'src1',
+  dstFactor: 'one-minus-src1',
+} as unknown as GPUBlendComponent;
 
 export type WebGpuSharedResources = {
   readonly device: GPUDevice;
@@ -195,6 +205,8 @@ export class WebGpuTerminalRuntime {
   private readonly atlases = new Map<string, AtlasEntry>();
   private device: GPUDevice | null = null;
   private format: GPUTextureFormat = 'bgra8unorm';
+  /** The stripe order glyph atlases draw subpixel text with, or null for grayscale. */
+  private subpixel: SubpixelOrder | null = null;
   private backgroundPipeline: GPURenderPipeline | null = null;
   private glyphPipeline: GPURenderPipeline | null = null;
   private bindGroupLayout: GPUBindGroupLayout | null = null;
@@ -361,7 +373,7 @@ export class WebGpuTerminalRuntime {
       entry = {
         key,
         users: new Set<WebGpuRuntimeSurface>(),
-        atlas: new GlyphAtlas(this.resources().device, metrics),
+        atlas: new GlyphAtlas(this.resources().device, metrics, this.subpixel),
         references: 0,
         lastUsed: performance.now(),
         flushRequested: false,
@@ -855,8 +867,10 @@ export class WebGpuTerminalRuntime {
     });
     this.assertLive();
     if (!adapter) throw new Error('No compatible WebGPU adapter was found');
+    const dualSource = adapter.features.has('dual-source-blending');
     const device = await adapter.requestDevice({
       label: 'lut shared terminal renderer',
+      requiredFeatures: dualSource ? ['dual-source-blending'] : [],
     });
     if (this.disposed || this.fatalError) {
       device.destroy();
@@ -874,6 +888,12 @@ export class WebGpuTerminalRuntime {
     this.confirmedFrames = this.submittedFrames;
     this.generation += 1;
     this.format = navigator.gpu.getPreferredCanvasFormat();
+    const subpixel = this.subpixelOrderFor(device);
+    if (subpixel !== this.subpixel) {
+      // Atlases kept across a recovery are suspended here; they resume in the new format.
+      for (const entry of this.atlases.values()) entry.atlas.setSubpixel(subpixel);
+      this.subpixel = subpixel;
+    }
     let initialized = false;
     const generation = this.generation;
     void device.lost.then((info) => {
@@ -890,6 +910,23 @@ export class WebGpuTerminalRuntime {
     initialized = true;
     const configuration = this.canvasConfiguration();
     for (const target of this.windows.values()) target.reconfigure(configuration);
+  }
+
+  /** The subpixel order `localStorage` asks for, when `device` can blend it (E13-13 prototype). */
+  private subpixelOrderFor(device: GPUDevice): SubpixelOrder | null {
+    const requested = currentSubpixelOrder();
+    const { order, unavailable } = resolveSubpixelOrder(requested, {
+      dualSourceBlending: device.features.has('dual-source-blending'),
+      hinting: hintingEnabled(),
+    });
+    if (requested) {
+      console.info(
+        order
+          ? `[lut] subpixel terminal text: ${order}`
+          : `[lut] subpixel terminal text is unavailable: ${unavailable}`,
+      );
+    }
+    return order;
   }
 
   private async createSharedResources(device: GPUDevice, format: GPUTextureFormat): Promise<void> {
@@ -926,8 +963,11 @@ export class WebGpuTerminalRuntime {
     });
     const glyphModule = device.createShaderModule({
       label: 'lut terminal glyph shader',
-      code: GLYPH_SHADER,
+      code: this.subpixel ? GLYPH_SUBPIXEL_SHADER : GLYPH_SHADER,
     });
+    const glyphColorBlend: GPUBlendComponent = this.subpixel
+      ? SUBPIXEL_COLOR_BLEND
+      : { srcFactor: 'src-alpha', dstFactor: 'one-minus-src-alpha' };
     const [backgroundPipeline, glyphPipeline] = await Promise.all([
       device.createRenderPipelineAsync({
         label: 'lut terminal background pipeline',
@@ -951,10 +991,7 @@ export class WebGpuTerminalRuntime {
             {
               format,
               blend: {
-                color: {
-                  srcFactor: 'src-alpha',
-                  dstFactor: 'one-minus-src-alpha',
-                },
+                color: glyphColorBlend,
                 alpha: {
                   srcFactor: 'one',
                   dstFactor: 'one-minus-src-alpha',

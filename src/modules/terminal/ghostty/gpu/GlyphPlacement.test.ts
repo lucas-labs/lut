@@ -314,7 +314,6 @@ describe('layoutGlyph', () => {
     const ink = measure({ left: 0.4, right: 14.6 });
     const placement = placeGlyph('\ue718', ink, CELL.width, CELL.height, false);
     const layout = layoutGlyph(ink, placement, CELL, PADDING, LIMIT);
-    expect(layout.exact).toBe(false);
     expect(layout.clip).toEqual({
       x: layout.penX - placement.shiftX,
       y: 0,

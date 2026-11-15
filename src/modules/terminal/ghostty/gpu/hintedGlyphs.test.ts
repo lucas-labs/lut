@@ -1,7 +1,13 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { FLAG_HINT, GLYPH_RASTER_WASM_SHA256, GlyphRaster } from '@lut/glyph-raster';
+import {
+  FLAG_BGR,
+  FLAG_HINT,
+  FLAG_SUBPIXEL,
+  GLYPH_RASTER_WASM_SHA256,
+  GlyphRaster,
+} from '@lut/glyph-raster';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const harness = vi.hoisted(() => ({
@@ -69,6 +75,25 @@ describe('glyph-raster.wasm', () => {
     expect(row.filter((value) => value > 25 && value < 230).length).toBeLessThanOrEqual(1);
   });
 
+  it('fills an RGBA mask, one coverage per channel, with the subpixel flag', async () => {
+    const raster = await GlyphRaster.fromBytes(await readFile(WASM));
+    const font = raster.loadFont(new Uint8Array(await readFile(LATIN)));
+    const glyph = raster.glyph(font, 0x4d);
+    const rgb = raster.rasterize(font, glyph, 14, 400, FLAG_HINT | FLAG_SUBPIXEL);
+    if (!rgb) throw new Error('no mask');
+    expect(rgb.pixels).toHaveLength(rgb.width * rgb.height * 4);
+    const rgbPixels = rgb.pixels.slice();
+    const bgr = raster.rasterize(font, glyph, 14, 400, FLAG_HINT | FLAG_SUBPIXEL | FLAG_BGR);
+    if (!bgr) throw new Error('no mask');
+    expect(bgr.width).toBe(rgb.width);
+    for (let index = 0; index < rgbPixels.length; index += 4) {
+      expect([bgr.pixels[index], bgr.pixels[index + 2]]).toEqual([
+        rgbPixels[index + 2],
+        rgbPixels[index],
+      ]);
+    }
+  });
+
   it('refuses bytes that are not a font', async () => {
     const raster = await GlyphRaster.fromBytes(await readFile(WASM));
     expect(raster.loadFont(new Uint8Array([1, 2, 3, 4]))).toBe(0);
@@ -132,6 +157,8 @@ describe('rasterizeHinted', () => {
       rasterizeHinted(CHAIN, 'normal', '\u0436', 3, 14),
       'cyrillic, bold italic',
     ).not.toBeNull();
+    const subpixel = rasterizeHinted(CHAIN, 'normal', 'l', 0, 14, 'bgr');
+    expect(subpixel?.pixels).toHaveLength((subpixel?.width ?? 0) * (subpixel?.height ?? 0) * 4);
   });
 
   it('hands the whole chain to the canvas when a drawable family cannot be read', async () => {

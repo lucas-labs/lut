@@ -11,7 +11,6 @@ import { CanvasBackingStore, type GestureGrowth } from '../gpu/CanvasBackingStor
 import { blockCursorSpan } from '../gpu/cursorText';
 import { isNeighbourAware, isNonGraphicsSymbol, roomyAt } from '../gpu/GlyphPlacement';
 import type { TerminalFontMetrics, TerminalGpuTheme } from '../gpu/terminalVisuals';
-import { DWRITE_GAMMA_RATIOS, type TextContrast } from '../gpu/textContrast';
 import {
   selectionBoundsContain,
   type TerminalSelectionBounds,
@@ -35,7 +34,6 @@ export type WebGlRendererProfile = {
   readonly metrics: TerminalFontMetrics;
   readonly theme: TerminalGpuTheme;
   readonly scale: number;
-  readonly contrast: TextContrast;
 };
 
 export type WebGlRendererFrame = {
@@ -79,8 +77,6 @@ type GlyphProgram = Program & {
   readonly cursorText: WebGLUniformLocation;
   readonly cursorBox: WebGLUniformLocation;
   readonly cells: WebGLUniformLocation;
-  readonly contrast: WebGLUniformLocation;
-  readonly gamma: WebGLUniformLocation;
 };
 
 type RectangleVertices = {
@@ -571,7 +567,7 @@ export class WebGlCellRenderer {
     this.glyphAttributes[index + 6] = uvMaxX - uvMinX;
     this.glyphAttributes[index + 7] = glyph.uvMaxY - glyph.uvMinY;
     writeNormalizedPackedColor(this.glyphAttributes, index + 8, foreground, alpha);
-    this.glyphAttributes[index + 12] = glyph.intrinsicColor ? 1 : glyph.exact ? 2 : 0;
+    this.glyphAttributes[index + 12] = glyph.intrinsicColor ? 1 : 0;
   }
 
   private clearGlyph(index: number): void {
@@ -838,12 +834,6 @@ export class WebGlCellRenderer {
       (this.blockRow + 1) * cellHeight,
     );
     gl.uniform2f(resources.glyphProgram.cells, this.cols, this.rows);
-    gl.uniform2f(
-      resources.glyphProgram.contrast,
-      profile.contrast.enhancedContrast,
-      profile.contrast.alphaCorrection,
-    );
-    gl.uniform4fv(resources.glyphProgram.gamma, DWRITE_GAMMA_RATIOS);
     gl.drawElementsInstanced(gl.TRIANGLE_STRIP, 4, gl.UNSIGNED_BYTE, 0, this.glyphInstanceCount);
   }
 
@@ -963,8 +953,6 @@ export class WebGlCellRenderer {
     const glyphCursorText = requiredUniform(gl, glyphProgramValue, 'u_cursor_text');
     const glyphCursorBox = requiredUniform(gl, glyphProgramValue, 'u_cursor_box');
     const glyphCells = requiredUniform(gl, glyphProgramValue, 'u_cells');
-    const glyphContrast = requiredUniform(gl, glyphProgramValue, 'u_contrast');
-    const glyphGamma = requiredUniform(gl, glyphProgramValue, 'u_gamma');
 
     const backgroundBuffer = requiredBuffer(gl);
     const cursorBuffer = requiredBuffer(gl);
@@ -995,8 +983,6 @@ export class WebGlCellRenderer {
         cursorText: glyphCursorText,
         cursorBox: glyphCursorBox,
         cells: glyphCells,
-        contrast: glyphContrast,
-        gamma: glyphGamma,
       },
       backgroundVao,
       cursorVao,
@@ -1331,8 +1317,6 @@ precision highp sampler2D;
 uniform sampler2D u_atlas;
 uniform sampler2D u_color_atlas;
 uniform bool u_text_blink_visible;
-uniform vec2 u_contrast;
-uniform vec4 u_gamma;
 uniform vec2 u_resolution;
 uniform vec4 u_cursor_box;
 uniform vec3 u_cursor_text;
@@ -1341,15 +1325,6 @@ in vec4 v_color;
 flat in float v_intrinsic_color;
 flat in float v_cursor_on;
 out vec4 outColor;
-float applyContrast(float coverage, vec3 foreground) {
-  float lightness = dot(foreground, vec3(0.30, 0.59, 0.11));
-  float k = u_contrast.x * clamp(4.0 * (0.75 - lightness), 0.0, 1.0);
-  float enhanced = coverage * (k + 1.0) / (coverage * k + 1.0);
-  float intensity = dot(foreground, vec3(0.25, 0.5, 0.25));
-  float corrected = enhanced + enhanced * (1.0 - enhanced) *
-    ((u_gamma.x * intensity + u_gamma.y) * enhanced + (u_gamma.z * intensity + u_gamma.w));
-  return clamp(mix(enhanced, corrected, u_contrast.y), 0.0, 1.0);
-}
 void main() {
   vec3 rgb = v_color.rgb;
   float alpha = abs(v_color.a);
@@ -1361,14 +1336,11 @@ void main() {
     }
   }
   if (v_color.a < 0.0 && !u_text_blink_visible) alpha = 0.0;
-  if (v_intrinsic_color > 0.5 && v_intrinsic_color < 1.5) {
+  if (v_intrinsic_color > 0.5) {
     vec4 color = texture(u_color_atlas, v_texcoord);
     outColor = vec4(color.rgb, alpha * color.a);
   } else {
     float coverage = texture(u_atlas, v_texcoord).r;
-    if (v_intrinsic_color < 1.5 && (u_contrast.x > 0.0 || u_contrast.y > 0.0)) {
-      coverage = applyContrast(coverage, rgb);
-    }
     outColor = vec4(rgb, alpha * coverage);
   }
 }`;

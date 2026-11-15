@@ -8,7 +8,6 @@ import {
   SCREEN_UNIFORM_BYTES,
 } from './shaders';
 import type { CursorRect, DecorationMetrics, SelectionUniform } from './terminalGeometry';
-import { DWRITE_GAMMA_RATIOS, type TextContrast } from './textContrast';
 
 export type ScreenUniformState = {
   readonly cols: number;
@@ -43,7 +42,6 @@ export type ScreenUniformState = {
   readonly selectionAlpha: number;
   readonly decoration: DecorationMetrics;
   readonly leftOverhangPadding: number;
-  readonly contrast: TextContrast;
 };
 
 /** Packs the shader's `Screen` uniform and detects changes without allocating. */
@@ -110,11 +108,6 @@ export class ScreenUniform {
     uints[SCREEN_OFFSET.decoration / 4 + 1] = state.decoration.thickness;
     uints[SCREEN_OFFSET.decoration / 4 + 2] = state.decoration.strikeY;
     uints[SCREEN_OFFSET.decoration / 4 + 3] = state.leftOverhangPadding;
-    floats[SCREEN_OFFSET.contrast / 4] = state.contrast.enhancedContrast;
-    floats[SCREEN_OFFSET.contrast / 4 + 1] = state.contrast.alphaCorrection;
-    for (let index = 0; index < DWRITE_GAMMA_RATIOS.length; index += 1) {
-      floats[SCREEN_OFFSET.gamma / 4 + index] = DWRITE_GAMMA_RATIOS[index];
-    }
   }
 
   /** True if the packed state differs from what `markUploaded` last recorded. */

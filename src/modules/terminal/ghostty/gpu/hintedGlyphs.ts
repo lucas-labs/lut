@@ -3,14 +3,17 @@ import latinUrl from '@/assets/fonts/source-code-pro-latin.ttf?url';
 import { BUNDLED_MONO_FAMILY, isFontAvailable } from '@/lib/fonts';
 import { IS_MAC } from '@/modules/platform';
 import {
+  FLAG_BGR,
   FLAG_EMBOLDEN,
   FLAG_HINT,
   FLAG_OBLIQUE,
+  FLAG_SUBPIXEL,
   type GlyphMask,
   GlyphRaster,
 } from '@lut/glyph-raster';
 import { invoke } from '@tauri-apps/api/core';
 import { isPrivateUse } from './GlyphPlacement';
+import type { SubpixelOrder } from './subpixelText';
 
 /**
  * Hinted terminal text (Windows and Linux). The canvas draws glyphs without grid fitting, so a
@@ -212,7 +215,8 @@ function loadHandle(
 /**
  * `text` hinted at `size` device pixels per em, or null when the canvas should draw it: hinting
  * is off or not ready, `text` is not one non-icon code point, or no prepared family has it.
- * The mask is borrowed until the next call.
+ * With a `subpixel` order the mask is RGBA, one coverage per colour channel. The mask is borrowed
+ * until the next call.
  */
 export function rasterizeHinted(
   family: string,
@@ -220,16 +224,20 @@ export function rasterizeHinted(
   text: string,
   style: number,
   size: number,
+  subpixel: SubpixelOrder | null = null,
 ): GlyphMask | null {
   if (!raster) return null;
   const faces = ready.get(chainKey(family, weight));
   if (!faces || faces.length === 0) return null;
   const codepoint = text.codePointAt(0) ?? 0;
   if (text.length !== (codepoint > 0xffff ? 2 : 1) || isPrivateUse(codepoint)) return null;
+  const subpixelFlags = subpixel ? FLAG_SUBPIXEL | (subpixel === 'bgr' ? FLAG_BGR : 0) : 0;
   for (const family of faces) {
     for (const face of family[(style & 3) as Style]) {
       const glyph = raster.glyph(face.handle, codepoint);
-      if (glyph !== 0) return raster.rasterize(face.handle, glyph, size, face.weight, face.flags);
+      if (glyph !== 0) {
+        return raster.rasterize(face.handle, glyph, size, face.weight, face.flags | subpixelFlags);
+      }
     }
   }
   return null;

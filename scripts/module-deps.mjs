@@ -145,7 +145,7 @@ export function analyse() {
   const events = new Map(modules.map((m) => [m, new Set()]));
   for (const f of files)
     for (const m of code.get(f).matchAll(/['"]((?:lut:|lut:\/\/|fs:)[\w-]+)['"]/g))
-      if (!/^lut:terminal-(diagnostics|gc-mirror|text-contrast)$/.test(m[1]))
+      if (!/^lut:terminal-(diagnostics|gc-mirror|subpixel)$/.test(m[1]))
         events.get(moduleOf(f)).add(m[1]);
 
   // Owned state: zustand stores, plugin-store files and localStorage keys.

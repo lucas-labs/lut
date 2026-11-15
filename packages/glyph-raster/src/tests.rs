@@ -154,3 +154,95 @@ fn refuses_sizes_outside_the_atlas() {
     assert_eq!(lut_rasterize(font, glyph, f32::NAN, 400.0, FLAG_HINT), 0);
     assert_eq!(lut_rasterize(font, glyph, 4096.0, 400.0, FLAG_HINT), 0);
 }
+
+/// Sum of one channel (0 red, 1 green, 2 blue) of an RGBA mask.
+fn channel_ink(pixels: &[u8], channel: usize) -> u32 {
+    pixels
+        .iter()
+        .skip(channel)
+        .step_by(4)
+        .map(|&v| u32::from(v))
+        .sum()
+}
+
+#[test]
+fn subpixel_masks_hold_one_coverage_per_channel() {
+    let font = load();
+    let (width, height, left, top, pixels) =
+        raster(font, 'L', 14.0, 400.0, FLAG_HINT | FLAG_SUBPIXEL);
+    assert_eq!(pixels.len(), width * height * 4);
+    let gray = raster(font, 'L', 14.0, 400.0, FLAG_HINT);
+    assert_eq!(top, gray.3, "the same rows");
+    assert!(
+        left <= gray.2,
+        "the filter reaches left of the ink: {left} vs {}",
+        gray.2
+    );
+    for pixel in pixels.as_chunks::<4>().0 {
+        assert_eq!(pixel[3], pixel[0].max(pixel[1]).max(pixel[2]));
+    }
+    let row = height / 2;
+    let fringed = (0..width).any(|column| {
+        let at = (row * width + column) * 4;
+        pixels[at] != pixels[at + 2]
+    });
+    assert!(fringed, "a stem's edges differ between red and blue");
+}
+
+#[test]
+fn every_channel_carries_the_ink_of_the_grayscale_mask() {
+    let font = load();
+    for codepoint in ['l', 'M', 'o'] {
+        let gray = raster(font, codepoint, 20.0, 400.0, 0).4;
+        let gray: u32 = gray.iter().map(|&v| u32::from(v)).sum();
+        let lcd = raster(font, codepoint, 20.0, 400.0, FLAG_SUBPIXEL).4;
+        for channel in 0..3 {
+            let ink = channel_ink(&lcd, channel);
+            let ratio = ink as f64 / gray as f64;
+            assert!(
+                (0.95..1.05).contains(&ratio),
+                "{codepoint:?} channel {channel}: {ink} vs {gray}"
+            );
+        }
+    }
+}
+
+#[test]
+fn bgr_swaps_red_and_blue() {
+    let font = load();
+    let rgb = raster(font, 'M', 14.0, 400.0, FLAG_HINT | FLAG_SUBPIXEL);
+    let bgr = raster(font, 'M', 14.0, 400.0, FLAG_HINT | FLAG_SUBPIXEL | FLAG_BGR);
+    assert_eq!((rgb.0, rgb.1, rgb.2, rgb.3), (bgr.0, bgr.1, bgr.2, bgr.3));
+    for (a, b) in rgb
+        .4
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .zip(bgr.4.as_chunks::<4>().0)
+    {
+        assert_eq!(*a, [b[2], b[1], b[0], b[3]]);
+    }
+}
+
+#[test]
+fn subpixel_masks_synthesize_bold_too() {
+    let font = load();
+    let regular = raster(font, 'l', 28.0, 400.0, FLAG_HINT | FLAG_SUBPIXEL);
+    let bold = raster(
+        font,
+        'l',
+        28.0,
+        400.0,
+        FLAG_HINT | FLAG_SUBPIXEL | FLAG_EMBOLDEN,
+    );
+    assert!(channel_ink(&bold.4, 1) > channel_ink(&regular.4, 1));
+    assert_eq!(bold.4.len(), bold.0 * bold.1 * 4);
+}
+
+#[test]
+fn a_blank_glyph_gives_an_empty_subpixel_mask() {
+    let font = load();
+    let (width, height, _, _, pixels) = raster(font, ' ', 14.0, 400.0, FLAG_HINT | FLAG_SUBPIXEL);
+    assert_eq!(width * height, 0);
+    assert!(pixels.is_empty());
+}

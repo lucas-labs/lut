@@ -7,7 +7,7 @@
  * All coordinates are integer device pixels; nothing is filtered.
  */
 
-export const SCREEN_UNIFORM_BYTES = 208;
+export const SCREEN_UNIFORM_BYTES = 176;
 
 /** Byte offsets of `Screen` fields; the TypeScript packer mirrors this layout. */
 export const SCREEN_OFFSET = {
@@ -33,9 +33,7 @@ export const SCREEN_OFFSET = {
   /** Device pixels of the pane cut off at the canvas's left and top edge (viewport starts there). */
   clip: 128,
   decoration: 144,
-  contrast: 160,
-  gamma: 176,
-  cursorText: 192,
+  cursorText: 160,
 } as const;
 
 export const SCREEN_FLAG_TEXT_BLINK_VISIBLE = 1;
@@ -51,9 +49,12 @@ export const SCREEN_FLAG_CURSOR_BLOCK = 16;
  *   trailing half of a wide character takes both from its lead, as the previous renderer
  *   treated the pair as one span.
  * - Fragment coordinates are relative to the window canvas, not to the pane's viewport.
+ * - Subpixel text (`GLYPH_SUBPIXEL_SHADER`) gives the blender a second source holding one
+ *   coverage per colour channel, so each channel mixes the text colour over the background on
+ *   its own; grayscale and colour glyphs give the same value in every channel, which blends
+ *   exactly as `GLYPH_SHADER` does.
  * - A glyph that overhangs to the left is clipped where the neighbour's background differs,
  *   so it cannot paint over a selection or a coloured cell.
- * - Cell-exact shapes (box drawing, shades) keep their coverage as drawn, without contrast.
  */
 const COMMON = /* wgsl */ `
 struct Screen {
@@ -72,8 +73,6 @@ struct Screen {
   origin: vec2i,
   clip: vec2u,
   decoration: vec4u,
-  contrast: vec4f,
-  gamma: vec4f,
   cursor_text: vec4f,
 }
 
@@ -251,7 +250,7 @@ fn fragment_main(@builtin(position) position: vec4f) -> @location(0) vec4f {
 }
 `;
 
-export const GLYPH_SHADER = /* wgsl */ `
+const GLYPH_STAGES = /* wgsl */ `
 ${COMMON}
 
 struct VertexOutput {
@@ -377,29 +376,19 @@ fn vertex_main(
   return output;
 }
 
-fn apply_contrast(coverage: f32, foreground: vec3f) -> f32 {
-  let enhanced_contrast = screen.contrast.x;
-  let correction = screen.contrast.y;
-  if (enhanced_contrast <= 0.0 && correction <= 0.0) { return coverage; }
-  let lightness = dot(foreground, vec3f(0.30, 0.59, 0.11));
-  let k = enhanced_contrast * saturate(4.0 * (0.75 - lightness));
-  let enhanced = coverage * (k + 1.0) / (coverage * k + 1.0);
-  let intensity = dot(foreground, vec3f(0.25, 0.5, 0.25));
-  let g = screen.gamma;
-  let corrected = enhanced + enhanced * (1.0 - enhanced) *
-    ((g.x * intensity + g.y) * enhanced + (g.z * intensity + g.w));
-  return saturate(mix(enhanced, corrected, correction));
+struct GlyphSample {
+  color: vec3f,
+  coverage: vec3f,
 }
 
-@fragment
-fn fragment_main(
-  @builtin(position) position: vec4f,
-  @interpolate(flat) @location(0) texel_origin: vec2i,
-  @interpolate(flat) @location(1) quad_origin: vec2i,
-  @interpolate(flat) @location(2) base_color: vec4f,
-  @interpolate(flat) @location(3) glyph_flags: u32,
-  @interpolate(flat) @location(4) cursor_box: vec4f,
-) -> @location(0) vec4f {
+fn glyph_sample(
+  position: vec4f,
+  texel_origin: vec2i,
+  quad_origin: vec2i,
+  base_color: vec4f,
+  glyph_flags: u32,
+  cursor_box: vec4f,
+) -> GlyphSample {
   var color = base_color;
   let local_position = position.xy - vec2f(screen.origin) + vec2f(0.0, f32(screen.shift_y));
   if (local_position.x >= cursor_box.x && local_position.y >= cursor_box.y &&
@@ -410,10 +399,49 @@ fn fragment_main(
     vec2i(0, i32(screen.shift_y)) - quad_origin;
   if ((glyph_flags & 1u) != 0u) {
     let sample = textureLoad(color_texture, texel, 0);
-    return vec4f(sample.rgb, sample.a * color.a);
+    return GlyphSample(sample.rgb, vec3f(sample.a * color.a));
   }
-  let coverage = textureLoad(coverage_texture, texel, 0).r;
-  if ((glyph_flags & 2u) != 0u) { return vec4f(color.rgb, color.a * coverage); }
-  return vec4f(color.rgb, color.a * apply_contrast(coverage, color.rgb));
+  let sample = textureLoad(coverage_texture, texel, 0);
+  var coverage = vec3f(sample.r);
+  if ((glyph_flags & 16u) != 0u) { coverage = sample.rgb; }
+  return GlyphSample(color.rgb, coverage * color.a);
+}
+`;
+
+export const GLYPH_SHADER = /* wgsl */ `${GLYPH_STAGES}
+@fragment
+fn fragment_main(
+  @builtin(position) position: vec4f,
+  @interpolate(flat) @location(0) texel_origin: vec2i,
+  @interpolate(flat) @location(1) quad_origin: vec2i,
+  @interpolate(flat) @location(2) base_color: vec4f,
+  @interpolate(flat) @location(3) glyph_flags: u32,
+  @interpolate(flat) @location(4) cursor_box: vec4f,
+) -> @location(0) vec4f {
+  let glyph = glyph_sample(position, texel_origin, quad_origin, base_color, glyph_flags, cursor_box);
+  return vec4f(glyph.color, glyph.coverage.r);
+}
+`;
+
+/** The glyph shader for subpixel text; the pipeline blends with `src1` / `one-minus-src1`. */
+export const GLYPH_SUBPIXEL_SHADER = /* wgsl */ `enable dual_source_blending;
+${GLYPH_STAGES}
+struct GlyphOutput {
+  @location(0) @blend_src(0) color: vec4f,
+  @location(0) @blend_src(1) blend: vec4f,
+}
+
+@fragment
+fn fragment_main(
+  @builtin(position) position: vec4f,
+  @interpolate(flat) @location(0) texel_origin: vec2i,
+  @interpolate(flat) @location(1) quad_origin: vec2i,
+  @interpolate(flat) @location(2) base_color: vec4f,
+  @interpolate(flat) @location(3) glyph_flags: u32,
+  @interpolate(flat) @location(4) cursor_box: vec4f,
+) -> GlyphOutput {
+  let glyph = glyph_sample(position, texel_origin, quad_origin, base_color, glyph_flags, cursor_box);
+  let alpha = max(glyph.coverage.r, max(glyph.coverage.g, glyph.coverage.b));
+  return GlyphOutput(vec4f(glyph.color, alpha), vec4f(glyph.coverage, alpha));
 }
 `;

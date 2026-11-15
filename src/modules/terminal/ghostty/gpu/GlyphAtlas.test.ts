@@ -2,12 +2,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   ATLAS_FULL,
   GLYPH_ENTRY_FLAG_COLOR,
-  GLYPH_ENTRY_FLAG_EXACT,
   GLYPH_ENTRY_FLAG_NEIGHBOUR,
+  GLYPH_ENTRY_FLAG_SUBPIXEL,
   GLYPH_ENTRY_FLAG_SYMBOL,
   GLYPH_ENTRY_WORDS,
   GlyphAtlas,
 } from './GlyphAtlas';
+import { GlyphRasterizer } from './GlyphRasterizer';
 import { deriveFontMetrics } from './terminalVisuals';
 
 const METRICS = deriveFontMetrics(
@@ -275,7 +276,7 @@ describe('GlyphAtlas', () => {
     atlas.dispose();
   });
 
-  it('shares one cell-sized exact entry between styles for procedural glyphs', () => {
+  it('shares one cell-sized entry between styles for procedural glyphs', () => {
     const h = createHarness();
     const atlas = new GlyphAtlas(h.device, METRICS);
     const regular = atlas.resolve('┼', 0);
@@ -292,7 +293,7 @@ describe('GlyphAtlas', () => {
     expect(entry[1]).toBe(METRICS.deviceCellWidth | (METRICS.deviceCellHeight << 16));
     // Zero bearing: the quad covers the whole cell.
     expect(entry[2]).toBe(0);
-    expect(entry[3]).toBe(GLYPH_ENTRY_FLAG_EXACT);
+    expect(entry[3]).toBe(0);
     const [, pixels, layout, size] = h.writeTexture.mock.calls[0];
     expect(size).toEqual([METRICS.deviceCellWidth, METRICS.deviceCellHeight, 1]);
     expect(layout.bytesPerRow).toBe(METRICS.deviceCellWidth);
@@ -303,6 +304,43 @@ describe('GlyphAtlas', () => {
     atlas.commit();
     const words = h.writeBuffer.mock.calls[1][2] as Uint32Array;
     expect(words[bold * GLYPH_ENTRY_WORDS + 3]).toBe(0);
+    atlas.dispose();
+  });
+
+  it('keeps subpixel coverage in an RGBA plane and repeats grayscale coverage in each channel', () => {
+    const h = createHarness();
+    const atlas = new GlyphAtlas(h.device, METRICS, 'rgb');
+    expect(liveTextures(h.textures).map((t) => t.format)).toEqual(['rgba8unorm', 'rgba8unorm']);
+    expect(atlas.byteSize).toBeGreaterThanOrEqual(1_024 * 1_024 * 4);
+    const box = atlas.resolve('┼', 0);
+    const [, boxPixels, boxLayout] = h.writeTexture.mock.calls[0];
+    expect(boxLayout.bytesPerRow).toBe(METRICS.deviceCellWidth * 4);
+    const rgba = boxPixels as Uint8Array;
+    expect(rgba).toHaveLength(METRICS.deviceCellWidth * METRICS.deviceCellHeight * 4);
+    for (let index = 0; index < rgba.length; index += 4) {
+      expect([rgba[index + 1], rgba[index + 2], rgba[index + 3]]).toEqual([
+        rgba[index],
+        rgba[index],
+        rgba[index],
+      ]);
+    }
+    const lcd = new Uint8Array([10, 20, 30, 30, 40, 50, 60, 60]);
+    vi.spyOn(GlyphRasterizer.prototype, 'rasterize').mockReturnValueOnce({
+      width: 2,
+      height: 1,
+      bearingX: 0,
+      bearingY: 0,
+      intrinsicColor: false,
+      subpixel: true,
+      pixels: lcd,
+    });
+    const text = atlas.resolve('l', 0);
+    expect(h.writeTexture.mock.calls[1][1]).toBe(lcd);
+    expect(h.writeTexture.mock.calls[1][2].bytesPerRow).toBe(8);
+    atlas.commit();
+    const words = h.writeBuffer.mock.calls[0][2] as Uint32Array;
+    expect(words[text * GLYPH_ENTRY_WORDS + 3]).toBe(GLYPH_ENTRY_FLAG_SUBPIXEL);
+    expect(words[box * GLYPH_ENTRY_WORDS + 3]).toBe(0);
     atlas.dispose();
   });
 

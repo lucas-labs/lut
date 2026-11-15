@@ -8,6 +8,7 @@ import {
 import { hasIntrinsicColor } from './glyphColor';
 import { drawGlyph, isExtendedSymbol, layoutGlyph, placeGlyph } from './GlyphPlacement';
 import { rasterizeHinted } from './hintedGlyphs';
+import type { SubpixelOrder } from './subpixelText';
 import { fontCss, type TerminalFontMetrics } from './terminalVisuals';
 
 const RASTER_SIZE = 256;
@@ -23,7 +24,7 @@ const EMPTY_GLYPH: RasterizedGlyph = {
   bearingX: 0,
   bearingY: 0,
   intrinsicColor: false,
-  exact: false,
+  subpixel: false,
   pixels: new Uint8Array(1),
 };
 
@@ -34,15 +35,11 @@ export type RasterizedGlyph = {
   readonly bearingX: number;
   readonly bearingY: number;
   readonly intrinsicColor: boolean;
-  /**
-   * The coverage is final: procedurally drawn cell shapes whose partial values
-   * (shades, anti-aliased edges) are intended, so no text contrast adjustment
-   * may reshape them.
-   */
-  readonly exact: boolean;
+  /** `pixels` holds RGBA bytes with one coverage per colour channel (subpixel text). */
+  readonly subpixel: boolean;
   /**
    * `width * height` coverage bytes, or `width * height * 4` RGBA bytes for an
-   * intrinsic-colour glyph. Borrowed scratch memory: valid until the next call.
+   * intrinsic-colour or subpixel glyph. Borrowed scratch memory: valid until the next call.
    */
   readonly pixels: Uint8Array;
 };
@@ -54,7 +51,8 @@ export type RasterizedGlyph = {
  * and `context.font` is assigned only when the style changes.
  *
  * Text the hinted rasterizer can draw (`hintedGlyphs.ts`) skips the canvas, so
- * its stems land on whole pixels. Box drawing, blocks, braille and powerline
+ * its stems land on whole pixels; with a `subpixel` order it comes back with one
+ * coverage per colour channel, and everything else stays grayscale. Box drawing, blocks, braille and powerline
  * separators skip the font: they are drawn at exactly the cell size with no
  * bearing (see `BuiltinGlyphs.ts`), so neighbouring cells join without gaps,
  * and bold or italic never alters them.
@@ -67,9 +65,13 @@ export class GlyphRasterizer {
   private dirtyWidth = RASTER_SIZE;
   private dirtyHeight = RASTER_SIZE;
   private readonly coverage = new Uint8Array(RASTER_SIZE * RASTER_SIZE);
+  private subpixelCoverage: Uint8Array | null = null;
   private builtin: BuiltinGlyphRenderer | null = null;
 
-  constructor(private readonly metrics: TerminalFontMetrics) {
+  constructor(
+    private readonly metrics: TerminalFontMetrics,
+    private readonly subpixel: SubpixelOrder | null = null,
+  ) {
     const font = {
       ...metrics.font,
       size: metrics.font.size * metrics.scale,
@@ -80,7 +82,11 @@ export class GlyphRasterizer {
   }
 
   get cpuBytes(): number {
-    return (this.canvas ? RASTER_SIZE * RASTER_SIZE * 5 : 0) + (this.builtin?.byteSize ?? 0);
+    return (
+      (this.canvas ? RASTER_SIZE * RASTER_SIZE * 5 : 0) +
+      (this.subpixelCoverage?.byteLength ?? 0) +
+      (this.builtin?.byteSize ?? 0)
+    );
   }
 
   /** `roomy`: a glyph that may take two cells has its second cell free (see `GlyphPlacement`). */
@@ -147,7 +153,7 @@ export class GlyphRasterizer {
       bearingX: layout.bearingX,
       bearingY: layout.bearingY,
       intrinsicColor,
-      exact: layout.exact,
+      subpixel: false,
       pixels,
     };
   }
@@ -155,10 +161,21 @@ export class GlyphRasterizer {
   /** `text` from the hinted rasterizer, or null when the canvas draws it. */
   private rasterizeHinted(text: string, style: number): RasterizedGlyph | null {
     const { font, scale, deviceBaseline } = this.metrics;
-    const mask = rasterizeHinted(font.family, font.weight, text, style, font.size * scale);
+    const mask = rasterizeHinted(
+      font.family,
+      font.weight,
+      text,
+      style,
+      font.size * scale,
+      this.subpixel,
+    );
     if (!mask || mask.width > RASTER_SIZE || mask.height > RASTER_SIZE) return null;
     if (mask.width === 0 || mask.height === 0) return EMPTY_GLYPH;
-    const pixels = this.coverage.subarray(0, mask.width * mask.height);
+    const subpixel = this.subpixel !== null;
+    const scratch = subpixel
+      ? (this.subpixelCoverage ??= new Uint8Array(RASTER_SIZE * RASTER_SIZE * 4))
+      : this.coverage;
+    const pixels = scratch.subarray(0, mask.pixels.length);
     pixels.set(mask.pixels);
     return {
       width: mask.width,
@@ -166,7 +183,7 @@ export class GlyphRasterizer {
       bearingX: mask.left,
       bearingY: deviceBaseline + mask.top,
       intrinsicColor: false,
-      exact: false,
+      subpixel,
       pixels,
     };
   }
@@ -187,7 +204,7 @@ export class GlyphRasterizer {
       bearingX: 0,
       bearingY: 0,
       intrinsicColor: false,
-      exact: true,
+      subpixel: false,
       pixels,
     };
   }
@@ -199,6 +216,7 @@ export class GlyphRasterizer {
     }
     this.canvas = null;
     this.context = null;
+    this.subpixelCoverage = null;
     this.builtin = null;
     this.activeStyle = -1;
   }
