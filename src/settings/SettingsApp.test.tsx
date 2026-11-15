@@ -37,12 +37,15 @@ function open(search: string) {
   act(() => root.render(createElement(SettingsApp)));
 }
 
-const shown = () => host.querySelector('main p')?.textContent;
-const current = () => host.querySelector('nav [aria-current="page"]')?.textContent;
-function navButton(label: string): HTMLButtonElement {
-  const button = [...host.querySelectorAll<HTMLButtonElement>('nav button')].find((b) => b.textContent === label);
-  if (!button) throw new Error(`no ${label} in the navigation`);
-  return button;
+const tabs = () => [...host.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+const panel = () => host.querySelector('[role="tabpanel"]:not([hidden])');
+const shown = () => panel()?.textContent;
+const selected = () => tabs().find((t) => t.getAttribute('aria-selected') === 'true')?.textContent;
+
+function tab(label: string): HTMLButtonElement {
+  const found = tabs().find((t) => t.textContent === label);
+  if (!found) throw new Error(`no ${label} tab`);
+  return found;
 }
 
 beforeEach(() => {
@@ -57,34 +60,52 @@ afterEach(() => {
 });
 
 describe('SettingsApp', () => {
-  it('lists every section in the side navigation', () => {
+  it('lists every section as a vertical tab', () => {
     open('');
-    expect([...host.querySelectorAll('nav button')].map((b) => b.textContent)).toEqual([
-      'General',
-      'Editor',
-      'Themes',
-      'Shortcuts',
-      'About',
-    ]);
+    const list = host.querySelector('[role="tablist"]');
+    expect(list?.getAttribute('aria-label')).toBe('Settings sections');
+    expect(list?.getAttribute('aria-orientation')).toBe('vertical');
+    expect(tabs().map((t) => t.textContent)).toEqual(['General', 'Editor', 'Themes', 'Shortcuts', 'About']);
+  });
+
+  it('shows the selected section in a panel labelled by its tab', () => {
+    open('?tab=themes');
+    const themes = tab('Themes');
+    expect(themes.getAttribute('aria-controls')).toBe(panel()?.id);
+    expect(panel()?.getAttribute('aria-labelledby')).toBe(themes.id);
+    expect(host.querySelectorAll('[role="tabpanel"]:not([hidden])')).toHaveLength(1);
   });
 
   it('opens the section a deep link names', () => {
     open('?tab=shortcuts');
     expect(shown()).toBe('shortcuts section');
-    expect(current()).toBe('Shortcuts');
+    expect(selected()).toBe('Shortcuts');
   });
 
   it('falls back to general for an unknown section', () => {
     open('?tab=models');
     expect(shown()).toBe('general section');
-    expect(current()).toBe('General');
+    expect(selected()).toBe('General');
   });
 
-  it('switches section from the navigation', () => {
+  it('switches section on click', () => {
     open('');
-    act(() => navButton('Themes').click());
+    act(() => {
+      tab('Themes').dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0 }));
+    });
     expect(shown()).toBe('themes section');
-    expect(current()).toBe('Themes');
+    expect(selected()).toBe('Themes');
+  });
+
+  it('moves to the next section with the down arrow', async () => {
+    open('');
+    act(() => tab('General').focus());
+    await act(async () => {
+      tab('General').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    expect(document.activeElement).toBe(tab('Editor'));
+    expect(shown()).toBe('editor section');
   });
 
   it('follows a section request sent to the open window, unknown ones to general', () => {

@@ -14,6 +14,7 @@ import {
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+import { Tabs as TabsPrimitive } from 'radix-ui';
 import { type JSX, useEffect, useState } from 'react';
 import { AboutSection } from './sections/AboutSection';
 import { EditorSection } from './sections/EditorSection';
@@ -47,7 +48,6 @@ function readInitialTab(): SettingsTab {
 export function SettingsApp() {
   const [active, setActive] = useState<SettingsTab>(readInitialTab);
   const init = usePreferencesStore((s) => s.init);
-  const ActiveSection = TABS.find((t) => t.id === active)?.component;
 
   useEffect(() => {
     void init();
@@ -63,13 +63,16 @@ export function SettingsApp() {
   }, []);
 
   return (
-    // The navigation is chrome like the main window's sidebars: `frame`, which window vibrancy (Mica) turns
-    // translucent. The content keeps the solid background.
-    <div className="flex h-screen overflow-hidden text-[13px] leading-[18px] text-foreground select-none">
-      <nav
-        aria-label="Settings sections"
-        className="flex h-full w-52 shrink-0 flex-col border-r border-border bg-frame"
-      >
+    // Vertical tabs: the arrow keys move between sections and each section is a labelled tab panel. The navigation
+    // is chrome like the main window's sidebars: `frame`, which window vibrancy (Mica) turns translucent. The content
+    // keeps the solid background.
+    <TabsPrimitive.Root
+      value={active}
+      onValueChange={(v) => setActive(toTab(v))}
+      orientation="vertical"
+      className="flex h-screen overflow-hidden text-[13px] leading-[18px] text-foreground select-none"
+    >
+      <nav className="flex h-full w-52 shrink-0 flex-col border-r border-border bg-frame">
         {/* On macOS the traffic lights sit in this row. */}
         <div
           data-tauri-drag-region
@@ -80,23 +83,18 @@ export function SettingsApp() {
         >
           Settings
         </div>
-        <div className="flex flex-col gap-0.5 px-2 pt-2">
+        <TabsPrimitive.List aria-label="Settings sections" className="flex flex-col gap-0.5 px-2 pt-2">
           {TABS.map((t) => (
-            <button
+            <TabsPrimitive.Trigger
               key={t.id}
-              type="button"
-              aria-current={active === t.id ? 'page' : undefined}
-              onClick={() => setActive(t.id)}
-              className={cn(
-                'flex h-7.5 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none',
-                active === t.id && 'bg-accent text-foreground',
-              )}
+              value={t.id}
+              className="flex h-7.5 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none data-[state=active]:bg-accent data-[state=active]:text-foreground"
             >
               <HugeiconsIcon icon={t.icon} size={16} strokeWidth={1.5} aria-hidden />
               {t.label}
-            </button>
+            </TabsPrimitive.Trigger>
           ))}
-        </div>
+        </TabsPrimitive.List>
         <div data-tauri-drag-region className="flex-1" />
       </nav>
       <WindowActivityBridge />
@@ -108,9 +106,15 @@ export function SettingsApp() {
           {USE_CUSTOM_WINDOW_CONTROLS && <WindowControls closeOnly />}
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-12 pt-3 pb-12 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div className="mx-auto w-full max-w-170">{ActiveSection && <ActiveSection />}</div>
+          <div className="mx-auto w-full max-w-170">
+            {TABS.map(({ id, component: Section }) => (
+              <TabsPrimitive.Content key={id} value={id} className="focus-visible:outline-none">
+                <Section />
+              </TabsPrimitive.Content>
+            ))}
+          </div>
         </div>
       </main>
-    </div>
+    </TabsPrimitive.Root>
   );
 }
