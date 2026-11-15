@@ -179,9 +179,7 @@ function AddCustomServerDialog({ customServers }: { customServers: LspCustomServ
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="h-6 px-2 text-[11px]">
-          Add custom server
-        </Button>
+        <Button variant="outline">Add custom server</Button>
       </DialogTrigger>
       <DialogContent className="max-w-sm">
         <DialogHeader>
@@ -196,7 +194,7 @@ function AddCustomServerDialog({ customServers }: { customServers: LspCustomServ
           {field('Root markers', rootMarkers, setRootMarkers, 'build.zig')}
         </div>
         <DialogFooter>
-          <Button size="sm" disabled={!valid} onClick={save}>
+          <Button size="lg" disabled={!valid} onClick={save}>
             Add server
           </Button>
         </DialogFooter>

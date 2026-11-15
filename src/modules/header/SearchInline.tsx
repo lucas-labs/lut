@@ -129,12 +129,14 @@ export const SearchInline = forwardRef<SearchInlineHandle, Props>(function Searc
             </span>
           ) : null}
           <Input
+            variant="subtle"
+            size="xs"
             ref={setInputRef}
             value={q}
             placeholder={baseLabel}
             aria-label={tooltipTitle}
             title={tooltipTitle}
-            className="h-[22px] border-border pr-6 pl-[26px] hover:border-ring/60"
+            className="pr-6 pl-[26px] hover:border-ring/60"
             onChange={(e) => {
               const next = e.target.value;
               setQ(next);
@@ -175,14 +177,7 @@ export const SearchInline = forwardRef<SearchInlineHandle, Props>(function Searc
         </div>
       ) : (
         <div className="absolute inset-0 flex items-center justify-end animate-in fade-in-0 duration-150">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-[22px] shrink-0 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-            onClick={focus}
-            aria-label={tooltipTitle}
-            title={tooltipTitle}
-          >
+          <Button variant="ghost" size="icon-sm" onClick={focus} aria-label={tooltipTitle} title={tooltipTitle}>
             <HugeiconsIcon icon={Search01Icon} size={13} strokeWidth={1.75} />
           </Button>
         </div>

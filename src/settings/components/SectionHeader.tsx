@@ -5,9 +5,9 @@ type Props = {
 
 export function SectionHeader({ title, description }: Props) {
   return (
-    <div className="flex flex-col gap-1">
-      <h1 className="text-[18px] font-semibold tracking-tight">{title}</h1>
-      {description ? <p className="text-[12px] text-muted-foreground">{description}</p> : null}
+    <div>
+      <h1 className="text-[20px] leading-7 font-semibold">{title}</h1>
+      {description ? <p className="mt-0.5 text-[13px] leading-[18px] text-muted-foreground">{description}</p> : null}
     </div>
   );
 }

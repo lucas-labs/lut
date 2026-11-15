@@ -185,6 +185,7 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
             className="pointer-events-none absolute top-3.5 left-3.5 -translate-y-1/2 text-muted-foreground"
           />
           <Input
+            variant="subtle"
             ref={inputRef}
             value={query}
             onChange={(e) => changeQuery(e.target.value)}

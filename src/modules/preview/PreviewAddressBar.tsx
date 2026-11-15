@@ -137,13 +137,15 @@ export const PreviewAddressBar = forwardRef<PreviewAddressBarHandle, Props>(func
           </DropdownMenuContent>
         </DropdownMenu>
         <Input
+          variant="subtle"
+          size="sm"
           ref={inputRef}
           value={draft}
           placeholder="http://localhost:3000"
           aria-label="Preview URL"
           spellCheck={false}
           autoComplete="off"
-          className="h-[26px] min-w-0 flex-1 border-border"
+          className="flex-1"
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {

@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
@@ -198,12 +199,12 @@ export function GeneralSection() {
           description="Theme uses the theme's colors, Original the icon set's own, Monochrome the muted text color."
         >
           <Select value={fileIconColors} onValueChange={(v) => void setFileIconColors(v)}>
-            <SelectTrigger value={fileIconColors} className="h-8 w-36 text-[12px]">
+            <SelectTrigger value={fileIconColors}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {FILE_ICON_COLORS.map((option) => (
-                <SelectItem key={option.value} value={option.value} className="text-[12px]">
+                <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
               ))}
@@ -222,7 +223,7 @@ export function GeneralSection() {
             value={terminalRenderer}
             onValueChange={(value) => void setTerminalRenderer(coerceTerminalRenderer(value))}
           >
-            <SelectTrigger className="h-8 w-36 text-[12px]">
+            <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -246,12 +247,12 @@ export function GeneralSection() {
         </SettingRow>
         <SettingRow title="Cursor style" description="Shape of the terminal cursor.">
           <Select value={terminalCursorStyle} onValueChange={(v) => void setTerminalCursorStyle(v)}>
-            <SelectTrigger value={terminalCursorStyle} className="h-8 w-28 text-[12px]">
+            <SelectTrigger value={terminalCursorStyle}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {TERMINAL_CURSOR_STYLES.map((style) => (
-                <SelectItem key={style.value} value={style.value} className="text-[12px]">
+                <SelectItem key={style.value} value={style.value}>
                   {style.label}
                 </SelectItem>
               ))}
@@ -261,12 +262,12 @@ export function GeneralSection() {
         <FontFamilyInput value={terminalFontFamily} onCommit={(v) => void setTerminalFontFamily(v)} />
         <SettingRow title="Font weight" description="Thickness of terminal characters">
           <Select value={terminalFontWeight} onValueChange={(v) => void setTerminalFontWeight(v)}>
-            <SelectTrigger value={terminalFontWeight} className="h-8 w-28 text-[12px]">
+            <SelectTrigger value={terminalFontWeight}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {TERMINAL_FONT_WEIGHTS.map((w) => (
-                <SelectItem key={w.value} value={w.value} className="text-[12px]">
+                <SelectItem key={w.value} value={w.value}>
                   {w.label}
                 </SelectItem>
               ))}
@@ -287,15 +288,13 @@ export function GeneralSection() {
             value={terminalShell || SHELL_AUTO}
             onValueChange={(v) => void setTerminalShell(v === SHELL_AUTO ? '' : v)}
           >
-            <SelectTrigger value={terminalShell || SHELL_AUTO} className="h-8 w-40 text-[12px]">
+            <SelectTrigger value={terminalShell || SHELL_AUTO}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={SHELL_AUTO} className="text-[12px]">
-                Auto
-              </SelectItem>
+              <SelectItem value={SHELL_AUTO}>Auto</SelectItem>
               {shells.map((s) => (
-                <SelectItem key={s.path} value={s.path} className="text-[12px]">
+                <SelectItem key={s.path} value={s.path}>
                   {s.name}
                 </SelectItem>
               ))}
@@ -308,21 +307,19 @@ export function GeneralSection() {
             description="Where new spaces run: Windows or a WSL distro. Existing spaces keep theirs; switch any from the status bar."
           >
             <Select value={defaultWorkspaceEnv} onValueChange={(v) => void setDefaultWorkspaceEnv(v)}>
-              <SelectTrigger value={defaultWorkspaceEnv} className="h-8 w-40 text-[12px]">
+              <SelectTrigger value={defaultWorkspaceEnv}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="local" className="text-[12px]">
-                  Windows
-                </SelectItem>
+                <SelectItem value="local">Windows</SelectItem>
                 {wslDistros.map((d) => (
-                  <SelectItem key={d.name} value={`wsl:${d.name}`} className="text-[12px]">
+                  <SelectItem key={d.name} value={`wsl:${d.name}`}>
                     WSL: {d.name}
                   </SelectItem>
                 ))}
                 {defaultWorkspaceEnv.startsWith('wsl:') &&
                   !wslDistros.some((d) => `wsl:${d.name}` === defaultWorkspaceEnv) && (
-                    <SelectItem value={defaultWorkspaceEnv} className="text-[12px]">
+                    <SelectItem value={defaultWorkspaceEnv}>
                       {defaultWorkspaceEnv.slice('wsl:'.length)} (unavailable)
                     </SelectItem>
                   )}
@@ -335,12 +332,12 @@ export function GeneralSection() {
           description="Extra horizontal space between characters (px). Use negative values to tighten Nerd Fonts."
         >
           <Select value={String(terminalLetterSpacing)} onValueChange={(v) => void setTerminalLetterSpacing(Number(v))}>
-            <SelectTrigger size="sm" className="h-8 w-28 text-[12px]">
+            <SelectTrigger size="sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {LETTER_SPACINGS.map((v) => (
-                <SelectItem key={v} value={String(v)} className="text-[12px]">
+                <SelectItem key={v} value={String(v)}>
                   {v > 0 ? `+${v}` : v} px
                 </SelectItem>
               ))}
@@ -349,12 +346,12 @@ export function GeneralSection() {
         </SettingRow>
         <SettingRow title="Font size" description="Terminal text size.">
           <Select value={String(terminalFontSize)} onValueChange={(v) => void setTerminalFontSize(Number(v))}>
-            <SelectTrigger size="sm" className="h-8 w-28 text-[12px]">
+            <SelectTrigger size="sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {TERMINAL_FONT_SIZES.map((size) => (
-                <SelectItem key={size} value={String(size)} className="text-[12px]">
+                <SelectItem key={size} value={String(size)}>
                   {size} px
                 </SelectItem>
               ))}
@@ -366,12 +363,12 @@ export function GeneralSection() {
           description="Lines of history kept per terminal. Higher uses more RAM (~3 KB / line)."
         >
           <Select value={String(terminalScrollback)} onValueChange={(v) => void setTerminalScrollback(Number(v))}>
-            <SelectTrigger size="sm" className="h-8 w-36 text-[12px]">
+            <SelectTrigger size="sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {TERMINAL_SCROLLBACK_PRESETS.map((lines) => (
-                <SelectItem key={lines} value={String(lines)} className="text-[12px]">
+                <SelectItem key={lines} value={String(lines)}>
                   {lines.toLocaleString()} lines
                 </SelectItem>
               ))}
@@ -387,12 +384,12 @@ export function GeneralSection() {
               value={terminalMacOptionAsAlt}
               onValueChange={(v) => void setTerminalMacOptionAsAlt(coerceMacOptionAsAlt(v))}
             >
-              <SelectTrigger size="sm" className="h-8 w-36 text-[12px]">
+              <SelectTrigger size="sm">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {OPTION_AS_ALT_CHOICES.map(([value, label]) => (
-                  <SelectItem key={value} value={value} className="text-[12px]">
+                  <SelectItem key={value} value={value}>
                     {label}
                   </SelectItem>
                 ))}
@@ -405,7 +402,7 @@ export function GeneralSection() {
           description="Lines per wheel or trackpad movement, for history and for programs that read the mouse wheel."
         >
           <Select value={String(terminalScrollSpeed)} onValueChange={(v) => void setTerminalScrollSpeed(Number(v))}>
-            <SelectTrigger size="sm" className="h-8 w-28 text-[12px]">
+            <SelectTrigger size="sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -413,7 +410,7 @@ export function GeneralSection() {
                 ? SCROLL_SPEEDS
                 : [...SCROLL_SPEEDS, terminalScrollSpeed].sort((a, b) => a - b)
               ).map((v) => (
-                <SelectItem key={v} value={String(v)} className="text-[12px]">
+                <SelectItem key={v} value={String(v)}>
                   {v}x
                 </SelectItem>
               ))}
@@ -441,7 +438,6 @@ export function GeneralSection() {
             <Button
               type="button"
               variant="outline"
-              size="xs"
               disabled={!agentNotifications || notificationTestPending}
               title={notificationTestTitle(notificationTest)}
               onClick={() => void testNotification()}
@@ -540,7 +536,7 @@ function FontFamilyInput({ value, onCommit }: { value: string; onCommit: (v: str
       title="Font family"
       description='Terminal font (e.g. "CaskaydiaCove Nerd Font Mono"). Icons render without a Nerd Font; leave blank to use an installed one when found.'
     >
-      <input
+      <Input
         type="text"
         value={draft}
         placeholder="Auto-detect"
@@ -549,7 +545,7 @@ function FontFamilyInput({ value, onCommit }: { value: string; onCommit: (v: str
         onKeyDown={(e) => {
           if (e.key === 'Enter') e.currentTarget.blur();
         }}
-        className="h-8 w-48 rounded-md border border-border bg-background px-2.5 text-[12px] outline-none focus:border-foreground/40"
+        className="w-55 font-mono"
       />
     </SettingRow>
   );

@@ -8,7 +8,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { useHoldTitleBar } from '@/lib/titleBarHold';
-import { cn } from '@/lib/utils';
 import { AgentLauncherPanel } from '@/modules/agents/components/AgentLauncherPanel';
 import type { AgentLaunchRequest } from '@/modules/agents/lib/launcher';
 import { ShortcutKeys, useShortcutLabel } from '@/modules/shortcuts';
@@ -78,16 +77,7 @@ export function NewTabMenu({
         <span className="inline-flex">
           <DropdownMenu open={menuOpen} onOpenChange={onMenuOpenChange}>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  'shrink-0 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground aria-expanded:bg-accent',
-                  size === 'rail' ? 'size-6' : 'size-[22px]',
-                )}
-                aria-label="New tab"
-                title="New tab"
-              >
+              <Button variant="ghost" size="icon-sm" aria-label="New tab" title="New tab">
                 <HugeiconsIcon icon={PlusSignIcon} size={size === 'rail' ? 16 : 14} strokeWidth={1.5} />
               </Button>
             </DropdownMenuTrigger>

@@ -79,11 +79,11 @@ export function AboutSection() {
 
       <div className="flex flex-col gap-1.5">
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => void openUrl(REPO_URL)} className="gap-1.5">
+          <Button variant="outline" onClick={() => void openUrl(REPO_URL)}>
             <HugeiconsIcon icon={GithubIcon} size={12} strokeWidth={1.75} />
             View on GitHub
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => void openUrl(`${REPO_URL}/issues/new`)}>
+          <Button variant="ghost" onClick={() => void openUrl(`${REPO_URL}/issues/new`)}>
             Report an issue
           </Button>
         </div>

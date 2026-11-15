@@ -94,6 +94,7 @@ export function NewEditorDialog({ open, onOpenChange, rootPath, onCreated }: Pro
           </DialogDescription>
         </DialogHeader>
         <Input
+          variant="subtle"
           ref={inputRef}
           value={name}
           onChange={(e) => {
@@ -116,10 +117,12 @@ export function NewEditorDialog({ open, onOpenChange, rootPath, onCreated }: Pro
           </div>
         )}
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+          <Button variant="ghost" size="lg" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={() => void submit()}>Create</Button>
+          <Button size="lg" onClick={() => void submit()}>
+            Create
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

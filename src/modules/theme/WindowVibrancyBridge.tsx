@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 import { useTheme } from './ThemeProvider';
 import { applyVibrancy } from './vibrancy';
 
-/** Main window only: `window_set_backdrop` targets its caller. */
+/** Each window mounts its own: `window_set_backdrop` targets its caller (the main window and Settings). */
 export function WindowVibrancyBridge() {
   const enabled = usePreferencesStore((s) => s.windowVibrancy);
   const hydrated = usePreferencesStore((s) => s.hydrated);

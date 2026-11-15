@@ -69,12 +69,7 @@ export function ShortcutsSection() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <SectionHeader title="Shortcuts" description="View and customize keyboard shortcuts." />
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 gap-1.5 px-2.5 text-[11px]"
-          onClick={() => setResetDialogOpen(true)}
-        >
+        <Button variant="outline" onClick={() => setResetDialogOpen(true)}>
           <HugeiconsIcon icon={ArrowTurnBackwardIcon} size={12} strokeWidth={2} />
           Reset All
         </Button>
@@ -91,7 +86,7 @@ export function ShortcutsSection() {
           placeholder="Search shortcuts..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="h-[30px] pl-8"
+          className="pl-8"
         />
       </div>
 
@@ -198,20 +193,14 @@ function ShortcutRow({
 
             <div className="flex items-center gap-1">
               {isModified && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-7 text-muted-foreground hover:text-foreground"
-                  onClick={onReset}
-                  title="Reset to default"
-                >
+                <Button variant="ghost" size="icon" onClick={onReset} title="Reset to default">
                   <HugeiconsIcon icon={ArrowTurnBackwardIcon} size={12} />
                 </Button>
               )}
               <Button
                 variant="ghost"
                 size="icon"
-                className="size-7 text-muted-foreground hover:text-destructive opacity-0 transition-opacity group-hover:opacity-100"
+                className="opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
                 onClick={onClear}
                 title="Clear shortcut"
               >

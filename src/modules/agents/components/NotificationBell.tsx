@@ -188,8 +188,8 @@ export function NotificationBell({ onActivate }: Props) {
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          size="icon"
-          className="relative size-[22px] shrink-0 rounded-md text-muted-foreground hover:bg-accent hover:text-foreground aria-expanded:bg-accent"
+          size="icon-sm"
+          className="relative"
           aria-label="Agent notifications"
           title="Agent notifications"
         >
