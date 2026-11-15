@@ -3574,7 +3574,7 @@ size: XS
 
 ```yaml
 id: E13
-depends-on: [E11, E05, E06, E14]
+depends-on: [E11, E05, E06]
 refs: [UX-004, UX-005, TER-008, 5.10:9, 6.2:9, F6, .docs/plan/analysis/state-settings.md]
 ```
 
@@ -3602,36 +3602,11 @@ size: S
 
 **Verification:** `pnpm test` (`shortcuts`, `shortcutDefaults`, `resolveShortcut` tests); `pnpm check-types`.
 
-### E13-03 — Resolve terminal theme and font through layered preferences
-
-```yaml
-id: E13-03
-depends-on: [E14-02, E14-01, E14-03]
-refs: [13.2:19, 16:6, 16:24, 3.4:invariant, .docs/plan/analysis/terminal.md, .docs/plan/analysis/decisions.md]
-covers: [terminal/theme-font, state-settings/theme-core, 13.2:19, 16:6, 16:24]
-type: task
-scope: ui
-size: M
-```
-
-**Goal:** Terminal palette, font and cursor come from the layered resolver and update live without restarting sessions.
-
-**Acceptance criteria:**
-
-- [ ] `src/styles/terminalTheme.ts` and `useTerminalFont.ts` read from `resolvePreferences` instead of only global prefs/CSS vars.
-- [ ] Changing theme, font or cursor updates open terminals without respawning PTYs or unmounting panes (13.2:19, 16:24).
-- [ ] Theme, font family/size and cursor style are all user-configurable (16:6).
-- [ ] Test: an appearance change triggers no `pty_close`/spawn.
-
-**Verification:** `pnpm test`; manual: change font and theme while `top` runs; output continues.
-
-**Out of scope:** per-pane overrides beyond what the per-pane appearance spike decides (decision 9).
-
 ### E13-04 — Support Nerd Font and powerline glyph fallback
 
 ```yaml
 id: E13-04
-depends-on: [E13-03]
+depends-on: []
 refs: [UX-005, .docs/plan/analysis/terminal.md]
 covers: [UX-005]
 type: task
@@ -3647,28 +3622,6 @@ size: S
 - [ ] A user-installed Nerd Font selected in preferences is used.
 
 **Verification:** `pnpm test` (`resolveTerminalFont`); manual: a powerline prompt renders with and without a Nerd Font installed.
-
-### E13-05 — Import, export and edit custom theme files
-
-```yaml
-id: E13-05
-depends-on: []
-refs: [F6:4, UX-004, .docs/plan/analysis/state-settings.md]
-covers: [state-settings/theme-files, F6:4, UX-004]
-type: task
-scope: ui
-size: S
-```
-
-**Goal:** Custom themes are JSON files that can be imported, exported and edited, and are re-validated and applied on change. Logic only: errors are returned as data and rendered by E13-08.
-
-**Acceptance criteria:**
-
-- [ ] Import/export of JSON themes under `appConfigDir/themes` (`themeFiles.ts`); no Terax format compatibility.
-- [ ] Edit opens the file in the built-in editor (kept, decision 2); saved changes are re-validated and applied live.
-- [ ] An invalid file keeps the previous theme and produces a typed error (file, field, message) exposed by the themes store; no new UI in this issue.
-
-**Verification:** `pnpm test` (`themeFiles` tests); manual edit round trip.
 
 ### E13-06 — Curate built-in themes and visual presets
 
@@ -3695,7 +3648,7 @@ size: M
 
 ```yaml
 id: E13-07
-depends-on: [E11-03, E14-02]
+depends-on: [E11-03]
 refs: [.docs/plan/analysis/decisions.md, .docs/plan/analysis/state-settings.md]
 covers: [state-settings/settings-window-shell, state-settings/settings-ui-kit]
 type: task
@@ -3716,9 +3669,9 @@ size: M
 
 ```yaml
 id: E13-08
-depends-on: [E13-07, E13-03, E13-04, E13-05, E13-06]
-refs: [UX-004, UX-005, 16:6, identity:2]
-covers: [state-settings/settings-sections-terminal, UX-004]
+depends-on: [E13-07]
+refs: [UX-004, UX-005, 16:6, F6:4, identity:2]
+covers: [state-settings/settings-sections-terminal, state-settings/theme-files, UX-004, F6:4, 16:6]
 type: task
 scope: ui
 size: M
@@ -3730,7 +3683,8 @@ size: M
 
 - [ ] `GeneralSection`, `ThemesSection` and `AboutSection` rebuilt per design; About shows lut identity (no Terax repo/site).
 - [ ] Theme picker (built-in + custom, import/export/edit) and font picker apply live.
-- [ ] Invalid custom theme files show the typed error from E13-05 next to the theme.
+- [ ] A custom theme file saved with an error in the editor keeps the previous theme and shows the error (file, field,
+      message) next to the theme; today it is only logged. Import errors keep showing as they do.
 
 **Verification:** `pnpm test`; manual: pick a theme and font; terminals update without restart.
 
@@ -3880,7 +3834,7 @@ Today only `pane.focusNext`/`pane.focusPrev` (order) and `pane.swap*` exist.
 
 ```yaml
 id: E13-11
-depends-on: [E13-01, E13-03, E13-04, E13-05, E13-06, E13-07, E13-08, E13-09, E13-10, E13-12, E13-13, E13-14, E13-15]
+depends-on: [E13-01, E13-04, E13-06, E13-07, E13-08, E13-09, E13-10, E13-12, E13-13, E13-14, E13-15]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
@@ -3939,7 +3893,7 @@ size: M
 ```
 
 **Goal:** Settings resolve as global defaults overridden by profile and project values, with preferences separated from theme tokens.
-This is the **only** preference resolver of lut: E13-03 reads terminal theme/font through it and E14-16 extends it with the
+This is the **only** preference resolver of lut: E14-16 resolves terminal theme/font through it and extends it with the
 pane layer. (Moved here from the settings epic so the profiles epic can build on it without an epic cycle.)
 
 **Acceptance criteria:**
@@ -4258,8 +4212,8 @@ size: S
 ```yaml
 id: E14-16
 depends-on: [E14-01, E14-14, E14-02]
-refs: [PRO-005, F3:5, 7.1, .docs/plan/analysis/state-settings.md]
-covers: [PRO-005, F3:5]
+refs: [PRO-005, F3:5, 7.1, 13.2:19, 16:24, .docs/plan/analysis/state-settings.md]
+covers: [PRO-005, F3:5, terminal/theme-font, state-settings/theme-core, 13.2:19, 16:24]
 type: task
 scope: ui
 size: M
