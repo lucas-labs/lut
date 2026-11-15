@@ -3730,8 +3730,12 @@ size: M
 **Acceptance criteria:**
 
 - [ ] `EditorSection`, `LspInstallDialog` and `LspServersGroup` rebuilt per design; `lspSwitchState` logic and its test kept.
+- [ ] A `SettingExpander` groups the settings that depend on a switch (Word wrap, Auto save, Format on save, Coding
+      agent notifications): its body slides open below the switch and is inert while closed, so Notification sound
+      hides while agent notifications are off.
+- [ ] `Dialog` takes `AlertDialog`'s look from the design.
 
-**Verification:** `pnpm test`; manual: toggle an LSP server and run the install flow.
+**Verification:** `pnpm test`; manual: toggle an LSP server and run the install flow; open and close each expander.
 
 ### E13-12 — Make the zoom shortcuts work on non-US keyboard layouts
 
