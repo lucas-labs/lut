@@ -3830,11 +3830,45 @@ Today only `pane.focusNext`/`pane.focusPrev` (order) and `pane.swap*` exist.
 
 **Verification:** `pnpm test`; manual: a 2×2 split, move around with Alt+arrows and resize with Alt+Shift+arrows.
 
+### E13-16 — Use the shared Button and Input for hand-made controls
+
+```yaml
+id: E13-16
+depends-on: [E13-07]
+refs: [.docs/plan/analysis/app-shell.md]
+covers: [app-shell/ui-primitives]
+type: task
+scope: ui
+size: M
+```
+
+**Goal:** Every button and text field in the app comes from `src/components/ui`. E13-07 put `Button` on the design
+(sizes `lg` 30, `default` 28, `sm` 26, `xs` 20, `icon` 28, `icon-sm` 24, `icon-xs` 20 px), but about 38 controls outside
+Settings are hand-made `<button>` elements with their own classes, in sizes from 16 to 28 px, so the same kind of
+button looks different from one panel to the next.
+
+**Acceptance criteria:**
+
+- [ ] Bordered text buttons use `outline`: Git history Fetch and branch scope, Preview URL, source-control branch picker
+      and Push, LSP pill Restart and Disable, editor "Open anyway", terminal Retry.
+- [ ] Filled buttons use `default`: source-control Commit, LSP "Check again".
+- [ ] Borderless icon buttons use `ghost` with an icon size: title bar sidebar and settings, sidebar view header actions,
+      Spaces (new space, row actions, close tab, expand), Preview reload / open in browser / dismiss, explorer and
+      header search clear, LSP copy and dismiss, discard change, commit detail actions.
+- [ ] Small text actions use `ghost` `xs` (code block Copy, notification Clear and Install, agent Reset, Preview notice
+      actions) and text links use `link` (editor Retry, markdown "Retry images", LSP Documentation).
+- [ ] Text fields use `Input` / `Textarea` where they fit (inline rename in Spaces and tabs, commit message); a field
+      that cannot is left with a comment saying why.
+- [ ] No `size-[…]`, height, radius or font-size overrides on `Button`; a missing size is added to the cva instead.
+- [ ] List rows, tabs, tree rows, breadcrumb segments, selection cards and the window caption buttons stay custom.
+
+**Verification:** `pnpm test`; manual: each panel listed above in light and dark, hover and keyboard focus.
+
 ### E13-11 — Close-out: settings and theming
 
 ```yaml
 id: E13-11
-depends-on: [E13-01, E13-04, E13-06, E13-07, E13-08, E13-09, E13-10, E13-12, E13-13, E13-14, E13-15]
+depends-on: [E13-01, E13-04, E13-06, E13-07, E13-08, E13-09, E13-10, E13-12, E13-13, E13-14, E13-15, E13-16]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
