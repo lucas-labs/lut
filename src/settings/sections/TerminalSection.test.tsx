@@ -98,24 +98,42 @@ describe('TerminalSection', () => {
   });
 
   it('turns subpixel text on and off where it can be drawn', async () => {
-    render({ terminalSubpixelText: true });
-    // Disabled until the GPU answers.
+    render();
+    // Off, it cannot be turned on until the GPU answers.
     expect(subpixelToggle().disabled).toBe(true);
     await act(async () => {});
     expect(subpixel.unavailable).toHaveBeenCalledWith('auto');
     expect(subpixelToggle().disabled).toBe(false);
+    expect(subpixelToggle().getAttribute('aria-checked')).toBe('false');
+    act(() => subpixelToggle().click());
+    expect(store.setTerminalSubpixelText).toHaveBeenCalledWith(true);
+
+    render({ terminalSubpixelText: true });
+    await act(async () => {});
     expect(subpixelToggle().getAttribute('aria-checked')).toBe('true');
     act(() => subpixelToggle().click());
-    expect(store.setTerminalSubpixelText).toHaveBeenCalledWith(false);
+    expect(store.setTerminalSubpixelText).toHaveBeenLastCalledWith(false);
   });
 
   it('disables subpixel text and says why where it cannot be drawn', async () => {
     subpixel.unavailable.mockResolvedValue('Not available with the WebGL renderer.');
-    render({ terminalSubpixelText: true, terminalRenderer: 'webgl' });
+    render({ terminalRenderer: 'webgl' });
     await act(async () => {});
     expect(subpixel.unavailable).toHaveBeenCalledWith('webgl');
     expect(subpixelToggle().disabled).toBe(true);
     expect(subpixelToggle().getAttribute('aria-checked')).toBe('false');
     expect(rowOf('Subpixel text')?.textContent).toContain('Not available with the WebGL renderer.');
+  });
+
+  it('still lets an enabled preference be turned off where it cannot be drawn', async () => {
+    // Terminals opened with WebGPU before the renderer changed still draw it.
+    subpixel.unavailable.mockResolvedValue('Not available with the WebGL renderer.');
+    render({ terminalSubpixelText: true, terminalRenderer: 'webgl' });
+    await act(async () => {});
+    expect(subpixelToggle().disabled).toBe(false);
+    expect(subpixelToggle().getAttribute('aria-checked')).toBe('true');
+    expect(rowOf('Subpixel text')?.textContent).toContain('Not available with the WebGL renderer.');
+    act(() => subpixelToggle().click());
+    expect(store.setTerminalSubpixelText).toHaveBeenCalledWith(false);
   });
 });

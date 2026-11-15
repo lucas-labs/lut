@@ -130,8 +130,10 @@ export function TerminalSection() {
           {(a11y) => (
             <Switch
               {...a11y}
-              checked={terminalSubpixelText && !subpixelUnavailable}
-              disabled={subpixelUnavailable !== null}
+              checked={terminalSubpixelText}
+              // An enabled preference can always be turned off: WebGPU terminals opened before the
+              // renderer changed to WebGL still draw it.
+              disabled={subpixelUnavailable !== null && !terminalSubpixelText}
               onCheckedChange={(v) => void setTerminalSubpixelText(v)}
             />
           )}

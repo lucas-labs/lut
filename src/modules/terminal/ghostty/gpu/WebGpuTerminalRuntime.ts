@@ -258,11 +258,15 @@ export class WebGpuTerminalRuntime {
   static async create(): Promise<WebGpuTerminalRuntime> {
     const runtime = new WebGpuTerminalRuntime();
     try {
-      // Read before the device so the first atlases draw in the right format at once.
-      runtime.requestedSubpixel = await requestedSubpixelOrder();
-      runtime.unbindSubpixelText = onSubpixelTextChange((order) =>
-        runtime.setSubpixelRequest(order),
-      );
+      // Subscribed first, so a change made while the initial order is read is not lost; read
+      // before the device, so the first atlases draw in the right format at once.
+      let changed = false;
+      runtime.unbindSubpixelText = onSubpixelTextChange((order) => {
+        changed = true;
+        runtime.setSubpixelRequest(order);
+      });
+      const initial = await requestedSubpixelOrder();
+      if (!changed) runtime.requestedSubpixel = initial;
       await runtime.initializeDevice();
       runtime.unbindPresentation = subscribeWindowPresentation(runtime.handleVisibility);
       runtime.unbindWindowFocus = bindTerminalWindowFocus(runtime.handleWindowFocus);
@@ -954,7 +958,10 @@ export class WebGpuTerminalRuntime {
     try {
       pipeline = await this.createGlyphPipeline(device, layout, this.format, subpixel);
     } catch (error) {
-      if (!this.disposed && generation === this.generation) this.disable(toError(error));
+      // A failed build that a lost device or a newer request superseded leaves nothing to stop.
+      if (this.disposed || generation !== this.generation) return;
+      if (request !== this.requestedSubpixel) return;
+      this.disable(toError(error));
       return;
     }
     // A lost device or a newer request supersedes this one.

@@ -439,6 +439,49 @@ describe('WebGpuTerminalRuntime', () => {
     expect(runtime.acquireGlyphAtlas(METRICS).atlas).toBe(lease.atlas);
   });
 
+  it('keeps a toggle changed while the runtime reads the initial order', async () => {
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    const h = createHarness({ dualSourceBlending: true });
+    setSubpixelText(true);
+    sharedArea = null;
+    const pending = WebGpuTerminalRuntime.create();
+    setSubpixelText(false);
+    const runtime = await pending;
+    runtimes.push(runtime);
+    await Promise.resolve();
+    expect(glyphBlendSource(h.device)).toBe('src-alpha');
+    runtime.acquireGlyphAtlas(METRICS);
+    expect(vi.mocked(h.device.createTexture).mock.calls[0][0].format).toBe('r8unorm');
+  });
+
+  it('ignores a failed subpixel pipeline that a newer toggle superseded', async () => {
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    const h = createHarness({ dualSourceBlending: true });
+    const runtime = await createRuntime();
+    const surface = createSurface();
+    join(runtime, surface);
+    let fail: (error: Error) => void = () => {};
+    vi.mocked(h.device.createRenderPipelineAsync).mockImplementationOnce(
+      () =>
+        new Promise<GPURenderPipeline>((_resolve, reject) => {
+          fail = reject;
+        }),
+    );
+    const grayscale = runtime.resources().glyphPipeline;
+    const builds = vi.mocked(h.device.createRenderPipelineAsync).mock.calls.length;
+    setSubpixelText(true);
+    await vi.waitFor(() =>
+      expect(vi.mocked(h.device.createRenderPipelineAsync).mock.calls.length).toBe(builds + 1),
+    );
+    // Off again before the build ends: the grayscale pipeline in use stays.
+    setSubpixelText(false);
+    await Promise.resolve();
+    fail(new Error('pipeline build failed'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(surface.handleRuntimeError).not.toHaveBeenCalled();
+    expect(runtime.resources().glyphPipeline).toBe(grayscale);
+  });
+
   it('applies a toggle that changed during a device recovery once it ends', async () => {
     vi.spyOn(console, 'info').mockImplementation(() => {});
     const h = createHarness({ dualSourceBlending: true });
