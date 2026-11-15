@@ -16,7 +16,12 @@ import { GlyphAtlas } from './GlyphAtlas';
 import type { RasterBudget } from './GlyphMap';
 import { hintingEnabled } from './hintedGlyphs';
 import { BACKGROUND_SHADER, GLYPH_SHADER, GLYPH_SUBPIXEL_SHADER } from './shaders';
-import { currentSubpixelOrder, resolveSubpixelOrder, type SubpixelOrder } from './subpixelText';
+import {
+  onSubpixelTextChange,
+  requestedSubpixelOrder,
+  resolveSubpixelOrder,
+  type SubpixelOrder,
+} from './subpixelText';
 import type { TerminalFontMetrics } from './terminalVisuals';
 import {
   findTerminalArea,
@@ -205,8 +210,14 @@ export class WebGpuTerminalRuntime {
   private readonly atlases = new Map<string, AtlasEntry>();
   private device: GPUDevice | null = null;
   private format: GPUTextureFormat = 'bgra8unorm';
+  /** The stripe order the Settings toggle asks for, or null; this device may not draw it. */
+  private requestedSubpixel: SubpixelOrder | null = null;
+  /** Counts toggle changes: only a pipeline built for the latest one may be applied or fail. */
+  private subpixelRevision = 0;
   /** The stripe order glyph atlases draw subpixel text with, or null for grayscale. */
   private subpixel: SubpixelOrder | null = null;
+  private pipelineLayout: GPUPipelineLayout | null = null;
+  private loggedSubpixel = '';
   private backgroundPipeline: GPURenderPipeline | null = null;
   private glyphPipeline: GPURenderPipeline | null = null;
   private bindGroupLayout: GPUBindGroupLayout | null = null;
@@ -241,6 +252,7 @@ export class WebGpuTerminalRuntime {
   private unbindWindowFocus: () => void = () => {};
   private unbindPresentation: () => void = () => {};
   private unbindResizeInteraction: () => void = () => {};
+  private unbindSubpixelText: () => void = () => {};
   private disposed = false;
 
   private constructor() {}
@@ -248,6 +260,15 @@ export class WebGpuTerminalRuntime {
   static async create(): Promise<WebGpuTerminalRuntime> {
     const runtime = new WebGpuTerminalRuntime();
     try {
+      // Subscribed first, so a change made while the initial order is read is not lost; read
+      // before the device, so the first atlases draw in the right format at once.
+      let changed = false;
+      runtime.unbindSubpixelText = onSubpixelTextChange((order) => {
+        changed = true;
+        runtime.setSubpixelRequest(order);
+      });
+      const initial = await requestedSubpixelOrder();
+      if (!changed) runtime.requestedSubpixel = initial;
       await runtime.initializeDevice();
       runtime.unbindPresentation = subscribeWindowPresentation(runtime.handleVisibility);
       runtime.unbindWindowFocus = bindTerminalWindowFocus(runtime.handleWindowFocus);
@@ -538,6 +559,7 @@ export class WebGpuTerminalRuntime {
     this.unbindPresentation();
     this.unbindWindowFocus();
     this.unbindResizeInteraction();
+    this.unbindSubpixelText();
     this.cancelScheduledFrame();
     if (this.atlasReapTimer !== null) clearTimeout(this.atlasReapTimer);
     this.atlasReapTimer = null;
@@ -910,16 +932,69 @@ export class WebGpuTerminalRuntime {
     initialized = true;
     const configuration = this.canvasConfiguration();
     for (const target of this.windows.values()) target.reconfigure(configuration);
+    // The toggle may have changed while the pipelines were being built.
+    void this.applySubpixelRequest();
   }
 
-  /** The subpixel order `localStorage` asks for, when `device` can blend it (E13-13 prototype). */
+  /**
+   * Turns subpixel text on (in `order`) or off for every terminal without a new device: the glyph
+   * pipeline is rebuilt and the atlases switch their coverage format. Every pane prepares again in
+   * the next frame, because the glyph indices it uploaded are gone.
+   */
+  setSubpixelRequest(order: SubpixelOrder | null): void {
+    if (this.disposed || order === this.requestedSubpixel) return;
+    this.requestedSubpixel = order;
+    this.subpixelRevision += 1;
+    void this.applySubpixelRequest();
+  }
+
+  private async applySubpixelRequest(): Promise<void> {
+    const device = this.device;
+    const layout = this.pipelineLayout;
+    // Without a ready device (initializing, lost, recovering) `initializeDevice` applies it.
+    if (this.disposed || this.fatalError || !device || !layout || !this.glyphPipeline) return;
+    const subpixel = this.subpixelOrderFor(device);
+    if (subpixel === this.subpixel) return;
+    const generation = this.generation;
+    // On, off, on again asks twice for the same order: only the revision tells the builds apart.
+    const revision = this.subpixelRevision;
+    let pipeline: GPURenderPipeline;
+    try {
+      pipeline = await this.createGlyphPipeline(device, layout, this.format, subpixel);
+    } catch (error) {
+      // A failed build that a lost device or a newer toggle superseded leaves nothing to stop.
+      if (this.disposed || generation !== this.generation) return;
+      if (revision !== this.subpixelRevision) return;
+      this.disable(toError(error));
+      return;
+    }
+    // A lost device or a newer toggle supersedes this one.
+    if (this.disposed || this.fatalError || generation !== this.generation) return;
+    if (revision !== this.subpixelRevision) return;
+    for (const entry of this.atlases.values()) {
+      entry.atlas.setSubpixel(subpixel);
+      // Unused atlases stay suspended until `acquireGlyphAtlas` resumes them.
+      if (entry.references > 0) entry.atlas.resume(device);
+    }
+    this.subpixel = subpixel;
+    this.glyphPipeline = pipeline;
+    for (const surface of this.surfaces) {
+      this.movedSurfaces.add(surface);
+      this.schedule(surface);
+    }
+  }
+
+  /** The subpixel order the Settings toggle asks for, when `device` can blend it. */
   private subpixelOrderFor(device: GPUDevice): SubpixelOrder | null {
-    const requested = currentSubpixelOrder();
+    const requested = this.requestedSubpixel;
     const { order, unavailable } = resolveSubpixelOrder(requested, {
       dualSourceBlending: device.features.has('dual-source-blending'),
       hinting: hintingEnabled(),
     });
-    if (requested) {
+    // Once per request and device: the end of `initializeDevice` resolves it a second time.
+    const logged = `${this.generation}:${requested}`;
+    if (requested && logged !== this.loggedSubpixel) {
+      this.loggedSubpixel = logged;
       console.info(
         order
           ? `[lut] subpixel terminal text: ${order}`
@@ -961,13 +1036,6 @@ export class WebGpuTerminalRuntime {
       label: 'lut terminal background shader',
       code: BACKGROUND_SHADER,
     });
-    const glyphModule = device.createShaderModule({
-      label: 'lut terminal glyph shader',
-      code: this.subpixel ? GLYPH_SUBPIXEL_SHADER : GLYPH_SHADER,
-    });
-    const glyphColorBlend: GPUBlendComponent = this.subpixel
-      ? SUBPIXEL_COLOR_BLEND
-      : { srcFactor: 'src-alpha', dstFactor: 'one-minus-src-alpha' };
     const [backgroundPipeline, glyphPipeline] = await Promise.all([
       device.createRenderPipelineAsync({
         label: 'lut terminal background pipeline',
@@ -980,37 +1048,54 @@ export class WebGpuTerminalRuntime {
         },
         primitive: { topology: 'triangle-list' },
       }),
-      device.createRenderPipelineAsync({
-        label: 'lut terminal glyph pipeline',
-        layout,
-        vertex: { module: glyphModule, entryPoint: 'vertex_main' },
-        fragment: {
-          module: glyphModule,
-          entryPoint: 'fragment_main',
-          targets: [
-            {
-              format,
-              blend: {
-                color: glyphColorBlend,
-                alpha: {
-                  srcFactor: 'one',
-                  dstFactor: 'one-minus-src-alpha',
-                },
-              },
-            },
-          ],
-        },
-        primitive: { topology: 'triangle-list' },
-      }),
+      this.createGlyphPipeline(device, layout, format, this.subpixel),
     ]);
     this.assertLive();
     this.assertHealthy();
+    this.pipelineLayout = layout;
     this.backgroundPipeline = backgroundPipeline;
     this.glyphPipeline = glyphPipeline;
     this.emptyStorage = device.createBuffer({
       label: 'lut terminal empty storage',
       size: 16,
       usage: GPUBufferUsage.STORAGE,
+    });
+  }
+
+  private createGlyphPipeline(
+    device: GPUDevice,
+    layout: GPUPipelineLayout,
+    format: GPUTextureFormat,
+    subpixel: SubpixelOrder | null,
+  ): Promise<GPURenderPipeline> {
+    const module = device.createShaderModule({
+      label: 'lut terminal glyph shader',
+      code: subpixel ? GLYPH_SUBPIXEL_SHADER : GLYPH_SHADER,
+    });
+    const color: GPUBlendComponent = subpixel
+      ? SUBPIXEL_COLOR_BLEND
+      : { srcFactor: 'src-alpha', dstFactor: 'one-minus-src-alpha' };
+    return device.createRenderPipelineAsync({
+      label: 'lut terminal glyph pipeline',
+      layout,
+      vertex: { module, entryPoint: 'vertex_main' },
+      fragment: {
+        module,
+        entryPoint: 'fragment_main',
+        targets: [
+          {
+            format,
+            blend: {
+              color,
+              alpha: {
+                srcFactor: 'one',
+                dstFactor: 'one-minus-src-alpha',
+              },
+            },
+          },
+        ],
+      },
+      primitive: { topology: 'triangle-list' },
     });
   }
 
@@ -1139,6 +1224,7 @@ export class WebGpuTerminalRuntime {
     this.confirmedFrames = this.submittedFrames;
     this.device?.destroy();
     this.device = null;
+    this.pipelineLayout = null;
     this.backgroundPipeline = null;
     this.glyphPipeline = null;
     this.bindGroupLayout = null;

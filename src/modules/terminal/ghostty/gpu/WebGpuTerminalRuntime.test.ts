@@ -1,3 +1,4 @@
+import { usePreferencesStore } from '@/modules/settings/preferences';
 import { resetTerminalResizeGestureForTest } from '@/modules/terminal/lib/terminalResizeGesture';
 import {
   beginTerminalResizeInteraction,
@@ -7,6 +8,23 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CssRect } from './PaneRects';
 import type { WebGpuRuntimeSurface } from './WebGpuTerminalRuntime';
 import { WebGpuTerminalRuntime } from './WebGpuTerminalRuntime';
+
+// The ClearType order the backend reports for subpixel text.
+vi.mock('@tauri-apps/api/core', () => ({ invoke: vi.fn(async () => 'rgb') }));
+
+function setSubpixelText(enabled: boolean) {
+  usePreferencesStore.setState({ terminalSubpixelText: enabled });
+}
+
+function lastGlyphPipeline(device: GPUDevice) {
+  return [...vi.mocked(device.createRenderPipelineAsync).mock.calls]
+    .reverse()
+    .find(([d]) => d.label === 'lut terminal glyph pipeline')?.[0];
+}
+
+function glyphBlendSource(device: GPUDevice) {
+  return [...(lastGlyphPipeline(device)?.fragment?.targets ?? [])][0]?.blend?.color?.srcFactor;
+}
 
 const GESTURE = {};
 const runtimes: WebGpuTerminalRuntime[] = [];
@@ -25,6 +43,7 @@ describe('WebGpuTerminalRuntime', () => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
     vi.restoreAllMocks();
+    setSubpixelText(false);
   });
 
   it('creates no encoder when dirty notifications resolve to unchanged pixels', async () => {
@@ -329,13 +348,13 @@ describe('WebGpuTerminalRuntime', () => {
 
   it('draws subpixel text when asked and the GPU blends two sources, grayscale otherwise', async () => {
     const info = vi.spyOn(console, 'info').mockImplementation(() => {});
-    for (const [stored, dualSourceBlending, subpixel] of [
-      ['rgb', true, true],
-      ['rgb', false, false],
-      [null, true, false],
+    for (const [enabled, dualSourceBlending, subpixel] of [
+      [true, true, true],
+      [true, false, false],
+      [false, true, false],
     ] as const) {
       const h = createHarness({ dualSourceBlending });
-      vi.stubGlobal('window', { ...window, localStorage: { getItem: () => stored } });
+      setSubpixelText(enabled);
       const runtime = await createRuntime();
       expect(h.requestDevice).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -355,7 +374,6 @@ describe('WebGpuTerminalRuntime', () => {
       expect(formats[0]).toBe(subpixel ? 'rgba8unorm' : 'r8unorm');
       lease.release();
       runtime.dispose();
-      vi.unstubAllGlobals();
     }
     expect(info.mock.calls.map(([message]) => message)).toEqual([
       '[lut] subpixel terminal text: rgb',
@@ -366,7 +384,7 @@ describe('WebGpuTerminalRuntime', () => {
   it('draws grayscale after recovering on a device without dual-source blending', async () => {
     vi.spyOn(console, 'info').mockImplementation(() => {});
     const h = createHarness({ dualSourceBlending: true });
-    vi.stubGlobal('window', { ...window, localStorage: { getItem: () => 'rgb' } });
+    setSubpixelText(true);
     const runtime = await createRuntime();
     const lease = runtime.acquireGlyphAtlas(METRICS);
     const textures = vi.mocked(h.device.createTexture);
@@ -387,6 +405,127 @@ describe('WebGpuTerminalRuntime', () => {
     // The kept atlas comes back with a grayscale coverage plane.
     expect(runtime.acquireGlyphAtlas(METRICS).atlas).toBe(lease.atlas);
     expect(textures.mock.calls[0][0].format).toBe('r8unorm');
+  });
+
+  it('switches open terminals to subpixel text and back when the toggle changes', async () => {
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    const h = createHarness({ dualSourceBlending: true });
+    const runtime = await createRuntime();
+    const surface = createSurface();
+    join(runtime, surface);
+    runtime.schedule(surface);
+    h.flushFrame();
+    const lease = runtime.acquireGlyphAtlas(METRICS, surface);
+    const textures = vi.mocked(h.device.createTexture);
+    expect(textures.mock.calls[0][0].format).toBe('r8unorm');
+    const generation = runtime.diagnostics().generation;
+
+    for (const [enabled, blend, format] of [
+      [true, 'src1', 'rgba8unorm'],
+      [false, 'src-alpha', 'r8unorm'],
+    ] as const) {
+      textures.mockClear();
+      surface.prepareFrame.mockClear();
+      setSubpixelText(enabled);
+      await vi.waitFor(() => expect(glyphBlendSource(h.device)).toBe(blend));
+      // The atlas in use comes back in the new coverage format, and the pane prepares again.
+      expect(textures.mock.calls[0][0].format).toBe(format);
+      h.flushFrame();
+      expect(surface.prepareFrame).toHaveBeenCalled();
+    }
+    // Same device throughout: no recovery, no device loss for the panes.
+    expect(runtime.diagnostics()).toMatchObject({ generation, deviceRecoveries: 0 });
+    expect(surface.handleDeviceLoss).not.toHaveBeenCalled();
+    expect(runtime.acquireGlyphAtlas(METRICS).atlas).toBe(lease.atlas);
+  });
+
+  it('keeps a toggle changed while the runtime reads the initial order', async () => {
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    const h = createHarness({ dualSourceBlending: true });
+    setSubpixelText(true);
+    sharedArea = null;
+    const pending = WebGpuTerminalRuntime.create();
+    setSubpixelText(false);
+    const runtime = await pending;
+    runtimes.push(runtime);
+    await Promise.resolve();
+    expect(glyphBlendSource(h.device)).toBe('src-alpha');
+    runtime.acquireGlyphAtlas(METRICS);
+    expect(vi.mocked(h.device.createTexture).mock.calls[0][0].format).toBe('r8unorm');
+  });
+
+  it('ignores a failed subpixel pipeline that a newer toggle superseded', async () => {
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    const h = createHarness({ dualSourceBlending: true });
+    const runtime = await createRuntime();
+    const surface = createSurface();
+    join(runtime, surface);
+    let fail: (error: Error) => void = () => {};
+    vi.mocked(h.device.createRenderPipelineAsync).mockImplementationOnce(
+      () =>
+        new Promise<GPURenderPipeline>((_resolve, reject) => {
+          fail = reject;
+        }),
+    );
+    const grayscale = runtime.resources().glyphPipeline;
+    const builds = vi.mocked(h.device.createRenderPipelineAsync).mock.calls.length;
+    setSubpixelText(true);
+    await vi.waitFor(() =>
+      expect(vi.mocked(h.device.createRenderPipelineAsync).mock.calls.length).toBe(builds + 1),
+    );
+    // Off again before the build ends: the grayscale pipeline in use stays.
+    setSubpixelText(false);
+    await Promise.resolve();
+    fail(new Error('pipeline build failed'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(surface.handleRuntimeError).not.toHaveBeenCalled();
+    expect(runtime.resources().glyphPipeline).toBe(grayscale);
+  });
+
+  it('ignores a failed build of an earlier toggle once a later one applied the same order', async () => {
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    const h = createHarness({ dualSourceBlending: true });
+    const runtime = await createRuntime();
+    const surface = createSurface();
+    join(runtime, surface);
+    const grayscale = runtime.resources().glyphPipeline;
+    const builds = vi.mocked(h.device.createRenderPipelineAsync);
+    let fail: (error: Error) => void = () => {};
+    builds.mockImplementationOnce(
+      () =>
+        new Promise<GPURenderPipeline>((_resolve, reject) => {
+          fail = reject;
+        }),
+    );
+    const before = builds.mock.calls.length;
+    // On (a build that will fail), off (nothing to build), on again (a build that succeeds).
+    setSubpixelText(true);
+    await vi.waitFor(() => expect(builds.mock.calls.length).toBe(before + 1));
+    setSubpixelText(false);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    setSubpixelText(true);
+    await vi.waitFor(() => expect(runtime.resources().glyphPipeline).not.toBe(grayscale));
+    const subpixel = runtime.resources().glyphPipeline;
+
+    fail(new Error('pipeline build failed'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(surface.handleRuntimeError).not.toHaveBeenCalled();
+    expect(runtime.resources().glyphPipeline).toBe(subpixel);
+  });
+
+  it('applies a toggle that changed during a device recovery once it ends', async () => {
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    const h = createHarness({ dualSourceBlending: true });
+    const runtime = await createRuntime();
+    expect(glyphBlendSource(h.device)).toBe('src-alpha');
+
+    h.loseDevice();
+    setSubpixelText(true);
+    await vi.waitFor(() => expect(runtime.diagnostics().deviceRecoveries).toBe(1));
+    await vi.waitFor(() => expect(glyphBlendSource(h.device)).toBe('src1'));
+    runtime.acquireGlyphAtlas(METRICS);
+    const formats = vi.mocked(h.device.createTexture).mock.calls.map(([d]) => d.format);
+    expect(formats).toContain('rgba8unorm');
   });
 
   it('releases the warm glyph atlas after the bounded idle window', async () => {

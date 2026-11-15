@@ -28,6 +28,9 @@ vi.mock('./sections/GeneralSection', () => ({
       createElement('button', { type: 'button', 'aria-label': 'Open Themes', onClick: () => openTab('themes') }),
     ),
 }));
+vi.mock('./sections/TerminalSection', () => ({
+  TerminalSection: () => createElement('p', null, 'terminal section'),
+}));
 vi.mock('./sections/EditorSection', () => ({ EditorSection: () => createElement('p', null, 'editor section') }));
 vi.mock('./sections/ThemesSection', () => ({ ThemesSection: () => createElement('p', null, 'themes section') }));
 vi.mock('./sections/ShortcutsSection', () => ({
@@ -73,7 +76,7 @@ describe('SettingsApp', () => {
     const list = host.querySelector('[role="tablist"]');
     expect(list?.getAttribute('aria-label')).toBe('Settings sections');
     expect(list?.getAttribute('aria-orientation')).toBe('vertical');
-    expect(tabs().map((t) => t.textContent)).toEqual(['General', 'Editor', 'Themes', 'Shortcuts', 'About']);
+    expect(tabs().map((t) => t.textContent)).toEqual(['General', 'Terminal', 'Editor', 'Themes', 'Shortcuts', 'About']);
   });
 
   it('shows the selected section in a panel labelled by its tab', () => {
@@ -112,8 +115,8 @@ describe('SettingsApp', () => {
       tab('General').dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
       await new Promise((resolve) => setTimeout(resolve, 0));
     });
-    expect(document.activeElement).toBe(tab('Editor'));
-    expect(shown()).toBe('editor section');
+    expect(document.activeElement).toBe(tab('Terminal'));
+    expect(shown()).toBe('terminal section');
   });
 
   it('lets a section open another one', () => {
