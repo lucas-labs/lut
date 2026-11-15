@@ -140,6 +140,8 @@ export type Preferences = {
   explorerGitDecorations: boolean;
   fileIconColors: FileIconColors;
   terminalRenderer: TerminalRendererSetting;
+  /** ClearType-style terminal text on the WebGPU renderer (E13-17). */
+  terminalSubpixelText: boolean;
   terminalScreenReader: boolean;
   terminalCursorBlink: boolean;
   terminalCursorStyle: TerminalCursorStyle;
@@ -216,6 +218,7 @@ const LEGACY_KEY_SHOW_HIDDEN_DIRS = 'showHiddenDirectories';
 const KEY_EXPLORER_GIT_DECORATIONS = 'explorerGitDecorations';
 const KEY_FILE_ICON_COLORS = 'fileIconColors';
 const KEY_TERMINAL_RENDERER = 'terminalRenderer';
+const KEY_TERMINAL_SUBPIXEL_TEXT = 'terminalSubpixelText';
 const KEY_TERMINAL_SCREEN_READER = 'terminalScreenReader';
 const KEY_TERMINAL_CURSOR_BLINK = 'terminalCursorBlink';
 const KEY_TERMINAL_CURSOR_STYLE = 'terminalCursorStyle';
@@ -286,6 +289,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   explorerGitDecorations: true,
   fileIconColors: 'theme',
   terminalRenderer: 'auto',
+  terminalSubpixelText: false,
   terminalScreenReader: false,
   terminalCursorBlink: true,
   terminalCursorStyle: 'bar',
@@ -368,6 +372,7 @@ export async function loadPreferences(): Promise<Preferences> {
       get<boolean>(KEY_EXPLORER_GIT_DECORATIONS) ?? DEFAULT_PREFERENCES.explorerGitDecorations,
     fileIconColors: coerceFileIconColors(get<unknown>(KEY_FILE_ICON_COLORS)),
     terminalRenderer: coerceTerminalRenderer(get<string>(KEY_TERMINAL_RENDERER)),
+    terminalSubpixelText: get<boolean>(KEY_TERMINAL_SUBPIXEL_TEXT) === true,
     terminalScreenReader: get<boolean>(KEY_TERMINAL_SCREEN_READER) === true,
     terminalCursorBlink:
       get<boolean>(KEY_TERMINAL_CURSOR_BLINK) ?? DEFAULT_PREFERENCES.terminalCursorBlink,
@@ -537,6 +542,10 @@ export async function setFileIconColors(value: unknown): Promise<void> {
 
 export async function setTerminalRenderer(value: TerminalRendererSetting): Promise<void> {
   await writePref(KEY_TERMINAL_RENDERER, coerceTerminalRenderer(value));
+}
+
+export async function setTerminalSubpixelText(value: boolean): Promise<void> {
+  await writePref(KEY_TERMINAL_SUBPIXEL_TEXT, value === true);
 }
 
 export async function setTerminalScreenReader(value: boolean): Promise<void> {
@@ -722,6 +731,7 @@ export async function onPreferencesChange(
     [KEY_EXPLORER_GIT_DECORATIONS]: 'explorerGitDecorations',
     [KEY_FILE_ICON_COLORS]: 'fileIconColors',
     [KEY_TERMINAL_RENDERER]: 'terminalRenderer',
+    [KEY_TERMINAL_SUBPIXEL_TEXT]: 'terminalSubpixelText',
     [KEY_TERMINAL_SCREEN_READER]: 'terminalScreenReader',
     [KEY_TERMINAL_CURSOR_BLINK]: 'terminalCursorBlink',
     [KEY_TERMINAL_CURSOR_STYLE]: 'terminalCursorStyle',

@@ -1,26 +1,49 @@
 /**
- * Subpixel (ClearType-style) terminal text, a prototype for E13-13: off unless
- * `localStorage["lut:terminal-subpixel"]` names the order of the panel's colour stripes, "rgb" or
- * "bgr". Only the WebGPU renderer draws it, and only where text is hinted (`hintedGlyphs.ts`) and
- * the GPU can blend each colour channel on its own (`dual-source-blending`).
+ * Subpixel (ClearType-style) terminal text (E13-17): on while the `terminalSubpixelText` preference
+ * is, in the colour order of the screen's stripes that the backend reads from Windows' ClearType
+ * setting (RGB elsewhere). Only the WebGPU renderer draws it, and only where text is hinted
+ * (`hintedGlyphs.ts`) and the GPU can blend each colour channel on its own (`dual-source-blending`).
  */
+import { IS_MAC } from '@/modules/platform';
+import { usePreferencesStore } from '@/modules/settings/preferences';
+import type { TerminalRendererSetting } from '@/modules/settings/store';
+import { invoke } from '@tauri-apps/api/core';
+
 export type SubpixelOrder = 'rgb' | 'bgr';
 
-const SUBPIXEL_STORAGE_KEY = 'lut:terminal-subpixel';
+let panelOrder: Promise<SubpixelOrder> | null = null;
 
-/** The order a stored value names, or null for grayscale text. */
-export function subpixelOrderFor(value: string | null | undefined): SubpixelOrder | null {
-  const order = value?.trim().toLowerCase();
-  return order === 'rgb' || order === 'bgr' ? order : null;
+/** The stripe order of the screen, read once per session; RGB when the backend cannot say. */
+export function panelSubpixelOrder(): Promise<SubpixelOrder> {
+  panelOrder ??= invoke<string>('font_subpixel_order').then(
+    (order) => (order === 'bgr' ? 'bgr' : 'rgb'),
+    () => 'rgb',
+  );
+  return panelOrder;
 }
 
-/** The order the user asked for through `localStorage`, or null. */
-export function currentSubpixelOrder(): SubpixelOrder | null {
-  try {
-    return subpixelOrderFor(window.localStorage?.getItem(SUBPIXEL_STORAGE_KEY));
-  } catch {
-    return null;
-  }
+function orderFor(enabled: boolean): Promise<SubpixelOrder | null> {
+  return enabled ? panelSubpixelOrder() : Promise.resolve(null);
+}
+
+/** The order the preference asks for now, or null for grayscale text. */
+export function requestedSubpixelOrder(): Promise<SubpixelOrder | null> {
+  return orderFor(usePreferencesStore.getState().terminalSubpixelText);
+}
+
+/**
+ * Calls `listener` with the order the preference asks for each time it is turned on or off. A
+ * change that resolves after a later one is dropped.
+ */
+export function onSubpixelTextChange(listener: (order: SubpixelOrder | null) => void): () => void {
+  let latest = 0;
+  return usePreferencesStore.subscribe((state, previous) => {
+    if (state.terminalSubpixelText === previous.terminalSubpixelText) return;
+    const change = ++latest;
+    void orderFor(state.terminalSubpixelText).then((order) => {
+      if (change === latest) listener(order);
+    });
+  });
 }
 
 /**
@@ -37,4 +60,29 @@ export function resolveSubpixelOrder(
     return { order: null, unavailable: 'the GPU has no dual-source-blending' };
   }
   return { order: requested, unavailable: null };
+}
+
+let gpuSupport: Promise<string | null> | null = null;
+
+function webGpuUnavailable(): Promise<string | null> {
+  gpuSupport ??= (async () => {
+    const gpu = typeof navigator === 'undefined' ? undefined : navigator.gpu;
+    const adapter = await gpu?.requestAdapter({ powerPreference: 'low-power' }).catch(() => null);
+    if (!adapter) return 'Not available: this webview has no WebGPU.';
+    return adapter.features.has('dual-source-blending')
+      ? null
+      : "Not available: this GPU can't blend each colour channel on its own.";
+  })();
+  return gpuSupport;
+}
+
+/** Why the Settings toggle cannot turn subpixel text on with `renderer`, or null when it can. */
+export async function subpixelTextUnavailable(
+  renderer: TerminalRendererSetting,
+): Promise<string | null> {
+  if (renderer === 'webgl') return 'Not available with the WebGL renderer.';
+  // Text is hinted everywhere but macOS (`hintingEnabled`); not imported from there, because it
+  // would bring the glyph rasterizer into the Settings window.
+  if (IS_MAC) return 'Not available on macOS.';
+  return webGpuUnavailable();
 }

@@ -6,6 +6,7 @@ import type { SettingsTab } from '@/modules/settings/openSettingsWindow';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { WindowActivityBridge, WindowVibrancyBridge } from '@/modules/theme';
 import {
+  ComputerTerminal02Icon,
   ContrastIcon,
   InformationCircleIcon,
   KeyboardIcon,
@@ -21,6 +22,7 @@ import { AboutSection } from './sections/AboutSection';
 import { EditorSection } from './sections/EditorSection';
 import { GeneralSection } from './sections/GeneralSection';
 import { ShortcutsSection } from './sections/ShortcutsSection';
+import { TerminalSection } from './sections/TerminalSection';
 import { ThemesSection } from './sections/ThemesSection';
 
 const TABS: {
@@ -30,6 +32,7 @@ const TABS: {
   component: (props: SectionProps) => JSX.Element;
 }[] = [
   { id: 'general', label: 'General', icon: SlidersHorizontalIcon, component: GeneralSection },
+  { id: 'terminal', label: 'Terminal', icon: ComputerTerminal02Icon, component: TerminalSection },
   { id: 'editor', label: 'Editor', icon: PencilEdit02Icon, component: EditorSection },
   { id: 'themes', label: 'Themes', icon: ContrastIcon, component: ThemesSection },
   { id: 'shortcuts', label: 'Shortcuts', icon: KeyboardIcon, component: ShortcutsSection },

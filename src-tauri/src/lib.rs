@@ -384,6 +384,7 @@ pub fn run() {
             vibrancy::window_set_backdrop,
             fonts::font_face_find,
             fonts::font_face_data,
+            fonts::font_subpixel_order,
             modules::window_presentation::window_presentation_state,
             #[cfg(feature = "bench")]
             modules::bench::bench_config,

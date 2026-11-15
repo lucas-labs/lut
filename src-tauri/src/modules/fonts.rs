@@ -93,12 +93,51 @@ pub async fn font_face_data(id: String) -> Result<Response, String> {
     .map_err(|error| error.to_string())?
 }
 
+/// The colour order of the screen's subpixel stripes for subpixel terminal text: Windows' ClearType
+/// setting, and RGB elsewhere or when it cannot be read.
+#[tauri::command]
+pub fn font_subpixel_order() -> &'static str {
+    subpixel_order()
+}
+
+#[cfg(target_os = "windows")]
+fn subpixel_order() -> &'static str {
+    use windows_sys::Win32::UI::WindowsAndMessaging::{
+        SystemParametersInfoW, FE_FONTSMOOTHINGORIENTATIONBGR, SPI_GETFONTSMOOTHINGORIENTATION,
+    };
+    let mut orientation: u32 = 1;
+    // SAFETY: SPI_GETFONTSMOOTHINGORIENTATION writes one u32 to `pvparam`.
+    let read = unsafe {
+        SystemParametersInfoW(
+            SPI_GETFONTSMOOTHINGORIENTATION,
+            0,
+            (&raw mut orientation).cast(),
+            0,
+        )
+    };
+    if read != 0 && orientation == FE_FONTSMOOTHINGORIENTATIONBGR {
+        "bgr"
+    } else {
+        "rgb"
+    }
+}
+
+#[cfg(not(target_os = "windows"))]
+fn subpixel_order() -> &'static str {
+    "rgb"
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     // A variable font whose name table calls its default instance "Source Code Pro ExtraLight".
     const FONT: &[u8] = include_bytes!("../../../src/assets/fonts/source-code-pro-latin.ttf");
+
+    #[test]
+    fn subpixel_order_is_rgb_or_bgr() {
+        assert!(matches!(font_subpixel_order(), "rgb" | "bgr"));
+    }
 
     fn database() -> (tempfile::TempDir, Database) {
         let dir = tempfile::tempdir().unwrap();

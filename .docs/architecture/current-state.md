@@ -117,7 +117,7 @@ state. The terminal sessions live in a module-level map keyed by leaf id
   (`modules/settings/preferences.ts`), `lut.sidebar.width|view|collapsed` (`modules/sidebar/useSidebarPanel.ts`),
   `lut-palette-mru`, `lut-palette-recent-files` (`modules/command-palette/lib/`), `lut.experimental.terminal-backend`
   (`modules/terminal/backend/selection.ts`), and the diagnostics flags `lut:terminal-diagnostics`,
-  `lut:terminal-gc-mirror`, `lut:terminal-subpixel` (E13-13 prototype).
+  `lut:terminal-gc-mirror`.
 - **Backend files:** the control descriptor and CLI launcher under the cache dir (`modules/control.rs`), shell-integration scripts under the
   cache dir (`modules/pty/shell_init.rs`). E02 moves all of them to lut names.
 

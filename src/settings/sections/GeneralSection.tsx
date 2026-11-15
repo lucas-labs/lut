@@ -1,44 +1,23 @@
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { type OsNotificationResult, testAgentOsNotification } from '@/modules/agents/lib/notify';
-import { IS_MAC } from '@/modules/platform';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import type { ThemePref } from '@/modules/settings/store';
 import {
   coerceFileIconColors,
-  coerceTerminalRenderer,
   setAgentNotifications,
   setAgentNotificationSound,
-  setConfirmCloseRunningTerminal,
-  setDefaultWorkspaceEnv,
   setExplorerGitDecorations,
   setFileIconColors,
   setRestoreWindowState,
   setShowHidden,
-  setTerminalCursorBlink,
-  setTerminalCursorStyle,
-  setTerminalFontFamily,
-  setTerminalFontSize,
-  setTerminalFontWeight,
-  setTerminalLetterSpacing,
-  setTerminalMacOptionAsAlt,
-  setTerminalRenderer,
-  setTerminalScreenReader,
-  setTerminalScrollback,
-  setTerminalScrollSpeed,
-  setTerminalShell,
   setZoomLevel,
-  TERMINAL_FONT_SIZES,
-  TERMINAL_SCROLLBACK_PRESETS,
 } from '@/modules/settings/store';
-import { coerceMacOptionAsAlt } from '@/modules/terminal/ghostty/input/macOptionAsAlt';
 import { useTheme } from '@/modules/theme';
 import type { Theme, ThemeMode } from '@/modules/theme/types';
-import { invoke } from '@tauri-apps/api/core';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { RangeControl } from '../components/RangeControl';
 import { SectionHeader } from '../components/SectionHeader';
 import { SettingExpander, SettingRow } from '../components/SettingRow';
@@ -51,33 +30,11 @@ const APPEARANCE: { id: ThemePref; label: string }[] = [
   { id: 'dark', label: 'Dark' },
 ];
 
-const TERMINAL_FONT_WEIGHTS = [
-  { value: 'normal', label: 'Normal' },
-  { value: '500', label: 'Medium' },
-  { value: '600', label: 'Semi-Bold' },
-  { value: 'bold', label: 'Bold' },
-] as const;
-const TERMINAL_CURSOR_STYLES = [
-  { value: 'bar', label: 'Bar' },
-  { value: 'block', label: 'Block' },
-  { value: 'underline', label: 'Underline' },
-] as const;
 const FILE_ICON_COLORS = [
   { value: 'theme', label: 'Theme' },
   { value: 'original', label: 'Original' },
   { value: 'monochrome', label: 'Monochrome' },
 ] as const;
-const LETTER_SPACINGS = [-4, -3, -2, -1, 0, 1, 2, 3, 4] as const;
-const OPTION_AS_ALT_CHOICES = [
-  ['off', 'Off'],
-  ['left', 'Left Option'],
-  ['right', 'Right Option'],
-  ['both', 'Both'],
-] as const;
-const SCROLL_SPEEDS = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4] as const;
-
-type ShellInfo = { name: string; path: string; integrated: boolean };
-const SHELL_AUTO = 'auto';
 const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 2.0;
 const ZOOM_STEP = 0.05;
@@ -92,22 +49,6 @@ export function GeneralSection({ openTab }: SectionProps) {
   const showHidden = usePreferencesStore((s) => s.showHidden);
   const explorerGitDecorations = usePreferencesStore((s) => s.explorerGitDecorations);
   const fileIconColors = usePreferencesStore((s) => coerceFileIconColors(s.fileIconColors));
-  const terminalRenderer = usePreferencesStore((s) => s.terminalRenderer);
-  const terminalScreenReader = usePreferencesStore((s) => s.terminalScreenReader);
-  const terminalCursorBlink = usePreferencesStore((s) => s.terminalCursorBlink);
-  const terminalCursorStyle = usePreferencesStore((s) => s.terminalCursorStyle);
-  const terminalFontFamily = usePreferencesStore((s) => s.terminalFontFamily);
-  const terminalFontWeight = usePreferencesStore((s) => s.terminalFontWeight);
-  const terminalShell = usePreferencesStore((s) => s.terminalShell);
-  const [shells, setShells] = useState<ShellInfo[]>([]);
-  const [wslDistros, setWslDistros] = useState<{ name: string }[]>([]);
-  const defaultWorkspaceEnv = usePreferencesStore((s) => s.defaultWorkspaceEnv);
-  const terminalLetterSpacing = usePreferencesStore((s) => s.terminalLetterSpacing);
-  const terminalFontSize = usePreferencesStore((s) => s.terminalFontSize);
-  const terminalScrollback = usePreferencesStore((s) => s.terminalScrollback);
-  const terminalScrollSpeed = usePreferencesStore((s) => s.terminalScrollSpeed);
-  const terminalMacOptionAsAlt = usePreferencesStore((s) => s.terminalMacOptionAsAlt);
-  const confirmCloseRunningTerminal = usePreferencesStore((s) => s.confirmCloseRunningTerminal);
   const zoomLevel = usePreferencesStore((s) => s.zoomLevel);
   const agentNotifications = usePreferencesStore((s) => s.agentNotifications);
   const agentNotificationSound = usePreferencesStore((s) => s.agentNotificationSound);
@@ -121,18 +62,9 @@ export function GeneralSection({ openTab }: SectionProps) {
     setNotificationTest(await testAgentOsNotification(agentNotificationSound));
   };
 
-  useEffect(() => {
-    void invoke<ShellInfo[]>('pty_list_shells')
-      .then(setShells)
-      .catch(() => {});
-    void invoke<{ name: string }[]>('wsl_list_distros')
-      .then(setWslDistros)
-      .catch(() => {});
-  }, []);
-
   return (
     <div className="flex flex-col">
-      <SectionHeader title="General" description="Mode, terminal, and startup." />
+      <SectionHeader title="General" description="Mode, explorer, and startup." />
 
       <SettingsGroup title="Appearance">
         <div className="flex gap-3.5 pt-1">
@@ -208,254 +140,6 @@ export function GeneralSection({ openTab }: SectionProps) {
                 ))}
               </SelectContent>
             </Select>
-          )}
-        </SettingRow>
-      </SettingsGroup>
-
-      <SettingsGroup title="Terminal">
-        <SettingRow
-          title="Terminal renderer"
-          description="Automatic and WebGPU draw with WebGPU and fall back to WebGL where the webview has none. WebGL is a compatibility mode: it uses more CPU and holds at most 12 visible panes per window. Applies to new terminals."
-        >
-          {(a11y) => (
-            <Select
-              value={terminalRenderer}
-              onValueChange={(value) => void setTerminalRenderer(coerceTerminalRenderer(value))}
-            >
-              <SelectTrigger {...a11y}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="auto">Automatic</SelectItem>
-                <SelectItem value="webgpu">WebGPU</SelectItem>
-                <SelectItem value="webgl">WebGL</SelectItem>
-              </SelectContent>
-            </Select>
-          )}
-        </SettingRow>
-        <SettingRow
-          title="Screen reader support"
-          description="Expose terminal output as accessible text. Page Up and Page Down browse history when the output region is focused."
-        >
-          {(a11y) => (
-            <Switch
-              {...a11y}
-              checked={terminalScreenReader}
-              onCheckedChange={(value) => void setTerminalScreenReader(value)}
-            />
-          )}
-        </SettingRow>
-        <SettingRow
-          title="Cursor blinking"
-          description="Blink the terminal cursor, which marks the active pane. On by default."
-        >
-          {(a11y) => (
-            <Switch {...a11y} checked={terminalCursorBlink} onCheckedChange={(v) => void setTerminalCursorBlink(v)} />
-          )}
-        </SettingRow>
-        <SettingRow title="Cursor style" description="Shape of the terminal cursor.">
-          {(a11y) => (
-            <Select value={terminalCursorStyle} onValueChange={(v) => void setTerminalCursorStyle(v)}>
-              <SelectTrigger {...a11y} value={terminalCursorStyle}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {TERMINAL_CURSOR_STYLES.map((style) => (
-                  <SelectItem key={style.value} value={style.value}>
-                    {style.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </SettingRow>
-        <FontFamilyInput value={terminalFontFamily} onCommit={(v) => void setTerminalFontFamily(v)} />
-        <SettingRow title="Font weight" description="Thickness of terminal characters">
-          {(a11y) => (
-            <Select value={terminalFontWeight} onValueChange={(v) => void setTerminalFontWeight(v)}>
-              <SelectTrigger {...a11y} value={terminalFontWeight}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {TERMINAL_FONT_WEIGHTS.map((w) => (
-                  <SelectItem key={w.value} value={w.value}>
-                    {w.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </SettingRow>
-        <SettingRow
-          title="Integrated terminal shell"
-          description={
-            shells.find((s) => s.path === terminalShell)?.integrated === false
-              ? 'Command blocks and directory tracking are unavailable for this shell.'
-              : wslDistros.length > 0
-                ? 'Shell for the integrated terminal. WSL spaces use the distro login shell. Existing tabs keep their shell.'
-                : 'Shell for new terminal tabs. Existing tabs keep their shell.'
-          }
-        >
-          {(a11y) => (
-            <Select
-              value={terminalShell || SHELL_AUTO}
-              onValueChange={(v) => void setTerminalShell(v === SHELL_AUTO ? '' : v)}
-            >
-              <SelectTrigger {...a11y} value={terminalShell || SHELL_AUTO}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={SHELL_AUTO}>Auto</SelectItem>
-                {shells.map((s) => (
-                  <SelectItem key={s.path} value={s.path}>
-                    {s.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </SettingRow>
-        {(wslDistros.length > 0 || defaultWorkspaceEnv !== 'local') && (
-          <SettingRow
-            title="Workspace environment"
-            description="Where new spaces run: Windows or a WSL distro. Existing spaces keep theirs; switch any from the status bar."
-          >
-            {(a11y) => (
-              <Select value={defaultWorkspaceEnv} onValueChange={(v) => void setDefaultWorkspaceEnv(v)}>
-                <SelectTrigger {...a11y} value={defaultWorkspaceEnv}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="local">Windows</SelectItem>
-                  {wslDistros.map((d) => (
-                    <SelectItem key={d.name} value={`wsl:${d.name}`}>
-                      WSL: {d.name}
-                    </SelectItem>
-                  ))}
-                  {defaultWorkspaceEnv.startsWith('wsl:') &&
-                    !wslDistros.some((d) => `wsl:${d.name}` === defaultWorkspaceEnv) && (
-                      <SelectItem value={defaultWorkspaceEnv}>
-                        {defaultWorkspaceEnv.slice('wsl:'.length)} (unavailable)
-                      </SelectItem>
-                    )}
-                </SelectContent>
-              </Select>
-            )}
-          </SettingRow>
-        )}
-        <SettingRow
-          title="Letter spacing"
-          description="Extra horizontal space between characters (px). Use negative values to tighten Nerd Fonts."
-        >
-          {(a11y) => (
-            <Select
-              value={String(terminalLetterSpacing)}
-              onValueChange={(v) => void setTerminalLetterSpacing(Number(v))}
-            >
-              <SelectTrigger {...a11y} size="sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {LETTER_SPACINGS.map((v) => (
-                  <SelectItem key={v} value={String(v)}>
-                    {v > 0 ? `+${v}` : v} px
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </SettingRow>
-        <SettingRow title="Font size" description="Terminal text size.">
-          {(a11y) => (
-            <Select value={String(terminalFontSize)} onValueChange={(v) => void setTerminalFontSize(Number(v))}>
-              <SelectTrigger {...a11y} size="sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {TERMINAL_FONT_SIZES.map((size) => (
-                  <SelectItem key={size} value={String(size)}>
-                    {size} px
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </SettingRow>
-        <SettingRow
-          title="Scrollback"
-          description="Lines of history kept per terminal. Higher uses more RAM (~3 KB / line)."
-        >
-          {(a11y) => (
-            <Select value={String(terminalScrollback)} onValueChange={(v) => void setTerminalScrollback(Number(v))}>
-              <SelectTrigger {...a11y} size="sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {TERMINAL_SCROLLBACK_PRESETS.map((lines) => (
-                  <SelectItem key={lines} value={String(lines)}>
-                    {lines.toLocaleString()} lines
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </SettingRow>
-        {IS_MAC && (
-          <SettingRow
-            title="Option as Alt"
-            description="Send Option as Alt (Meta) so readline and editor shortcuts like Option+B and Option+F work. Off types the characters Option produces. Keys are matched by their position on a US keyboard, so layouts that type other letters on those keys are not followed."
-          >
-            {(a11y) => (
-              <Select
-                value={terminalMacOptionAsAlt}
-                onValueChange={(v) => void setTerminalMacOptionAsAlt(coerceMacOptionAsAlt(v))}
-              >
-                <SelectTrigger {...a11y} size="sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {OPTION_AS_ALT_CHOICES.map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </SettingRow>
-        )}
-        <SettingRow
-          title="Scroll speed"
-          description="Lines per wheel or trackpad movement, for history and for programs that read the mouse wheel."
-        >
-          {(a11y) => (
-            <Select value={String(terminalScrollSpeed)} onValueChange={(v) => void setTerminalScrollSpeed(Number(v))}>
-              <SelectTrigger {...a11y} size="sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {(SCROLL_SPEEDS.some((v) => v === terminalScrollSpeed)
-                  ? SCROLL_SPEEDS
-                  : [...SCROLL_SPEEDS, terminalScrollSpeed].sort((a, b) => a - b)
-                ).map((v) => (
-                  <SelectItem key={v} value={String(v)}>
-                    {v}x
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </SettingRow>
-        <SettingRow
-          title="Confirm before killing a running process"
-          description="Ask before closing a terminal tab or quitting while a command is still running. Unsaved editor changes are always confirmed."
-        >
-          {(a11y) => (
-            <Switch
-              {...a11y}
-              checked={confirmCloseRunningTerminal}
-              onCheckedChange={(v) => void setConfirmCloseRunningTerminal(v)}
-            />
           )}
         </SettingRow>
       </SettingsGroup>
@@ -619,44 +303,4 @@ function notificationTestTitle(status: NotificationTestState): string {
     default:
       return 'Send a native test notification after two seconds';
   }
-}
-
-function FontFamilyInput({ value, onCommit }: { value: string; onCommit: (v: string) => void }) {
-  const [draft, setDraft] = useState(value);
-  // A change saved elsewhere replaces the draft.
-  const [draftOf, setDraftOf] = useState(value);
-  if (value !== draftOf) {
-    setDraftOf(value);
-    setDraft(value);
-  }
-
-  // Commit (and trim) only on blur/Enter so a trailing space can be typed
-  // mid-edit, e.g. "JetBrains Mono ".
-  const commit = () => {
-    const next = draft.trim();
-    if (next !== draft) setDraft(next);
-    if (next !== value) onCommit(next);
-  };
-
-  return (
-    <SettingRow
-      title="Font family"
-      description='Terminal font (e.g. "CaskaydiaCove Nerd Font Mono"). Icons render without a Nerd Font; leave blank to use an installed one when found.'
-    >
-      {(a11y) => (
-        <Input
-          {...a11y}
-          type="text"
-          value={draft}
-          placeholder="Auto-detect"
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') e.currentTarget.blur();
-          }}
-          className="w-55 font-mono"
-        />
-      )}
-    </SettingRow>
-  );
 }

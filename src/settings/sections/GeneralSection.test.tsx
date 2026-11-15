@@ -21,20 +21,8 @@ vi.mock('@/modules/settings/preferences', () => ({
     pick({
       zoomLevel: 1.25,
       fileIconColors: 'theme',
-      terminalRenderer: 'auto',
-      terminalCursorStyle: 'bar',
-      terminalFontFamily: '',
-      terminalFontWeight: 'normal',
-      terminalShell: '',
-      defaultWorkspaceEnv: 'local',
-      terminalLetterSpacing: 0,
-      terminalFontSize: 14,
-      terminalScrollback: 10000,
-      terminalScrollSpeed: 1,
-      terminalMacOptionAsAlt: 'off',
     }),
 }));
-vi.mock('@tauri-apps/api/core', () => ({ invoke: () => Promise.resolve([]) }));
 vi.mock('@/modules/agents/lib/notify', () => ({ testAgentOsNotification: vi.fn() }));
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -71,9 +59,14 @@ describe('GeneralSection', () => {
     expect(theme.setMode).toHaveBeenCalledWith('system');
   });
 
+  it('groups the settings under their headings; the terminal ones have their own section', () => {
+    const groups = [...host.querySelectorAll('section h2')].map((h) => h.textContent);
+    expect(groups).toEqual(['Appearance', 'Zoom', 'Explorer', 'Agents', 'Startup']);
+  });
+
   it('names every switch and select by its row title', () => {
     const controls = host.querySelectorAll('[role="switch"], [role="combobox"], input');
-    expect(controls.length).toBeGreaterThan(10);
+    expect(controls.length).toBeGreaterThan(5);
     for (const control of controls) {
       const name = document.getElementById(control.getAttribute('aria-labelledby') ?? '')?.textContent;
       expect(name, control.outerHTML).toBeTruthy();
