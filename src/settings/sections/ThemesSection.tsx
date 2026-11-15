@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { closeWindow } from '@/modules/platform';
@@ -19,18 +18,20 @@ import {
   setWindowVibrancy,
 } from '@/modules/settings/store';
 import { useTheme } from '@/modules/theme';
-import { deleteBgImage, importBgImageFromFile } from '@/modules/theme/bgImageStore';
+import { deleteBgImage, getBgImage, importBgImageFromFile } from '@/modules/theme/bgImageStore';
 import { deleteCustomTheme, saveCustomTheme } from '@/modules/theme/customThemes';
 import { deleteThemeFile, handOffThemeEdit, type ThemeEditRequest } from '@/modules/theme/themeFiles';
 import { listBuiltinThemes } from '@/modules/theme/themes';
-import { DEFAULT_THEME_ID } from '@/modules/theme/types';
+import { DEFAULT_THEME_ID, type Theme, type ThemeMode } from '@/modules/theme/types';
 import { validateTheme } from '@/modules/theme/validateTheme';
 import { type Backdrop, getBackdropKind } from '@/modules/theme/vibrancy';
-import { Edit02Icon, PlusSignIcon } from '@hugeicons/core-free-icons';
+import { Delete02Icon, Download01Icon, Edit02Icon, Image02Icon, PlusSignIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { RangeControl } from '../components/RangeControl';
 import { SectionHeader } from '../components/SectionHeader';
 import { SettingRow } from '../components/SettingRow';
+import { SettingsGroup } from '../components/SettingsGroup';
 
 /** Makes `file` the background image and deletes the one it replaces; returns the error to show, or null. */
 async function replaceBackgroundImage(file: File, previousId: string | null): Promise<string | null> {
@@ -43,6 +44,20 @@ async function replaceBackgroundImage(file: File, previousId: string | null): Pr
   } catch (e) {
     return e instanceof Error ? e.message : 'failed to import image';
   }
+}
+
+/** Accepts dropped files on a group without the browser opening them. */
+function dropZone(onFiles: (files: FileList) => void) {
+  return {
+    onDragOver: (e: React.DragEvent) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+    },
+    onDrop: (e: React.DragEvent) => {
+      e.preventDefault();
+      onFiles(e.dataTransfer.files);
+    },
+  };
 }
 
 export function ThemesSection() {
@@ -68,6 +83,7 @@ export function ThemesSection() {
   const backgroundOpacity = usePreferencesStore((s) => s.backgroundOpacity);
   const backgroundBlur = usePreferencesStore((s) => s.backgroundBlur);
   const windowVibrancy = usePreferencesStore((s) => s.windowVibrancy);
+  const imageId = backgroundKind === 'image' ? backgroundImageId : null;
 
   const [backdrop, setBackdrop] = useState<Backdrop>('none');
   useEffect(() => {
@@ -131,137 +147,72 @@ export function ThemesSection() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col">
       <SectionHeader title="Themes" description="Theme, background image, and customization." />
 
       {backdrop === 'none' ? null : (
-        <SettingRow
-          title={backdrop === 'mica' ? 'Mica background' : 'Window vibrancy'}
-          description={
-            backdrop === 'mica'
-              ? 'Blend the header, status bar and gutters into the desktop wallpaper. Windows 11 only.'
-              : 'Frost the header, status bar and gutters over what is behind the window. Panes stay solid.'
-          }
-        >
-          <Switch checked={windowVibrancy} onCheckedChange={(v) => void setWindowVibrancy(v)} />
-        </SettingRow>
+        <SettingsGroup title="Window backdrop">
+          <SettingRow
+            title={backdrop === 'mica' ? 'Mica background' : 'Window vibrancy'}
+            description={
+              backdrop === 'mica'
+                ? 'Blend the header, status bar and gutters into the desktop wallpaper. Windows 11 only.'
+                : 'Frost the header, status bar and gutters over what is behind the window. Panes stay solid.'
+            }
+          >
+            <Switch checked={windowVibrancy} onCheckedChange={(v) => void setWindowVibrancy(v)} />
+          </SettingRow>
+        </SettingsGroup>
       )}
 
-      <div
-        role="presentation"
-        className="flex flex-col gap-2"
-        onDragOver={(e) => {
-          e.preventDefault();
-          e.dataTransfer.dropEffect = 'copy';
-        }}
-        onDrop={(e) => {
-          e.preventDefault();
-          void handleThemeFiles(e.dataTransfer.files);
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <Label>Theme</Label>
-          <div className="flex items-center gap-1.5">
-            <Button variant="outline" onClick={onCreateTheme}>
-              <HugeiconsIcon icon={PlusSignIcon} size={11} strokeWidth={2} />
-              Create
-            </Button>
-            <Button variant="outline" onClick={onPickThemeFile}>
-              Import .lut-theme
-            </Button>
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".lut-theme,.json,application/json"
-            className="hidden"
-            onChange={(e) => {
-              void handleThemeFiles(e.target.files);
-              e.target.value = '';
-            }}
-          />
-        </div>
-        {importError ? (
-          <div className="rounded-md border border-destructive/40 bg-destructive/10 px-2.5 py-1.5 text-[11.5px] text-destructive">
-            {importError}
-          </div>
-        ) : null}
-        <div className="grid grid-cols-2 gap-2">
-          {themes.map((t) => {
-            const v = t.variants[resolvedMode] ?? t.variants.dark ?? t.variants.light;
-            const c = v?.colors;
-            const swatchBg = c?.background ?? 'var(--background)';
-            const swatchFg = c?.foreground ?? 'var(--foreground)';
-            const swatchAccent = c?.primary ?? c?.accent ?? 'var(--accent)';
-            const swatchMuted = c?.muted ?? 'var(--muted)';
-            const selected = themeId === t.id;
-            const isCustom = customIds.has(t.id);
-            return (
-              <button
+      <div role="presentation" {...dropZone((files) => void handleThemeFiles(files))}>
+        <SettingsGroup
+          title="Theme"
+          actions={
+            <>
+              <Button variant="outline" onClick={onCreateTheme}>
+                <HugeiconsIcon icon={PlusSignIcon} strokeWidth={1.5} />
+                Create
+              </Button>
+              <Button variant="outline" onClick={onPickThemeFile}>
+                <HugeiconsIcon icon={Download01Icon} strokeWidth={1.5} />
+                Import .lut-theme
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".lut-theme,.json,application/json"
+                className="hidden"
+                onChange={(e) => {
+                  void handleThemeFiles(e.target.files);
+                  e.target.value = '';
+                }}
+              />
+            </>
+          }
+        >
+          {importError ? <ErrorNote>{importError}</ErrorNote> : null}
+          <div className="mt-1.5 grid grid-cols-2 gap-2">
+            {themes.map((t) => (
+              <ThemeCard
                 key={t.id}
-                type="button"
-                onClick={() => setThemeId(t.id)}
-                className={cn(
-                  'group flex items-center gap-3 rounded-lg border p-2.5 text-left transition-all',
-                  selected ? 'border-foreground/60 ring-1 ring-foreground/20' : 'border-border/60 hover:border-border',
-                )}
-              >
-                <div
-                  className="flex h-10 w-14 shrink-0 items-center justify-center gap-1 rounded-md border border-border/40"
-                  style={{ background: swatchBg }}
-                >
-                  <span className="h-5 w-2 rounded-sm" style={{ background: swatchAccent }} />
-                  <span className="h-5 w-2 rounded-sm" style={{ background: swatchFg, opacity: 0.7 }} />
-                  <span className="h-5 w-2 rounded-sm" style={{ background: swatchMuted }} />
-                </div>
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-[12.5px] font-medium">{t.name}</span>
-                  {t.description ? (
-                    <span className="truncate text-[11px] text-muted-foreground">{t.description}</span>
-                  ) : null}
-                </div>
-                {isCustom ? (
-                  <span className="ml-1 flex shrink-0 items-center gap-0.5 opacity-0 transition group-hover:opacity-100">
-                    <span
-                      role="button"
-                      aria-label={`Edit ${t.name}`}
-                      className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEditTheme(t.id);
-                      }}
-                    >
-                      <HugeiconsIcon icon={Edit02Icon} size={12} strokeWidth={1.75} />
-                    </span>
-                    <span
-                      role="button"
-                      aria-label={`Remove ${t.name}`}
-                      className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-destructive"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void onRemoveCustomTheme(t.id);
-                      }}
-                    >
-                      ×
-                    </span>
-                  </span>
-                ) : null}
-              </button>
-            );
-          })}
-        </div>
+                theme={t}
+                mode={resolvedMode}
+                selected={themeId === t.id}
+                custom={customIds.has(t.id)}
+                onSelect={() => setThemeId(t.id)}
+                onEdit={() => onEditTheme(t.id)}
+                onRemove={() => void onRemoveCustomTheme(t.id)}
+              />
+            ))}
+          </div>
+        </SettingsGroup>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex min-w-0 flex-col">
-            <Label>Editor theme</Label>
-            <span className="text-[11px] text-muted-foreground">
-              Syntax colors for the code editor. Auto follows the app theme.
-            </span>
-          </div>
+      <SettingsGroup title="Editor theme">
+        <SettingRow title="Editor theme" description="Syntax colors for the code editor. Auto follows the app theme.">
           <Select value={editorThemePref} onValueChange={(v) => void setEditorTheme(v as EditorThemePref)}>
-            <SelectTrigger size="sm">
+            <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -273,43 +224,33 @@ export function ThemesSection() {
                     (EDITOR_THEME_MODE[a] === resolvedMode ? 0 : 1) - (EDITOR_THEME_MODE[b] === resolvedMode ? 0 : 1),
                 )
                 .map((id) => (
-                  <SelectItem
-                    key={id}
-                    value={id}
-                    disabled={EDITOR_THEME_MODE[id] !== resolvedMode}
-                    className="text-[12px]"
-                  >
+                  <SelectItem key={id} value={id} disabled={EDITOR_THEME_MODE[id] !== resolvedMode}>
                     {EDITOR_THEME_LABELS[id]}
                   </SelectItem>
                 ))}
             </SelectContent>
           </Select>
-        </div>
-      </div>
+        </SettingRow>
+      </SettingsGroup>
 
-      <div
-        role="presentation"
-        className="flex flex-col gap-2"
-        onDragOver={(e) => {
-          e.preventDefault();
-          e.dataTransfer.dropEffect = 'copy';
-        }}
-        onDrop={(e) => {
-          e.preventDefault();
-          void handleBgFiles(e.dataTransfer.files);
-        }}
-      >
-        <div className="flex items-center justify-between">
-          <Label>Background</Label>
-          <div className="flex items-center gap-2">
-            {backgroundKind === 'image' && backgroundImageId ? (
-              <Button variant="ghost" className="hover:text-destructive" onClick={() => void onRemoveBackground()}>
+      <div role="presentation" {...dropZone((files) => void handleBgFiles(files))}>
+        <SettingsGroup title="Background">
+          {bgError ? <ErrorNote>{bgError}</ErrorNote> : null}
+          <div className="flex items-center gap-3 rounded-lg border border-dashed border-muted-foreground/75 p-3.5 text-[12px] leading-4 text-muted-foreground">
+            <BackgroundThumbnail imageId={imageId} />
+            <span className="min-w-0 flex-1">
+              {imageId
+                ? 'Drop an image here to replace it.'
+                : "Drop an image here or pick one. Stored locally; doesn't affect the default look until set."}
+            </span>
+            <Button variant="outline" onClick={onPickBgFile}>
+              {imageId ? 'Replace image' : 'Choose image'}
+            </Button>
+            {imageId ? (
+              <Button variant="outline" onClick={() => void onRemoveBackground()}>
                 Remove
               </Button>
             ) : null}
-            <Button variant="outline" onClick={onPickBgFile}>
-              {backgroundKind === 'image' ? 'Replace image' : 'Choose image'}
-            </Button>
             <input
               ref={bgInputRef}
               type="file"
@@ -321,49 +262,138 @@ export function ThemesSection() {
               }}
             />
           </div>
-        </div>
-        {bgError ? (
-          <div className="rounded-md border border-destructive/40 bg-destructive/10 px-2.5 py-1.5 text-[11.5px] text-destructive">
-            {bgError}
-          </div>
-        ) : null}
-        {backgroundKind === 'image' && backgroundImageId ? (
-          <div className="flex flex-col gap-3 rounded-lg border border-border/60 p-3">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-[11.5px] text-muted-foreground">Opacity</span>
-              <span className="tabular-nums text-[11px] text-muted-foreground">
-                {Math.round(backgroundOpacity * 100)}%
-              </span>
-            </div>
-            <Slider
-              value={[backgroundOpacity]}
-              min={0}
-              max={1}
-              step={0.01}
-              onValueChange={(v) => void setBackgroundOpacity(v[0] ?? 0)}
-            />
-            <div className="flex items-center justify-between gap-3 pt-1">
-              <span className="text-[11.5px] text-muted-foreground">Blur</span>
-              <span className="tabular-nums text-[11px] text-muted-foreground">{backgroundBlur}px</span>
-            </div>
-            <Slider
-              value={[backgroundBlur]}
-              min={0}
-              max={64}
-              step={1}
-              onValueChange={(v) => void setBackgroundBlur(v[0] ?? 0)}
-            />
-          </div>
-        ) : (
-          <p className="text-[11px] text-muted-foreground">
-            Drop an image here or pick one. Stored locally; doesn't affect the default look until set.
-          </p>
-        )}
+          {imageId ? (
+            <>
+              <SettingRow title="Opacity">
+                <RangeControl
+                  label="Background opacity"
+                  value={backgroundOpacity}
+                  min={0}
+                  max={1}
+                  step={0.01}
+                  onChange={(v) => void setBackgroundOpacity(v)}
+                  format={(v) => `${Math.round(v * 100)}%`}
+                />
+              </SettingRow>
+              <SettingRow title="Blur">
+                <RangeControl
+                  label="Background blur"
+                  value={backgroundBlur}
+                  min={0}
+                  max={64}
+                  step={1}
+                  onChange={(v) => void setBackgroundBlur(v)}
+                  format={(v) => `${v} px`}
+                />
+              </SettingRow>
+            </>
+          ) : null}
+        </SettingsGroup>
       </div>
     </div>
   );
 }
 
-function Label({ children }: { children: React.ReactNode }) {
-  return <span className="text-[11px] font-medium tracking-tight text-muted-foreground">{children}</span>;
+function ErrorNote({ children }: { children: ReactNode }) {
+  return (
+    <div className="rounded-md border border-destructive/40 bg-destructive/10 px-2.5 py-1.5 text-[12px] leading-4 text-destructive">
+      {children}
+    </div>
+  );
+}
+
+type ThemeCardProps = {
+  theme: Theme;
+  mode: ThemeMode;
+  selected: boolean;
+  custom: boolean;
+  onSelect: () => void;
+  onEdit: () => void;
+  onRemove: () => void;
+};
+
+/** A theme to pick: its swatch, name and description. Custom themes add edit and remove, shown on hover or focus. */
+function ThemeCard({ theme, mode, selected, custom, onSelect, onEdit, onRemove }: ThemeCardProps) {
+  const c = (theme.variants[mode] ?? theme.variants.dark ?? theme.variants.light)?.colors;
+  return (
+    <div className="group/card relative min-w-0">
+      <button
+        type="button"
+        aria-pressed={selected}
+        onClick={onSelect}
+        className={cn(
+          'flex w-full min-w-0 items-center gap-3 rounded-lg border bg-card p-2.5 text-left text-foreground transition-colors outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+          selected ? 'border-primary ring-1 ring-primary' : 'border-border hover:border-muted-foreground/75',
+        )}
+      >
+        <span
+          aria-hidden
+          className="flex h-10 w-14 shrink-0 items-center justify-center gap-0.75 rounded-md border border-border"
+          style={{ background: c?.background ?? 'var(--background)' }}
+        >
+          <span className="h-5 w-2 rounded-sm" style={{ background: c?.primary ?? c?.accent ?? 'var(--accent)' }} />
+          <span
+            className="h-5 w-2 rounded-sm opacity-70"
+            style={{ background: c?.foreground ?? 'var(--foreground)' }}
+          />
+          <span className="h-5 w-2 rounded-sm" style={{ background: c?.muted ?? 'var(--muted)' }} />
+        </span>
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <span className="truncate text-[13px] leading-[18px] font-semibold">{theme.name}</span>
+          {theme.description ? (
+            <span className="truncate text-[12px] leading-4 text-muted-foreground">{theme.description}</span>
+          ) : null}
+        </span>
+      </button>
+      {custom ? (
+        <span className="absolute top-1.5 right-1.5 flex gap-0.5 opacity-0 transition-opacity group-hover/card:opacity-100 focus-within:opacity-100">
+          <Button variant="secondary" size="icon-xs" aria-label={`Edit ${theme.name}`} onClick={onEdit}>
+            <HugeiconsIcon icon={Edit02Icon} strokeWidth={1.5} />
+          </Button>
+          <Button variant="secondary" size="icon-xs" aria-label={`Remove ${theme.name}`} onClick={onRemove}>
+            <HugeiconsIcon icon={Delete02Icon} strokeWidth={1.5} />
+          </Button>
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+/** The background image, small; an image icon when none is set. */
+function BackgroundThumbnail({ imageId }: { imageId: string | null }) {
+  const url = useBgImageUrl(imageId);
+  return (
+    <span
+      aria-hidden
+      className="flex h-14 w-24 shrink-0 items-center justify-center overflow-hidden rounded-md bg-accent text-muted-foreground"
+    >
+      {url ? (
+        <img src={url} alt="" className="size-full object-cover" />
+      ) : (
+        <HugeiconsIcon icon={Image02Icon} size={18} strokeWidth={1.5} />
+      )}
+    </span>
+  );
+}
+
+/** An object URL for a stored background image, revoked when the image changes or the thumbnail goes away. */
+function useBgImageUrl(imageId: string | null): string | null {
+  const [shown, setShown] = useState<{ id: string; url: string } | null>(null);
+  useEffect(() => {
+    if (!imageId) return;
+    let alive = true;
+    let created: string | null = null;
+    void getBgImage(imageId)
+      .catch(() => null)
+      .then((blob) => {
+        if (!alive || !blob) return;
+        created = URL.createObjectURL(blob);
+        setShown({ id: imageId, url: created });
+      });
+    return () => {
+      alive = false;
+      if (created) URL.revokeObjectURL(created);
+    };
+  }, [imageId]);
+  return shown?.id === imageId ? shown.url : null;
 }
