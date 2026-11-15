@@ -3849,16 +3849,17 @@ button looks different from one panel to the next.
 
 **Acceptance criteria:**
 
-- [ ] Bordered text buttons use `outline`: Git history Fetch and branch scope, Preview URL, source-control branch picker
-      and Push, LSP pill Restart and Disable, editor "Open anyway", terminal Retry.
+- [ ] Toolbar buttons use `outline-subtle` (faint border): Git history Fetch and branch scope, Preview URL,
+      source-control branch picker. Other bordered text buttons use `outline`: source-control Push, LSP pill Restart and
+      Disable, editor "Open anyway", terminal Retry.
 - [ ] Filled buttons use `default`: source-control Commit, LSP "Check again".
 - [ ] Borderless icon buttons use `ghost` with an icon size: title bar sidebar and settings, sidebar view header actions,
       Spaces (new space, row actions, close tab, expand), Preview reload / open in browser / dismiss, explorer and
       header search clear, LSP copy and dismiss, discard change, commit detail actions.
 - [ ] Small text actions use `ghost` `xs` (code block Copy, notification Clear and Install, agent Reset, Preview notice
       actions) and text links use `link` (editor Retry, markdown "Retry images", LSP Documentation).
-- [ ] Text fields use `Input` / `Textarea` where they fit (inline rename in Spaces and tabs, commit message); a field
-      that cannot is left with a comment saying why.
+- [ ] Text fields use `Input` / `Textarea` where they fit (inline rename in Spaces and tabs, commit message), with its
+      `subtle` variant in toolbars; a field that cannot is left with a comment saying why.
 - [ ] No `size-[…]`, height, radius or font-size overrides on `Button`; a missing size is added to the cva instead.
 - [ ] List rows, tabs, tree rows, breadcrumb segments, selection cards and the window caption buttons stay custom.
 
