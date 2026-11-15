@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { type OsNotificationResult, testAgentOsNotification } from '@/modules/agents/lib/notify';
@@ -37,21 +36,19 @@ import {
 } from '@/modules/settings/store';
 import { coerceMacOptionAsAlt } from '@/modules/terminal/ghostty/input/macOptionAsAlt';
 import { useTheme } from '@/modules/theme';
-import { ComputerIcon, Moon02Icon, Sun03Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import type { Theme, ThemeMode } from '@/modules/theme/types';
 import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useState } from 'react';
+import { RangeControl } from '../components/RangeControl';
 import { SectionHeader } from '../components/SectionHeader';
 import { SettingRow } from '../components/SettingRow';
+import { SettingsGroup } from '../components/SettingsGroup';
+import type { SectionProps } from '../sectionProps';
 
-const APPEARANCE: {
-  id: ThemePref;
-  label: string;
-  icon: typeof ComputerIcon;
-}[] = [
-  { id: 'system', label: 'System', icon: ComputerIcon },
-  { id: 'light', label: 'Light', icon: Sun03Icon },
-  { id: 'dark', label: 'Dark', icon: Moon02Icon },
+const APPEARANCE: { id: ThemePref; label: string }[] = [
+  { id: 'system', label: 'System' },
+  { id: 'light', label: 'Light' },
+  { id: 'dark', label: 'Dark' },
 ];
 
 const TERMINAL_FONT_WEIGHTS = [
@@ -88,8 +85,8 @@ const NOTIFICATION_TEST_DELAY_MS = 2_000;
 
 type NotificationTestState = OsNotificationResult | 'idle' | 'waiting' | 'sending';
 
-export function GeneralSection() {
-  const { mode, setMode } = useTheme();
+export function GeneralSection({ openTab }: SectionProps) {
+  const { mode, setMode, activeTheme } = useTheme();
 
   const restoreWindowState = usePreferencesStore((s) => s.restoreWindowState);
   const showHidden = usePreferencesStore((s) => s.showHidden);
@@ -134,54 +131,46 @@ export function GeneralSection() {
   }, []);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col">
       <SectionHeader title="General" description="Mode, terminal, and startup." />
 
-      <div className="flex flex-col gap-2">
-        <Label>Appearance</Label>
-        <div className="grid grid-cols-3 gap-2">
+      <SettingsGroup title="Appearance">
+        <div className="flex gap-3.5 pt-1">
           {APPEARANCE.map((o) => (
-            <button
+            <ModeCard
               key={o.id}
-              type="button"
-              onClick={() => setMode(o.id)}
-              className={cn(
-                'group flex h-20 flex-col items-center justify-center gap-1.5 rounded-lg border bg-card transition-all',
-                mode === o.id
-                  ? 'border-foreground/60 ring-1 ring-foreground/20'
-                  : 'border-border/60 hover:border-border',
-              )}
-            >
-              <HugeiconsIcon icon={o.icon} size={18} strokeWidth={1.5} />
-              <span className="text-[11.5px]">{o.label}</span>
-            </button>
+              mode={o.id}
+              label={o.label}
+              theme={activeTheme}
+              selected={mode === o.id}
+              onSelect={() => setMode(o.id)}
+            />
           ))}
         </div>
-        <p className="text-[11px] text-muted-foreground">
+        <p className="pt-0.5 text-[12px] leading-4 text-muted-foreground">
           For theme, background and customization, see the{' '}
-          <strong className="font-medium text-foreground">Themes</strong> tab.
+          <Button variant="link" size="inline" onClick={() => openTab('themes')}>
+            Themes
+          </Button>{' '}
+          tab.
         </p>
-      </div>
+      </SettingsGroup>
 
-      <div className="flex flex-col gap-2">
-        <Label>Zoom</Label>
-        <div className="flex flex-col gap-3 rounded-lg border border-border/60 p-3">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-[11.5px] text-muted-foreground">UI zoom level</span>
-            <span className="tabular-nums text-[11px] text-muted-foreground">{Math.round(zoomLevel * 100)}%</span>
-          </div>
-          <Slider
-            value={[zoomLevel]}
+      <SettingsGroup title="Zoom">
+        <SettingRow title="UI zoom level">
+          <RangeControl
+            label="UI zoom level"
+            value={zoomLevel}
             min={ZOOM_MIN}
             max={ZOOM_MAX}
             step={ZOOM_STEP}
-            onValueChange={(v) => void setZoomLevel(v[0] ?? 1)}
+            onChange={(v) => void setZoomLevel(v)}
+            format={(v) => `${Math.round(v * 100)}%`}
           />
-        </div>
-      </div>
+        </SettingRow>
+      </SettingsGroup>
 
-      <div className="flex flex-col gap-2">
-        <Label>Explorer</Label>
+      <SettingsGroup title="Explorer">
         <SettingRow
           title="Show hidden files"
           description="Include dot-prefixed files and folders (.env, .gitignore, .config) in the file explorer and search."
@@ -211,10 +200,9 @@ export function GeneralSection() {
             </SelectContent>
           </Select>
         </SettingRow>
-      </div>
+      </SettingsGroup>
 
-      <div className="flex flex-col gap-2">
-        <Label>Terminal</Label>
+      <SettingsGroup title="Terminal">
         <SettingRow
           title="Terminal renderer"
           description="Automatic and WebGPU draw with WebGPU and fall back to WebGL where the webview has none. WebGL is a compatibility mode: it uses more CPU and holds at most 12 visible panes per window. Applies to new terminals."
@@ -426,10 +414,9 @@ export function GeneralSection() {
             onCheckedChange={(v) => void setConfirmCloseRunningTerminal(v)}
           />
         </SettingRow>
-      </div>
+      </SettingsGroup>
 
-      <div className="flex flex-col gap-2">
-        <Label>Agents</Label>
+      <SettingsGroup title="Agents">
         <SettingRow
           title="Coding agent notifications"
           description="Alert when a coding agent needs your input or finishes. Native notification when lut is unfocused, in-app otherwise."
@@ -461,25 +448,87 @@ export function GeneralSection() {
             onCheckedChange={(v) => void setAgentNotificationSound(v)}
           />
         </SettingRow>
-      </div>
+      </SettingsGroup>
 
-      <div className="flex flex-col gap-2">
-        <Label>Startup</Label>
-        <div className="flex flex-col gap-2">
-          <SettingRow
-            title="Restore window position & size"
-            description="Reopen the main window where you left it. Applies on next launch."
-          >
-            <Switch checked={restoreWindowState} onCheckedChange={(v) => void setRestoreWindowState(v)} />
-          </SettingRow>
-        </div>
-      </div>
+      <SettingsGroup title="Startup">
+        <SettingRow
+          title="Restore window position & size"
+          description="Reopen the main window where you left it. Applies on next launch."
+        >
+          <Switch checked={restoreWindowState} onCheckedChange={(v) => void setRestoreWindowState(v)} />
+        </SettingRow>
+      </SettingsGroup>
     </div>
   );
 }
 
-function Label({ children }: { children: React.ReactNode }) {
-  return <span className="text-[11px] font-medium tracking-tight text-muted-foreground">{children}</span>;
+type ModeCardProps = {
+  mode: ThemePref;
+  label: string;
+  theme: Theme;
+  selected: boolean;
+  onSelect: () => void;
+};
+
+/** A mode choice with a small window drawn in the active theme's light or dark colours. */
+function ModeCard({ mode, label, theme, selected, onSelect }: ModeCardProps) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={onSelect}
+      className="group flex flex-1 flex-col gap-2 text-left text-[12px] leading-4 text-foreground outline-none"
+    >
+      <span
+        className={cn(
+          'flex h-18 overflow-hidden rounded-lg border transition-colors group-focus-visible:outline-2 group-focus-visible:outline-offset-2 group-focus-visible:outline-ring',
+          selected ? 'border-primary ring-1 ring-primary' : 'border-border group-hover:border-muted-foreground/75',
+        )}
+        aria-hidden
+      >
+        {mode === 'system' ? (
+          <>
+            <span className="light flex-1" style={{ background: variantColors(theme, 'light').background }} />
+            <span
+              className="dark flex-1 border-l border-border"
+              style={{ background: variantColors(theme, 'dark').background }}
+            />
+          </>
+        ) : (
+          <WindowSketch mode={mode} colors={variantColors(theme, mode)} />
+        )}
+      </span>
+      {label}
+    </button>
+  );
+}
+
+type SketchColors = { background: string; card: string; border: string; primary: string; muted: string };
+
+/** A sidebar and two lines of text, in one variant's colours. */
+function WindowSketch({ mode, colors }: { mode: ThemeMode; colors: SketchColors }) {
+  return (
+    // The mode class scopes the colour tokens to this mode, for a theme that leaves them to the stylesheet (lut's).
+    <span className={cn(mode, 'flex flex-1')}>
+      <span className="w-[30%] border-r" style={{ background: colors.card, borderColor: colors.border }} />
+      <span className="flex flex-1 flex-col gap-1.25 p-2.5" style={{ background: colors.background }}>
+        <span className="h-1.25 w-1/2 rounded-full" style={{ background: colors.primary }} />
+        <span className="h-1.25 w-[70%] rounded-full" style={{ background: colors.muted }} />
+      </span>
+    </span>
+  );
+}
+
+/** One variant's colours, or the other variant's when the theme has only one, as the theme cards do. */
+function variantColors(theme: Theme, mode: ThemeMode): SketchColors {
+  const c = (theme.variants[mode] ?? theme.variants.dark ?? theme.variants.light)?.colors ?? {};
+  return {
+    background: c.background ?? 'var(--background)',
+    card: c.card ?? 'var(--card)',
+    border: c.border ?? 'var(--border)',
+    primary: c.primary ?? 'var(--primary)',
+    muted: c.mutedForeground ?? 'var(--muted-foreground)',
+  };
 }
 
 function notificationTestLabel(status: NotificationTestState): string {
