@@ -363,6 +363,32 @@ describe('WebGpuTerminalRuntime', () => {
     ]);
   });
 
+  it('draws grayscale after recovering on a device without dual-source blending', async () => {
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    const h = createHarness({ dualSourceBlending: true });
+    vi.stubGlobal('window', { ...window, localStorage: { getItem: () => 'rgb' } });
+    const runtime = await createRuntime();
+    const lease = runtime.acquireGlyphAtlas(METRICS);
+    const textures = vi.mocked(h.device.createTexture);
+    expect(textures.mock.calls[0][0].format).toBe('rgba8unorm');
+
+    // The replacement adapter (another GPU, a driver change) lacks the feature.
+    h.features.clear();
+    textures.mockClear();
+    h.loseDevice();
+    await vi.waitFor(() => expect(runtime.diagnostics().deviceRecoveries).toBe(1));
+    const shaders = vi.mocked(h.device.createShaderModule).mock.calls.map(([d]) => d.code);
+    expect(shaders[shaders.length - 1]?.startsWith('enable dual_source_blending;')).toBe(false);
+    const pipelines = vi.mocked(h.device.createRenderPipelineAsync).mock.calls;
+    const glyph = [...pipelines]
+      .reverse()
+      .find(([d]) => d.label === 'lut terminal glyph pipeline')?.[0];
+    expect([...(glyph?.fragment?.targets ?? [])][0]?.blend?.color?.srcFactor).toBe('src-alpha');
+    // The kept atlas comes back with a grayscale coverage plane.
+    expect(runtime.acquireGlyphAtlas(METRICS).atlas).toBe(lease.atlas);
+    expect(textures.mock.calls[0][0].format).toBe('r8unorm');
+  });
+
   it('releases the warm glyph atlas after the bounded idle window', async () => {
     vi.useFakeTimers();
     createHarness();
@@ -1116,6 +1142,7 @@ function createHarness(options: { dualSourceBlending?: boolean } = {}) {
     destroyDevice,
     gpuContext,
     device,
+    features,
     requestDevice,
     loseDevice() {
       const resolve = loseDevice;

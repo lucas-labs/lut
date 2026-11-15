@@ -888,7 +888,12 @@ export class WebGpuTerminalRuntime {
     this.confirmedFrames = this.submittedFrames;
     this.generation += 1;
     this.format = navigator.gpu.getPreferredCanvasFormat();
-    this.subpixel = this.subpixelOrderFor(device);
+    const subpixel = this.subpixelOrderFor(device);
+    if (subpixel !== this.subpixel) {
+      // Atlases kept across a recovery are suspended here; they resume in the new format.
+      for (const entry of this.atlases.values()) entry.atlas.setSubpixel(subpixel);
+      this.subpixel = subpixel;
+    }
     let initialized = false;
     const generation = this.generation;
     void device.lost.then((info) => {
@@ -907,13 +912,8 @@ export class WebGpuTerminalRuntime {
     for (const target of this.windows.values()) target.reconfigure(configuration);
   }
 
-  /**
-   * The subpixel order `localStorage` asks for, when `device` can blend it (E13-13 prototype).
-   * Atlases kept across a device recovery keep the order they were made with, so it never
-   * changes once an atlas exists.
-   */
+  /** The subpixel order `localStorage` asks for, when `device` can blend it (E13-13 prototype). */
   private subpixelOrderFor(device: GPUDevice): SubpixelOrder | null {
-    if (this.atlases.size > 0) return this.subpixel;
     const requested = currentSubpixelOrder();
     const { order, unavailable } = resolveSubpixelOrder(requested, {
       dualSourceBlending: device.features.has('dual-source-blending'),

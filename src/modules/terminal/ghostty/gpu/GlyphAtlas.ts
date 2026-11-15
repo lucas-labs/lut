@@ -53,7 +53,7 @@ type Plane = {
  * coverage per colour channel, and grayscale glyphs repeat theirs in each.
  */
 export class GlyphAtlas {
-  private readonly rasterizer: GlyphRasterizer;
+  private rasterizer: GlyphRasterizer;
   private coverage: Plane | null = null;
   private color: Plane | null = null;
   private placeholder: GPUTexture | null = null;
@@ -82,7 +82,7 @@ export class GlyphAtlas {
   constructor(
     private device: GPUDevice,
     readonly metrics: TerminalFontMetrics,
-    private readonly subpixel: SubpixelOrder | null = null,
+    private subpixel: SubpixelOrder | null = null,
   ) {
     this.rasterizer = new GlyphRasterizer(metrics, subpixel);
     this.activate();
@@ -316,6 +316,20 @@ export class GlyphAtlas {
     this.tableDirtyStart = Number.POSITIVE_INFINITY;
     this.tableDirtyEnd = -1;
     this.epochValue += 1;
+  }
+
+  /**
+   * Switches between subpixel and grayscale coverage (a replacement device may lack dual-source
+   * blending). The GPU resources are released and every index becomes invalid; the next `resume`
+   * makes the coverage plane in the new format.
+   */
+  setSubpixel(order: SubpixelOrder | null): void {
+    this.assertLive();
+    if (order === this.subpixel) return;
+    this.suspend();
+    this.rasterizer.dispose();
+    this.subpixel = order;
+    this.rasterizer = new GlyphRasterizer(this.metrics, order);
   }
 
   resume(device: GPUDevice): void {
