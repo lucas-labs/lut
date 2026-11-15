@@ -3874,11 +3874,41 @@ button looks different from one panel to the next.
 
 **Verification:** `pnpm test`; manual: each panel listed above in light and dark, hover and keyboard focus.
 
+### E13-17 — Subpixel terminal text setting
+
+```yaml
+id: E13-17
+depends-on: [E13-13]
+refs: [5.4, .docs/plan/analysis/terminal.md]
+covers: [terminal/webgpu-renderer]
+type: task
+scope: ui
+size: M
+```
+
+**Goal:** Ship the subpixel (ClearType-style) text that the E13-13 spike prototyped behind
+`localStorage["lut:terminal-subpixel"]`, as a Settings toggle. The prototype rasterizes hinted text with one
+coverage per colour channel and blends each channel on its own (WebGPU `dual-source-blending`); it measured +12% to
++44% rasterization time per new glyph, about +3 MiB of GPU memory per atlas (4 bytes per coverage texel instead of 1)
+and +1.4 KB in the release binary.
+
+**Acceptance criteria:**
+
+- [ ] Settings → General → Terminal has a toggle that turns subpixel text on and off, off by default; changing it
+      redraws open terminals without restarting the app.
+- [ ] The stripe order (RGB or BGR) follows Windows' ClearType setting, read by the backend; RGB elsewhere.
+- [ ] Where it cannot draw (WebGL renderer, no `dual-source-blending`, macOS) the toggle is disabled and its
+      description says why; text stays grayscale.
+- [ ] The `lut:terminal-subpixel` key is removed; the setting is the only switch.
+
+**Verification:** `pnpm test`; manual on Windows: toggle on and off with terminals open, dark and light theme, 100% and
+125% scale, WebGL renderer selected.
+
 ### E13-11 — Close-out: settings and theming
 
 ```yaml
 id: E13-11
-depends-on: [E13-01, E13-04, E13-06, E13-07, E13-08, E13-09, E13-10, E13-12, E13-13, E13-14, E13-15, E13-16]
+depends-on: [E13-01, E13-04, E13-06, E13-07, E13-08, E13-09, E13-10, E13-12, E13-13, E13-14, E13-15, E13-16, E13-17]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
