@@ -94,7 +94,7 @@ export function LspInstallDialog({ server, onClose }: Props) {
           {server.install ? (
             <Button
               variant="ghost"
-              size="sm"
+              size="lg"
               className="mr-auto"
               onClick={() => void openUrl(server.install?.docsUrl ?? '').catch(console.error)}
             >
@@ -103,7 +103,7 @@ export function LspInstallDialog({ server, onClose }: Props) {
           ) : (
             <span />
           )}
-          <Button size="sm" disabled={checking} onClick={() => void checkAgain()}>
+          <Button size="lg" disabled={checking} onClick={() => void checkAgain()}>
             <HugeiconsIcon
               icon={Refresh01Icon}
               size={12}

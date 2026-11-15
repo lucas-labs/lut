@@ -441,7 +441,6 @@ export function GeneralSection() {
             <Button
               type="button"
               variant="outline"
-              size="xs"
               disabled={!agentNotifications || notificationTestPending}
               title={notificationTestTitle(notificationTest)}
               onClick={() => void testNotification()}

@@ -97,14 +97,7 @@ export function AgentLauncherPanel({ onBack, onLaunch }: Props) {
       }}
     >
       <div className="flex h-9 items-center gap-2 px-1">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          className="rounded-md text-muted-foreground"
-          onClick={onBack}
-          aria-label="Back to new tab menu"
-        >
+        <Button type="button" variant="ghost" size="icon-sm" onClick={onBack} aria-label="Back to new tab menu">
           <HugeiconsIcon icon={ArrowLeft01Icon} size={14} strokeWidth={1.75} />
         </Button>
         <div className="min-w-0">
@@ -205,7 +198,7 @@ export function AgentLauncherPanel({ onBack, onLaunch }: Props) {
         </div>
       </div>
 
-      <Button type="submit" size="sm" className="mt-1 w-full rounded-xl" disabled={!hydrated || !validation.ok}>
+      <Button type="submit" className="mt-1 w-full" disabled={!hydrated || !validation.ok}>
         <HugeiconsIcon icon={PlayIcon} size={13} strokeWidth={2} />
         Launch {instances} {instances === 1 ? 'agent' : 'agents'}
       </Button>

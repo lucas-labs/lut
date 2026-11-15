@@ -162,11 +162,11 @@ export function ThemesSection() {
         <div className="flex items-center justify-between">
           <Label>Theme</Label>
           <div className="flex items-center gap-1.5">
-            <Button variant="outline" size="sm" className="h-7 gap-1.5 px-2 text-[11px]" onClick={onCreateTheme}>
+            <Button variant="outline" onClick={onCreateTheme}>
               <HugeiconsIcon icon={PlusSignIcon} size={11} strokeWidth={2} />
               Create
             </Button>
-            <Button variant="outline" size="sm" className="h-7 px-2 text-[11px]" onClick={onPickThemeFile}>
+            <Button variant="outline" onClick={onPickThemeFile}>
               Import .lut-theme
             </Button>
           </div>
@@ -305,16 +305,11 @@ export function ThemesSection() {
           <Label>Background</Label>
           <div className="flex items-center gap-2">
             {backgroundKind === 'image' && backgroundImageId ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2 text-[11px] text-muted-foreground hover:text-destructive"
-                onClick={() => void onRemoveBackground()}
-              >
+              <Button variant="ghost" className="hover:text-destructive" onClick={() => void onRemoveBackground()}>
                 Remove
               </Button>
             ) : null}
-            <Button variant="outline" size="sm" className="h-7 px-2 text-[11px]" onClick={onPickBgFile}>
+            <Button variant="outline" onClick={onPickBgFile}>
               {backgroundKind === 'image' ? 'Replace image' : 'Choose image'}
             </Button>
             <input
