@@ -72,6 +72,28 @@ describe('MermaidDiagram', () => {
     expect(document.querySelectorAll('[role="dialog"] svg[data-testid="diagram"]')).toHaveLength(1);
   });
 
+  it('draws with an id no element on the page has, also while the diagram is enlarged', async () => {
+    // Mermaid removes the element with the id it is given and looks its own SVG up by it: a reused id would hit the
+    // inline or the enlarged copy.
+    const taken: boolean[] = [];
+    mermaid.render.mockImplementation(async (id: string) => {
+      taken.push(document.getElementById(id) !== null);
+      return { svg: `<svg id="${id}" data-testid="diagram" style="max-width: 320px;"></svg>` };
+    });
+    await draw(FLOW);
+    act(() => host.querySelector<HTMLButtonElement>('button[aria-label="Enlarge diagram"]')?.click());
+
+    theme.resolvedMode = 'light';
+    theme.activeTheme = { id: 'lut' };
+    await draw(FLOW);
+
+    const ids = mermaid.render.mock.calls.map(([id]) => id);
+    expect(ids).toHaveLength(2);
+    expect(ids[1]).not.toBe(ids[0]);
+    expect(taken).toEqual([false, false]);
+    expect(document.querySelectorAll(`[id="${ids[1]}"]`)).toHaveLength(2);
+  });
+
   it('shows the error over the source for an invalid diagram', async () => {
     mermaid.render.mockResolvedValueOnce({ svg: '<svg data-testid="diagram"></svg>' });
     await draw(FLOW);

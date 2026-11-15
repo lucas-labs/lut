@@ -37,7 +37,7 @@ export function MermaidDiagram({ code }: { code: string }) {
             themeVariables,
             fontFamily,
           });
-          const { svg } = await mermaid.render(id, code);
+          const { svg } = await mermaid.render(nextRenderId(id), code);
           if (!cancelled) setDrawn({ kind: 'diagram', svg });
         })
         .catch((error: unknown) => {
@@ -91,6 +91,18 @@ function SvgMarkup({ svg, className }: { svg: string; className?: string }) {
 function diagramWidth(svg: string): string {
   const width = /max-width:\s*([\d.]+)px/.exec(svg)?.[1];
   return width ? `${width}px` : '100%';
+}
+
+let renders = 0;
+
+/**
+ * A fresh SVG id for each drawing. Mermaid removes the first element with the id it is given and then looks its own
+ * temporary SVG up by that id, so reusing the id of a diagram already on the page (inline, or enlarged in the dialog)
+ * would remove that one and draw into the other.
+ */
+function nextRenderId(base: string): string {
+  renders += 1;
+  return `${base}-${renders}`;
 }
 
 /** Outside the component: the React Compiler does not handle `import()` expressions. */
