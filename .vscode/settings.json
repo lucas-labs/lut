@@ -6,5 +6,25 @@
     "source.fixAll.eslint": "explicit"
   },
   "[rust]": { "editor.defaultFormatter": "rust-lang.rust-analyzer" },
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "files.exclude": {
+    ".claude": true,
+    ".vscode": true,
+    "**/node_modules": true,
+    "dist": true,
+    "**/*.test.ts*": true,
+    "**/target": true,
+    "**/Cargo.lock": true,
+    "**/.gitignore": true,
+    "**/binaries": true,
+    "components.json": true,
+    ".prettier**": true,
+    ".gitattributes": true,
+    ".gitleaksignore": true,
+    ".editorconfig": true,
+    ".coderabbit.yaml": true,
+    "pnpm-lock.yaml": true,
+    "pnpm-workspace.yaml": true,
+    "**/tsconfig*.json": true
+  }
 }
