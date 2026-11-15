@@ -327,6 +327,42 @@ describe('WebGpuTerminalRuntime', () => {
     expect(h.frames.size).toBe(0);
   });
 
+  it('draws subpixel text when asked and the GPU blends two sources, grayscale otherwise', async () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+    for (const [stored, dualSourceBlending, subpixel] of [
+      ['rgb', true, true],
+      ['rgb', false, false],
+      [null, true, false],
+    ] as const) {
+      const h = createHarness({ dualSourceBlending });
+      vi.stubGlobal('window', { ...window, localStorage: { getItem: () => stored } });
+      const runtime = await createRuntime();
+      expect(h.requestDevice).toHaveBeenCalledWith(
+        expect.objectContaining({
+          requiredFeatures: dualSourceBlending ? ['dual-source-blending'] : [],
+        }),
+      );
+      const shaders = vi.mocked(h.device.createShaderModule).mock.calls.map(([d]) => d.code);
+      expect(shaders.some((code) => code.startsWith('enable dual_source_blending;'))).toBe(
+        subpixel,
+      );
+      const pipelines = vi.mocked(h.device.createRenderPipelineAsync).mock.calls;
+      const glyph = pipelines.find(([d]) => d.label === 'lut terminal glyph pipeline')?.[0];
+      const blend = [...(glyph?.fragment?.targets ?? [])][0]?.blend?.color;
+      expect(blend?.srcFactor).toBe(subpixel ? 'src1' : 'src-alpha');
+      const lease = runtime.acquireGlyphAtlas(METRICS);
+      const formats = vi.mocked(h.device.createTexture).mock.calls.map(([d]) => d.format);
+      expect(formats[0]).toBe(subpixel ? 'rgba8unorm' : 'r8unorm');
+      lease.release();
+      runtime.dispose();
+      vi.unstubAllGlobals();
+    }
+    expect(info.mock.calls.map(([message]) => message)).toEqual([
+      '[lut] subpixel terminal text: rgb',
+      '[lut] subpixel terminal text is unavailable: the GPU has no dual-source-blending',
+    ]);
+  });
+
   it('releases the warm glyph atlas after the bounded idle window', async () => {
     vi.useFakeTimers();
     createHarness();
@@ -921,7 +957,8 @@ describe('WebGpuTerminalRuntime', () => {
   });
 });
 
-function createHarness() {
+function createHarness(options: { dualSourceBlending?: boolean } = {}) {
+  const features = new Set<string>(options.dualSourceBlending ? ['dual-source-blending'] : []);
   let visible = true;
   let visibilityListener: (() => void) | null = null;
   let uncapturedErrorListener: ((event: { error: { message: string } }) => void) | null = null;
@@ -974,6 +1011,7 @@ function createHarness() {
       copyTextureToTexture: vi.fn(),
     })),
     limits: { maxTextureDimension2D: 8_192 },
+    features,
     destroy: destroyDevice,
     lost: new Promise<GPUDeviceLostInfo>((resolve) => {
       loseDevice = resolve;
@@ -997,6 +1035,7 @@ function createHarness() {
   vi.stubGlobal('navigator', {
     gpu: {
       requestAdapter: vi.fn(async () => ({
+        features,
         requestDevice,
       })),
       getPreferredCanvasFormat: vi.fn(() => 'bgra8unorm'),

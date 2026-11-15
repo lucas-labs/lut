@@ -3,6 +3,7 @@ import { ScreenUniform, type ScreenUniformState } from './ScreenUniform';
 import {
   BACKGROUND_SHADER,
   GLYPH_SHADER,
+  GLYPH_SUBPIXEL_SHADER,
   SCREEN_FLAG_CURSOR_BLOCK,
   SCREEN_FLAG_SEARCH_ACTIVE,
   SCREEN_FLAG_SELECTION_ACTIVE,
@@ -182,6 +183,7 @@ describe('shader uniform layout', () => {
   it.each([
     ['background', BACKGROUND_SHADER],
     ['glyph', GLYPH_SHADER],
+    ['subpixel glyph', GLYPH_SUBPIXEL_SHADER],
   ])('declares offsets that match the TypeScript packer in the %s shader', (_name, shader) => {
     const { offsets, size } = layout(shader);
     expect(size).toBe(SCREEN_UNIFORM_BYTES);
@@ -291,7 +293,7 @@ describe('shader uniform layout', () => {
   });
 
   it('binds the storage and texture slots the surface fills', () => {
-    for (const shader of [BACKGROUND_SHADER, GLYPH_SHADER]) {
+    for (const shader of [BACKGROUND_SHADER, GLYPH_SHADER, GLYPH_SUBPIXEL_SHADER]) {
       expect(shader).toMatch(/@binding\(1\) var<storage, read> cells/);
       expect(shader).toMatch(/@binding\(2\) var<storage, read> glyph_map/);
       expect(shader).toMatch(/@binding\(3\) var<storage, read> glyph_table/);
@@ -302,5 +304,17 @@ describe('shader uniform layout', () => {
     // Sampling must stay out of non-uniform control flow and unfiltered.
     expect(GLYPH_SHADER).not.toMatch(/textureSample\(/);
     expect(GLYPH_SHADER).toMatch(/textureLoad\(coverage_texture/);
+  });
+
+  it('gives subpixel text a second blend source with one coverage per channel', () => {
+    expect(GLYPH_SUBPIXEL_SHADER.startsWith('enable dual_source_blending;')).toBe(true);
+    expect(GLYPH_SUBPIXEL_SHADER).toMatch(/@location\(0\) @blend_src\(0\) color: vec4f/);
+    expect(GLYPH_SUBPIXEL_SHADER).toMatch(/@location\(0\) @blend_src\(1\) blend: vec4f/);
+    expect(GLYPH_SHADER).not.toMatch(/dual_source_blending|blend_src/);
+    // Subpixel entries (flag 16) read three channels; every other glyph repeats its coverage.
+    expect(GLYPH_SHADER).toMatch(
+      /if \(\(glyph_flags & 16u\) != 0u\) \{ coverage = sample\.rgb; \}/,
+    );
+    expect(GLYPH_SHADER).toMatch(/var coverage = vec3f\(sample\.r\);/);
   });
 });

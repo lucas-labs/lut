@@ -2,6 +2,7 @@ import { isBuiltinGlyph } from './BuiltinGlyphs';
 import { isNeighbourAware, isNonGraphicsSymbol } from './GlyphPlacement';
 import { GlyphRasterizer, type RasterizedGlyph } from './GlyphRasterizer';
 import { SkylineAtlasAllocator } from './SkylineAtlasAllocator';
+import type { SubpixelOrder } from './subpixelText';
 import type { TerminalFontMetrics } from './terminalVisuals';
 
 /** Words per `glyph_table` entry: rect xy, size wh, bearing xy, flags. */
@@ -16,6 +17,8 @@ export const GLYPH_ENTRY_FLAG_COLOR = 1;
 export const GLYPH_ENTRY_FLAG_NEIGHBOUR = 4;
 /** A private-use symbol that is not a Powerline separator (see `isNonGraphicsSymbol`). */
 export const GLYPH_ENTRY_FLAG_SYMBOL = 8;
+/** One coverage per colour channel (subpixel text): the shader blends each channel on its own. */
+export const GLYPH_ENTRY_FLAG_SUBPIXEL = 16;
 /** `resolve()` result when nothing more fits even at the largest atlas. */
 export const ATLAS_FULL = -1;
 
@@ -45,6 +48,9 @@ type Plane = {
  * 512^2 -> 2048^2) by a GPU copy before anything is evicted. When the largest
  * atlas is full the owner calls `flush()` between frames: the epoch advances,
  * every index is invalid, and each surface re-rasterizes what it shows.
+ *
+ * With a `subpixel` order the coverage plane is RGBA: hinted text keeps one
+ * coverage per colour channel, and grayscale glyphs repeat theirs in each.
  */
 export class GlyphAtlas {
   private readonly rasterizer: GlyphRasterizer;
@@ -56,6 +62,8 @@ export class GlyphAtlas {
   private tableData = new Uint32Array(0);
   private tableDirtyStart = Number.POSITIVE_INFINITY;
   private tableDirtyEnd = -1;
+  /** Grayscale coverage repeated into RGBA for a subpixel coverage plane. */
+  private expanded: Uint8Array | null = null;
   private readonly simple = new Map<number, number>();
   private readonly complex = new Map<string, number>();
   private count = 0;
@@ -74,8 +82,9 @@ export class GlyphAtlas {
   constructor(
     private device: GPUDevice,
     readonly metrics: TerminalFontMetrics,
+    private readonly subpixel: SubpixelOrder | null = null,
   ) {
-    this.rasterizer = new GlyphRasterizer(metrics);
+    this.rasterizer = new GlyphRasterizer(metrics, subpixel);
     this.activate();
   }
 
@@ -112,13 +121,15 @@ export class GlyphAtlas {
 
   get byteSize(): number {
     if (!this.gpuActive || this.disposed) return 0;
-    const coverage = this.coverage ? this.coverage.allocator.width ** 2 : 0;
+    const coverage = this.coverage
+      ? this.coverage.allocator.width ** 2 * (this.coverage.format === 'rgba8unorm' ? 4 : 1)
+      : 0;
     const color = this.color ? this.color.allocator.width ** 2 * 4 : 4;
     return coverage + color + (this.table?.size ?? 0);
   }
 
   get cpuByteSize(): number {
-    return this.tableData.byteLength + this.rasterizer.cpuBytes;
+    return this.tableData.byteLength + (this.expanded?.byteLength ?? 0) + this.rasterizer.cpuBytes;
   }
 
   get uploadCount(): number {
@@ -201,10 +212,14 @@ export class GlyphAtlas {
       return false;
     }
 
-    const bytesPerPixel = glyph.intrinsicColor ? 4 : 1;
+    const bytesPerPixel = plane.format === 'rgba8unorm' ? 4 : 1;
+    const pixels =
+      bytesPerPixel === 4 && !glyph.intrinsicColor && !glyph.subpixel
+        ? this.expand(glyph.pixels)
+        : glyph.pixels;
     this.device.queue.writeTexture(
       { texture: plane.texture, origin: [region.x, region.y, 0] },
-      glyph.pixels,
+      pixels,
       { bytesPerRow: glyph.width * bytesPerPixel, rowsPerImage: glyph.height },
       [glyph.width, glyph.height, 1],
     );
@@ -215,10 +230,24 @@ export class GlyphAtlas {
     this.tableData[base] = region.x | (region.y << 16);
     this.tableData[base + 1] = glyph.width | (glyph.height << 16);
     this.tableData[base + 2] = (glyph.bearingX & 0xffff) | ((glyph.bearingY & 0xffff) << 16);
-    this.tableData[base + 3] = (glyph.intrinsicColor ? GLYPH_ENTRY_FLAG_COLOR : 0) | extraFlags;
+    this.tableData[base + 3] =
+      (glyph.intrinsicColor ? GLYPH_ENTRY_FLAG_COLOR : 0) |
+      (glyph.subpixel ? GLYPH_ENTRY_FLAG_SUBPIXEL : 0) |
+      extraFlags;
     this.tableDirtyStart = Math.min(this.tableDirtyStart, index);
     this.tableDirtyEnd = Math.max(this.tableDirtyEnd, index);
     return true;
+  }
+
+  /** Grayscale coverage repeated in each RGBA channel, in scratch memory reused per glyph. */
+  private expand(coverage: Uint8Array): Uint8Array {
+    const bytes = coverage.length * 4;
+    if (!this.expanded || this.expanded.length < bytes) this.expanded = new Uint8Array(bytes);
+    const out = this.expanded.subarray(0, bytes);
+    for (let index = 0; index < coverage.length; index += 1) {
+      out.fill(coverage[index], index * 4, index * 4 + 4);
+    }
+    return out;
   }
 
   /** Uploads table entries written since the last commit. */
@@ -304,7 +333,11 @@ export class GlyphAtlas {
   }
 
   private activate(): void {
-    const coverage = this.createPlane('r8unorm', COVERAGE_SIZES, 'coverage');
+    const coverage = this.createPlane(
+      this.subpixel ? 'rgba8unorm' : 'r8unorm',
+      COVERAGE_SIZES,
+      'coverage',
+    );
     this.coverage = coverage;
     try {
       this.placeholder = this.device.createTexture({

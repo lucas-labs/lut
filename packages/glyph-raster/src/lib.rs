@@ -4,6 +4,8 @@
 //! pixels comes out as two grey pixels, so terminal text looks soft next to native terminals. This
 //! crate hints each glyph (the font's TrueType instructions when it has them, the automatic hinter
 //! otherwise) and fills it into an 8-bit coverage mask the terminal's glyph atlas takes as is.
+//! With `FLAG_SUBPIXEL` it fills an RGBA mask instead: one coverage per colour channel, for LCD
+//! panels whose pixels are three vertical stripes, as ClearType draws.
 //!
 //! The interface is a handful of C ABI exports over the module's linear memory:
 //! - `lut_alloc` / `lut_free`: buffers the host fills with font bytes;
@@ -23,7 +25,7 @@ use skrifa::outline::{
 use skrifa::raw::types::Tag;
 use skrifa::raw::TableProvider;
 use skrifa::{FontRef, GlyphId, MetadataProvider};
-use zeno::{Command, Format, Mask, PathBuilder, Stroke, Vector};
+use zeno::{Command, Format, Mask, PathBuilder, Placement, Stroke, Transform, Vector};
 
 /// `lut_rasterize` flag: grid-fit the outline before filling it.
 pub const FLAG_HINT: u32 = 1;
@@ -31,11 +33,18 @@ pub const FLAG_HINT: u32 = 1;
 pub const FLAG_EMBOLDEN: u32 = 2;
 /// `lut_rasterize` flag: slant the outline, for an italic the font has no face for.
 pub const FLAG_OBLIQUE: u32 = 4;
+/// `lut_rasterize` flag: fill an RGBA mask with one coverage per colour channel (RGB stripes).
+pub const FLAG_SUBPIXEL: u32 = 8;
+/// With `FLAG_SUBPIXEL`: the panel's stripes run blue, green, red.
+pub const FLAG_BGR: u32 = 16;
 
 /// Horizontal shift per unit of height of a synthesized oblique (about 11 degrees, as browsers do).
 const OBLIQUE_SLANT: f32 = 0.2;
 /// Extra stem weight of a synthesized bold, per pixel of font size (FreeType's emboldening ratio).
 const EMBOLDEN_PER_PX: f32 = 1.0 / 24.0;
+/// FreeType's default LCD filter (`FT_LCD_FILTER_DEFAULT`): spreads each subpixel sample over its
+/// neighbours so a stem's edge does not come out as a pure colour. The weights add up to 256.
+const LCD_FILTER: [u32; 5] = [8, 77, 86, 77, 8];
 
 const WGHT: Tag = Tag::new(b"wght");
 
@@ -45,14 +54,16 @@ struct LoadedFont {
     /// The font carries its own hinting program; otherwise the automatic hinter is used.
     has_instructions: bool,
     has_weight_axis: bool,
-    hinting: HashMap<(u32, u32), HintingInstance>,
+    /// Hinting instances by size, weight and whether they target an LCD panel.
+    hinting: HashMap<(u32, u32, bool), HintingInstance>,
 }
 
 #[derive(Default)]
 struct State {
     fonts: Vec<Option<LoadedFont>>,
     /// `[width, height, left, top]`: the mask's size and the offset of its top-left pixel from the
-    /// pen at the baseline (y grows downwards).
+    /// pen at the baseline (y grows downwards). The pixels are 1 byte each, 4 (RGBA) for a
+    /// subpixel mask.
     header: [i32; 4],
     pixels: Vec<u8>,
     path: Vec<Command>,
@@ -142,7 +153,8 @@ pub extern "C" fn lut_result_header() -> *const i32 {
     STATE.with_borrow(|state| state.header.as_ptr())
 }
 
-/// The result's `width * height` coverage bytes, row by row.
+/// The result's `width * height` coverage bytes, row by row (`width * height * 4` RGBA bytes
+/// with `FLAG_SUBPIXEL`; alpha holds the largest of the three).
 #[no_mangle]
 pub extern "C" fn lut_result_pixels() -> *const u8 {
     STATE.with_borrow(|state| state.pixels.as_ptr())
@@ -202,8 +214,9 @@ impl State {
         let outlines = font_ref.outline_glyphs();
         let outline = outlines.get(GlyphId::new(glyph))?;
         let size = Size::new(size);
+        let subpixel = flags & FLAG_SUBPIXEL != 0;
         let hinting = if flags & FLAG_HINT != 0 {
-            let key = (size.ppem()?.to_bits(), weight.to_bits());
+            let key = (size.ppem()?.to_bits(), weight.to_bits(), subpixel);
             if !loaded.hinting.contains_key(&key) {
                 let engine = if loaded.has_instructions {
                     Engine::Interpreter
@@ -211,7 +224,11 @@ impl State {
                     Engine::Auto(None)
                 };
                 let target = Target::Smooth {
-                    mode: SmoothMode::Normal,
+                    mode: if subpixel {
+                        SmoothMode::Lcd
+                    } else {
+                        SmoothMode::Normal
+                    },
                     symmetric_rendering: true,
                     preserve_linear_metrics: false,
                 };
@@ -254,47 +271,104 @@ impl State {
         } else {
             0.0
         };
-        fill(&self.path, embolden, &mut self.pixels, &mut self.header);
-        Some(())
-    }
-}
-
-/// Fills `path` into `pixels`, thickened by `embolden` pixels when it is above 0, and records the
-/// mask's placement in `header`.
-fn fill(path: &[Command], embolden: f32, pixels: &mut Vec<u8>, header: &mut [i32; 4]) {
-    if embolden <= 0.0 {
-        let (mask, placement) = Mask::new(path).format(Format::Alpha).render();
-        *pixels = mask;
-        *header = [
+        let (mask, placement) = if subpixel {
+            let (coverage, placement) =
+                fill(&self.path, embolden, Some(Transform::scale(3.0, 1.0)));
+            lcd_filter(&coverage, placement, flags & FLAG_BGR != 0)
+        } else {
+            fill(&self.path, embolden, None)
+        };
+        self.pixels = mask;
+        self.header = [
             placement.width as i32,
             placement.height as i32,
             placement.left,
             placement.top,
         ];
-        return;
+        Some(())
+    }
+}
+
+/// Fills `path`, thickened by `embolden` pixels when it is above 0, into an 8-bit coverage mask;
+/// `transform` applies after the thickening.
+fn fill(path: &[Command], embolden: f32, transform: Option<Transform>) -> (Vec<u8>, Placement) {
+    if embolden <= 0.0 {
+        return Mask::new(path)
+            .format(Format::Alpha)
+            .transform(transform)
+            .render();
     }
     // A stroke as wide as the extra weight grows every stem by half of it on each side; the fill
     // keeps the counters' interiors, which a stroke alone would leave hollow.
     let (mut mask, placement) = Mask::new(path)
         .style(Stroke::new(embolden))
         .format(Format::Alpha)
+        .transform(transform)
         .render();
     let mut inside = vec![0; mask.len()];
     Mask::new(path)
         .format(Format::Alpha)
+        .transform(transform)
         .size(placement.width, placement.height)
         .offset(Vector::new(-placement.left as f32, -placement.top as f32))
         .render_into(&mut inside, None);
     for (out, fill) in mask.iter_mut().zip(inside) {
         *out = (*out).max(fill);
     }
-    *pixels = mask;
-    *header = [
-        placement.width as i32,
-        placement.height as i32,
-        placement.left,
-        placement.top,
-    ];
+    (mask, placement)
+}
+
+/// Turns a mask filled at three times the horizontal resolution into an RGBA subpixel mask: runs
+/// `LCD_FILTER` along each row, then gives every pixel its three subpixel samples, leftmost
+/// stripe first (red, or blue when `bgr`). Pixel `p` holds subpixels `3p..3p + 3`, so the mask
+/// starts at the pixel holding the first subpixel the filter reaches.
+fn lcd_filter(coverage: &[u8], placement: Placement, bgr: bool) -> (Vec<u8>, Placement) {
+    let source_width = placement.width as i32;
+    let height = placement.height as usize;
+    if source_width == 0 || height == 0 {
+        return (
+            Vec::new(),
+            Placement {
+                width: 0,
+                height: 0,
+                ..placement
+            },
+        );
+    }
+    let reach = (LCD_FILTER.len() / 2) as i32;
+    let first = (placement.left - reach).div_euclid(3);
+    let last = (placement.left + source_width - 1 + reach).div_euclid(3);
+    let width = (last - first + 1) as usize;
+    let mut pixels = vec![0u8; width * height * 4];
+    for row in 0..height {
+        let source = &coverage[row * source_width as usize..(row + 1) * source_width as usize];
+        let sample = |subpixel: i32| -> u8 {
+            let mut sum = 0;
+            for (tap, weight) in LCD_FILTER.iter().enumerate() {
+                let at = subpixel + tap as i32 - reach - placement.left;
+                if (0..source_width).contains(&at) {
+                    sum += weight * u32::from(source[at as usize]);
+                }
+            }
+            ((sum + 128) >> 8).min(255) as u8
+        };
+        for column in 0..width {
+            let stripe = (first + column as i32) * 3;
+            let (left, middle, right) = (sample(stripe), sample(stripe + 1), sample(stripe + 2));
+            let (red, blue) = if bgr { (right, left) } else { (left, right) };
+            let out = (row * width + column) * 4;
+            pixels[out] = red;
+            pixels[out + 1] = middle;
+            pixels[out + 2] = blue;
+            pixels[out + 3] = red.max(middle).max(blue);
+        }
+    }
+    let placement = Placement {
+        left: first,
+        width: width as u32,
+        ..placement
+    };
+    (pixels, placement)
 }
 
 /// Collects a glyph outline in pixel space with y growing downwards, slanted by `slant`.

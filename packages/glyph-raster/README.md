@@ -6,6 +6,8 @@ terminals (DirectWrite, FreeType) snap them to whole pixels. This crate does the
 webview: it hints each glyph with [skrifa](https://github.com/googlefonts/fontations) (the font's
 TrueType instructions, or the automatic hinter for fonts without them) and fills it with
 [zeno](https://github.com/dfrg/zeno) into an 8-bit coverage mask the glyph atlas takes as is.
+With `FLAG_SUBPIXEL` it fills at three times the horizontal resolution, runs FreeType's default
+LCD filter and returns an RGBA mask with one coverage per colour channel (subpixel text).
 
 - `src/lib.rs`: the C ABI the loader calls (`lut_font_load`, `lut_rasterize`...).
 - `lib/index.ts`: the loader (`GlyphRaster`), synchronous after `load`.

@@ -5,7 +5,7 @@
 
 /** SHA-256 of `glyph-raster.wasm`; `pnpm build:glyph-raster` prints it after a rebuild. */
 export const GLYPH_RASTER_WASM_SHA256 =
-  '0df25a6cf7dcc6c828ea106f9c5e5b03b5af8c247d25c84f5d4a0bf3d9a9f494';
+  '1fbe939cbde629033f7050068f51cd7a6a2e000ed7a168addb9fe6ed2c84c702';
 
 /** Grid-fit the outline before filling it. */
 export const FLAG_HINT = 1;
@@ -13,6 +13,10 @@ export const FLAG_HINT = 1;
 export const FLAG_EMBOLDEN = 2;
 /** Slant the outline: an italic the font has no face for. */
 export const FLAG_OBLIQUE = 4;
+/** Fill an RGBA mask with one coverage per colour channel, for an LCD panel's RGB stripes. */
+export const FLAG_SUBPIXEL = 8;
+/** With `FLAG_SUBPIXEL`: the panel's stripes run blue, green, red. */
+export const FLAG_BGR = 16;
 
 export type GlyphMask = {
   readonly width: number;
@@ -20,7 +24,10 @@ export type GlyphMask = {
   /** Offset of the mask's top-left pixel from the pen at the baseline (y grows downwards). */
   readonly left: number;
   readonly top: number;
-  /** `width * height` coverage bytes. Borrowed: valid until the next call into the rasterizer. */
+  /**
+   * `width * height` coverage bytes, or `width * height * 4` RGBA bytes with `FLAG_SUBPIXEL` (alpha
+   * holds the largest channel). Borrowed: valid until the next call into the rasterizer.
+   */
   readonly pixels: Uint8Array;
 };
 
@@ -104,7 +111,8 @@ export class GlyphRaster {
     if (!this.exports.lut_rasterize(font, glyph, size, weight, flags)) return null;
     const buffer = this.exports.memory.buffer;
     const [width, height, left, top] = new Int32Array(buffer, this.exports.lut_result_header(), 4);
-    const pixels = new Uint8Array(buffer, this.exports.lut_result_pixels(), width * height);
+    const bytes = width * height * (flags & FLAG_SUBPIXEL ? 4 : 1);
+    const pixels = new Uint8Array(buffer, this.exports.lut_result_pixels(), bytes);
     return { width, height, left, top, pixels };
   }
 }
