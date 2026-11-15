@@ -16,7 +16,7 @@ type Props = SettingRowA11y & {
 
 /**
  * A setting row's number field, 88 px wide with its unit on the right, named by the row. The typed text is a draft
- * until the field loses focus or Enter: then it is clamped and saved, or put back when it is not a number.
+ * until the field loses focus or Enter: then it is clamped and saved, or put back when it is empty or not a number.
  */
 export function NumberControl({ value, min, max, step, clamp, onChange, unit, ...a11y }: Props) {
   const [draft, setDraft] = useState(String(value));
@@ -29,7 +29,8 @@ export function NumberControl({ value, min, max, step, clamp, onChange, unit, ..
 
   const commit = () => {
     const n = Number(draft);
-    if (!Number.isFinite(n)) {
+    // An empty field is not 0: put the saved value back.
+    if (draft.trim() === '' || !Number.isFinite(n)) {
       setDraft(String(value));
       return;
     }

@@ -98,6 +98,20 @@ describe('EditorSection', () => {
     expect(input.value).toBe(String(EDITOR_WORD_WRAP_COLUMN_MAX));
   });
 
+  it('puts the saved wrap column back when the field is left empty', () => {
+    render({ editorWordWrap: true });
+    const input = rowOf('Wrap column')?.querySelector('input') as HTMLInputElement;
+    act(() => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(input, '');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    act(() => {
+      input.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+    });
+    expect(store.setEditorWordWrapColumn).not.toHaveBeenCalled();
+    expect(input.value).toBe('100');
+  });
+
   it('adds and removes a language override', () => {
     render();
     act(() => button('Add override')?.click());
