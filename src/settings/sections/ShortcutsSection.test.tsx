@@ -59,6 +59,15 @@ describe('ShortcutsSection', () => {
     );
   });
 
+  it('says under a pane layout shortcut that it only acts in a split', () => {
+    render();
+    const description = rowOf('Focus pane left')?.querySelector('[id$="-description"]');
+    expect(description?.textContent).toBe(
+      'Only in a tab split into panes; elsewhere the keys reach the terminal or the editor.',
+    );
+    expect(rowOf('New tab')?.querySelector('[id$="-description"]')).toBeNull();
+  });
+
   it('records the next key press with a modifier as the binding', () => {
     render();
     act(() => keysOf('New tab').click());

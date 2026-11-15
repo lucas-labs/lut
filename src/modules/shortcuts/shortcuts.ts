@@ -28,6 +28,14 @@ export type ShortcutId =
   | 'pane.swapRight'
   | 'pane.swapUp'
   | 'pane.swapDown'
+  | 'pane.focusLeft'
+  | 'pane.focusRight'
+  | 'pane.focusUp'
+  | 'pane.focusDown'
+  | 'pane.resizeLeft'
+  | 'pane.resizeRight'
+  | 'pane.resizeUp'
+  | 'pane.resizeDown'
   | 'pane.moveToNewTab'
   | 'pane.moveToNextTab'
   | 'pane.moveToPrevTab'
@@ -66,10 +74,16 @@ export type KeyBinding = {
 export type Shortcut = {
   id: ShortcutId;
   label: string;
+  /** When the shortcut acts, shown under its label in Settings. */
+  description?: string;
   group: ShortcutGroup;
   defaultBindings: KeyBinding[];
   allowRepeat?: boolean;
 };
+
+/** The pane layout shortcuts only act in a split (shouldDisablePaneLayoutShortcut). */
+const SPLIT_ONLY =
+  'Only in a tab split into panes; elsewhere the keys reach the terminal or the editor.';
 
 // Matching walks this list in order and skips a shortcut its host disables, so
 // terminal.clear stays ahead of commandPalette.open: on macOS ⌘K clears a
@@ -149,21 +163,77 @@ const SHORTCUT_META: Omit<Shortcut, 'defaultBindings'>[] = [
     id: 'pane.swapLeft',
     label: 'Swap pane left',
     group: 'Panes',
+    description: SPLIT_ONLY,
   },
   {
     id: 'pane.swapRight',
     label: 'Swap pane right',
     group: 'Panes',
+    description: SPLIT_ONLY,
   },
   {
     id: 'pane.swapUp',
     label: 'Swap pane up',
     group: 'Panes',
+    description: SPLIT_ONLY,
   },
   {
     id: 'pane.swapDown',
     label: 'Swap pane down',
     group: 'Panes',
+    description: SPLIT_ONLY,
+  },
+  {
+    id: 'pane.focusLeft',
+    label: 'Focus pane left',
+    group: 'Panes',
+    description: SPLIT_ONLY,
+  },
+  {
+    id: 'pane.focusRight',
+    label: 'Focus pane right',
+    group: 'Panes',
+    description: SPLIT_ONLY,
+  },
+  {
+    id: 'pane.focusUp',
+    label: 'Focus pane up',
+    group: 'Panes',
+    description: SPLIT_ONLY,
+  },
+  {
+    id: 'pane.focusDown',
+    label: 'Focus pane down',
+    group: 'Panes',
+    description: SPLIT_ONLY,
+  },
+  {
+    id: 'pane.resizeLeft',
+    label: 'Resize pane left',
+    group: 'Panes',
+    description: SPLIT_ONLY,
+    allowRepeat: true,
+  },
+  {
+    id: 'pane.resizeRight',
+    label: 'Resize pane right',
+    group: 'Panes',
+    description: SPLIT_ONLY,
+    allowRepeat: true,
+  },
+  {
+    id: 'pane.resizeUp',
+    label: 'Resize pane up',
+    group: 'Panes',
+    description: SPLIT_ONLY,
+    allowRepeat: true,
+  },
+  {
+    id: 'pane.resizeDown',
+    label: 'Resize pane down',
+    group: 'Panes',
+    description: SPLIT_ONLY,
+    allowRepeat: true,
   },
   {
     id: 'pane.moveToNewTab',

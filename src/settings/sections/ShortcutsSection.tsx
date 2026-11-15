@@ -169,7 +169,7 @@ function ShortcutRow({
   useShortcutRecorder(isRecording, onRecord, onStopRecording);
 
   return (
-    <SettingRow title={shortcut.label}>
+    <SettingRow title={shortcut.label} description={shortcut.description}>
       <div className="flex items-center gap-1">
         {isModified && !isRecording && (
           <Button variant="link" onClick={onReset}>

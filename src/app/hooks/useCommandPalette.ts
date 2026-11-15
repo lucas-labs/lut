@@ -4,6 +4,7 @@ import { openSettingsWindow } from '@/modules/settings/openSettingsWindow';
 import type { SidebarViewId } from '@/modules/sidebar';
 import { useSpaces } from '@/modules/spaces';
 import type { Tab } from '@/modules/tabs';
+import type { PaneDirection } from '@/modules/terminal';
 import { useCallback, useMemo, useState } from 'react';
 
 type CommandPaletteArgs = {
@@ -22,6 +23,8 @@ type CommandPaletteArgs = {
   handleCloseTabOrPane: () => void;
   splitActivePaneInActiveTab: (dir: 'row' | 'col') => void;
   moveActivePane: (target: 'new' | 1 | -1) => void;
+  focusPaneInDirection: (direction: PaneDirection) => void;
+  resizeActivePane: (direction: PaneDirection) => void;
   /** Focuses the header's search. */
   focusSearchInline: () => void;
   focusExplorerSearch: () => void;
@@ -55,6 +58,8 @@ export function useCommandPalette({
   handleCloseTabOrPane,
   splitActivePaneInActiveTab,
   moveActivePane,
+  focusPaneInDirection,
+  resizeActivePane,
   focusSearchInline,
   focusExplorerSearch,
   toggleSidebar,
@@ -96,6 +101,8 @@ export function useCommandPalette({
             movePaneToNewTab: () => moveActivePane('new'),
             movePaneToNextTab: () => moveActivePane(1),
             movePaneToPrevTab: () => moveActivePane(-1),
+            focusPaneInDirection,
+            resizeActivePane,
             focusSearch: focusSearchInline,
             focusExplorerSearch,
             toggleSidebar,
@@ -129,6 +136,8 @@ export function useCommandPalette({
       handleCloseTabOrPane,
       splitActivePaneInActiveTab,
       moveActivePane,
+      focusPaneInDirection,
+      resizeActivePane,
       focusSearchInline,
       focusExplorerSearch,
       toggleSidebar,

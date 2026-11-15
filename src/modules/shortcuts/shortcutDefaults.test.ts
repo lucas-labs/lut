@@ -6,6 +6,7 @@ import { searchKeymap } from '@codemirror/search';
 import type { KeyBinding as CodeMirrorBinding } from '@codemirror/view';
 import { describe, expect, it } from 'vitest';
 import { resolveShortcut } from './lib/resolveShortcut';
+import { isPaneLayoutShortcut } from './lib/shortcutScope';
 import { MAC_DEFAULTS, WIN_LINUX_DEFAULTS } from './shortcutDefaults';
 import {
   buildShortcuts,
@@ -36,6 +37,14 @@ pane.swapLeft: Alt+Cmd+ArrowLeft
 pane.swapRight: Alt+Cmd+ArrowRight
 pane.swapUp: Alt+Cmd+ArrowUp
 pane.swapDown: Alt+Cmd+ArrowDown
+pane.focusLeft: Alt+ArrowLeft
+pane.focusRight: Alt+ArrowRight
+pane.focusUp: Alt+ArrowUp
+pane.focusDown: Alt+ArrowDown
+pane.resizeLeft: Alt+Shift+ArrowLeft
+pane.resizeRight: Alt+Shift+ArrowRight
+pane.resizeUp: Alt+Shift+ArrowUp
+pane.resizeDown: Alt+Shift+ArrowDown
 pane.moveToNewTab: 
 pane.moveToNextTab: 
 pane.moveToPrevTab: 
@@ -98,10 +107,12 @@ const isEditor = (id: string) => group(id) === 'Editor';
 
 /**
  * Chords a terminal program reads that a default takes on purpose, as Windows Terminal does: Ctrl+- zooms out (the
- * undo of readline stays on Ctrl+_).
+ * undo of readline stays on Ctrl+_), and Alt+arrows focus and resize panes, which only act in a tab split into panes
+ * (shouldDisablePaneLayoutShortcut), so a terminal on its own still gets them.
  */
 const takesTerminalChord = (id: ShortcutId, b: KeyBinding): boolean =>
-  id === 'view.zoomOut' && !!b.ctrl && !b.shift && !b.alt && !b.meta && b.key === '-';
+  (id === 'view.zoomOut' && !!b.ctrl && !b.shift && !b.alt && !b.meta && b.key === '-') ||
+  isPaneLayoutShortcut(id);
 
 describe('macOS defaults', () => {
   it('are the expected table', () => {
@@ -487,9 +498,10 @@ describe("Windows and Linux defaults against the editor's CodeMirror keymaps", (
   it('never shares a chord with an application shortcut outside the editor', () => {
     const shared: string[] = [];
     for (const id of ids) {
-      // The editor keeps the editor group; pane swaps only run in a terminal tab
-      // with two panes (shouldDisablePaneSwapShortcut), which holds no editor.
-      if (isEditor(id) || id.startsWith('pane.swap')) continue;
+      // The editor keeps the editor group; pane swaps, focus and resize only run in
+      // a terminal tab with two panes (shouldDisablePaneLayoutShortcut), which holds
+      // no editor.
+      if (isEditor(id) || isPaneLayoutShortcut(id)) continue;
       for (const binding of WIN_LINUX_DEFAULTS[id].flatMap((b) => accepted(id, b))) {
         const name = codeMirrorChords.get(chord(binding));
         if (name) shared.push(`${id} ${describeBinding(binding)} = ${name}`);

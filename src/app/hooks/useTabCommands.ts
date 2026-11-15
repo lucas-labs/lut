@@ -8,7 +8,7 @@ import {
 } from '@/modules/navigation';
 import { useSpaces } from '@/modules/spaces';
 import { useTabSwitcher } from '@/modules/tabs';
-import { leafIds, type PaneBounds } from '@/modules/terminal';
+import { leafIds, type PaneBounds, type PaneDirection } from '@/modules/terminal';
 import { useCallback, useMemo } from 'react';
 import { useAgentLaunch } from './useAgentLaunch';
 
@@ -97,8 +97,22 @@ export function useTabCommands({
   );
 
   const swapActivePane = useCallback(
-    (direction: 'left' | 'right' | 'up' | 'down') => {
+    (direction: PaneDirection) => {
       nav().swapActivePaneInDirection(activeId, direction, livePaneBounds(activeId));
+    },
+    [activeId],
+  );
+
+  const focusPaneInDirection = useCallback(
+    (direction: PaneDirection) => {
+      nav().focusPaneInDirection(activeId, direction, livePaneBounds(activeId));
+    },
+    [activeId],
+  );
+
+  const resizeActivePane = useCallback(
+    (direction: PaneDirection) => {
+      nav().resizeActivePaneInDirection(activeId, direction);
     },
     [activeId],
   );
@@ -157,6 +171,8 @@ export function useTabCommands({
     splitActivePaneInActiveTab,
     moveActivePane,
     swapActivePane,
+    focusPaneInDirection,
+    resizeActivePane,
     handleCloseTabOrPane,
     activateAgentTarget,
     switcherState,

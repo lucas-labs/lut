@@ -27,6 +27,11 @@ import type { KeyBinding, ShortcutId } from './shortcuts';
  * out and in as in Windows Terminal, from the main row of any layout and from
  * the numpad (`+` is its own key on Spanish or German layouts, so Ctrl+= alone
  * misses it).
+ *
+ * Pane focus and resize take Alt+arrows and Alt+Shift+arrows, as in Windows
+ * Terminal, but only act in a tab split into panes
+ * (shouldDisablePaneLayoutShortcut): anywhere else the keys reach the terminal
+ * or the editor, where CodeMirror moves and copies lines with them.
  */
 
 export const MAC_DEFAULTS: Readonly<Record<ShortcutId, readonly KeyBinding[]>> = {
@@ -51,6 +56,14 @@ export const MAC_DEFAULTS: Readonly<Record<ShortcutId, readonly KeyBinding[]>> =
   'pane.swapRight': [{ alt: true, meta: true, key: 'ArrowRight' }],
   'pane.swapUp': [{ alt: true, meta: true, key: 'ArrowUp' }],
   'pane.swapDown': [{ alt: true, meta: true, key: 'ArrowDown' }],
+  'pane.focusLeft': [{ alt: true, key: 'ArrowLeft' }],
+  'pane.focusRight': [{ alt: true, key: 'ArrowRight' }],
+  'pane.focusUp': [{ alt: true, key: 'ArrowUp' }],
+  'pane.focusDown': [{ alt: true, key: 'ArrowDown' }],
+  'pane.resizeLeft': [{ alt: true, shift: true, key: 'ArrowLeft' }],
+  'pane.resizeRight': [{ alt: true, shift: true, key: 'ArrowRight' }],
+  'pane.resizeUp': [{ alt: true, shift: true, key: 'ArrowUp' }],
+  'pane.resizeDown': [{ alt: true, shift: true, key: 'ArrowDown' }],
   'pane.moveToNewTab': [],
   'pane.moveToNextTab': [],
   'pane.moveToPrevTab': [],
@@ -113,6 +126,14 @@ export const WIN_LINUX_DEFAULTS: Readonly<Record<ShortcutId, readonly KeyBinding
   'pane.swapRight': [{ ctrl: true, alt: true, key: 'ArrowRight' }],
   'pane.swapUp': [{ ctrl: true, alt: true, key: 'ArrowUp' }],
   'pane.swapDown': [{ ctrl: true, alt: true, key: 'ArrowDown' }],
+  'pane.focusLeft': [{ alt: true, key: 'ArrowLeft' }],
+  'pane.focusRight': [{ alt: true, key: 'ArrowRight' }],
+  'pane.focusUp': [{ alt: true, key: 'ArrowUp' }],
+  'pane.focusDown': [{ alt: true, key: 'ArrowDown' }],
+  'pane.resizeLeft': [{ alt: true, shift: true, key: 'ArrowLeft' }],
+  'pane.resizeRight': [{ alt: true, shift: true, key: 'ArrowRight' }],
+  'pane.resizeUp': [{ alt: true, shift: true, key: 'ArrowUp' }],
+  'pane.resizeDown': [{ alt: true, shift: true, key: 'ArrowDown' }],
   'pane.moveToNewTab': [],
   'pane.moveToNextTab': [],
   'pane.moveToPrevTab': [],

@@ -7,10 +7,12 @@ import {
   hasLeaf,
   insertLeaf,
   leafIds,
+  leafInDirection,
   nextLeafId,
   type PaneBounds,
   type PaneDirection,
   removeLeaf,
+  resizeLeafInDirection,
   setLeafCwd as setLeafCwdInTree,
   setSplitRatios as setSplitRatiosInTree,
   siblingLeafOf,
@@ -93,6 +95,10 @@ type NavigationActions = {
   setLeafCwd: (leafId: number, cwd: string) => void;
   focusPane: (tabId: number, leafId: number) => void;
   focusNextPaneInTab: (tabId: number, delta: 1 | -1) => void;
+  /** Focus the pane beside the active one in `direction`; nothing at an edge. */
+  focusPaneInDirection: (tabId: number, direction: PaneDirection, bounds?: PaneBounds[]) => void;
+  /** Move a divider of the active pane in `direction` (resizeLeafInDirection). */
+  resizeActivePaneInDirection: (tabId: number, direction: PaneDirection) => void;
   swapActivePaneInDirection: (
     tabId: number,
     direction: PaneDirection,
@@ -646,6 +652,20 @@ export const useNavigationStore = create<NavigationState>()((set, get) => {
         if (next === t.activeLeafId) return t;
         const cwd = findLeafCwd(t.paneTree, next);
         return { ...t, activeLeafId: next, ...(cwd !== undefined && { cwd }) };
+      }),
+
+    focusPaneInDirection: (tabId, direction, bounds) =>
+      mapTerminal(tabId, (t) => {
+        const next = leafInDirection(t.paneTree, t.activeLeafId, direction, bounds);
+        if (next === null || next === t.activeLeafId) return t;
+        const cwd = findLeafCwd(t.paneTree, next);
+        return { ...t, activeLeafId: next, ...(cwd !== undefined && { cwd }) };
+      }),
+
+    resizeActivePaneInDirection: (tabId, direction) =>
+      mapTerminal(tabId, (t) => {
+        const paneTree = resizeLeafInDirection(t.paneTree, t.activeLeafId, direction);
+        return paneTree === t.paneTree ? t : { ...t, paneTree };
       }),
 
     swapActivePaneInDirection: (tabId, direction, bounds) =>

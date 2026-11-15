@@ -36,4 +36,21 @@ describe('split ratios in the store', () => {
     store().setSplitRatios(1, tab(1).paneTree.id, [1, 1]);
     expect(store().tabs).toBe(before);
   });
+  it('focuses the pane beside the active one and moves its divider', () => {
+    const second = store().splitActivePane(1, 'row');
+    if (second === null) throw new Error('Expected a split');
+    const split = tab(1).paneTree;
+    if (split.kind !== 'split') throw new Error('Expected a split');
+    store().focusPaneInDirection(1, 'left');
+    expect(tab(1).activeLeafId).toBe(split.children[0].id);
+    const before = store().tabs;
+    store().focusPaneInDirection(1, 'left');
+    expect(store().tabs).toBe(before);
+
+    store().resizeActivePaneInDirection(1, 'right');
+    const tree = tab(1).paneTree;
+    if (tree.kind !== 'split') throw new Error('Expected a split');
+    expect(tree.ratios[0]).toBeCloseTo(0.55);
+    expect(tree.ratios[1]).toBeCloseTo(0.45);
+  });
 });

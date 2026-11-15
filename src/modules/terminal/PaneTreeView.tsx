@@ -3,7 +3,7 @@ import type { TerminalSearchController } from '@/modules/terminal/search/Termina
 import { Fragment, useCallback, useEffect, useRef } from 'react';
 import type { GroupImperativeHandle, Layout } from 'react-resizable-panels';
 import { useTerminalDropStore } from './lib/dropStore';
-import { firstLeafSlotId, type PaneNode } from './lib/panes';
+import { firstLeafSlotId, MIN_PANE_SHARE, type PaneNode } from './lib/panes';
 import { beginTerminalResizeInteraction, endTerminalResizeInteraction } from './lib/terminalResizeInteraction';
 import { TerminalPane, type TerminalPaneHandle } from './TerminalPane';
 
@@ -142,7 +142,7 @@ function SplitView(props: Props & { node: SplitNode }) {
       {node.children.map((child, i) => (
         <Fragment key={ids[i]}>
           {i > 0 && <TerminalResizableHandle />}
-          <ResizablePanel id={ids[i]} defaultSize={`${node.ratios[i] * 100}%`} minSize="10%">
+          <ResizablePanel id={ids[i]} defaultSize={`${node.ratios[i] * 100}%`} minSize={`${MIN_PANE_SHARE * 100}%`}>
             <PaneTreeView {...props} node={child} inSplit />
           </ResizablePanel>
         </Fragment>
