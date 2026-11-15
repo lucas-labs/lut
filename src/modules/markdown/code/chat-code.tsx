@@ -1,5 +1,6 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { CheckmarkCircle01Icon, CopyIcon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -148,13 +149,9 @@ function CopyButton({ text }: { text: string }) {
   };
 
   return (
-    <button
-      type="button"
-      onClick={onCopy}
-      className="flex h-5 shrink-0 items-center gap-1 rounded-[4px] px-1.5 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground"
-    >
+    <Button variant="ghost" size="xs" onClick={onCopy}>
       <HugeiconsIcon icon={copied ? CheckmarkCircle01Icon : CopyIcon} size={12} strokeWidth={1.5} aria-hidden />
       {copied ? 'Copied' : 'Copy'}
-    </button>
+    </Button>
   );
 }

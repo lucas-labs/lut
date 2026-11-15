@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,9 +25,6 @@ type Props = {
   fetching: boolean;
   onFetch: () => void;
 };
-
-const TOOL =
-  'flex h-[26px] shrink-0 items-center gap-1.5 rounded-md border border-border px-2 text-xs whitespace-nowrap outline-none';
 
 function scopeKey(scope: GitLogScope): string {
   return scope.kind === 'branch' ? `branch:${scope.name}` : scope.kind;
@@ -74,14 +72,11 @@ export function HistoryToolbar({
     <div className="flex h-11 shrink-0 items-center gap-2 border-b border-border px-4">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button
-            type="button"
-            className={`${TOOL} max-w-60 text-foreground hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring`}
-          >
+          <Button variant="outline-subtle" size="sm" className="max-w-60">
             <HugeiconsIcon icon={GitBranchIcon} size={13} strokeWidth={1.5} className="shrink-0" />
             <span className="truncate">{scopeLabel}</span>
             <HugeiconsIcon icon={ArrowDown01Icon} size={12} strokeWidth={1.75} className="shrink-0" />
-          </button>
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="max-h-80 min-w-56">
           <DropdownMenuRadioGroup value={scopeKey(scope)} onValueChange={(key) => onScopeChange(scopeFromKey(key))}>
@@ -129,19 +124,14 @@ export function HistoryToolbar({
       <span className="flex-1" />
       {summary ? <span className="truncate text-xs text-muted-foreground">{summary}</span> : null}
 
-      <button
-        type="button"
-        onClick={onFetch}
-        disabled={fetching}
-        className={`${TOOL} text-foreground hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60`}
-      >
+      <Button variant="outline-subtle" size="sm" onClick={onFetch} disabled={fetching}>
         {fetching ? (
           <Spinner className="size-3" />
         ) : (
           <HugeiconsIcon icon={Download01Icon} size={13} strokeWidth={1.5} className="shrink-0" />
         )}
         {fetching ? 'Fetching…' : 'Fetch'}
-      </button>
+      </Button>
     </div>
   );
 }

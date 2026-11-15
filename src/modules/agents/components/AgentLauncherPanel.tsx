@@ -164,16 +164,17 @@ export function AgentLauncherPanel({ onBack, onLaunch }: Props) {
           <label htmlFor="agent-start-command" className="text-[11px] font-medium text-muted-foreground">
             Start command
           </label>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="xs"
             onClick={resetCommand}
             disabled={!hydrated || command === DEFAULT_AGENT_LAUNCH_COMMANDS[agentId]}
-            className="ml-auto flex items-center gap-1 rounded-md px-1 text-[10px] text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+            className="ml-auto"
             title={`Reset to ${launcher.defaultCommand}`}
           >
             <HugeiconsIcon icon={Refresh01Icon} size={11} strokeWidth={1.75} />
             Reset
-          </button>
+          </Button>
         </div>
         <Input
           variant="subtle"

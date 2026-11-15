@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   ContextMenu,
@@ -291,13 +292,14 @@ const ChangeRow = memo(function ChangeRow({
           {entry.unstaged ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
                   aria-label={`Discard ${entry.path}`}
                   disabled={disabled}
                   onClick={() => onDiscardFile(entry)}
                   className={cn(
-                    'flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground outline-none hover:text-foreground focus-visible:opacity-100 disabled:pointer-events-none',
+                    'focus-visible:opacity-100',
                     focused || selected || discardBusy ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
                   )}
                 >
@@ -306,7 +308,7 @@ const ChangeRow = memo(function ChangeRow({
                   ) : (
                     <HugeiconsIcon icon={RemoveSquareIcon} size={12} strokeWidth={1.5} />
                   )}
-                </button>
+                </Button>
               </TooltipTrigger>
               <TooltipContent side="top">{`Discard ${entry.path}`}</TooltipContent>
             </Tooltip>

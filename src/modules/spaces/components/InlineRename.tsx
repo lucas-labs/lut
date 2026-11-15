@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
 import { useEffect, useRef } from 'react';
 
 type Props = {
@@ -27,14 +27,12 @@ export function InlineRename({ initial, onCommit, onCancel, className }: Props) 
   };
 
   return (
-    <input
+    <Input
       ref={ref}
+      size="xs"
       defaultValue={initial}
       aria-label="Rename space"
-      className={cn(
-        'w-full min-w-0 rounded-sm bg-background px-1.5 py-0.5 text-xs text-foreground outline-none ring-1 ring-border focus:ring-ring',
-        className,
-      )}
+      className={className}
       onKeyDown={(e) => {
         e.stopPropagation();
         if (e.key === 'Enter') finish(() => onCommit(e.currentTarget.value));

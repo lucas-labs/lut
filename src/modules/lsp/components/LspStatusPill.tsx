@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { setLspActivation } from '@/modules/settings/store';
@@ -74,27 +75,24 @@ function ErrorPill({ preset, reason }: { preset: LspPreset; reason: string }) {
         <div className="mb-1 font-medium text-foreground">{preset.name} language server stopped</div>
         <p className="mb-2 text-muted-foreground">{reason}</p>
         <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => void restartPresetSessions(preset.id).catch(reportRestartFailure)}
           >
             <HugeiconsIcon icon={RefreshIcon} size={11} strokeWidth={1.9} />
             Restart
-          </button>
-          <button
-            type="button"
-            className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
-            onClick={() => void setLspActivation(preset.id, 'dismissed')}
-          >
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => void setLspActivation(preset.id, 'dismissed')}>
             Disable
-          </button>
+          </Button>
         </div>
       </PopoverContent>
     </Popover>
   );
 }
 
+// Not a Button: it sits inside the 16 px status-line pill, smaller than the smallest icon button.
 function DismissButton({ preset }: { preset: LspPreset }) {
   return (
     <button
@@ -146,36 +144,22 @@ function InstallPill({ preset }: { preset: LspPreset }) {
         {install ? (
           <div className="mb-2 flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-1.5 font-mono text-[11px]">
             <span className="min-w-0 flex-1 truncate select-text">{install.command}</span>
-            <button
-              type="button"
-              className="shrink-0 rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
-              onClick={copy}
-              title="Copy command"
-            >
+            <Button variant="ghost" size="icon-xs" onClick={copy} title="Copy command" aria-label="Copy command">
               <HugeiconsIcon icon={copied ? Tick02Icon : Copy01Icon} size={12} strokeWidth={2} />
-            </button>
+            </Button>
           </div>
         ) : null}
         <div className="flex items-center justify-between">
           {install ? (
-            <button
-              type="button"
-              className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-              onClick={() => void openUrl(install.docsUrl).catch(console.error)}
-            >
+            <Button variant="link" size="inline" onClick={() => void openUrl(install.docsUrl).catch(console.error)}>
               Documentation
-            </button>
+            </Button>
           ) : (
             <span />
           )}
-          <button
-            type="button"
-            className="rounded-md bg-primary px-2 py-1 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
-            onClick={checkAgain}
-            disabled={checking}
-          >
+          <Button size="sm" onClick={checkAgain} disabled={checking}>
             {checking ? 'Checking...' : 'Check again'}
-          </button>
+          </Button>
         </div>
       </PopoverContent>
     </Popover>
@@ -202,21 +186,17 @@ function ActivePill({ preset, starting }: { preset: LspPreset; starting: boolean
           workspace.
         </p>
         <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => void restartPresetSessions(preset.id).catch(reportRestartFailure)}
           >
             <HugeiconsIcon icon={RefreshIcon} size={11} strokeWidth={1.9} />
             Restart
-          </button>
-          <button
-            type="button"
-            className="rounded-md border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
-            onClick={() => void setLspActivation(preset.id, 'dismissed')}
-          >
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => void setLspActivation(preset.id, 'dismissed')}>
             Disable
-          </button>
+          </Button>
         </div>
       </PopoverContent>
     </Popover>

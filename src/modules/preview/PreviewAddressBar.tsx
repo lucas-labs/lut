@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,11 +36,6 @@ const PORT_PRESETS: readonly PortPreset[] = [
   { port: 7860, label: 'Gradio', hint: 'gradio' },
   { port: 11434, label: 'Ollama', hint: 'ollama api' },
 ];
-
-/** The toolbar controls of the redesigned tools (as the git history toolbar). */
-const TOOL =
-  'flex h-[26px] shrink-0 items-center gap-1.5 rounded-md border border-border px-2 text-xs whitespace-nowrap text-foreground outline-none hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50';
-const ICON_TOOL = `${TOOL} w-[26px] justify-center px-0`;
 
 export type PreviewAddressBarHandle = {
   focus: () => void;
@@ -108,16 +104,16 @@ export const PreviewAddressBar = forwardRef<PreviewAddressBarHandle, Props>(func
   return (
     <div className="shrink-0 border-b border-border">
       <div className="flex h-11 items-center gap-2 px-4">
-        <button type="button" onClick={onReload} title="Reload" aria-label="Reload" className={ICON_TOOL}>
+        <Button variant="ghost" size="icon-sm" onClick={onReload} title="Reload" aria-label="Reload">
           <HugeiconsIcon icon={ArrowReloadHorizontalIcon} size={13} strokeWidth={1.5} />
-        </button>
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button type="button" title="Common dev-server ports" className={TOOL}>
+            <Button variant="outline-subtle" size="sm" title="Common dev-server ports">
               <HugeiconsIcon icon={Globe02Icon} size={13} strokeWidth={1.5} className="shrink-0" />
               <span className="hidden sm:inline">Ports</span>
               <HugeiconsIcon icon={ArrowDown01Icon} size={12} strokeWidth={1.75} className="shrink-0" />
-            </button>
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="max-h-80 min-w-56 overflow-y-auto">
             {PORT_PRESETS.map((p) => (
@@ -158,29 +154,25 @@ export const PreviewAddressBar = forwardRef<PreviewAddressBarHandle, Props>(func
             }
           }}
         />
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon-sm"
           onClick={() => {
             if (url) void openUrl(url).catch(console.error);
           }}
           title="Open in system browser"
           aria-label="Open in system browser"
-          className={ICON_TOOL}
           disabled={!url}
         >
           <HugeiconsIcon icon={LinkSquare02Icon} size={13} strokeWidth={1.5} />
-        </button>
+        </Button>
       </div>
       {notice ? (
         <div className="flex items-center gap-1.5 border-t border-border bg-warning/10 px-4 py-1 text-[11px] text-warning">
           <span className="truncate">{notice}</span>
-          <button
-            type="button"
-            onClick={() => setNotice(null)}
-            className="ml-auto rounded px-1 text-[11px] opacity-80 hover:bg-warning/15 hover:opacity-100"
-          >
+          <Button variant="ghost" size="xs" onClick={() => setNotice(null)} className="ml-auto">
             Dismiss
-          </button>
+          </Button>
         </div>
       ) : null}
     </div>

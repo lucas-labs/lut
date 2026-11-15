@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { FileIcon } from '@/modules/explorer/FileIcon';
@@ -107,13 +108,9 @@ export function CommitDetail({ commit, filesEntry, remoteWeb, onCopySha, onOpenF
 
 function DetailAction({ onClick, children }: { onClick: () => void; children: ReactNode }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex h-6 items-center gap-1.5 rounded-md px-1.5 text-xs text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring"
-    >
+    <Button variant="ghost" size="sm" onClick={onClick}>
       {children}
-    </button>
+    </Button>
   );
 }
 

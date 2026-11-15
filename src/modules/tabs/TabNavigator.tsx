@@ -6,6 +6,7 @@ import {
   ContextMenuShortcut,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import type { AgentLaunchRequest } from '@/modules/agents/lib/launcher';
 import {
@@ -397,11 +398,12 @@ function TabRenameInput({
   };
 
   return (
-    <input
+    <Input
       ref={ref}
+      size="xs"
       defaultValue={initial}
       aria-label="Tab name"
-      className="h-5 w-32 min-w-0 rounded-sm border border-ring bg-background px-1 text-xs text-foreground outline-none"
+      className="w-32"
       onKeyDown={(e) => {
         e.stopPropagation();
         if (e.key === 'Enter') commit(e.currentTarget.value, true);

@@ -1,3 +1,5 @@
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { IS_MAC } from '@/modules/platform';
@@ -5,10 +7,8 @@ import { ShortcutKeys } from '@/modules/shortcuts';
 import { type KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import type { SourceControlPanelState } from './useSourceControlPanel';
 
-const BUTTON_CLASS =
-  'h-7 min-w-0 flex-1 rounded-md border text-xs font-medium outline-none transition-[background-color,filter] focus-visible:ring-1 focus-visible:ring-ring aria-disabled:cursor-default aria-disabled:opacity-45';
-const SECONDARY_CLASS =
-  'border-muted-foreground/70 bg-transparent text-foreground hover:bg-accent aria-disabled:hover:bg-transparent';
+// aria-disabled, not disabled: the tooltips say why the action is unavailable, and a disabled button gets no hover.
+const ACTION_CLASS = 'min-w-0 flex-1 font-medium aria-disabled:hover:bg-transparent';
 
 /** "↑2 ↓1 origin/main": the counts ahead of and behind the upstream, then the upstream. */
 function syncLabel(ahead: number, behind: number, upstream: string | null | undefined): string {
@@ -66,13 +66,14 @@ export function CommitBox({ scm, blocked }: { scm: SourceControlPanelState; bloc
   return (
     <>
       <div className="rounded-lg border border-muted-foreground/70 bg-background transition-colors focus-within:border-primary">
-        <textarea
+        <Textarea
+          variant="bare"
           aria-label="Commit message"
           placeholder="Commit message"
           value={scm.commitMessage}
           onChange={(event) => scm.setCommitMessage(event.target.value)}
           onKeyDown={onKeyDown}
-          className="block h-[46px] w-full resize-none bg-transparent px-2.5 pt-2 text-[13px] leading-[18px] text-foreground outline-none placeholder:text-muted-foreground"
+          className="h-[46px] pb-0"
         />
         <div className="px-2.5 pt-0.5 pb-1.5 text-[11px] leading-[14px] tabular-nums text-muted-foreground">
           {scm.commitMessage.length > 0 ? (
@@ -100,27 +101,22 @@ export function CommitBox({ scm, blocked }: { scm: SourceControlPanelState; bloc
       <div className="flex gap-1.5">
         <Tooltip>
           <TooltipTrigger asChild>
-            <button
-              type="button"
+            <Button
+              variant={canCommit ? 'default' : 'outline'}
               aria-disabled={!canCommit}
               onClick={commit}
-              className={cn(
-                BUTTON_CLASS,
-                canCommit
-                  ? 'border-transparent bg-primary text-primary-foreground hover:brightness-108'
-                  : SECONDARY_CLASS,
-              )}
+              className={ACTION_CLASS}
             >
               {scm.actionBusy === 'commit' ? 'Committing…' : 'Commit'}
-            </button>
+            </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">{commitHint}</TooltipContent>
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
-            <button type="button" aria-disabled={!canPush} onClick={push} className={cn(BUTTON_CLASS, SECONDARY_CLASS)}>
+            <Button variant="outline" aria-disabled={!canPush} onClick={push} className={ACTION_CLASS}>
               {scm.actionBusy === 'push' ? 'Pushing…' : 'Push'}
-            </button>
+            </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom" className="max-w-64">
             {pushHint}
