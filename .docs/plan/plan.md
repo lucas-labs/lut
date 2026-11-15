@@ -6286,18 +6286,27 @@ refs: [F6:6, TER-008]
 covers: [F6:6]
 type: task
 scope: ui
-size: S
+size: M
 ```
 
-**Goal:** Every registry command can be bound to a user-configurable shortcut, including chords.
+**Goal:** Every registry command can be bound to a user-configurable shortcut, and the same keys can do different
+things in different areas of the app (Alt+Left goes back in Preview and focuses the left pane in a terminal). No chord
+(two-step) bindings: lut has few enough shortcuts that one key combination each is enough.
 
 **Acceptance criteria:**
 
 - [ ] Registry commands are listed by the shortcuts system and accept user bindings.
-- [ ] Chord (two-step) bindings supported; conflicts reported; keys a focused TUI needs are not stolen unless explicitly bound.
-- [ ] `shortcuts.test.ts` / `resolveShortcut.test.ts` cover chords and conflicts.
+- [ ] Each shortcut declares the area where it works: global, terminal, editor or preview. The resolver picks the
+      match for the area that has focus, and this replaces the per-shortcut exceptions in `isAppShortcutDisabled`
+      (`terminal.clear`, `sidebar.toggle`, the editor-only ids).
+- [ ] The same keys can be bound in different areas. Settings → Shortcuts reports a conflict only when two shortcuts
+      share keys in the same area, or one of them is global.
+- [ ] Preview gets back and forward shortcuts, Alt+Left/Right by default, while it has focus.
+- [ ] Keys a focused TUI needs are not stolen unless explicitly bound.
+- [ ] `shortcuts.test.ts` / `resolveShortcut.test.ts` cover areas and conflicts.
 
-**Verification:** `pnpm test`; manual: bind and use a chord inside and outside Neovim.
+**Verification:** `pnpm test`; manual: Alt+Left in Preview goes back and in a split terminal focuses the left pane;
+bind two terminal shortcuts to the same keys and see the conflict in Settings.
 
 ### E22-07 — Add a compact/normal density setting
 

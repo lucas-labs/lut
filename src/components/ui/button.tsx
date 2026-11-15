@@ -9,7 +9,8 @@ import { cn } from "@/lib/utils"
  * for toolbars, `xs` 20 px for small text actions; `icon` 28, `icon-sm` 24 and `icon-xs` 20 px squares;
  * `inline` takes the size of the text around it, for a link inside a sentence.
  * The design's bordered "ghost" button is `outline` here (forms, Settings) and its toolbar button `outline-subtle`,
- * with the faint border; its borderless icon button is `ghost`.
+ * with the faint border; its borderless icon button is `ghost`. `outline-hover` shows its border only on hover, and the
+ * accent border while pressed: the shortcut buttons of Settings, at size `keys` (28 px, tight around their keys).
  */
 const buttonVariants = cva(
   "group/button inline-flex shrink-0 items-center justify-center rounded-md border border-transparent bg-clip-padding text-xs whitespace-nowrap transition-colors outline-none select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-40 aria-invalid:border-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
@@ -26,6 +27,8 @@ const buttonVariants = cva(
         ghost:
           "text-muted-foreground hover:bg-accent hover:text-foreground aria-expanded:bg-accent aria-expanded:text-foreground",
         destructive: "bg-destructive font-medium text-white hover:brightness-108",
+        "outline-hover":
+          "text-muted-foreground hover:border-muted-foreground/75 aria-pressed:border-primary aria-pressed:text-foreground",
         link: "text-primary underline underline-offset-2 hover:text-foreground",
       },
       size: {
@@ -36,6 +39,7 @@ const buttonVariants = cva(
         icon: "size-7",
         "icon-sm": "size-6",
         "icon-xs": "size-5 rounded-sm [&_svg:not([class*='size-'])]:size-3",
+        keys: "h-7 gap-1 px-1",
         inline: "gap-1 rounded-sm border-0 p-0 align-baseline text-[length:inherit] leading-[inherit]",
       },
     },

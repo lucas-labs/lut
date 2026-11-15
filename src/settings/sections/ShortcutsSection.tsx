@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import { cn } from '@/lib/utils';
 import { IS_WINDOWS } from '@/modules/platform';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { setShortcuts } from '@/modules/settings/store';
@@ -24,10 +25,12 @@ import {
   type ShortcutId,
   SHORTCUTS,
 } from '@/modules/shortcuts/shortcuts';
-import { ArrowTurnBackwardIcon, Delete02Icon, Search01Icon } from '@hugeicons/core-free-icons';
+import { ArrowTurnBackwardIcon, Cancel01Icon, Search01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { SectionHeader } from '../components/SectionHeader';
+import { SettingRow, SettingRowList } from '../components/SettingRow';
+import { SettingsGroup } from '../components/SettingsGroup';
 
 export function ShortcutsSection() {
   const userShortcuts = usePreferencesStore((s) => s.shortcuts);
@@ -66,16 +69,16 @@ export function ShortcutsSection() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col">
       <div className="flex items-center justify-between">
         <SectionHeader title="Shortcuts" description="View and customize keyboard shortcuts." />
         <Button variant="outline" onClick={() => setResetDialogOpen(true)}>
-          <HugeiconsIcon icon={ArrowTurnBackwardIcon} size={12} strokeWidth={2} />
+          <HugeiconsIcon icon={ArrowTurnBackwardIcon} strokeWidth={1.5} />
           Reset All
         </Button>
       </div>
 
-      <div className="relative">
+      <div className="relative mt-4">
         <HugeiconsIcon
           icon={Search01Icon}
           size={14}
@@ -90,21 +93,20 @@ export function ShortcutsSection() {
         />
       </div>
 
-      <div className="flex flex-col gap-8">
+      <div className="flex flex-col">
         {SHORTCUT_GROUPS.map((group) => {
           const items = filteredShortcuts.filter((s) => s.group === group);
           if (items.length === 0) return null;
 
           return (
-            <div key={group} className="flex flex-col gap-3">
-              <h3 className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">{group}</h3>
-              <div className="flex flex-col divide-y divide-border/40 rounded-lg border border-border/60 bg-card/40 overflow-hidden">
+            <SettingsGroup key={group} title={group}>
+              <SettingRowList>
                 {items.map((s) => (
                   <ShortcutRow
                     key={s.id}
                     shortcut={s}
                     isRecording={recordingId === s.id}
-                    onStartRecording={() => setRecordingId(s.id)}
+                    onToggleRecording={() => setRecordingId((id) => (id === s.id ? null : s.id))}
                     onStopRecording={() => setRecordingId(null)}
                     onRecord={(b) => onRecord(s.id, b)}
                     onClear={() => onClear(s.id)}
@@ -112,8 +114,8 @@ export function ShortcutsSection() {
                     userBindings={userShortcuts[s.id]}
                   />
                 ))}
-              </div>
-            </div>
+              </SettingRowList>
+            </SettingsGroup>
           );
         })}
       </div>
@@ -143,7 +145,7 @@ export function ShortcutsSection() {
 function ShortcutRow({
   shortcut,
   isRecording,
-  onStartRecording,
+  onToggleRecording,
   onStopRecording,
   onRecord,
   onClear,
@@ -152,7 +154,7 @@ function ShortcutRow({
 }: {
   shortcut: Shortcut;
   isRecording: boolean;
-  onStartRecording: () => void;
+  onToggleRecording: () => void;
   onStopRecording: () => void;
   onRecord: (b: KeyBinding) => void;
   onClear: () => void;
@@ -162,67 +164,80 @@ function ShortcutRow({
   const bindings = userBindings !== undefined ? userBindings : shortcut.defaultBindings;
   const isModified = userBindings !== undefined;
   const hasBindings = bindings && bindings.length > 0;
+  // The button's name says what it does; its description reads the keys it holds, "Unassigned" or the recording note.
+  const keysId = useId();
+  useShortcutRecorder(isRecording, onRecord, onStopRecording);
 
   return (
-    <div className="group flex items-center justify-between px-3 py-2.5 transition-colors hover:bg-muted/30">
-      <div className="flex flex-col gap-0.5">
-        <span className="text-[12.5px] font-medium">{shortcut.label}</span>
-      </div>
-
-      <div className="flex items-center gap-2">
-        {isRecording ? (
-          <Recorder onRecord={onRecord} onCancel={onStopRecording} />
-        ) : (
-          <>
-            <div
-              onClick={onStartRecording}
-              className="flex min-w-[100px] cursor-pointer items-center justify-end gap-1"
-            >
-              {hasBindings ? (
-                <KbdGroup>
-                  {getBindingTokens(bindings[0]).map((t, i) => (
-                    <Kbd key={i} className="group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
-                      <ShortcutKey token={t} />
-                    </Kbd>
-                  ))}
-                </KbdGroup>
-              ) : (
-                <span className="text-[11px] text-muted-foreground italic">Unassigned</span>
-              )}
-            </div>
-
-            <div className="flex items-center gap-1">
-              {isModified && (
-                <Button variant="ghost" size="icon" onClick={onReset} title="Reset to default">
-                  <HugeiconsIcon icon={ArrowTurnBackwardIcon} size={12} />
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="opacity-0 transition-opacity group-hover:opacity-100 hover:text-destructive"
-                onClick={onClear}
-                title="Clear shortcut"
-              >
-                <HugeiconsIcon icon={Delete02Icon} size={12} />
-              </Button>
-            </div>
-          </>
+    <SettingRow title={shortcut.label}>
+      <div className="flex items-center gap-1">
+        {isModified && !isRecording && (
+          <Button variant="link" onClick={onReset}>
+            Reset to default
+          </Button>
         )}
+        {/* While recording, the ✕ cancels like Esc, and stays visible. */}
+        {isRecording ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onStopRecording}
+            aria-label="Cancel recording"
+            title="Cancel recording"
+          >
+            <HugeiconsIcon icon={Cancel01Icon} strokeWidth={1.75} />
+          </Button>
+        ) : hasBindings ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            // A changed shortcut shows it with its reset; the others on hover or focus.
+            className={cn(
+              !isModified &&
+                'opacity-0 transition-opacity group-focus-within/row:opacity-100 group-hover/row:opacity-100',
+            )}
+            onClick={onClear}
+            aria-label="Clear shortcut"
+            title="Clear shortcut"
+          >
+            <HugeiconsIcon icon={Cancel01Icon} strokeWidth={1.75} />
+          </Button>
+        ) : null}
+        <Button
+          variant="outline-hover"
+          size="keys"
+          aria-label={`Record shortcut for ${shortcut.label}`}
+          aria-describedby={keysId}
+          aria-pressed={isRecording}
+          onClick={onToggleRecording}
+        >
+          <span id={keysId} className="contents">
+            {isRecording ? (
+              'Recording... (Esc to cancel)'
+            ) : hasBindings ? (
+              <KbdGroup>
+                {getBindingTokens(bindings[0]).map((t) => (
+                  <Kbd key={t}>
+                    <ShortcutKey token={t} />
+                  </Kbd>
+                ))}
+              </KbdGroup>
+            ) : (
+              'Unassigned'
+            )}
+          </span>
+        </Button>
       </div>
-    </div>
+    </SettingRow>
   );
 }
 
-function Recorder({ onRecord, onCancel }: { onRecord: (b: KeyBinding) => void; onCancel: () => void }) {
-  const [_mods, setMods] = useState({
-    ctrl: false,
-    shift: false,
-    alt: false,
-    meta: false,
-  });
+const MODIFIER_KEYS = ['Control', 'Shift', 'Alt', 'Meta'];
 
+/** While `active`, the next key press with a modifier becomes the binding; Esc cancels. Other keys are swallowed. */
+function useShortcutRecorder(active: boolean, onRecord: (b: KeyBinding) => void, onCancel: () => void) {
   useEffect(() => {
+    if (!active) return;
     const onDown = (e: KeyboardEvent) => {
       e.preventDefault();
       e.stopPropagation();
@@ -231,17 +246,7 @@ function Recorder({ onRecord, onCancel }: { onRecord: (b: KeyBinding) => void; o
         onCancel();
         return;
       }
-
-      const isMod = ['Control', 'Shift', 'Alt', 'Meta'].includes(e.key);
-      if (isMod) {
-        setMods({
-          ctrl: e.ctrlKey,
-          shift: e.shiftKey,
-          alt: e.altKey,
-          meta: e.metaKey,
-        });
-        return;
-      }
+      if (MODIFIER_KEYS.includes(e.key)) return;
 
       // Require at least one primary modifier (Ctrl, Alt, Meta).
       // Reject Shift‑only shortcuts that would insert a character.
@@ -259,18 +264,8 @@ function Recorder({ onRecord, onCancel }: { onRecord: (b: KeyBinding) => void; o
         meta: e.metaKey,
       });
     };
-
-    const onUp = (e: KeyboardEvent) => {
-      const isMod = ['Control', 'Shift', 'Alt', 'Meta'].includes(e.key);
-      if (isMod) {
-        setMods({
-          ctrl: e.ctrlKey,
-          shift: e.shiftKey,
-          alt: e.altKey,
-          meta: e.metaKey,
-        });
-      }
-    };
+    // Space activates a focused button on key up: swallow it so it doesn't toggle the recording off.
+    const onUp = (e: KeyboardEvent) => e.preventDefault();
 
     window.addEventListener('keydown', onDown, { capture: true });
     window.addEventListener('keyup', onUp, { capture: true });
@@ -278,12 +273,5 @@ function Recorder({ onRecord, onCancel }: { onRecord: (b: KeyBinding) => void; o
       window.removeEventListener('keydown', onDown, { capture: true });
       window.removeEventListener('keyup', onUp, { capture: true });
     };
-  }, [onRecord, onCancel]);
-
-  return (
-    <div className="flex items-center gap-2 rounded bg-accent/50 px-2 py-1 text-[11px] ring-1 ring-accent">
-      <span className="animate-pulse font-medium">Recording...</span>
-      <span className="text-muted-foreground">(Esc to cancel)</span>
-    </div>
-  );
+  }, [active, onRecord, onCancel]);
 }
