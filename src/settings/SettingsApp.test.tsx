@@ -16,7 +16,7 @@ vi.mock('@tauri-apps/api/webviewWindow', () => ({
 vi.mock('@/modules/settings/preferences', () => ({
   usePreferencesStore: (pick: (s: { init: () => Promise<void> }) => unknown) => pick({ init: async () => {} }),
 }));
-vi.mock('@/modules/theme', () => ({ WindowActivityBridge: () => null }));
+vi.mock('@/modules/theme', () => ({ WindowActivityBridge: () => null, WindowVibrancyBridge: () => null }));
 vi.mock('@/components/ui/sonner', () => ({ Toaster: () => null }));
 vi.mock('@/components/WindowControls', () => ({ WindowControls: () => null }));
 vi.mock('./sections/GeneralSection', () => ({ GeneralSection: () => createElement('p', null, 'general section') }));

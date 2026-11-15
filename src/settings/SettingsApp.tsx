@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { IS_MAC, USE_CUSTOM_WINDOW_CONTROLS } from '@/modules/platform';
 import type { SettingsTab } from '@/modules/settings/openSettingsWindow';
 import { usePreferencesStore } from '@/modules/settings/preferences';
-import { WindowActivityBridge } from '@/modules/theme';
+import { WindowActivityBridge, WindowVibrancyBridge } from '@/modules/theme';
 import {
   ContrastIcon,
   InformationCircleIcon,
@@ -63,8 +63,13 @@ export function SettingsApp() {
   }, []);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background text-[13px] leading-[18px] text-foreground select-none">
-      <nav aria-label="Settings sections" className="flex h-full w-52 shrink-0 flex-col border-r border-border bg-card">
+    // The navigation is chrome like the main window's sidebars: `frame`, which window vibrancy (Mica) turns
+    // translucent. The content keeps the solid background.
+    <div className="flex h-screen overflow-hidden text-[13px] leading-[18px] text-foreground select-none">
+      <nav
+        aria-label="Settings sections"
+        className="flex h-full w-52 shrink-0 flex-col border-r border-border bg-frame"
+      >
         {/* On macOS the traffic lights sit in this row. */}
         <div
           data-tauri-drag-region
@@ -95,9 +100,10 @@ export function SettingsApp() {
         <div data-tauri-drag-region className="flex-1" />
       </nav>
       <WindowActivityBridge />
+      <WindowVibrancyBridge />
       <Toaster position="bottom-right" />
 
-      <main className="flex h-full min-w-0 flex-1 flex-col">
+      <main className="flex h-full min-w-0 flex-1 flex-col bg-background">
         <div data-tauri-drag-region className="flex h-7 shrink-0 items-start justify-end">
           {USE_CUSTOM_WINDOW_CONTROLS && <WindowControls closeOnly />}
         </div>
