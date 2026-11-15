@@ -482,6 +482,37 @@ describe('WebGpuTerminalRuntime', () => {
     expect(runtime.resources().glyphPipeline).toBe(grayscale);
   });
 
+  it('ignores a failed build of an earlier toggle once a later one applied the same order', async () => {
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+    const h = createHarness({ dualSourceBlending: true });
+    const runtime = await createRuntime();
+    const surface = createSurface();
+    join(runtime, surface);
+    const grayscale = runtime.resources().glyphPipeline;
+    const builds = vi.mocked(h.device.createRenderPipelineAsync);
+    let fail: (error: Error) => void = () => {};
+    builds.mockImplementationOnce(
+      () =>
+        new Promise<GPURenderPipeline>((_resolve, reject) => {
+          fail = reject;
+        }),
+    );
+    const before = builds.mock.calls.length;
+    // On (a build that will fail), off (nothing to build), on again (a build that succeeds).
+    setSubpixelText(true);
+    await vi.waitFor(() => expect(builds.mock.calls.length).toBe(before + 1));
+    setSubpixelText(false);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    setSubpixelText(true);
+    await vi.waitFor(() => expect(runtime.resources().glyphPipeline).not.toBe(grayscale));
+    const subpixel = runtime.resources().glyphPipeline;
+
+    fail(new Error('pipeline build failed'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(surface.handleRuntimeError).not.toHaveBeenCalled();
+    expect(runtime.resources().glyphPipeline).toBe(subpixel);
+  });
+
   it('applies a toggle that changed during a device recovery once it ends', async () => {
     vi.spyOn(console, 'info').mockImplementation(() => {});
     const h = createHarness({ dualSourceBlending: true });

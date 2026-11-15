@@ -97,6 +97,21 @@ describe('subpixel text', () => {
     expect(resolveSubpixelOrder('bgr', { ...both, hinting: false }).order).toBeNull();
   });
 
+  it('asks the GPU again after a query that failed, and keeps an answer it got', async () => {
+    const requestAdapter = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('gpu process restarting'))
+      .mockResolvedValue({ features: new Set(['dual-source-blending']) });
+    vi.stubGlobal('navigator', { gpu: { requestAdapter } });
+    const { subpixelTextUnavailable } = await load();
+    expect(await subpixelTextUnavailable('auto')).toBe(
+      'Not available: this webview has no WebGPU.',
+    );
+    expect(await subpixelTextUnavailable('auto')).toBeNull();
+    expect(await subpixelTextUnavailable('auto')).toBeNull();
+    expect(requestAdapter).toHaveBeenCalledTimes(2);
+  });
+
   it('tells Settings why the toggle cannot turn it on', async () => {
     stubAdapter({ features: new Set(['dual-source-blending']) });
     let { subpixelTextUnavailable } = await load();

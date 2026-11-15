@@ -212,6 +212,8 @@ export class WebGpuTerminalRuntime {
   private format: GPUTextureFormat = 'bgra8unorm';
   /** The stripe order the Settings toggle asks for, or null; this device may not draw it. */
   private requestedSubpixel: SubpixelOrder | null = null;
+  /** Counts toggle changes: only a pipeline built for the latest one may be applied or fail. */
+  private subpixelRevision = 0;
   /** The stripe order glyph atlases draw subpixel text with, or null for grayscale. */
   private subpixel: SubpixelOrder | null = null;
   private pipelineLayout: GPUPipelineLayout | null = null;
@@ -942,6 +944,7 @@ export class WebGpuTerminalRuntime {
   setSubpixelRequest(order: SubpixelOrder | null): void {
     if (this.disposed || order === this.requestedSubpixel) return;
     this.requestedSubpixel = order;
+    this.subpixelRevision += 1;
     void this.applySubpixelRequest();
   }
 
@@ -953,20 +956,21 @@ export class WebGpuTerminalRuntime {
     const subpixel = this.subpixelOrderFor(device);
     if (subpixel === this.subpixel) return;
     const generation = this.generation;
-    const request = this.requestedSubpixel;
+    // On, off, on again asks twice for the same order: only the revision tells the builds apart.
+    const revision = this.subpixelRevision;
     let pipeline: GPURenderPipeline;
     try {
       pipeline = await this.createGlyphPipeline(device, layout, this.format, subpixel);
     } catch (error) {
-      // A failed build that a lost device or a newer request superseded leaves nothing to stop.
+      // A failed build that a lost device or a newer toggle superseded leaves nothing to stop.
       if (this.disposed || generation !== this.generation) return;
-      if (request !== this.requestedSubpixel) return;
+      if (revision !== this.subpixelRevision) return;
       this.disable(toError(error));
       return;
     }
-    // A lost device or a newer request supersedes this one.
+    // A lost device or a newer toggle supersedes this one.
     if (this.disposed || this.fatalError || generation !== this.generation) return;
-    if (request !== this.requestedSubpixel) return;
+    if (revision !== this.subpixelRevision) return;
     for (const entry of this.atlases.values()) {
       entry.atlas.setSubpixel(subpixel);
       // Unused atlases stay suspended until `acquireGlyphAtlas` resumes them.

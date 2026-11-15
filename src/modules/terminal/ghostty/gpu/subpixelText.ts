@@ -64,11 +64,21 @@ export function resolveSubpixelOrder(
 
 let gpuSupport: Promise<string | null> | null = null;
 
+const NO_WEBGPU = 'Not available: this webview has no WebGPU.';
+
+/** The answer is kept for the session, but a query that failed is asked again next time. */
 function webGpuUnavailable(): Promise<string | null> {
   gpuSupport ??= (async () => {
     const gpu = typeof navigator === 'undefined' ? undefined : navigator.gpu;
-    const adapter = await gpu?.requestAdapter({ powerPreference: 'low-power' }).catch(() => null);
-    if (!adapter) return 'Not available: this webview has no WebGPU.';
+    if (!gpu) return NO_WEBGPU;
+    let adapter: GPUAdapter | null;
+    try {
+      adapter = await gpu.requestAdapter({ powerPreference: 'low-power' });
+    } catch {
+      gpuSupport = null;
+      return NO_WEBGPU;
+    }
+    if (!adapter) return NO_WEBGPU;
     return adapter.features.has('dual-source-blending')
       ? null
       : "Not available: this GPU can't blend each colour channel on its own.";
