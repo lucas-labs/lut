@@ -23,8 +23,8 @@ vi.mock('@/modules/settings/preferences', () => ({
   usePreferencesStore: (pick: (s: Record<string, unknown>) => unknown) => pick(prefs.state),
 }));
 const store = vi.hoisted(() => ({
-  setEditorWordWrapColumn: vi.fn(async () => {}),
-  setEditorFormatterByLang: vi.fn(async () => {}),
+  setEditorWordWrapColumn: vi.fn(async (_column: number) => {}),
+  setEditorFormatterByLang: vi.fn(async (_byLang: Record<string, string>) => {}),
 }));
 vi.mock('@/modules/settings/store', async (importOriginal) => ({
   ...(await importOriginal<object>()),
