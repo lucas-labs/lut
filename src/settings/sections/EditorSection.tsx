@@ -55,12 +55,12 @@ export function EditorSection() {
         <Label>Appearance</Label>
         <SettingRow title="Font size" description="Code editor text size.">
           <Select value={String(editorFontSize)} onValueChange={(v) => void setEditorFontSize(Number(v))}>
-            <SelectTrigger size="sm" className="h-8 w-28 text-[12px]">
+            <SelectTrigger size="sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {EDITOR_FONT_SIZES.map((size) => (
-                <SelectItem key={size} value={String(size)} className="text-[12px]">
+                <SelectItem key={size} value={String(size)}>
                   {size} px
                 </SelectItem>
               ))}
@@ -120,7 +120,7 @@ const FORMATTER_OPTIONS: EditorFormatter[] = ['lsp', ...(Object.keys(FORMATTERS)
 function FormatterSelect({ value, onChange }: { value: EditorFormatter; onChange: (v: EditorFormatter) => void }) {
   return (
     <Select value={value} onValueChange={(v) => onChange(v as EditorFormatter)}>
-      <SelectTrigger className="h-8 w-40 text-[12px]">
+      <SelectTrigger>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
@@ -205,7 +205,7 @@ function FormatterOverrides() {
               update(next);
             }}
           >
-            <SelectTrigger className="h-7 w-44 text-[12px]">
+            <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

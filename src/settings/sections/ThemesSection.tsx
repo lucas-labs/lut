@@ -261,13 +261,11 @@ export function ThemesSection() {
             </span>
           </div>
           <Select value={editorThemePref} onValueChange={(v) => void setEditorTheme(v as EditorThemePref)}>
-            <SelectTrigger size="sm" className="h-8 w-44 text-[12px]">
+            <SelectTrigger size="sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value={EDITOR_THEME_AUTO} className="text-[12px]">
-                Auto (match app theme)
-              </SelectItem>
+              <SelectItem value={EDITOR_THEME_AUTO}>Auto (match app theme)</SelectItem>
               <SelectSeparator />
               {[...EDITOR_THEMES]
                 .sort(
