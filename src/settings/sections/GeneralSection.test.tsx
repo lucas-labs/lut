@@ -71,6 +71,15 @@ describe('GeneralSection', () => {
     expect(theme.setMode).toHaveBeenCalledWith('system');
   });
 
+  it('names every switch and select by its row title', () => {
+    const controls = host.querySelectorAll('[role="switch"], [role="combobox"], input');
+    expect(controls.length).toBeGreaterThan(10);
+    for (const control of controls) {
+      const name = document.getElementById(control.getAttribute('aria-labelledby') ?? '')?.textContent;
+      expect(name, control.outerHTML).toBeTruthy();
+    }
+  });
+
   it('draws each mode in its own colours, whatever the current mode', () => {
     // A theme that leaves its colours to the stylesheet (lut's) gets them from the mode class.
     expect(button('Light').querySelector('.light')).not.toBeNull();
@@ -85,7 +94,7 @@ describe('GeneralSection', () => {
 
   it('shows the zoom level next to its slider', () => {
     const zoom = host.querySelector('[role="slider"]');
-    expect(zoom?.getAttribute('aria-label')).toBe('UI zoom level');
+    expect(document.getElementById(zoom?.getAttribute('aria-labelledby') ?? '')?.textContent).toBe('UI zoom level');
     expect(zoom?.closest('[data-slot="slider"]')?.parentElement?.textContent).toBe('125%');
   });
 });

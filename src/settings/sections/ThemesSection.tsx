@@ -173,7 +173,7 @@ export function ThemesSection() {
                 : 'Frost the header, status bar and gutters over what is behind the window. Panes stay solid.'
             }
           >
-            <Switch checked={windowVibrancy} onCheckedChange={(v) => void setWindowVibrancy(v)} />
+            {(a11y) => <Switch {...a11y} checked={windowVibrancy} onCheckedChange={(v) => void setWindowVibrancy(v)} />}
           </SettingRow>
         </SettingsGroup>
       )}
@@ -225,25 +225,27 @@ export function ThemesSection() {
 
       <SettingsGroup title="Editor theme">
         <SettingRow title="Editor theme" description="Syntax colors for the code editor. Auto follows the app theme.">
-          <Select value={editorThemePref} onValueChange={(v) => void setEditorTheme(v as EditorThemePref)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={EDITOR_THEME_AUTO}>Auto (match app theme)</SelectItem>
-              <SelectSeparator />
-              {[...EDITOR_THEMES]
-                .sort(
-                  (a, b) =>
-                    (EDITOR_THEME_MODE[a] === resolvedMode ? 0 : 1) - (EDITOR_THEME_MODE[b] === resolvedMode ? 0 : 1),
-                )
-                .map((id) => (
-                  <SelectItem key={id} value={id} disabled={EDITOR_THEME_MODE[id] !== resolvedMode}>
-                    {EDITOR_THEME_LABELS[id]}
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
+          {(a11y) => (
+            <Select value={editorThemePref} onValueChange={(v) => void setEditorTheme(v as EditorThemePref)}>
+              <SelectTrigger {...a11y}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={EDITOR_THEME_AUTO}>Auto (match app theme)</SelectItem>
+                <SelectSeparator />
+                {[...EDITOR_THEMES]
+                  .sort(
+                    (a, b) =>
+                      (EDITOR_THEME_MODE[a] === resolvedMode ? 0 : 1) - (EDITOR_THEME_MODE[b] === resolvedMode ? 0 : 1),
+                  )
+                  .map((id) => (
+                    <SelectItem key={id} value={id} disabled={EDITOR_THEME_MODE[id] !== resolvedMode}>
+                      {EDITOR_THEME_LABELS[id]}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          )}
         </SettingRow>
       </SettingsGroup>
 
@@ -279,26 +281,30 @@ export function ThemesSection() {
           {imageId ? (
             <>
               <SettingRow title="Opacity">
-                <RangeControl
-                  label="Background opacity"
-                  value={backgroundOpacity}
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  onChange={(v) => void setBackgroundOpacity(v)}
-                  format={(v) => `${Math.round(v * 100)}%`}
-                />
+                {(a11y) => (
+                  <RangeControl
+                    {...a11y}
+                    value={backgroundOpacity}
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    onChange={(v) => void setBackgroundOpacity(v)}
+                    format={(v) => `${Math.round(v * 100)}%`}
+                  />
+                )}
               </SettingRow>
               <SettingRow title="Blur">
-                <RangeControl
-                  label="Background blur"
-                  value={backgroundBlur}
-                  min={0}
-                  max={64}
-                  step={1}
-                  onChange={(v) => void setBackgroundBlur(v)}
-                  format={(v) => `${v} px`}
-                />
+                {(a11y) => (
+                  <RangeControl
+                    {...a11y}
+                    value={backgroundBlur}
+                    min={0}
+                    max={64}
+                    step={1}
+                    onChange={(v) => void setBackgroundBlur(v)}
+                    format={(v) => `${v} px`}
+                  />
+                )}
               </SettingRow>
             </>
           ) : null}

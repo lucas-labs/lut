@@ -158,15 +158,17 @@ export function GeneralSection({ openTab }: SectionProps) {
 
       <SettingsGroup title="Zoom">
         <SettingRow title="UI zoom level">
-          <RangeControl
-            label="UI zoom level"
-            value={zoomLevel}
-            min={ZOOM_MIN}
-            max={ZOOM_MAX}
-            step={ZOOM_STEP}
-            onChange={(v) => void setZoomLevel(v)}
-            format={(v) => `${Math.round(v * 100)}%`}
-          />
+          {(a11y) => (
+            <RangeControl
+              {...a11y}
+              value={zoomLevel}
+              min={ZOOM_MIN}
+              max={ZOOM_MAX}
+              step={ZOOM_STEP}
+              onChange={(v) => void setZoomLevel(v)}
+              format={(v) => `${Math.round(v * 100)}%`}
+            />
+          )}
         </SettingRow>
       </SettingsGroup>
 
@@ -175,30 +177,38 @@ export function GeneralSection({ openTab }: SectionProps) {
           title="Show hidden files"
           description="Include dot-prefixed files and folders (.env, .gitignore, .config) in the file explorer and search."
         >
-          <Switch checked={showHidden} onCheckedChange={(v) => void setShowHidden(v)} />
+          {(a11y) => <Switch {...a11y} checked={showHidden} onCheckedChange={(v) => void setShowHidden(v)} />}
         </SettingRow>
         <SettingRow
           title="Git decorations"
           description="Show the Git status of changed files and dim gitignored entries in the file explorer."
         >
-          <Switch checked={explorerGitDecorations} onCheckedChange={(v) => void setExplorerGitDecorations(v)} />
+          {(a11y) => (
+            <Switch
+              {...a11y}
+              checked={explorerGitDecorations}
+              onCheckedChange={(v) => void setExplorerGitDecorations(v)}
+            />
+          )}
         </SettingRow>
         <SettingRow
           title="File icon colors"
           description="Theme uses the theme's colors, Original the icon set's own, Monochrome the muted text color."
         >
-          <Select value={fileIconColors} onValueChange={(v) => void setFileIconColors(v)}>
-            <SelectTrigger value={fileIconColors}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {FILE_ICON_COLORS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {(a11y) => (
+            <Select value={fileIconColors} onValueChange={(v) => void setFileIconColors(v)}>
+              <SelectTrigger {...a11y} value={fileIconColors}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {FILE_ICON_COLORS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </SettingRow>
       </SettingsGroup>
 
@@ -207,60 +217,74 @@ export function GeneralSection({ openTab }: SectionProps) {
           title="Terminal renderer"
           description="Automatic and WebGPU draw with WebGPU and fall back to WebGL where the webview has none. WebGL is a compatibility mode: it uses more CPU and holds at most 12 visible panes per window. Applies to new terminals."
         >
-          <Select
-            value={terminalRenderer}
-            onValueChange={(value) => void setTerminalRenderer(coerceTerminalRenderer(value))}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="auto">Automatic</SelectItem>
-              <SelectItem value="webgpu">WebGPU</SelectItem>
-              <SelectItem value="webgl">WebGL</SelectItem>
-            </SelectContent>
-          </Select>
+          {(a11y) => (
+            <Select
+              value={terminalRenderer}
+              onValueChange={(value) => void setTerminalRenderer(coerceTerminalRenderer(value))}
+            >
+              <SelectTrigger {...a11y}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto">Automatic</SelectItem>
+                <SelectItem value="webgpu">WebGPU</SelectItem>
+                <SelectItem value="webgl">WebGL</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         </SettingRow>
         <SettingRow
           title="Screen reader support"
           description="Expose terminal output as accessible text. Page Up and Page Down browse history when the output region is focused."
         >
-          <Switch checked={terminalScreenReader} onCheckedChange={(value) => void setTerminalScreenReader(value)} />
+          {(a11y) => (
+            <Switch
+              {...a11y}
+              checked={terminalScreenReader}
+              onCheckedChange={(value) => void setTerminalScreenReader(value)}
+            />
+          )}
         </SettingRow>
         <SettingRow
           title="Cursor blinking"
           description="Blink the terminal cursor, which marks the active pane. On by default."
         >
-          <Switch checked={terminalCursorBlink} onCheckedChange={(v) => void setTerminalCursorBlink(v)} />
+          {(a11y) => (
+            <Switch {...a11y} checked={terminalCursorBlink} onCheckedChange={(v) => void setTerminalCursorBlink(v)} />
+          )}
         </SettingRow>
         <SettingRow title="Cursor style" description="Shape of the terminal cursor.">
-          <Select value={terminalCursorStyle} onValueChange={(v) => void setTerminalCursorStyle(v)}>
-            <SelectTrigger value={terminalCursorStyle}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TERMINAL_CURSOR_STYLES.map((style) => (
-                <SelectItem key={style.value} value={style.value}>
-                  {style.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {(a11y) => (
+            <Select value={terminalCursorStyle} onValueChange={(v) => void setTerminalCursorStyle(v)}>
+              <SelectTrigger {...a11y} value={terminalCursorStyle}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TERMINAL_CURSOR_STYLES.map((style) => (
+                  <SelectItem key={style.value} value={style.value}>
+                    {style.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </SettingRow>
         <FontFamilyInput value={terminalFontFamily} onCommit={(v) => void setTerminalFontFamily(v)} />
         <SettingRow title="Font weight" description="Thickness of terminal characters">
-          <Select value={terminalFontWeight} onValueChange={(v) => void setTerminalFontWeight(v)}>
-            <SelectTrigger value={terminalFontWeight}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TERMINAL_FONT_WEIGHTS.map((w) => (
-                <SelectItem key={w.value} value={w.value}>
-                  {w.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {(a11y) => (
+            <Select value={terminalFontWeight} onValueChange={(v) => void setTerminalFontWeight(v)}>
+              <SelectTrigger {...a11y} value={terminalFontWeight}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TERMINAL_FONT_WEIGHTS.map((w) => (
+                  <SelectItem key={w.value} value={w.value}>
+                    {w.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </SettingRow>
         <SettingRow
           title="Integrated terminal shell"
@@ -272,147 +296,167 @@ export function GeneralSection({ openTab }: SectionProps) {
                 : 'Shell for new terminal tabs. Existing tabs keep their shell.'
           }
         >
-          <Select
-            value={terminalShell || SHELL_AUTO}
-            onValueChange={(v) => void setTerminalShell(v === SHELL_AUTO ? '' : v)}
-          >
-            <SelectTrigger value={terminalShell || SHELL_AUTO}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={SHELL_AUTO}>Auto</SelectItem>
-              {shells.map((s) => (
-                <SelectItem key={s.path} value={s.path}>
-                  {s.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {(a11y) => (
+            <Select
+              value={terminalShell || SHELL_AUTO}
+              onValueChange={(v) => void setTerminalShell(v === SHELL_AUTO ? '' : v)}
+            >
+              <SelectTrigger {...a11y} value={terminalShell || SHELL_AUTO}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={SHELL_AUTO}>Auto</SelectItem>
+                {shells.map((s) => (
+                  <SelectItem key={s.path} value={s.path}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </SettingRow>
         {(wslDistros.length > 0 || defaultWorkspaceEnv !== 'local') && (
           <SettingRow
             title="Workspace environment"
             description="Where new spaces run: Windows or a WSL distro. Existing spaces keep theirs; switch any from the status bar."
           >
-            <Select value={defaultWorkspaceEnv} onValueChange={(v) => void setDefaultWorkspaceEnv(v)}>
-              <SelectTrigger value={defaultWorkspaceEnv}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="local">Windows</SelectItem>
-                {wslDistros.map((d) => (
-                  <SelectItem key={d.name} value={`wsl:${d.name}`}>
-                    WSL: {d.name}
-                  </SelectItem>
-                ))}
-                {defaultWorkspaceEnv.startsWith('wsl:') &&
-                  !wslDistros.some((d) => `wsl:${d.name}` === defaultWorkspaceEnv) && (
-                    <SelectItem value={defaultWorkspaceEnv}>
-                      {defaultWorkspaceEnv.slice('wsl:'.length)} (unavailable)
+            {(a11y) => (
+              <Select value={defaultWorkspaceEnv} onValueChange={(v) => void setDefaultWorkspaceEnv(v)}>
+                <SelectTrigger {...a11y} value={defaultWorkspaceEnv}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="local">Windows</SelectItem>
+                  {wslDistros.map((d) => (
+                    <SelectItem key={d.name} value={`wsl:${d.name}`}>
+                      WSL: {d.name}
                     </SelectItem>
-                  )}
-              </SelectContent>
-            </Select>
+                  ))}
+                  {defaultWorkspaceEnv.startsWith('wsl:') &&
+                    !wslDistros.some((d) => `wsl:${d.name}` === defaultWorkspaceEnv) && (
+                      <SelectItem value={defaultWorkspaceEnv}>
+                        {defaultWorkspaceEnv.slice('wsl:'.length)} (unavailable)
+                      </SelectItem>
+                    )}
+                </SelectContent>
+              </Select>
+            )}
           </SettingRow>
         )}
         <SettingRow
           title="Letter spacing"
           description="Extra horizontal space between characters (px). Use negative values to tighten Nerd Fonts."
         >
-          <Select value={String(terminalLetterSpacing)} onValueChange={(v) => void setTerminalLetterSpacing(Number(v))}>
-            <SelectTrigger size="sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {LETTER_SPACINGS.map((v) => (
-                <SelectItem key={v} value={String(v)}>
-                  {v > 0 ? `+${v}` : v} px
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {(a11y) => (
+            <Select
+              value={String(terminalLetterSpacing)}
+              onValueChange={(v) => void setTerminalLetterSpacing(Number(v))}
+            >
+              <SelectTrigger {...a11y} size="sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {LETTER_SPACINGS.map((v) => (
+                  <SelectItem key={v} value={String(v)}>
+                    {v > 0 ? `+${v}` : v} px
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </SettingRow>
         <SettingRow title="Font size" description="Terminal text size.">
-          <Select value={String(terminalFontSize)} onValueChange={(v) => void setTerminalFontSize(Number(v))}>
-            <SelectTrigger size="sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TERMINAL_FONT_SIZES.map((size) => (
-                <SelectItem key={size} value={String(size)}>
-                  {size} px
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {(a11y) => (
+            <Select value={String(terminalFontSize)} onValueChange={(v) => void setTerminalFontSize(Number(v))}>
+              <SelectTrigger {...a11y} size="sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TERMINAL_FONT_SIZES.map((size) => (
+                  <SelectItem key={size} value={String(size)}>
+                    {size} px
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </SettingRow>
         <SettingRow
           title="Scrollback"
           description="Lines of history kept per terminal. Higher uses more RAM (~3 KB / line)."
         >
-          <Select value={String(terminalScrollback)} onValueChange={(v) => void setTerminalScrollback(Number(v))}>
-            <SelectTrigger size="sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TERMINAL_SCROLLBACK_PRESETS.map((lines) => (
-                <SelectItem key={lines} value={String(lines)}>
-                  {lines.toLocaleString()} lines
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {(a11y) => (
+            <Select value={String(terminalScrollback)} onValueChange={(v) => void setTerminalScrollback(Number(v))}>
+              <SelectTrigger {...a11y} size="sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TERMINAL_SCROLLBACK_PRESETS.map((lines) => (
+                  <SelectItem key={lines} value={String(lines)}>
+                    {lines.toLocaleString()} lines
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </SettingRow>
         {IS_MAC && (
           <SettingRow
             title="Option as Alt"
             description="Send Option as Alt (Meta) so readline and editor shortcuts like Option+B and Option+F work. Off types the characters Option produces. Keys are matched by their position on a US keyboard, so layouts that type other letters on those keys are not followed."
           >
-            <Select
-              value={terminalMacOptionAsAlt}
-              onValueChange={(v) => void setTerminalMacOptionAsAlt(coerceMacOptionAsAlt(v))}
-            >
-              <SelectTrigger size="sm">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {OPTION_AS_ALT_CHOICES.map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {(a11y) => (
+              <Select
+                value={terminalMacOptionAsAlt}
+                onValueChange={(v) => void setTerminalMacOptionAsAlt(coerceMacOptionAsAlt(v))}
+              >
+                <SelectTrigger {...a11y} size="sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {OPTION_AS_ALT_CHOICES.map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </SettingRow>
         )}
         <SettingRow
           title="Scroll speed"
           description="Lines per wheel or trackpad movement, for history and for programs that read the mouse wheel."
         >
-          <Select value={String(terminalScrollSpeed)} onValueChange={(v) => void setTerminalScrollSpeed(Number(v))}>
-            <SelectTrigger size="sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {(SCROLL_SPEEDS.some((v) => v === terminalScrollSpeed)
-                ? SCROLL_SPEEDS
-                : [...SCROLL_SPEEDS, terminalScrollSpeed].sort((a, b) => a - b)
-              ).map((v) => (
-                <SelectItem key={v} value={String(v)}>
-                  {v}x
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {(a11y) => (
+            <Select value={String(terminalScrollSpeed)} onValueChange={(v) => void setTerminalScrollSpeed(Number(v))}>
+              <SelectTrigger {...a11y} size="sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(SCROLL_SPEEDS.some((v) => v === terminalScrollSpeed)
+                  ? SCROLL_SPEEDS
+                  : [...SCROLL_SPEEDS, terminalScrollSpeed].sort((a, b) => a - b)
+                ).map((v) => (
+                  <SelectItem key={v} value={String(v)}>
+                    {v}x
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </SettingRow>
         <SettingRow
           title="Confirm before killing a running process"
           description="Ask before closing a terminal tab or quitting while a command is still running. Unsaved editor changes are always confirmed."
         >
-          <Switch
-            checked={confirmCloseRunningTerminal}
-            onCheckedChange={(v) => void setConfirmCloseRunningTerminal(v)}
-          />
+          {(a11y) => (
+            <Switch
+              {...a11y}
+              checked={confirmCloseRunningTerminal}
+              onCheckedChange={(v) => void setConfirmCloseRunningTerminal(v)}
+            />
+          )}
         </SettingRow>
       </SettingsGroup>
 
@@ -421,32 +465,38 @@ export function GeneralSection({ openTab }: SectionProps) {
           title="Coding agent notifications"
           description="Alert when a coding agent needs your input or finishes. Native notification when lut is unfocused, in-app otherwise."
         >
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={!agentNotifications || notificationTestPending}
-              title={notificationTestTitle(notificationTest)}
-              onClick={() => void testNotification()}
-            >
-              {notificationTestLabel(notificationTest)}
-            </Button>
-            <Switch
-              checked={agentNotifications}
-              disabled={notificationTestPending}
-              onCheckedChange={(v) => {
-                setNotificationTest('idle');
-                void setAgentNotifications(v);
-              }}
-            />
-          </div>
+          {(a11y) => (
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!agentNotifications || notificationTestPending}
+                title={notificationTestTitle(notificationTest)}
+                onClick={() => void testNotification()}
+              >
+                {notificationTestLabel(notificationTest)}
+              </Button>
+              <Switch
+                {...a11y}
+                checked={agentNotifications}
+                disabled={notificationTestPending}
+                onCheckedChange={(v) => {
+                  setNotificationTest('idle');
+                  void setAgentNotifications(v);
+                }}
+              />
+            </div>
+          )}
         </SettingRow>
         <SettingRow title="Notification sound" description="Play a sound with agent notifications and in-app alerts.">
-          <Switch
-            checked={agentNotificationSound}
-            disabled={!agentNotifications || notificationTestPending}
-            onCheckedChange={(v) => void setAgentNotificationSound(v)}
-          />
+          {(a11y) => (
+            <Switch
+              {...a11y}
+              checked={agentNotificationSound}
+              disabled={!agentNotifications || notificationTestPending}
+              onCheckedChange={(v) => void setAgentNotificationSound(v)}
+            />
+          )}
         </SettingRow>
       </SettingsGroup>
 
@@ -455,7 +505,9 @@ export function GeneralSection({ openTab }: SectionProps) {
           title="Restore window position & size"
           description="Reopen the main window where you left it. Applies on next launch."
         >
-          <Switch checked={restoreWindowState} onCheckedChange={(v) => void setRestoreWindowState(v)} />
+          {(a11y) => (
+            <Switch {...a11y} checked={restoreWindowState} onCheckedChange={(v) => void setRestoreWindowState(v)} />
+          )}
         </SettingRow>
       </SettingsGroup>
     </div>
@@ -585,17 +637,20 @@ function FontFamilyInput({ value, onCommit }: { value: string; onCommit: (v: str
       title="Font family"
       description='Terminal font (e.g. "CaskaydiaCove Nerd Font Mono"). Icons render without a Nerd Font; leave blank to use an installed one when found.'
     >
-      <Input
-        type="text"
-        value={draft}
-        placeholder="Auto-detect"
-        onChange={(e) => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') e.currentTarget.blur();
-        }}
-        className="w-55 font-mono"
-      />
+      {(a11y) => (
+        <Input
+          {...a11y}
+          type="text"
+          value={draft}
+          placeholder="Auto-detect"
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.blur();
+          }}
+          className="w-55 font-mono"
+        />
+      )}
     </SettingRow>
   );
 }
