@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils"
 /**
  * lut's buttons (E13-07 design). Sizes: `lg` 30 px for dialogs, `default` 28 px for forms and settings, `sm` 26 px
  * for toolbars, `xs` 20 px for small text actions; `icon` 28, `icon-sm` 24 and `icon-xs` 20 px squares.
- * The design's bordered "ghost" button is `outline` here; its borderless icon button is `ghost`.
+ * The design's bordered "ghost" button is `outline` here (forms, Settings) and its toolbar button `outline-subtle`,
+ * with the faint border; its borderless icon button is `ghost`.
  */
 const buttonVariants = cva(
   "group/button inline-flex shrink-0 items-center justify-center rounded-md border border-transparent bg-clip-padding text-xs whitespace-nowrap transition-colors outline-none select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-40 aria-invalid:border-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
@@ -16,7 +17,9 @@ const buttonVariants = cva(
       variant: {
         default: "bg-primary font-medium text-primary-foreground hover:brightness-106",
         outline:
-          "border-input bg-transparent text-foreground hover:bg-accent aria-expanded:bg-accent",
+          "border-muted-foreground/75 bg-transparent text-foreground hover:bg-accent aria-expanded:bg-accent",
+        "outline-subtle":
+          "border-border bg-transparent text-foreground hover:bg-accent aria-expanded:bg-accent",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-accent aria-expanded:bg-accent",
         ghost:
