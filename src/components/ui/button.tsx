@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils"
 
 /**
  * lut's buttons (E13-07 design). Sizes: `lg` 30 px for dialogs, `default` 28 px for forms and settings, `sm` 26 px
- * for toolbars, `xs` 20 px for small text actions; `icon` 28, `icon-sm` 24 and `icon-xs` 20 px squares;
+ * for toolbars, `xs` 20 px for small text actions; `icon` 28, `icon-sm` 24, `icon-xs` 20 and `icon-2xs` 14 px squares
+ * (`icon-2xs` fits inside a 16 px status-line pill);
  * `inline` takes the size of the text around it, for a link inside a sentence.
  * The design's bordered "ghost" button is `outline` here (forms, Settings) and its toolbar button `outline-subtle`,
  * with the faint border; its borderless icon button is `ghost`. `outline-hover` shows its border only on hover, and the
@@ -39,6 +40,7 @@ const buttonVariants = cva(
         icon: "size-7",
         "icon-sm": "size-6",
         "icon-xs": "size-5 rounded-sm [&_svg:not([class*='size-'])]:size-3",
+        "icon-2xs": "size-3.5 rounded-sm [&_svg:not([class*='size-'])]:size-2.5",
         keys: "h-7 gap-1 px-1",
         inline: "gap-1 rounded-sm border-0 p-0 align-baseline text-[length:inherit] leading-[inherit]",
       },

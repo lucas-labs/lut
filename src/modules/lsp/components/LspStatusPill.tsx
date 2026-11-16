@@ -92,17 +92,17 @@ function ErrorPill({ preset, reason }: { preset: LspPreset; reason: string }) {
   );
 }
 
-// Not a Button: it sits inside the 16 px status-line pill, smaller than the smallest icon button.
 function DismissButton({ preset }: { preset: LspPreset }) {
   return (
-    <button
-      type="button"
-      className="rounded-full p-0.5 hover:bg-foreground/10"
+    <Button
+      variant="ghost"
+      size="icon-2xs"
       onClick={() => void setLspActivation(preset.id, 'dismissed')}
       title="Dismiss (you can re-enable from Settings)"
+      aria-label="Dismiss"
     >
       <HugeiconsIcon icon={Cancel01Icon} size={9} strokeWidth={2.2} />
-    </button>
+    </Button>
   );
 }
 
