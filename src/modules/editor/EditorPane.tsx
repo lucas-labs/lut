@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { useAssetGrant } from '@/lib/useAssetGrant';
 import { lspFormatDocument, useLspExtension } from '@/modules/lsp';
 import { usePreferencesStore } from '@/modules/settings/preferences';
@@ -448,9 +449,9 @@ export const EditorPane = memo(
               {assetGrant.error ? (
                 <>
                   <p role="alert">Media preview unavailable: {assetGrant.error}</p>
-                  <button type="button" className="mt-2 underline" onClick={assetGrant.retry}>
+                  <Button variant="link" size="inline" className="mt-2" onClick={assetGrant.retry}>
                     Retry
-                  </button>
+                  </Button>
                 </>
               ) : (
                 'Loading media preview…'
@@ -487,13 +488,9 @@ export const EditorPane = memo(
             {formatBytes(doc.size)} · {canForce ? 'syntax features disabled' : 'preview not supported'}
           </div>
           {canForce && (
-            <button
-              type="button"
-              onClick={openAnyway}
-              className="mt-2 rounded-md border border-border bg-muted/60 px-3 py-1 text-xs text-foreground hover:bg-accent"
-            >
+            <Button variant="outline" onClick={openAnyway} className="mt-2">
               Open anyway
-            </button>
+            </Button>
           )}
         </div>
       );

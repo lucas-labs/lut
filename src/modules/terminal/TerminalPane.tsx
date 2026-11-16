@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import type { TerminalSearchController } from '@/modules/terminal/search/TerminalSearchController';
 import { useTheme } from '@/modules/theme';
@@ -107,13 +108,9 @@ const GhosttyTerminalPane = memo(
             {session.error.kind === 'renderer' && (
               <p className="text-muted-foreground">Your terminal session is preserved. Retry to restore its display.</p>
             )}
-            <button
-              type="button"
-              className="rounded-md border px-3 py-1.5 hover:bg-accent focus-visible:outline-2"
-              onClick={session.retry}
-            >
+            <Button variant="outline" onClick={session.retry}>
               {session.error.kind === 'renderer' ? 'Retry display' : 'Retry'}
-            </button>
+            </Button>
           </div>
         )}
       </div>

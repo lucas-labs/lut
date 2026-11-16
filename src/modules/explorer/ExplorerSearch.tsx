@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -217,14 +218,15 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
             className="pr-7 pl-[27px]"
           />
           {query ? (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon-xs"
               onClick={() => changeQuery('')}
-              className="absolute top-3.5 right-2.5 -translate-y-1/2 rounded-sm p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+              className="absolute top-3.5 right-1.5 -translate-y-1/2"
               aria-label="Clear search"
             >
               <HugeiconsIcon icon={Cancel01Icon} size={11} strokeWidth={2} />
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}

@@ -161,18 +161,19 @@ export const SearchInline = forwardRef<SearchInlineHandle, Props>(function Searc
             }}
           />
           {q && (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon-xs"
               onClick={() => {
                 setQ('');
                 clearTarget();
                 inputRef.current?.focus();
               }}
-              className="absolute top-1/2 right-1.5 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+              className="absolute top-1/2 right-0.5 -translate-y-1/2"
               aria-label="Clear search"
             >
               <HugeiconsIcon icon={Cancel01Icon} size={11} strokeWidth={2} />
-            </button>
+            </Button>
           )}
         </div>
       ) : (

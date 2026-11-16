@@ -87,23 +87,19 @@ export const PreviewPane = forwardRef<PreviewPaneHandle, Props>(function Preview
           <span className="min-w-0 flex-1 truncate" title="Cookie-based sign-in may not work in the sandboxed preview.">
             Cookie-based sign-in may not work in preview.
           </span>
-          <button
-            type="button"
-            onClick={() => void openUrl(url).catch(console.error)}
-            className="flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 font-medium hover:bg-info/15"
-          >
+          <Button variant="ghost" size="xs" onClick={() => void openUrl(url).catch(console.error)}>
             <HugeiconsIcon icon={LinkSquare02Icon} size={10} strokeWidth={1.75} />
             Open in browser
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-xs"
             aria-label="Dismiss cookie sign-in notice"
             title="Dismiss"
             onClick={() => setDismissedCookieOrigin(cookieOrigin)}
-            className="flex size-5 shrink-0 items-center justify-center rounded opacity-70 hover:bg-info/15 hover:opacity-100"
           >
             <HugeiconsIcon icon={Cancel01Icon} size={10} strokeWidth={2} />
-          </button>
+          </Button>
         </div>
       ) : null}
       {/* No backdrop of our own: the webview paints a page's canvas when its colour scheme differs from the app's,

@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { checkReadable } from '@/lib/security/security';
 import { useAssetGrant } from '@/lib/useAssetGrant';
 import { cn } from '@/lib/utils';
@@ -140,9 +141,9 @@ const MarkdownBody = memo(function MarkdownBody({
       {assetError && (
         <div className="mb-3 text-xs text-muted-foreground">
           <p role="alert">Local images unavailable: {assetError}</p>
-          <button type="button" className="underline" onClick={retry}>
+          <Button variant="link" size="inline" onClick={retry}>
             Retry images
-          </button>
+          </Button>
         </div>
       )}
       {/* Streamdown's memo ignores rehypePlugins: without a new key a grant that lands after the first render

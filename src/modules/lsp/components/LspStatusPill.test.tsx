@@ -24,8 +24,7 @@ function restartButton(node: ReactNode): (() => void) | undefined {
       if (found) return found;
     }
   } else if (isValidElement<{ children?: ReactNode; onClick?: () => void }>(node)) {
-    if (node.type === 'button' && Array.isArray(node.props.children) && node.props.children.includes('Restart'))
-      return node.props.onClick;
+    if (Array.isArray(node.props.children) && node.props.children.includes('Restart')) return node.props.onClick;
     return restartButton(node.props.children);
   }
 }

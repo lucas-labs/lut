@@ -1,4 +1,5 @@
 import { AppLogo } from '@/components/AppLogo';
+import { Button } from '@/components/ui/button';
 import { WindowControls } from '@/components/WindowControls';
 import { TitleBarHoldProvider } from '@/lib/titleBarHold';
 import { cn } from '@/lib/utils';
@@ -50,9 +51,6 @@ type Props = {
 
 /** Below this width the search collapses to an icon and the tabs get shorter titles. */
 const COMPACT_WIDTH = 720;
-
-const ICON_BUTTON =
-  'flex shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground';
 
 /** The window's title bar, per the E11-02 design. */
 export function TitleBar(props: Props) {
@@ -138,16 +136,16 @@ function TitleBarRow({
       )}
     >
       {!inline && !IS_MAC && appMark}
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="icon-sm"
         onClick={onToggleSidebar}
         aria-label="Toggle sidebar"
         aria-pressed={sidePanelsOpen}
         title="Toggle sidebar"
-        className={cn(ICON_BUTTON, 'size-6')}
       >
         <HugeiconsIcon icon={SidebarLeftIcon} size={14} strokeWidth={1.5} />
-      </button>
+      </Button>
       {inline && (
         <TabNavigator
           orientation="horizontal"
@@ -169,15 +167,16 @@ function TitleBarRow({
       <span aria-hidden className="w-1.5 shrink-0" />
       <SearchInline ref={searchRef} target={searchTarget} compact={compact} />
       <NotificationBell onActivate={onActivateAgent} />
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="icon-sm"
         onClick={onOpenSettings}
         aria-label="Settings"
         title="Settings"
-        className={cn(ICON_BUTTON, 'mr-1.5 h-[22px] w-[26px]')}
+        className="mr-1.5"
       >
         <HugeiconsIcon icon={SlidersHorizontalIcon} size={14} strokeWidth={1.5} />
-      </button>
+      </Button>
       {!inline && IS_MAC && appMark}
       {USE_CUSTOM_WINDOW_CONTROLS && <WindowControls />}
     </div>

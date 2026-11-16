@@ -86,17 +86,12 @@ function HookAgentRow({
           enabled
         </span>
       ) : (
-        <button
-          type="button"
-          onClick={onEnable}
-          disabled={installing}
-          className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-60"
-        >
+        <Button variant="ghost" size="xs" onClick={onEnable} disabled={installing}>
           {installing ? (
             <HugeiconsIcon icon={Loading03Icon} size={12} strokeWidth={1.75} className="animate-spin" />
           ) : null}
           {installing ? 'Enabling' : 'Enable'}
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -211,13 +206,9 @@ export function NotificationBell({ onActivate }: Props) {
               </span>
             ) : null}
             {notifications.length > 0 ? (
-              <button
-                type="button"
-                onClick={clearNotifications}
-                className="rounded-md px-1.5 py-0.5 text-[11px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-              >
+              <Button variant="ghost" size="xs" onClick={clearNotifications}>
                 Clear
-              </button>
+              </Button>
             ) : null}
           </div>
         </div>

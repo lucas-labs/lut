@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { labelFor, type Tab, TabIcon } from '@/modules/navigation';
 import { useShortcutLabel } from '@/modules/shortcuts';
@@ -212,15 +213,9 @@ export function SpacesView({
         >
           Spaces
         </span>
-        <button
-          type="button"
-          onClick={onNewSpace}
-          aria-label="New space"
-          title="New space"
-          className="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        >
+        <Button variant="ghost" size="icon-sm" onClick={onNewSpace} aria-label="New space" title="New space">
           <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={1.5} />
-        </button>
+        </Button>
       </div>
       <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 pt-1 pb-2">
         {spaces.map((sp) => (
@@ -350,18 +345,18 @@ function SpaceRow({
               : 'hover:bg-accent/50',
         )}
       >
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon-xs"
           data-no-drag
           aria-label={expanded ? 'Collapse' : 'Expand'}
           onClick={(e) => {
             e.stopPropagation();
             onToggle();
           }}
-          className="flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground/60 hover:text-foreground"
         >
           <HugeiconsIcon icon={expanded ? ArrowDown01Icon : ArrowRight01Icon} size={13} strokeWidth={2} />
-        </button>
+        </Button>
         <SpaceAvatar space={space} size="sm" active={isActive} />
         {editing ? (
           <InlineRename initial={space.name} onCommit={onCommitRename} onCancel={onCancelRename} className="ml-0.5" />
@@ -460,18 +455,19 @@ function TabRow({
           <span className="truncate text-[11.5px] leading-tight">{labelFor(tab)}</span>
           {subtitle && <span className="truncate text-[9.5px] leading-tight text-muted-foreground/55">{subtitle}</span>}
         </span>
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="icon-xs"
           data-no-drag
           onClick={(e) => {
             e.stopPropagation();
             onClose();
           }}
           aria-label="Close tab"
-          className="flex size-4 shrink-0 items-center justify-center rounded text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover/tab:opacity-70 hover:opacity-100"
+          className="opacity-0 group-hover/tab:opacity-70 hover:opacity-100 focus-visible:opacity-100"
         >
           <HugeiconsIcon icon={Cancel01Icon} size={11} strokeWidth={2} />
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -514,20 +510,18 @@ function RowAction({
   destructive?: boolean;
 }) {
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
+      size="icon-xs"
       aria-label={label}
       title={label}
       onClick={(e) => {
         e.stopPropagation();
         onClick();
       }}
-      className={cn(
-        'flex size-5 items-center justify-center rounded text-muted-foreground/70 transition-colors',
-        destructive ? 'hover:bg-destructive/10 hover:text-destructive' : 'hover:bg-accent hover:text-foreground',
-      )}
+      className={cn(destructive && 'hover:bg-destructive/10 hover:text-destructive')}
     >
       <HugeiconsIcon icon={icon} size={13} strokeWidth={1.75} />
-    </button>
+    </Button>
   );
 }

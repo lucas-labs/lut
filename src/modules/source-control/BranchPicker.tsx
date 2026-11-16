@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -99,21 +100,22 @@ export function BranchPicker({
   return (
     <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
-        <button
-          type="button"
+        <Button
+          variant="outline-subtle"
+          size="sm"
           disabled={checkingOut}
           title={displayRepoRoot ?? repoLabel}
-          className="flex h-[26px] min-w-0 items-center gap-1.5 overflow-hidden rounded-md border border-border bg-background px-2 text-xs whitespace-nowrap text-muted-foreground outline-none transition-colors hover:border-muted-foreground/70 focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-70"
+          className="min-w-0 shrink overflow-hidden"
         >
-          <HugeiconsIcon icon={GitBranchIcon} size={13} strokeWidth={1.5} className="shrink-0" />
+          <HugeiconsIcon icon={GitBranchIcon} size={13} strokeWidth={1.5} className="shrink-0 text-muted-foreground" />
           {displayRepoRoot ? (
             <>
-              <span className="max-w-[45%] truncate">{basename(displayRepoRoot)}</span>
-              <span>/</span>
+              <span className="max-w-[45%] truncate text-muted-foreground">{basename(displayRepoRoot)}</span>
+              <span className="text-muted-foreground">/</span>
             </>
           ) : null}
-          <span className="min-w-0 truncate font-medium text-foreground">{repoLabel}</span>
-        </button>
+          <span className="min-w-0 truncate font-medium">{repoLabel}</span>
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         {displayRepoRoot ? (
