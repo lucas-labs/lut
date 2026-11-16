@@ -55,6 +55,7 @@ function Button({
   variant = "default",
   size = "default",
   asChild = false,
+  type,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
@@ -67,6 +68,8 @@ function Button({
       data-slot="button"
       data-variant={variant}
       data-size={size}
+      // An action, not a form submit unless it says so: Enter in a form field must not press the first button.
+      type={asChild ? type : (type ?? "button")}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     />
