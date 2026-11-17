@@ -1,7 +1,6 @@
 import { cn } from '@/lib/utils';
 import { isPrimaryModifierPressed } from '@/modules/platform';
-import { ArrowRight01Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { ChevronIcon } from '@lut/lut-icons';
 import { memo } from 'react';
 import { FileIcon, FolderIcon } from './FileIcon';
 import { InlineInput } from './InlineInput';
@@ -46,14 +45,7 @@ const ROW = 'flex h-6 w-full min-w-0 items-center gap-[5px] rounded-sm pr-2 text
 function Chevron({ isDir, expanded }: { isDir: boolean; expanded: boolean }) {
   return (
     <span className="flex size-3 shrink-0 items-center justify-center text-muted-foreground">
-      {isDir ? (
-        <HugeiconsIcon
-          icon={ArrowRight01Icon}
-          size={12}
-          strokeWidth={2}
-          className={cn('transition-transform', expanded && 'rotate-90')}
-        />
-      ) : null}
+      {isDir ? <ChevronIcon size="xs" className={cn('transition-transform', expanded && 'rotate-90')} /> : null}
     </span>
   );
 }

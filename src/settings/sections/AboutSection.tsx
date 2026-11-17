@@ -1,7 +1,6 @@
 import { AppLogo } from '@/components/AppLogo';
 import { Button } from '@/components/ui/button';
-import { AlertCircleIcon, LinkSquare02Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { AlertIcon, LinkIcon } from '@lut/lut-icons';
 import { getIdentifier, getName, getVersion } from '@tauri-apps/api/app';
 import { invoke } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
@@ -94,11 +93,11 @@ export function AboutSection() {
 
       <div className="mt-5 flex gap-2">
         <Button variant="outline" disabled={!repository} onClick={() => void openUrl(repository)}>
-          <HugeiconsIcon icon={LinkSquare02Icon} strokeWidth={1.5} />
+          <LinkIcon size="sm" />
           View on GitHub
         </Button>
         <Button variant="outline" disabled={!repository} onClick={() => void openUrl(`${repository}/issues/new`)}>
-          <HugeiconsIcon icon={AlertCircleIcon} strokeWidth={1.5} />
+          <AlertIcon size="sm" />
           Report an issue
         </Button>
       </div>

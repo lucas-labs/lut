@@ -6,8 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { allServers, detectBinary, type LspPreset, redetectBinary, useLspRuntimeStore } from '@/modules/lsp';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { type LspCustomServer, setLspActivation, setLspCustomServers } from '@/modules/settings/store';
-import { Delete02Icon, PlusSignIcon, Refresh01Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { DeleteIcon, PlusIcon, RefreshIcon } from '@lut/lut-icons';
 import { useEffect, useId, useState } from 'react';
 import { LspInstallDialog } from './LspInstallDialog';
 import { resolveLspSwitchState } from './lspSwitchState';
@@ -87,7 +86,7 @@ function ServerRow({
           aria-label="Detect again"
           title="Detect again"
         >
-          <HugeiconsIcon icon={Refresh01Icon} strokeWidth={1.75} />
+          <RefreshIcon size="sm" />
         </Button>
         {custom ? (
           <Button
@@ -100,7 +99,7 @@ function ServerRow({
             aria-label="Remove server"
             title="Remove server"
           >
-            <HugeiconsIcon icon={Delete02Icon} strokeWidth={1.75} />
+            <DeleteIcon size="sm" />
           </Button>
         ) : null}
         <Switch
@@ -182,7 +181,7 @@ function AddCustomServerDialog({ customServers }: { customServers: LspCustomServ
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline">
-          <HugeiconsIcon icon={PlusSignIcon} strokeWidth={1.5} />
+          <PlusIcon size="sm" />
           Add custom server
         </Button>
       </DialogTrigger>

@@ -9,8 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { currentWorkspaceEnv } from '@/modules/workspace';
-import { File02Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { FileIcon } from '@lut/lut-icons';
 import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useRef, useState } from 'react';
 
@@ -86,7 +85,7 @@ export function NewEditorDialog({ open, onOpenChange, rootPath, onCreated }: Pro
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex gap-1.75">
-            <HugeiconsIcon icon={File02Icon} size={16} strokeWidth={1.75} />
+            <FileIcon size="md" />
             New file
           </DialogTitle>
           <DialogDescription>

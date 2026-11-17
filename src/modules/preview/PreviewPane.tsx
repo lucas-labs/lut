@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Alert02Icon, Cancel01Icon, InformationCircleIcon, LinkSquare02Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { AlertIcon, InfoIcon, LinkIcon, XIcon } from '@lut/lut-icons';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { forwardRef, type ReactNode, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { isAllowedPreviewUrl, loopbackPreviewOrigin } from './lib/previewUrl';
@@ -72,7 +71,7 @@ export const PreviewPane = forwardRef<PreviewPaneHandle, Props>(function Preview
       <PreviewAddressBar ref={addressRef} url={url} onSubmit={onUrlChange} onReload={() => setNonce((n) => n + 1)} />
       {showXfoHint ? (
         <div className="flex h-7 shrink-0 items-center gap-1.5 border-b border-border bg-warning/10 px-4 text-[11px] text-warning">
-          <HugeiconsIcon icon={Alert02Icon} size={12} strokeWidth={1.75} className="shrink-0" />
+          <AlertIcon size="xs" className="shrink-0" />
           <span className="truncate">
             Many public sites refuse to embed (X-Frame-Options). If the page is blank, open it externally.
           </span>
@@ -83,12 +82,12 @@ export const PreviewPane = forwardRef<PreviewPaneHandle, Props>(function Preview
           role="note"
           className="flex h-7 shrink-0 items-center gap-1.5 border-b border-border bg-info/10 px-4 text-[11px] text-info"
         >
-          <HugeiconsIcon icon={InformationCircleIcon} size={12} strokeWidth={1.75} className="shrink-0" />
+          <InfoIcon size="xs" className="shrink-0" />
           <span className="min-w-0 flex-1 truncate" title="Cookie-based sign-in may not work in the sandboxed preview.">
             Cookie-based sign-in may not work in preview.
           </span>
           <Button variant="ghost" size="xs" onClick={() => void openUrl(url).catch(console.error)}>
-            <HugeiconsIcon icon={LinkSquare02Icon} size={10} strokeWidth={1.75} />
+            <LinkIcon size="xs" />
             Open in browser
           </Button>
           <Button
@@ -98,7 +97,7 @@ export const PreviewPane = forwardRef<PreviewPaneHandle, Props>(function Preview
             title="Dismiss"
             onClick={() => setDismissedCookieOrigin(cookieOrigin)}
           >
-            <HugeiconsIcon icon={Cancel01Icon} size={10} strokeWidth={2} />
+            <XIcon size="xs" />
           </Button>
         </div>
       ) : null}

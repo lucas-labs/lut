@@ -8,8 +8,8 @@ import {
   USE_CUSTOM_WINDOW_CONTROLS,
   useWindowFullScreen,
 } from '@/modules/platform';
+import { WindowCloseIcon, WindowMaximizeIcon, WindowMinimizeIcon, WindowRestoreIcon } from '@lut/lut-icons';
 import { useEffect, useState } from 'react';
-import { CloseIcon, MaximizeIcon, MinimizeIcon, RestoreIcon } from './windowControlIcons';
 
 type Props = {
   /** Render only the close button (used by the settings window). */
@@ -33,17 +33,17 @@ export function WindowControls({ closeOnly = false }: Props) {
     <div className="flex h-full shrink-0 items-start self-start">
       {!closeOnly && (
         <CtlButton ariaLabel="Minimize" onClick={() => void minimizeWindow()}>
-          <MinimizeIcon />
+          <WindowMinimizeIcon size="xs" />
         </CtlButton>
       )}
       {/* Maximize means nothing to a full-screen window; F11 leaves full screen. */}
       {!closeOnly && !fullScreen && (
         <CtlButton ariaLabel={maximized ? 'Restore' : 'Maximize'} onClick={() => void toggleMaximizeWindow()}>
-          {maximized ? <RestoreIcon /> : <MaximizeIcon />}
+          {maximized ? <WindowRestoreIcon size="xs" /> : <WindowMaximizeIcon size="xs" />}
         </CtlButton>
       )}
       <CtlButton ariaLabel="Close" onClick={() => void closeWindow()} danger>
-        <CloseIcon />
+        <WindowCloseIcon size="xs" />
       </CtlButton>
     </div>
   );

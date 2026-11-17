@@ -25,8 +25,7 @@ import {
   type ShortcutId,
   SHORTCUTS,
 } from '@/modules/shortcuts/shortcuts';
-import { ArrowTurnBackwardIcon, Cancel01Icon, Search01Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { ArrowTurnBackIcon, SearchIcon, XIcon } from '@lut/lut-icons';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { SectionHeader } from '../components/SectionHeader';
 import { SettingRow, SettingRowList } from '../components/SettingRow';
@@ -73,16 +72,14 @@ export function ShortcutsSection() {
       <div className="flex items-center justify-between">
         <SectionHeader title="Shortcuts" description="View and customize keyboard shortcuts." />
         <Button variant="outline" onClick={() => setResetDialogOpen(true)}>
-          <HugeiconsIcon icon={ArrowTurnBackwardIcon} strokeWidth={1.5} />
+          <ArrowTurnBackIcon size="sm" />
           Reset All
         </Button>
       </div>
 
       <div className="relative mt-4">
-        <HugeiconsIcon
-          icon={Search01Icon}
-          size={14}
-          strokeWidth={1.75}
+        <SearchIcon
+          size="sm"
           className="pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-muted-foreground"
         />
         <Input
@@ -187,7 +184,7 @@ function ShortcutRow({
               aria-label="Cancel recording"
               title="Cancel recording"
             >
-              <HugeiconsIcon icon={Cancel01Icon} strokeWidth={1.75} />
+              <XIcon size="sm" />
             </Button>
           ) : hasBindings ? (
             <Button
@@ -202,7 +199,7 @@ function ShortcutRow({
               aria-label="Clear shortcut"
               title="Clear shortcut"
             >
-              <HugeiconsIcon icon={Cancel01Icon} strokeWidth={1.75} />
+              <XIcon size="sm" />
             </Button>
           ) : null}
           <Button

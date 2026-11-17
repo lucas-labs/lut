@@ -1,0 +1,267 @@
+{
+  "absolute": [
+    "AbsoluteIcon"
+  ],
+  "agent-claude": [
+    "ClaudeIcon"
+  ],
+  "agent-codex": [
+    "ChatGptIcon"
+  ],
+  "agent-gemini": [
+    "GoogleGeminiIcon"
+  ],
+  "agent-grok": [
+    "Grok02Icon"
+  ],
+  "agent-pi": [
+    "InlinePiIcon"
+  ],
+  "alert": [
+    "Alert02Icon",
+    "AlertCircleIcon",
+    "AlertDiamondIcon"
+  ],
+  "alert-filled": [
+    "InlineWarningFilledIcon"
+  ],
+  "arrow-both-sides": [
+    "ArrowHorizontalIcon",
+    "ArrowVerticalIcon"
+  ],
+  "arrow-move": [
+    "ArrowMoveUpRightIcon"
+  ],
+  "arrow-one-side": [
+    "ArrowDown02Icon",
+    "ArrowLeft02Icon",
+    "ArrowRight02Icon",
+    "ArrowUp02Icon"
+  ],
+  "arrow-turn-back": [
+    "ArrowTurnBackwardIcon",
+    "RemoveSquareIcon"
+  ],
+  "bell": [
+    "Notification01Icon",
+    "Notification03Icon"
+  ],
+  "box": [
+    "BoxIcon"
+  ],
+  "brackets": [
+    "BracketsIcon"
+  ],
+  "bulb": [
+    "BulbIcon"
+  ],
+  "bullet-list": [
+    "LeftToRightListBulletIcon"
+  ],
+  "cancel-circle": [
+    "CancelCircleIcon"
+  ],
+  "center-focus": [
+    "CenterFocusIcon"
+  ],
+  "checkmark": [
+    "CheckmarkCircle01Icon",
+    "Tick02Icon"
+  ],
+  "checkmark-circle": [
+    "CheckmarkCircle01Icon",
+    "CheckmarkCircle02Icon"
+  ],
+  "chevron": [
+    "ArrowDown01Icon",
+    "ArrowLeft01Icon",
+    "ArrowRight01Icon",
+    "ArrowUp01Icon"
+  ],
+  "clock": [
+    "Clock01Icon"
+  ],
+  "code": [
+    "CodeIcon",
+    "SourceCodeIcon"
+  ],
+  "collapse": [
+    "CollapseIcon"
+  ],
+  "color": [
+    "PaintBoardIcon"
+  ],
+  "command": [
+    "CommandIcon"
+  ],
+  "copy": [
+    "Copy01Icon",
+    "CopyIcon"
+  ],
+  "dashboard": [
+    "DashboardSquare01Icon"
+  ],
+  "delete": [
+    "Delete02Icon"
+  ],
+  "download": [
+    "ArrowDown02Icon",
+    "Download01Icon"
+  ],
+  "eye": [
+    "ViewIcon"
+  ],
+  "file": [
+    "File01Icon",
+    "File02Icon"
+  ],
+  "file-add": [
+    "FileAddIcon"
+  ],
+  "file-edit": [
+    "FileEditIcon",
+    "PencilEdit02Icon"
+  ],
+  "file-search": [
+    "FileSearchIcon"
+  ],
+  "flash": [
+    "FlashIcon"
+  ],
+  "folder": [
+    "Folder01Icon"
+  ],
+  "folder-add": [
+    "FolderAddIcon"
+  ],
+  "full-screen": [
+    "FullScreenIcon"
+  ],
+  "function": [
+    "FunctionIcon"
+  ],
+  "git-branch": [
+    "GitBranchIcon",
+    "SourceCodeIcon"
+  ],
+  "git-commit": [
+    "GitCommitIcon"
+  ],
+  "git-compare": [
+    "GitCompareIcon"
+  ],
+  "globe": [
+    "Globe02Icon"
+  ],
+  "hashtag": [
+    "HashtagIcon"
+  ],
+  "home": [
+    "Home03Icon"
+  ],
+  "image": [
+    "Image01Icon",
+    "Image02Icon"
+  ],
+  "incognito": [
+    "IncognitoIcon"
+  ],
+  "info": [
+    "InformationCircleIcon"
+  ],
+  "key": [
+    "Key01Icon"
+  ],
+  "keyboard": [
+    "KeyboardIcon"
+  ],
+  "link": [
+    "LinkSquare02Icon"
+  ],
+  "math": [
+    "MathIcon"
+  ],
+  "minus": [
+    "MinusSignIcon"
+  ],
+  "more": [
+    "MoreHorizontalCircle01Icon",
+    "MoreHorizontalIcon"
+  ],
+  "move": [
+    "MoveLeftIcon",
+    "MoveRightIcon"
+  ],
+  "options": [
+    "Settings01Icon",
+    "SlidersHorizontalIcon"
+  ],
+  "package": [
+    "PackageIcon"
+  ],
+  "panel-arrow-right": [
+    "LayoutLeftIcon",
+    "SidebarLeftIcon"
+  ],
+  "pencil": [
+    "Edit02Icon",
+    "PencilEdit02Icon"
+  ],
+  "play": [
+    "PlayIcon"
+  ],
+  "plus": [
+    "PlusSignIcon"
+  ],
+  "puzzle": [
+    "PuzzleIcon"
+  ],
+  "refresh": [
+    "ArrowReloadHorizontalIcon",
+    "Refresh01Icon",
+    "RefreshIcon"
+  ],
+  "search": [
+    "Search01Icon",
+    "SearchIcon"
+  ],
+  "shift": [
+    "InlineShiftIcon"
+  ],
+  "sparkles": [
+    "AiBrowserIcon"
+  ],
+  "spinner": [
+    "InlineSpinnerIcon",
+    "Loading03Icon"
+  ],
+  "terminal": [
+    "ComputerTerminal02Icon",
+    "TerminalIcon"
+  ],
+  "text-font": [
+    "TextFontIcon"
+  ],
+  "themes": [
+    "ContrastIcon"
+  ],
+  "two-sides-layout": [
+    "LayoutTwoColumnIcon",
+    "LayoutTwoRowIcon"
+  ],
+  "window-close": [
+    "InlineCloseIcon"
+  ],
+  "window-maximize": [
+    "InlineMaximizeIcon"
+  ],
+  "window-minimize": [
+    "InlineMinimizeIcon"
+  ],
+  "window-restore": [
+    "InlineRestoreIcon"
+  ],
+  "x": [
+    "Cancel01Icon"
+  ]
+}

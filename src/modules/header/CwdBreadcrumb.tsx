@@ -8,14 +8,7 @@ import { useHoldTitleBar } from '@/lib/titleBarHold';
 import { cn } from '@/lib/utils';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { currentWorkspaceEnv } from '@/modules/workspace';
-import {
-  ArrowDown01Icon,
-  ArrowRight01Icon,
-  Folder01Icon,
-  Home03Icon,
-  MoreHorizontalIcon,
-} from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { ChevronIcon, FolderIcon, HomeIcon, MoreIcon } from '@lut/lut-icons';
 import { invoke } from '@tauri-apps/api/core';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { type Segment, segmentsFromCwd } from './lib/pathUtils';
@@ -118,12 +111,11 @@ function Trail({ first, children }: { first: Segment | null; children: ReactNode
       aria-label="Current directory"
       className="ml-1.5 flex max-w-[42%] min-w-0 shrink items-center gap-px overflow-hidden text-xs whitespace-nowrap text-muted-foreground"
     >
-      <HugeiconsIcon
-        icon={first?.isHome ? Home03Icon : Folder01Icon}
-        size={13}
-        strokeWidth={1.5}
-        className="mr-1 shrink-0"
-      />
+      {first?.isHome ? (
+        <HomeIcon size="sm" className="mr-1 shrink-0" />
+      ) : (
+        <FolderIcon size="sm" className="mr-1 shrink-0" />
+      )}
       {children}
     </nav>
   );
@@ -133,9 +125,7 @@ function Trail({ first, children }: { first: Segment | null; children: ReactNode
 function Item({ first, children }: { first: boolean; children: ReactNode }) {
   return (
     <span className="flex shrink-0 items-center gap-px">
-      {first ? null : (
-        <HugeiconsIcon icon={ArrowRight01Icon} size={10} strokeWidth={2} className="shrink-0 opacity-55" />
-      )}
+      {first ? null : <ChevronIcon size="xs" className="shrink-0 opacity-55" />}
       {children}
     </span>
   );
@@ -197,7 +187,7 @@ function CurrentSegmentDropdown({ segment, onCd }: { segment: Segment; onCd: (p:
       <DropdownMenuTrigger asChild>
         <button type="button" aria-current="location" className={cn(SEGMENT_CLASS, 'text-foreground')}>
           <SegmentLabel segment={segment} />
-          <HugeiconsIcon icon={ArrowDown01Icon} className="size-3 opacity-70" strokeWidth={2} />
+          <ChevronIcon size="xs" rotate={90} className="opacity-70" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto" {...closeFocus}>
@@ -211,7 +201,7 @@ function CurrentSegmentDropdown({ segment, onCd }: { segment: Segment; onCd: (p:
               key={name}
               onSelect={() => onCd(path.endsWith('/') ? `${path}${name}` : `${path}/${name}`)}
             >
-              <HugeiconsIcon icon={Folder01Icon} className="size-3.5 text-muted-foreground" strokeWidth={1.75} />
+              <FolderIcon size="sm" className="text-muted-foreground" />
               {name}
             </DropdownMenuItem>
           ))
@@ -231,17 +221,17 @@ function CollapsedSegments({ segments, onCd }: { segments: Segment[]; onCd: (p: 
         <DropdownMenu open={open} onOpenChange={setOpen}>
           <DropdownMenuTrigger asChild>
             <button type="button" title="Show hidden folders" className={SEGMENT_CLASS}>
-              <HugeiconsIcon icon={MoreHorizontalIcon} className="size-3" strokeWidth={1.75} />
+              <MoreIcon size="xs" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="min-w-44" {...closeFocus}>
             {segments.map((s) => (
               <DropdownMenuItem key={s.fullPath} onSelect={() => onCd(s.fullPath)}>
-                <HugeiconsIcon
-                  icon={s.isHome ? Home03Icon : Folder01Icon}
-                  className="size-3.5 text-muted-foreground"
-                  strokeWidth={1.75}
-                />
+                {s.isHome ? (
+                  <HomeIcon size="sm" className="text-muted-foreground" />
+                ) : (
+                  <FolderIcon size="sm" className="text-muted-foreground" />
+                )}
                 <span className="truncate">{s.isHome ? 'Home' : s.label}</span>
               </DropdownMenuItem>
             ))}

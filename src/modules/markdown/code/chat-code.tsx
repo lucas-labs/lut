@@ -2,8 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { CheckmarkCircle01Icon, CopyIcon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { CheckmarkIcon, CopyIcon } from '@lut/lut-icons';
 import { memo, useEffect, useRef, useState } from 'react';
 import { highlight, type HighlightedNode, isHighlightable } from './chat-code-lezer';
 
@@ -150,7 +149,7 @@ function CopyButton({ text }: { text: string }) {
 
   return (
     <Button variant="ghost" size="xs" onClick={onCopy}>
-      <HugeiconsIcon icon={copied ? CheckmarkCircle01Icon : CopyIcon} size={12} strokeWidth={1.5} aria-hidden />
+      {copied ? <CheckmarkIcon size="xs" /> : <CopyIcon size="xs" />}
       {copied ? 'Copied' : 'Copy'}
     </Button>
   );

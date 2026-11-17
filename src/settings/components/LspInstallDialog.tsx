@@ -9,8 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { type LspPreset, redetectBinary } from '@/modules/lsp';
 import { setLspActivation } from '@/modules/settings/store';
-import { Copy01Icon, Refresh01Icon, Tick02Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { CheckmarkIcon, CopyIcon, RefreshIcon } from '@lut/lut-icons';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { useEffect, useState } from 'react';
 
@@ -76,7 +75,7 @@ export function LspInstallDialog({ server, onClose }: Props) {
               aria-label="Copy install command"
               title="Copy install command"
             >
-              <HugeiconsIcon icon={copied ? Tick02Icon : Copy01Icon} strokeWidth={2} />
+              {copied ? <CheckmarkIcon size="sm" /> : <CopyIcon size="sm" />}
             </Button>
           </div>
         ) : (
@@ -105,7 +104,7 @@ export function LspInstallDialog({ server, onClose }: Props) {
             <span />
           )}
           <Button size="lg" disabled={checking} onClick={() => void checkAgain()}>
-            <HugeiconsIcon icon={Refresh01Icon} strokeWidth={1.75} className={checking ? 'animate-spin' : undefined} />
+            <RefreshIcon size="sm" className={checking ? 'animate-spin' : undefined} />
             {checking ? 'Checking...' : 'Check again'}
           </Button>
         </DialogFooter>

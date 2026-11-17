@@ -1,0 +1,735 @@
+[
+  {
+    "icon": "AbsoluteIcon",
+    "names": [
+      "absolute"
+    ],
+    "replaces": [
+      "AbsoluteIcon"
+    ]
+  },
+  {
+    "icon": "AiBrowserIcon",
+    "names": [
+      "sparkles"
+    ],
+    "replaces": [
+      "AiBrowserIcon"
+    ]
+  },
+  {
+    "icon": "Alert02Icon",
+    "names": [
+      "alert"
+    ],
+    "replaces": [
+      "Alert02Icon",
+      "AlertCircleIcon",
+      "AlertDiamondIcon"
+    ]
+  },
+  {
+    "icon": "ArrowHorizontalIcon",
+    "names": [
+      "arrow-both-sides"
+    ],
+    "replaces": [
+      "ArrowHorizontalIcon",
+      "ArrowVerticalIcon"
+    ]
+  },
+  {
+    "icon": "ArrowMoveUpRightIcon",
+    "names": [
+      "arrow-move"
+    ],
+    "replaces": [
+      "ArrowMoveUpRightIcon"
+    ]
+  },
+  {
+    "icon": "ArrowRight01Icon",
+    "names": [
+      "chevron"
+    ],
+    "replaces": [
+      "ArrowDown01Icon",
+      "ArrowLeft01Icon",
+      "ArrowRight01Icon",
+      "ArrowUp01Icon"
+    ]
+  },
+  {
+    "icon": "ArrowRight02Icon",
+    "names": [
+      "arrow-one-side"
+    ],
+    "replaces": [
+      "ArrowDown02Icon",
+      "ArrowLeft02Icon",
+      "ArrowRight02Icon",
+      "ArrowUp02Icon"
+    ]
+  },
+  {
+    "icon": "ArrowTurnBackwardIcon",
+    "names": [
+      "arrow-turn-back"
+    ],
+    "replaces": [
+      "ArrowTurnBackwardIcon",
+      "RemoveSquareIcon"
+    ]
+  },
+  {
+    "icon": "BoxIcon",
+    "names": [
+      "box"
+    ],
+    "replaces": [
+      "BoxIcon"
+    ]
+  },
+  {
+    "icon": "BracketsIcon",
+    "names": [
+      "brackets"
+    ],
+    "replaces": [
+      "BracketsIcon"
+    ]
+  },
+  {
+    "icon": "BulbIcon",
+    "names": [
+      "bulb"
+    ],
+    "replaces": [
+      "BulbIcon"
+    ]
+  },
+  {
+    "icon": "Cancel01Icon",
+    "names": [
+      "x"
+    ],
+    "replaces": [
+      "Cancel01Icon"
+    ]
+  },
+  {
+    "icon": "CancelCircleIcon",
+    "names": [
+      "cancel-circle"
+    ],
+    "replaces": [
+      "CancelCircleIcon"
+    ]
+  },
+  {
+    "icon": "CenterFocusIcon",
+    "names": [
+      "center-focus"
+    ],
+    "replaces": [
+      "CenterFocusIcon"
+    ]
+  },
+  {
+    "icon": "ChatGptIcon",
+    "names": [
+      "agent-codex"
+    ],
+    "replaces": [
+      "ChatGptIcon"
+    ]
+  },
+  {
+    "icon": "CheckmarkCircle01Icon",
+    "names": [
+      "checkmark-circle"
+    ],
+    "replaces": [
+      "CheckmarkCircle01Icon",
+      "CheckmarkCircle02Icon"
+    ]
+  },
+  {
+    "icon": "ClaudeIcon",
+    "names": [
+      "agent-claude"
+    ],
+    "replaces": [
+      "ClaudeIcon"
+    ]
+  },
+  {
+    "icon": "Clock01Icon",
+    "names": [
+      "clock"
+    ],
+    "replaces": [
+      "Clock01Icon"
+    ]
+  },
+  {
+    "icon": "CollapseIcon",
+    "names": [
+      "collapse"
+    ],
+    "replaces": [
+      "CollapseIcon"
+    ]
+  },
+  {
+    "icon": "CommandIcon",
+    "names": [
+      "command"
+    ],
+    "replaces": [
+      "CommandIcon"
+    ]
+  },
+  {
+    "icon": "ComputerTerminal02Icon",
+    "names": [
+      "terminal"
+    ],
+    "replaces": [
+      "ComputerTerminal02Icon",
+      "TerminalIcon"
+    ]
+  },
+  {
+    "icon": "ContrastIcon",
+    "names": [
+      "themes"
+    ],
+    "replaces": [
+      "ContrastIcon"
+    ]
+  },
+  {
+    "icon": "Copy01Icon",
+    "names": [
+      "copy"
+    ],
+    "replaces": [
+      "Copy01Icon",
+      "CopyIcon"
+    ]
+  },
+  {
+    "icon": "DashboardSquare01Icon",
+    "names": [
+      "dashboard"
+    ],
+    "replaces": [
+      "DashboardSquare01Icon"
+    ]
+  },
+  {
+    "icon": "Delete02Icon",
+    "names": [
+      "delete"
+    ],
+    "replaces": [
+      "Delete02Icon"
+    ]
+  },
+  {
+    "icon": "Download01Icon",
+    "names": [
+      "download"
+    ],
+    "replaces": [
+      "ArrowDown02Icon",
+      "Download01Icon"
+    ]
+  },
+  {
+    "icon": "File01Icon",
+    "names": [
+      "file"
+    ],
+    "replaces": [
+      "File01Icon",
+      "File02Icon"
+    ]
+  },
+  {
+    "icon": "FileAddIcon",
+    "names": [
+      "file-add"
+    ],
+    "replaces": [
+      "FileAddIcon"
+    ]
+  },
+  {
+    "icon": "FileEditIcon",
+    "names": [
+      "file-edit"
+    ],
+    "replaces": [
+      "FileEditIcon",
+      "PencilEdit02Icon"
+    ]
+  },
+  {
+    "icon": "FileSearchIcon",
+    "names": [
+      "file-search"
+    ],
+    "replaces": [
+      "FileSearchIcon"
+    ]
+  },
+  {
+    "icon": "FlashIcon",
+    "names": [
+      "flash"
+    ],
+    "replaces": [
+      "FlashIcon"
+    ]
+  },
+  {
+    "icon": "Folder01Icon",
+    "names": [
+      "folder"
+    ],
+    "replaces": [
+      "Folder01Icon"
+    ]
+  },
+  {
+    "icon": "FolderAddIcon",
+    "names": [
+      "folder-add"
+    ],
+    "replaces": [
+      "FolderAddIcon"
+    ]
+  },
+  {
+    "icon": "FullScreenIcon",
+    "names": [
+      "full-screen"
+    ],
+    "replaces": [
+      "FullScreenIcon"
+    ]
+  },
+  {
+    "icon": "FunctionIcon",
+    "names": [
+      "function"
+    ],
+    "replaces": [
+      "FunctionIcon"
+    ]
+  },
+  {
+    "icon": "GitBranchIcon",
+    "names": [
+      "git-branch"
+    ],
+    "replaces": [
+      "GitBranchIcon",
+      "SourceCodeIcon"
+    ]
+  },
+  {
+    "icon": "GitCommitIcon",
+    "names": [
+      "git-commit"
+    ],
+    "replaces": [
+      "GitCommitIcon"
+    ]
+  },
+  {
+    "icon": "GitCompareIcon",
+    "names": [
+      "git-compare"
+    ],
+    "replaces": [
+      "GitCompareIcon"
+    ]
+  },
+  {
+    "icon": "Globe02Icon",
+    "names": [
+      "globe"
+    ],
+    "replaces": [
+      "Globe02Icon"
+    ]
+  },
+  {
+    "icon": "GoogleGeminiIcon",
+    "names": [
+      "agent-gemini"
+    ],
+    "replaces": [
+      "GoogleGeminiIcon"
+    ]
+  },
+  {
+    "icon": "Grok02Icon",
+    "names": [
+      "agent-grok"
+    ],
+    "replaces": [
+      "Grok02Icon"
+    ]
+  },
+  {
+    "icon": "HashtagIcon",
+    "names": [
+      "hashtag"
+    ],
+    "replaces": [
+      "HashtagIcon"
+    ]
+  },
+  {
+    "icon": "Home03Icon",
+    "names": [
+      "home"
+    ],
+    "replaces": [
+      "Home03Icon"
+    ]
+  },
+  {
+    "icon": "Image01Icon",
+    "names": [
+      "image"
+    ],
+    "replaces": [
+      "Image01Icon",
+      "Image02Icon"
+    ]
+  },
+  {
+    "icon": "IncognitoIcon",
+    "names": [
+      "incognito"
+    ],
+    "replaces": [
+      "IncognitoIcon"
+    ]
+  },
+  {
+    "icon": "InformationCircleIcon",
+    "names": [
+      "info"
+    ],
+    "replaces": [
+      "InformationCircleIcon"
+    ]
+  },
+  {
+    "icon": "InlineCloseIcon",
+    "names": [
+      "window-close"
+    ],
+    "replaces": [
+      "InlineCloseIcon"
+    ]
+  },
+  {
+    "icon": "InlineMaximizeIcon",
+    "names": [
+      "window-maximize"
+    ],
+    "replaces": [
+      "InlineMaximizeIcon"
+    ]
+  },
+  {
+    "icon": "InlineMinimizeIcon",
+    "names": [
+      "window-minimize"
+    ],
+    "replaces": [
+      "InlineMinimizeIcon"
+    ]
+  },
+  {
+    "icon": "InlinePiIcon",
+    "names": [
+      "agent-pi"
+    ],
+    "replaces": [
+      "InlinePiIcon"
+    ]
+  },
+  {
+    "icon": "InlineRestoreIcon",
+    "names": [
+      "window-restore"
+    ],
+    "replaces": [
+      "InlineRestoreIcon"
+    ]
+  },
+  {
+    "icon": "InlineShiftIcon",
+    "names": [
+      "shift"
+    ],
+    "replaces": [
+      "InlineShiftIcon"
+    ]
+  },
+  {
+    "icon": "InlineWarningFilledIcon",
+    "names": [
+      "alert-filled"
+    ],
+    "replaces": [
+      "InlineWarningFilledIcon"
+    ]
+  },
+  {
+    "icon": "Key01Icon",
+    "names": [
+      "key"
+    ],
+    "replaces": [
+      "Key01Icon"
+    ]
+  },
+  {
+    "icon": "KeyboardIcon",
+    "names": [
+      "keyboard"
+    ],
+    "replaces": [
+      "KeyboardIcon"
+    ]
+  },
+  {
+    "icon": "LayoutTwoColumnIcon",
+    "names": [
+      "two-sides-layout"
+    ],
+    "replaces": [
+      "LayoutTwoColumnIcon",
+      "LayoutTwoRowIcon"
+    ]
+  },
+  {
+    "icon": "LeftToRightListBulletIcon",
+    "names": [
+      "bullet-list"
+    ],
+    "replaces": [
+      "LeftToRightListBulletIcon"
+    ]
+  },
+  {
+    "icon": "LinkSquare02Icon",
+    "names": [
+      "link"
+    ],
+    "replaces": [
+      "LinkSquare02Icon"
+    ]
+  },
+  {
+    "icon": "Loading03Icon",
+    "names": [
+      "spinner"
+    ],
+    "replaces": [
+      "InlineSpinnerIcon",
+      "Loading03Icon"
+    ]
+  },
+  {
+    "icon": "MathIcon",
+    "names": [
+      "math"
+    ],
+    "replaces": [
+      "MathIcon"
+    ]
+  },
+  {
+    "icon": "MinusSignIcon",
+    "names": [
+      "minus"
+    ],
+    "replaces": [
+      "MinusSignIcon"
+    ]
+  },
+  {
+    "icon": "MoreHorizontalIcon",
+    "names": [
+      "more"
+    ],
+    "replaces": [
+      "MoreHorizontalCircle01Icon",
+      "MoreHorizontalIcon"
+    ]
+  },
+  {
+    "icon": "MoveRightIcon",
+    "names": [
+      "move"
+    ],
+    "replaces": [
+      "MoveLeftIcon",
+      "MoveRightIcon"
+    ]
+  },
+  {
+    "icon": "Notification01Icon",
+    "names": [
+      "bell"
+    ],
+    "replaces": [
+      "Notification01Icon",
+      "Notification03Icon"
+    ]
+  },
+  {
+    "icon": "PackageIcon",
+    "names": [
+      "package"
+    ],
+    "replaces": [
+      "PackageIcon"
+    ]
+  },
+  {
+    "icon": "PaintBoardIcon",
+    "names": [
+      "color"
+    ],
+    "replaces": [
+      "PaintBoardIcon"
+    ]
+  },
+  {
+    "icon": "PencilEdit02Icon",
+    "names": [
+      "pencil"
+    ],
+    "replaces": [
+      "Edit02Icon",
+      "PencilEdit02Icon"
+    ]
+  },
+  {
+    "icon": "PlayIcon",
+    "names": [
+      "play"
+    ],
+    "replaces": [
+      "PlayIcon"
+    ]
+  },
+  {
+    "icon": "PlusSignIcon",
+    "names": [
+      "plus"
+    ],
+    "replaces": [
+      "PlusSignIcon"
+    ]
+  },
+  {
+    "icon": "PuzzleIcon",
+    "names": [
+      "puzzle"
+    ],
+    "replaces": [
+      "PuzzleIcon"
+    ]
+  },
+  {
+    "icon": "Refresh01Icon",
+    "names": [
+      "refresh"
+    ],
+    "replaces": [
+      "ArrowReloadHorizontalIcon",
+      "Refresh01Icon",
+      "RefreshIcon"
+    ]
+  },
+  {
+    "icon": "Search01Icon",
+    "names": [
+      "search"
+    ],
+    "replaces": [
+      "Search01Icon",
+      "SearchIcon"
+    ]
+  },
+  {
+    "icon": "SidebarLeftIcon",
+    "names": [
+      "panel-arrow-right"
+    ],
+    "replaces": [
+      "LayoutLeftIcon",
+      "SidebarLeftIcon"
+    ]
+  },
+  {
+    "icon": "SlidersHorizontalIcon",
+    "names": [
+      "options"
+    ],
+    "replaces": [
+      "Settings01Icon",
+      "SlidersHorizontalIcon"
+    ]
+  },
+  {
+    "icon": "SourceCodeIcon",
+    "names": [
+      "code"
+    ],
+    "replaces": [
+      "CodeIcon",
+      "SourceCodeIcon"
+    ]
+  },
+  {
+    "icon": "TextFontIcon",
+    "names": [
+      "text-font"
+    ],
+    "replaces": [
+      "TextFontIcon"
+    ]
+  },
+  {
+    "icon": "Tick02Icon",
+    "names": [
+      "checkmark"
+    ],
+    "replaces": [
+      "CheckmarkCircle01Icon",
+      "Tick02Icon"
+    ]
+  },
+  {
+    "icon": "ViewIcon",
+    "names": [
+      "eye"
+    ],
+    "replaces": [
+      "ViewIcon"
+    ]
+  }
+]

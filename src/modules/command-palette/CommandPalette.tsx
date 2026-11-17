@@ -13,8 +13,7 @@ import { FileIcon } from '@/modules/explorer/FileIcon';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { getBindingTokens, type KeyBinding, type ShortcutId, ShortcutKeys, SHORTCUTS } from '@/modules/shortcuts';
 import { listBuiltinThemes, useTheme } from '@/modules/theme';
-import { AlertCircleIcon, ArrowTurnBackwardIcon, CommandIcon, Tick02Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { AlertIcon, ArrowTurnBackIcon, CheckmarkIcon, CommandIcon } from '@lut/lut-icons';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { COMMAND_GROUPS } from './commands';
 import { CONTENT_SEARCH_MIN_QUERY, useContentSearch } from './hooks/useContentSearch';
@@ -265,7 +264,7 @@ export function CommandPalette({
             {inThemes ? (
               <CommandGroup heading="Themes">
                 <CommandItem value="theme:back" onSelect={exitThemes} className="text-[12.5px]">
-                  <HugeiconsIcon icon={ArrowTurnBackwardIcon} size={14} strokeWidth={1.75} />
+                  <ArrowTurnBackIcon size="sm" />
                   <span>Back</span>
                 </CommandItem>
                 {themes.map((t) => (
@@ -276,14 +275,7 @@ export function CommandPalette({
                     className="text-[12.5px]"
                   >
                     <span className="truncate">{t.name}</span>
-                    {t.id === themeId ? (
-                      <HugeiconsIcon
-                        icon={Tick02Icon}
-                        size={14}
-                        strokeWidth={2}
-                        className="ml-auto text-muted-foreground"
-                      />
-                    ) : null}
+                    {t.id === themeId ? <CheckmarkIcon size="sm" className="ml-auto text-muted-foreground" /> : null}
                   </CommandItem>
                 ))}
                 {themes.length === 0 ? <StatusItem label="No themes" /> : null}
@@ -510,9 +502,7 @@ function ActionItem({
     item.disabledReason ?? item.trailing ?? (shortcutLabel ? <ShortcutKeys label={shortcutLabel} /> : null);
   return (
     <CommandItem value={`cmd:${item.id}`} disabled={!!item.disabledReason} onSelect={onRun} className="text-[12.5px]">
-      {item.icon ? (
-        <HugeiconsIcon icon={item.icon} size={14} strokeWidth={1.75} className="text-muted-foreground" />
-      ) : null}
+      {item.icon ? <item.icon size="sm" className="text-muted-foreground" /> : null}
       <span className="truncate">{item.title}</span>
       {rightLabel ? (
         <CommandShortcut className={item.disabledReason ? 'normal-case tracking-normal' : ''}>
@@ -556,9 +546,7 @@ function AsyncBody({
 function StatusItem({ label, tone = 'muted' }: { label: string; tone?: 'muted' | 'error' }) {
   return (
     <CommandItem value={`status:${label}`} disabled className="text-[12.5px] font-normal">
-      {tone === 'error' ? (
-        <HugeiconsIcon icon={AlertCircleIcon} size={14} strokeWidth={1.75} className="text-destructive" />
-      ) : null}
+      {tone === 'error' ? <AlertIcon size="sm" className="text-destructive" /> : null}
       <span className={tone === 'error' ? 'text-destructive' : 'text-muted-foreground'}>{label}</span>
     </CommandItem>
   );
@@ -567,7 +555,7 @@ function StatusItem({ label, tone = 'muted' }: { label: string; tone?: 'muted' |
 function EmptyHint() {
   return (
     <div className="flex flex-col items-center gap-2 px-4 py-10 text-center text-sm text-muted-foreground">
-      <HugeiconsIcon icon={CommandIcon} size={18} strokeWidth={1.5} />
+      <CommandIcon size="md" />
       <span>No commands found. Type ? to see search modes.</span>
     </div>
   );

@@ -11,8 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { currentWorkspaceEnv } from '@/modules/workspace';
-import { Cancel01Icon, Search01Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { SearchIcon, XIcon } from '@lut/lut-icons';
 import { invoke } from '@tauri-apps/api/core';
 import { forwardRef, type ReactNode, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { FileIcon, FolderIcon } from './FileIcon';
@@ -179,10 +178,8 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
     <div className={cn('flex flex-col', active && 'min-h-0 flex-1')}>
       {open ? (
         <div className="relative shrink-0 px-1.5 pb-1.5 animate-in fade-in-0 slide-in-from-top-3 duration-200 ease-out">
-          <HugeiconsIcon
-            icon={Search01Icon}
-            size={13}
-            strokeWidth={1.75}
+          <SearchIcon
+            size="sm"
             className="pointer-events-none absolute top-3.5 left-3.5 -translate-y-1/2 text-muted-foreground"
           />
           <Input
@@ -225,7 +222,7 @@ export const ExplorerSearch = forwardRef<ExplorerSearchHandle, Props>(function E
               className="absolute top-3.5 right-1.5 -translate-y-1/2"
               aria-label="Clear search"
             >
-              <HugeiconsIcon icon={Cancel01Icon} size={11} strokeWidth={2} />
+              <XIcon size="xs" />
             </Button>
           ) : null}
         </div>

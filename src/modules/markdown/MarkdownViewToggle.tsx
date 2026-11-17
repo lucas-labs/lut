@@ -1,6 +1,5 @@
 import { cn } from '@/lib/utils';
-import { CodeIcon, ViewIcon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react';
+import { CodeIcon, EyeIcon, type LutIconComponent } from '@lut/lut-icons';
 import { useId } from 'react';
 
 type Mode = 'rendered' | 'raw';
@@ -12,9 +11,9 @@ type Props = {
   renderedHint?: string;
 };
 
-const OPTIONS: readonly { mode: Mode; label: string; icon: IconSvgElement }[] = [
+const OPTIONS: readonly { mode: Mode; label: string; icon: LutIconComponent }[] = [
   { mode: 'raw', label: 'Raw', icon: CodeIcon },
-  { mode: 'rendered', label: 'Rendered', icon: ViewIcon },
+  { mode: 'rendered', label: 'Rendered', icon: EyeIcon },
 ];
 
 /** Switches a markdown file between its source and its rendered view, at the top right of the tab. */
@@ -45,7 +44,7 @@ export function MarkdownViewToggle({ mode, onChange, renderedDisabled, renderedH
               onChange={() => onChange(option.mode)}
               className="sr-only"
             />
-            <HugeiconsIcon icon={option.icon} size={13} strokeWidth={1.75} aria-hidden />
+            <option.icon size="sm" aria-hidden />
             {option.label}
           </label>
         );

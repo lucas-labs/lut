@@ -14,8 +14,7 @@ import {
 } from '@/modules/agents/lib/launcher';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { setAgentLaunchCommands } from '@/modules/settings/store';
-import { ArrowLeft01Icon, PlayIcon, Refresh01Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { ChevronIcon, PlayIcon, RefreshIcon } from '@lut/lut-icons';
 import { useEffect, useRef, useState } from 'react';
 
 type Props = {
@@ -98,7 +97,7 @@ export function AgentLauncherPanel({ onBack, onLaunch }: Props) {
     >
       <div className="flex h-9 items-center gap-2 px-1">
         <Button type="button" variant="ghost" size="icon-sm" onClick={onBack} aria-label="Back to new tab menu">
-          <HugeiconsIcon icon={ArrowLeft01Icon} size={14} strokeWidth={1.75} />
+          <ChevronIcon rotate={180} size="sm" />
         </Button>
         <div className="min-w-0">
           <div className="text-[13px] font-medium text-foreground">Launch agents</div>
@@ -125,7 +124,7 @@ export function AgentLauncherPanel({ onBack, onLaunch }: Props) {
             >
               <AgentIcon
                 agent={agent.id}
-                size={16}
+                size="md"
                 className={cn('shrink-0', selected ? 'text-primary' : 'text-muted-foreground')}
               />
               <span className="truncate text-xs font-medium">{agent.label}</span>
@@ -172,7 +171,7 @@ export function AgentLauncherPanel({ onBack, onLaunch }: Props) {
             className="ml-auto"
             title={`Reset to ${launcher.defaultCommand}`}
           >
-            <HugeiconsIcon icon={Refresh01Icon} size={11} strokeWidth={1.75} />
+            <RefreshIcon size="xs" />
             Reset
           </Button>
         </div>
@@ -201,7 +200,7 @@ export function AgentLauncherPanel({ onBack, onLaunch }: Props) {
       </div>
 
       <Button type="submit" className="mt-1 w-full" disabled={!hydrated || !validation.ok}>
-        <HugeiconsIcon icon={PlayIcon} size={13} strokeWidth={2} />
+        <PlayIcon size="sm" />
         Launch {instances} {instances === 1 ? 'agent' : 'agents'}
       </Button>
     </form>

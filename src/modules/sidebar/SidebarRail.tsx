@@ -1,12 +1,11 @@
 import { cn } from '@/lib/utils';
-import { DashboardSquare01Icon, Folder01Icon, GitBranchIcon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { DashboardIcon, FolderIcon, GitBranchIcon, type LutIconComponent } from '@lut/lut-icons';
 import type { SidebarViewId } from './types';
 
 type RailItem = {
   id: SidebarViewId;
   label: string;
-  icon: Parameters<typeof HugeiconsIcon>[0]['icon'];
+  icon: LutIconComponent;
   badge?: number;
 };
 
@@ -19,8 +18,8 @@ type Props = {
 /** The sidebar's view switcher, at its bottom (E11-02 design). */
 export function SidebarRail({ activeView, onSelectView, changedCount }: Props) {
   const items: RailItem[] = [
-    { id: 'spaces', label: 'Spaces', icon: DashboardSquare01Icon },
-    { id: 'explorer', label: 'Files', icon: Folder01Icon },
+    { id: 'spaces', label: 'Spaces', icon: DashboardIcon },
+    { id: 'explorer', label: 'Files', icon: FolderIcon },
     { id: 'source-control', label: 'Git', icon: GitBranchIcon, badge: changedCount },
   ];
 
@@ -42,7 +41,7 @@ export function SidebarRail({ activeView, onSelectView, changedCount }: Props) {
               isActive ? 'bg-accent text-foreground' : 'text-muted-foreground hover:text-foreground',
             )}
           >
-            <HugeiconsIcon icon={item.icon} size={14} strokeWidth={1.5} className="shrink-0" />
+            <item.icon size="sm" className="shrink-0" />
             <span>{item.label}</span>
             {badge > 0 ? (
               <span

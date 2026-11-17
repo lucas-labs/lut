@@ -15,8 +15,7 @@ import { copyToClipboard, revealInFinder } from '@/modules/explorer/lib/contextA
 import { gitStatusTextClass } from '@/modules/explorer/lib/gitStatusColor';
 import { joinPath } from '@/modules/explorer/lib/useFileTree';
 import { IS_MAC } from '@/modules/platform';
-import { Alert02Icon, RemoveSquareIcon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { AlertIcon, ArrowTurnBackIcon } from '@lut/lut-icons';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { type KeyboardEvent, memo, useCallback, useEffect, useRef, useState } from 'react';
 import type { CheckState, SourceControlFileEntry } from './useSourceControlPanel';
@@ -156,7 +155,7 @@ export function ChangesList({
     <div className="flex min-h-0 flex-1 flex-col">
       {diverged ? (
         <div className="mx-2.5 mt-2 flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border bg-accent/40 px-2 text-[11px] leading-none text-muted-foreground">
-          <HugeiconsIcon icon={Alert02Icon} size={12} strokeWidth={1.5} className="shrink-0 text-warning" />
+          <AlertIcon size="xs" className="shrink-0 text-warning" />
           <span className="min-w-0 flex-1 truncate">
             <span className="font-medium text-foreground">Diverged from upstream</span>
             <span className="ml-1">— resolve in terminal</span>
@@ -303,11 +302,7 @@ const ChangeRow = memo(function ChangeRow({
                     focused || selected || discardBusy ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
                   )}
                 >
-                  {discardBusy ? (
-                    <Spinner className="size-3" />
-                  ) : (
-                    <HugeiconsIcon icon={RemoveSquareIcon} size={12} strokeWidth={1.5} />
-                  )}
+                  {discardBusy ? <Spinner size="xs" /> : <ArrowTurnBackIcon size="xs" />}
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="top">{`Discard ${entry.path}`}</TooltipContent>
@@ -324,7 +319,7 @@ const ChangeRow = memo(function ChangeRow({
           </span>
           <span className="flex size-3.5 shrink-0 items-center justify-center">
             {stageBusy ? (
-              <Spinner className="size-3" />
+              <Spinner size="xs" />
             ) : (
               <Checkbox
                 aria-label={`Stage ${entry.path}`}

@@ -15,15 +15,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { IS_WINDOWS } from '@/modules/platform';
 import { SidebarHeaderAction, SidebarViewHeader } from '@/modules/sidebar';
-import {
-  ArrowDown02Icon,
-  ArrowRight01Icon,
-  CheckmarkCircle01Icon,
-  Download01Icon,
-  GitCommitIcon,
-  Refresh01Icon,
-} from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { CheckmarkCircleIcon, ChevronIcon, DownloadIcon, GitCommitIcon, RefreshIcon } from '@lut/lut-icons';
 import { memo, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { BranchPicker } from './BranchPicker';
 import { ChangesList } from './ChangesList';
@@ -135,22 +127,14 @@ export const GitPanel = memo(function GitPanel({
             disabled={!canFetch}
             onClick={() => void sourceControl.runRemoteAction('fetch')}
           >
-            {fetchBusy ? (
-              <Spinner className="size-3" />
-            ) : (
-              <HugeiconsIcon icon={Download01Icon} size={15} strokeWidth={1.5} />
-            )}
+            {fetchBusy ? <Spinner size="xs" /> : <DownloadIcon size="sm" />}
           </SidebarHeaderAction>
           <SidebarHeaderAction
             label={pullLabel}
             disabled={!canPull}
             onClick={() => void sourceControl.runRemoteAction('pull')}
           >
-            {pullBusy ? (
-              <Spinner className="size-3" />
-            ) : (
-              <HugeiconsIcon icon={ArrowDown02Icon} size={15} strokeWidth={1.5} />
-            )}
+            {pullBusy ? <Spinner size="xs" /> : <DownloadIcon size="sm" />}
           </SidebarHeaderAction>
           <SidebarHeaderAction
             label="Refresh source control"
@@ -158,14 +142,9 @@ export const GitPanel = memo(function GitPanel({
             onClick={handleRefresh}
           >
             {isRefreshing ? (
-              <Spinner className="size-3.5" />
+              <Spinner size="sm" />
             ) : (
-              <HugeiconsIcon
-                icon={Refresh01Icon}
-                size={15}
-                strokeWidth={1.5}
-                className={cn(refreshAnimating && 'animate-spin')}
-              />
+              <RefreshIcon size="sm" className={cn(refreshAnimating && 'animate-spin')} />
             )}
           </SidebarHeaderAction>
         </SidebarViewHeader>
@@ -213,19 +192,9 @@ export const GitPanel = memo(function GitPanel({
                   onClick={() => onOpenGitGraph()}
                   className="-mx-1 flex h-7 items-center gap-2 rounded-md px-1.5 text-left text-[13px] text-foreground outline-none transition-colors hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring"
                 >
-                  <HugeiconsIcon
-                    icon={GitCommitIcon}
-                    size={14}
-                    strokeWidth={1.5}
-                    className="shrink-0 text-muted-foreground"
-                  />
+                  <GitCommitIcon size="sm" className="shrink-0 text-muted-foreground" />
                   <span className="flex-1">Commit Graph</span>
-                  <HugeiconsIcon
-                    icon={ArrowRight01Icon}
-                    size={12}
-                    strokeWidth={1.5}
-                    className="shrink-0 text-muted-foreground"
-                  />
+                  <ChevronIcon size="xs" className="shrink-0 text-muted-foreground" />
                 </button>
               ) : null}
               <CommitBox scm={scm} blocked={fixedTargetPending} />
@@ -296,7 +265,7 @@ function PanelCenter({ title, body, action }: { title: string; body?: string; ac
 function CleanTreeHint({ repoLabel }: { repoLabel: string }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1.5 px-4 text-center">
-      <HugeiconsIcon icon={CheckmarkCircle01Icon} size={18} strokeWidth={1.5} className="text-muted-foreground" />
+      <CheckmarkCircleIcon size="md" className="text-muted-foreground" />
       <div className="text-xs font-medium text-foreground">Working tree clean</div>
       <div className="text-[11px] leading-snug text-muted-foreground">
         on <span className="font-mono text-foreground">{repoLabel}</span>

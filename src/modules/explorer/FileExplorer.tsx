@@ -14,8 +14,7 @@ import { ShortcutKeys, useGlobalShortcuts } from '@/modules/shortcuts';
 import { SidebarHeaderAction, SidebarViewHeader } from '@/modules/sidebar';
 import type { TerminalPathDropTarget } from '@/modules/terminal';
 import { useWorkspaceEnvStore } from '@/modules/workspace';
-import { CollapseIcon, FileAddIcon, FolderAddIcon, Refresh01Icon, Search01Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { CollapseIcon, FileAddIcon, FolderAddIcon, RefreshIcon, SearchIcon } from '@lut/lut-icons';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   forwardRef,
@@ -602,19 +601,19 @@ export const FileExplorer = memo(
       <div ref={containerRef} className="flex h-full flex-col outline-none" tabIndex={0} onKeyDown={handleKeyDown}>
         <SidebarViewHeader title={basename(rootPath)} titleHint={rootPath}>
           <SidebarHeaderAction label="Search files" onClick={() => setIsSearchOpen((v) => !v)}>
-            <HugeiconsIcon icon={Search01Icon} size={15} strokeWidth={1.5} />
+            <SearchIcon size="sm" />
           </SidebarHeaderAction>
           <SidebarHeaderAction label="New file" onClick={() => tree.beginCreate(rootPath, 'file')}>
-            <HugeiconsIcon icon={FileAddIcon} size={15} strokeWidth={1.5} />
+            <FileAddIcon size="sm" />
           </SidebarHeaderAction>
           <SidebarHeaderAction label="New folder" onClick={() => tree.beginCreate(rootPath, 'dir')}>
-            <HugeiconsIcon icon={FolderAddIcon} size={15} strokeWidth={1.5} />
+            <FolderAddIcon size="sm" />
           </SidebarHeaderAction>
           <SidebarHeaderAction label="Collapse folders" onClick={tree.collapseAll}>
-            <HugeiconsIcon icon={CollapseIcon} size={15} strokeWidth={1.5} />
+            <CollapseIcon size="sm" />
           </SidebarHeaderAction>
           <SidebarHeaderAction label="Refresh" onClick={() => tree.refresh(rootPath)}>
-            <HugeiconsIcon icon={Refresh01Icon} size={15} strokeWidth={1.5} />
+            <RefreshIcon size="sm" />
           </SidebarHeaderAction>
         </SidebarViewHeader>
 

@@ -1,14 +1,14 @@
-import shiftIcon from '@/assets/icons/shift.svg';
 import { IS_MAC, KEY_SEP } from '@/modules/platform';
+import { ShiftIconData, toSvgString } from '@lut/lut-icons/data';
 import { type CSSProperties, Fragment } from 'react';
 
 /**
- * Shift as Hugeicons' ArrowUpBig outline, drawn through a CSS mask so it takes the text's color: the browser loads the
- * file once for every key on screen. Text fonts have no Shift arrow of their own (Consolas and the bundled Source Code
+ * Shift as lut-icons' shift, drawn through a CSS mask so it takes the text's color and scales with it: one data URL for
+ * every key on screen. Text fonts have no Shift arrow of their own (Consolas and the bundled Source Code
  * Pro lack U+21E7), so a fallback font would draw it tiny.
  */
 const SHIFT_MASK: CSSProperties = {
-  maskImage: `url("${shiftIcon}")`,
+  maskImage: `url("data:image/svg+xml,${encodeURIComponent(toSvgString(ShiftIconData, 'sm'))}")`,
   maskSize: 'contain',
   maskRepeat: 'no-repeat',
   maskPosition: 'center',
