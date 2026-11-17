@@ -3906,11 +3906,40 @@ and +1.4 KB in the release binary.
 **Verification:** `pnpm test`; manual on Windows: toggle on and off with terminals open, dark and light theme, 100% and
 125% scale, WebGL renderer selected.
 
+### E13-18 — Replace HugeIcons with lut-icons
+
+```yaml
+id: E13-18
+depends-on: [E13-16]
+refs: [.docs/plan/analysis/app-shell.md]
+covers: [app-shell/ui-primitives]
+type: task
+scope: ui
+size: L
+size-exception: Mechanical icon swap over about 50 files, in one PR so the app never mixes two icon sets.
+```
+
+**Goal:** Every UI icon comes from `packages/lut-icons`, drawn on the pixel grid at 12, 14, 16, 24, 28 and 32 px,
+instead of `@hugeicons`. The hand-made inline SVGs it replaces (window controls, tab spinner and warning, pi agent)
+move to it too.
+
+**Acceptance criteria:**
+
+- [ ] Each HugeIcons use maps to its lut icon through `lut-icons.replacements.json`; where one maps to two, the one
+      that fits the place is chosen, and directional icons are rotated.
+- [ ] Sizes go to the nearest label: 9 to 12 px → `xs`, 13 to 15 → `sm`, 16 to 20 → `md`, 22 → `lg`; no
+      `strokeWidth`.
+- [ ] Icons stored in configs are typed `LutIconComponent`; the editor's CSS masks use `toSvgString`.
+- [ ] `@hugeicons/react` and `@hugeicons/core-free-icons` are removed from `package.json` and `vite.config.ts`.
+- [ ] The package's TypeScript is formatted and linted with the app's.
+
+**Verification:** `pnpm test`; manual: every panel in light and dark, buttons and menus at 100% and 125% scale.
+
 ### E13-11 — Close-out: settings and theming
 
 ```yaml
 id: E13-11
-depends-on: [E13-01, E13-04, E13-06, E13-07, E13-08, E13-09, E13-10, E13-12, E13-13, E13-14, E13-15, E13-16, E13-17]
+depends-on: [E13-01, E13-04, E13-06, E13-07, E13-08, E13-09, E13-10, E13-12, E13-13, E13-14, E13-15, E13-16, E13-17, E13-18]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
