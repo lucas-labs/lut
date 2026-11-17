@@ -22,9 +22,9 @@ and the WebGL fallback. Decides the scope of profile appearance overrides (E14-1
 
 - **WebGPU.** One `GlyphAtlas` per distinct font key in the window's runtime (`fontAtlasKey`): family, size, weight,
   line height, letter spacing, symbol fonts, scale and device cell metrics. Panes with the same key share it.
-  - `MAX_ATLAS_COUNT = 8` live atlases, plus one warm unused atlas kept (`MAX_WARM_UNUSED_ATLASES`).
-  - A ninth key throws in `acquireGlyphAtlas`, and the pane shows a renderer error. Nothing falls back to the default
-    font today.
+  - `MAX_ATLAS_COUNT = 8` atlases total, including up to one warm unused atlas (`MAX_WARM_UNUSED_ATLASES = 1`).
+  - If the budget is full and no unused atlas can be evicted, a new key throws in `acquireGlyphAtlas`, and the pane
+    shows a renderer error. Nothing falls back to the default font today.
   - An atlas starts with a 1024² coverage plane: `r8unorm`, or `rgba8unorm` with subpixel text. It grows to 2048² and
     4096². A 512² `rgba8unorm` colour plane for emoji appears on first use and grows to 2048².
   - Worst case per atlas: 32 MiB in grayscale, 80 MiB with subpixel text. Typical: about 1 MiB.
