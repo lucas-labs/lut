@@ -26,7 +26,7 @@ F0  E01 baseline ──┬─ E02 identity ──┬─ E04 names, public
                       E02 ─ E07 terminal-first PoC (F1)
                       E02 ─ E06 blocks removal ─ E05 AI removal (F2)
                       E07 + E05 + E06 ─ E08 navigation ─ E09 coordinator split
-                      E08 ─ E14 profiles (F3) ─ E16 projects ─ E17 restore (F4)
+                      E08 ─ E14 profiles (F3) ─ E16 spaces ─ E17 restore (F4)
                       E09 + E16 ─ E19 agents core ─ E20 agents UX ─ E21 resume (F5)
 E11 design (user) + E14 ─ E13 settings ─ E10 tools on demand ─ E12 app shell UI ─ E15, E18, E22, E23 (F6)
                       E12 + E17 + E19 ─ E24 cross-platform ─ E25 release and updater (F7)
@@ -49,7 +49,7 @@ Reuses the current components; nothing new and visual before the user's design (
    no `pty_close`/`pty_open`).
 2. E07-02: `TerminalStack` takes `{ id, paneTree, activeLeafId }[]` instead of `Tab[]` (proposal PR-002).
 3. E07-03 and E07-04: `AppShell` with the terminal as the main surface; IDE tools hidden at startup.
-4. E07-05 to E07-07: orientation toggle, projects sidebar placeholder, theming and shortcuts (PR-003, PR-004).
+4. E07-05 to E07-07: orientation toggle, spaces sidebar placeholder, theming and shortcuts (PR-003, PR-004).
 5. **Gate:** E07-08 (resize, DPI, hidden panes, WebGPU fallback) and E07-09 (orientation, sidebar, reorder, hidden
    tabs).
 
@@ -78,9 +78,9 @@ Model and validation in Rust (E14-03), versioned store (E14-04), detection with 
 launch spec (E14-07 to E14-10), then PTYs opened by profile id resolved in the backend (E14-12, PR-006) and a profile per
 pane (E14-14). **Gate:** E14-17 (two panes with different profiles persist and restore).
 
-### 6. Projects and restore (F4): E16, E17
+### 6. Spaces and restore (F4): E16, E17
 
-- **E16** evolves Spaces into projects: schema spike (E16-01), rename (E16-02), versioned store with migrations
+- **E16** gives Spaces a saved state: schema spike (E16-01), versioned store with migrations
   (E16-03, PR-007), model and snapshots (E16-04, E16-05), runtime ids regenerated at hydration (E16-09).
 - **E17** the restore orchestrator of §8.4 (E17-02 to E17-06, PR-008), the shell-ready event (E17-11) and startup
   commands with consent (E17-12 to E17-16). **Tests:** E17-17 (serialization, startup integration, restore time).
@@ -95,7 +95,7 @@ UX (badges, notifications, hooks manager with plan/apply), E21 resume and status
 
 E11 is the user's design and has no code dependency. E13 (settings, theming, fonts, shortcuts) needs it and the
 profiles. E10 rebuilds the IDE tools on the design; how they load (most already load on first open) is analysed by E26-04. E12
-implements the app shell; E15 profiles UI, E18 project navigator, E22 palette and polish and E23 export and import
+implements the app shell; E15 profiles UI, E18 space navigator, E22 palette and polish and E23 export and import
 follow.
 
 ### 9. Platforms and release (F7): E24, E25
@@ -110,9 +110,9 @@ updater on lut's own infrastructure (decision 5; E25-07).
 | PR-001 baseline, docs, build                       | E01                    |
 | PR-002 `AppShell` and encapsulated `TerminalStack` | E07-02, E07-03         |
 | PR-003 visual tabs adapter and orientation         | E07-05, E08-03         |
-| PR-004 empty projects sidebar, navigation state    | E07-06, E08-02         |
+| PR-004 empty spaces sidebar, navigation state      | E07-06, E08-02         |
 | PR-005 isolate the BYOK chat                       | E05-01 to E05-06       |
 | PR-006 profile → pane → PTY contracts              | E14-03, E14-12, E14-14 |
 | PR-007 versioned presets, Spaces migration         | E16-01 to E16-03       |
-| PR-008 project start orchestrator                  | E17-02, E17-03         |
+| PR-008 space start orchestrator                    | E17-02, E17-03         |
 | PR-009 agent reducer to UI                         | E19-07                 |

@@ -1,6 +1,6 @@
 # lut
 
-A cross-platform desktop terminal built around projects, profiles and CLI coding agents. The terminal takes the
+A cross-platform desktop terminal built around spaces, profiles and CLI coding agents. The terminal takes the
 centre of the window; editor, Git and other tools stay secondary and open only when you ask for them.
 
 > [!NOTE]

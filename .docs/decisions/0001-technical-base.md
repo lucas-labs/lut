@@ -7,7 +7,7 @@
 ## Context
 
 lut needs a cross-platform terminal engine (PTY, VT parser, GPU rendering, shell integration, agent hook bridge)
-before it can work on what makes it different: projects, profiles and agent awareness. The full reasoning is in
+before it can work on what makes it different: spaces, profiles and agent awareness. The full reasoning is in
 [`.docs/proposal.md`](../proposal.md) §4 (ADR-001) and the audit of Terax in §5.
 
 ## Decision

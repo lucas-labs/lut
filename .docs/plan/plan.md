@@ -2209,7 +2209,7 @@ scope: ui
 size: S
 ```
 
-**Goal:** The spaces list moves from the title-bar popover into the sidebar as its first view (Spaces / Git / Files), shown and hidden with the sidebar. "Spaces" is the UI name of what this plan calls projects (E16–E18).
+**Goal:** The spaces list moves from the title-bar popover into the sidebar as its first view (Spaces / Git / Files), shown and hidden with the sidebar.
 
 **Acceptance criteria:**
 
@@ -3179,7 +3179,7 @@ size: M
 
 - [ ] Section list and layout of each section.
 - [ ] Theme picker, font picker and shortcuts editor (including conflict display) designed.
-- [ ] Startup setting designed: startup mode (restore last session / open a default project / empty terminal) and default-project choice (IR-28).
+- [ ] Startup setting designed: startup mode (restore last session / open a default space / empty terminal) and default-space choice (IR-28).
 
 ### E11-04 — Profiles UI: picker for new tab/split, profile editor, profile icons, tab title/color
 
@@ -3203,7 +3203,7 @@ tab title/colour customisation.
 - [ ] Tab title and colour customisation designed.
 - [ ] In-pane error states designed: missing profile (with "open with default profile" / choose another profile) and the "process exited" state used by the profile `closeBehavior`.
 
-### E11-05 — Projects UI: sidebar navigator, relaunch consent modal, restore errors
+### E11-05 — Spaces UI: sidebar navigator, relaunch consent modal, restore errors
 
 ```yaml
 id: E11-05
@@ -3215,12 +3215,12 @@ scope: ui
 size: M
 ```
 
-**Goal:** The user designs project navigation in the sidebar, the modal that asks before relaunching a command
+**Goal:** The user designs space navigation in the sidebar, the modal that asks before relaunching a command
 (decision 26) and how restore errors are shown.
 
 **Acceptance criteria:**
 
-- [ ] Sidebar project navigator designed (no permanent explorer/source control).
+- [ ] Sidebar space navigator designed (no permanent explorer/source control).
 - [ ] Relaunch consent modal designed (run / always in this Space / don't run).
 - [ ] Restore error states (retry / open shell) designed.
 
@@ -3547,7 +3547,7 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] A command and shortcut enter and leave focus mode; it hides the tab navigator, projects sidebar and header. It
+- [ ] A command and shortcut enter and leave focus mode; it hides the tab navigator, spaces sidebar and header. It
       replaces today's zen mode (`view.zenMode`).
 - [ ] Focus mode also puts the window in OS full screen; leaving it restores the window as it was (maximized or not).
 - [ ] A separate full-screen toggle (F11 by default, as in Windows Terminal) works with or without focus mode.
@@ -3985,7 +3985,7 @@ and the WebGL fallback, before committing the appearance scope of profiles.
 
 **Verification:** Note reviewed by the user; `node .docs/plan/tools/validate.mjs` passes after the plan update.
 
-### E14-02 — Introduce layered preferences (global, profile, project)
+### E14-02 — Introduce layered preferences (global, profile, space)
 
 ```yaml
 id: E14-02
@@ -3997,13 +3997,13 @@ scope: ui
 size: M
 ```
 
-**Goal:** Settings resolve as global defaults overridden by profile and project values, with preferences separated from theme tokens.
+**Goal:** Settings resolve as global defaults overridden by profile and space values, with preferences separated from theme tokens.
 This is the **only** preference resolver of lut: E14-16 resolves terminal theme/font through it and extends it with the
 pane layer. (Moved here from the settings epic so the profiles epic can build on it without an epic cycle.)
 
 **Acceptance criteria:**
 
-- [ ] Pure `resolvePreferences(global, profile?, project?)` in `src/modules/settings/` with tests for precedence and missing layers; its layer list is ordered so a later pane layer can be appended without changing callers.
+- [ ] Pure `resolvePreferences(global, profile?, space?)` in `src/modules/settings/` with tests for precedence and missing layers; its layer list is ordered so a later pane layer can be appended without changing callers.
 - [ ] Single-store + `writePref`/emit cross-window mechanism kept (`store.ts:394-406`, `preferences.ts:48-72`).
 - [ ] Appearance preferences (theme id, font, cursor) are stored apart from UI token values (5.10:9).
 
@@ -4356,7 +4356,7 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] The current snapshot serializer writes and reads `profileId` per leaf (minimal change; the versioned projects schema comes in E16).
+- [ ] The current snapshot serializer writes and reads `profileId` per leaf (minimal change; the versioned spaces schema comes in E16).
 - [ ] Round-trip test with two leaves that have different profiles and cwds.
 - [ ] Manual gate run documented in the PR.
 
@@ -4587,7 +4587,7 @@ size: XS
 **Goal:** Verify every item of this epic is delivered (validator coverage), run the epic's verification commands, and add
 any discovered work to plan.md (or state 'nothing new').
 
-## E16 — Projects: model and persistence (Spaces evolution)
+## E16 — Spaces: model and persistence
 
 ```yaml
 id: E16
@@ -4595,10 +4595,10 @@ depends-on: [E14, E02, E08]
 refs: [ADR-006, F4, 6.4, 6.5, .docs/plan/analysis/state-settings.md, .docs/plan/analysis/decisions.md]
 ```
 
-Evolve Spaces into projects whose saved state is their live state (decision 26: no presets), with stable ids
+Spaces gain a saved state that is their live state (decision 26: no presets), with stable ids
 reconciled at hydration. lut has no releases: a shape change drops the old data, nothing is migrated.
 
-### E16-01 — Spike: Project and saved-state schema
+### E16-01 — Spike: Space and saved-state schema
 
 ```yaml
 id: E16-01
@@ -4614,7 +4614,7 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] Written schema in `.docs/` with `projectId`, `windowId`, `tabId`, `paneId`/runtime ids, pane tree with ratios, `profileId`, cwd, the still-running command, the per-project relaunch approvals, and `windows[]` from v1 (IR-71).
+- [ ] Written schema in `.docs/` with `spaceId`, `windowId`, `tabId`, `paneId`/runtime ids, pane tree with ratios, `profileId`, cwd, the still-running command, the per-space relaunch approvals, and `windows[]` from v1 (IR-71).
 - [ ] Storage decision: JSON via Tauri Store (IR-73; no `schemaVersion` before the first release), file layout, owner (TS with Zod; Serde only where it crosses IPC).
 - [ ] Ratio validation rule (sum 1, one per child; IR-70) documented.
 - [ ] Pane/leaf id semantics of the current code are investigated and written down (IR-60: which ids are stable across restarts, splits and moves) before persisted pane ids are fixed.
@@ -4623,42 +4623,19 @@ size: S
 
 **Verification:** Document reviewed by the user; `node .docs/plan/tools/validate.mjs` passes.
 
-### E16-02 — Rename the spaces module to projects (no behaviour change)
-
-```yaml
-id: E16-02
-depends-on: [E16-01, E02-14]
-refs: [ADR-006, 5.10:5, .docs/plan/analysis/state-settings.md]
-covers: [5.10:5]
-type: task
-scope: ui
-size: L
-size-exception: mechanical move/rename of src/modules/spaces to src/modules/projects and its importers; no logic change
-```
-
-**Goal:** Spaces become `projects` in code (module, types, hooks) so the following issues extend one model (ADR-006).
-
-**Acceptance criteria:**
-
-- [ ] `src/modules/spaces/` moved to `src/modules/projects/`; `SpaceMeta` → `ProjectMeta`, hooks renamed; importers updated.
-- [ ] Persisted file name and keys unchanged in this PR.
-- [ ] No behaviour change: existing tests pass unchanged except renames.
-
-**Verification:** `pnpm test`; `pnpm typecheck`; manual: existing spaces still load after the rename.
-
-### E16-03 — Projects store validated on load
+### E16-03 — Spaces store validated on load
 
 ```yaml
 id: E16-03
-depends-on: [E16-02]
+depends-on: [E16-01, E02-14]
 refs: [13.5:9, .docs/plan/analysis/state-settings.md]
-covers: [13.5:9, ADR-006, state-settings/spaces-persistence]
+covers: [13.5:9, 5.10:5, ADR-006, state-settings/spaces-persistence]
 type: task
 scope: ui
 size: M
 ```
 
-**Goal:** The projects store validates on load with Zod and never drops data silently. lut has no releases, so there
+**Goal:** The spaces store validates on load with Zod and never drops data silently. lut has no releases, so there
 are no migrations: data saved in an older shape is dropped.
 
 **Acceptance criteria:**
@@ -4669,7 +4646,7 @@ are no migrations: data saved in an older shape is dropped.
 
 **Verification:** `pnpm test`; manual: corrupt the store file, start, defaults loaded and backup present.
 
-### E16-04 — Project and saved-state model
+### E16-04 — Space and saved-state model
 
 ```yaml
 id: E16-04
@@ -4681,12 +4658,12 @@ scope: ui
 size: M
 ```
 
-**Goal:** Implement the E16-01 schema: a project list with metadata and each project's saved state, with separate stable ids.
+**Goal:** Implement the E16-01 schema: a space list with metadata and each space's saved state, with separate stable ids.
 
 **Acceptance criteria:**
 
-- [ ] Zod schemas and types for `Project`, its saved state and `RunningWorkspace` with `projectId`, `windowId`, `tabId`, `paneId`.
-- [ ] Project list API (create, rename, archive flag per decision 19, delete) backed by the projects store.
+- [ ] Zod schemas and types for `Space`, its saved state and `RunningWorkspace` with `spaceId`, `windowId`, `tabId`, `paneId`.
+- [ ] Space list API (create, rename, archive flag per decision 19, delete) backed by the spaces store.
 
 **Verification:** `pnpm test`; `pnpm typecheck`.
 
@@ -4702,7 +4679,7 @@ scope: ui
 size: M
 ```
 
-**Goal:** A snapshot captures tab order, pane tree, split ratios, cwd per pane, active tab and pane: the project's saved state is its live state (decision 26). The still-running command is added by E17-12.
+**Goal:** A snapshot captures tab order, pane tree, split ratios, cwd per pane, active tab and pane: the space's saved state is its live state (decision 26). The still-running command is added by E17-12.
 
 **Acceptance criteria:**
 
@@ -4724,18 +4701,18 @@ scope: ui
 size: S
 ```
 
-**Goal:** Persisted layouts can never promise more panes than the renderer supports: `MAX_PANES_PER_TAB = 4` (§5.4, decision 12, IR-48) is a validation rule of the project schema, not only of the live `useTabs` action.
+**Goal:** Persisted layouts can never promise more panes than the renderer supports: `MAX_PANES_PER_TAB = 4` (§5.4, decision 12, IR-48) is a validation rule of the space schema, not only of the live `useTabs` action.
 
 **Acceptance criteria:**
 
 - [ ] The saved-state Zod schema rejects a tab with more than 4 leaves with a typed, field-level error (tab id, pane count).
 - [ ] The limit is one shared constant used by `useTabs` (`src/modules/tabs/lib/useTabs.ts:31`) and the schema.
-- [ ] Hydrating a stored layout with more than 4 panes in a tab does not crash: the project is reported as invalid and not partially restored.
+- [ ] Hydrating a stored layout with more than 4 panes in a tab does not crash: the space is reported as invalid and not partially restored.
 - [ ] Tests: 4 panes accepted, 5 rejected, invalid stored file handled.
 
 **Verification:** `pnpm test`; `pnpm typecheck`.
 
-### E16-07 — Different profiles per pane in a project
+### E16-07 — Different profiles per pane in a space
 
 ```yaml
 id: E16-07
@@ -4747,7 +4724,7 @@ scope: ui
 size: S
 ```
 
-**Goal:** Saved leaves reference a `profileId`; panes of one project can use different profiles.
+**Goal:** Saved leaves reference a `profileId`; panes of one space can use different profiles.
 
 **Acceptance criteria:**
 
@@ -4755,7 +4732,7 @@ size: S
 - [ ] Hydrating a leaf whose profile no longer exists opens with the default profile and reports a repairable error (13.2:12).
 - [ ] Tests for mixed profiles and a missing profile.
 
-**Verification:** `pnpm test`; manual: project with pwsh and WSL panes restores both.
+**Verification:** `pnpm test`; manual: space with pwsh and WSL panes restores both.
 
 ### E16-09 — Regenerate runtime ids at hydration; never persist live PTYs
 
@@ -4779,7 +4756,7 @@ size: S
 
 **Verification:** `pnpm test`; manual: restart and confirm new shells in the saved cwds.
 
-### E16-10 — Keep workspace authorization for project roots
+### E16-10 — Keep workspace authorization for space roots
 
 ```yaml
 id: E16-10
@@ -4791,11 +4768,11 @@ scope: ui
 size: XS
 ```
 
-**Goal:** Project roots and pane cwds keep going through the existing `workspace_authorize` checks before spawn.
+**Goal:** Space roots and pane cwds keep going through the existing `workspace_authorize` checks before spawn.
 
 **Acceptance criteria:**
 
-- [ ] Project creation/hydration calls the existing authorization (`useSpacesBoot.ts:105-107`, `workspace.rs:95-147`) unchanged.
+- [ ] Space creation/hydration calls the existing authorization (`useSpacesBoot.ts:105-107`, `workspace.rs:95-147`) unchanged.
 - [ ] Test that an unauthorized cwd is not spawned without authorization.
 
 **Verification:** `pnpm test`; `cargo test --manifest-path src-tauri/Cargo.toml workspace`.
@@ -4888,11 +4865,11 @@ and `closeTab` refuses, so the code everywhere assumes every space has a tab and
 
 **Verification:** `pnpm test`; manual: close every tab of a space, switch away and back, restart.
 
-### E16-11 — Close-out: projects model and persistence
+### E16-11 — Close-out: spaces model and persistence
 
 ```yaml
 id: E16-11
-depends-on: [E16-01, E16-02, E16-03, E16-04, E16-05, E16-06, E16-07, E16-09, E16-10, E16-12, E16-13, E16-14]
+depends-on: [E16-01, E16-03, E16-04, E16-05, E16-06, E16-07, E16-09, E16-10, E16-12, E16-13, E16-14]
 refs: [F4]
 covers: []
 type: closeout
@@ -4903,7 +4880,7 @@ size: XS
 **Goal:** Verify every item of this epic is delivered (validator coverage), run the epic's verification commands, and add
 any discovered work to plan.md (or state 'nothing new').
 
-## E17 — Project restore, command relaunch and multi-project
+## E17 — Space restore, command relaunch and multi-space
 
 ```yaml
 id: E17
@@ -4911,9 +4888,9 @@ depends-on: [E16, E14]
 refs: [8.4, 8.5, 14.1, F4, .docs/plan/analysis/state-settings.md, .docs/plan/analysis/decisions.md]
 ```
 
-Restore orchestrator (§8.4), last-session restore at startup, multiple open projects, archiving, and relaunching the commands that were still running, with their consent and safety rules (§8.5, §14.1; decision 26). Per decision 8 the P0 restore rebuilds layout and cwd only; relaunching is P1.
+Restore orchestrator (§8.4), last-session restore at startup, multiple open spaces, archiving, and relaunching the commands that were still running, with their consent and safety rules (§8.5, §14.1; decision 26). Per decision 8 the P0 restore rebuilds layout and cwd only; relaunching is P1.
 
-### E17-01 — Persist the open-projects session separately from the project catalogue
+### E17-01 — Persist the open-spaces session separately from the space catalogue
 
 ```yaml
 id: E17-01
@@ -4925,12 +4902,12 @@ scope: ui
 size: S
 ```
 
-**Goal:** Record which projects are open and which is active, apart from the list of projects that exist, so startup can reopen exactly that set.
+**Goal:** Record which spaces are open and which is active, apart from the list of spaces that exist, so startup can reopen exactly that set.
 
 **Acceptance criteria:**
 
-- [ ] A versioned `session` record (open project ids in order, active project id, active tab per project) is stored separately from the projects catalogue.
-- [ ] Opening, closing and switching projects update the record; ids that no longer exist are dropped on read.
+- [ ] A versioned `session` record (open space ids in order, active space id, active tab per space) is stored separately from the spaces catalogue.
+- [ ] Opening, closing and switching spaces update the record; ids that no longer exist are dropped on read.
 - [ ] Malformed session data is schema-validated and falls back to an empty session with a logged error, never a crash (16:13).
 
 **Verification:** `pnpm test` (session store round-trip and malformed-input tests); `pnpm typecheck`.
@@ -4949,13 +4926,13 @@ scope: ui
 size: M
 ```
 
-**Goal:** First stages of the §8.4 algorithm as a pure, testable orchestrator: load the project's saved state, validate, and check that profiles, WSL distros, cwds and executables are available.
+**Goal:** First stages of the §8.4 algorithm as a pure, testable orchestrator: load the space's saved state, validate, and check that profiles, WSL distros, cwds and executables are available.
 
 **Acceptance criteria:**
 
-- [ ] `restoreProject(id)` loads metadata and saved state, validates the saved state and profile existence, and returns a typed plan plus a list of per-pane problems.
+- [ ] `restoreSpace(id)` loads metadata and saved state, validates the saved state and profile existence, and returns a typed plan plus a list of per-pane problems.
 - [ ] A missing profile / distro / cwd / executable yields a repairable per-pane problem with a fallback suggestion, not an exception.
-- [ ] One failing project never blocks the app or other projects (16:13).
+- [ ] One failing space never blocks the app or other spaces (16:13).
 - [ ] No PTY is spawned and no command runs in these stages.
 
 **Verification:** `pnpm test` (orchestrator tests with missing profile, missing cwd, invalid saved state); `pnpm typecheck`.
@@ -4981,7 +4958,7 @@ size: M
 - [ ] Sessions are created progressively within renderer limits (4 panes per tab, decision 12); an active hidden session is kept.
 - [ ] Profile overrides and pane cwd are applied before any startup step; this stage relaunches no command.
 
-**Verification:** `pnpm test` (save → restore round-trip of a three-pane project); manual: save a three-pane project, restart, structure and cwds match.
+**Verification:** `pnpm test` (save → restore round-trip of a three-pane space); manual: save a three-pane space, restart, structure and cwds match.
 
 ### E17-04 — Enable autosave only after hydration and cancel restore on close
 
@@ -4995,16 +4972,16 @@ scope: ui
 size: S
 ```
 
-**Goal:** Prevent partial state from overwriting saved data, and handle closing a project while it is still restoring.
+**Goal:** Prevent partial state from overwriting saved data, and handle closing a space while it is still restoring.
 
 **Acceptance criteria:**
 
-- [ ] Project persistence stays disabled per project until its restore completes successfully.
-- [ ] Closing a project mid-restore cancels pending spawns, kills the PTYs already created for it and leaves the stored state untouched.
+- [ ] Space persistence stays disabled per space until its restore completes successfully.
+- [ ] Closing a space mid-restore cancels pending spawns, kills the PTYs already created for it and leaves the stored state untouched.
 
 **Verification:** `pnpm test` (autosave gated by hydration; cancel mid-restore leaves the store unchanged and no orphan sessions).
 
-### E17-05 — Keep debounced autosave and flush on hide/close for projects
+### E17-05 — Keep debounced autosave and flush on hide/close for spaces
 
 ```yaml
 id: E17-05
@@ -5016,13 +4993,13 @@ scope: ui
 size: S
 ```
 
-**Goal:** The projects store keeps the save semantics of Spaces (§5.6, IR-50): a 3 s debounce while working, plus an immediate flush when the window is hidden or closed, so quitting never loses the last layout change.
+**Goal:** The spaces store keeps the save semantics of Spaces (§5.6, IR-50): a 3 s debounce while working, plus an immediate flush when the window is hidden or closed, so quitting never loses the last layout change.
 
 **Acceptance criteria:**
 
-- [ ] Project and session persistence save with a 3 s debounce; pending saves are flushed on window hide and on app close (close guard path), and the close waits for the flush (bounded).
-- [ ] The flush respects the hydration gate of E17-04 (nothing is flushed for a project that is still restoring).
-- [ ] Tests with fake timers: debounce coalesces writes; hide and close flush pending changes; a restoring project is not flushed.
+- [ ] Space and session persistence save with a 3 s debounce; pending saves are flushed on window hide and on app close (close guard path), and the close waits for the flush (bounded).
+- [ ] The flush respects the hydration gate of E17-04 (nothing is flushed for a space that is still restoring).
+- [ ] Tests with fake timers: debounce coalesces writes; hide and close flush pending changes; a restoring space is not flushed.
 
 **Verification:** `pnpm test`; manual: resize a split and quit immediately (under 3 s), relaunch → the new ratio is restored.
 
@@ -5038,18 +5015,18 @@ scope: ui
 size: M
 ```
 
-**Goal:** On launch, reopen the projects that were open using the §8.4 orchestrator and focus the previously active one. P0: layout and cwd only, commands manual (decision 8).
+**Goal:** On launch, reopen the spaces that were open using the §8.4 orchestrator and focus the previously active one. P0: layout and cwd only, commands manual (decision 8).
 
 **Acceptance criteria:**
 
-- [ ] Boot reads the session record and restores each open project through the orchestrator; the active project and its active tab are focused.
+- [ ] Boot reads the session record and restores each open space through the orchestrator; the active space and its active tab are focused.
 - [ ] No command is relaunched during the P0 restore; panes open a shell in the saved cwd.
-- [ ] A project that fails to restore is reported and skipped; the others still open.
-- [ ] An empty or missing session starts with the default project.
+- [ ] A space that fails to restore is reported and skipped; the others still open.
+- [ ] An empty or missing session starts with the default space.
 
-**Verification:** `pnpm test` (boot restore integration test); manual: open two projects with different layouts, quit, relaunch → both restored with the same active project (13.2:20).
+**Verification:** `pnpm test` (boot restore integration test); manual: open two spaces with different layouts, quit, relaunch → both restored with the same active space (13.2:20).
 
-### E17-07 — Startup mode setting: restore last session, default project or empty terminal
+### E17-07 — Startup mode setting: restore last session, default space or empty terminal
 
 ```yaml
 id: E17-07
@@ -5061,17 +5038,17 @@ scope: ui
 size: S
 ```
 
-**Goal:** PRJ-016 defines three startup behaviours (IR-28): restore the last session (default), open a default project, or start with an empty terminal. E17-06 implements only the first; this issue adds the setting and the other two paths. The settings control is added by E18-07.
+**Goal:** PRJ-016 defines three startup behaviours (IR-28): restore the last session (default), open a default space, or start with an empty terminal. E17-06 implements only the first; this issue adds the setting and the other two paths. The settings control is added by E18-07.
 
 **Acceptance criteria:**
 
-- [ ] Preferences `startupMode: "restoreLast" | "defaultProject" | "emptyTerminal"` (default `restoreLast`) and `defaultProjectId`, schema-validated; unknown values fall back to the default.
-- [ ] Boot honours the mode: `defaultProject` opens only that project (missing or archived → falls back to an empty terminal with a reported warning); `emptyTerminal` opens one tab with the default profile and restores nothing.
-- [ ] Tests for each mode and for the missing-default-project fallback.
+- [ ] Preferences `startupMode: "restoreLast" | "defaultSpace" | "emptyTerminal"` (default `restoreLast`) and `defaultSpaceId`, schema-validated; unknown values fall back to the default.
+- [ ] Boot honours the mode: `defaultSpace` opens only that space (missing or archived → falls back to an empty terminal with a reported warning); `emptyTerminal` opens one tab with the default profile and restores nothing.
+- [ ] Tests for each mode and for the missing-default-space fallback.
 
 **Verification:** `pnpm test`; manual: set each mode in the settings file, relaunch.
 
-### E17-08 — Open other saved projects and handle live instances
+### E17-08 — Open other saved spaces and handle live instances
 
 ```yaml
 id: E17-08
@@ -5083,18 +5060,18 @@ scope: ui
 size: M
 ```
 
-**Goal:** Open any saved project without closing the open ones, with explicit rules when it is already open.
+**Goal:** Open any saved space without closing the open ones, with explicit rules when it is already open.
 
 **Acceptance criteria:**
 
-- [ ] `openProject(id)` adds the project to the session and makes it active; other open projects keep their sessions.
-- [ ] If the project is already open the caller chooses focus / open another instance / cancel; the default is focus and nothing is respawned (13.2:11).
-- [ ] Switching the active project neither kills nor restarts PTYs of the others.
+- [ ] `openSpace(id)` adds the space to the session and makes it active; other open spaces keep their sessions.
+- [ ] If the space is already open the caller chooses focus / open another instance / cancel; the default is focus and nothing is respawned (13.2:11).
+- [ ] Switching the active space neither kills nor restarts PTYs of the others.
 - [ ] Exposed as store actions and palette commands; visuals come from E18.
 
 **Verification:** `pnpm test` (open twice → one set of sessions); manual: open A, open B, both alive; open A again → focuses A, process count unchanged.
 
-### E17-09 — Define and implement the close-project policy
+### E17-09 — Define and implement the close-space policy
 
 ```yaml
 id: E17-09
@@ -5106,17 +5083,17 @@ scope: ui
 size: S
 ```
 
-**Goal:** Closing an active project follows one explicit policy for its PTYs and resources.
+**Goal:** Closing an active space follows one explicit policy for its PTYs and resources.
 
 **Acceptance criteria:**
 
 - [ ] The chosen policy (close PTYs, suspend presentation, or keep in memory) is written into `.docs/proposal.md` and implemented.
-- [ ] Closing a project removes it from the session record but keeps it in the catalogue.
+- [ ] Closing a space removes it from the session record but keeps it in the catalogue.
 - [ ] Running processes trigger the existing close confirmation before being killed.
 
-**Verification:** `pnpm test`; manual: close a project with a running process → confirmation, then no orphan processes.
+**Verification:** `pnpm test`; manual: close a space with a running process → confirmation, then no orphan processes.
 
-### E17-10 — Archive and unarchive projects
+### E17-10 — Archive and unarchive spaces
 
 ```yaml
 id: E17-10
@@ -5128,14 +5105,14 @@ scope: ui
 size: S
 ```
 
-**Goal:** Implement the behaviour of decision 19: archiving hides a project from the list and keeps all its data. The `archived` flag itself is added to the schema by E16-04.
+**Goal:** Implement the behaviour of decision 19: archiving hides a space from the list and keeps all its data. The `archived` flag itself is added to the schema by E16-04.
 
 **Acceptance criteria:**
 
-- [ ] Archiving (setting the E16-04 `archived` flag) closes the project if open and removes it from the session.
-- [ ] Archived projects are excluded from the default list and from startup restore; unarchiving restores visibility with its data intact.
+- [ ] Archiving (setting the E16-04 `archived` flag) closes the space if open and removes it from the session.
+- [ ] Archived spaces are excluded from the default list and from startup restore; unarchiving restores visibility with its data intact.
 
-**Verification:** `pnpm test` (archive/unarchive keeps project data; archived project skipped at boot).
+**Verification:** `pnpm test` (archive/unarchive keeps space data; archived space skipped at boot).
 
 ### E17-11 — Emit a shell-ready event for startup execution
 
@@ -5171,7 +5148,7 @@ scope: ui
 size: M
 ```
 
-**Goal:** Each pane remembers the command line still running when the project is saved, so restore can relaunch it
+**Goal:** Each pane remembers the command line still running when the space is saved, so restore can relaunch it
 (decision 26). The line comes from shell integration (OSC 133;C with the command text: pwsh and fish today, bash and zsh
 after E17-19); panes without it (cmd, nu, profiles without integration) keep no command and reopen with an empty shell.
 
@@ -5196,12 +5173,12 @@ scope: ui
 size: M
 ```
 
-**Goal:** P1 restore: before relaunching a pane's command, ask unless the project already approves it (decision 26).
+**Goal:** P1 restore: before relaunching a pane's command, ask unless the space already approves it (decision 26).
 
 **Acceptance criteria:**
 
-- [ ] Each relaunch asks "Run" (this time only), "Always in this Space" (stores an approval for that command, cwd and profile in the project; any change asks again) or "Don't run" (the pane opens an empty shell).
-- [ ] Approved commands relaunch without asking; previewing a project never relaunches anything; an imported project carries no approvals (16:14, 13.2:18).
+- [ ] Each relaunch asks "Run" (this time only), "Always in this Space" (stores an approval for that command, cwd and profile in the space; any change asks again) or "Don't run" (the pane opens an empty shell).
+- [ ] Approved commands relaunch without asking; previewing a space never relaunches anything; an imported space carries no approvals (16:14, 13.2:18).
 - [ ] The consent request is exposed as data (commands, cwd, profile, env) for the E18 modal.
 
 **Verification:** `pnpm test` (approval matrix, invalidation when command, cwd or profile change); manual: restart with `pnpm dev` running → asked; "Always in this Space" → the next restart relaunches it without asking.
@@ -5222,12 +5199,12 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] A per-session guard relaunches each command at most once per restore, including duplicate ready events and a project opened twice; an explicit "Retry" after a failed run (E17-15) starts a new attempt.
+- [ ] A per-session guard relaunches each command at most once per restore, including duplicate ready events and a space opened twice; an explicit "Retry" after a failed run (E17-15) starts a new attempt.
 - [ ] A global `relaunchCommands` setting (default on) turns relaunching off (panes reopen with an empty shell); it is checked at execution time, not only at plan time.
 - [ ] Command text is saved only while `relaunchCommands` is on and `startupMode` is `restoreLast` (decision 28); turning either off clears the saved commands.
 - [ ] Tests: dedupe under duplicate ready events and double open; Retry after a failure runs again; global switch off → no command runs, consent is not even requested.
 
-**Verification:** `pnpm test`; manual: disable relaunching, restart a project with an approved command → nothing runs.
+**Verification:** `pnpm test`; manual: disable relaunching, restart a space with an approved command → nothing runs.
 
 ### E17-15 — Record per-pane restore results and recovery actions
 
@@ -5268,8 +5245,8 @@ size: M
 **Acceptance criteria:**
 
 - [ ] Unit tests for saved-state/session serialization; integration tests for boot restore including last-session restore.
-- [ ] Gate scenario covered: restart, open a three-pane project, structure recovered, only authorized commands run, errors reported, no duplicated processes.
-- [ ] Restore time of a project with multiple tools measured and recorded in the PR (13.4:8).
+- [ ] Gate scenario covered: restart, open a three-pane space, structure recovered, only authorized commands run, errors reported, no duplicated processes.
+- [ ] Restore time of a space with multiple tools measured and recorded in the PR (13.4:8).
 
 **Verification:** `pnpm test`; `pnpm typecheck`; manual gate run documented in the PR.
 
@@ -5296,7 +5273,7 @@ size: S
 **Verification:** the bash and zsh script tests pass; manual: run a command with quotes in bash (WSL) and check the 133;C
 text in the PTY output.
 
-### E17-18 — Close-out: project restore
+### E17-18 — Close-out: space restore
 
 ```yaml
 id: E17-18
@@ -5310,7 +5287,7 @@ size: XS
 
 **Goal:** Verify every item of this epic is delivered (validator coverage), run the epic's verification commands, and add any discovered work to plan.md (or state 'nothing new').
 
-## E18 — Project navigator and relaunch UI
+## E18 — Space navigator and relaunch UI
 
 ```yaml
 id: E18
@@ -5318,7 +5295,7 @@ depends-on: [E11, E16, E17, E13]
 refs: [UX-003, 10.2, 8.5, F4, .docs/plan/analysis/app-shell.md, .docs/plan/analysis/state-settings.md]
 ```
 
-Projects sidebar navigator, archive, relaunch consent modal and restore error surfaces, built on the user's E11 designs.
+Spaces sidebar navigator, archive, relaunch consent modal and restore error surfaces, built on the user's E11 designs.
 
 ### E18-09 — Spaces sidebar view on the design
 
@@ -5333,7 +5310,7 @@ size: S
 ```
 
 **Goal:** The Spaces view of the sidebar takes the design's look ("Main window" boards, Spaces view) over today's spaces
-store. Look only: the projects model and its actions come with E18-02.
+store. Look only: the spaces model and its actions come with E18-02.
 
 **Acceptance criteria:**
 
@@ -5345,7 +5322,7 @@ store. Look only: the projects model and its actions come with E18-02.
 
 **Verification:** `pnpm test`; manual on Windows: both tab orientations, sidebar open and closed.
 
-### E18-02 — Implement the projects sidebar navigator
+### E18-02 — Implement the spaces sidebar navigator
 
 ```yaml
 id: E18-02
@@ -5357,17 +5334,17 @@ scope: ui
 size: M
 ```
 
-**Goal:** The Spaces view (E18-09) becomes the projects navigator: it lists projects and acts on them through the E17
+**Goal:** The Spaces view (E18-09) becomes the full spaces navigator: it lists spaces and acts on them through the E17
 store actions, keeping the E18-09 look.
 
 **Acceptance criteria:**
 
-- [ ] The navigator lists projects, marks open and active ones, and opens/focuses/closes projects via the E17 store actions.
-- [ ] Create, rename, reorder and remove go through the projects store; pinning and unpinning the Space's folder
+- [ ] The navigator lists spaces, marks open and active ones, and opens/focuses/closes spaces via the E17 store actions.
+- [ ] Create, rename, reorder and remove go through the spaces store; pinning and unpinning the Space's folder
       (E16-13) stays available from the navigator.
-- [ ] `SidebarRail.tsx`, `SpaceSwitcher.tsx`, `SpaceAvatar.tsx` and `src/modules/projects/components/` (the former `spaces/components/`, renamed by E16-02) are removed or replaced.
+- [ ] `SidebarRail.tsx`, `SpaceSwitcher.tsx`, `SpaceAvatar.tsx` and `src/modules/spaces/components/` are removed or replaced.
 
-**Verification:** `pnpm test`; `pnpm typecheck`; manual: open two projects from the sidebar, collapse/resize, restart → width and collapsed state persisted.
+**Verification:** `pnpm test`; `pnpm typecheck`; manual: open two spaces from the sidebar, collapse/resize, restart → width and collapsed state persisted.
 
 ### E18-03 — Add archive and unarchive to the navigator
 
@@ -5381,11 +5358,11 @@ scope: ui
 size: S
 ```
 
-**Goal:** Expose project archiving (decision 19) in the navigator as designed in E11-05.
+**Goal:** Expose space archiving (decision 19) in the navigator as designed in E11-05.
 
 **Acceptance criteria:**
 
-- [ ] The archive action hides the project; an archived list allows unarchiving.
+- [ ] The archive action hides the space; an archived list allows unarchiving.
 - [ ] Uses the E17 archive store actions; no data is lost.
 
 **Verification:** `pnpm test`; manual: archive, restart, unarchive → data intact.
@@ -5431,9 +5408,9 @@ size: S
 - [ ] Failed or skipped panes show the error and the two actions, wired to the E17 result actions.
 - [ ] Errors never block the rest of the app.
 
-**Verification:** `pnpm test`; manual: project with a missing cwd → error shown, "Open shell without command" works.
+**Verification:** `pnpm test`; manual: space with a missing cwd → error shown, "Open shell without command" works.
 
-### E18-07 — Startup mode and default project in settings
+### E18-07 — Startup mode and default space in settings
 
 ```yaml
 id: E18-07
@@ -5449,14 +5426,14 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] A startup section offers the three `startupMode` values of E17-07; choosing "default project" shows a project picker (archived projects excluded).
+- [ ] A startup section offers the three `startupMode` values of E17-07; choosing "default space" shows a space picker (archived spaces excluded).
 - [ ] The global relaunch switch of E17-14 is shown in the same section, with a warning that running command lines are saved locally to relaunch them and may contain secrets (decision 28).
 - [ ] Changes are saved through the settings store and apply at the next launch; matches the E11-03 design.
-- [ ] Component tests for each mode and for the project picker.
+- [ ] Component tests for each mode and for the space picker.
 
 **Verification:** `pnpm test`; manual: choose each mode, relaunch.
 
-### E18-08 — Close-out: projects UI
+### E18-08 — Close-out: spaces UI
 
 ```yaml
 id: E18-08
@@ -5479,7 +5456,7 @@ refs: [9.1, 9.2, 9.3, 9.4, 9.5, F5, 14.1, 14.2, .docs/plan/analysis/agents.md]
 ```
 
 Normalized agent events and per-pane state for every supported CLI (Claude, Codex, Gemini, Pi, OpenCode, Grok), keyed by
-pane/PTY and linked to tab and project, with privacy defaults and payload sanitizing. No API keys: lut only launches the
+pane/PTY and linked to tab and space, with privacy defaults and payload sanitizing. No API keys: lut only launches the
 official binaries.
 
 ### E19-01 — Move the agent activity store from terminal into the agents module
@@ -5589,7 +5566,7 @@ size: M
 
 **Acceptance criteria:**
 
-- [ ] The default event keeps only ids, agent, state, time, PTY, tab, project and minimal metadata (14.2:1).
+- [ ] The default event keeps only ids, agent, state, time, PTY, tab, space and minimal metadata (14.2:1).
 - [ ] Commands, tool names, previews, messages, detailed errors and a persistent timeline only with an explicit opt-in flag (14.2:2); the flag defaults to off.
 - [ ] Full prompts, file content, transcripts, env vars and tokens are never stored or logged (14.2:3, 14.1:4); `UserPromptSubmit` records turn start only (9.4:2).
 - [ ] Length, rate (dedupe/frequency) and persistence limits enforced in the backend (14.1:8, IR-76).
@@ -5645,7 +5622,7 @@ size: M
 
 **Verification:** `pnpm test`, `pnpm check-types`; manual: run `claude` in a pane and observe working -> response-done in the store (devtools).
 
-### E19-08 — Associate agent sessions with tab and project
+### E19-08 — Associate agent sessions with tab and space
 
 ```yaml
 id: E19-08
@@ -5657,12 +5634,12 @@ scope: ui
 size: S
 ```
 
-**Goal:** Each agent session resolves to its pane, PTY, tab, project and agent session id.
+**Goal:** Each agent session resolves to its pane, PTY, tab, space and agent session id.
 
 **Acceptance criteria:**
 
-- [ ] A selector returns `{paneId, ptyId, tabId, projectId, agentSessionId}` for an agent and updates when a pane moves to another tab.
-- [ ] Panes outside any project report no project without error.
+- [ ] A selector returns `{paneId, ptyId, tabId, spaceId, agentSessionId}` for an agent and updates when a pane moves to another tab.
+- [ ] Panes outside any space report no space without error.
 - [ ] Unit tests for pane move and close.
 
 **Verification:** `pnpm test`, `pnpm check-types`.
@@ -6003,7 +5980,7 @@ size: S
 
 **Verification:** `pnpm test`; manual in a sandboxed HOME: launch Claude from the launcher with no hooks installed → `~/.claude/settings.json` unchanged until consent.
 
-### E20-13 — Project panel of active agent sessions
+### E20-13 — Space panel of active agent sessions
 
 ```yaml
 id: E20-13
@@ -6015,14 +5992,14 @@ scope: ui
 size: S
 ```
 
-**Goal:** Optional per-project panel listing active agent sessions with state and subagent count; selecting one focuses its pane.
+**Goal:** Optional per-space panel listing active agent sessions with state and subagent count; selecting one focuses its pane.
 
 **Acceptance criteria:**
 
-- [ ] Uses the E19-08 tab/project selector; updates live.
+- [ ] Uses the E19-08 tab/space selector; updates live.
 - [ ] Implemented per the user's design.
 
-**Verification:** `pnpm test`; manual with two agents in one project.
+**Verification:** `pnpm test`; manual with two agents in one space.
 
 ### E20-15 — Ship agent hooks as plugins the user installs by hand
 
@@ -6077,7 +6054,7 @@ depends-on: [E17, E19, E16, E20]
 refs: [PRJ-010, 8.6, 9.7, F5:7, .docs/plan/analysis/agents.md]
 ```
 
-Resume agent conversations as an explicit action, separate from project restore, and an optional statusLine bridge for
+Resume agent conversations as an explicit action, separate from space restore, and an optional statusLine bridge for
 context/model metrics that never overrides the user's own statusLine. Version-dependent; may slip.
 
 ### E21-01 — Spike: official resume options of Claude Code and Codex
@@ -6102,7 +6079,7 @@ size: S
 
 **Verification:** findings committed under `.docs/`.
 
-### E21-02 — Persist agent session ids per project pane and build resume commands
+### E21-02 — Persist agent session ids per space pane and build resume commands
 
 ```yaml
 id: E21-02
@@ -6114,7 +6091,7 @@ scope: ui
 size: M
 ```
 
-**Goal:** Store the last agent session id per project pane (metadata only) and compute the official resume command for it.
+**Goal:** Store the last agent session id per space pane (metadata only) and compute the official resume command for it.
 
 **Acceptance criteria:**
 
@@ -6124,7 +6101,7 @@ size: M
 
 **Verification:** `pnpm test`, `pnpm check-types`.
 
-### E21-03 — Offer agent resume as an explicit action after project restore
+### E21-03 — Offer agent resume as an explicit action after space restore
 
 ```yaml
 id: E21-03
@@ -6136,14 +6113,14 @@ scope: ui
 size: S
 ```
 
-**Goal:** After a project is restored, panes that had an agent session offer a resume action; nothing resumes automatically.
+**Goal:** After a space is restored, panes that had an agent session offer a resume action; nothing resumes automatically.
 
 **Acceptance criteria:**
 
 - [ ] The resume action runs the command from E21-02 in that pane only after user action.
 - [ ] Restore without resume keeps working; unsupported CLIs show no action.
 
-**Verification:** `pnpm test`; manual: restore a project with a Claude pane and resume it.
+**Verification:** `pnpm test`; manual: restore a space with a Claude pane and resume it.
 
 ### E21-04 — Spike: non-destructive statusLine bridge for Claude Code
 
@@ -6232,7 +6209,7 @@ depends-on: [E11, E12, E05, E06, E13, E14, E15, E17, E18]
 refs: [F6, UX-006, UX-007, UX-008, UX-010, UX-011, TER-013, .docs/plan/analysis/app-shell.md]
 ```
 
-Turns the palette into a terminal/project action launcher, adds context menus, and finishes density, compact tabs,
+Turns the palette into a terminal/space action launcher, adds context menus, and finishes density, compact tabs,
 accessibility and loading/error states on top of the user's design.
 
 ### E22-01 — Refactor the command palette into an extensible command registry
@@ -6261,7 +6238,7 @@ size: M
 
 **Out of scope:** new commands, visuals.
 
-### E22-02 — Add terminal, tab, profile and project actions to the palette registry
+### E22-02 — Add terminal, tab, profile and space actions to the palette registry
 
 ```yaml
 id: E22-02
@@ -6273,12 +6250,12 @@ scope: ui
 size: S
 ```
 
-**Goal:** Orient the palette to terminal and project actions: new tab/split with a profile, close/move panes, switch tab, open/restore project.
+**Goal:** Orient the palette to terminal and space actions: new tab/split with a profile, close/move panes, switch tab, open/restore space.
 
 **Acceptance criteria:**
 
-- [ ] Commands for new tab, split (each orientation), close pane, focus next/previous tab, "new tab with profile <name>" (one per profile) and "open project <name>" (one per project).
-- [ ] Commands call existing store actions; profile/project entries update live when the stores change.
+- [ ] Commands for new tab, split (each orientation), close pane, focus next/previous tab, "new tab with profile <name>" (one per profile) and "open space <name>" (one per space).
+- [ ] Commands call existing store actions; profile/space entries update live when the stores change.
 - [ ] Unit tests for registration and invocation of each action group.
 
 **Verification:** `pnpm test`; manual: run each action from the palette.
@@ -6327,7 +6304,7 @@ size: S
 
 **Verification:** `pnpm test`; manual on tabs and panes.
 
-### E22-05 — Add project context menus in the projects navigator
+### E22-05 — Add space context menus in the spaces navigator
 
 ```yaml
 id: E22-05
@@ -6339,14 +6316,14 @@ scope: ui
 size: S
 ```
 
-**Goal:** Context menu on projects in the sidebar navigator per the E11-07 and E11-05 designs.
+**Goal:** Context menu on spaces in the sidebar navigator per the E11-07 and E11-05 designs.
 
 **Acceptance criteria:**
 
-- [ ] Open, restore, rename and remove actions call existing project store actions.
+- [ ] Open, restore, rename and remove actions call existing space store actions.
 - [ ] Reachable by keyboard.
 
-**Verification:** `pnpm test`; manual in the projects sidebar.
+**Verification:** `pnpm test`; manual in the spaces sidebar.
 
 ### E22-06 — Add advanced shortcuts for palette, context and navigation actions
 
@@ -6438,7 +6415,7 @@ size: M
 **Acceptance criteria:**
 
 - [ ] Group model in the navigation store with unit tests (create, rename, collapse, move tab, deleting a group keeps its tabs).
-- [ ] Groups persisted with the session/project layout.
+- [ ] Groups persisted with the session/space layout.
 - [ ] UI per E11-02.
 
 **Verification:** `pnpm test`; manual: groups survive a restart.
@@ -6455,16 +6432,16 @@ scope: ui
 size: M
 ```
 
-**Goal:** Loading, error and missing-permission states across shell, profiles, projects and agents are accessible and non-intrusive.
+**Goal:** Loading, error and missing-permission states across shell, profiles, spaces and agents are accessible and non-intrusive.
 
 **Acceptance criteria:**
 
-- [ ] Shared status components per E11-02 used for: shell spawn failure, project restore error, hook install permission error, lazy tool loading.
+- [ ] Shared status components per E11-02 used for: shell spawn failure, space restore error, hook install permission error, lazy tool loading.
 - [ ] Errors announced through an ARIA live region; none steals terminal focus.
 
 **Verification:** `pnpm test`; manual: profile with a non-existent shell; read-only settings directory.
 
-### E22-11 — Keyboard operability and visible focus: tab navigator and projects sidebar
+### E22-11 — Keyboard operability and visible focus: tab navigator and spaces sidebar
 
 ```yaml
 id: E22-11
@@ -6476,7 +6453,7 @@ scope: ui
 size: M
 ```
 
-**Goal:** The tab navigator (both orientations) and the projects sidebar are fully keyboard operable with logical focus order, visible focus and ARIA roles; the shared a11y test setup is added here.
+**Goal:** The tab navigator (both orientations) and the spaces sidebar are fully keyboard operable with logical focus order, visible focus and ARIA roles; the shared a11y test setup is added here.
 
 **Acceptance criteria:**
 
@@ -6484,7 +6461,7 @@ size: M
 - [ ] Focus ring uses the theme's `ring` token; text contrast of these surfaces meets WCAG AA in both themes.
 - [ ] axe is wired into vitest (shared helper); the tab navigator and sidebar report no serious violations.
 
-**Verification:** `pnpm test`; manual keyboard-only session over tabs and projects; Narrator smoke.
+**Verification:** `pnpm test`; manual keyboard-only session over tabs and spaces; Narrator smoke.
 
 ### E22-12 — Keyboard operability and visible focus: dialogs and menus
 
@@ -6564,7 +6541,7 @@ size: XS
 
 **Goal:** Verify every item of this epic is delivered (validator coverage), run the epic's verification commands, and add any discovered work to plan.md (or state 'nothing new').
 
-## E23 — Export and import of profiles and projects
+## E23 — Export and import of profiles and spaces
 
 ```yaml
 id: E23
@@ -6572,7 +6549,7 @@ depends-on: [E14, E16, E17, E11]
 refs: [PRO-007, PRJ-015, F4:8, 16:14]
 ```
 
-Portable export/import schema for profiles and projects that never contains secrets; imported projects never relaunch commands without consent.
+Portable export/import schema for profiles and spaces that never contains secrets; imported spaces never relaunch commands without consent.
 
 ### E23-01 — Define the portable export schema without secrets
 
@@ -6586,11 +6563,11 @@ scope: ui
 size: S
 ```
 
-**Goal:** One versioned, documented JSON schema for exported profiles and projects, with a serializer that strips secrets.
+**Goal:** One versioned, documented JSON schema for exported profiles and spaces, with a serializer that strips secrets.
 
 **Acceptance criteria:**
 
-- [ ] Schema has `schemaVersion`, `kind` (profiles | projects) and a validated payload (Zod).
+- [ ] Schema has `schemaVersion`, `kind` (profiles | spaces) and a validated payload (Zod).
 - [ ] Secret env values, tokens and stored permissions are excluded or replaced by placeholders.
 - [ ] The parser rejects unknown versions with a clear error.
 
@@ -6617,7 +6594,7 @@ size: S
 
 **Verification:** `pnpm test`; manual: export two profiles, import them into a clean data dir.
 
-### E23-03 — Export and import projects without relaunch approvals
+### E23-03 — Export and import spaces without relaunch approvals
 
 ```yaml
 id: E23-03
@@ -6629,15 +6606,15 @@ scope: ui
 size: M
 ```
 
-**Goal:** Users export and import projects; an imported project never relaunches a command without consent.
+**Goal:** Users export and import spaces; an imported space never relaunches a command without consent.
 
 **Acceptance criteria:**
 
 - [ ] Export includes the saved layout, per-pane profile references and running commands, without secrets or relaunch approvals.
-- [ ] An imported project has no approvals: every relaunch asks (E17-13) until the user chooses "Always in this Space".
+- [ ] An imported space has no approvals: every relaunch asks (E17-13) until the user chooses "Always in this Space".
 - [ ] Missing referenced profiles produce repairable errors, not failures.
 
-**Verification:** `pnpm test`; manual: import a project with a running command → consent requested, nothing runs before.
+**Verification:** `pnpm test`; manual: import a space with a running command → consent requested, nothing runs before.
 
 ### E23-04 — Close-out: export/import
 
@@ -7233,7 +7210,7 @@ add any discovered work to plan.md (or state 'nothing new').
 ## Not planned
 
 - `TER-010` — P2: moving sessions between windows needs multiwindow (post-v1).
-- `PRJ-012` — P2: multiple windows per project (post-v1).
+- `PRJ-012` — P2: multiple windows per space (post-v1).
 - `UX-012` — P2: visual layout/window editor (post-v1).
 - `AGT-011` — P2: approve/deny permissions from the UI (post-v1); the existing decision broker stays as is.
 - `AGT-014` — P2: plugin system for more agent adapters (post-v1); existing adapters are kept.

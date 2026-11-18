@@ -18,7 +18,7 @@ Also to review in a future round (no proposal item yet):
 
 ## Multiwindow
 
-Several windows: PTY/renderer ownership per window, moving tabs/panes between windows, per-window project layouts, geometry restore per monitor. Needs a design of PTY and canvas ownership first (proposal 5.10, Phase 7).
+Several windows: PTY/renderer ownership per window, moving tabs/panes between windows, per-window space layouts, geometry restore per monitor. Needs a design of PTY and canvas ownership first (proposal 5.10, Phase 7).
 
 - `TER-010` — P2 Mover sesiones entre ventanas
 - `PRJ-012` — P2 Ventanas múltiples por proyecto
