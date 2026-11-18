@@ -24,7 +24,7 @@
 | **Origen**                       | **lu** (Lucas) + **t** (terminal)                                                                         |
 | **Escritura oficial**            | Siempre en minúsculas: `lut`; evitar `LUT`, `LuT`, `luT` como marca                                       |
 | **Ejecutable principal deseado** | `lut`                                                                                                     |
-| **Categoría**                    | Terminal desktop multiplataforma, orientada a spaces, perfiles y agentes CLI                           |
+| **Categoría**                    | Terminal desktop multiplataforma, orientada a spaces, perfiles y agentes CLI                              |
 | **Nombre de trabajo anterior**   | «Terminal Workspace» queda descartado; no utilizarlo en UI, documentación nueva ni identidad del producto |
 
 **Implicaciones para implementación:** la aplicación final deberá mostrar `lut` en su título, About, accesos directos, instaladores, ejecutable y documentación. Los identificadores de paquete, bundle, repositorio, comandos auxiliares, rutas de configuración, URL de actualizaciones y eventual dominio se definirán en la Fase 0 con comprobaciones de disponibilidad y compatibilidad; **no inventarlos en este documento**.
@@ -111,7 +111,7 @@ Usar identificadores estables para tareas, pruebas y trazabilidad. Las prioridad
 | TER-002 | P0        | Tabs múltiples                           | Crear, cerrar, renombrar, reordenar y cambiar tabs sin terminar las otras sesiones |
 | TER-003 | P0        | Orientación horizontal/vertical de tabs  | Cambio en Settings en tiempo de ejecución, sin reiniciar procesos                  |
 | TER-004 | P0        | Splits horizontales/verticales           | Dividir, enfocar, redimensionar y cerrar panes sin afectar otros                   |
-| TER-005 | P0        | Sesiones ocultas activas                 | Un comando de larga duración continúa al cambiar de pestaña/space               |
+| TER-005 | P0        | Sesiones ocultas activas                 | Un comando de larga duración continúa al cambiar de pestaña/space                  |
 | TER-006 | P0        | Copiar, pegar, selección, búsqueda       | Funcionan en una terminal real y con Unicode                                       |
 | TER-007 | P0        | Teclado y TUI fiables                    | Neovim, lazygit, Ctrl+C, flechas, teclado internacional, resize y mouse en TUI     |
 | TER-008 | P1        | Atajos configurables                     | Acciones globales, navegación y split; evitar colisiones con shells                |
@@ -137,32 +137,32 @@ Usar identificadores estables para tareas, pruebas y trazabilidad. Las prioridad
 | PRO-005 | P0        | Apariencia por perfil                | Fuente, tamaño, peso, colores, tema, cursor, scrollback y padding dentro del pane; override sobre defaults                                                |
 | PRO-006 | P1        | Entorno Windows/WSL/macOS/Linux      | El perfil puede definir destino y compatibilidad                                                                                                          |
 | PRO-007 | P1        | Exportar/importar perfiles           | Esquema versionado, validación, merge sin duplicados                                                                                                      |
-| PRO-009 | P1        | Perfil en cada pane                  | Diferentes panes del mismo space pueden usar perfiles distintos                                                                                        |
+| PRO-009 | P1        | Perfil en cada pane                  | Diferentes panes del mismo space pueden usar perfiles distintos                                                                                           |
 | PRO-010 | P1        | Validación de perfiles               | Explicar ausencia de executable/entorno/workingDir, con opción de reparar                                                                                 |
 
 Ejemplos de perfiles: PowerShell 7 normal; PowerShell sin perfil; Ubuntu WSL; CMD; Bash; shell para scripts; perfil de terminal de alto contraste; perfil con tema nocturno. **Perfiles no equivalen a agentes**: un perfil puede iniciar `pwsh`; un space puede pedir al shell que ejecute `claude` cuando esté listo.
 
 ## 3.3. Spaces y workspaces persistentes
 
-| ID      | Prioridad | Requisito                                 | Criterio verificable                                                                                                                                                                                                                                                                                |
-| ------- | --------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PRJ-001 | P0        | Lista de spaces                        | Crear, renombrar, duplicar, archivar/borrar                                                                                                                                                                                                                                                         |
-| PRJ-002 | P0        | Guardar tabs y splits                     | Cerrar aplicación y restaurar árbol y tabs en siguiente inicio                                                                                                                                                                                                                                      |
-| PRJ-003 | P0        | Directorio por pane                       | Mantener cwd específico, no solo raíz del space                                                                                                                                                                                                                                                  |
-| PRJ-004 | P0        | Relanzar comandos                         | Al restaurar, relanzar a pedido (P0) o con confirmación (P1) los comandos que seguían corriendo en cada pane                                                                                                                                                                                        |
-| PRJ-005 | P0        | Distintos perfiles en un space         | Por ejemplo PowerShell, WSL y shell de scripts                                                                                                                                                                                                                                                      |
-| PRJ-006 | P1        | Ratios de splits                          | Guardar proporciones reales, no sólo la topología                                                                                                                                                                                                                                                   |
-| PRJ-007 | P1        | Confirmación de relanzamiento             | Ejecutar / ejecutar siempre en este space / no ejecutar, por comando                                                                                                                                                                                                                             |
-| PRJ-008 | P1        | Estados de inicio por pane                | Pending, starting, ready, running, failed, exited                                                                                                                                                                                                                                                   |
-| PRJ-009 | P1        | Reabrir space existente                | Elegir enfocar instancia activa vs crear una segunda                                                                                                                                                                                                                                                |
-| PRJ-010 | P1        | Reanudar agentes                          | Mecanismo específico y opcional según CLI, sin prometer persistencia de procesos                                                                                                                                                                                                                    |
-| PRJ-011 | P1        | Varios spaces activos                  | Cambiar entre ellos sin terminar sesiones existentes                                                                                                                                                                                                                                                |
-| PRJ-012 | P2        | Ventanas múltiples por space           | Guardar y restaurar geometría y asignación de tabs por ventana                                                                                                                                                                                                                                      |
-| PRJ-013 | P1        | Estado vivo, sin presets                  | El space es su último estado de sesión; no hay plantillas separadas                                                                                                                                                                                                                              |
-| PRJ-014 | P1        | Migraciones de esquema                    | Actualizar formatos persistidos conservando datos y rollback                                                                                                                                                                                                                                        |
-| PRJ-015 | P1        | Exportar/importar spaces               | Formato portable, sin incluir secretos inadvertidamente                                                                                                                                                                                                                                             |
+| ID      | Prioridad | Requisito                                 | Criterio verificable                                                                                                                                                                                                                                                                       |
+| ------- | --------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| PRJ-001 | P0        | Lista de spaces                           | Crear, renombrar, duplicar, archivar/borrar                                                                                                                                                                                                                                                |
+| PRJ-002 | P0        | Guardar tabs y splits                     | Cerrar aplicación y restaurar árbol y tabs en siguiente inicio                                                                                                                                                                                                                             |
+| PRJ-003 | P0        | Directorio por pane                       | Mantener cwd específico, no solo raíz del space                                                                                                                                                                                                                                            |
+| PRJ-004 | P0        | Relanzar comandos                         | Al restaurar, relanzar a pedido (P0) o con confirmación (P1) los comandos que seguían corriendo en cada pane                                                                                                                                                                               |
+| PRJ-005 | P0        | Distintos perfiles en un space            | Por ejemplo PowerShell, WSL y shell de scripts                                                                                                                                                                                                                                             |
+| PRJ-006 | P1        | Ratios de splits                          | Guardar proporciones reales, no sólo la topología                                                                                                                                                                                                                                          |
+| PRJ-007 | P1        | Confirmación de relanzamiento             | Ejecutar / ejecutar siempre en este space / no ejecutar, por comando                                                                                                                                                                                                                       |
+| PRJ-008 | P1        | Estados de inicio por pane                | Pending, starting, ready, running, failed, exited                                                                                                                                                                                                                                          |
+| PRJ-009 | P1        | Reabrir space existente                   | Elegir enfocar instancia activa vs crear una segunda                                                                                                                                                                                                                                       |
+| PRJ-010 | P1        | Reanudar agentes                          | Mecanismo específico y opcional según CLI, sin prometer persistencia de procesos                                                                                                                                                                                                           |
+| PRJ-011 | P1        | Varios spaces activos                     | Cambiar entre ellos sin terminar sesiones existentes                                                                                                                                                                                                                                       |
+| PRJ-012 | P2        | Ventanas múltiples por space              | Guardar y restaurar geometría y asignación de tabs por ventana                                                                                                                                                                                                                             |
+| PRJ-013 | P1        | Estado vivo, sin presets                  | El space es su último estado de sesión; no hay plantillas separadas                                                                                                                                                                                                                        |
+| PRJ-014 | P1        | Migraciones de esquema                    | Actualizar formatos persistidos conservando datos y rollback                                                                                                                                                                                                                               |
+| PRJ-015 | P1        | Exportar/importar spaces                  | Formato portable, sin incluir secretos inadvertidamente                                                                                                                                                                                                                                    |
 | PRJ-016 | P0        | Restaurar la última sesión al iniciar lut | Al abrir la app se reabren los spaces que estaban abiertos al cerrar, con el space activo y su layout; los comandos a relanzar piden confirmación (§8.4). Comportamiento configurable: restaurar última sesión (por defecto) / abrir un space por defecto / iniciar con una terminal vacía |
-| PRJ-017 | P0        | Abrir otros spaces desde la app        | Desde el navegador de spaces o la command palette, sin cerrar los ya abiertos (ver PRJ-011)                                                                                                                                                                                                      |
+| PRJ-017 | P0        | Abrir otros spaces desde la app           | Desde el navegador de spaces o la command palette, sin cerrar los ya abiertos (ver PRJ-011)                                                                                                                                                                                                |
 
 **Definición fundamental:** un _Space_ es el contexto de trabajo nombrado; su _estado guardado_ (tabs, splits, perfiles, cwd y comandos que seguían corriendo) es lo que se reconstruye; un _Running Workspace_ representa las sesiones activas. No hay presets: el space es su estado vivo, que se guarda mientras se trabaja (decisión 26 de `.docs/plan/analysis/decisions.md`).
 
@@ -172,12 +172,12 @@ Ejemplos de perfiles: PowerShell 7 normal; PowerShell sin perfil; Ubuntu WSL; CM
 | ------ | --------- | ------------------------------------------------------------------------------------- |
 | UX-001 | P0        | Terminal ocupa el área central y predominante                                         |
 | UX-002 | P0        | Navegación de tabs vertical, horizontal, o auto si se agrega más adelante             |
-| UX-003 | P0        | Sidebar de spaces opcional, colapsable y con ancho persistido                      |
+| UX-003 | P0        | Sidebar de spaces opcional, colapsable y con ancho persistido                         |
 | UX-004 | P0        | Temas claros/oscuros y temas personalizados mediante tokens                           |
 | UX-005 | P0        | Fuentes configurables y soporte de Nerd Fonts/powerline cuando el renderer lo permita |
 | UX-006 | P1        | UI minimalista, densidad compacta/normal, iconografía coherente                       |
-| UX-007 | P1        | Menús contextuales para tabs/panes/spaces                                          |
-| UX-008 | P1        | Command palette orientado a acciones de terminal/spaces                            |
+| UX-007 | P1        | Menús contextuales para tabs/panes/spaces                                             |
+| UX-008 | P1        | Command palette orientado a acciones de terminal/spaces                               |
 | UX-009 | P1        | Paneles secundarios opcionales: explorer, Git, diff, logs de agentes                  |
 | UX-010 | P1        | Estados de carga/error/falta de permisos accesibles y no intrusivos                   |
 | UX-011 | P1        | Layout compatible con DPI, tamaño mínimo, pantallas de alta densidad y teclado        |
@@ -192,7 +192,7 @@ Ejemplos de perfiles: PowerShell 7 normal; PowerShell sin perfil; Ubuntu WSL; CM
 | AGT-001 | P0        | Detectar Claude Code oficial que corre dentro de PTY propia                               |
 | AGT-002 | P0        | Detectar Codex CLI oficial y sus eventos cuando la versión soporta hooks correspondientes |
 | AGT-003 | P0        | No solicitar API key de Anthropic/OpenAI para monitorizar estos procesos                  |
-| AGT-004 | P0        | Asociar agente con pane, PTY, tab, space y sesión de agente                            |
+| AGT-004 | P0        | Asociar agente con pane, PTY, tab, space y sesión de agente                               |
 | AGT-005 | P0        | Estado visible: iniciando, trabajando, atención, finalizado/error/salido                  |
 | AGT-006 | P0        | Notificar finalización y requerimientos de atención con acción de enfoque                 |
 | AGT-007 | P1        | Gestionar instalación de hooks con previsualización y desinstalación selectiva            |
@@ -1194,30 +1194,30 @@ Estos comandos deben ejecutarse en un entorno con dependencias instaladas y tool
 
 ## 13.2. Matriz de pruebas funcionales
 
-| Escenario                                       | Resultado esperado                                                                                               |
-| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Abrir pwsh                                      | Shell interactiva y prompt correcto                                                                              |
-| Abrir WSL Ubuntu                                | Shell con cwd correcto y teclado operativo                                                                       |
-| Ejecutar Neovim                                 | Pantalla alterna y combinaciones de teclas funcionan                                                             |
-| Ejecutar lazygit                                | Mouse/resize/Unicode correctos                                                                                   |
-| Switch horizontal → vertical                    | PTY y output siguen vivos, sin reiniciar procesos                                                                |
+| Escenario                                    | Resultado esperado                                                                                               |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Abrir pwsh                                   | Shell interactiva y prompt correcto                                                                              |
+| Abrir WSL Ubuntu                             | Shell con cwd correcto y teclado operativo                                                                       |
+| Ejecutar Neovim                              | Pantalla alterna y combinaciones de teclas funcionan                                                             |
+| Ejecutar lazygit                             | Mouse/resize/Unicode correctos                                                                                   |
+| Switch horizontal → vertical                 | PTY y output siguen vivos, sin reiniciar procesos                                                                |
 | Colapsar spaces sidebar                      | Ningún proceso se detiene                                                                                        |
-| Split y resize continuo                         | Una sesión por pane, geometry/TTY consistentes                                                                   |
-| Tabs ocultas con `pnpm dev`                     | Proceso continúa, output no corrompido al volver                                                                 |
-| Cerrar tab con proceso activo                   | Política de confirmación y cleanup                                                                               |
+| Split y resize continuo                      | Una sesión por pane, geometry/TTY consistentes                                                                   |
+| Tabs ocultas con `pnpm dev`                  | Proceso continúa, output no corrompido al volver                                                                 |
+| Cerrar tab con proceso activo                | Política de confirmación y cleanup                                                                               |
 | Guardar y restaurar space                    | Topología, perfiles, cwd, ratios y comandos correctos                                                            |
 | Abrir space dos veces                        | No duplica accidentalmente procesos                                                                              |
-| Abrir perfil inexistente                        | Error reparable, sin crash general                                                                               |
-| Claude + Codex en tabs distintos                | Estados y notificaciones correlacionados                                                                         |
-| Dos Claude en mismo cwd                         | Cada evento pertenece a su PTY                                                                                   |
-| Desinstalar hooks                               | Preserva hooks ajenos                                                                                            |
-| Hooks ausentes                                  | Terminal funciona; degradación de badges explícita                                                               |
-| Proveedor BYOK sin key                          | Terminal y agentes CLI funcionan igual                                                                           |
-| Reiniciar con comando peligroso a relanzar      | Exige confirmación antes de ejecutar                                                                             |
-| Cambiar tema/fuente                             | Presentación se actualiza sin reiniciar proceso                                                                  |
-| Cerrar y reabrir lut con dos spaces abiertos | Se restauran ambos spaces, el activo y sus layouts; comandos según política                                   |
-| Terax instalado en la misma máquina             | lut no lee ni escribe datos, stores, hooks ni variables de Terax; desinstalar hooks de lut preserva los de Terax |
-| Comprobación de actualizaciones                 | Sólo consulta el endpoint de lut; rechaza binarios sin firma válida de lut                                       |
+| Abrir perfil inexistente                     | Error reparable, sin crash general                                                                               |
+| Claude + Codex en tabs distintos             | Estados y notificaciones correlacionados                                                                         |
+| Dos Claude en mismo cwd                      | Cada evento pertenece a su PTY                                                                                   |
+| Desinstalar hooks                            | Preserva hooks ajenos                                                                                            |
+| Hooks ausentes                               | Terminal funciona; degradación de badges explícita                                                               |
+| Proveedor BYOK sin key                       | Terminal y agentes CLI funcionan igual                                                                           |
+| Reiniciar con comando peligroso a relanzar   | Exige confirmación antes de ejecutar                                                                             |
+| Cambiar tema/fuente                          | Presentación se actualiza sin reiniciar proceso                                                                  |
+| Cerrar y reabrir lut con dos spaces abiertos | Se restauran ambos spaces, el activo y sus layouts; comandos según política                                      |
+| Terax instalado en la misma máquina          | lut no lee ni escribe datos, stores, hooks ni variables de Terax; desinstalar hooks de lut preserva los de Terax |
+| Comprobación de actualizaciones              | Sólo consulta el endpoint de lut; rechaza binarios sin firma válida de lut                                       |
 
 ## 13.3. Matriz por plataforma
 
