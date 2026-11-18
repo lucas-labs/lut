@@ -7190,11 +7190,36 @@ page for them, cannot load `file://` URLs, and sends no `SameSite=Lax` cookies, 
 
 **Verification:** the comparison and the recommendation in the issue.
 
+### E26-06 — Background transparency setting over Mica
+
+```yaml
+id: E26-06
+depends-on: []
+refs: [.docs/plan/analysis/state-settings.md]
+covers: [state-settings/theme-window-platform]
+type: task
+scope: ui
+size: M
+```
+
+**Goal:** When Mica is active, a setting configures how transparent lut's backgrounds are, so the Mica backdrop shows
+through them, the terminal included.
+
+Today the terminal hides Mica: both renderers draw opaque (WebGPU `alphaMode: 'opaque'` and a clear with alpha 1, WebGL
+`alpha: false`), and `readTerminalGpuTheme` reads `--terminal-background` as RGB, dropping any alpha.
+
+**Acceptance criteria:**
+
+- [ ] A setting configures the transparency of the backgrounds while Mica is active.
+- [ ] Mica shows through the terminal background at the configured transparency.
+
+**Verification:** manual on Windows 11 with Mica active.
+
 ### E26-03 — Close-out: accessory improvements
 
 ```yaml
 id: E26-03
-depends-on: [E26-01, E26-02, E26-04, E26-05]
+depends-on: [E26-01, E26-02, E26-04, E26-05, E26-06]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
