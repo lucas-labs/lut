@@ -110,15 +110,16 @@ function nodeElements(node, o) {
   return [];
 }
 
-// Lines with the same style (width, caps, joins and opacity) draw the same in one path as in several
-// (a stroke ignores fill rules and subpath direction), so they are joined: one <path> per style. Fills stay apart, since joining
-// filled shapes can open or close holes.
+// Opaque lines with the same style draw the same in one path as in several (a stroke ignores fill rules and
+// subpath direction), so they are joined: one <path> per style. Translucent lines stay apart: where two
+// cross, separate paths stack their opacity and one path would paint the crossing once. Fills stay apart,
+// since joining filled shapes can open or close holes.
 function mergeStrokes(elements) {
   const out = [];
   const byStyle = new Map();
   for (const e of elements) {
-    if (e.paint !== 'stroke') { out.push(e); continue; }
-    const key = JSON.stringify([e.strokeWidth, e.linecap, e.linejoin, e.miterLimit, e.opacity]);
+    if (e.paint !== 'stroke' || e.opacity != null) { out.push(e); continue; }
+    const key = JSON.stringify([e.strokeWidth, e.linecap, e.linejoin, e.miterLimit]);
     const same = byStyle.get(key);
     if (same) same.d += e.d;
     else { const copy = { ...e }; byStyle.set(key, copy); out.push(copy); }
