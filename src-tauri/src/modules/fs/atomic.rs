@@ -15,6 +15,22 @@ pub(crate) fn write_atomic(target: &Path, content: &[u8]) -> std::io::Result<()>
     tmp.as_file_mut().write_all(content)?;
     tmp.as_file_mut().sync_all()?;
     tmp.persist(target).map_err(|e| e.error)?;
+    sync_dir(parent)
+}
+
+/// Makes the rename itself durable. Windows has no directory fsync; NTFS journals the rename.
+#[cfg(unix)]
+fn sync_dir(dir: &Path) -> std::io::Result<()> {
+    std::fs::File::open(dir)?.sync_all().map_err(|error| {
+        std::io::Error::new(
+            error.kind(),
+            format!("file replaced, but its directory could not be synced: {error}"),
+        )
+    })
+}
+
+#[cfg(not(unix))]
+fn sync_dir(_dir: &Path) -> std::io::Result<()> {
     Ok(())
 }
 

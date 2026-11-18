@@ -49,6 +49,7 @@ describe('useProfilesLoadNotice', () => {
     await mount();
     expect(mocks.toastError).toHaveBeenCalledOnce();
     expect(mocks.toastError.mock.calls[0][1].description).toContain('C:/cfg/profiles.corrupt-1.json');
+    expect(mocks.toastError.mock.calls[0][1].duration).toBe(Infinity);
   });
 
   it('gives the reason when the file could not be read', async () => {

@@ -42,8 +42,8 @@ pub struct LoadOutcome {
 /// `profiles.corrupt-<ms>.json` and reported, so the user's data is never dropped silently.
 pub fn load(dir: &Path) -> LoadOutcome {
     let path = dir.join(PROFILES_FILE);
-    let text = match std::fs::read_to_string(&path) {
-        Ok(text) => text,
+    let bytes = match std::fs::read(&path) {
+        Ok(bytes) => bytes,
         Err(error) if error.kind() == io::ErrorKind::NotFound => return defaults(None),
         Err(error) => {
             // Leave a file we cannot read where it is: writing over it could lose it.
@@ -53,7 +53,7 @@ pub fn load(dir: &Path) -> LoadOutcome {
             }));
         }
     };
-    let reason = match serde_json::from_str::<ProfilesFile>(&text) {
+    let reason = match serde_json::from_slice::<ProfilesFile>(&bytes) {
         Ok(file) => match validate_profiles(&file.profiles).first() {
             None => {
                 return LoadOutcome {
@@ -216,6 +216,15 @@ mod tests {
         assert_eq!(recovered.backup_path, found[0].display().to_string());
         assert_eq!(std::fs::read_to_string(&found[0]).unwrap(), "{ not json");
         assert!(!dir.path().join(PROFILES_FILE).exists());
+    }
+
+    #[test]
+    fn invalid_utf8_is_treated_as_a_corrupt_file() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join(PROFILES_FILE), [0xff, 0xfe, b'{']).unwrap();
+        let outcome = load(dir.path());
+        assert!(!outcome.recovered.unwrap().backup_path.is_empty());
+        assert_eq!(backups(dir.path()).len(), 1);
     }
 
     #[test]
