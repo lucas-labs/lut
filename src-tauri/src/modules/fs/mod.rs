@@ -1,4 +1,5 @@
 pub mod assets;
+pub(crate) mod atomic;
 pub mod clipboard;
 pub mod copy;
 pub mod file;

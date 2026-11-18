@@ -259,6 +259,9 @@ pub fn run() {
             modules::bench::guard(_app.handle())?;
             #[cfg(target_os = "macos")]
             modules::window_presentation::macos::install(_app.handle());
+            // Fatal on purpose: without a config dir no store (profiles, settings, themes) can work.
+            let config_dir = _app.path().app_config_dir()?;
+            _app.manage(modules::profiles::store::ProfilesState::load(config_dir));
             if let Err(error) = control::start(_app.handle().clone(), control_for_setup.clone()) {
                 log::warn!("could not start lut control server: {error}");
             }
@@ -300,6 +303,7 @@ pub fn run() {
         .manage(LaunchDir(Mutex::new(cli_dir)))
         .manage(LaunchFiles(Mutex::new(launch.files)))
         .invoke_handler(tauri::generate_handler![
+            modules::profiles::store::profiles_take_load_error,
             pty::pty_open,
             pty::pty_write,
             pty::pty_stream_open,
