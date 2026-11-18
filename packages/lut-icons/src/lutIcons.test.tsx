@@ -4,6 +4,7 @@ import { createLutIcon } from './createLutIcon';
 import { ArrowOneSideIconData } from './icons/arrow-one-side';
 import { ChevronIcon, ChevronIconData } from './icons/chevron';
 import { PlusIcon, PlusIconData } from './icons/plus';
+import { SpinnerIcon } from './icons/spinner';
 import { resolveSize } from './sizes';
 import { toSvgString } from './svgString';
 
@@ -38,6 +39,12 @@ describe('createLutIcon', () => {
     expect(attr(html, 'style')).toBe('width:14px;height:14px');
     expect(attr(html, 'class')).toBe('text-muted');
     expect(attr(html, 'data-odd')).toBeUndefined();
+  });
+
+  it("keeps a faded shape apart, at the drawing's opacity", () => {
+    const html = renderToStaticMarkup(<SpinnerIcon size="md" />);
+    expect(html.match(/<path /g)).toHaveLength(2);
+    expect(html.match(/stroke-opacity="([^"]*)"/g)).toEqual(['stroke-opacity="0.25"']);
   });
 
   it('marks an odd box for the Button', () => {

@@ -48,8 +48,10 @@ function styleAttrs(appearance, rule) {
   const stroke = items.find(i => i.kind === 'stroke');
   const at = [`fill="${paintAttr(fill?.paint)}"`];
   if (fill?.paint?.type === 'solid' && rule === 'EvenOdd') at.push('fill-rule="evenodd"');
+  if (fill?.paint?.type === 'solid' && (fill.opacity ?? 1) !== 1) at.push(`fill-opacity="${r(fill.opacity)}"`);
   if (stroke && stroke.paint?.type === 'solid') {
     at.push('stroke="currentColor"', `stroke-width="${r(stroke.width ?? 1)}"`);
+    if ((stroke.opacity ?? 1) !== 1) at.push(`stroke-opacity="${r(stroke.opacity)}"`);
     if (stroke.cap && stroke.cap !== 'Butt') at.push(`stroke-linecap="${stroke.cap.toLowerCase()}"`);
     if (stroke.join && stroke.join !== 'Miter') at.push(`stroke-linejoin="${stroke.join.toLowerCase()}"`);
     if (stroke.miter_limit != null && stroke.join !== 'Round') at.push(`stroke-miterlimit="${r(stroke.miter_limit)}"`);
@@ -77,10 +79,13 @@ function nodeSvg(node, o, warn) {
 
 // How a shape is painted: a filled area, or a line with the caps, joins and width it was drawn
 // with (they are part of the design: square ends that match the native window controls, butt
-// lines that fill a dot). Colour is left to the component (currentColor).
+// lines that fill a dot). Colour is left to the component (currentColor); an opacity below 1 is
+// kept, since it is part of the drawing too (the spinner's faint track).
+const opacityOf = item => ((item?.opacity ?? 1) !== 1 ? { opacity: r(item.opacity) } : {});
 function paintOf(appearance) {
   const items = appearance?.items ?? [];
-  if (items.some(i => i.kind === 'fill' && i.paint?.type === 'solid')) return { paint: 'fill' };
+  const f = items.find(i => i.kind === 'fill' && i.paint?.type === 'solid');
+  if (f) return { paint: 'fill', ...opacityOf(f) };
   const s = items.find(i => i.kind === 'stroke' && i.paint?.type === 'solid');
   const join = (s?.join ?? 'Miter').toLowerCase();
   return {
@@ -89,6 +94,7 @@ function paintOf(appearance) {
     linecap: (s?.cap ?? 'Butt').toLowerCase(),
     linejoin: join,
     ...(join === 'miter' && s?.miter_limit != null ? { miterLimit: r(s.miter_limit) } : {}),
+    ...opacityOf(s),
   };
 }
 
@@ -104,15 +110,15 @@ function nodeElements(node, o) {
   return [];
 }
 
-// Lines with the same style draw the same in one path as in several (a stroke ignores fill rules and
-// subpath direction), so they are joined: one <path> per style. Fills stay apart, since joining
+// Lines with the same style (width, caps, joins and opacity) draw the same in one path as in several
+// (a stroke ignores fill rules and subpath direction), so they are joined: one <path> per style. Fills stay apart, since joining
 // filled shapes can open or close holes.
 function mergeStrokes(elements) {
   const out = [];
   const byStyle = new Map();
   for (const e of elements) {
     if (e.paint !== 'stroke') { out.push(e); continue; }
-    const key = JSON.stringify([e.strokeWidth, e.linecap, e.linejoin, e.miterLimit]);
+    const key = JSON.stringify([e.strokeWidth, e.linecap, e.linejoin, e.miterLimit, e.opacity]);
     const same = byStyle.get(key);
     if (same) same.d += e.d;
     else { const copy = { ...e }; byStyle.set(key, copy); out.push(copy); }

@@ -12,6 +12,8 @@ type LutIconFill = {
   paint: 'fill';
   d: string;
   fillRule?: 'evenodd';
+  /** Below 1 when the drawing fades this shape; absent means opaque. */
+  opacity?: number;
 };
 
 /** A line, with the width (in canvas units), caps and joins it was drawn with. */
@@ -22,6 +24,8 @@ type LutIconStroke = {
   linecap: 'butt' | 'round' | 'square';
   linejoin: 'miter' | 'round' | 'bevel';
   miterLimit?: number;
+  /** Below 1 when the drawing fades this line (the spinner's track); absent means opaque. */
+  opacity?: number;
 };
 
 /** One shape of a drawing. */

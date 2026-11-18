@@ -25,7 +25,7 @@ export function createLutIcon(
     const { master, width, height, viewBox, transform, odd } = resolveSize(data, size, rotate);
     const paths = master.paths.map((p) =>
       p.paint === 'fill' ? (
-        <path key={p.d} d={p.d} fill="currentColor" fillRule={p.fillRule} />
+        <path key={p.d} d={p.d} fill="currentColor" fillRule={p.fillRule} fillOpacity={p.opacity} />
       ) : (
         <path
           key={p.d}
@@ -36,6 +36,7 @@ export function createLutIcon(
           strokeLinecap={p.linecap}
           strokeLinejoin={p.linejoin}
           strokeMiterlimit={p.miterLimit}
+          strokeOpacity={p.opacity}
         />
       ),
     );

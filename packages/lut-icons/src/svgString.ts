@@ -16,8 +16,8 @@ export function toSvgString(
   const paths = master.paths
     .map((p) =>
       p.paint === 'fill'
-        ? `<path d="${p.d}" fill="${color}"${p.fillRule ? ` fill-rule="${p.fillRule}"` : ''}/>`
-        : `<path d="${p.d}" fill="none" stroke="${color}" stroke-width="${p.strokeWidth}" stroke-linecap="${p.linecap}" stroke-linejoin="${p.linejoin}"${p.miterLimit != null ? ` stroke-miterlimit="${p.miterLimit}"` : ''}/>`,
+        ? `<path d="${p.d}" fill="${color}"${p.fillRule ? ` fill-rule="${p.fillRule}"` : ''}${p.opacity != null ? ` fill-opacity="${p.opacity}"` : ''}/>`
+        : `<path d="${p.d}" fill="none" stroke="${color}" stroke-width="${p.strokeWidth}" stroke-linecap="${p.linecap}" stroke-linejoin="${p.linejoin}"${p.miterLimit != null ? ` stroke-miterlimit="${p.miterLimit}"` : ''}${p.opacity != null ? ` stroke-opacity="${p.opacity}"` : ''}/>`,
     )
     .join('');
   const body = transform ? `<g transform="${transform}">${paths}</g>` : paths;

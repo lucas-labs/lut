@@ -65,7 +65,12 @@ function TerminalTabStatus({ tab }: { tab: Tab }) {
     );
   }
   if (state === 'finished') {
-    return <CheckmarkCircleIcon size="xs" aria-label="Finished" className="shrink-0 text-success" />;
+    return (
+      <>
+        <CheckmarkCircleIcon size="xs" className="shrink-0 text-success" />
+        <span className="sr-only">Finished</span>
+      </>
+    );
   }
   return null;
 }
