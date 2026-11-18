@@ -53,7 +53,13 @@ pub fn load(dir: &Path) -> LoadOutcome {
             }));
         }
     };
-    let reason = match serde_json::from_slice::<ProfilesFile>(&bytes) {
+    // Checked up front: serde skips unknown values without validating their UTF-8.
+    let parsed = std::str::from_utf8(&bytes)
+        .map_err(|error| error.to_string())
+        .and_then(|text| {
+            serde_json::from_str::<ProfilesFile>(text).map_err(|error| error.to_string())
+        });
+    let reason = match parsed {
         Ok(file) => match validate_profiles(&file.profiles).first() {
             None => {
                 return LoadOutcome {
@@ -63,7 +69,7 @@ pub fn load(dir: &Path) -> LoadOutcome {
             }
             Some(error) => error.to_string(),
         },
-        Err(error) => error.to_string(),
+        Err(reason) => reason,
     };
     let backup = backup_path(dir);
     let recovered = match std::fs::rename(&path, &backup) {
@@ -221,10 +227,16 @@ mod tests {
     #[test]
     fn invalid_utf8_is_treated_as_a_corrupt_file() {
         let dir = tempfile::tempdir().unwrap();
-        std::fs::write(dir.path().join(PROFILES_FILE), [0xff, 0xfe, b'{']).unwrap();
-        let outcome = load(dir.path());
-        assert!(!outcome.recovered.unwrap().backup_path.is_empty());
-        assert_eq!(backups(dir.path()).len(), 1);
+        let inside_ignored_value = b"{\"profiles\":[],\"extra\":\"\xff\"}".as_slice();
+        for (n, content) in [[0xff, 0xfe, b'{'].as_slice(), inside_ignored_value]
+            .into_iter()
+            .enumerate()
+        {
+            std::fs::write(dir.path().join(PROFILES_FILE), content).unwrap();
+            let outcome = load(dir.path());
+            assert!(!outcome.recovered.unwrap().backup_path.is_empty());
+            assert_eq!(backups(dir.path()).len(), n + 1);
+        }
     }
 
     #[test]
