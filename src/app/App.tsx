@@ -5,6 +5,7 @@ import { useApplyFileIconColors } from '@/modules/explorer';
 import { type SearchInlineHandle, TitleBar } from '@/modules/header';
 import { DEFAULT_SPACE_ID, useNavigatorItems } from '@/modules/navigation';
 import { getLaunchDir } from '@/modules/platform';
+import { useProfilesLoadNotice } from '@/modules/profiles';
 import { openSettingsWindow } from '@/modules/settings/openSettingsWindow';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { TabNavigator, useTabs, useWindowTitle, useWorkspaceCwd } from '@/modules/tabs';
@@ -87,6 +88,7 @@ export default function App() {
     newTabInSpace: workspace.newTabInSpace,
   });
   const appClose = useAppCloseGuard();
+  useProfilesLoadNotice();
   const commands = useTabCommands({ ...closeGuards, activeId, activeSpaceId, inheritedCwdForNewTab });
   const git = useAppSourceControl({ ...workspace, ...panels, tabs, activeTab, activeCwd, explorerRoot });
   const { searchTarget, onGitHistorySearchHandle } = useSearchTarget({
