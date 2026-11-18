@@ -6,12 +6,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./data": "./src/data.ts",
-    "./lut-icons.json": "./lut-icons.json",
-    "./lut-icons.replacements.json": "./lut-icons.replacements.json"
+    "./lut-icons.json": "./lut-icons.json"
   },
   "scripts": {
-    "build": "node scripts/build-manifest.mjs && node scripts/generate.mjs",
-    "replacements": "node scripts/replacements.mjs"
+    "build": "node scripts/build-manifest.mjs && node scripts/generate.mjs"
   },
   "peerDependencies": {
     "react": "^19.3.0"

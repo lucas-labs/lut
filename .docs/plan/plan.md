@@ -3925,7 +3925,7 @@ move to it too.
 
 **Acceptance criteria:**
 
-- [ ] Each HugeIcons use maps to its lut icon through `lut-icons.replacements.json`; where one maps to two, the one
+- [ ] Each HugeIcons use maps to the lut icon drawn for it; where one maps to two, the one
       that fits the place is chosen, and directional icons are rotated.
 - [ ] Sizes go to the nearest label: 9 to 12 px → `xs`, 13 to 15 → `sm`, 16 to 20 → `md`, 22 → `lg`; no
       `strokeWidth`.
