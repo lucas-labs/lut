@@ -30,15 +30,7 @@ import { listBuiltinThemes } from '@/modules/theme/themes';
 import { DEFAULT_THEME_ID, type Theme, type ThemeMode } from '@/modules/theme/types';
 import { validateTheme } from '@/modules/theme/validateTheme';
 import { type Backdrop, getBackdropKind } from '@/modules/theme/vibrancy';
-import {
-  AlertCircleIcon,
-  Delete02Icon,
-  Download01Icon,
-  Edit02Icon,
-  Image02Icon,
-  PlusSignIcon,
-} from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { AlertIcon, DeleteIcon, DownloadIcon, ImageIcon, PencilIcon, PlusIcon } from '@lut/lut-icons';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { RangeControl } from '../components/RangeControl';
 import { SectionHeader } from '../components/SectionHeader';
@@ -184,11 +176,11 @@ export function ThemesSection() {
           actions={
             <>
               <Button variant="outline" onClick={onCreateTheme}>
-                <HugeiconsIcon icon={PlusSignIcon} strokeWidth={1.5} />
+                <PlusIcon size="sm" />
                 Create
               </Button>
               <Button variant="outline" onClick={onPickThemeFile}>
-                <HugeiconsIcon icon={Download01Icon} strokeWidth={1.5} />
+                <DownloadIcon size="sm" />
                 Import .lut-theme
               </Button>
               <input
@@ -374,7 +366,7 @@ function ThemeCard({ theme, mode, selected, custom, onSelect, onEdit, onRemove, 
           ) : null}
           {fileError ? (
             <span className="flex min-w-0 items-center gap-1 text-[12px] leading-4 text-destructive" title={fileError}>
-              <HugeiconsIcon icon={AlertCircleIcon} size={12} strokeWidth={1.75} className="shrink-0" />
+              <AlertIcon size="xs" className="shrink-0" />
               <span className="truncate">{fileError}</span>
             </span>
           ) : null}
@@ -383,10 +375,10 @@ function ThemeCard({ theme, mode, selected, custom, onSelect, onEdit, onRemove, 
       {custom ? (
         <span className="absolute top-1.5 right-1.5 flex gap-0.5 opacity-0 transition-opacity group-hover/card:opacity-100 focus-within:opacity-100">
           <Button variant="secondary" size="icon-xs" aria-label={`Edit ${theme.name}`} onClick={onEdit}>
-            <HugeiconsIcon icon={Edit02Icon} strokeWidth={1.5} />
+            <PencilIcon size="xs" />
           </Button>
           <Button variant="secondary" size="icon-xs" aria-label={`Remove ${theme.name}`} onClick={onRemove}>
-            <HugeiconsIcon icon={Delete02Icon} strokeWidth={1.5} />
+            <DeleteIcon size="xs" />
           </Button>
         </span>
       ) : null}
@@ -426,11 +418,7 @@ function BackgroundThumbnail({ imageId }: { imageId: string | null }) {
       aria-hidden
       className="flex h-14 w-24 shrink-0 items-center justify-center overflow-hidden rounded-md bg-accent text-muted-foreground"
     >
-      {url ? (
-        <img src={url} alt="" className="size-full object-cover" />
-      ) : (
-        <HugeiconsIcon icon={Image02Icon} size={18} strokeWidth={1.5} />
-      )}
+      {url ? <img src={url} alt="" className="size-full object-cover" /> : <ImageIcon size="md" />}
     </span>
   );
 }

@@ -2,15 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useHoldTitleBar } from '@/lib/titleBarHold';
 import { cn } from '@/lib/utils';
-import {
-  ArrowDown01Icon,
-  ArrowUp01Icon,
-  CheckmarkCircle02Icon,
-  Loading03Icon,
-  Notification01Icon,
-  Notification03Icon,
-} from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { BellIcon, CheckmarkCircleIcon, ChevronIcon, SpinnerIcon } from '@lut/lut-icons';
 import { invoke } from '@tauri-apps/api/core';
 import { useMemo, useState } from 'react';
 import { AgentIcon } from '../lib/agentIcon';
@@ -40,7 +32,7 @@ function StatusRow({ agent, status, onClick }: { agent: string; status: AgentSta
       onClick={onClick}
       className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-accent"
     >
-      <AgentIcon agent={agent} size={16} className="shrink-0 text-muted-foreground" />
+      <AgentIcon agent={agent} size="md" className="shrink-0 text-muted-foreground" />
       <span className="flex-1 truncate text-sm text-foreground">{displayAgent(agent)}</span>
       <span
         className={cn(
@@ -78,18 +70,16 @@ function HookAgentRow({
 }) {
   return (
     <div className="flex items-center gap-2 px-2 py-1">
-      <AgentIcon agent={id} size={14} className="shrink-0 text-muted-foreground" />
+      <AgentIcon agent={id} size="sm" className="shrink-0 text-muted-foreground" />
       <span className="flex-1 truncate text-[12px] text-muted-foreground">{label}</span>
       {ready ? (
         <span className="flex items-center gap-1 text-[11px] font-medium text-primary">
-          <HugeiconsIcon icon={CheckmarkCircle02Icon} size={13} strokeWidth={1.75} />
+          <CheckmarkCircleIcon size="sm" />
           enabled
         </span>
       ) : (
         <Button variant="ghost" size="xs" onClick={onEnable} disabled={installing}>
-          {installing ? (
-            <HugeiconsIcon icon={Loading03Icon} size={12} strokeWidth={1.75} className="animate-spin" />
-          ) : null}
+          {installing ? <SpinnerIcon size="xs" className="animate-spin" /> : null}
           {installing ? 'Enabling' : 'Enable'}
         </Button>
       )}
@@ -106,7 +96,7 @@ function NotificationRow({ n, onClick }: { n: AgentNotification; onClick: () => 
     >
       <span className="flex w-4 shrink-0 items-center justify-center">
         {n.kind === 'finished' ? (
-          <HugeiconsIcon icon={CheckmarkCircle02Icon} size={15} strokeWidth={1.75} className="text-muted-foreground" />
+          <CheckmarkCircleIcon size="sm" className="text-muted-foreground" />
         ) : (
           <span className={cn('size-1.5 rounded-full', n.kind === 'error' ? 'bg-destructive' : 'bg-primary')} />
         )}
@@ -188,7 +178,7 @@ export function NotificationBell({ onActivate }: Props) {
           aria-label="Agent notifications"
           title="Agent notifications"
         >
-          <HugeiconsIcon icon={Notification01Icon} size={14} strokeWidth={1.5} />
+          <BellIcon size="sm" />
           {badge > 0 ? (
             <span className="absolute -top-0.5 -right-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-semibold leading-none text-primary-foreground">
               {badge > 9 ? '9+' : badge}
@@ -238,13 +228,13 @@ export function NotificationBell({ onActivate }: Props) {
             aria-expanded={alertsOpen}
             className="flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70 transition-colors hover:text-foreground"
           >
-            <HugeiconsIcon icon={Notification03Icon} size={11} strokeWidth={2} />
+            <BellIcon size="xs" />
             Agent alerts
             <span className="ml-auto flex items-center gap-1.5 normal-case tracking-normal">
               {enabledCount > 0 ? (
                 <span className="text-[10px] text-muted-foreground/60">{enabledCount} on</span>
               ) : null}
-              <HugeiconsIcon icon={alertsOpen ? ArrowUp01Icon : ArrowDown01Icon} size={13} strokeWidth={2} />
+              <ChevronIcon rotate={alertsOpen ? 270 : 90} size="sm" />
             </span>
           </button>
           {alertsOpen

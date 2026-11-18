@@ -6,14 +6,14 @@ import type { SettingsTab } from '@/modules/settings/openSettingsWindow';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { WindowActivityBridge, WindowVibrancyBridge } from '@/modules/theme';
 import {
-  ComputerTerminal02Icon,
-  ContrastIcon,
-  InformationCircleIcon,
+  FileEditIcon,
+  InfoIcon,
   KeyboardIcon,
-  PencilEdit02Icon,
-  SlidersHorizontalIcon,
-} from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+  type LutIconComponent,
+  OptionsIcon,
+  TerminalIcon,
+  ThemesIcon,
+} from '@lut/lut-icons';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 import { Tabs as TabsPrimitive } from 'radix-ui';
 import { type JSX, useEffect, useState } from 'react';
@@ -28,15 +28,15 @@ import { ThemesSection } from './sections/ThemesSection';
 const TABS: {
   id: SettingsTab;
   label: string;
-  icon: typeof SlidersHorizontalIcon;
+  icon: LutIconComponent;
   component: (props: SectionProps) => JSX.Element;
 }[] = [
-  { id: 'general', label: 'General', icon: SlidersHorizontalIcon, component: GeneralSection },
-  { id: 'terminal', label: 'Terminal', icon: ComputerTerminal02Icon, component: TerminalSection },
-  { id: 'editor', label: 'Editor', icon: PencilEdit02Icon, component: EditorSection },
-  { id: 'themes', label: 'Themes', icon: ContrastIcon, component: ThemesSection },
+  { id: 'general', label: 'General', icon: OptionsIcon, component: GeneralSection },
+  { id: 'terminal', label: 'Terminal', icon: TerminalIcon, component: TerminalSection },
+  { id: 'editor', label: 'Editor', icon: FileEditIcon, component: EditorSection },
+  { id: 'themes', label: 'Themes', icon: ThemesIcon, component: ThemesSection },
   { id: 'shortcuts', label: 'Shortcuts', icon: KeyboardIcon, component: ShortcutsSection },
-  { id: 'about', label: 'About', icon: InformationCircleIcon, component: AboutSection },
+  { id: 'about', label: 'About', icon: InfoIcon, component: AboutSection },
 ];
 
 /** A known section id, or general for anything else (a removed section such as models or agents). */
@@ -94,7 +94,7 @@ export function SettingsApp() {
               value={t.id}
               className="flex h-7.5 w-full items-center gap-2.5 rounded-md px-2.5 text-left text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none data-[state=active]:bg-accent data-[state=active]:text-foreground"
             >
-              <HugeiconsIcon icon={t.icon} size={16} strokeWidth={1.5} aria-hidden />
+              <t.icon size="md" aria-hidden />
               {t.label}
             </TabsPrimitive.Trigger>
           ))}

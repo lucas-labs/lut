@@ -10,8 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
 import { git, type GitBranchEntry } from '@/modules/git';
-import { Folder01Icon, GitBranchIcon, Tick02Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { CheckmarkIcon, FolderIcon, GitBranchIcon } from '@lut/lut-icons';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import type { SourceControlRepositoryTarget } from './repositoryTarget';
@@ -107,7 +106,7 @@ export function BranchPicker({
           title={displayRepoRoot ?? repoLabel}
           className="min-w-0 shrink overflow-hidden"
         >
-          <HugeiconsIcon icon={GitBranchIcon} size={13} strokeWidth={1.5} className="shrink-0 text-muted-foreground" />
+          <GitBranchIcon size="sm" className="shrink-0 text-muted-foreground" />
           {displayRepoRoot ? (
             <>
               <span className="max-w-[45%] truncate text-muted-foreground">{basename(displayRepoRoot)}</span>
@@ -140,7 +139,7 @@ export function BranchPicker({
         ) : null}
         {loading ? (
           <div className="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground">
-            <Spinner className="size-3" />
+            <Spinner size="xs" />
             Loading branches…
           </div>
         ) : error ? (
@@ -158,7 +157,7 @@ export function BranchPicker({
                       className="cursor-pointer"
                     >
                       {b.isHead ? (
-                        <HugeiconsIcon icon={Tick02Icon} size={14} strokeWidth={1.5} className="shrink-0" />
+                        <CheckmarkIcon size="sm" className="shrink-0" />
                       ) : (
                         <span className="w-3.5 shrink-0" />
                       )}
@@ -183,12 +182,7 @@ export function BranchPicker({
                       }}
                       className="h-auto cursor-pointer py-1"
                     >
-                      <HugeiconsIcon
-                        icon={Folder01Icon}
-                        size={14}
-                        strokeWidth={1.5}
-                        className="shrink-0 text-muted-foreground"
-                      />
+                      <FolderIcon size="sm" className="shrink-0 text-muted-foreground" />
                       <div className="flex min-w-0 flex-col">
                         <span className="truncate">{b.name}</span>
                         {b.worktreePath && (

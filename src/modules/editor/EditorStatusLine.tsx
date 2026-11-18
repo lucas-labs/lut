@@ -1,7 +1,6 @@
 import { LspStatusPill } from '@/modules/lsp';
 import type { ViewUpdate } from '@codemirror/view';
-import { File01Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { FileIcon } from '@lut/lut-icons';
 import { useSyncExternalStore } from 'react';
 import { DiagnosticsBadge } from './DiagnosticsBadge';
 
@@ -51,7 +50,7 @@ export function EditorStatusLine({ path, cursor }: Props) {
       className="flex h-5 shrink-0 items-center gap-3.5 border-t border-border bg-card pr-2 pl-3 text-[11px] leading-3.5 whitespace-nowrap text-muted-foreground"
     >
       <span className="flex min-w-0 items-center gap-1.5 overflow-hidden">
-        <HugeiconsIcon icon={File01Icon} size={12} strokeWidth={1.5} className="shrink-0" />
+        <FileIcon size="xs" className="shrink-0" />
         <span className="truncate">{path}</span>
       </span>
       <span className="flex-1" />

@@ -1,5 +1,4 @@
-import { Alert02Icon, CancelCircleIcon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { AlertIcon, CancelCircleIcon } from '@lut/lut-icons';
 import { useDiagnosticsStore } from './lib/diagnosticsStore';
 
 type Props = {
@@ -14,13 +13,13 @@ export function DiagnosticsBadge({ filePath }: Props) {
     <span className="lut-pill-in flex shrink-0 cursor-default items-center gap-2 tabular-nums">
       {counts.errors > 0 ? (
         <span className="flex items-center gap-0.5 text-destructive">
-          <HugeiconsIcon icon={CancelCircleIcon} size={11} strokeWidth={2} />
+          <CancelCircleIcon size="xs" />
           {counts.errors}
         </span>
       ) : null}
       {counts.warnings > 0 ? (
         <span className="flex items-center gap-0.5 text-warning">
-          <HugeiconsIcon icon={Alert02Icon} size={11} strokeWidth={2} />
+          <AlertIcon size="xs" />
           {counts.warnings}
         </span>
       ) : null}

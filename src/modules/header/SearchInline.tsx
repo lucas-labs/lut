@@ -3,8 +3,7 @@ import { Input } from '@/components/ui/input';
 import type { EditorPaneHandle } from '@/modules/editor';
 import { ShortcutKeys, useShortcutHint, useShortcutLabel } from '@/modules/shortcuts';
 import type { TerminalSearchController } from '@/modules/terminal/search/TerminalSearchController';
-import { Cancel01Icon, Search01Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { SearchIcon, XIcon } from '@lut/lut-icons';
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
 
 const TERM_DECORATIONS = {
@@ -117,10 +116,8 @@ export const SearchInline = forwardRef<SearchInlineHandle, Props>(function Searc
     >
       {expanded ? (
         <div className="absolute inset-0 animate-in fade-in-0 duration-150">
-          <HugeiconsIcon
-            icon={Search01Icon}
-            size={13}
-            strokeWidth={1.75}
+          <SearchIcon
+            size="sm"
             className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-muted-foreground"
           />
           {!q && shortcutText ? (
@@ -172,14 +169,14 @@ export const SearchInline = forwardRef<SearchInlineHandle, Props>(function Searc
               className="absolute top-1/2 right-0.5 -translate-y-1/2"
               aria-label="Clear search"
             >
-              <HugeiconsIcon icon={Cancel01Icon} size={11} strokeWidth={2} />
+              <XIcon size="xs" />
             </Button>
           )}
         </div>
       ) : (
         <div className="absolute inset-0 flex items-center justify-end animate-in fade-in-0 duration-150">
           <Button variant="ghost" size="icon-sm" onClick={focus} aria-label={tooltipTitle} title={tooltipTitle}>
-            <HugeiconsIcon icon={Search01Icon} size={13} strokeWidth={1.75} />
+            <SearchIcon size="sm" />
           </Button>
         </div>
       )}

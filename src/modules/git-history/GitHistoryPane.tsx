@@ -305,7 +305,7 @@ export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: P
       />
       {loadStatus === 'initial' && commits.length === 0 ? (
         <CenterPlaceholder>
-          <Spinner className="size-4" />
+          <Spinner size="md" />
           <span className="text-xs text-muted-foreground">Loading commits…</span>
         </CenterPlaceholder>
       ) : loadStatus === 'error' && commits.length === 0 ? (
@@ -371,7 +371,7 @@ export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: P
 
             {loadStatus === 'more' ? (
               <div className="flex items-center justify-center gap-2 py-3 text-xs text-muted-foreground">
-                <Spinner className="size-3" />
+                <Spinner size="xs" />
                 Loading more…
               </div>
             ) : null}

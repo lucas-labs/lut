@@ -2,15 +2,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { labelFor, type Tab, TabIcon } from '@/modules/navigation';
 import { useShortcutLabel } from '@/modules/shortcuts';
-import {
-  ArrowDown01Icon,
-  ArrowRight01Icon,
-  Cancel01Icon,
-  Delete02Icon,
-  PencilEdit02Icon,
-  PlusSignIcon,
-} from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { ChevronIcon, DeleteIcon, type LutIconComponent, PencilIcon, PlusIcon, XIcon } from '@lut/lut-icons';
 import { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { InlineRename } from './components/InlineRename';
@@ -214,7 +206,7 @@ export function SpacesView({
           Spaces
         </span>
         <Button variant="ghost" size="icon-sm" onClick={onNewSpace} aria-label="New space" title="New space">
-          <HugeiconsIcon icon={PlusSignIcon} size={16} strokeWidth={1.5} />
+          <PlusIcon size="md" />
         </Button>
       </div>
       <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 pt-1 pb-2">
@@ -355,7 +347,7 @@ function SpaceRow({
             onToggle();
           }}
         >
-          <HugeiconsIcon icon={expanded ? ArrowDown01Icon : ArrowRight01Icon} size={13} strokeWidth={2} />
+          <ChevronIcon rotate={expanded ? 90 : 0} size="sm" />
         </Button>
         <SpaceAvatar space={space} size="sm" active={isActive} />
         {editing ? (
@@ -369,9 +361,9 @@ function SpaceRow({
               {tabs.length}
             </span>
             <div data-no-drag className="hidden shrink-0 items-center gap-0.5 group-hover:flex">
-              <RowAction icon={PencilEdit02Icon} label="Rename space" onClick={onStartRename} />
-              <RowAction icon={PlusSignIcon} label="New tab" onClick={onNewTab} />
-              {canDelete && <RowAction icon={Delete02Icon} label="Delete space" destructive onClick={onDelete} />}
+              <RowAction icon={PencilIcon} label="Rename space" onClick={onStartRename} />
+              <RowAction icon={PlusIcon} label="New tab" onClick={onNewTab} />
+              {canDelete && <RowAction icon={DeleteIcon} label="Delete space" destructive onClick={onDelete} />}
             </div>
           </>
         )}
@@ -466,7 +458,7 @@ function TabRow({
           aria-label="Close tab"
           className="opacity-0 group-hover/tab:opacity-70 hover:opacity-100 focus-visible:opacity-100"
         >
-          <HugeiconsIcon icon={Cancel01Icon} size={11} strokeWidth={2} />
+          <XIcon size="xs" />
         </Button>
       </div>
     </div>
@@ -499,12 +491,12 @@ function OverlayChip({ tab, color, label }: { tab?: Tab; color?: string; label: 
 }
 
 function RowAction({
-  icon,
+  icon: Icon,
   label,
   onClick,
   destructive,
 }: {
-  icon: typeof Delete02Icon;
+  icon: LutIconComponent;
   label: string;
   onClick: () => void;
   destructive?: boolean;
@@ -521,7 +513,7 @@ function RowAction({
       }}
       className={cn(destructive && 'hover:bg-destructive/10 hover:text-destructive')}
     >
-      <HugeiconsIcon icon={icon} size={13} strokeWidth={1.75} />
+      <Icon size="sm" />
     </Button>
   );
 }

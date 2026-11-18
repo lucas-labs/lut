@@ -2,8 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { setLspActivation } from '@/modules/settings/store';
-import { Cancel01Icon, Copy01Icon, RefreshIcon, SourceCodeIcon, Tick02Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { CheckmarkIcon, CodeIcon, CopyIcon, RefreshIcon, XIcon } from '@lut/lut-icons';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -43,7 +42,7 @@ export function LspStatusPill({ filePath }: Props) {
           onClick={() => void setLspActivation(hint.preset.id, 'enabled')}
           title={`Start ${hint.preset.command} for this workspace`}
         >
-          <HugeiconsIcon icon={SourceCodeIcon} size={10} strokeWidth={2} />
+          <CodeIcon size="xs" />
           <span>Enable {hint.preset.name} LSP</span>
         </button>
         <DismissButton preset={hint.preset} />
@@ -80,7 +79,7 @@ function ErrorPill({ preset, reason }: { preset: LspPreset; reason: string }) {
             size="sm"
             onClick={() => void restartPresetSessions(preset.id).catch(reportRestartFailure)}
           >
-            <HugeiconsIcon icon={RefreshIcon} size={11} strokeWidth={1.9} />
+            <RefreshIcon size="xs" />
             Restart
           </Button>
           <Button variant="outline" size="sm" onClick={() => void setLspActivation(preset.id, 'dismissed')}>
@@ -101,7 +100,7 @@ function DismissButton({ preset }: { preset: LspPreset }) {
       title="Dismiss (you can re-enable from Settings)"
       aria-label="Dismiss"
     >
-      <HugeiconsIcon icon={Cancel01Icon} size={9} strokeWidth={2.2} />
+      <XIcon size="xs" />
     </Button>
   );
 }
@@ -129,7 +128,7 @@ function InstallPill({ preset }: { preset: LspPreset }) {
       <span className={ACTION_CLASS}>
         <PopoverTrigger asChild>
           <button type="button" className="flex items-center gap-1">
-            <HugeiconsIcon icon={SourceCodeIcon} size={10} strokeWidth={2} />
+            <CodeIcon size="xs" />
             <span>Install {preset.name} LSP</span>
           </button>
         </PopoverTrigger>
@@ -145,7 +144,7 @@ function InstallPill({ preset }: { preset: LspPreset }) {
           <div className="mb-2 flex items-center gap-1 rounded-md border border-border bg-muted/40 px-2 py-1.5 font-mono text-[11px]">
             <span className="min-w-0 flex-1 truncate select-text">{install.command}</span>
             <Button variant="ghost" size="icon-xs" onClick={copy} title="Copy command" aria-label="Copy command">
-              <HugeiconsIcon icon={copied ? Tick02Icon : Copy01Icon} size={12} strokeWidth={2} />
+              {copied ? <CheckmarkIcon size="xs" /> : <CopyIcon size="xs" />}
             </Button>
           </div>
         ) : null}
@@ -191,7 +190,7 @@ function ActivePill({ preset, starting }: { preset: LspPreset; starting: boolean
             size="sm"
             onClick={() => void restartPresetSessions(preset.id).catch(reportRestartFailure)}
           >
-            <HugeiconsIcon icon={RefreshIcon} size={11} strokeWidth={1.9} />
+            <RefreshIcon size="xs" />
             Restart
           </Button>
           <Button variant="outline" size="sm" onClick={() => void setLspActivation(preset.id, 'dismissed')}>

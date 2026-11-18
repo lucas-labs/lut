@@ -1,7 +1,6 @@
 import { cn } from '@/lib/utils';
 import type { GitLogEntry, GitLogRef } from '@/modules/git';
-import { File02Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { FileIcon } from '@lut/lut-icons';
 import { memo, type MouseEvent, type ReactNode } from 'react';
 import { GraphRail } from './GraphRail';
 import type { GraphRow } from './lib/graph';
@@ -127,7 +126,7 @@ export const CommitRow = memo(function CommitRow({
             className="inline-flex items-center gap-1.5"
             title={`${commit.filesChanged} ${commit.filesChanged === 1 ? 'file' : 'files'} changed`}
           >
-            <HugeiconsIcon icon={File02Icon} size={12} strokeWidth={1.5} />
+            <FileIcon size="xs" />
             {commit.filesChanged}
           </span>
         ) : null}

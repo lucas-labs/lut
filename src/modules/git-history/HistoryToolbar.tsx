@@ -11,8 +11,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import type { GitBranchEntry, GitLogScope } from '@/modules/git';
-import { ArrowDown01Icon, Download01Icon, GitBranchIcon, Search01Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { ChevronIcon, DownloadIcon, GitBranchIcon, SearchIcon } from '@lut/lut-icons';
 
 type Props = {
   scope: GitLogScope;
@@ -73,9 +72,9 @@ export function HistoryToolbar({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline-subtle" size="sm" className="max-w-60">
-            <HugeiconsIcon icon={GitBranchIcon} size={13} strokeWidth={1.5} className="shrink-0" />
+            <GitBranchIcon size="sm" className="shrink-0" />
             <span className="truncate">{scopeLabel}</span>
-            <HugeiconsIcon icon={ArrowDown01Icon} size={12} strokeWidth={1.75} className="shrink-0" />
+            <ChevronIcon rotate={90} size="xs" className="shrink-0" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="max-h-80 min-w-56">
@@ -96,10 +95,8 @@ export function HistoryToolbar({
       </DropdownMenu>
 
       <div className="relative w-60 min-w-0 shrink-0">
-        <HugeiconsIcon
-          icon={Search01Icon}
-          size={13}
-          strokeWidth={1.75}
+        <SearchIcon
+          size="sm"
           className="pointer-events-none absolute top-1/2 left-2 -translate-y-1/2 text-muted-foreground"
         />
         <Input
@@ -125,11 +122,7 @@ export function HistoryToolbar({
       {summary ? <span className="truncate text-xs text-muted-foreground">{summary}</span> : null}
 
       <Button variant="outline-subtle" size="sm" onClick={onFetch} disabled={fetching}>
-        {fetching ? (
-          <Spinner className="size-3" />
-        ) : (
-          <HugeiconsIcon icon={Download01Icon} size={13} strokeWidth={1.5} className="shrink-0" />
-        )}
+        {fetching ? <Spinner size="xs" /> : <DownloadIcon size="sm" className="shrink-0" />}
         {fetching ? 'Fetching…' : 'Fetch'}
       </Button>
     </div>

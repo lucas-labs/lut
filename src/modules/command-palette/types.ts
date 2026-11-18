@@ -1,14 +1,12 @@
 import type { ShortcutId } from '@/modules/shortcuts';
-import type { TerminalIcon } from '@hugeicons/core-free-icons';
-
-type PaletteIcon = typeof TerminalIcon;
+import type { LutIconComponent } from '@lut/lut-icons';
 
 export type PaletteItem = {
   id: string;
   title: string;
   group: string;
   keywords?: string[];
-  icon?: PaletteIcon;
+  icon?: LutIconComponent;
   iconUrl?: string;
   shortcutId?: ShortcutId;
   trailing?: string;

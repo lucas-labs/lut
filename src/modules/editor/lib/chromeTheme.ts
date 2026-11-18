@@ -2,77 +2,61 @@ import { detectMonoFontFamily } from '@/lib/fonts';
 import type { Extension } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import {
-  AbsoluteIcon,
-  BoxIcon,
-  BracketsIcon,
-  CodeIcon,
-  File01Icon,
-  FlashIcon,
-  Folder01Icon,
-  FunctionIcon,
-  HashtagIcon,
-  Key01Icon,
-  LeftToRightListBulletIcon,
-  MathIcon,
-  PackageIcon,
-  PuzzleIcon,
-  TextFontIcon,
-} from '@hugeicons/core-free-icons';
+  AbsoluteIconData,
+  BoxIconData,
+  BracketsIconData,
+  BulletListIconData,
+  CodeIconData,
+  FileIconData,
+  FlashIconData,
+  FolderIconData,
+  FunctionIconData,
+  HashtagIconData,
+  KeyIconData,
+  type LutIconData,
+  MathIconData,
+  PackageIconData,
+  PuzzleIconData,
+  TextFontIconData,
+  toSvgString,
+} from '@lut/lut-icons/data';
 
 type IconGroup = 'fn' | 'val' | 'type' | 'iface' | 'misc';
 type ThemeSpec = Parameters<typeof EditorView.theme>[0];
-type IconDef = readonly (readonly [string, Record<string, string | number>])[];
 
-const SVG_ATTR: Record<string, string> = {
-  strokeWidth: 'stroke-width',
-  strokeLinecap: 'stroke-linecap',
-  strokeLinejoin: 'stroke-linejoin',
-  fillRule: 'fill-rule',
-  clipRule: 'clip-rule',
-};
-
-function iconMask(icon: IconDef): string {
-  const body = icon
-    .map(([tag, attrs]) => {
-      const a = Object.entries(attrs)
-        .filter(([k]) => k !== 'key')
-        .map(([k, v]) => `${SVG_ATTR[k] ?? k}="${v}"`)
-        .join(' ');
-      return `<${tag} ${a}/>`;
-    })
-    .join('');
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">${body}</svg>`;
-  return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+/** A completion kind's icon as a CSS mask, at the 14 px of `.cm-completionIcon`. */
+function iconMask(icon: LutIconData): string {
+  return `url("data:image/svg+xml,${encodeURIComponent(toSvgString(icon, 'sm'))}")`;
 }
 
-const ICONS: [kind: string, icon: IconDef, group: IconGroup][] = [
-  ['function', FunctionIcon, 'fn'],
-  ['method', FunctionIcon, 'fn'],
-  ['constructor', FunctionIcon, 'fn'],
-  ['variable', AbsoluteIcon, 'val'],
-  ['property', HashtagIcon, 'val'],
-  ['field', HashtagIcon, 'val'],
-  ['class', BoxIcon, 'type'],
-  ['struct', BoxIcon, 'type'],
-  ['enum', LeftToRightListBulletIcon, 'type'],
-  ['enummember', LeftToRightListBulletIcon, 'type'],
-  ['event', FlashIcon, 'type'],
-  ['interface', PuzzleIcon, 'iface'],
-  ['type', BracketsIcon, 'iface'],
-  ['typeparameter', BracketsIcon, 'iface'],
-  ['namespace', PackageIcon, 'iface'],
-  ['module', PackageIcon, 'iface'],
-  ['keyword', Key01Icon, 'misc'],
-  ['constant', MathIcon, 'misc'],
-  ['snippet', CodeIcon, 'misc'],
-  ['text', TextFontIcon, 'misc'],
-  ['unit', CodeIcon, 'misc'],
-  ['value', CodeIcon, 'misc'],
-  ['operator', CodeIcon, 'misc'],
-  ['reference', CodeIcon, 'misc'],
-  ['file', File01Icon, 'misc'],
-  ['folder', Folder01Icon, 'misc'],
-  ['color', CodeIcon, 'misc'],
+const ICONS: [kind: string, icon: LutIconData, group: IconGroup][] = [
+  ['function', FunctionIconData, 'fn'],
+  ['method', FunctionIconData, 'fn'],
+  ['constructor', FunctionIconData, 'fn'],
+  ['variable', AbsoluteIconData, 'val'],
+  ['property', HashtagIconData, 'val'],
+  ['field', HashtagIconData, 'val'],
+  ['class', BoxIconData, 'type'],
+  ['struct', BoxIconData, 'type'],
+  ['enum', BulletListIconData, 'type'],
+  ['enummember', BulletListIconData, 'type'],
+  ['event', FlashIconData, 'type'],
+  ['interface', PuzzleIconData, 'iface'],
+  ['type', BracketsIconData, 'iface'],
+  ['typeparameter', BracketsIconData, 'iface'],
+  ['namespace', PackageIconData, 'iface'],
+  ['module', PackageIconData, 'iface'],
+  ['keyword', KeyIconData, 'misc'],
+  ['constant', MathIconData, 'misc'],
+  ['snippet', CodeIconData, 'misc'],
+  ['text', TextFontIconData, 'misc'],
+  ['unit', CodeIconData, 'misc'],
+  ['value', CodeIconData, 'misc'],
+  ['operator', CodeIconData, 'misc'],
+  ['reference', CodeIconData, 'misc'],
+  ['file', FileIconData, 'misc'],
+  ['folder', FolderIconData, 'misc'],
+  ['color', CodeIconData, 'misc'],
 ];
 
 const GROUP_COLORS: Record<IconGroup, { light: string; dark: string }> = {

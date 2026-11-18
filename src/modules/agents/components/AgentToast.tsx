@@ -22,7 +22,7 @@ export function showAgentToast({ agent, title, body, onActivate }: AgentToastArg
     ) : (
       body
     ),
-    icon: <AgentIcon agent={agent} size={18} />,
+    icon: <AgentIcon agent={agent} size="md" />,
     action: { label: 'Open', onClick: onActivate },
     duration: 6000,
   });

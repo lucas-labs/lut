@@ -1,15 +1,6 @@
 import { isExternalUrl } from '@/lib/external-link';
 import { cn } from '@/lib/utils';
-import {
-  Alert02Icon,
-  AlertCircleIcon,
-  AlertDiamondIcon,
-  BulbIcon,
-  Image01Icon,
-  InformationCircleIcon,
-  Tick02Icon,
-} from '@hugeicons/core-free-icons';
-import { HugeiconsIcon, type IconSvgElement } from '@hugeicons/react';
+import { AlertIcon, BulbIcon, CheckmarkIcon, ImageIcon, InfoIcon, type LutIconComponent } from '@lut/lut-icons';
 import { type ComponentProps, type CSSProperties, type MouseEvent, type ReactNode, useContext } from 'react';
 import { MarkdownCode } from './code/markdown-code';
 import { REFUSED_IMAGE_TAG } from './lib/assetPath';
@@ -28,12 +19,12 @@ type HastElement = {
   children?: HastElement[];
 };
 
-const ALERTS: Record<AlertKind, { title: string; icon: IconSvgElement; color: string }> = {
-  note: { title: 'Note', icon: InformationCircleIcon, color: 'var(--info)' },
+const ALERTS: Record<AlertKind, { title: string; icon: LutIconComponent; color: string }> = {
+  note: { title: 'Note', icon: InfoIcon, color: 'var(--info)' },
   tip: { title: 'Tip', icon: BulbIcon, color: 'var(--terminal-ansi-green)' },
-  important: { title: 'Important', icon: AlertDiamondIcon, color: 'var(--terminal-ansi-magenta)' },
-  warning: { title: 'Warning', icon: Alert02Icon, color: 'var(--warning)' },
-  caution: { title: 'Caution', icon: AlertCircleIcon, color: 'var(--destructive)' },
+  important: { title: 'Important', icon: AlertIcon, color: 'var(--terminal-ansi-magenta)' },
+  warning: { title: 'Warning', icon: AlertIcon, color: 'var(--warning)' },
+  caution: { title: 'Caution', icon: AlertIcon, color: 'var(--destructive)' },
 };
 
 const isAlertKind = (value: unknown): value is AlertKind => typeof value === 'string' && value in ALERTS;
@@ -112,7 +103,7 @@ function TaskBox({ node: _node, type, checked, className, ...props }: HastProps<
           checked ? 'border-primary bg-primary' : 'border-muted-foreground/50',
         )}
       />
-      {checked && <HugeiconsIcon icon={Tick02Icon} size={10} strokeWidth={3} aria-hidden className="relative" />}
+      {checked && <CheckmarkIcon size="xs" aria-hidden className="relative" />}
     </span>
   );
 }
@@ -130,7 +121,7 @@ function Blockquote({ node: _node, className, children, ...props }: HastProps<'b
       >
         <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] bg-(--alert)" />
         <p className="mb-0.5 flex items-center gap-1.5 text-[12px] leading-4 font-semibold text-(--alert)">
-          <HugeiconsIcon icon={alert.icon} size={13} strokeWidth={2} aria-hidden />
+          <alert.icon size="sm" aria-hidden />
           {alert.title}
         </p>
         {children}
@@ -219,7 +210,7 @@ function RefusedImage({ 'data-src': src }: { 'data-src'?: string; children?: Rea
       data-image-placeholder
       className="flex h-40 flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-muted-foreground/40 bg-card font-mono text-[11px] text-muted-foreground"
     >
-      <HugeiconsIcon icon={Image01Icon} size={22} strokeWidth={1.5} aria-hidden />
+      <ImageIcon size="lg" aria-hidden />
       <span className="max-w-full truncate px-4">
         <span className="sr-only">Image not loaded: </span>
         {src}

@@ -4,8 +4,7 @@ import { cn } from '@/lib/utils';
 import { FileIcon } from '@/modules/explorer/FileIcon';
 import { gitStatusTextClass } from '@/modules/explorer/lib/gitStatusColor';
 import type { GitCommitFileChange, GitLogEntry } from '@/modules/git';
-import { Copy01Icon, LinkSquare02Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { CopyIcon, LinkIcon } from '@lut/lut-icons';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { memo, type ReactNode, useEffect, useState } from 'react';
 import { RefChip } from './CommitRow';
@@ -90,12 +89,12 @@ export function CommitDetail({ commit, filesEntry, remoteWeb, onCopySha, onOpenF
               setCopied(true);
             }}
           >
-            <HugeiconsIcon icon={Copy01Icon} size={13} strokeWidth={1.5} />
+            <CopyIcon size="sm" />
             {copied ? 'Copied' : 'Copy SHA'}
           </DetailAction>
           {webUrl && remoteWeb ? (
             <DetailAction onClick={() => void openUrl(webUrl).catch(console.error)}>
-              <HugeiconsIcon icon={LinkSquare02Icon} size={13} strokeWidth={1.5} />
+              <LinkIcon size="sm" />
               {hostLabel(remoteWeb)}
             </DetailAction>
           ) : null}
@@ -128,7 +127,7 @@ function CommitFiles({
   if (!filesEntry || filesEntry.state === 'loading') {
     return (
       <div className="flex items-center gap-2 px-3 py-3 text-xs text-muted-foreground">
-        <Spinner className="size-3" />
+        <Spinner size="xs" />
         Loading files…
       </div>
     );

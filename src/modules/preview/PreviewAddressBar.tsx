@@ -6,8 +6,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { ArrowDown01Icon, ArrowReloadHorizontalIcon, Globe02Icon, LinkSquare02Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { ChevronIcon, GlobeIcon, LinkIcon, RefreshIcon } from '@lut/lut-icons';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 
@@ -105,14 +104,14 @@ export const PreviewAddressBar = forwardRef<PreviewAddressBarHandle, Props>(func
     <div className="shrink-0 border-b border-border">
       <div className="flex h-11 items-center gap-2 px-4">
         <Button variant="ghost" size="icon-sm" onClick={onReload} title="Reload" aria-label="Reload">
-          <HugeiconsIcon icon={ArrowReloadHorizontalIcon} size={13} strokeWidth={1.5} />
+          <RefreshIcon size="sm" />
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline-subtle" size="sm" title="Common dev-server ports">
-              <HugeiconsIcon icon={Globe02Icon} size={13} strokeWidth={1.5} className="shrink-0" />
+              <GlobeIcon size="sm" className="shrink-0" />
               <span className="hidden sm:inline">Ports</span>
-              <HugeiconsIcon icon={ArrowDown01Icon} size={12} strokeWidth={1.75} className="shrink-0" />
+              <ChevronIcon rotate={90} size="xs" className="shrink-0" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="max-h-80 min-w-56 overflow-y-auto">
@@ -164,7 +163,7 @@ export const PreviewAddressBar = forwardRef<PreviewAddressBarHandle, Props>(func
           aria-label="Open in system browser"
           disabled={!url}
         >
-          <HugeiconsIcon icon={LinkSquare02Icon} size={13} strokeWidth={1.5} />
+          <LinkIcon size="sm" />
         </Button>
       </div>
       {notice ? (

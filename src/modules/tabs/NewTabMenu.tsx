@@ -12,16 +12,15 @@ import { AgentLauncherPanel } from '@/modules/agents/components/AgentLauncherPan
 import type { AgentLaunchRequest } from '@/modules/agents/lib/launcher';
 import { ShortcutKeys, useShortcutLabel } from '@/modules/shortcuts';
 import {
-  AiBrowserIcon,
-  ArrowRight01Icon,
-  ComputerTerminal02Icon,
+  ChevronIcon,
+  FileEditIcon,
   GitBranchIcon,
-  Globe02Icon,
+  GlobeIcon,
   IncognitoIcon,
-  PencilEdit02Icon,
-  PlusSignIcon,
-} from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+  PlusIcon,
+  SparklesIcon,
+  TerminalIcon,
+} from '@lut/lut-icons';
 import { useRef, useState } from 'react';
 
 type Props = {
@@ -78,7 +77,7 @@ export function NewTabMenu({
           <DropdownMenu open={menuOpen} onOpenChange={onMenuOpenChange}>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon-sm" aria-label="New tab" title="New tab">
-                <HugeiconsIcon icon={PlusSignIcon} size={size === 'rail' ? 16 : 14} strokeWidth={1.5} />
+                <PlusIcon size={size === 'rail' ? 'md' : 'sm'} />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -93,40 +92,40 @@ export function NewTabMenu({
               }}
             >
               <DropdownMenuItem onSelect={onNew}>
-                <HugeiconsIcon icon={ComputerTerminal02Icon} size={14} strokeWidth={1.5} />
+                <TerminalIcon size="sm" />
                 <span className="flex-1">Terminal</span>
                 <DropdownMenuShortcut>
                   <ShortcutKeys label={terminalHint} />
                 </DropdownMenuShortcut>
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={openLauncher}>
-                <HugeiconsIcon icon={AiBrowserIcon} size={14} strokeWidth={1.5} />
+                <SparklesIcon size="sm" />
                 <span className="flex-1">Agents</span>
-                <HugeiconsIcon icon={ArrowRight01Icon} size={14} strokeWidth={1.5} className="text-muted-foreground" />
+                <ChevronIcon size="sm" className="text-muted-foreground" />
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={onNewPrivate}>
-                <HugeiconsIcon icon={IncognitoIcon} size={14} strokeWidth={1.5} />
+                <IncognitoIcon size="sm" />
                 <span className="flex-1">Privacy</span>
                 <DropdownMenuShortcut>
                   <ShortcutKeys label={privateHint} />
                 </DropdownMenuShortcut>
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={onNewEditor}>
-                <HugeiconsIcon icon={PencilEdit02Icon} size={14} strokeWidth={1.5} />
+                <FileEditIcon size="sm" />
                 <span className="flex-1">Editor</span>
                 <DropdownMenuShortcut>
                   <ShortcutKeys label={editorHint} />
                 </DropdownMenuShortcut>
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={onNewPreview}>
-                <HugeiconsIcon icon={Globe02Icon} size={14} strokeWidth={1.5} />
+                <GlobeIcon size="sm" />
                 <span className="flex-1">Preview</span>
                 <DropdownMenuShortcut>
                   <ShortcutKeys label={previewHint} />
                 </DropdownMenuShortcut>
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={onNewGitGraph}>
-                <HugeiconsIcon icon={GitBranchIcon} size={14} strokeWidth={1.5} />
+                <GitBranchIcon size="sm" />
                 <span className="flex-1">Git Graph</span>
               </DropdownMenuItem>
             </DropdownMenuContent>

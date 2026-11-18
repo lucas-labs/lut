@@ -17,8 +17,7 @@ import {
   TabStatus,
 } from '@/modules/navigation';
 import { ShortcutKeys, useShortcutLabel } from '@/modules/shortcuts';
-import { ArrowRight01Icon, Cancel01Icon, CancelCircleIcon, PencilEdit02Icon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { CancelCircleIcon, ChevronIcon, PencilIcon, XIcon } from '@lut/lut-icons';
 import { Fragment, type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { NewTabMenu } from './NewTabMenu';
 
@@ -268,22 +267,22 @@ export function TabNavigator({
           <ContextMenuContent className="min-w-56" onCloseAutoFocus={(e) => e.preventDefault()}>
             {t.renamable && (
               <ContextMenuItem onSelect={() => setEditingId(t.id)}>
-                <HugeiconsIcon icon={PencilEdit02Icon} size={14} strokeWidth={1.5} />
+                <PencilIcon size="sm" />
                 <span className="flex-1">Rename</span>
               </ContextMenuItem>
             )}
             {t.renamable && <ContextMenuSeparator />}
             <ContextMenuItem disabled={!hasTabsAfter} onSelect={() => actions.closeToEnd(t.id)}>
-              <HugeiconsIcon icon={ArrowRight01Icon} size={14} strokeWidth={1.5} />
+              <ChevronIcon size="sm" />
               <span className="flex-1">{vertical ? 'Close tabs below' : 'Close tabs to the right'}</span>
             </ContextMenuItem>
             <ContextMenuItem disabled={items.length <= 1} onSelect={() => actions.closeOthers(t.id)}>
-              <HugeiconsIcon icon={CancelCircleIcon} size={14} strokeWidth={1.5} />
+              <CancelCircleIcon size="sm" />
               <span className="flex-1">Close other tabs</span>
             </ContextMenuItem>
             <ContextMenuSeparator />
             <ContextMenuItem disabled={items.length <= 1} onSelect={() => actions.close(t.id)}>
-              <HugeiconsIcon icon={Cancel01Icon} size={14} strokeWidth={1.75} />
+              <XIcon size="sm" />
               <span className="flex-1">Close tab</span>
               {t.active && closeHint ? (
                 <ContextMenuShortcut>

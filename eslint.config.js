@@ -1,4 +1,5 @@
-// ESLint flat config. Replaces the Biome linter (E01-16) with the same scope `pnpm lint` had (`src/`).
+// ESLint flat config. Replaces the Biome linter (E01-16) with the same scope `pnpm lint` had (`src/`), plus the
+// lut-icons package's TypeScript.
 //
 // Rules that report pre-existing violations are warnings, with their counts recorded in
 // .docs/testing/baseline.md; new code should not add to them.
@@ -16,7 +17,7 @@ export default tseslint.config(
     ignores: ['src/components/ui/**'],
   },
   {
-    files: ['src/**/*.{ts,tsx}'],
+    files: ['src/**/*.{ts,tsx}', 'packages/lut-icons/src/**/*.{ts,tsx}'],
     extends: [
       js.configs.recommended,
       ...tseslint.configs.recommended,

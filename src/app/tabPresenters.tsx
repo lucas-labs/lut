@@ -12,14 +12,15 @@ import { registerTabPresenter, type Tab, type TerminalTab, useNavigationStore } 
 import { selectTabAgentStatus } from '@/modules/tabs';
 import { leafIds, ptyIdForLeaf, useAgentActivityStore } from '@/modules/terminal';
 import {
-  CheckmarkCircle01Icon,
-  Clock01Icon,
+  AlertFilledIcon,
+  CheckmarkCircleIcon,
+  CheckmarkIcon,
+  ClockIcon,
   GitCompareIcon,
-  Globe02Icon,
+  GlobeIcon,
   IncognitoIcon,
-  Tick02Icon,
-} from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+  SpinnerIcon,
+} from '@lut/lut-icons';
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -36,7 +37,7 @@ function terminalPtyIds(tab: TerminalTab): number[] {
 /** A private terminal is marked by its icon; other terminals have none until profiles give them one. */
 function TerminalTabIcon({ tab }: { tab: Tab }) {
   if (tab.kind !== 'terminal' || !tab.private) return null;
-  return <HugeiconsIcon icon={IncognitoIcon} size={13} strokeWidth={1.75} className="shrink-0 text-muted-foreground" />;
+  return <IncognitoIcon size="sm" className="shrink-0 text-muted-foreground" />;
 }
 
 /**
@@ -50,18 +51,7 @@ function TerminalTabStatus({ tab }: { tab: Tab }) {
   if (state === 'working') {
     return (
       <>
-        <svg
-          viewBox="0 0 24 24"
-          aria-hidden
-          className="size-3 shrink-0 animate-spin"
-          fill="none"
-          strokeWidth={2.5}
-          strokeLinecap="round"
-        >
-          <circle cx="12" cy="12" r="8" className="stroke-primary/25" />
-          <path d="M12 4a8 8 0 0 1 8 8" className="stroke-primary" />
-          <title>Working</title>
-        </svg>
+        <SpinnerIcon size="xs" className="shrink-0 animate-spin text-primary" />
         <span className="sr-only">Working</span>
       </>
     );
@@ -69,24 +59,17 @@ function TerminalTabStatus({ tab }: { tab: Tab }) {
   if (state === 'attention') {
     return (
       <>
-        <svg viewBox="0 0 24 24" aria-hidden className="size-3 shrink-0">
-          <title>Needs attention</title>
-          <path d="M12 3 2 20h20L12 3z" className="fill-warning" />
-          <path d="M12 10v4M12 17h.01" className="stroke-background" strokeWidth={2.2} strokeLinecap="round" />
-        </svg>
+        <AlertFilledIcon size="xs" className="shrink-0 text-warning" />
         <span className="sr-only">Needs attention</span>
       </>
     );
   }
   if (state === 'finished') {
     return (
-      <HugeiconsIcon
-        icon={CheckmarkCircle01Icon}
-        size={12}
-        strokeWidth={2}
-        aria-label="Finished"
-        className="shrink-0 text-success"
-      />
+      <>
+        <CheckmarkCircleIcon size="xs" className="shrink-0 text-success" />
+        <span className="sr-only">Finished</span>
+      </>
     );
   }
   return null;
@@ -147,7 +130,7 @@ function EditorTabLanguageMenu({ tab }: { tab: Tab }) {
             <span>Auto Detect</span>
             <span className="text-[10px] text-muted-foreground italic">Mode: {resolveDisplayName(tab.title)}</span>
           </div>
-          {!tab.overrideLanguage && <HugeiconsIcon icon={Tick02Icon} className="size-3.5 text-primary" />}
+          {!tab.overrideLanguage && <CheckmarkIcon size="sm" className="text-primary" />}
         </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={(e) => {
@@ -167,7 +150,7 @@ function EditorTabLanguageMenu({ tab }: { tab: Tab }) {
           >
             <FileIcon name={`dummy.${lang.ext}`} className="size-3.5 shrink-0 object-contain" />
             <span className="flex-1">{lang.name}</span>
-            {tab.overrideLanguage === lang.ext && <HugeiconsIcon icon={Tick02Icon} className="size-3.5 text-primary" />}
+            {tab.overrideLanguage === lang.ext && <CheckmarkIcon size="sm" className="text-primary" />}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
@@ -175,15 +158,9 @@ function EditorTabLanguageMenu({ tab }: { tab: Tab }) {
   );
 }
 
-const PreviewTabIcon = () => (
-  <HugeiconsIcon icon={Globe02Icon} size={13} strokeWidth={1.75} className="shrink-0 text-muted-foreground" />
-);
-const GitDiffTabIcon = () => (
-  <HugeiconsIcon icon={GitCompareIcon} size={13} strokeWidth={1.75} className="shrink-0 text-muted-foreground" />
-);
-const GitHistoryTabIcon = () => (
-  <HugeiconsIcon icon={Clock01Icon} size={13} strokeWidth={1.75} className="shrink-0 text-muted-foreground" />
-);
+const PreviewTabIcon = () => <GlobeIcon size="sm" className="shrink-0 text-muted-foreground" />;
+const GitDiffTabIcon = () => <GitCompareIcon size="sm" className="shrink-0 text-muted-foreground" />;
+const GitHistoryTabIcon = () => <ClockIcon size="sm" className="shrink-0 text-muted-foreground" />;
 
 /** How each tab kind looks in the tab strip, the column, the switcher and the Spaces view. */
 export function registerTabPresenters() {

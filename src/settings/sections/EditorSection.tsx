@@ -26,8 +26,7 @@ import {
   setVimMode,
 } from '@/modules/settings/store';
 import { useShortcutHint } from '@/modules/shortcuts';
-import { Cancel01Icon, PlusSignIcon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { PlusIcon, XIcon } from '@lut/lut-icons';
 import { useState } from 'react';
 import { LspServersGroup } from '../components/LspServersGroup';
 import { NumberControl } from '../components/NumberControl';
@@ -281,7 +280,7 @@ function FormatterOverrides() {
                     update(next);
                   }}
                 >
-                  <HugeiconsIcon icon={Cancel01Icon} strokeWidth={1.75} />
+                  <XIcon size="sm" />
                 </Button>
               </div>
             ))}
@@ -297,7 +296,7 @@ function FormatterOverrides() {
           if (first) update({ ...byLang, [first.ext]: 'lsp' });
         }}
       >
-        <HugeiconsIcon icon={PlusSignIcon} strokeWidth={1.5} />
+        <PlusIcon size="sm" />
         Add override
       </Button>
     </SettingRow>

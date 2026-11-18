@@ -8,8 +8,7 @@ import type { AgentLaunchRequest } from '@/modules/agents/lib/launcher';
 import type { TabNavigatorActions, TabNavigatorItem } from '@/modules/navigation';
 import { dragRegion, IS_MAC, USE_CUSTOM_WINDOW_CONTROLS, useWindowFullScreen } from '@/modules/platform';
 import { TabNavigator } from '@/modules/tabs';
-import { SidebarLeftIcon, SlidersHorizontalIcon } from '@hugeicons/core-free-icons';
-import { HugeiconsIcon } from '@hugeicons/react';
+import { OptionsIcon, PanelArrowRightIcon } from '@lut/lut-icons';
 import { type RefObject, useEffect, useRef, useState } from 'react';
 import { CwdBreadcrumb } from './CwdBreadcrumb';
 import { SearchInline, type SearchInlineHandle, type SearchTarget } from './SearchInline';
@@ -144,7 +143,7 @@ function TitleBarRow({
         aria-pressed={sidePanelsOpen}
         title="Toggle sidebar"
       >
-        <HugeiconsIcon icon={SidebarLeftIcon} size={14} strokeWidth={1.5} />
+        <PanelArrowRightIcon size="sm" />
       </Button>
       {inline && (
         <TabNavigator
@@ -175,7 +174,7 @@ function TitleBarRow({
         title="Settings"
         className="mr-1.5"
       >
-        <HugeiconsIcon icon={SlidersHorizontalIcon} size={14} strokeWidth={1.5} />
+        <OptionsIcon size="sm" />
       </Button>
       {!inline && IS_MAC && appMark}
       {USE_CUSTOM_WINDOW_CONTROLS && <WindowControls />}

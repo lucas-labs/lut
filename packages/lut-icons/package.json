@@ -1,0 +1,17 @@
+{
+  "name": "@lut/lut-icons",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./data": "./src/data.ts",
+    "./lut-icons.json": "./lut-icons.json"
+  },
+  "scripts": {
+    "build": "node scripts/build-manifest.mjs && node scripts/generate.mjs"
+  },
+  "peerDependencies": {
+    "react": "^19.3.0"
+  }
+}
