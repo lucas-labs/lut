@@ -12,6 +12,7 @@ pub mod fs;
 pub mod git;
 pub mod lsp;
 pub mod proc;
+pub mod profiles;
 pub mod pty;
 pub mod runtime;
 pub mod shell;
