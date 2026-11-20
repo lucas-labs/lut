@@ -56,6 +56,20 @@ pub struct LaunchSpec {
     /// An absolute path, or a bare name looked up on `PATH`.
     pub program: String,
     pub args: Vec<String>,
+    /// PowerShell only: `false` starts it with `-NoProfile`, so it skips the user's profile
+    /// scripts while lut's own integration script still runs.
+    pub load_user_profile: bool,
+}
+
+impl LaunchSpec {
+    /// `program` with no arguments and the user's profile loaded.
+    pub fn new(program: String) -> Self {
+        Self {
+            program,
+            args: Vec::new(),
+            load_user_profile: true,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -256,7 +270,7 @@ fn uses_integration(kind: ShellKind, args: &[String], windows: bool) -> bool {
         return false;
     }
     let covered = |arg: &String| match kind {
-        ShellKind::Pwsh => arg.eq_ignore_ascii_case("-NoLogo"),
+        ShellKind::Pwsh => arg.eq_ignore_ascii_case("-NoLogo") || is_no_profile(arg),
         ShellKind::Bash | ShellKind::Zsh | ShellKind::Fish => {
             matches!(arg.as_str(), "-l" | "--login" | "-i")
         }
@@ -266,23 +280,50 @@ fn uses_integration(kind: ShellKind, args: &[String], windows: bool) -> bool {
     args.iter().all(covered)
 }
 
+fn is_no_profile(arg: &str) -> bool {
+    arg.eq_ignore_ascii_case("-NoProfile")
+}
+
+/// The arguments of a launch without lut's integration: the user's own, plus `-NoProfile` for a
+/// PowerShell that should skip the user's profile. It goes first, as PowerShell hands everything
+/// after `-File` or `-Command` to the script or command.
+fn bare_args(kind: ShellKind, user_args: &[String], load_user_profile: bool) -> Vec<String> {
+    let mut args = Vec::with_capacity(user_args.len() + 1);
+    if kind == ShellKind::Pwsh
+        && !load_user_profile
+        && !user_args.iter().any(|arg| is_no_profile(arg))
+    {
+        args.push("-NoProfile".to_string());
+    }
+    args.extend(user_args.iter().cloned());
+    args
+}
+
 /// The arguments of an integrated launch. `file` is lut's prepared integration file (the
 /// PowerShell profile, the bash rcfile), `None` when preparing it failed. The user's covered
 /// flags are kept where the integrated launch does not already imply them: bash's rcfile runs the
 /// login files itself (`--login` would make bash skip it), zsh already starts with `-l`, and
-/// PowerShell with `-NoLogo`.
-fn integrated_args(kind: ShellKind, user_args: &[String], file: Option<&str>) -> Vec<String> {
+/// PowerShell with `-NoLogo`. PowerShell skips the user's profile when `load_user_profile` is off
+/// or the user asked for `-NoProfile`; `-File` still runs lut's.
+fn integrated_args(
+    kind: ShellKind,
+    user_args: &[String],
+    file: Option<&str>,
+    load_user_profile: bool,
+) -> Vec<String> {
     let asked = |flags: &[&str]| user_args.iter().any(|arg| flags.contains(&arg.as_str()));
     let mut args: Vec<String> = Vec::new();
     match kind {
         ShellKind::Pwsh => match file {
             Some(profile) => {
-                args.extend(
-                    ["-NoLogo", "-NoExit", "-ExecutionPolicy", "Bypass", "-File"].map(String::from),
-                );
+                args.push("-NoLogo".into());
+                if !load_user_profile || user_args.iter().any(|arg| is_no_profile(arg)) {
+                    args.push("-NoProfile".into());
+                }
+                args.extend(["-NoExit", "-ExecutionPolicy", "Bypass", "-File"].map(String::from));
                 args.push(profile.to_string());
             }
-            None => args.extend(user_args.iter().cloned()),
+            None => args = bare_args(kind, user_args, load_user_profile),
         },
         ShellKind::Bash => {
             if let Some(rcfile) = file {
@@ -583,14 +624,15 @@ mod unix {
         launch: Option<super::LaunchSpec>,
         control: Option<super::ShellControlEnv>,
     ) -> Result<CommandBuilder, super::LaunchError> {
-        let (program, user_args) = match launch {
+        let (program, user_args, load_user_profile) = match launch {
             Some(spec) => (
                 super::resolve_program(&spec.program)?
                     .to_string_lossy()
                     .into_owned(),
                 spec.args,
+                spec.load_user_profile,
             ),
-            None => (default_shell(), Vec::new()),
+            None => (default_shell(), Vec::new(), true),
         };
         let mut cmd = CommandBuilder::new(&program);
         super::apply_common(&mut cmd, cwd, control.as_ref());
@@ -599,7 +641,7 @@ mod unix {
             apply_shell_init(&mut cmd, kind, &user_args);
         } else {
             log::info!("spawning '{program}' without shell integration");
-            cmd.args(&user_args);
+            cmd.args(super::bare_args(kind, &user_args, load_user_profile));
         }
         Ok(cmd)
     }
@@ -664,7 +706,13 @@ mod unix {
             }
             ShellKind::Pwsh | ShellKind::Cmd | ShellKind::Other => {}
         }
-        cmd.args(super::integrated_args(kind, user_args, file.as_deref()));
+        // Only PowerShell reads the profile option, and lut does not integrate it on Unix.
+        cmd.args(super::integrated_args(
+            kind,
+            user_args,
+            file.as_deref(),
+            true,
+        ));
     }
 
     fn integration_root() -> Result<PathBuf, String> {
@@ -826,9 +874,13 @@ mod windows {
             let _ = (launch, control);
             return build_wsl(cwd, distro).map_err(super::LaunchError::Failed);
         }
-        let (program, user_args) = match launch {
-            Some(spec) => (super::resolve_program(&spec.program)?, spec.args),
-            None => (super::windows_shell_path(), Vec::new()),
+        let (program, user_args, load_user_profile) = match launch {
+            Some(spec) => (
+                super::resolve_program(&spec.program)?,
+                spec.args,
+                spec.load_user_profile,
+            ),
+            None => (super::windows_shell_path(), Vec::new(), true),
         };
         let mut cmd = CommandBuilder::new(&program);
         super::apply_common(&mut cmd, cwd, control.as_ref());
@@ -840,7 +892,14 @@ mod windows {
             log::info!("spawning {} without shell integration", program.display());
             None
         };
-        apply_launch(&mut cmd, kind, integrated, &user_args, file.as_deref());
+        apply_launch(
+            &mut cmd,
+            kind,
+            integrated,
+            &user_args,
+            file.as_deref(),
+            load_user_profile,
+        );
         log::info!("spawning Windows program: {}", program.display());
         Ok(cmd)
     }
@@ -868,6 +927,7 @@ mod windows {
         integrated: bool,
         user_args: &[String],
         file: Option<&str>,
+        load_user_profile: bool,
     ) {
         if kind == ShellKind::Bash {
             // git-bash's /etc/profile cd's to $HOME unless CHERE_INVOKING is set; keep the cwd
@@ -875,7 +935,7 @@ mod windows {
             cmd.env("CHERE_INVOKING", "1");
         }
         if !integrated {
-            cmd.args(user_args);
+            cmd.args(super::bare_args(kind, user_args, load_user_profile));
             return;
         }
         if kind == ShellKind::Cmd {
@@ -883,7 +943,12 @@ mod windows {
             let existing = std::env::var("PROMPT").ok();
             cmd.env("PROMPT", super::cmd_prompt(&host, existing.as_deref()));
         }
-        cmd.args(super::integrated_args(kind, user_args, file));
+        cmd.args(super::integrated_args(
+            kind,
+            user_args,
+            file,
+            load_user_profile,
+        ));
     }
 
     fn build_wsl(cwd: Option<String>, distro: String) -> Result<CommandBuilder, String> {
@@ -1258,6 +1323,7 @@ mod windows {
                 integrated,
                 &user_args,
                 file,
+                true,
             );
             cmd
         }
@@ -1637,9 +1703,9 @@ mod tests {
     use std::path::PathBuf;
 
     use super::{
-        apply_common, cmd_prompt, find_in_dirs, integrated_args, is_shell, parse_etc_shells,
-        resolve_program, unique_shell_paths, uses_integration, LaunchError, ShellControlEnv,
-        ShellKind, FISH_REINSTALL_PROMPT,
+        apply_common, bare_args, cmd_prompt, find_in_dirs, integrated_args, is_shell,
+        parse_etc_shells, resolve_program, unique_shell_paths, uses_integration, LaunchError,
+        ShellControlEnv, ShellKind, FISH_REINSTALL_PROMPT,
     };
 
     fn strings(args: &[&str]) -> Vec<String> {
@@ -1801,12 +1867,7 @@ mod tests {
     fn only_flags_the_integrated_launch_covers_keep_integration() {
         assert!(uses_integration(
             ShellKind::Pwsh,
-            &strings(&["-nologo"]),
-            true
-        ));
-        assert!(!uses_integration(
-            ShellKind::Pwsh,
-            &strings(&["-NoProfile"]),
+            &strings(&["-nologo", "-noprofile"]),
             true
         ));
         assert!(!uses_integration(
@@ -1850,38 +1911,100 @@ mod tests {
                 integrated_args(
                     ShellKind::Pwsh,
                     &strings(user),
-                    Some(r"C:\cache\profile.ps1")
+                    Some(r"C:\cache\profile.ps1"),
+                    true
                 ),
                 expected
             );
         }
         // Without lut's profile, PowerShell starts as the user asked.
         assert_eq!(
-            integrated_args(ShellKind::Pwsh, &strings(&["-NoLogo"]), None),
+            integrated_args(ShellKind::Pwsh, &strings(&["-NoLogo"]), None, true),
             strings(&["-NoLogo"])
         );
+    }
+
+    #[test]
+    fn pwsh_can_skip_the_users_profile_and_still_run_luts() {
+        let expected = strings(&[
+            "-NoLogo",
+            "-NoProfile",
+            "-NoExit",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            r"C:\cache\profile.ps1",
+        ]);
+        let file = Some(r"C:\cache\profile.ps1");
+        // The profile option, or -NoProfile among the arguments, in any case.
+        for (user, load_user_profile) in [
+            (&[][..], false),
+            (&["-NoProfile"][..], true),
+            (&["-noprofile", "-NoLogo"][..], true),
+            (&["-NoProfile"][..], false),
+        ] {
+            assert_eq!(
+                integrated_args(ShellKind::Pwsh, &strings(user), file, load_user_profile),
+                expected,
+                "{user:?} {load_user_profile}"
+            );
+        }
+        // Without lut's profile it is still skipped.
+        assert_eq!(
+            integrated_args(ShellKind::Pwsh, &[], None, false),
+            strings(&["-NoProfile"])
+        );
+    }
+
+    #[test]
+    fn a_bare_pwsh_skips_the_users_profile_before_its_own_arguments() {
+        // Everything after -Command goes to the command: -NoProfile must come first.
+        assert_eq!(
+            bare_args(ShellKind::Pwsh, &strings(&["-Command", "Get-Date"]), false),
+            strings(&["-NoProfile", "-Command", "Get-Date"])
+        );
+        // Not twice when the user already asked for it.
+        assert_eq!(
+            bare_args(ShellKind::Pwsh, &strings(&["-NOPROFILE", "-c", "x"]), false),
+            strings(&["-NOPROFILE", "-c", "x"])
+        );
+        assert_eq!(
+            bare_args(ShellKind::Pwsh, &strings(&["-c", "x"]), true),
+            strings(&["-c", "x"])
+        );
+        // Other programs ignore the option.
+        for kind in [ShellKind::Bash, ShellKind::Cmd, ShellKind::Other] {
+            assert_eq!(
+                bare_args(kind, &strings(&["-c", "x"]), false),
+                strings(&["-c", "x"]),
+                "{kind:?}"
+            );
+        }
     }
 
     #[test]
     fn bash_runs_lut_rcfile_which_does_the_login() {
         for user in [&[][..], &["-l"][..], &["--login", "-i"][..]] {
             assert_eq!(
-                integrated_args(ShellKind::Bash, &strings(user), Some("/cache/bashrc")),
+                integrated_args(ShellKind::Bash, &strings(user), Some("/cache/bashrc"), true),
                 strings(&["--rcfile", "/cache/bashrc", "-i"]),
                 "{user:?}"
             );
         }
         assert_eq!(
-            integrated_args(ShellKind::Bash, &[], None),
+            integrated_args(ShellKind::Bash, &[], None, true),
             strings(&["-i"])
         );
     }
 
     #[test]
     fn zsh_is_a_login_shell_and_keeps_an_asked_interactive_flag() {
-        assert_eq!(integrated_args(ShellKind::Zsh, &[], None), strings(&["-l"]));
         assert_eq!(
-            integrated_args(ShellKind::Zsh, &strings(&["--login", "-i"]), None),
+            integrated_args(ShellKind::Zsh, &[], None, true),
+            strings(&["-l"])
+        );
+        assert_eq!(
+            integrated_args(ShellKind::Zsh, &strings(&["--login", "-i"]), None, true),
             strings(&["-l", "-i"])
         );
     }
@@ -1889,11 +2012,11 @@ mod tests {
     #[test]
     fn fish_reinstalls_lut_prompt_last_and_keeps_an_asked_login() {
         assert_eq!(
-            integrated_args(ShellKind::Fish, &[], None),
+            integrated_args(ShellKind::Fish, &[], None, true),
             strings(&["-i", "-C", FISH_REINSTALL_PROMPT])
         );
         assert_eq!(
-            integrated_args(ShellKind::Fish, &strings(&["--login"]), None),
+            integrated_args(ShellKind::Fish, &strings(&["--login"]), None, true),
             strings(&["-l", "-i", "-C", FISH_REINSTALL_PROMPT])
         );
     }
@@ -1901,7 +2024,7 @@ mod tests {
     #[test]
     fn cmd_keeps_its_arguments() {
         assert_eq!(
-            integrated_args(ShellKind::Cmd, &strings(&["/k", "init.bat"]), None),
+            integrated_args(ShellKind::Cmd, &strings(&["/k", "init.bat"]), None, true),
             strings(&["/k", "init.bat"])
         );
     }

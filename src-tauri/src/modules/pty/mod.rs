@@ -189,10 +189,7 @@ pub async fn pty_open(
     let launch = shell
         .map(|program| program.trim().to_string())
         .filter(|program| !program.is_empty())
-        .map(|program| shell_init::LaunchSpec {
-            program,
-            args: Vec::new(),
-        });
+        .map(shell_init::LaunchSpec::new);
     // A Windows helper cannot execute inside WSL without explicit path and
     // network translation. Do not inject credentials for a broken command.
     let control_env = if workspace.is_wsl() {

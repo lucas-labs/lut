@@ -19,6 +19,10 @@ pub struct TerminalProfile {
     /// Variables set on top of the inherited environment.
     #[serde(default)]
     pub env: BTreeMap<String, String>,
+    /// PowerShell only: `false` skips the user's profile scripts (`-NoProfile`) while lut's
+    /// integration still loads. Other programs ignore it.
+    #[serde(default = "load_user_profile_default")]
+    pub load_user_profile: bool,
     /// A plain string, as it may be a path inside a WSL distro.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub starting_directory: Option<String>,
@@ -30,6 +34,10 @@ pub struct TerminalProfile {
     pub tab: ProfileTab,
     #[serde(default)]
     pub close_behavior: CloseBehavior,
+}
+
+fn load_user_profile_default() -> bool {
+    true
 }
 
 /// Where the executable runs: on the host, or inside a WSL distro (the default one when unset).
@@ -142,6 +150,7 @@ mod tests {
             executable: Some("bash".into()),
             args: vec!["-l".into()],
             env: BTreeMap::from([("EDITOR".into(), "nvim".into())]),
+            load_user_profile: false,
             starting_directory: Some("~/code".into()),
             environment: ProfileEnvironment::Wsl {
                 distro: Some("Ubuntu-24.04".into()),
@@ -177,6 +186,7 @@ mod tests {
                 "executable": "bash",
                 "args": ["-l"],
                 "env": { "EDITOR": "nvim" },
+                "loadUserProfile": false,
                 "startingDirectory": "~/code",
                 "environment": { "kind": "wsl", "distro": "Ubuntu-24.04" },
                 "appearance": {
@@ -209,6 +219,7 @@ mod tests {
         .unwrap();
         assert!(profile.args.is_empty());
         assert!(profile.env.is_empty());
+        assert!(profile.load_user_profile);
         assert_eq!(profile.starting_directory, None);
         assert_eq!(profile.environment, ProfileEnvironment::Native);
         assert_eq!(profile.appearance, ProfileAppearance::default());
