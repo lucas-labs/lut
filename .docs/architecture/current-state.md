@@ -208,9 +208,9 @@ The tables below list each one with the frontend files that call it; for the wra
 
 **Commands without a real caller (1):**
 
-| Commands                 | Why                                                   | Removed by |
-| ------------------------ | ----------------------------------------------------- | ---------- |
-| `wsl_default_distro`     | No caller; kept as an input for WSL profile detection | (E14-06)   |
+| Commands             | Why                                                   | Removed by |
+| -------------------- | ----------------------------------------------------- | ---------- |
+| `wsl_default_distro` | No caller; kept as an input for WSL profile detection | (E14-06)   |
 
 **Callers the running app never loads:** `agent_decisions_ready` and `agent_decision_respond`
 (`modules/control/lib/agentDecisions.ts`) and `agent_disable_hooks`, `agent_hooks_plan`, `agent_hooks_apply` (only

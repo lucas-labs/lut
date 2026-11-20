@@ -12,7 +12,6 @@ const defaults = {
   terminalCursorStyle: 'bar',
   terminalFontFamily: '',
   terminalFontWeight: 'normal',
-  terminalShell: '',
   defaultWorkspaceEnv: 'local',
   terminalLetterSpacing: 0,
   terminalFontSize: 14,
@@ -32,7 +31,35 @@ vi.mock('@/modules/settings/store', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   ...store,
 }));
-vi.mock('@tauri-apps/api/core', () => ({ invoke: () => Promise.resolve([]) }));
+const native = vi.hoisted(() => ({
+  profiles: {
+    profiles: [
+      { id: 'detected:pwsh', name: 'PowerShell', executable: 'C:/pwsh.exe', hidden: false },
+      { id: 'detected:cmd', name: 'Command Prompt', executable: 'C:/cmd.exe', hidden: true },
+      { id: 'detected:wsl:Ubuntu', name: 'Ubuntu', hidden: false },
+    ],
+    defaultProfileId: 'detected:pwsh' as string | null,
+  },
+  shells: [{ name: 'Command Prompt', path: 'C:/cmd.exe', integrated: false }],
+  setDefault: vi.fn(async (_id: string) => {}),
+  changed: null as null | (() => void),
+}));
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: (command: string, args?: { id: string }) => {
+    if (command === 'profiles_list') return Promise.resolve(structuredClone(native.profiles));
+    if (command === 'profiles_set_default') return native.setDefault(args?.id ?? '');
+    if (command === 'pty_list_shells') return Promise.resolve(native.shells);
+    return Promise.resolve([]);
+  },
+}));
+vi.mock('@tauri-apps/api/event', () => ({
+  listen: (name: string, callback: () => void) => {
+    if (name === 'lut:profiles-changed') native.changed = callback;
+    return Promise.resolve(() => {});
+  },
+}));
+const toasts = vi.hoisted(() => ({ error: vi.fn() }));
+vi.mock('sonner', () => ({ toast: toasts }));
 const subpixel = vi.hoisted(() => ({
   unavailable: vi.fn(async (_renderer: string): Promise<string | null> => null),
 }));
@@ -55,6 +82,9 @@ const render = (state: Partial<typeof defaults> = {}) => {
 
 beforeEach(() => {
   store.setTerminalSubpixelText.mockClear();
+  native.setDefault.mockReset();
+  native.profiles.defaultProfileId = 'detected:pwsh';
+  toasts.error.mockClear();
   subpixel.unavailable.mockReset();
   subpixel.unavailable.mockResolvedValue(null);
   host = document.createElement('div');
@@ -72,6 +102,13 @@ const rowOf = (title: string) =>
     (r) => r.querySelector('.font-medium')?.textContent === title,
   );
 const groupOf = (title: string) => rowOf(title)?.closest('section')?.querySelector('h2')?.textContent;
+const profileSelect = () => rowOf('Default profile')?.querySelector('[role="combobox"]') as HTMLElement;
+const openProfiles = async () => {
+  await act(async () => {
+    profileSelect().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+  });
+  return [...document.querySelectorAll('[role="option"]')] as HTMLElement[];
+};
 const subpixelToggle = () => rowOf('Subpixel text')?.querySelector('button[role="switch"]') as HTMLButtonElement;
 
 describe('TerminalSection', () => {
@@ -83,7 +120,7 @@ describe('TerminalSection', () => {
     expect(groupOf('Subpixel text')).toBe('Rendering');
     expect(groupOf('Font family')).toBe('Text');
     expect(groupOf('Cursor style')).toBe('Cursor');
-    expect(groupOf('Integrated terminal shell')).toBe('Shell');
+    expect(groupOf('Default profile')).toBe('Shell');
     expect(groupOf('Scrollback')).toBe('Scrolling & input');
   });
 
@@ -95,6 +132,42 @@ describe('TerminalSection', () => {
       const name = document.getElementById(control.getAttribute('aria-labelledby') ?? '')?.textContent;
       expect(name, control.outerHTML).toBeTruthy();
     }
+  });
+
+  it('sets the default profile from the visible profiles', async () => {
+    render();
+    await act(async () => {});
+    expect(profileSelect().textContent).toBe('PowerShell');
+    expect(rowOf('Default profile')?.textContent).toContain('Profile new terminal tabs open with.');
+    const options = await openProfiles();
+    expect(options.map((o) => o.textContent)).toEqual(['PowerShell', 'Ubuntu']);
+    await act(async () => {
+      options[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    });
+    expect(native.setDefault).toHaveBeenCalledWith('detected:wsl:Ubuntu');
+  });
+
+  it('follows a default changed elsewhere and keeps a hidden default listed', async () => {
+    render();
+    await act(async () => {});
+    native.profiles.defaultProfileId = 'detected:cmd';
+    await act(async () => native.changed?.());
+    expect(profileSelect().textContent).toBe('Command Prompt');
+    // cmd has no shell integration.
+    expect(rowOf('Default profile')?.textContent).toContain('directory tracking are unavailable');
+    const options = await openProfiles();
+    expect(options.map((o) => o.textContent)).toEqual(['PowerShell', 'Command Prompt', 'Ubuntu']);
+  });
+
+  it('says why the default could not be set', async () => {
+    native.setDefault.mockRejectedValue({ kind: 'io', message: 'disk full' });
+    render();
+    await act(async () => {});
+    const options = await openProfiles();
+    await act(async () => {
+      options[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    });
+    expect(toasts.error).toHaveBeenCalledWith("Couldn't set the default profile", { description: 'disk full' });
   });
 
   it('turns subpixel text on and off where it can be drawn', async () => {

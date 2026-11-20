@@ -107,6 +107,8 @@ impl Default for LaunchSpec {
 /// tells them apart by `code` and shows `message`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LaunchError {
+    /// No listed profile has this id (deleted, or a detected shell or distro since removed).
+    ProfileNotFound { id: String },
     /// The program is not a file, or a bare name not found on `PATH` (the distro's, for WSL).
     ExecutableNotFound { program: String },
     /// The requested start directory is missing, not a directory or on an unmounted drive. A
@@ -127,6 +129,7 @@ impl LaunchError {
 
     fn code(&self) -> &'static str {
         match self {
+            Self::ProfileNotFound { .. } => "profileNotFound",
             Self::ExecutableNotFound { .. } => "executableNotFound",
             Self::CwdUnavailable { .. } => "cwdUnavailable",
             Self::DistroNotInstalled { .. } => "distroNotInstalled",
@@ -138,6 +141,7 @@ impl LaunchError {
 impl std::fmt::Display for LaunchError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::ProfileNotFound { id } => write!(f, "terminal profile not found: {id}"),
             Self::ExecutableNotFound { program } => write!(f, "executable not found: {program}"),
             Self::CwdUnavailable { cwd, reason } => {
                 write!(f, "directory not available: {cwd} ({reason})")
@@ -162,6 +166,7 @@ impl serde::Serialize for LaunchError {
         let mut map = serializer.serialize_map(None)?;
         map.serialize_entry("code", self.code())?;
         match self {
+            Self::ProfileNotFound { id } => map.serialize_entry("id", id)?,
             Self::ExecutableNotFound { program } => map.serialize_entry("program", program)?,
             Self::CwdUnavailable { cwd, reason } => {
                 map.serialize_entry("cwd", cwd)?;
@@ -192,6 +197,21 @@ pub fn build_command(
     #[cfg(windows)]
     {
         windows::build(spec, control)
+    }
+}
+
+/// The distro a WSL launch runs in: the one named, else the one `wsl.exe` marks as the default.
+pub fn wsl_distro(distro: Option<String>) -> Result<String, LaunchError> {
+    #[cfg(windows)]
+    {
+        distro.map_or_else(windows::default_wsl_distro, Ok)
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = distro;
+        Err(LaunchError::spawn_failed(
+            "WSL is only available on Windows",
+        ))
     }
 }
 
@@ -1165,7 +1185,7 @@ mod windows {
     }
 
     /// The distro `wsl.exe` runs without `-d`, from the registry (`registered_distros`).
-    fn default_wsl_distro() -> Result<String, super::LaunchError> {
+    pub(super) fn default_wsl_distro() -> Result<String, super::LaunchError> {
         let distros = crate::modules::workspace::registered_distros()
             .map_err(super::LaunchError::spawn_failed)?;
         pick_default_distro(&distros)
@@ -2424,6 +2444,14 @@ mod tests {
                     "code": "distroNotInstalled",
                     "distro": null,
                     "message": "no WSL distro is installed"
+                }),
+            ),
+            (
+                LaunchError::ProfileNotFound { id: "gone".into() },
+                serde_json::json!({
+                    "code": "profileNotFound",
+                    "id": "gone",
+                    "message": "terminal profile not found: gone"
                 }),
             ),
             (

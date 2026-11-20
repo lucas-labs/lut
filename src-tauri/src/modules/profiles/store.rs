@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 use std::io;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::{Condvar, Mutex};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
 
@@ -134,6 +134,8 @@ pub struct ProfilesState {
     /// Held across a whole detection, so one that started earlier cannot publish over a later
     /// one. Readers only take `detected`, so a slow detection never blocks them.
     pub detecting: Mutex<()>,
+    /// Set once the first detection published, so a terminal opened at startup waits for it.
+    first_detection: (Mutex<bool>, Condvar),
     load_error: Mutex<Option<RecoveredFile>>,
     /// Set when startup left an unusable `profiles.json` in place: saving would overwrite it.
     writes_blocked: Option<String>,
@@ -164,6 +166,7 @@ impl ProfilesState {
             file: Mutex::new(outcome.file),
             detected: Mutex::new(Vec::new()),
             detecting: Mutex::new(()),
+            first_detection: (Mutex::new(false), Condvar::new()),
             load_error: Mutex::new(outcome.recovered),
             writes_blocked,
         }
@@ -172,6 +175,24 @@ impl ProfilesState {
     /// Why profiles cannot be saved this session, if they cannot.
     pub fn writes_blocked(&self) -> Option<&str> {
         self.writes_blocked.as_deref()
+    }
+
+    /// Records that a detection published its result.
+    pub fn detection_finished(&self) {
+        let (done, changed) = &self.first_detection;
+        *done.lock().unwrap_or_else(|poisoned| poisoned.into_inner()) = true;
+        changed.notify_all();
+    }
+
+    /// Blocks until the first detection published, or `timeout` passed: `false` then. Detection
+    /// only checks files and the registry, so the timeout guards against a hung `git` alone.
+    pub fn wait_for_detection(&self, timeout: Duration) -> bool {
+        let (done, changed) = &self.first_detection;
+        let guard = done.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let (guard, _) = changed
+            .wait_timeout_while(guard, timeout, |done| !*done)
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        *guard
     }
 }
 
@@ -209,6 +230,18 @@ mod tests {
             .collect();
         found.sort();
         found
+    }
+
+    #[test]
+    fn waiting_for_detection_returns_once_it_finished() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = std::sync::Arc::new(ProfilesState::load(dir.path().to_path_buf()));
+        assert!(!state.wait_for_detection(Duration::ZERO));
+        let detecting = state.clone();
+        let finished = std::thread::spawn(move || detecting.detection_finished());
+        assert!(state.wait_for_detection(Duration::from_secs(10)));
+        finished.join().unwrap();
+        assert!(state.wait_for_detection(Duration::ZERO));
     }
 
     #[test]

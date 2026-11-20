@@ -10,24 +10,24 @@ use super::model::{
 use super::store::ProfilesFile;
 use super::validate::DETECTED_ID_PREFIX;
 use crate::modules::pty::shell_init::{self, ShellInfo};
-use crate::modules::workspace::WslDistro;
+use crate::modules::workspace::RegisteredDistro;
 
-/// Finds the installed shells and WSL distros. Blocking: it runs `wsl.exe` (and maybe `git`).
+/// Finds the installed shells and WSL distros. Blocking but quick: it checks files, reads the
+/// registry for the distros (never `wsl.exe`, which can wake the WSL service) and may run `git`.
 pub fn detect() -> Vec<TerminalProfile> {
     profiles_from(&shell_init::list_shells(), &wsl_distros())
 }
 
 #[cfg(windows)]
-fn wsl_distros() -> Vec<WslDistro> {
-    crate::modules::workspace::list_distros_blocking().unwrap_or_else(|error| {
-        // Also the answer of a machine without WSL, so not a warning.
-        log::info!("no WSL distros detected: {error}");
+fn wsl_distros() -> Vec<RegisteredDistro> {
+    crate::modules::workspace::registered_distros().unwrap_or_else(|error| {
+        log::warn!("WSL distros not detected: {error}");
         Vec::new()
     })
 }
 
 #[cfg(not(windows))]
-fn wsl_distros() -> Vec<WslDistro> {
+fn wsl_distros() -> Vec<RegisteredDistro> {
     Vec::new()
 }
 
@@ -37,7 +37,7 @@ pub fn is_detected_id(id: &str) -> bool {
 
 /// One profile per shell, then one per distro, with ids derived from their source so they stay
 /// the same across detections.
-pub fn profiles_from(shells: &[ShellInfo], distros: &[WslDistro]) -> Vec<TerminalProfile> {
+pub fn profiles_from(shells: &[ShellInfo], distros: &[RegisteredDistro]) -> Vec<TerminalProfile> {
     let shells = shells.iter().map(|shell| TerminalProfile {
         executable: Some(shell.path.clone()),
         ..base(&shell.id, &shell.name)
@@ -141,11 +141,10 @@ mod tests {
         }
     }
 
-    fn distro(name: &str) -> WslDistro {
-        WslDistro {
+    fn distro(name: &str) -> RegisteredDistro {
+        RegisteredDistro {
             name: name.into(),
             default: false,
-            running: false,
         }
     }
 
