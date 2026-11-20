@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use portable_pty::CommandBuilder;
@@ -59,15 +60,22 @@ pub struct LaunchSpec {
     /// PowerShell only: `false` starts it with `-NoProfile`, so it skips the user's profile
     /// scripts while lut's own integration script still runs.
     pub load_user_profile: bool,
+    /// Set over the inherited environment and under lut's own variables (`apply_common`).
+    pub env: ProfileEnv,
 }
 
+/// A profile's variables: a value sets one, `None` removes an inherited one. Names starting with
+/// `LUT_` are rejected when the profile is saved.
+pub type ProfileEnv = BTreeMap<String, Option<String>>;
+
 impl LaunchSpec {
-    /// `program` with no arguments and the user's profile loaded.
+    /// `program` with no arguments, the user's profile loaded and no variables of its own.
     pub fn new(program: String) -> Self {
         Self {
             program,
             args: Vec::new(),
             load_user_profile: true,
+            env: ProfileEnv::new(),
         }
     }
 }
@@ -465,9 +473,12 @@ fn ensure_utf8_locale(cmd: &mut CommandBuilder) {
         let up = v.to_ascii_uppercase();
         up.contains("UTF-8") || up.contains("UTF8")
     };
-    let already_utf8 = ["LC_ALL", "LC_CTYPE", "LANG"]
-        .iter()
-        .any(|k| std::env::var(k).ok().as_deref().is_some_and(is_utf8));
+    // What the child gets, so a profile's own locale counts.
+    let already_utf8 = ["LC_ALL", "LC_CTYPE", "LANG"].iter().any(|k| {
+        cmd.get_env(k)
+            .and_then(|value| value.to_str())
+            .is_some_and(is_utf8)
+    });
     if already_utf8 {
         return;
     }
@@ -480,10 +491,42 @@ fn ensure_utf8_locale(cmd: &mut CommandBuilder) {
     cmd.env("LANG", fallback);
 }
 
-fn apply_common(cmd: &mut CommandBuilder, cwd: Option<String>, control: Option<&ShellControlEnv>) {
+/// The profile's variables: a value sets one, `None` removes an inherited one.
+fn apply_profile_env(cmd: &mut CommandBuilder, env: &ProfileEnv) {
+    for (name, value) in env {
+        match value {
+            Some(value) => {
+                cmd.env(name, value);
+            }
+            None => {
+                cmd.env_remove(name);
+            }
+        }
+    }
+}
+
+/// Whether the profile sets or removes `name`, which Windows matches in any case.
+fn profile_names(env: &ProfileEnv, name: &str) -> bool {
+    env.keys().any(|key| {
+        if cfg!(windows) {
+            key.eq_ignore_ascii_case(name)
+        } else {
+            key == name
+        }
+    })
+}
+
+/// The environment, in order: the inherited one, lut's defaults (`TERM`, `COLORTERM`, no
+/// `TERAX_*`, the AppImage fixes), the profile's `env`, then lut's own `LUT_*` variables, which a
+/// profile cannot override. The CLI folder goes in front of the profile's `PATH` when it has one.
+fn apply_common(
+    cmd: &mut CommandBuilder,
+    cwd: Option<String>,
+    control: Option<&ShellControlEnv>,
+    env: &ProfileEnv,
+) {
     cmd.env("TERM", "xterm-256color");
     cmd.env("COLORTERM", "truecolor");
-    cmd.env("LUT_TERMINAL", "1");
     // A lut started from a Terax pane inherits Terax's control address, token and CLI: never pass
     // them on, so Terax tooling cannot attach to lut panes.
     for key in std::env::vars_os().map(|(key, _)| key) {
@@ -506,6 +549,13 @@ fn apply_common(cmd: &mut CommandBuilder, cwd: Option<String>, control: Option<&
             }
         }
     }
+    apply_profile_env(cmd, env);
+    let clean_path = if profile_names(env, "PATH") {
+        cmd.get_env("PATH").map(ToOwned::to_owned)
+    } else {
+        clean_path
+    };
+    cmd.env("LUT_TERMINAL", "1");
     if let Some(control) = control {
         cmd.env("LUT_CONTROL_ADDR", &control.address);
         cmd.env("LUT_CONTROL_TOKEN", &control.token);
@@ -624,24 +674,26 @@ mod unix {
         launch: Option<super::LaunchSpec>,
         control: Option<super::ShellControlEnv>,
     ) -> Result<CommandBuilder, super::LaunchError> {
-        let (program, user_args, load_user_profile) = match launch {
+        let (program, spec) = match launch {
             Some(spec) => (
                 super::resolve_program(&spec.program)?
                     .to_string_lossy()
                     .into_owned(),
-                spec.args,
-                spec.load_user_profile,
+                spec,
             ),
-            None => (default_shell(), Vec::new(), true),
+            None => {
+                let program = default_shell();
+                (program.clone(), super::LaunchSpec::new(program))
+            }
         };
         let mut cmd = CommandBuilder::new(&program);
-        super::apply_common(&mut cmd, cwd, control.as_ref());
+        super::apply_common(&mut cmd, cwd, control.as_ref(), &spec.env);
         let kind = ShellKind::classify(&program);
-        if super::uses_integration(kind, &user_args, false) {
-            apply_shell_init(&mut cmd, kind, &user_args);
+        if super::uses_integration(kind, &spec.args, false) {
+            apply_shell_init(&mut cmd, kind, &spec.args);
         } else {
             log::info!("spawning '{program}' without shell integration");
-            cmd.args(super::bare_args(kind, &user_args, load_user_profile));
+            cmd.args(super::bare_args(kind, &spec.args, spec.load_user_profile));
         }
         Ok(cmd)
     }
@@ -674,8 +726,12 @@ mod unix {
             ShellKind::Zsh => {
                 match prepare_zdotdir() {
                     Ok(zdotdir) => {
-                        // Guard against lut-in-lut :)
-                        match user_zdotdir_for(std::env::var("ZDOTDIR").ok().as_deref(), &zdotdir) {
+                        // The child's ZDOTDIR so far, inherited or the profile's; guards against
+                        // lut-in-lut :)
+                        let inherited = cmd
+                            .get_env("ZDOTDIR")
+                            .map(|dir| dir.to_string_lossy().into_owned());
+                        match user_zdotdir_for(inherited.as_deref(), &zdotdir) {
                             UserZdotdir::Set(user) => {
                                 cmd.env("LUT_USER_ZDOTDIR", user);
                             }
@@ -813,6 +869,20 @@ mod unix {
         }
 
         #[test]
+        fn a_zdotdir_from_the_profile_is_the_users() {
+            let mut cmd = CommandBuilder::new("/bin/zsh");
+            // As apply_common leaves it for a profile that sets ZDOTDIR.
+            cmd.env("ZDOTDIR", "/profile/zsh");
+            apply_shell_init(&mut cmd, ShellKind::Zsh, &[]);
+            assert_eq!(
+                cmd.get_env("LUT_USER_ZDOTDIR"),
+                Some(std::ffi::OsStr::new("/profile/zsh"))
+            );
+            let zdotdir = cmd.get_env("ZDOTDIR").expect("ZDOTDIR is set");
+            assert!(Path::new(zdotdir).ends_with("shell-integration/zsh"));
+        }
+
+        #[test]
         fn builds_unix_fish_launch_with_post_config_rewrap() {
             let mut cmd = CommandBuilder::new("/usr/bin/fish");
             apply_shell_init(&mut cmd, ShellKind::Fish, &[]);
@@ -871,19 +941,27 @@ mod windows {
         control: Option<super::ShellControlEnv>,
     ) -> Result<CommandBuilder, super::LaunchError> {
         if let WorkspaceEnv::Wsl { distro } = workspace {
-            let _ = (launch, control);
-            return build_wsl(cwd, distro).map_err(super::LaunchError::Failed);
+            // Only the variables reach WSL for now; its program and arguments come with E14-10.
+            let _ = control;
+            let env = launch.map(|spec| spec.env).unwrap_or_default();
+            return build_wsl(cwd, distro, &env).map_err(super::LaunchError::Failed);
         }
-        let (program, user_args, load_user_profile) = match launch {
-            Some(spec) => (
-                super::resolve_program(&spec.program)?,
-                spec.args,
-                spec.load_user_profile,
-            ),
-            None => (super::windows_shell_path(), Vec::new(), true),
+        let (program, spec) = match launch {
+            Some(spec) => (super::resolve_program(&spec.program)?, spec),
+            None => {
+                let program = super::windows_shell_path();
+                let spec = super::LaunchSpec::new(program.to_string_lossy().into_owned());
+                (program, spec)
+            }
         };
+        let super::LaunchSpec {
+            args: user_args,
+            load_user_profile,
+            env,
+            ..
+        } = spec;
         let mut cmd = CommandBuilder::new(&program);
-        super::apply_common(&mut cmd, cwd, control.as_ref());
+        super::apply_common(&mut cmd, cwd, control.as_ref(), &env);
         let kind = ShellKind::classify(&program.to_string_lossy());
         let integrated = super::uses_integration(kind, &user_args, true);
         let file = if integrated {
@@ -940,7 +1018,10 @@ mod windows {
         }
         if kind == ShellKind::Cmd {
             let host = std::env::var("COMPUTERNAME").unwrap_or_default();
-            let existing = std::env::var("PROMPT").ok();
+            // The prompt the child would get, which may be the profile's.
+            let existing = cmd
+                .get_env("PROMPT")
+                .map(|prompt| prompt.to_string_lossy().into_owned());
             cmd.env("PROMPT", super::cmd_prompt(&host, existing.as_deref()));
         }
         cmd.args(super::integrated_args(
@@ -951,21 +1032,29 @@ mod windows {
         ));
     }
 
-    fn build_wsl(cwd: Option<String>, distro: String) -> Result<CommandBuilder, String> {
+    fn build_wsl(
+        cwd: Option<String>,
+        distro: String,
+        env: &super::ProfileEnv,
+    ) -> Result<CommandBuilder, String> {
         crate::modules::workspace::validate_wsl_distro_name(&distro)?;
         let shell_path = crate::modules::workspace::wsl_login_shell(distro.clone())?;
         let shell_kind = ShellKind::classify(&shell_path);
         let integration = match shell_kind {
             ShellKind::Zsh => match prepare_wsl_zdotdir(&distro) {
                 Ok(zdotdir) => {
-                    let user_zdotdir = match probe_wsl_zdotdir(&distro, &shell_path) {
-                        Ok(path) if !path.is_empty() && path != zdotdir => Some(path),
-                        Ok(_) => None,
-                        Err(e) => {
-                            log::warn!("WSL zsh ZDOTDIR probe failed for {distro}: {e}");
-                            None
-                        }
-                    };
+                    // A ZDOTDIR the profile sets is the user's, as the distro's own would be.
+                    let user_zdotdir = match env.get("ZDOTDIR") {
+                        Some(set) => set.clone(),
+                        None => match probe_wsl_zdotdir(&distro, &shell_path) {
+                            Ok(path) => Some(path),
+                            Err(e) => {
+                                log::warn!("WSL zsh ZDOTDIR probe failed for {distro}: {e}");
+                                None
+                            }
+                        },
+                    }
+                    .filter(|path| !path.is_empty() && *path != zdotdir);
                     WslShellIntegration::Zsh {
                         zdotdir,
                         user_zdotdir,
@@ -1004,6 +1093,7 @@ mod windows {
             &shell_path,
             shell_kind,
             integration,
+            env,
         );
         let mut cmd = CommandBuilder::new("wsl.exe");
         cmd.env("LUT_WSL_LOGIN_SHELL", &shell_path);
@@ -1018,12 +1108,17 @@ mod windows {
         Ok(cmd)
     }
 
+    /// `wsl.exe` passes no Windows variable to Linux unless `WSLENV` lists it, and `WSLENV` cannot
+    /// remove one. So the profile's variables go through an `env` prefix inside the distro:
+    /// `-u NAME` for a removed one (options come before any assignment), `NAME=value` for a set
+    /// one, and lut's integration variables last, so they win.
     fn build_wsl_launch_spec(
         cwd: Option<&str>,
         distro: &str,
         shell_path: &str,
         shell_kind: ShellKind,
         integration: WslShellIntegration,
+        env: &super::ProfileEnv,
     ) -> WslLaunchSpec {
         let mut args = vec![
             "-d".to_string(),
@@ -1032,6 +1127,15 @@ mod windows {
             cwd.filter(|s| !s.is_empty()).unwrap_or("~").to_string(),
             "--exec".to_string(),
         ];
+        let removed = env.iter().filter(|(_, value)| value.is_none());
+        let mut prefix: Vec<String> = removed
+            .flat_map(|(name, _)| ["-u".to_string(), name.clone()])
+            .collect();
+        prefix.extend(
+            env.iter()
+                .filter_map(|(name, value)| Some(format!("{name}={}", value.as_ref()?))),
+        );
+        let mut shell = vec![shell_path.to_string()];
         match (shell_kind, integration) {
             (
                 ShellKind::Zsh,
@@ -1040,42 +1144,33 @@ mod windows {
                     user_zdotdir,
                 },
             ) => {
-                args.push("env".to_string());
                 if let Some(user_zdotdir) = user_zdotdir {
-                    args.push(format!("LUT_USER_ZDOTDIR={user_zdotdir}"));
+                    prefix.push(format!("LUT_USER_ZDOTDIR={user_zdotdir}"));
                 }
-                args.push(format!("ZDOTDIR={zdotdir}"));
-                args.push(shell_path.to_string());
-                args.push("-l".to_string());
+                prefix.push(format!("ZDOTDIR={zdotdir}"));
+                shell.push("-l".to_string());
             }
             (ShellKind::Bash, WslShellIntegration::Bash { rcfile }) => {
-                args.push(shell_path.to_string());
-                args.push("--rcfile".to_string());
-                args.push(rcfile);
-                args.push("-i".to_string());
+                shell.extend(["--rcfile".to_string(), rcfile, "-i".to_string()]);
             }
             (ShellKind::Fish, WslShellIntegration::Fish) => {
-                args.push("env".to_string());
-                args.push("fish_features=no-mark-prompt".to_string());
-                args.push(shell_path.to_string());
-                args.push("-i".to_string());
-                args.push("-C".to_string());
-                args.push(super::FISH_REINSTALL_PROMPT.to_string());
+                prefix.push("fish_features=no-mark-prompt".to_string());
+                shell.extend([
+                    "-i".to_string(),
+                    "-C".to_string(),
+                    super::FISH_REINSTALL_PROMPT.to_string(),
+                ]);
             }
-            (ShellKind::Zsh, WslShellIntegration::None) => {
-                args.push(shell_path.to_string());
-                args.push("-l".to_string());
-            }
+            (ShellKind::Zsh, WslShellIntegration::None) => shell.push("-l".to_string()),
             (ShellKind::Bash, WslShellIntegration::None)
-            | (ShellKind::Fish, WslShellIntegration::None) => {
-                args.push(shell_path.to_string());
-                args.push("-i".to_string());
-            }
-            (ShellKind::Other, _) => args.push(shell_path.to_string()),
-            _ => {
-                args.push(shell_path.to_string());
-            }
+            | (ShellKind::Fish, WslShellIntegration::None) => shell.push("-i".to_string()),
+            _ => {}
         }
+        if !prefix.is_empty() {
+            args.push("env".to_string());
+            args.extend(prefix);
+        }
+        args.extend(shell);
         WslLaunchSpec { args }
     }
 
@@ -1398,6 +1493,17 @@ mod windows {
         }
 
         #[test]
+        fn cmd_reports_the_cwd_before_the_profiles_own_prompt() {
+            let mut cmd = CommandBuilder::new(r"C:\Windows\System32\cmd.exe");
+            // As apply_common leaves it for a profile that sets PROMPT.
+            cmd.env("PROMPT", "[$P]$G");
+            apply_launch(&mut cmd, ShellKind::Cmd, true, &[], None, true);
+            let prompt = cmd.get_env("PROMPT").unwrap().to_string_lossy();
+            assert!(prompt.starts_with("$E]7;file://"), "{prompt}");
+            assert!(prompt.ends_with(r"$E\[$P]$G"), "{prompt}");
+        }
+
+        #[test]
         fn another_program_gets_its_arguments_one_by_one() {
             let cmd = launch(
                 r"C:\Python\python.exe",
@@ -1469,6 +1575,78 @@ mod windows {
             assert_eq!(git_root_for_exec_path(Path::new("D:/elsewhere/git")), None);
         }
 
+        fn no_env() -> super::super::ProfileEnv {
+            super::super::ProfileEnv::new()
+        }
+
+        fn wsl_args(shell: &str, kind: ShellKind, integration: WslShellIntegration) -> Vec<String> {
+            let env = super::super::ProfileEnv::from([
+                ("PAGER".to_string(), None),
+                ("EDITOR".to_string(), Some("nvim".to_string())),
+                ("GREETING".to_string(), Some("hello world".to_string())),
+                ("ZDOTDIR".to_string(), Some("/mine".to_string())),
+            ]);
+            let spec = build_wsl_launch_spec(None, "Ubuntu", shell, kind, integration, &env);
+            // The part after `--exec`.
+            spec.args[5..].to_vec()
+        }
+
+        #[test]
+        fn wsl_gets_the_profiles_variables_through_an_env_prefix() {
+            let profile = [
+                "env",
+                "-u",
+                "PAGER",
+                "EDITOR=nvim",
+                "GREETING=hello world",
+                "ZDOTDIR=/mine",
+            ];
+            let with = |rest: &[&str]| -> Vec<String> {
+                profile.iter().chain(rest).map(|a| a.to_string()).collect()
+            };
+            // lut's integration variables come last, so they win.
+            assert_eq!(
+                wsl_args(
+                    "/usr/bin/zsh",
+                    ShellKind::Zsh,
+                    WslShellIntegration::Zsh {
+                        zdotdir: "/lut/zsh".into(),
+                        user_zdotdir: Some("/mine".into()),
+                    },
+                ),
+                with(&[
+                    "LUT_USER_ZDOTDIR=/mine",
+                    "ZDOTDIR=/lut/zsh",
+                    "/usr/bin/zsh",
+                    "-l"
+                ])
+            );
+            assert_eq!(
+                wsl_args(
+                    "/bin/bash",
+                    ShellKind::Bash,
+                    WslShellIntegration::Bash {
+                        rcfile: "/lut/bashrc".into()
+                    },
+                ),
+                with(&["/bin/bash", "--rcfile", "/lut/bashrc", "-i"])
+            );
+            assert_eq!(
+                wsl_args("/usr/bin/fish", ShellKind::Fish, WslShellIntegration::Fish),
+                with(&[
+                    "fish_features=no-mark-prompt",
+                    "/usr/bin/fish",
+                    "-i",
+                    "-C",
+                    super::super::FISH_REINSTALL_PROMPT
+                ])
+            );
+            assert_eq!(
+                wsl_args("/usr/bin/nu", ShellKind::Other, WslShellIntegration::None),
+                with(&["/usr/bin/nu"])
+            );
+        }
+
         #[test]
         fn builds_wsl_zsh_launch_spec_with_env_and_login() {
             let spec = build_wsl_launch_spec(
@@ -1480,6 +1658,7 @@ mod windows {
                     zdotdir: "/home/vinicios/.cache/dev.lucode.lut/shell-integration/zsh".into(),
                     user_zdotdir: None,
                 },
+                &no_env(),
             );
             assert_eq!(
                 spec.args,
@@ -1509,6 +1688,7 @@ mod windows {
                     zdotdir: "/home/vinicios/.cache/dev.lucode.lut/shell-integration/zsh".into(),
                     user_zdotdir: Some("/home/vinicios/.config/zsh".into()),
                 },
+                &no_env(),
             );
             assert_eq!(
                 spec.args,
@@ -1536,6 +1716,7 @@ mod windows {
                 "/usr/bin/zsh",
                 ShellKind::Zsh,
                 WslShellIntegration::None,
+                &no_env(),
             );
             assert_eq!(
                 spec.args,
@@ -1562,6 +1743,7 @@ mod windows {
                     rcfile: "/home/vinicios/.cache/dev.lucode.lut/shell-integration/bash/bashrc"
                         .into(),
                 },
+                &no_env(),
             );
             assert_eq!(
                 spec.args,
@@ -1588,6 +1770,7 @@ mod windows {
                 "/usr/bin/fish",
                 ShellKind::Fish,
                 WslShellIntegration::Fish,
+                &no_env(),
             );
             assert_eq!(
                 spec.args,
@@ -1615,6 +1798,7 @@ mod windows {
                 "/usr/bin/nu",
                 ShellKind::Other,
                 WslShellIntegration::None,
+                &no_env(),
             );
             assert_eq!(
                 spec.args,
@@ -1705,7 +1889,7 @@ mod tests {
     use super::{
         apply_common, bare_args, cmd_prompt, find_in_dirs, integrated_args, is_shell,
         parse_etc_shells, resolve_program, unique_shell_paths, uses_integration, LaunchError,
-        ShellControlEnv, ShellKind, FISH_REINSTALL_PROMPT,
+        ProfileEnv, ShellControlEnv, ShellKind, FISH_REINSTALL_PROMPT,
     };
 
     fn strings(args: &[&str]) -> Vec<String> {
@@ -2117,7 +2301,7 @@ mod tests {
             cli_path: Some("/app/lut-cli".into()),
             cli_bin_dir: Some(std::path::PathBuf::from("/app/bin")),
         };
-        apply_common(&mut command, None, Some(&control));
+        apply_common(&mut command, None, Some(&control), &ProfileEnv::new());
 
         assert_eq!(
             command.get_env("LUT_CONTROL_ADDR"),
@@ -2150,7 +2334,7 @@ mod tests {
             cli_path: Some("/app/lut-cli".into()),
             cli_bin_dir: Some(std::path::PathBuf::from("/app/bin")),
         };
-        apply_common(&mut command, None, Some(&control));
+        apply_common(&mut command, None, Some(&control), &ProfileEnv::new());
         std::env::remove_var("TERAX_E02_09_INHERITED_PROBE");
 
         let terax: Vec<_> = command
@@ -2160,5 +2344,88 @@ mod tests {
             .collect();
         assert!(terax.is_empty(), "{terax:?}");
         assert_eq!(command.get_env("LUT_TERMINAL"), Some(OsStr::new("1")));
+    }
+
+    fn control(pane_id: u32) -> ShellControlEnv {
+        ShellControlEnv {
+            address: "127.0.0.1:1234".into(),
+            token: "secret".into(),
+            pane_id,
+            cli_path: Some("/app/lut-cli".into()),
+            cli_bin_dir: Some(PathBuf::from("/app/bin")),
+        }
+    }
+
+    #[test]
+    fn the_profile_sets_and_removes_variables_over_the_inherited_and_luts_defaults() {
+        // Unique names, so setting them cannot disturb tests running in parallel.
+        std::env::set_var("E14_09_OVERRIDDEN", "inherited");
+        std::env::set_var("E14_09_REMOVED", "inherited");
+        let mut command = CommandBuilder::new("shell");
+        let env = ProfileEnv::from([
+            ("E14_09_OVERRIDDEN".to_string(), Some("profile".to_string())),
+            ("E14_09_REMOVED".to_string(), None),
+            ("TERM".to_string(), Some("xterm".to_string())),
+            ("EDITOR".to_string(), Some("nvim".to_string())),
+        ]);
+        apply_common(&mut command, None, Some(&control(7)), &env);
+        std::env::remove_var("E14_09_OVERRIDDEN");
+        std::env::remove_var("E14_09_REMOVED");
+
+        assert_eq!(
+            command.get_env("E14_09_OVERRIDDEN"),
+            Some(OsStr::new("profile"))
+        );
+        assert_eq!(command.get_env("E14_09_REMOVED"), None);
+        assert_eq!(command.get_env("EDITOR"), Some(OsStr::new("nvim")));
+        assert_eq!(command.get_env("TERM"), Some(OsStr::new("xterm")));
+    }
+
+    #[test]
+    fn luts_own_variables_win_over_the_profile() {
+        // Saving a profile rejects these names; the launch still never lets them through.
+        let mut command = CommandBuilder::new("shell");
+        let env = ProfileEnv::from([
+            ("LUT_PANE_ID".to_string(), Some("1".to_string())),
+            ("LUT_TERMINAL".to_string(), None),
+        ]);
+        apply_common(&mut command, None, Some(&control(42)), &env);
+        assert_eq!(command.get_env("LUT_PANE_ID"), Some(OsStr::new("42")));
+        assert_eq!(command.get_env("LUT_TERMINAL"), Some(OsStr::new("1")));
+    }
+
+    #[test]
+    fn the_cli_folder_goes_in_front_of_the_profiles_path() {
+        let profile_path = std::env::join_paths(["/opt/tools", "/usr/bin"]).unwrap();
+        let mut command = CommandBuilder::new("shell");
+        let env = ProfileEnv::from([(
+            "PATH".to_string(),
+            Some(profile_path.to_string_lossy().into_owned()),
+        )]);
+        apply_common(&mut command, None, Some(&control(1)), &env);
+        let path: Vec<PathBuf> = std::env::split_paths(command.get_env("PATH").unwrap()).collect();
+        assert_eq!(
+            path,
+            [
+                PathBuf::from("/app/bin"),
+                PathBuf::from("/opt/tools"),
+                PathBuf::from("/usr/bin")
+            ]
+        );
+        // A removed PATH leaves only the CLI folder.
+        let mut command = CommandBuilder::new("shell");
+        let env = ProfileEnv::from([("PATH".to_string(), None)]);
+        apply_common(&mut command, None, Some(&control(1)), &env);
+        assert_eq!(command.get_env("PATH"), Some(OsStr::new("/app/bin")));
+    }
+
+    #[test]
+    fn a_utf8_locale_from_the_profile_needs_no_fallback() {
+        let mut command = CommandBuilder::new("shell");
+        command.env_remove("LC_ALL");
+        command.env_remove("LC_CTYPE");
+        let env = ProfileEnv::from([("LANG".to_string(), Some("de_DE.UTF-8".to_string()))]);
+        apply_common(&mut command, None, None, &env);
+        assert_eq!(command.get_env("LANG"), Some(OsStr::new("de_DE.UTF-8")));
     }
 }

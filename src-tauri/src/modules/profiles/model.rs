@@ -16,9 +16,10 @@ pub struct TerminalProfile {
     /// Each argument on its own, never one shell string.
     #[serde(default)]
     pub args: Vec<String>,
-    /// Variables set on top of the inherited environment.
+    /// Variables set on top of the inherited environment: a value sets one, `null` removes an
+    /// inherited one. lut's own `LUT_*` variables are not the profile's to set.
     #[serde(default)]
-    pub env: BTreeMap<String, String>,
+    pub env: BTreeMap<String, Option<String>>,
     /// PowerShell only: `false` skips the user's profile scripts (`-NoProfile`) while lut's
     /// integration still loads. Other programs ignore it.
     #[serde(default = "load_user_profile_default")]
@@ -149,7 +150,10 @@ mod tests {
             name: "Ubuntu".into(),
             executable: Some("bash".into()),
             args: vec!["-l".into()],
-            env: BTreeMap::from([("EDITOR".into(), "nvim".into())]),
+            env: BTreeMap::from([
+                ("EDITOR".into(), Some("nvim".into())),
+                ("PAGER".into(), None),
+            ]),
             load_user_profile: false,
             starting_directory: Some("~/code".into()),
             environment: ProfileEnvironment::Wsl {
@@ -185,7 +189,7 @@ mod tests {
                 "name": "Ubuntu",
                 "executable": "bash",
                 "args": ["-l"],
-                "env": { "EDITOR": "nvim" },
+                "env": { "EDITOR": "nvim", "PAGER": null },
                 "loadUserProfile": false,
                 "startingDirectory": "~/code",
                 "environment": { "kind": "wsl", "distro": "Ubuntu-24.04" },
