@@ -1,4 +1,6 @@
+import { Alert, AlertAction, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { useProfiles } from '@/modules/profiles';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import type { TerminalSearchController } from '@/modules/terminal/search/TerminalSearchController';
 import { useTheme } from '@/modules/theme';
@@ -55,6 +57,9 @@ const GhosttyTerminalPane = memo(
     ref,
   ) {
     const screenReader = usePreferencesStore((state) => state.terminalScreenReader);
+    const profiles = useProfiles();
+    // What the pane does when its process exits; a pane without a listed profile closes, as it always did.
+    const closeBehavior = profiles?.profiles.find((profile) => profile.id === profileId)?.closeBehavior ?? 'close';
     const containerRef = useRef<HTMLDivElement>(null);
     const { resolvedMode, activeTheme } = useTheme();
     const session = useGhosttyTerminalSession({
@@ -66,7 +71,9 @@ const GhosttyTerminalPane = memo(
       initialCwd,
       profileId,
       onSearchReady: (search) => onSearchReady?.(leafId, search),
-      onExit: (code) => onExit?.(leafId, code),
+      onExit: (code) => {
+        if (closeBehavior === 'close') onExit?.(leafId, code);
+      },
       onCwd: (cwd) => onCwd?.(leafId, cwd),
       onProfile: (id) => onProfile?.(leafId, id),
     });
@@ -109,6 +116,23 @@ const GhosttyTerminalPane = memo(
               onExit={session.focus}
             />
           </Suspense>
+        )}
+        {session.exitCode !== null && closeBehavior !== 'close' && (
+          <div className="absolute inset-x-3 bottom-3 z-10">
+            <Alert>
+              <AlertTitle>Process exited with code {session.exitCode}</AlertTitle>
+              {closeBehavior === 'ask' && (
+                <AlertAction className="flex gap-2">
+                  <Button variant="outline" onClick={() => onExit?.(leafId, session.exitCode ?? 0)}>
+                    Close
+                  </Button>
+                  <Button variant="outline" onClick={session.restart}>
+                    Restart
+                  </Button>
+                </AlertAction>
+              )}
+            </Alert>
+          </div>
         )}
         {session.error && (
           <div

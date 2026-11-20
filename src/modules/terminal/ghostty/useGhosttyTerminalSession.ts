@@ -97,6 +97,8 @@ type GhosttySession = {
   startupError: StartupFailure | null;
   rendererError: string | null;
   shellExited: boolean;
+  /** How the shell exited, until the pane restarts it. */
+  exitCode: number | null;
   /** OSC 133 has been seen, so `commandRunning` can be trusted. */
   promptIntegrated: boolean;
   commandRunning: boolean;
@@ -160,6 +162,7 @@ export function useGhosttyTerminalSession({
 }: Options) {
   const [model, setModel] = useState<GhosttyTerminalModelApi | null>(null);
   const [error, setError] = useState<GhosttySessionFailure | null>(null);
+  const [exitCode, setExitCode] = useState<number | null>(null);
   const { fontFamily, fontSize, fontWeight } = useTerminalFont();
   const letterSpacing = usePreferencesStore((state) => state.terminalLetterSpacing);
   const zoomLevel = usePreferencesStore((state) => state.zoomLevel);
@@ -201,11 +204,15 @@ export function useGhosttyTerminalSession({
       onModel: setModel,
       onError: setError,
       onSearchReady: (search) => reportSearchReady(search),
-      onExit: (code) => reportExit(code),
+      onExit: (code) => {
+        setExitCode(code);
+        reportExit(code);
+      },
       onCwd: (cwd) => reportCwd(cwd),
       onProfile: (id) => reportProfile(id),
     };
     setError(sessionFailure(session));
+    setExitCode(session.exitCode);
     if (session.surface) {
       session.callbacks.onSearchReady?.(session.surface.searchController());
     }
@@ -313,6 +320,15 @@ export function useGhosttyTerminalSession({
     );
   }, [leafId]);
 
+  /** Starts an exited shell again, with the same profile, in the folder it was last in. */
+  const restart = useCallback(() => {
+    const cwd = sessions.get(leafId)?.lastCwd ?? undefined;
+    setExitCode(null);
+    void respawnGhosttySession(leafId, { cwd }).catch((error: unknown) =>
+      setError({ kind: 'startup', message: toError(error).message }),
+    );
+  }, [leafId]);
+
   const openWithDefaultProfile = useCallback(() => {
     void respawnGhosttySession(leafId, { profileId: undefined }).catch((error: unknown) =>
       setError({ kind: 'startup', message: toError(error).message }),
@@ -322,8 +338,10 @@ export function useGhosttyTerminalSession({
   return useMemo(
     () => ({
       error,
+      exitCode,
       model,
       retry,
+      restart,
       openWithDefaultProfile,
       write,
       writeAtPrompt,
@@ -332,7 +350,20 @@ export function useGhosttyTerminalSession({
       getSelection,
       applyTheme,
     }),
-    [write, writeAtPrompt, focus, getBuffer, getSelection, applyTheme, error, retry, model],
+    [
+      write,
+      writeAtPrompt,
+      focus,
+      getBuffer,
+      getSelection,
+      applyTheme,
+      error,
+      exitCode,
+      retry,
+      restart,
+      openWithDefaultProfile,
+      model,
+    ],
   );
 }
 
@@ -462,6 +493,7 @@ async function respawnGhosttySession(
   await session.pty?.close();
   session.pty = null;
   session.shellExited = false;
+  session.exitCode = null;
   session.promptIntegrated = false;
   session.commandRunning = false;
   session.commandTracked = false;
@@ -524,6 +556,7 @@ function ensureSession(
     startupError: null,
     rendererError: null,
     shellExited: false,
+    exitCode: null,
     promptIntegrated: false,
     commandRunning: false,
     commandTracked: false,
@@ -782,6 +815,7 @@ async function initializeSessionGeneration(
       onExit: (code) => {
         if (session.disposed || generation !== session.generation) return;
         session.shellExited = true;
+        session.exitCode = code;
         session.cancelFocusRetry?.();
         session.writer.detach();
         session.pty = null;

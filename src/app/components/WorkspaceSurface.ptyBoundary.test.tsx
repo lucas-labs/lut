@@ -27,7 +27,32 @@ const pty = vi.hoisted(() => ({
   failures: new Map<number, { code: 'profileNotFound'; id: string; message: string }>(),
   /** Profiles the panes reported they opened with. */
   reported: [] as { leaf: number; profileId: string }[],
+  /** Each PTY's exit handler, to end its shell. */
+  exit: new Map<number, (code: number) => void>(),
+  /** Panes the workspace was told to close after their process exited. */
+  closedByExit: [] as { leaf: number; code: number }[],
 }));
+/** One custom profile per close behaviour, as `profiles_list` lists them. */
+const profilesList = vi.hoisted(() => {
+  const profile = (id: string, closeBehavior: string) => ({
+    id,
+    name: id,
+    executable: 'cmd.exe',
+    args: [],
+    env: {},
+    loadUserProfile: true,
+    environment: { kind: 'native' },
+    appearance: {},
+    tab: { allowShellTitle: true },
+    closeBehavior,
+    source: 'custom',
+    hidden: false,
+  });
+  return {
+    profiles: [profile('asks', 'ask'), profile('closes', 'close'), profile('stays', 'keepOpen')],
+    defaultProfileId: 'closes',
+  };
+});
 /** What reached each terminal model (the Ghostty core), and how many WebGL surfaces were built. */
 const terminal = vi.hoisted(() => ({ written: new Map<number, string>(), webGlSurfaces: 0 }));
 
@@ -45,7 +70,7 @@ vi.mock('@/modules/terminal/lib/pty-bridge', async (importOriginal) => ({
   openPty: async (
     _cols: number,
     _rows: number,
-    handlers: { onData: (bytes: Uint8Array) => unknown },
+    handlers: { onData: (bytes: Uint8Array) => unknown; onExit?: (code: number) => void },
     { paneId: leafId, profileId }: { paneId?: number; profileId?: string } = {},
   ) => {
     pty.requested.push({ leaf: leafId ?? -1, profileId });
@@ -56,6 +81,7 @@ vi.mock('@/modules/terminal/lib/pty-bridge', async (importOriginal) => ({
     }
     pty.opened.push(leafId ?? -1);
     pty.output.set(leafId ?? -1, handlers.onData);
+    if (handlers.onExit) pty.exit.set(leafId ?? -1, handlers.onExit);
     return {
       id: leafId ?? -1,
       // Native opens the default profile when none is asked for.
@@ -71,7 +97,7 @@ vi.mock('@/modules/terminal/lib/pty-bridge', async (importOriginal) => ({
 }));
 vi.mock('@tauri-apps/api/core', async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  invoke: async () => null,
+  invoke: async (command: string) => (command === 'profiles_list' ? structuredClone(profilesList) : null),
 }));
 vi.mock('@/lib/fonts', async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -196,7 +222,7 @@ function surface(tabs: Tab[], activeId: number) {
     onSearchReady: noop,
     onCwd: noop,
     onProfile: (leaf: number, profileId: string) => pty.reported.push({ leaf, profileId }),
-    onExit: noop,
+    onExit: (leaf: number, code: number) => pty.closedByExit.push({ leaf, code }),
     onFocusLeaf: noop,
     registerEditorHandle: noop,
     onEditorDirtyChange: noop,
@@ -278,6 +304,8 @@ beforeEach(() => {
   pty.requested = [];
   pty.failures.clear();
   pty.reported = [];
+  pty.exit.clear();
+  pty.closedByExit = [];
   terminal.written.clear();
   terminal.webGlSurfaces = 0;
   rendered.clear();
@@ -460,5 +488,49 @@ describe('each pane opens with its own profile (E14-14)', () => {
     expect(pty.requested[2]).toEqual({ leaf, profileId: undefined });
     expect(pty.reported).toEqual([{ leaf, profileId: 'detected:pwsh' }]);
     expect(button('Open with default profile')).toBeUndefined();
+  });
+});
+
+describe('the profile decides what a pane does when its process exits (E14-15)', () => {
+  const button = (name: string) =>
+    [...host.querySelectorAll('button')].find((b) => b.textContent === name) as HTMLButtonElement | undefined;
+
+  async function exited(profileId: string, code: number) {
+    const tab = term({ kind: 'leaf', id: nextId * 100, profileId });
+    await render(shell([tab], tab.id));
+    await waitForOpens(1);
+    await act(async () => pty.exit.get(tab.activeLeafId)?.(code));
+    await tick();
+    return tab.activeLeafId;
+  }
+
+  it('closes the pane, as before', async () => {
+    const leaf = await exited('closes', 0);
+    expect(pty.closedByExit).toEqual([{ leaf, code: 0 }]);
+    expect(host.textContent).not.toContain('Process exited');
+  });
+
+  it('keeps the pane and its output with a notice', async () => {
+    await exited('stays', 3);
+    expect(pty.closedByExit).toEqual([]);
+    expect(host.textContent).toContain('Process exited with code 3');
+    expect(button('Restart')).toBeUndefined();
+  });
+
+  it('asks, then restarts with the same profile', async () => {
+    const leaf = await exited('asks', 1);
+    expect(pty.closedByExit).toEqual([]);
+    expect(host.textContent).toContain('Process exited with code 1');
+    await act(async () => button('Restart')?.click());
+    await waitForOpens(2);
+    expect(pty.requested.map((r) => r.profileId)).toEqual(['asks', 'asks']);
+    expect(pty.opened).toEqual([leaf, leaf]);
+    expect(host.textContent).not.toContain('Process exited');
+  });
+
+  it('asks, then closes the pane', async () => {
+    const leaf = await exited('asks', 0);
+    await act(async () => button('Close')?.click());
+    expect(pty.closedByExit).toEqual([{ leaf, code: 0 }]);
   });
 });

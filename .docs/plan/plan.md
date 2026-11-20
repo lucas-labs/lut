@@ -4309,8 +4309,9 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] On PTY exit the session lifecycle reads the pane's profile `closeBehavior`: `close` closes the pane (and the tab if it was the last pane), `keepOpen` keeps the pane with its output and an exit notice, `ask` keeps the pane and offers close/restart.
-- [ ] Restart reuses the same profile and cwd (no app restart); a missing profile falls back to the E14-14 missing-profile path.
+- [ ] On PTY exit the session lifecycle reads the pane's profile `closeBehavior`: `close` closes the pane as before (the tab with its last pane, the window with the last pane of the last tab), `keepOpen` keeps the pane with its output and an exit notice, `ask` keeps the pane and offers close/restart.
+- [ ] `close` is the default, also for detected profiles (which cannot change it), so `exit` keeps closing the pane.
+- [ ] Restart reuses the same profile and the pane's last cwd, clearing the screen (no app restart); a missing profile falls back to the E14-14 missing-profile path.
 - [ ] The notice and prompt reuse existing components as-is (decision 7); the designed state comes with E15-01 (E11-04).
 - [ ] Tests for the three behaviours, including the last pane of a tab and a non-zero exit code.
 

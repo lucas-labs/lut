@@ -129,13 +129,15 @@ pub struct DetectedOverride {
     pub tab: ProfileTab,
 }
 
-/// What happens to the pane when its process exits.
+/// What happens to the pane when its process exits. `Close` by default, as a pane always did.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum CloseBehavior {
-    #[default]
+    /// Keep the pane and offer to close or restart it.
     Ask,
+    #[default]
     Close,
+    /// Keep the pane with its output and a notice that the process exited.
     KeepOpen,
 }
 
@@ -228,7 +230,7 @@ mod tests {
         assert_eq!(profile.environment, ProfileEnvironment::Native);
         assert_eq!(profile.appearance, ProfileAppearance::default());
         assert!(profile.tab.allow_shell_title);
-        assert_eq!(profile.close_behavior, CloseBehavior::Ask);
+        assert_eq!(profile.close_behavior, CloseBehavior::Close);
     }
 
     #[test]
