@@ -4076,7 +4076,7 @@ size: S
 
 - [ ] Commands `profiles_list`, `profiles_get`, `profiles_save`, `profiles_delete`, `profiles_set_default`; all validate input with the E14-03 validator.
 - [ ] Deleting the default profile reassigns the default to the first available profile.
-- [ ] A `lut://profiles-changed` event is emitted after every mutation.
+- [ ] A `lut:profiles-changed` event is emitted after every mutation.
 - [ ] Commands registered in the capability file; unit tests for default reassignment.
 
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml profiles`.
@@ -4257,7 +4257,7 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] `src/modules/profiles/` with Zod schemas mirroring the serde model and a store refreshed on `lut://profiles-changed`.
+- [ ] `src/modules/profiles/` with Zod schemas mirroring the serde model and a store refreshed on `lut:profiles-changed`.
 - [ ] `openPty({ profileId, cwd, paneId, colors })` replaces the positional signature (`pty-bridge.ts:110-119`).
 - [ ] Typed errors from E14-10 surface as a discriminated union.
 - [ ] `pty-bridge.test.ts` and the profile schema tests are updated.

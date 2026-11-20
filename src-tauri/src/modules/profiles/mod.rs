@@ -1,9 +1,12 @@
 //! Terminal profiles (E14): named launch settings the backend owns and validates.
 //!
 //! The UI refers to a profile by id and the backend resolves it (decision 10). This module holds
-//! the model, its validation and its store; commands, detection and launch build on it.
+//! the model, its validation, its store and the commands that edit it; detection and launch build
+//! on it.
 
+pub mod commands;
 mod model;
+pub mod ops;
 pub mod store;
 mod validate;
 
