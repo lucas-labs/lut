@@ -1202,9 +1202,12 @@ mod windows {
     }
 
     /// Program and arguments of the ZDOTDIR probe: the shell itself, behind `env` when the
-    /// profile has variables.
+    /// profile has variables. `-f` skips the user's startup files (only `/etc/zshenv` runs), so the
+    /// probe sees the ZDOTDIR the environment gives; one the user's `.zshenv` sets is the
+    /// wrapper's to find (`scripts/zshenv.zsh`), after it has sourced that `.zshenv`.
     fn wsl_zdotdir_probe(shell_path: &str, env: &super::ProfileEnv) -> (String, Vec<String>) {
         let probe = [
+            "-f".to_string(),
             "-c".to_string(),
             r#"printf %s "${ZDOTDIR:-$HOME}""#.to_string(),
         ];
@@ -1633,12 +1636,12 @@ mod windows {
                 wsl_zdotdir_probe("/usr/bin/zsh", &no_env()),
                 (
                     "/usr/bin/zsh".to_string(),
-                    vec!["-c".to_string(), script.to_string()]
+                    vec!["-f".to_string(), "-c".to_string(), script.to_string()]
                 )
             );
             let env = super::super::ProfileEnv::from([
                 ("HOME".to_string(), Some("/home/other".to_string())),
-                ("ZDOTDIR".to_string(), None),
+                ("PAGER".to_string(), None),
             ]);
             assert_eq!(
                 wsl_zdotdir_probe("/usr/bin/zsh", &env),
@@ -1646,10 +1649,11 @@ mod windows {
                     "env".to_string(),
                     [
                         "-u",
-                        "ZDOTDIR",
+                        "PAGER",
                         "--",
                         "HOME=/home/other",
                         "/usr/bin/zsh",
+                        "-f",
                         "-c",
                         script
                     ]
