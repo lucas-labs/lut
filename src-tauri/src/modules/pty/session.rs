@@ -79,6 +79,8 @@ pub struct Session {
     colors: Arc<ColorState>,
     // Set only after output drains, so registration cannot reap a live queue.
     pub(super) finished: Arc<AtomicBool>,
+    /// Set as soon as the child exits, before its output drains.
+    pub(super) exited: Arc<AtomicBool>,
 }
 
 impl Drop for Session {
@@ -347,6 +349,7 @@ pub(super) fn spawn_with(
     };
 
     let finished = Arc::new(AtomicBool::new(false));
+    let exited = Arc::new(AtomicBool::new(false));
     let output = Arc::new(OutputQueue::new(Some(hub.wake())));
     let (input, mut input_rx) = mpsc::channel::<InputMessage>(INPUT_QUEUE);
     let color_state = Arc::new(ColorState::new(colors));
@@ -386,6 +389,7 @@ pub(super) fn spawn_with(
         output: output.clone(),
         colors: color_state.clone(),
         finished: finished.clone(),
+        exited: exited.clone(),
     });
 
     // The writer thread owns the PTY input: one ordered queue for keystrokes,
@@ -507,6 +511,7 @@ pub(super) fn spawn_with(
                     -1
                 }
             };
+            exited.store(true, Ordering::Release);
             // Arm before ConPTY close and the join: both can depend on credit.
             output_e.begin_exit(EXIT_ACK_TIMEOUT);
             #[cfg(unix)]
@@ -760,6 +765,8 @@ mod tests {
         thread::sleep(Duration::from_millis(300));
         assert!(frontend.received.is_empty());
         assert!(!session.finished.load(Ordering::Acquire));
+        // The program counts as gone even though its output still waits.
+        assert!(session.exited.load(Ordering::Acquire));
         frontend.run_until_exit(1, &session);
         assert_eq!(String::from_utf8_lossy(&frontend.received), "early");
         assert_eq!(frontend.exit, Some(0));

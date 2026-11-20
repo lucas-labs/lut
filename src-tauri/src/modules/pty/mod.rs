@@ -378,7 +378,7 @@ pub fn pty_has_foreground_process(state: tauri::State<PtyState>, id: u32) -> Res
     })?;
     // A program run directly (an editor, a REPL) is the running process until it exits.
     if !session.program_is_shell {
-        return Ok(!session.finished.load(Ordering::Acquire));
+        return Ok(!session.exited.load(Ordering::Acquire));
     }
     let shell_pid = session.shell_pid;
     if shell_pid == 0 {
