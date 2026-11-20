@@ -4190,6 +4190,7 @@ size: M
 **Acceptance criteria:**
 
 - [ ] The launch spec carries `cwd` and `distro`; profile args are honoured for WSL (ignored today, `shell_init.rs:652-653`).
+- [ ] A WSL profile without `executable` (every detected distro, E14-06) launches the distro's login shell, resolved at launch as today (`wsl_login_shell`).
 - [ ] An unusable cwd (missing path, unmounted drive) falls back to home and the open result reports the cwd used plus a warning.
 - [ ] Errors are a serialized enum: `ExecutableNotFound`, `CwdUnavailable`, `DistroNotInstalled`, `ProfileNotFound`, `SpawnFailed`.
 - [ ] Unit tests for each error path.

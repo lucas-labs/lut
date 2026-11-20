@@ -262,6 +262,7 @@ pub fn run() {
             // Fatal on purpose: without a config dir no store (profiles, settings, themes) can work.
             let config_dir = _app.path().app_config_dir()?;
             _app.manage(modules::profiles::store::ProfilesState::load(config_dir));
+            modules::profiles::commands::detect_in_background(_app.handle());
             if let Err(error) = control::start(_app.handle().clone(), control_for_setup.clone()) {
                 log::warn!("could not start lut control server: {error}");
             }
@@ -309,6 +310,8 @@ pub fn run() {
             modules::profiles::commands::profiles_save,
             modules::profiles::commands::profiles_delete,
             modules::profiles::commands::profiles_set_default,
+            modules::profiles::commands::profiles_set_detected_override,
+            modules::profiles::commands::profiles_detect,
             pty::pty_open,
             pty::pty_write,
             pty::pty_stream_open,

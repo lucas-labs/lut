@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
@@ -5,15 +6,15 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
 
-use super::model::TerminalProfile;
+use super::model::{DetectedOverride, TerminalProfile};
 use super::validate::validate_profiles;
 use crate::modules::fs::atomic::{write_atomic, AtomicWriteError};
 
 /// Store file name inside lut's app config dir.
 pub const PROFILES_FILE: &str = "profiles.json";
 
-/// What the store file holds: the user's own profiles. Detected shells are listed at runtime
-/// (E14-06) and never written here.
+/// What the store file holds: the user's own profiles, and the user's changes to detected ones.
+/// Detected profiles themselves are found at runtime and never written here.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProfilesFile {
@@ -21,6 +22,10 @@ pub struct ProfilesFile {
     pub profiles: Vec<TerminalProfile>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default_profile_id: Option<String>,
+    /// Keyed by detected profile id. Kept when that profile is no longer detected, so it comes
+    /// back as it was when the shell or distro is installed again.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub detected: BTreeMap<String, DetectedOverride>,
 }
 
 /// A store file that could not be used, so lut started with the defaults instead.
@@ -124,6 +129,8 @@ fn backup_path(dir: &Path) -> PathBuf {
 pub struct ProfilesState {
     pub dir: PathBuf,
     pub file: Mutex<ProfilesFile>,
+    /// The last detection; empty until the first one finishes.
+    pub detected: Mutex<Vec<TerminalProfile>>,
     load_error: Mutex<Option<RecoveredFile>>,
     /// Set when startup left an unusable `profiles.json` in place: saving would overwrite it.
     writes_blocked: Option<String>,
@@ -152,6 +159,7 @@ impl ProfilesState {
         Self {
             dir,
             file: Mutex::new(outcome.file),
+            detected: Mutex::new(Vec::new()),
             load_error: Mutex::new(outcome.recovered),
             writes_blocked,
         }
@@ -213,6 +221,7 @@ mod tests {
         let file = ProfilesFile {
             profiles: vec![profile("pwsh"), profile("cmd")],
             default_profile_id: Some("cmd".into()),
+            ..Default::default()
         };
         save(dir.path(), &file).unwrap();
         let outcome = load(dir.path());
@@ -263,6 +272,7 @@ mod tests {
         let file = ProfilesFile {
             profiles: vec![profile("pwsh"), profile("pwsh")],
             default_profile_id: None,
+            ..Default::default()
         };
         save(dir.path(), &file).unwrap();
         let outcome = load(dir.path());

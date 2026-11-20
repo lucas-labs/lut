@@ -128,11 +128,25 @@ fn sanitize_shell_override(shell: Option<String>) -> Option<String> {
 
 #[derive(serde::Serialize)]
 pub struct ShellInfo {
+    /// Stable key of the shell's source (`pwsh`, `git-bash`, `shell:/bin/zsh`), the base of its
+    /// detected profile id. Internal: the UI keys shells by path.
+    #[serde(skip)]
+    pub id: String,
     pub name: String,
     pub path: String,
     /// True when lut injects OSC 7/133 integration for this shell (cwd
     /// tracking, agent detection). Others spawn bare.
     pub integrated: bool,
+}
+
+/// The shell paths in `/etc/shells`: one per line, `#` comments and blank lines skipped.
+#[cfg_attr(not(unix), allow(dead_code))]
+fn parse_etc_shells(content: &str) -> impl Iterator<Item = String> + '_ {
+    content
+        .lines()
+        .map(|line| line.split('#').next().unwrap_or("").trim())
+        .filter(|line| !line.is_empty())
+        .map(str::to_string)
 }
 
 pub fn list_shells() -> Vec<ShellInfo> {
@@ -307,21 +321,27 @@ mod unix {
         let (_, login) = Shell::detect();
         let mut candidates = vec![login];
         if let Ok(content) = fs::read_to_string("/etc/shells") {
-            for line in content.lines() {
-                let line = line.trim();
-                if line.is_empty() || line.starts_with('#') {
-                    continue;
-                }
-                candidates.push(line.to_string());
+            candidates.extend(super::parse_etc_shells(&content));
+        }
+        // Homebrew shells are often missing from /etc/shells.
+        for prefix in ["/opt/homebrew/bin", "/usr/local/bin"] {
+            for name in ["bash", "zsh", "fish", "nu", "pwsh"] {
+                candidates.push(format!("{prefix}/{name}"));
             }
         }
         for path in candidates {
-            if !seen.insert(path.clone()) || !Path::new(&path).is_file() {
+            if !Path::new(&path).is_file() {
+                continue;
+            }
+            // Symlinks (/bin -> /usr/bin, Homebrew links) name the same shell twice.
+            let canonical = fs::canonicalize(&path).unwrap_or_else(|_| PathBuf::from(&path));
+            if !seen.insert(canonical) {
                 continue;
             }
             let integrated = !matches!(Shell::classify(&path), Shell::Other);
             let name = path.rsplit('/').next().unwrap_or(&path).to_string();
             out.push(super::ShellInfo {
+                id: format!("shell:{path}"),
                 name,
                 path,
                 integrated,
@@ -916,9 +936,16 @@ mod windows {
     }
 
     pub fn list_shells() -> Vec<super::ShellInfo> {
-        fn add(out: &mut Vec<super::ShellInfo>, name: &str, path: PathBuf, integrated: bool) {
+        fn add(
+            out: &mut Vec<super::ShellInfo>,
+            id: &str,
+            name: &str,
+            path: PathBuf,
+            integrated: bool,
+        ) {
             if path.is_file() {
                 out.push(super::ShellInfo {
+                    id: id.to_string(),
                     name: name.to_string(),
                     path: path.to_string_lossy().into_owned(),
                     integrated,
@@ -928,10 +955,11 @@ mod windows {
 
         let mut out = Vec::new();
         if let Some(p) = super::which_in_path("pwsh.exe") {
-            add(&mut out, "PowerShell", p, true);
+            add(&mut out, "pwsh", "PowerShell", p, true);
         } else if let Some(pf) = std::env::var_os("ProgramFiles").map(PathBuf::from) {
             add(
                 &mut out,
+                "pwsh",
                 "PowerShell",
                 pf.join("PowerShell").join("7").join("pwsh.exe"),
                 true,
@@ -943,6 +971,7 @@ mod windows {
             .join("System32");
         add(
             &mut out,
+            "powershell",
             "Windows PowerShell",
             system32
                 .join("WindowsPowerShell")
@@ -950,31 +979,80 @@ mod windows {
                 .join("powershell.exe"),
             true,
         );
-        add(&mut out, "Command Prompt", system32.join("cmd.exe"), false);
+        add(
+            &mut out,
+            "cmd",
+            "Command Prompt",
+            system32.join("cmd.exe"),
+            false,
+        );
         if let Some(p) = git_bash_path() {
-            add(&mut out, "Git Bash", p, true);
+            add(&mut out, "git-bash", "Git Bash", p, true);
         }
         out
     }
 
     fn git_bash_path() -> Option<PathBuf> {
-        // Git for Windows install locations only. A bash.exe on PATH is usually
-        // the WSL launcher in System32, which is the separate WSL switcher.
-        for var in ["ProgramFiles", "ProgramFiles(x86)", "LocalAppData"] {
-            if let Some(base) = std::env::var_os(var).map(PathBuf::from) {
-                for rel in [
-                    r"Git\bin\bash.exe",
-                    r"Git\usr\bin\bash.exe",
-                    r"Programs\Git\bin\bash.exe",
-                ] {
-                    let candidate = base.join(rel);
-                    if candidate.is_file() {
-                        return Some(candidate);
-                    }
-                }
-            }
+        // Git for Windows only: a bash.exe on PATH is usually the WSL launcher in System32,
+        // which is the separate WSL switcher. Git may live on any drive, so it is found through
+        // git itself first, and the usual install locations are the fallback.
+        let from_path = super::which_in_path("git.exe").and_then(|git| git_root_for_git_exe(&git));
+        // Spawns git, so it only runs when the roots before it hold no bash.
+        let from_exec_path =
+            std::iter::once_with(|| git_exec_path().and_then(|exec| git_root_for_exec_path(&exec)))
+                .flatten();
+        let fixed = ["ProgramFiles", "ProgramFiles(x86)", "LocalAppData"]
+            .into_iter()
+            .filter_map(|var| std::env::var_os(var).map(PathBuf::from))
+            .flat_map(|base| [base.join("Git"), base.join("Programs").join("Git")]);
+        from_path
+            .into_iter()
+            .chain(from_exec_path)
+            .chain(fixed)
+            .flat_map(|root| [root.join(r"bin\bash.exe"), root.join(r"usr\bin\bash.exe")])
+            .find(|candidate| candidate.is_file())
+    }
+
+    fn git_exec_path() -> Option<PathBuf> {
+        let mut cmd = std::process::Command::new("git");
+        cmd.arg("--exec-path");
+        crate::modules::proc::hide_console(&mut cmd);
+        let out = cmd.output().ok().filter(|out| out.status.success())?;
+        let text = String::from_utf8_lossy(&out.stdout).trim().to_string();
+        (!text.is_empty()).then(|| PathBuf::from(text))
+    }
+
+    /// The Git for Windows root holding `git.exe`: `<root>\cmd\git.exe`, `<root>\bin\git.exe`
+    /// or `<root>\mingw64\bin\git.exe`.
+    fn git_root_for_git_exe(git: &Path) -> Option<PathBuf> {
+        let dir_name = |p: &Path| {
+            p.file_name()
+                .map(|n| n.to_string_lossy().to_ascii_lowercase())
+        };
+        let dir = git.parent()?;
+        if !matches!(dir_name(dir).as_deref(), Some("cmd" | "bin")) {
+            return None;
         }
-        None
+        let parent = dir.parent()?;
+        if dir_name(parent).is_some_and(|n| n.starts_with("mingw") || n == "clangarm64") {
+            parent.parent().map(Path::to_path_buf)
+        } else {
+            Some(parent.to_path_buf())
+        }
+    }
+
+    /// The Git for Windows root from `git --exec-path`, `<root>/mingw64/libexec/git-core`.
+    fn git_root_for_exec_path(exec: &Path) -> Option<PathBuf> {
+        let mut ancestors = exec.ancestors();
+        let core = ancestors.next()?;
+        let libexec = ancestors.next()?;
+        let _platform = ancestors.next()?;
+        let root = ancestors.next()?;
+        let named = |p: &Path, name: &str| {
+            p.file_name()
+                .is_some_and(|n| n.to_string_lossy().eq_ignore_ascii_case(name))
+        };
+        (named(core, "git-core") && named(libexec, "libexec")).then(|| root.to_path_buf())
     }
 
     fn write_if_changed(path: &Path, content: &str) -> Result<(), String> {
@@ -996,6 +1074,34 @@ mod windows {
     #[cfg(test)]
     mod tests {
         use super::*;
+
+        #[test]
+        fn git_root_comes_from_the_git_exe_folder() {
+            for (git, root) in [
+                (r"D:\Program Files\Git\cmd\git.exe", r"D:\Program Files\Git"),
+                (r"D:\Program Files\Git\bin\git.exe", r"D:\Program Files\Git"),
+                (r"D:\tools\Git\mingw64\bin\git.exe", r"D:\tools\Git"),
+            ] {
+                assert_eq!(
+                    git_root_for_git_exe(Path::new(git)),
+                    Some(PathBuf::from(root))
+                );
+            }
+            // A shim (scoop) is not inside Git: `git --exec-path` finds that one.
+            assert_eq!(
+                git_root_for_git_exe(Path::new(r"C:\scoop\shims\git.exe")),
+                None
+            );
+        }
+
+        #[test]
+        fn git_root_comes_from_the_exec_path() {
+            assert_eq!(
+                git_root_for_exec_path(Path::new("D:/Program Files/Git/mingw64/libexec/git-core")),
+                Some(PathBuf::from("D:/Program Files/Git"))
+            );
+            assert_eq!(git_root_for_exec_path(Path::new("D:/elsewhere/git")), None);
+        }
 
         #[test]
         fn builds_wsl_zsh_launch_spec_with_env_and_login() {
@@ -1224,7 +1330,19 @@ mod tests {
 
     use portable_pty::CommandBuilder;
 
-    use super::{apply_common, cmd_prompt, sanitize_shell_override, ShellControlEnv};
+    use super::{
+        apply_common, cmd_prompt, parse_etc_shells, sanitize_shell_override, ShellControlEnv,
+    };
+
+    #[test]
+    fn etc_shells_skips_comments_and_blank_lines() {
+        let content =
+            "# List of acceptable shells\n\n/bin/bash\n  /bin/zsh  \n/usr/bin/fish # fish\n";
+        assert_eq!(
+            parse_etc_shells(content).collect::<Vec<_>>(),
+            ["/bin/bash", "/bin/zsh", "/usr/bin/fish"]
+        );
+    }
 
     #[test]
     fn cmd_prompt_reports_the_cwd_before_the_users_own_prompt() {
