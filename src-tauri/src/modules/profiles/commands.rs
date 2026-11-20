@@ -98,6 +98,7 @@ fn list(state: &ProfilesState) -> ProfilesList {
 /// Detects the shells and distros again and swaps the list in; `true` when it changed.
 /// Blocking: run it off the main thread.
 fn redetect(state: &ProfilesState) -> bool {
+    let _detecting = lock(&state.detecting);
     let found = detect::detect();
     let mut current = lock(&state.detected);
     if *current == found {

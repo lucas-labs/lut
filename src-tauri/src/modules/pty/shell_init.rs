@@ -149,6 +149,34 @@ fn parse_etc_shells(content: &str) -> impl Iterator<Item = String> + '_ {
         .map(str::to_string)
 }
 
+/// Each shell once, the login shell first, spelled as `listed` first names it: the same binary
+/// often has two paths (`/bin/zsh`, `/usr/bin/zsh`), and its id must not depend on which one the
+/// login shell uses. `key` names the binary behind a path, `None` when there is none.
+#[cfg_attr(not(unix), allow(dead_code))]
+fn unique_shell_paths<K: Eq + std::hash::Hash>(
+    login: &str,
+    listed: &[String],
+    key: impl Fn(&str) -> Option<K>,
+) -> Vec<String> {
+    use std::collections::{HashMap, HashSet};
+    let mut spelling = HashMap::new();
+    for path in listed {
+        if let Some(k) = key(path) {
+            spelling.entry(k).or_insert(path);
+        }
+    }
+    let mut seen = HashSet::new();
+    let mut out = Vec::new();
+    for path in std::iter::once(login).chain(listed.iter().map(String::as_str)) {
+        let Some(k) = key(path) else { continue };
+        let stable = spelling.get(&k).map_or(path, |listed| listed.as_str());
+        if seen.insert(k) {
+            out.push(stable.to_string());
+        }
+    }
+    out
+}
+
 pub fn list_shells() -> Vec<ShellInfo> {
     #[cfg(unix)]
     {
@@ -315,29 +343,25 @@ mod unix {
     }
 
     pub fn list_shells() -> Vec<super::ShellInfo> {
-        use std::collections::HashSet;
-        let mut out = Vec::new();
-        let mut seen = HashSet::new();
         let (_, login) = Shell::detect();
-        let mut candidates = vec![login];
+        let mut listed = Vec::new();
         if let Ok(content) = fs::read_to_string("/etc/shells") {
-            candidates.extend(super::parse_etc_shells(&content));
+            listed.extend(super::parse_etc_shells(&content));
         }
         // Homebrew shells are often missing from /etc/shells.
         for prefix in ["/opt/homebrew/bin", "/usr/local/bin"] {
             for name in ["bash", "zsh", "fish", "nu", "pwsh"] {
-                candidates.push(format!("{prefix}/{name}"));
+                listed.push(format!("{prefix}/{name}"));
             }
         }
-        for path in candidates {
-            if !Path::new(&path).is_file() {
-                continue;
-            }
-            // Symlinks (/bin -> /usr/bin, Homebrew links) name the same shell twice.
-            let canonical = fs::canonicalize(&path).unwrap_or_else(|_| PathBuf::from(&path));
-            if !seen.insert(canonical) {
-                continue;
-            }
+        // Symlinks (/bin -> /usr/bin, Homebrew links) name the same shell twice.
+        let binary = |path: &str| {
+            Path::new(path)
+                .is_file()
+                .then(|| fs::canonicalize(path).unwrap_or_else(|_| PathBuf::from(path)))
+        };
+        let mut out = Vec::new();
+        for path in super::unique_shell_paths(&login, &listed, binary) {
             let integrated = !matches!(Shell::classify(&path), Shell::Other);
             let name = path.rsplit('/').next().unwrap_or(&path).to_string();
             out.push(super::ShellInfo {
@@ -1331,8 +1355,31 @@ mod tests {
     use portable_pty::CommandBuilder;
 
     use super::{
-        apply_common, cmd_prompt, parse_etc_shells, sanitize_shell_override, ShellControlEnv,
+        apply_common, cmd_prompt, parse_etc_shells, sanitize_shell_override, unique_shell_paths,
+        ShellControlEnv,
     };
+
+    #[test]
+    fn a_shell_keeps_its_listed_spelling_whatever_the_login_shell() {
+        // `/bin` links to `/usr/bin`: both spellings name one binary.
+        let binary = |path: &str| {
+            let file = path.rsplit('/').next().unwrap();
+            (file != "missing").then(|| file.to_string())
+        };
+        let listed: Vec<String> = ["/bin/bash", "/bin/zsh", "/usr/bin/zsh", "/bin/missing"]
+            .map(String::from)
+            .into();
+        assert_eq!(
+            unique_shell_paths("/usr/bin/zsh", &listed, binary),
+            ["/bin/zsh", "/bin/bash"]
+        );
+        assert_eq!(
+            unique_shell_paths("/usr/bin/bash", &listed, binary),
+            ["/bin/bash", "/bin/zsh"]
+        );
+        // A login shell nothing lists keeps its own path.
+        assert_eq!(unique_shell_paths("/opt/nu", &listed, binary)[0], "/opt/nu");
+    }
 
     #[test]
     fn etc_shells_skips_comments_and_blank_lines() {

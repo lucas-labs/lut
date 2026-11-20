@@ -131,6 +131,9 @@ pub struct ProfilesState {
     pub file: Mutex<ProfilesFile>,
     /// The last detection; empty until the first one finishes.
     pub detected: Mutex<Vec<TerminalProfile>>,
+    /// Held across a whole detection, so one that started earlier cannot publish over a later
+    /// one. Readers only take `detected`, so a slow detection never blocks them.
+    pub detecting: Mutex<()>,
     load_error: Mutex<Option<RecoveredFile>>,
     /// Set when startup left an unusable `profiles.json` in place: saving would overwrite it.
     writes_blocked: Option<String>,
@@ -160,6 +163,7 @@ impl ProfilesState {
             dir,
             file: Mutex::new(outcome.file),
             detected: Mutex::new(Vec::new()),
+            detecting: Mutex::new(()),
             load_error: Mutex::new(outcome.recovered),
             writes_blocked,
         }
