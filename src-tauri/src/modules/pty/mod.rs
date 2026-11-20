@@ -184,6 +184,15 @@ pub async fn pty_open(
     colors: Option<TerminalColors>,
 ) -> Result<u32, String> {
     let workspace = WorkspaceEnv::from_option(workspace);
+    // The `terminalShell` preference until panes open by profile id (E14-12); empty means the
+    // default shell.
+    let launch = shell
+        .map(|program| program.trim().to_string())
+        .filter(|program| !program.is_empty())
+        .map(|program| shell_init::LaunchSpec {
+            program,
+            args: Vec::new(),
+        });
     // A Windows helper cannot execute inside WSL without explicit path and
     // network translation. Do not inject credentials for a broken command.
     let control_env = if workspace.is_wsl() {
@@ -216,7 +225,7 @@ pub async fn pty_open(
             rows,
             cwd,
             workspace,
-            shell,
+            launch,
             control_env,
             colors,
             pane_id,
@@ -367,11 +376,25 @@ pub fn pty_has_foreground_process(state: tauri::State<PtyState>, id: u32) -> Res
         log::warn!("pty_has_foreground_process: unknown session id={id}");
         "no session".to_string()
     })?;
+    // A program run directly (an editor, a REPL) is the running process until it exits.
+    if !session.program_is_shell {
+        return Ok(!session.exited.load(Ordering::Acquire));
+    }
     let shell_pid = session.shell_pid;
     if shell_pid == 0 {
         return Ok(false);
     }
-    Ok(foreground::shell_has_children(shell_pid))
+    #[cfg(unix)]
+    {
+        Ok(foreground::shell_has_children(shell_pid))
+    }
+    #[cfg(windows)]
+    {
+        Ok(foreground::shell_has_children(
+            shell_pid,
+            session.git_bash_launcher,
+        ))
+    }
 }
 
 // Foreground-only check for the renderer hibernation path: true while a job
@@ -400,7 +423,10 @@ pub fn pty_has_foreground_job(state: tauri::State<PtyState>, id: u32) -> Result<
     }
     #[cfg(windows)]
     {
-        Ok(foreground::shell_has_children(shell_pid))
+        Ok(foreground::shell_has_children(
+            shell_pid,
+            session.git_bash_launcher,
+        ))
     }
 }
 

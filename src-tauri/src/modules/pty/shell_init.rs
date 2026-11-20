@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use portable_pty::CommandBuilder;
 
@@ -49,22 +49,271 @@ fn fish_init_script() -> &'static str {
     FISH_INIT_SCRIPT
 }
 
+/// What a PTY starts: a program and its arguments, each passed to the child on its own and never
+/// joined into one shell string.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LaunchSpec {
+    /// An absolute path, or a bare name looked up on `PATH`.
+    pub program: String,
+    pub args: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum LaunchError {
+    /// The program is not a file, or a bare name not found on `PATH`.
+    ExecutableNotFound {
+        program: String,
+    },
+    Failed(String),
+}
+
+impl std::fmt::Display for LaunchError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::ExecutableNotFound { program } => write!(f, "executable not found: {program}"),
+            Self::Failed(reason) => f.write_str(reason),
+        }
+    }
+}
+
+impl std::error::Error for LaunchError {}
+
+/// Builds the command for `launch`, or for the default shell when it is `None`.
 pub fn build_command(
     cwd: Option<String>,
     workspace: WorkspaceEnv,
-    shell: Option<String>,
+    launch: Option<LaunchSpec>,
     control: Option<ShellControlEnv>,
-) -> Result<CommandBuilder, String> {
-    let shell = sanitize_shell_override(shell);
+) -> Result<CommandBuilder, LaunchError> {
     #[cfg(unix)]
     {
         let _ = workspace;
-        unix::build(cwd, shell, control)
+        unix::build(cwd, launch, control)
     }
     #[cfg(windows)]
     {
-        windows::build(cwd, workspace, shell, control)
+        windows::build(cwd, workspace, launch, control)
     }
+}
+
+/// Finds the file a launch names: an absolute path as is, a bare name on `PATH`. A relative path
+/// with folders has nothing to resolve against and is not found.
+fn resolve_program(program: &str) -> Result<PathBuf, LaunchError> {
+    let not_found = || LaunchError::ExecutableNotFound {
+        program: program.to_string(),
+    };
+    let path = Path::new(program);
+    if path.is_absolute() {
+        return if path.is_file() {
+            Ok(path.to_path_buf())
+        } else {
+            Err(not_found())
+        };
+    }
+    if program.trim().is_empty() || path.components().count() != 1 {
+        return Err(not_found());
+    }
+    which_in_path(program).ok_or_else(not_found)
+}
+
+/// The first file `name` names in the `PATH` directories. On Windows a name without an extension
+/// is tried with each `PATHEXT` extension, as `cmd.exe` does.
+fn which_in_path(name: &str) -> Option<PathBuf> {
+    let extensions = if cfg!(windows) {
+        std::env::var("PATHEXT").unwrap_or_else(|_| ".COM;.EXE;.BAT;.CMD".into())
+    } else {
+        String::new()
+    };
+    find_in_dirs(
+        name,
+        std::env::split_paths(&std::env::var_os("PATH")?),
+        &extensions,
+    )
+}
+
+/// `extensions` is a `PATHEXT`-style list; empty means the name is tried only as written.
+/// Relative directories (`.` in `PATH`) are skipped: lut's own working directory has nothing to
+/// do with the pane's, and the child would resolve the path against its cwd.
+fn find_in_dirs(
+    name: &str,
+    dirs: impl IntoIterator<Item = PathBuf>,
+    extensions: &str,
+) -> Option<PathBuf> {
+    let candidates: Vec<String> = if extensions.is_empty() || Path::new(name).extension().is_some()
+    {
+        vec![name.to_string()]
+    } else {
+        extensions
+            .split(';')
+            .map(str::trim)
+            .filter(|ext| !ext.is_empty())
+            .map(|ext| format!("{name}{}", ext.to_ascii_lowercase()))
+            .collect()
+    };
+    dirs.into_iter()
+        .filter(|dir| dir.is_absolute())
+        .find_map(|dir| {
+            candidates
+                .iter()
+                .map(|candidate| dir.join(candidate))
+                .find(|path| is_executable(path))
+        })
+}
+
+/// A file the PATH search may pick. On Unix it also needs an execute bit, so a later executable
+/// in `PATH` wins over a plain file of the same name.
+fn is_executable(path: &Path) -> bool {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        path.metadata()
+            .is_ok_and(|meta| meta.is_file() && meta.permissions().mode() & 0o111 != 0)
+    }
+    #[cfg(not(unix))]
+    {
+        path.is_file()
+    }
+}
+
+/// The program's file name in lower case, without `.exe`.
+fn program_name(program: &str) -> String {
+    let name = program
+        .rsplit(['/', '\\'])
+        .next()
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    match name.strip_suffix(".exe") {
+        Some(stem) => stem.to_string(),
+        None => name,
+    }
+}
+
+/// Whether the program is an interactive shell, integrated by lut or not. At its prompt a shell is
+/// idle, so only what it starts counts as running; any other program is the running process.
+pub(crate) fn is_shell(program: &str) -> bool {
+    const SHELLS: [&str; 15] = [
+        "pwsh",
+        "powershell",
+        "cmd",
+        "bash",
+        "zsh",
+        "fish",
+        "nu",
+        "sh",
+        "dash",
+        "ksh",
+        "mksh",
+        "tcsh",
+        "csh",
+        "elvish",
+        "xonsh",
+    ];
+    SHELLS.contains(&program_name(program).as_str())
+}
+
+/// The shells lut knows, by the program's file name (any case, with or without `.exe`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ShellKind {
+    /// PowerShell 7 or Windows PowerShell.
+    Pwsh,
+    Bash,
+    Zsh,
+    Fish,
+    Cmd,
+    Other,
+}
+
+impl ShellKind {
+    pub(crate) fn classify(program: &str) -> Self {
+        match program_name(program).as_str() {
+            "pwsh" | "powershell" => Self::Pwsh,
+            "bash" => Self::Bash,
+            "zsh" => Self::Zsh,
+            "fish" => Self::Fish,
+            "cmd" => Self::Cmd,
+            _ => Self::Other,
+        }
+    }
+
+    /// Whether lut has integration for this shell on the host: PowerShell, Git Bash and cmd on
+    /// Windows; zsh, bash and fish on Unix.
+    fn integrated_on(self, windows: bool) -> bool {
+        if windows {
+            matches!(self, Self::Pwsh | Self::Bash | Self::Cmd)
+        } else {
+            matches!(self, Self::Bash | Self::Zsh | Self::Fish)
+        }
+    }
+}
+
+/// Whether a launch gets lut's integration: a shell lut integrates on the host, started with no
+/// arguments or only with flags its integrated launch already covers. Any other argument (a
+/// `-Command`, a script, `--rcfile`) would clash with the arguments lut adds, so that launch runs
+/// as the user wrote it, without integration. cmd's integration is its `PROMPT` variable, which
+/// no argument clashes with.
+fn uses_integration(kind: ShellKind, args: &[String], windows: bool) -> bool {
+    if !kind.integrated_on(windows) {
+        return false;
+    }
+    let covered = |arg: &String| match kind {
+        ShellKind::Pwsh => arg.eq_ignore_ascii_case("-NoLogo"),
+        ShellKind::Bash | ShellKind::Zsh | ShellKind::Fish => {
+            matches!(arg.as_str(), "-l" | "--login" | "-i")
+        }
+        ShellKind::Cmd => true,
+        ShellKind::Other => false,
+    };
+    args.iter().all(covered)
+}
+
+/// The arguments of an integrated launch. `file` is lut's prepared integration file (the
+/// PowerShell profile, the bash rcfile), `None` when preparing it failed. The user's covered
+/// flags are kept where the integrated launch does not already imply them: bash's rcfile runs the
+/// login files itself (`--login` would make bash skip it), zsh already starts with `-l`, and
+/// PowerShell with `-NoLogo`.
+fn integrated_args(kind: ShellKind, user_args: &[String], file: Option<&str>) -> Vec<String> {
+    let asked = |flags: &[&str]| user_args.iter().any(|arg| flags.contains(&arg.as_str()));
+    let mut args: Vec<String> = Vec::new();
+    match kind {
+        ShellKind::Pwsh => match file {
+            Some(profile) => {
+                args.extend(
+                    ["-NoLogo", "-NoExit", "-ExecutionPolicy", "Bypass", "-File"].map(String::from),
+                );
+                args.push(profile.to_string());
+            }
+            None => args.extend(user_args.iter().cloned()),
+        },
+        ShellKind::Bash => {
+            if let Some(rcfile) = file {
+                args.push("--rcfile".into());
+                args.push(rcfile.to_string());
+            }
+            // bash ignores --rcfile under -l, so we use -i and source /etc/profile from inside
+            // our rcfile to emulate login init.
+            args.push("-i".into());
+        }
+        ShellKind::Zsh => {
+            // Login shell so /etc/zprofile runs path_helper on macOS — without this, GUI-launched
+            // apps get a minimal PATH missing Homebrew.
+            args.push("-l".into());
+            if asked(&["-i"]) {
+                args.push("-i".into());
+            }
+        }
+        ShellKind::Fish => {
+            if asked(&["-l", "--login"]) {
+                args.push("-l".into());
+            }
+            args.push("-i".into());
+            // Re-assert our prompt after config.fish (-C runs last), so a framework prompt
+            // (starship etc.) loaded there can't override the markers and break cwd tracking.
+            args.push("-C".into());
+            args.push(FISH_REINSTALL_PROMPT.into());
+        }
+        ShellKind::Cmd | ShellKind::Other => args.extend(user_args.iter().cloned()),
+    }
+    args
 }
 
 /// Preserve the shell behind the WSL launcher for shell-specific input quoting.
@@ -105,24 +354,6 @@ mod launched_shell_tests {
         }
         let mut direct = CommandBuilder::new("powershell.exe");
         assert_eq!(launched_shell(&mut direct), "powershell.exe");
-    }
-}
-
-// Honor the override only if it matches an enumerated shell, so a tampered
-// setting can't spawn an arbitrary binary across the IPC boundary.
-fn sanitize_shell_override(shell: Option<String>) -> Option<String> {
-    let candidate = shell
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty())?;
-    let target = std::fs::canonicalize(&candidate).ok();
-    let allowed = list_shells().into_iter().any(|s| {
-        s.path == candidate || (target.is_some() && std::fs::canonicalize(&s.path).ok() == target)
-    });
-    if allowed {
-        Some(candidate)
-    } else {
-        log::warn!("ignoring non-enumerated shell override '{candidate}'");
-        None
     }
 }
 
@@ -285,45 +516,14 @@ mod unix {
     const BASHRC: &str = include_str!("scripts/bashrc.bash");
     const FISH_INIT: &str = include_str!("scripts/init.fish");
 
-    pub enum Shell {
-        Zsh,
-        Bash,
-        Fish,
-        Other,
-    }
+    use super::ShellKind;
 
-    impl Shell {
-        pub fn classify(path: &str) -> Shell {
-            match path.rsplit('/').next().unwrap_or("") {
-                "zsh" => Shell::Zsh,
-                "bash" => Shell::Bash,
-                "fish" => Shell::Fish,
-                _ => Shell::Other,
-            }
-        }
-
-        pub fn detect() -> (Shell, String) {
-            let path = login_shell()
-                .or_else(|| std::env::var("SHELL").ok())
-                .filter(|s| !s.is_empty())
-                .unwrap_or_else(|| "/bin/zsh".into());
-            (Self::classify(&path), path)
-        }
-
-        // A configured override wins only when it points at a real file;
-        // otherwise fall back to the user's login shell.
-        pub fn resolve(shell_override: Option<String>) -> (Shell, String) {
-            if let Some(path) = shell_override
-                .map(|s| s.trim().to_string())
-                .filter(|s| !s.is_empty())
-            {
-                if Path::new(&path).is_file() {
-                    return (Self::classify(&path), path);
-                }
-                log::warn!("configured shell '{path}' not found, using auto-detect");
-            }
-            Self::detect()
-        }
+    /// The user's login shell: passwd, then `$SHELL`, then zsh.
+    fn default_shell() -> String {
+        login_shell()
+            .or_else(|| std::env::var("SHELL").ok())
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| "/bin/zsh".into())
     }
 
     fn login_shell() -> Option<String> {
@@ -343,7 +543,7 @@ mod unix {
     }
 
     pub fn list_shells() -> Vec<super::ShellInfo> {
-        let (_, login) = Shell::detect();
+        let login = default_shell();
         let mut listed = Vec::new();
         if let Ok(content) = fs::read_to_string("/etc/shells") {
             listed.extend(super::parse_etc_shells(&content));
@@ -366,7 +566,7 @@ mod unix {
         };
         let mut out = Vec::new();
         for path in super::unique_shell_paths(&login, &listed, binary) {
-            let integrated = !matches!(Shell::classify(&path), Shell::Other);
+            let integrated = ShellKind::classify(&path).integrated_on(false);
             let name = path.rsplit('/').next().unwrap_or(&path).to_string();
             out.push(super::ShellInfo {
                 id: format!("shell:{path}"),
@@ -380,13 +580,27 @@ mod unix {
 
     pub fn build(
         cwd: Option<String>,
-        shell_override: Option<String>,
+        launch: Option<super::LaunchSpec>,
         control: Option<super::ShellControlEnv>,
-    ) -> Result<CommandBuilder, String> {
-        let (shell, shell_path) = Shell::resolve(shell_override);
-        let mut cmd = CommandBuilder::new(&shell_path);
+    ) -> Result<CommandBuilder, super::LaunchError> {
+        let (program, user_args) = match launch {
+            Some(spec) => (
+                super::resolve_program(&spec.program)?
+                    .to_string_lossy()
+                    .into_owned(),
+                spec.args,
+            ),
+            None => (default_shell(), Vec::new()),
+        };
+        let mut cmd = CommandBuilder::new(&program);
         super::apply_common(&mut cmd, cwd, control.as_ref());
-        apply_shell_init(&mut cmd, &shell, &shell_path);
+        let kind = ShellKind::classify(&program);
+        if super::uses_integration(kind, &user_args, false) {
+            apply_shell_init(&mut cmd, kind, &user_args);
+        } else {
+            log::info!("spawning '{program}' without shell integration");
+            cmd.args(&user_args);
+        }
         Ok(cmd)
     }
 
@@ -411,9 +625,11 @@ mod unix {
         }
     }
 
-    fn apply_shell_init(cmd: &mut CommandBuilder, shell: &Shell, shell_path: &str) {
-        match shell {
-            Shell::Zsh => {
+    /// Environment and arguments of an integrated launch of zsh, bash or fish.
+    fn apply_shell_init(cmd: &mut CommandBuilder, kind: ShellKind, user_args: &[String]) {
+        let mut file = None;
+        match kind {
+            ShellKind::Zsh => {
                 match prepare_zdotdir() {
                     Ok(zdotdir) => {
                         // Guard against lut-in-lut :)
@@ -432,44 +648,23 @@ mod unix {
                         log::warn!("zsh shell integration disabled: {e}");
                     }
                 }
-                // Login shell so /etc/zprofile runs path_helper on macOS — without
-                // this, GUI-launched apps get a minimal PATH missing Homebrew.
-                cmd.arg("-l");
             }
-            Shell::Bash => {
-                match prepare_bash_rcfile() {
-                    Ok(rc) => {
-                        cmd.arg("--rcfile");
-                        cmd.arg(rc);
-                    }
-                    Err(e) => {
-                        log::warn!("bash shell integration disabled: {e}");
-                    }
+            ShellKind::Bash => match prepare_bash_rcfile() {
+                Ok(rc) => file = Some(rc.to_string_lossy().into_owned()),
+                Err(e) => {
+                    log::warn!("bash shell integration disabled: {e}");
                 }
-                // bash ignores --rcfile under -l, so we use -i and source
-                // /etc/profile from inside our rcfile to emulate login init.
-                cmd.arg("-i");
-            }
-            Shell::Fish => {
+            },
+            ShellKind::Fish => {
                 if let Err(e) = prepare_fish_conf_d() {
                     log::warn!("fish shell integration disabled: {e}");
                 }
                 // fish 4.0+ writes its own OSC 133 A/B; ours would double it.
                 cmd.env("fish_features", "no-mark-prompt");
-                cmd.arg("-i");
-                // Re-assert our prompt after config.fish (-C runs last), so a
-                // framework prompt (starship etc.) loaded there can't override
-                // the markers and break cwd tracking.
-                cmd.arg("-C");
-                cmd.arg(super::FISH_REINSTALL_PROMPT);
             }
-            Shell::Other => {
-                log::info!(
-                    "unsupported shell '{}', spawning without integration",
-                    shell_path
-                );
-            }
+            ShellKind::Pwsh | ShellKind::Cmd | ShellKind::Other => {}
         }
+        cmd.args(super::integrated_args(kind, user_args, file.as_deref()));
     }
 
     fn integration_root() -> Result<PathBuf, String> {
@@ -528,40 +723,6 @@ mod unix {
         use super::*;
 
         #[test]
-        fn classify_maps_known_shells() {
-            assert!(matches!(Shell::classify("/bin/zsh"), Shell::Zsh));
-            assert!(matches!(Shell::classify("/usr/bin/bash"), Shell::Bash));
-            assert!(matches!(
-                Shell::classify("/opt/homebrew/bin/fish"),
-                Shell::Fish
-            ));
-            assert!(matches!(Shell::classify("/bin/sh"), Shell::Other));
-            assert!(matches!(Shell::classify("/usr/bin/nu"), Shell::Other));
-        }
-
-        #[test]
-        fn resolve_uses_an_existing_override() {
-            let exe = std::env::current_exe().unwrap();
-            let path = exe.to_string_lossy().into_owned();
-            let (_, resolved) = Shell::resolve(Some(path.clone()));
-            assert_eq!(resolved, path);
-        }
-
-        #[test]
-        fn resolve_falls_back_when_override_missing() {
-            let (_, path) = Shell::resolve(Some("/no/such/shell/xyz".into()));
-            assert!(!path.is_empty());
-            assert_ne!(path, "/no/such/shell/xyz");
-        }
-
-        #[test]
-        fn resolve_falls_back_on_empty_override() {
-            let (_, fallback) = Shell::resolve(Some("   ".into()));
-            let (_, detected) = Shell::detect();
-            assert_eq!(fallback, detected);
-        }
-
-        #[test]
         fn the_users_zdotdir_survives_a_lut_started_from_an_integrated_zsh() {
             let integration = Path::new("/cache/dev.lucode.lut/shell-integration/zsh");
             assert_eq!(
@@ -585,7 +746,7 @@ mod unix {
         fn zsh_starts_from_the_integration_dir_and_forgets_a_stale_user_zdotdir() {
             let mut cmd = CommandBuilder::new("/bin/zsh");
             cmd.env("LUT_USER_ZDOTDIR", "/left/over/from/a/parent/terminal");
-            apply_shell_init(&mut cmd, &Shell::Zsh, "/bin/zsh");
+            apply_shell_init(&mut cmd, ShellKind::Zsh, &[]);
             let zdotdir = cmd.get_env("ZDOTDIR").expect("ZDOTDIR is set");
             assert!(Path::new(zdotdir).ends_with("shell-integration/zsh"));
             assert!(cmd.get_argv().iter().any(|arg| arg == "-l"));
@@ -606,7 +767,7 @@ mod unix {
         #[test]
         fn builds_unix_fish_launch_with_post_config_rewrap() {
             let mut cmd = CommandBuilder::new("/usr/bin/fish");
-            apply_shell_init(&mut cmd, &Shell::Fish, "/usr/bin/fish");
+            apply_shell_init(&mut cmd, ShellKind::Fish, &[]);
             let argv: Vec<_> = cmd
                 .get_argv()
                 .iter()
@@ -631,29 +792,11 @@ mod windows {
     use std::fs;
     use std::path::{Path, PathBuf};
 
+    use super::ShellKind;
     use crate::modules::workspace::WorkspaceEnv;
     use portable_pty::CommandBuilder;
 
     const PROFILE_PS1: &str = include_str!("scripts/profile.ps1");
-
-    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-    enum ShellKind {
-        Zsh,
-        Bash,
-        Fish,
-        Other,
-    }
-
-    impl ShellKind {
-        fn from_path(path: &str) -> Self {
-            match path.rsplit('/').next().unwrap_or("") {
-                "zsh" => Self::Zsh,
-                "bash" => Self::Bash,
-                "fish" => Self::Fish,
-                _ => Self::Other,
-            }
-        }
-    }
 
     #[derive(Clone, Debug, Eq, PartialEq)]
     enum WslShellIntegration {
@@ -676,79 +819,77 @@ mod windows {
     pub fn build(
         cwd: Option<String>,
         workspace: WorkspaceEnv,
-        shell: Option<String>,
+        launch: Option<super::LaunchSpec>,
         control: Option<super::ShellControlEnv>,
-    ) -> Result<CommandBuilder, String> {
+    ) -> Result<CommandBuilder, super::LaunchError> {
         if let WorkspaceEnv::Wsl { distro } = workspace {
-            let _ = (shell, control);
-            return build_wsl(cwd, distro);
+            let _ = (launch, control);
+            return build_wsl(cwd, distro).map_err(super::LaunchError::Failed);
         }
-        let shell_path = shell
-            .map(|s| s.trim().to_string())
-            .filter(|s| !s.is_empty())
-            .map(PathBuf::from)
-            .filter(|p| p.is_file())
-            .unwrap_or_else(super::windows_shell_path);
-        let shell_name = shell_path
-            .file_name()
-            .and_then(|s| s.to_str())
-            .map(|s| s.to_ascii_lowercase())
-            .unwrap_or_default();
-        let is_powershell = shell_name == "pwsh.exe" || shell_name == "powershell.exe";
-        let is_bash = shell_name == "bash.exe";
-        let is_cmd = shell_name == "cmd.exe";
-
-        let mut cmd = CommandBuilder::new(&shell_path);
+        let (program, user_args) = match launch {
+            Some(spec) => (super::resolve_program(&spec.program)?, spec.args),
+            None => (super::windows_shell_path(), Vec::new()),
+        };
+        let mut cmd = CommandBuilder::new(&program);
         super::apply_common(&mut cmd, cwd, control.as_ref());
+        let kind = ShellKind::classify(&program.to_string_lossy());
+        let integrated = super::uses_integration(kind, &user_args, true);
+        let file = if integrated {
+            integration_file(kind)
+        } else {
+            log::info!("spawning {} without shell integration", program.display());
+            None
+        };
+        apply_launch(&mut cmd, kind, integrated, &user_args, file.as_deref());
+        log::info!("spawning Windows program: {}", program.display());
+        Ok(cmd)
+    }
 
-        if is_cmd {
+    /// lut's prepared integration file for `kind`, in the form the shell reads.
+    fn integration_file(kind: ShellKind) -> Option<String> {
+        let prepared = match kind {
+            ShellKind::Pwsh => prepare_ps_profile().map(|p| p.to_string_lossy().into_owned()),
+            // Native git-bash: same OSC 7/133 rcfile as Unix bash, in the forward-slash form
+            // MSYS bash accepts.
+            ShellKind::Bash => {
+                prepare_bash_rcfile().map(|p| p.to_string_lossy().replace('\\', "/"))
+            }
+            _ => return None,
+        };
+        prepared
+            .inspect_err(|e| log::warn!("{kind:?} shell integration disabled: {e}"))
+            .ok()
+    }
+
+    /// Environment and arguments of a native launch, once its program and integration are known.
+    fn apply_launch(
+        cmd: &mut CommandBuilder,
+        kind: ShellKind,
+        integrated: bool,
+        user_args: &[String],
+        file: Option<&str>,
+    ) {
+        if kind == ShellKind::Bash {
+            // git-bash's /etc/profile cd's to $HOME unless CHERE_INVOKING is set; keep the cwd
+            // we configured in apply_common.
+            cmd.env("CHERE_INVOKING", "1");
+        }
+        if !integrated {
+            cmd.args(user_args);
+            return;
+        }
+        if kind == ShellKind::Cmd {
             let host = std::env::var("COMPUTERNAME").unwrap_or_default();
             let existing = std::env::var("PROMPT").ok();
             cmd.env("PROMPT", super::cmd_prompt(&host, existing.as_deref()));
         }
-
-        if is_powershell {
-            match prepare_ps_profile() {
-                Ok(profile) => {
-                    cmd.arg("-NoLogo");
-                    cmd.arg("-NoExit");
-                    cmd.arg("-ExecutionPolicy");
-                    cmd.arg("Bypass");
-                    cmd.arg("-File");
-                    cmd.arg(profile);
-                }
-                Err(e) => {
-                    log::warn!("powershell shell integration disabled: {e}");
-                }
-            }
-        } else if is_bash {
-            // git-bash's /etc/profile cd's to $HOME unless CHERE_INVOKING is
-            // set; keep the cwd we configured in apply_common.
-            cmd.env("CHERE_INVOKING", "1");
-            // Native git-bash: same OSC 7/133 rcfile as Unix bash, in the
-            // forward-slash form MSYS bash accepts.
-            match prepare_bash_rcfile() {
-                Ok(rc) => {
-                    cmd.arg("--rcfile");
-                    cmd.arg(rc.to_string_lossy().replace('\\', "/"));
-                    cmd.arg("-i");
-                }
-                Err(e) => {
-                    log::warn!("bash shell integration disabled: {e}");
-                }
-            }
-        } else {
-            log::info!("spawning {} without shell integration", shell_name);
-        }
-
-        log::info!("spawning Windows shell: {}", shell_path.display());
-        Ok(cmd)
+        cmd.args(super::integrated_args(kind, user_args, file));
     }
 
     fn build_wsl(cwd: Option<String>, distro: String) -> Result<CommandBuilder, String> {
         crate::modules::workspace::validate_wsl_distro_name(&distro)?;
         let shell_path = crate::modules::workspace::wsl_login_shell(distro.clone())?;
-        let shell_kind = ShellKind::from_path(&shell_path);
+        let shell_kind = ShellKind::classify(&shell_path);
         let integration = match shell_kind {
             ShellKind::Zsh => match prepare_wsl_zdotdir(&distro) {
                 Ok(zdotdir) => {
@@ -784,7 +925,7 @@ mod windows {
                     WslShellIntegration::None
                 }
             },
-            ShellKind::Other => {
+            ShellKind::Pwsh | ShellKind::Cmd | ShellKind::Other => {
                 log::info!(
                     "unsupported WSL shell '{}', spawning without integration",
                     shell_path
@@ -1103,6 +1244,137 @@ mod windows {
     mod tests {
         use super::*;
 
+        fn launch(
+            program: &str,
+            integrated: bool,
+            user_args: &[&str],
+            file: Option<&str>,
+        ) -> CommandBuilder {
+            let mut cmd = CommandBuilder::new(program);
+            let user_args: Vec<String> = user_args.iter().map(|a| a.to_string()).collect();
+            apply_launch(
+                &mut cmd,
+                ShellKind::classify(program),
+                integrated,
+                &user_args,
+                file,
+            );
+            cmd
+        }
+
+        fn argv(cmd: &CommandBuilder) -> Vec<String> {
+            cmd.get_argv()
+                .iter()
+                .map(|arg| arg.to_string_lossy().into_owned())
+                .collect()
+        }
+
+        #[test]
+        fn pwsh_starts_with_lut_profile() {
+            let cmd = launch(
+                r"C:\Program Files\PowerShell\7\pwsh.exe",
+                true,
+                &["-NoLogo"],
+                Some(r"C:\cache\profile.ps1"),
+            );
+            assert_eq!(
+                argv(&cmd),
+                [
+                    r"C:\Program Files\PowerShell\7\pwsh.exe",
+                    "-NoLogo",
+                    "-NoExit",
+                    "-ExecutionPolicy",
+                    "Bypass",
+                    "-File",
+                    r"C:\cache\profile.ps1",
+                ]
+            );
+        }
+
+        #[test]
+        fn git_bash_keeps_the_cwd_and_reads_lut_rcfile() {
+            let cmd = launch(
+                r"D:\Git\bin\bash.exe",
+                true,
+                &[],
+                Some("C:/cache/bash/bashrc"),
+            );
+            assert_eq!(
+                argv(&cmd),
+                [
+                    r"D:\Git\bin\bash.exe",
+                    "--rcfile",
+                    "C:/cache/bash/bashrc",
+                    "-i"
+                ]
+            );
+            assert_eq!(cmd.get_env("CHERE_INVOKING"), Some("1".as_ref()));
+            // Without integration bash still must not cd to $HOME.
+            let cmd = launch(r"D:\Git\bin\bash.exe", false, &["-c", "make"], None);
+            assert_eq!(argv(&cmd), [r"D:\Git\bin\bash.exe", "-c", "make"]);
+            assert_eq!(cmd.get_env("CHERE_INVOKING"), Some("1".as_ref()));
+        }
+
+        #[test]
+        fn cmd_reports_the_cwd_through_its_prompt_and_keeps_its_arguments() {
+            let cmd = launch(
+                r"C:\Windows\System32\cmd.exe",
+                true,
+                &["/k", "init.bat"],
+                None,
+            );
+            assert_eq!(
+                argv(&cmd),
+                [r"C:\Windows\System32\cmd.exe", "/k", "init.bat"]
+            );
+            let prompt = cmd.get_env("PROMPT").unwrap().to_string_lossy();
+            assert!(prompt.starts_with("$E]7;file://"), "{prompt}");
+        }
+
+        #[test]
+        fn another_program_gets_its_arguments_one_by_one() {
+            let cmd = launch(
+                r"C:\Python\python.exe",
+                false,
+                &["-q", "C:\\My Scripts\\start.py", "a \"quoted\" arg"],
+                None,
+            );
+            assert_eq!(
+                argv(&cmd),
+                [
+                    r"C:\Python\python.exe",
+                    "-q",
+                    "C:\\My Scripts\\start.py",
+                    "a \"quoted\" arg"
+                ]
+            );
+        }
+
+        #[test]
+        fn only_git_for_windows_bin_bash_is_a_launcher() {
+            let git = tempfile::tempdir().unwrap();
+            for dir in [r"bin", r"usr\bin"] {
+                fs::create_dir_all(git.path().join(dir)).unwrap();
+                fs::write(git.path().join(dir).join("bash.exe"), "").unwrap();
+            }
+            assert!(super::super::is_git_bash_launcher(
+                &git.path().join(r"bin\BASH.EXE")
+            ));
+            // The real bash it starts, and a bash with no usr\bin beside it (Cygwin).
+            assert!(!super::super::is_git_bash_launcher(
+                &git.path().join(r"usr\bin\bash.exe")
+            ));
+            let cygwin = tempfile::tempdir().unwrap();
+            fs::create_dir_all(cygwin.path().join("bin")).unwrap();
+            fs::write(cygwin.path().join(r"bin\bash.exe"), "").unwrap();
+            assert!(!super::super::is_git_bash_launcher(
+                &cygwin.path().join(r"bin\bash.exe")
+            ));
+            assert!(!super::super::is_git_bash_launcher(Path::new(
+                r"C:\Windows\System32\cmd.exe"
+            )));
+        }
+
         #[test]
         fn git_root_comes_from_the_git_exe_folder() {
             for (git, root) in [
@@ -1312,6 +1584,22 @@ fn cmd_prompt(host: &str, existing: Option<&str>) -> String {
     format!("{REPORT_CWD}{host}/$P$E\\{}", existing.unwrap_or("$P$G"))
 }
 
+/// Git for Windows' `<root>\bin\bash.exe` is a launcher: it sets up the environment and runs
+/// `<root>\usr\bin\bash.exe` as its child. A bash elsewhere (MSYS2, Cygwin) is the shell itself.
+#[cfg(windows)]
+pub fn is_git_bash_launcher(program: &Path) -> bool {
+    let named = |path: &Path, name: &str| {
+        path.file_name()
+            .is_some_and(|file| file.eq_ignore_ascii_case(name))
+    };
+    named(program, "bash.exe")
+        && program
+            .parent()
+            .filter(|bin| named(bin, "bin"))
+            .and_then(Path::parent)
+            .is_some_and(|root| root.join(r"usr\bin\bash.exe").is_file())
+}
+
 #[cfg(windows)]
 pub fn windows_shell_path() -> PathBuf {
     if let Some(p) = which_in_path("pwsh.exe") {
@@ -1340,28 +1628,283 @@ pub fn windows_shell_path() -> PathBuf {
     system32.join("cmd.exe")
 }
 
-#[cfg(windows)]
-fn which_in_path(name: &str) -> Option<PathBuf> {
-    let path = std::env::var_os("PATH")?;
-    for dir in std::env::split_paths(&path) {
-        let candidate = dir.join(name);
-        if candidate.is_file() {
-            return Some(candidate);
-        }
-    }
-    None
-}
-
 #[cfg(test)]
 mod tests {
     use std::ffi::OsStr;
 
     use portable_pty::CommandBuilder;
 
+    use std::path::PathBuf;
+
     use super::{
-        apply_common, cmd_prompt, parse_etc_shells, sanitize_shell_override, unique_shell_paths,
-        ShellControlEnv,
+        apply_common, cmd_prompt, find_in_dirs, integrated_args, is_shell, parse_etc_shells,
+        resolve_program, unique_shell_paths, uses_integration, LaunchError, ShellControlEnv,
+        ShellKind, FISH_REINSTALL_PROMPT,
     };
+
+    fn strings(args: &[&str]) -> Vec<String> {
+        args.iter().map(|arg| arg.to_string()).collect()
+    }
+
+    #[test]
+    fn an_absolute_path_must_be_a_file() {
+        let exe = std::env::current_exe().unwrap();
+        assert_eq!(resolve_program(&exe.to_string_lossy()), Ok(exe.clone()));
+        let missing = exe.with_file_name("no-such-shell-e14-07");
+        let missing = missing.to_string_lossy().into_owned();
+        assert_eq!(
+            resolve_program(&missing),
+            Err(LaunchError::ExecutableNotFound {
+                program: missing.clone()
+            })
+        );
+        assert_eq!(
+            resolve_program(&missing).unwrap_err().to_string(),
+            format!("executable not found: {missing}")
+        );
+    }
+
+    #[test]
+    fn a_relative_path_or_blank_program_is_not_found() {
+        for program in ["", "  ", "bin/zsh", "./bash", "..\\cmd.exe"] {
+            assert_eq!(
+                resolve_program(program),
+                Err(LaunchError::ExecutableNotFound {
+                    program: program.into()
+                }),
+                "{program:?}"
+            );
+        }
+    }
+
+    /// An empty file the PATH search accepts (with an execute bit on Unix).
+    fn executable(path: &std::path::Path) {
+        std::fs::write(path, "").unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755)).unwrap();
+        }
+    }
+
+    #[test]
+    fn a_bare_name_is_found_in_the_path_dirs() {
+        let first = tempfile::tempdir().unwrap();
+        let second = tempfile::tempdir().unwrap();
+        executable(&second.path().join("nu"));
+        executable(&second.path().join("nu.cmd"));
+        executable(&first.path().join("nu.exe"));
+        let dirs = || [first.path().to_path_buf(), second.path().to_path_buf()];
+        // As written when there is no PATHEXT, or the name has an extension.
+        assert_eq!(
+            find_in_dirs("nu", dirs(), ""),
+            Some(second.path().join("nu"))
+        );
+        assert_eq!(
+            find_in_dirs("nu.cmd", dirs(), ".EXE"),
+            Some(second.path().join("nu.cmd"))
+        );
+        // With each PATHEXT extension, the first directory that has one winning.
+        assert_eq!(
+            find_in_dirs("nu", dirs(), ".COM;.EXE;.CMD"),
+            Some(first.path().join("nu.exe"))
+        );
+        assert_eq!(find_in_dirs("fish", dirs(), ".EXE"), None);
+        assert_eq!(find_in_dirs("nu", Vec::<PathBuf>::new(), ""), None);
+    }
+
+    #[test]
+    fn relative_path_dirs_are_skipped() {
+        // Tests run in the crate root, which holds Cargo.toml.
+        assert!(std::path::Path::new("Cargo.toml").is_file());
+        for dir in [".", "./", ""] {
+            assert_eq!(
+                find_in_dirs("Cargo.toml", [PathBuf::from(dir)], ""),
+                None,
+                "{dir:?}"
+            );
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_file_without_an_execute_bit_does_not_hide_a_later_executable() {
+        let first = tempfile::tempdir().unwrap();
+        let second = tempfile::tempdir().unwrap();
+        std::fs::write(first.path().join("nu"), "").unwrap();
+        executable(&second.path().join("nu"));
+        assert_eq!(
+            find_in_dirs(
+                "nu",
+                [first.path().to_path_buf(), second.path().to_path_buf()],
+                ""
+            ),
+            Some(second.path().join("nu"))
+        );
+    }
+
+    #[test]
+    fn shells_are_told_from_other_programs() {
+        for program in [
+            r"C:\Windows\System32\cmd.exe",
+            r"C:\Program Files\nu\bin\nu.exe",
+            "/bin/sh",
+            "/usr/bin/dash",
+            "/usr/local/bin/xonsh",
+            "Pwsh.EXE",
+        ] {
+            assert!(is_shell(program), "{program}");
+        }
+        for program in [r"C:\tools\nvim.exe", "/usr/bin/python3", "htop", "shell"] {
+            assert!(!is_shell(program), "{program}");
+        }
+    }
+
+    #[test]
+    fn shells_are_known_by_file_name() {
+        for (program, kind) in [
+            (r"C:\Program Files\PowerShell\7\pwsh.exe", ShellKind::Pwsh),
+            (
+                r"C:\Windows\System32\WindowsPowerShell\v1.0\PowerShell.EXE",
+                ShellKind::Pwsh,
+            ),
+            ("/usr/bin/pwsh", ShellKind::Pwsh),
+            (r"D:\Git\bin\bash.exe", ShellKind::Bash),
+            ("/usr/bin/zsh", ShellKind::Zsh),
+            ("/opt/homebrew/bin/fish", ShellKind::Fish),
+            (r"C:\Windows\System32\cmd.exe", ShellKind::Cmd),
+            ("/bin/sh", ShellKind::Other),
+            ("nu", ShellKind::Other),
+            (r"C:\Python\python.exe", ShellKind::Other),
+        ] {
+            assert_eq!(ShellKind::classify(program), kind, "{program}");
+        }
+    }
+
+    #[test]
+    fn integration_follows_the_host() {
+        for kind in [ShellKind::Pwsh, ShellKind::Bash, ShellKind::Cmd] {
+            assert!(uses_integration(kind, &[], true), "{kind:?}");
+        }
+        for kind in [ShellKind::Zsh, ShellKind::Fish, ShellKind::Other] {
+            assert!(!uses_integration(kind, &[], true), "{kind:?}");
+        }
+        for kind in [ShellKind::Bash, ShellKind::Zsh, ShellKind::Fish] {
+            assert!(uses_integration(kind, &[], false), "{kind:?}");
+        }
+        for kind in [ShellKind::Pwsh, ShellKind::Cmd, ShellKind::Other] {
+            assert!(!uses_integration(kind, &[], false), "{kind:?}");
+        }
+    }
+
+    #[test]
+    fn only_flags_the_integrated_launch_covers_keep_integration() {
+        assert!(uses_integration(
+            ShellKind::Pwsh,
+            &strings(&["-nologo"]),
+            true
+        ));
+        assert!(!uses_integration(
+            ShellKind::Pwsh,
+            &strings(&["-NoProfile"]),
+            true
+        ));
+        assert!(!uses_integration(
+            ShellKind::Pwsh,
+            &strings(&["-Command", "Get-Date"]),
+            true
+        ));
+        for kind in [ShellKind::Bash, ShellKind::Zsh, ShellKind::Fish] {
+            assert!(uses_integration(
+                kind,
+                &strings(&["-l", "--login", "-i"]),
+                false
+            ));
+            assert!(!uses_integration(kind, &strings(&["-c", "make"]), false));
+            assert!(!uses_integration(
+                kind,
+                &strings(&["-l", "script.sh"]),
+                false
+            ));
+        }
+        // cmd's integration is its PROMPT variable, which no argument clashes with.
+        assert!(uses_integration(
+            ShellKind::Cmd,
+            &strings(&["/k", "init.bat"]),
+            true
+        ));
+    }
+
+    #[test]
+    fn pwsh_runs_lut_profile_and_keeps_its_logo_off() {
+        let expected = strings(&[
+            "-NoLogo",
+            "-NoExit",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            r"C:\cache\profile.ps1",
+        ]);
+        for user in [&[][..], &["-NoLogo"][..]] {
+            assert_eq!(
+                integrated_args(
+                    ShellKind::Pwsh,
+                    &strings(user),
+                    Some(r"C:\cache\profile.ps1")
+                ),
+                expected
+            );
+        }
+        // Without lut's profile, PowerShell starts as the user asked.
+        assert_eq!(
+            integrated_args(ShellKind::Pwsh, &strings(&["-NoLogo"]), None),
+            strings(&["-NoLogo"])
+        );
+    }
+
+    #[test]
+    fn bash_runs_lut_rcfile_which_does_the_login() {
+        for user in [&[][..], &["-l"][..], &["--login", "-i"][..]] {
+            assert_eq!(
+                integrated_args(ShellKind::Bash, &strings(user), Some("/cache/bashrc")),
+                strings(&["--rcfile", "/cache/bashrc", "-i"]),
+                "{user:?}"
+            );
+        }
+        assert_eq!(
+            integrated_args(ShellKind::Bash, &[], None),
+            strings(&["-i"])
+        );
+    }
+
+    #[test]
+    fn zsh_is_a_login_shell_and_keeps_an_asked_interactive_flag() {
+        assert_eq!(integrated_args(ShellKind::Zsh, &[], None), strings(&["-l"]));
+        assert_eq!(
+            integrated_args(ShellKind::Zsh, &strings(&["--login", "-i"]), None),
+            strings(&["-l", "-i"])
+        );
+    }
+
+    #[test]
+    fn fish_reinstalls_lut_prompt_last_and_keeps_an_asked_login() {
+        assert_eq!(
+            integrated_args(ShellKind::Fish, &[], None),
+            strings(&["-i", "-C", FISH_REINSTALL_PROMPT])
+        );
+        assert_eq!(
+            integrated_args(ShellKind::Fish, &strings(&["--login"]), None),
+            strings(&["-l", "-i", "-C", FISH_REINSTALL_PROMPT])
+        );
+    }
+
+    #[test]
+    fn cmd_keeps_its_arguments() {
+        assert_eq!(
+            integrated_args(ShellKind::Cmd, &strings(&["/k", "init.bat"]), None),
+            strings(&["/k", "init.bat"])
+        );
+    }
 
     #[test]
     fn a_shell_keeps_its_listed_spelling_whatever_the_login_shell() {
@@ -1439,21 +1982,6 @@ mod tests {
             cmd_prompt("a$E]52;c;x$E\\b", None),
             "$E]7;file://aE52cxEb/$P$E\\$P$G"
         );
-    }
-
-    #[test]
-    fn rejects_non_enumerated_override() {
-        let exe = std::env::current_exe()
-            .unwrap()
-            .to_string_lossy()
-            .into_owned();
-        assert_eq!(sanitize_shell_override(Some(exe)), None);
-    }
-
-    #[test]
-    fn empty_or_missing_override_is_none() {
-        assert_eq!(sanitize_shell_override(Some("   ".into())), None);
-        assert_eq!(sanitize_shell_override(None), None);
     }
 
     #[test]

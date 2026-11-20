@@ -57,6 +57,12 @@ pub struct Session {
     /// PID of the shell process. 0 means unknown; callers must skip checks when 0.
     pub shell_pid: u32,
     pub shell_program: String,
+    /// The program is an interactive shell: idle at its prompt, so only what it starts counts as
+    /// running. Any other program (an editor, a REPL) is itself the running process.
+    pub program_is_shell: bool,
+    /// The shell is Git for Windows' `bin\bash.exe` launcher, whose child is the real bash.
+    #[cfg(windows)]
+    pub git_bash_launcher: bool,
     /// Frontend pane (leaf) this terminal belongs to, when it reported one.
     pub pane_id: Option<u32>,
     /// Agent state shared with the control server's structured hooks.
@@ -73,6 +79,8 @@ pub struct Session {
     colors: Arc<ColorState>,
     // Set only after output drains, so registration cannot reap a live queue.
     pub(super) finished: Arc<AtomicBool>,
+    /// Set as soon as the child exits, before its output drains.
+    pub(super) exited: Arc<AtomicBool>,
 }
 
 impl Drop for Session {
@@ -244,7 +252,7 @@ pub fn spawn(
     rows: u16,
     cwd: Option<String>,
     workspace: WorkspaceEnv,
-    shell: Option<String>,
+    launch: Option<shell_init::LaunchSpec>,
     control: Option<crate::modules::control::ShellControlEnv>,
     colors: Option<TerminalColors>,
     pane_id: Option<u32>,
@@ -280,7 +288,9 @@ pub fn spawn(
             pixel_width: 0,
             pixel_height: 0,
         },
-        move || shell_init::build_command(cwd, workspace, shell, control),
+        move || {
+            shell_init::build_command(cwd, workspace, launch, control).map_err(|e| e.to_string())
+        },
     )
 }
 
@@ -339,6 +349,7 @@ pub(super) fn spawn_with(
     };
 
     let finished = Arc::new(AtomicBool::new(false));
+    let exited = Arc::new(AtomicBool::new(false));
     let output = Arc::new(OutputQueue::new(Some(hub.wake())));
     let (input, mut input_rx) = mpsc::channel::<InputMessage>(INPUT_QUEUE);
     let color_state = Arc::new(ColorState::new(colors));
@@ -363,6 +374,11 @@ pub(super) fn spawn_with(
         #[cfg(windows)]
         _job: job,
         shell_pid,
+        program_is_shell: super::shell_init::is_shell(&shell_program),
+        #[cfg(windows)]
+        git_bash_launcher: super::shell_init::is_git_bash_launcher(std::path::Path::new(
+            &shell_program,
+        )),
         shell_program,
         pane_id,
         link: link.clone(),
@@ -373,6 +389,7 @@ pub(super) fn spawn_with(
         output: output.clone(),
         colors: color_state.clone(),
         finished: finished.clone(),
+        exited: exited.clone(),
     });
 
     // The writer thread owns the PTY input: one ordered queue for keystrokes,
@@ -494,6 +511,7 @@ pub(super) fn spawn_with(
                     -1
                 }
             };
+            exited.store(true, Ordering::Release);
             // Arm before ConPTY close and the join: both can depend on credit.
             output_e.begin_exit(EXIT_ACK_TIMEOUT);
             #[cfg(unix)]
@@ -747,6 +765,8 @@ mod tests {
         thread::sleep(Duration::from_millis(300));
         assert!(frontend.received.is_empty());
         assert!(!session.finished.load(Ordering::Acquire));
+        // The program counts as gone even though its output still waits.
+        assert!(session.exited.load(Ordering::Acquire));
         frontend.run_until_exit(1, &session);
         assert_eq!(String::from_utf8_lossy(&frontend.received), "early");
         assert_eq!(frontend.exit, Some(0));
