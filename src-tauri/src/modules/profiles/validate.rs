@@ -24,6 +24,10 @@ pub enum ProfileErrorCode {
     EmptyExecutable,
     /// Empty, or holding `=` or NUL, which break the environment block on every platform.
     InvalidEnvName,
+    /// Starts with `LUT_` (any case): lut sets those for its integration, after the profile's.
+    ReservedEnvName,
+    /// Holding NUL, which ends the value early on Windows and fails the spawn on Unix.
+    InvalidEnvValue,
     DuplicateId,
     /// Starts with `detected:`, which only detected profiles use.
     ReservedId,
@@ -46,6 +50,8 @@ impl Display for ProfileError {
             ProfileErrorCode::EmptyName => "name is empty",
             ProfileErrorCode::EmptyExecutable => "executable is empty",
             ProfileErrorCode::InvalidEnvName => "environment variable name is invalid",
+            ProfileErrorCode::ReservedEnvName => "environment variable name is reserved for lut",
+            ProfileErrorCode::InvalidEnvValue => "environment variable value is invalid",
             ProfileErrorCode::DuplicateId => "id is used by another profile",
             ProfileErrorCode::ReservedId => "id uses the prefix of detected profiles",
         };
@@ -68,6 +74,15 @@ fn is_blank(value: &str) -> bool {
 
 fn is_valid_env_name(name: &str) -> bool {
     !name.is_empty() && !name.contains(['=', '\0'])
+}
+
+/// Prefix of lut's own variables (`LUT_CLI`, `LUT_PANE_ID`, ...), in any case: Windows names are
+/// case-insensitive.
+const RESERVED_ENV_PREFIX: &str = "LUT_";
+
+fn is_reserved_env_name(name: &str) -> bool {
+    name.get(..RESERVED_ENV_PREFIX.len())
+        .is_some_and(|prefix| prefix.eq_ignore_ascii_case(RESERVED_ENV_PREFIX))
 }
 
 /// Every problem in one of the user's profiles, not only the first. Detected profiles are built
@@ -101,13 +116,18 @@ pub fn validate_profile(profile: &TerminalProfile) -> Vec<ProfileError> {
             ProfileErrorCode::EmptyExecutable,
         ));
     }
-    for name in profile.env.keys() {
-        if !is_valid_env_name(name) {
-            errors.push(ProfileError::new(
-                profile,
-                format!("env.{name}"),
-                ProfileErrorCode::InvalidEnvName,
-            ));
+    for (name, value) in &profile.env {
+        let code = if !is_valid_env_name(name) {
+            Some(ProfileErrorCode::InvalidEnvName)
+        } else if is_reserved_env_name(name) {
+            Some(ProfileErrorCode::ReservedEnvName)
+        } else if value.as_deref().is_some_and(|value| value.contains('\0')) {
+            Some(ProfileErrorCode::InvalidEnvValue)
+        } else {
+            None
+        };
+        if let Some(code) = code {
+            errors.push(ProfileError::new(profile, format!("env.{name}"), code));
         }
     }
     errors
@@ -206,11 +226,11 @@ mod tests {
     fn rejects_env_names_that_break_the_environment_block() {
         let mut p = profile("pwsh");
         p.env = BTreeMap::from([
-            ("".into(), "x".into()),
-            ("A=B".into(), "x".into()),
-            ("NUL\0".into(), "x".into()),
-            ("ProgramFiles(x86)".into(), "x".into()),
-            ("EDITOR".into(), "nvim".into()),
+            ("".into(), Some("x".into())),
+            ("A=B".into(), Some("x".into())),
+            ("NUL\0".into(), Some("x".into())),
+            ("ProgramFiles(x86)".into(), Some("x".into())),
+            ("EDITOR".into(), Some("nvim".into())),
         ]);
         assert_eq!(
             codes(&validate_profile(&p)),
@@ -218,6 +238,26 @@ mod tests {
                 ("env.", ProfileErrorCode::InvalidEnvName),
                 ("env.A=B", ProfileErrorCode::InvalidEnvName),
                 ("env.NUL\0", ProfileErrorCode::InvalidEnvName),
+            ]
+        );
+    }
+
+    #[test]
+    fn rejects_luts_own_variables_and_values_with_nul() {
+        let mut p = profile("pwsh");
+        p.env = BTreeMap::from([
+            ("LUT_CLI".into(), Some("x".into())),
+            ("lut_pane_id".into(), None),
+            ("LUTX".into(), Some("x".into())),
+            ("EDITOR".into(), Some("vi\0m".into())),
+            ("PAGER".into(), None),
+        ]);
+        assert_eq!(
+            codes(&validate_profile(&p)),
+            [
+                ("env.EDITOR", ProfileErrorCode::InvalidEnvValue),
+                ("env.LUT_CLI", ProfileErrorCode::ReservedEnvName),
+                ("env.lut_pane_id", ProfileErrorCode::ReservedEnvName),
             ]
         );
     }
