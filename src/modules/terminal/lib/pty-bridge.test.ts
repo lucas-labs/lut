@@ -168,14 +168,19 @@ describe('PTY bridge over the multiplexed stream', () => {
   it('opens the stream before pty_open and no longer passes output channels', async () => {
     const { openPty } = await load();
     nativeInvoke();
-    await openPty(80, 24, { onData: vi.fn() }, '/work', 9);
+    await openPty(
+      80,
+      24,
+      { onData: vi.fn() },
+      { profileId: 'detected:pwsh', cwd: '/work', paneId: 9 },
+    );
     const commands = mocks.invoke.mock.calls.map(([command]) => command);
     expect(commands.indexOf('pty_stream_open')).toBeLessThan(commands.indexOf('pty_open'));
     const open = openArguments();
     expect(open).toMatchObject({
       cols: 80,
       rows: 24,
-      profileId: null,
+      profileId: 'detected:pwsh',
       cwd: '/work',
       paneId: 9,
     });
@@ -203,7 +208,7 @@ describe('PTY bridge over the multiplexed stream', () => {
         });
       return Promise.resolve();
     });
-    const session = await openPty(80, 24, { onData: vi.fn() }, '/mnt/d/gone');
+    const session = await openPty(80, 24, { onData: vi.fn() }, { cwd: '/mnt/d/gone' });
     expect(session.id).toBe(7);
     expect(mocks.toast.warning).toHaveBeenCalledWith("Couldn't open /mnt/d/gone", {
       id: 'pty-cwd:/mnt/d/gone',
@@ -212,7 +217,14 @@ describe('PTY bridge over the multiplexed stream', () => {
     await session.close();
   });
 
-  it('rejects with a readable error that keeps the launch error code', async () => {
+  it('opens the default profile when none is given', async () => {
+    const { openPty } = await load();
+    nativeInvoke();
+    await openPty(80, 24, { onData: vi.fn() });
+    expect(openArguments()).toMatchObject({ profileId: null, cwd: null, paneId: null });
+  });
+
+  it('rejects with the launch error native explained', async () => {
     const { openPty } = await load();
     mocks.invoke.mockImplementation((command: string) => {
       if (command === 'pty_stream_open') return Promise.resolve('00000000000000aa');
@@ -226,7 +238,22 @@ describe('PTY bridge over the multiplexed stream', () => {
     });
     const opening = openPty(80, 24, { onData: vi.fn() });
     await expect(opening).rejects.toThrow('WSL distro Debian is not installed');
-    await expect(opening).rejects.toMatchObject({ code: 'distroNotInstalled' });
+    await expect(opening).rejects.toMatchObject({
+      launch: { code: 'distroNotInstalled', distro: 'Debian' },
+    });
+  });
+
+  it('rejects with what native sent when it is not a launch error', async () => {
+    const { openPty } = await load();
+    mocks.invoke.mockImplementation((command: string) => {
+      if (command === 'pty_stream_open') return Promise.resolve('00000000000000aa');
+      if (command === 'pty_open')
+        return Promise.reject('invalid args `cols` for command `pty_open`');
+      return Promise.resolve();
+    });
+    await expect(openPty(80, 24, { onData: vi.fn() })).rejects.toBe(
+      'invalid args `cols` for command `pty_open`',
+    );
   });
 
   it('starts the output stream by announcing the terminal on the first poll', async () => {
@@ -312,7 +339,7 @@ describe('PTY bridge over the multiplexed stream', () => {
     nativeInvoke(70);
     setLeafPresentation(31, false, false);
     await flush();
-    const session = await openPty(80, 24, { onData: vi.fn() }, undefined, 31);
+    const session = await openPty(80, 24, { onData: vi.fn() }, { paneId: 31 });
     const open = openArguments();
     expect(open.presentation).toBe('hidden');
     await flush();

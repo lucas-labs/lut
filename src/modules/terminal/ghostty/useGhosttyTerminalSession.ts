@@ -744,9 +744,7 @@ async function initializeSessionGeneration(
         session.callbacks.onExit?.(code);
       },
     },
-    session.initialCwd,
-    session.leafId,
-    theme,
+    { cwd: session.initialCwd, paneId: session.leafId, colors: theme },
   );
   if (session.disposed || generation !== session.generation) {
     await pty.close();

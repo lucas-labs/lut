@@ -4256,11 +4256,11 @@ scope: ui
 size: S
 ```
 
-**Goal:** Typed TS access to the profile commands (validated with Zod at the IPC boundary) and an `openPty` that takes an options object with `profileId`.
+**Goal:** Typed TS access to the profile commands (validated at the IPC boundary) and an `openPty` that takes an options object with `profileId`.
 
 **Acceptance criteria:**
 
-- [ ] `src/modules/profiles/` with Zod schemas mirroring the serde model and a store refreshed on `lut:profiles-changed`.
+- [ ] `src/modules/profiles/` with hand-written parsers mirroring the serde model (the project's IPC convention; no Zod dependency) and a store refreshed on `lut:profiles-changed`.
 - [ ] `openPty({ profileId, cwd, paneId, colors })` replaces the positional signature (`pty-bridge.ts:110-119`).
 - [ ] Typed errors from E14-10 surface as a discriminated union.
 - [ ] `pty-bridge.test.ts` and the profile schema tests are updated.

@@ -3,6 +3,11 @@ import {
   clearAgentActivity,
   ensureAgentActivityListener,
 } from '@/modules/terminal/lib/agentActivity';
+import {
+  type LaunchError,
+  parseLaunchError,
+  PtyLaunchError,
+} from '@/modules/terminal/lib/launchError';
 import { PtyOutputHub, type PtyStreamTransport } from '@/modules/terminal/lib/PtyOutputHub';
 import { PtyOutputReceiver, type PtyOutputStatus } from '@/modules/terminal/lib/PtyOutputReceiver';
 import {
@@ -82,7 +87,7 @@ export type PtyHandlers = {
 };
 
 /** What native answers `OSC 4/10/11/12` and `CSI ? 996 n` queries from. */
-export type PtyColors = Pick<TerminalGpuTheme, 'foreground' | 'background' | 'cursor' | 'palette'>;
+type PtyColors = Pick<TerminalGpuTheme, 'foreground' | 'background' | 'cursor' | 'palette'>;
 
 export type PtySession = {
   id: number;
@@ -92,46 +97,33 @@ export type PtySession = {
   close: () => Promise<void>;
 };
 
-/**
- * A launch problem from `pty_open`, as native's `LaunchError` serializes it:
- * `code` names it and `message` reads as is.
- */
-type PtyLaunchError = { code: string; message: string; cwd?: string };
-
 /** What `pty_open` answers: `cwd` is where the terminal started (`~` is the WSL distro's home). */
-type PtyOpened = { id: number; cwd: string | null; warning: PtyLaunchError | null };
+type PtyOpened = { id: number; cwd: string | null; warning: unknown };
 
-function isLaunchError(error: unknown): error is PtyLaunchError {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    typeof (error as PtyLaunchError).code === 'string' &&
-    typeof (error as PtyLaunchError).message === 'string'
-  );
-}
-
-/** A rejected `pty_open` as an `Error` the pane can show, keeping the launch error's `code`. */
-function launchFailure(error: unknown): unknown {
-  if (!isLaunchError(error)) return error;
-  return Object.assign(new Error(error.message), { code: error.code });
-}
-
-function warnCwdFallback(warning: PtyLaunchError, cwd: string | null): void {
-  const requested = warning.cwd ?? '';
+function warnCwdFallback(
+  warning: Extract<LaunchError, { code: 'cwdUnavailable' }>,
+  cwd: string | null,
+): void {
   // One toast per directory: restoring a Space whose folder is gone opens many panes there.
-  toast.warning(`Couldn't open ${requested}`, {
-    id: `pty-cwd:${requested}`,
+  toast.warning(`Couldn't open ${warning.cwd}`, {
+    id: `pty-cwd:${warning.cwd}`,
     description: `Opened ${cwd ?? 'the default folder'} instead.`,
   });
 }
+
+type PtyOpenOptions = {
+  /** The profile to open; without one native opens the default profile. */
+  profileId?: string;
+  cwd?: string;
+  paneId?: number;
+  colors?: PtyColors;
+};
 
 export async function openPty(
   cols: number,
   rows: number,
   handlers: PtyHandlers,
-  cwd?: string,
-  paneId?: number,
-  colors?: PtyColors,
+  { profileId, cwd, paneId, colors }: PtyOpenOptions = {},
 ): Promise<PtySession> {
   const stream = outputHub();
   let id: number | null = null;
@@ -180,18 +172,19 @@ export async function openPty(
     const opened = await invoke<PtyOpened>('pty_open', {
       cols,
       rows,
-      // No profile yet: native opens the default one (E14-13 adds the option).
-      profileId: null,
+      profileId: profileId ?? null,
       cwd: cwd ?? null,
       paneId: paneId ?? null,
       presentation: presentation ?? null,
       colors: colors ?? null,
     });
     id = opened.id;
-    if (opened.warning?.code === 'cwdUnavailable') warnCwdFallback(opened.warning, opened.cwd);
+    const warning = parseLaunchError(opened.warning);
+    if (warning?.code === 'cwdUnavailable') warnCwdFallback(warning, opened.cwd);
   } catch (error) {
     releaseHandlers();
-    throw launchFailure(error);
+    const launch = parseLaunchError(error);
+    throw launch ? new PtyLaunchError(launch) : error;
   }
   const sessionId = id;
   if (released) {
