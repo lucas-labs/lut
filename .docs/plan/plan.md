@@ -4434,11 +4434,38 @@ like nvim fill the pane by default.
 
 **Verification:** `pnpm test`; manual: two panes with different profiles and paddings, nvim in one of them.
 
+### E14-22 — Git Bash's launcher is not a running process
+
+```yaml
+id: E14-22
+depends-on: []
+refs: [.docs/plan/analysis/backend-core.md]
+covers: [backend-core/pty-session]
+type: task
+scope: be
+size: XS
+```
+
+**Goal:** an idle Git Bash pane does not block closing or quitting. Found while testing E14-07: Git for Windows'
+`bin\bash.exe` is a launcher that runs `usr\bin\bash.exe` as its child, and MSYS emulates `exec` by running the new
+program as a child the old one waits for (`exec zsh` in `.bashrc`). The running-process check counts children of the
+spawned program, so every Git Bash pane read as busy and the quit dialog always asked.
+
+**Acceptance criteria:**
+
+- [ ] On Windows, when the pane's program is Git for Windows' `bin\bash.exe`, the check skips the launcher and a chain
+      of lone shell children (bash, zsh, fish, sh); what runs below the last shell counts.
+- [ ] Other programs, MSYS2 and Cygwin bash keep the plain "has any child" check.
+- [ ] Unit tests on a process snapshot: idle and busy Git Bash, an `exec zsh` chain, and a looping snapshot.
+
+**Verification:** `cargo test --manifest-path src-tauri/Cargo.toml --lib foreground`; manual: quit with an idle Git Bash
+tab does not ask; with `sleep 60` running it asks.
+
 ### E14-18 — Close-out: profiles model and launch
 
 ```yaml
 id: E14-18
-depends-on: [E14-01, E14-02, E14-03, E14-04, E14-05, E14-06, E14-07, E14-08, E14-09, E14-10, E14-11, E14-12, E14-13, E14-14, E14-15, E14-16, E14-17, E14-19, E14-20, E14-21]
+depends-on: [E14-01, E14-02, E14-03, E14-04, E14-05, E14-06, E14-07, E14-08, E14-09, E14-10, E14-11, E14-12, E14-13, E14-14, E14-15, E14-16, E14-17, E14-19, E14-20, E14-21, E14-22]
 refs: [F3]
 covers: []
 type: closeout

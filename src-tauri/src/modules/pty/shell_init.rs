@@ -1301,6 +1301,31 @@ mod windows {
         }
 
         #[test]
+        fn only_git_for_windows_bin_bash_is_a_launcher() {
+            let git = tempfile::tempdir().unwrap();
+            for dir in [r"bin", r"usr\bin"] {
+                fs::create_dir_all(git.path().join(dir)).unwrap();
+                fs::write(git.path().join(dir).join("bash.exe"), "").unwrap();
+            }
+            assert!(super::super::is_git_bash_launcher(
+                &git.path().join(r"bin\BASH.EXE")
+            ));
+            // The real bash it starts, and a bash with no usr\bin beside it (Cygwin).
+            assert!(!super::super::is_git_bash_launcher(
+                &git.path().join(r"usr\bin\bash.exe")
+            ));
+            let cygwin = tempfile::tempdir().unwrap();
+            fs::create_dir_all(cygwin.path().join("bin")).unwrap();
+            fs::write(cygwin.path().join(r"bin\bash.exe"), "").unwrap();
+            assert!(!super::super::is_git_bash_launcher(
+                &cygwin.path().join(r"bin\bash.exe")
+            ));
+            assert!(!super::super::is_git_bash_launcher(Path::new(
+                r"C:\Windows\System32\cmd.exe"
+            )));
+        }
+
+        #[test]
         fn git_root_comes_from_the_git_exe_folder() {
             for (git, root) in [
                 (r"D:\Program Files\Git\cmd\git.exe", r"D:\Program Files\Git"),
@@ -1507,6 +1532,22 @@ fn cmd_prompt(host: &str, existing: Option<&str>) -> String {
         .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'))
         .collect();
     format!("{REPORT_CWD}{host}/$P$E\\{}", existing.unwrap_or("$P$G"))
+}
+
+/// Git for Windows' `<root>\bin\bash.exe` is a launcher: it sets up the environment and runs
+/// `<root>\usr\bin\bash.exe` as its child. A bash elsewhere (MSYS2, Cygwin) is the shell itself.
+#[cfg(windows)]
+pub fn is_git_bash_launcher(program: &Path) -> bool {
+    let named = |path: &Path, name: &str| {
+        path.file_name()
+            .is_some_and(|file| file.eq_ignore_ascii_case(name))
+    };
+    named(program, "bash.exe")
+        && program
+            .parent()
+            .filter(|bin| named(bin, "bin"))
+            .and_then(Path::parent)
+            .is_some_and(|root| root.join(r"usr\bin\bash.exe").is_file())
 }
 
 #[cfg(windows)]

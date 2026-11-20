@@ -380,7 +380,17 @@ pub fn pty_has_foreground_process(state: tauri::State<PtyState>, id: u32) -> Res
     if shell_pid == 0 {
         return Ok(false);
     }
-    Ok(foreground::shell_has_children(shell_pid))
+    #[cfg(unix)]
+    {
+        Ok(foreground::shell_has_children(shell_pid))
+    }
+    #[cfg(windows)]
+    {
+        Ok(foreground::shell_has_children(
+            shell_pid,
+            session.git_bash_launcher,
+        ))
+    }
 }
 
 // Foreground-only check for the renderer hibernation path: true while a job
@@ -409,7 +419,10 @@ pub fn pty_has_foreground_job(state: tauri::State<PtyState>, id: u32) -> Result<
     }
     #[cfg(windows)]
     {
-        Ok(foreground::shell_has_children(shell_pid))
+        Ok(foreground::shell_has_children(
+            shell_pid,
+            session.git_bash_launcher,
+        ))
     }
 }
 

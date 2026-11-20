@@ -57,6 +57,9 @@ pub struct Session {
     /// PID of the shell process. 0 means unknown; callers must skip checks when 0.
     pub shell_pid: u32,
     pub shell_program: String,
+    /// The shell is Git for Windows' `bin\bash.exe` launcher, whose child is the real bash.
+    #[cfg(windows)]
+    pub git_bash_launcher: bool,
     /// Frontend pane (leaf) this terminal belongs to, when it reported one.
     pub pane_id: Option<u32>,
     /// Agent state shared with the control server's structured hooks.
@@ -365,6 +368,10 @@ pub(super) fn spawn_with(
         #[cfg(windows)]
         _job: job,
         shell_pid,
+        #[cfg(windows)]
+        git_bash_launcher: super::shell_init::is_git_bash_launcher(std::path::Path::new(
+            &shell_program,
+        )),
         shell_program,
         pane_id,
         link: link.clone(),
