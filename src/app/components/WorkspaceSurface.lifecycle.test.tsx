@@ -122,6 +122,7 @@ function surface(tabs: Tab[], activeId: number) {
     registerTerminalHandle: noop,
     onSearchReady: noop,
     onCwd: noop,
+    onProfile: noop,
     onExit: noop,
     onFocusLeaf: noop,
     registerEditorHandle: noop,

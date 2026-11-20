@@ -21,6 +21,12 @@ const pty = vi.hoisted(() => ({
   closed: [] as number[],
   /** Each PTY's output handler, to emit shell output. */
   output: new Map<number, (bytes: Uint8Array) => unknown>(),
+  /** The profile each open asked for, in order. */
+  requested: [] as { leaf: number; profileId: string | undefined }[],
+  /** Launch errors the next opens of a leaf fail with. */
+  failures: new Map<number, { code: 'profileNotFound'; id: string; message: string }>(),
+  /** Profiles the panes reported they opened with. */
+  reported: [] as { leaf: number; profileId: string }[],
 }));
 /** What reached each terminal model (the Ghostty core), and how many WebGL surfaces were built. */
 const terminal = vi.hoisted(() => ({ written: new Map<number, string>(), webGlSurfaces: 0 }));
@@ -40,12 +46,20 @@ vi.mock('@/modules/terminal/lib/pty-bridge', async (importOriginal) => ({
     _cols: number,
     _rows: number,
     handlers: { onData: (bytes: Uint8Array) => unknown },
-    { paneId: leafId }: { paneId?: number } = {},
+    { paneId: leafId, profileId }: { paneId?: number; profileId?: string } = {},
   ) => {
+    pty.requested.push({ leaf: leafId ?? -1, profileId });
+    const failure = pty.failures.get(leafId ?? -1);
+    if (failure) {
+      const { PtyLaunchError } = await import('@/modules/terminal/lib/launchError');
+      throw new PtyLaunchError(failure);
+    }
     pty.opened.push(leafId ?? -1);
     pty.output.set(leafId ?? -1, handlers.onData);
     return {
       id: leafId ?? -1,
+      // Native opens the default profile when none is asked for.
+      profileId: profileId ?? 'detected:pwsh',
       write: async () => {},
       resize: async () => {},
       setColors: async () => {},
@@ -181,6 +195,7 @@ function surface(tabs: Tab[], activeId: number) {
     registerTerminalHandle: noop,
     onSearchReady: noop,
     onCwd: noop,
+    onProfile: (leaf: number, profileId: string) => pty.reported.push({ leaf, profileId }),
     onExit: noop,
     onFocusLeaf: noop,
     registerEditorHandle: noop,
@@ -260,6 +275,9 @@ beforeEach(() => {
   pty.opened = [];
   pty.closed = [];
   pty.output.clear();
+  pty.requested = [];
+  pty.failures.clear();
+  pty.reported = [];
   terminal.written.clear();
   terminal.webGlSurfaces = 0;
   rendered.clear();
@@ -391,5 +409,56 @@ describe('the real session hook keeps every PTY open', () => {
       Reflect.deleteProperty(navigator, 'gpu');
       warn.mockRestore();
     }
+  });
+});
+
+describe('each pane opens with its own profile (E14-14)', () => {
+  /** Waits until `count` opens were asked for, failed ones included. */
+  async function waitForRequests(count: number) {
+    for (let i = 0; i < 400 && pty.requested.length < count; i++) await tick();
+    expect(pty.requested).toHaveLength(count);
+  }
+
+  const button = (name: string) =>
+    [...host.querySelectorAll('button')].find((b) => b.textContent === name) as HTMLButtonElement | undefined;
+
+  it('opens a pane with its profile, and a new one with the default, which it then keeps', async () => {
+    const ubuntu = term({ kind: 'leaf', id: nextId * 100, profileId: 'detected:wsl:Ubuntu' });
+    const fresh = term();
+    await render(shell([ubuntu, fresh], ubuntu.id));
+    await waitForOpens(2);
+    expect(pty.requested).toEqual(
+      expect.arrayContaining([
+        { leaf: ubuntu.activeLeafId, profileId: 'detected:wsl:Ubuntu' },
+        { leaf: fresh.activeLeafId, profileId: undefined },
+      ]),
+    );
+    expect(pty.reported).toEqual(
+      expect.arrayContaining([
+        { leaf: ubuntu.activeLeafId, profileId: 'detected:wsl:Ubuntu' },
+        { leaf: fresh.activeLeafId, profileId: 'detected:pwsh' },
+      ]),
+    );
+  });
+
+  it('offers the default profile when the pane profile is gone, and retries with the same one', async () => {
+    const tab = term({ kind: 'leaf', id: nextId * 100, profileId: 'mine' });
+    const leaf = tab.activeLeafId;
+    pty.failures.set(leaf, { code: 'profileNotFound', id: 'mine', message: 'terminal profile not found: mine' });
+    await render(shell([tab], tab.id));
+    await waitForRequests(1);
+    await tick();
+    expect(host.textContent).toContain('terminal profile not found: mine');
+
+    await act(async () => button('Retry')?.click());
+    await waitForRequests(2);
+    expect(pty.requested[1]).toEqual({ leaf, profileId: 'mine' });
+
+    pty.failures.delete(leaf);
+    await act(async () => button('Open with default profile')?.click());
+    await waitForOpens(1);
+    expect(pty.requested[2]).toEqual({ leaf, profileId: undefined });
+    expect(pty.reported).toEqual([{ leaf, profileId: 'detected:pwsh' }]);
+    expect(button('Open with default profile')).toBeUndefined();
   });
 });

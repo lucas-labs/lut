@@ -37,6 +37,7 @@ function render(node: PaneNode, activeLeafId: number) {
         registerHandle: () => {},
         onSearchReady: () => {},
         onCwd: () => {},
+        onProfile: () => {},
         onExit: () => {},
       }),
     ),

@@ -14,6 +14,7 @@ type Props = {
   registerHandle: (leafId: number, handle: TerminalPaneHandle | null) => void;
   onSearchReady: (leafId: number, addon: TerminalSearchController) => void;
   onCwd: (leafId: number, cwd: string) => void;
+  onProfile: (leafId: number, profileId: string) => void;
   onExit: (leafId: number, code: number) => void;
   onFocusLeaf: (tabId: number, leafId: number) => void;
   /** The user resized a split of a tab: its children's new shares. */
@@ -26,6 +27,7 @@ export function TerminalStack({
   registerHandle,
   onSearchReady,
   onCwd,
+  onProfile,
   onExit,
   onFocusLeaf,
   onSplitRatios,
@@ -63,6 +65,7 @@ export function TerminalStack({
               registerHandle={registerHandle}
               onSearchReady={onSearchReady}
               onCwd={onCwd}
+              onProfile={onProfile}
               onExit={onExit}
               onSplitRatios={onSplitRatios && ((splitId, ratios) => onSplitRatios(t.id, splitId, ratios))}
             />

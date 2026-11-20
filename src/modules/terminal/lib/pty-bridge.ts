@@ -91,6 +91,8 @@ type PtyColors = Pick<TerminalGpuTheme, 'foreground' | 'background' | 'cursor' |
 
 export type PtySession = {
   id: number;
+  /** The profile that opened; `null` only when no profile is listed (the system's default shell). */
+  profileId: string | null;
   write: (data: string | Uint8Array) => Promise<void>;
   resize: (cols: number, rows: number) => Promise<void>;
   setColors: (colors: PtyColors) => Promise<void>;
@@ -98,7 +100,7 @@ export type PtySession = {
 };
 
 /** What `pty_open` answers: `cwd` is where the terminal started (`~` is the WSL distro's home). */
-type PtyOpened = { id: number; cwd: string | null; warning: unknown };
+type PtyOpened = { id: number; profileId: string | null; cwd: string | null; warning: unknown };
 
 function warnCwdFallback(
   warning: Extract<LaunchError, { code: 'cwdUnavailable' }>,
@@ -127,6 +129,7 @@ export async function openPty(
 ): Promise<PtySession> {
   const stream = outputHub();
   let id: number | null = null;
+  let openedProfile: string | null = null;
   let released = false;
   let notice: string | number | undefined;
   let progress: ((processedBytes: number) => void) | null = null;
@@ -179,6 +182,7 @@ export async function openPty(
       colors: colors ?? null,
     });
     id = opened.id;
+    openedProfile = opened.profileId;
     const warning = parseLaunchError(opened.warning);
     if (warning?.code === 'cwdUnavailable') warnCwdFallback(warning, opened.cwd);
   } catch (error) {
@@ -210,6 +214,7 @@ export async function openPty(
 
   return {
     id: sessionId,
+    profileId: openedProfile,
     // Raw bytes + id header: no JSON round-trip on the per-keystroke path.
     write: (data) =>
       invoke('pty_write', typeof data === 'string' ? textEncoder.encode(data) : data, { headers }),

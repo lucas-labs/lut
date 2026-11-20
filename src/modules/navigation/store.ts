@@ -3,6 +3,7 @@ import { type AgentInstanceCount, createAgentPanePlan } from '@/modules/agents/l
 import {
   canAddPane,
   detachLeaf,
+  findLeaf,
   findLeafCwd,
   hasLeaf,
   insertLeaf,
@@ -14,6 +15,7 @@ import {
   removeLeaf,
   resizeLeafInDirection,
   setLeafCwd as setLeafCwdInTree,
+  setLeafProfile as setLeafProfileInTree,
   setSplitRatios as setSplitRatiosInTree,
   siblingLeafOf,
   type SplitDir,
@@ -93,6 +95,8 @@ type NavigationActions = {
   updateTab: (id: number, patch: TabPatch) => void;
   selectByIndex: (idx: number, spaceId?: string) => void;
   setLeafCwd: (leafId: number, cwd: string) => void;
+  /** Remember the terminal profile a leaf opened with, so splits and restarts reuse it. */
+  setLeafProfile: (leafId: number, profileId: string) => void;
   focusPane: (tabId: number, leafId: number) => void;
   focusNextPaneInTab: (tabId: number, delta: 1 | -1) => void;
   /** Focus the pane beside the active one in `direction`; nothing at an edge. */
@@ -639,6 +643,19 @@ export const useNavigationStore = create<NavigationState>()((set, get) => {
         return changed ? next : curr;
       }),
 
+    setLeafProfile: (leafId, profileId) =>
+      setTabs((curr) => {
+        let changed = false;
+        const next = curr.map((t) => {
+          if (t.kind !== 'terminal' || !hasLeaf(t.paneTree, leafId)) return t;
+          const paneTree = setLeafProfileInTree(t.paneTree, leafId, profileId);
+          if (paneTree === t.paneTree) return t;
+          changed = true;
+          return { ...t, paneTree };
+        });
+        return changed ? next : curr;
+      }),
+
     focusPane: (tabId, leafId) =>
       mapTerminal(tabId, (t) => {
         if (!hasLeaf(t.paneTree, leafId) || t.activeLeafId === leafId) return t;
@@ -684,7 +701,11 @@ export const useNavigationStore = create<NavigationState>()((set, get) => {
       const leafId = alloc();
       mapTerminal(tabId, (t) => ({
         ...t,
-        paneTree: splitLeaf(t.paneTree, t.activeLeafId, splitId, leafId, dir, t.cwd),
+        // The new pane opens with the profile of the pane it splits.
+        paneTree: splitLeaf(t.paneTree, t.activeLeafId, splitId, leafId, dir, {
+          cwd: t.cwd,
+          profileId: findLeaf(t.paneTree, t.activeLeafId)?.profileId,
+        }),
         activeLeafId: leafId,
       }));
       return leafId;

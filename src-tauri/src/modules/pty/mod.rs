@@ -170,11 +170,14 @@ fn reap(id: u32, session: Arc<Session>, reason: &str) {
         .expect("spawn pty drop thread");
 }
 
-/// What `pty_open` answers: the terminal, the directory it started in (`~` is the distro's home)
-/// and, when the requested one could not be used, why (`LaunchError::CwdUnavailable`).
+/// What `pty_open` answers: the terminal, the profile it opened (`None` only when no profile is
+/// listed), the directory it started in (`~` is the distro's home) and, when the requested one
+/// could not be used, why (`LaunchError::CwdUnavailable`).
 #[derive(Debug, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PtyOpened {
     pub id: u32,
+    pub profile_id: Option<String>,
     pub cwd: Option<String>,
     pub warning: Option<LaunchError>,
 }
@@ -232,7 +235,7 @@ pub async fn pty_open(
     let owner: Arc<str> = Arc::from(webview.label());
     let hub = state.hub.clone();
     let class = presentation.unwrap_or_default();
-    let (session, opened_cwd, warning, credential, pending_credential) =
+    let (session, opened_profile, opened_cwd, warning, credential, pending_credential) =
         tauri::async_runtime::spawn_blocking(move || {
             // Waiting for the first profile detection, naming the default distro (the registry)
             // and authorizing the directory (a network volume, or wsl.exe) all touch the disk:
@@ -286,7 +289,14 @@ pub async fn pty_open(
                 }
                 cwd => (cwd, warning),
             };
-            Ok::<_, LaunchError>((session, opened_cwd, warning, credential, pending))
+            Ok::<_, LaunchError>((
+                session,
+                resolved.profile_id,
+                opened_cwd,
+                warning,
+                credential,
+                pending,
+            ))
         })
         .await
         .map_err(|e| {
@@ -327,6 +337,7 @@ pub async fn pty_open(
     log::info!("pty opened id={id} cols={cols} rows={rows}");
     Ok(PtyOpened {
         id,
+        profile_id: opened_profile,
         cwd: opened_cwd,
         warning,
     })

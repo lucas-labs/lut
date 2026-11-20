@@ -82,7 +82,7 @@ const heldPoll = () => {
 const flush = () => vi.advanceTimersByTimeAsync(0);
 
 /** What native answers a `pty_open` that started where it was asked. */
-const opened = (id: number) => ({ id, cwd: '/work', warning: null });
+const opened = (id: number) => ({ id, profileId: 'detected:pwsh', cwd: '/work', warning: null });
 
 /** The arguments of the most recent pty_open call. */
 function openArguments(): Record<string, unknown> {
@@ -217,11 +217,13 @@ describe('PTY bridge over the multiplexed stream', () => {
     await session.close();
   });
 
-  it('opens the default profile when none is given', async () => {
+  it('opens the default profile when none is given and says which one opened', async () => {
     const { openPty } = await load();
     nativeInvoke();
-    await openPty(80, 24, { onData: vi.fn() });
+    const session = await openPty(80, 24, { onData: vi.fn() });
     expect(openArguments()).toMatchObject({ profileId: null, cwd: null, paneId: null });
+    expect(session.profileId).toBe('detected:pwsh');
+    await session.close();
   });
 
   it('rejects with the launch error native explained', async () => {

@@ -27,6 +27,7 @@ import {
   useSyncExternalStore,
 } from 'react';
 import { isAgentActivePty } from '../lib/agentActivity';
+import { type LaunchError, PtyLaunchError } from '../lib/launchError';
 import { openPty, type PtySession } from '../lib/pty-bridge';
 import { writeTerminalClipboard } from '../lib/terminalClipboard';
 import { GhosttySemanticEventRouter } from './core/GhosttySemanticEventRouter';
@@ -55,7 +56,10 @@ type GhosttySurfaceBaseOptions = Omit<WebGlTerminalSurfaceOptions, 'onError'>;
 type GhosttySessionFailure = {
   kind: 'startup' | 'renderer';
   message: string;
+  /** Why native could not launch the terminal, when it said. */
+  launch?: LaunchError;
 };
+type StartupFailure = { message: string; launch?: LaunchError };
 
 const DEFAULT_COLS = 80;
 const DEFAULT_ROWS = 24;
@@ -68,12 +72,15 @@ type Callbacks = {
   onSearchReady?: (search: TerminalSearchController) => void;
   onExit?: (code: number) => void;
   onCwd?: (cwd: string) => void;
+  onProfile?: (profileId: string) => void;
 };
 
 type GhosttySession = {
   readonly leafId: number;
   readonly backend: GhosttyBackend;
   initialCwd: string | undefined;
+  /** The profile the terminal opens with; none is the default one. Kept across restarts. */
+  profileId: string | undefined;
   lastCwd: string | null;
   model: GhosttyTerminalModelApi | null;
   surface: GhosttySurface | null;
@@ -87,7 +94,7 @@ type GhosttySession = {
   callbacks: Callbacks;
   visible: boolean;
   focused: boolean;
-  startupError: string | null;
+  startupError: StartupFailure | null;
   rendererError: string | null;
   shellExited: boolean;
   /** OSC 133 has been seen, so `commandRunning` can be trusted. */
@@ -126,8 +133,12 @@ type Options = {
   visible: boolean;
   focused: boolean;
   initialCwd?: string;
+  /** The pane's profile; none opens the default one. */
+  profileId?: string;
   onExit?: (code: number) => void;
   onCwd?: (cwd: string) => void;
+  /** The profile that opened, so the pane keeps it. */
+  onProfile?: (profileId: string) => void;
   onSearchReady?: (search: TerminalSearchController) => void;
 };
 
@@ -141,9 +152,11 @@ export function useGhosttyTerminalSession({
   visible,
   focused,
   initialCwd,
+  profileId,
   onSearchReady,
   onExit,
   onCwd,
+  onProfile,
 }: Options) {
   const [model, setModel] = useState<GhosttyTerminalModelApi | null>(null);
   const [error, setError] = useState<GhosttySessionFailure | null>(null);
@@ -169,10 +182,18 @@ export function useGhosttyTerminalSession({
   );
   const reportExit = useEffectEvent((code: number) => onExit?.(code));
   const reportCwd = useEffectEvent((cwd: string) => onCwd?.(cwd));
+  const reportProfile = useEffectEvent((id: string) => onProfile?.(id));
   const initialCwdRef = useRef(initialCwd);
+  const initialProfileRef = useRef(profileId);
 
   useEffect(() => {
-    const session = ensureSession(leafId, backend, initialCwdRef.current, currentFont());
+    const session = ensureSession(
+      leafId,
+      backend,
+      initialCwdRef.current,
+      initialProfileRef.current,
+      currentFont(),
+    );
     const node = container.current;
     session.container = node;
     setModel(session.model);
@@ -182,6 +203,7 @@ export function useGhosttyTerminalSession({
       onSearchReady: (search) => reportSearchReady(search),
       onExit: (code) => reportExit(code),
       onCwd: (cwd) => reportCwd(cwd),
+      onProfile: (id) => reportProfile(id),
     };
     setError(sessionFailure(session));
     if (session.surface) {
@@ -206,7 +228,12 @@ export function useGhosttyTerminalSession({
   }, [leafId, backend, font]);
 
   useEffect(() => {
-    const session = ensureSession(leafId, backend, initialCwdRef.current);
+    const session = ensureSession(
+      leafId,
+      backend,
+      initialCwdRef.current,
+      initialProfileRef.current,
+    );
     session.visible = visible;
     session.focused = focused;
     if (!visible || !focused) session.cancelFocusRetry?.();
@@ -286,11 +313,18 @@ export function useGhosttyTerminalSession({
     );
   }, [leafId]);
 
+  const openWithDefaultProfile = useCallback(() => {
+    void respawnGhosttySession(leafId, { profileId: undefined }).catch((error: unknown) =>
+      setError({ kind: 'startup', message: toError(error).message }),
+    );
+  }, [leafId]);
+
   return useMemo(
     () => ({
       error,
       model,
       retry,
+      openWithDefaultProfile,
       write,
       writeAtPrompt,
       focus,
@@ -405,7 +439,11 @@ export function disposeGhosttySession(leafId: number): boolean {
   return true;
 }
 
-async function respawnGhosttySession(leafId: number, cwd?: string): Promise<boolean> {
+/** Starts the pane's terminal again; `launch` changes what it opens with, else it is the same. */
+async function respawnGhosttySession(
+  leafId: number,
+  launch: { cwd?: string; profileId?: string } = {},
+): Promise<boolean> {
   const session = sessions.get(leafId);
   if (!session || session.disposed) return false;
   session.generation += 1;
@@ -428,7 +466,8 @@ async function respawnGhosttySession(leafId: number, cwd?: string): Promise<bool
   session.commandRunning = false;
   session.commandTracked = false;
   session.lastCwd = null;
-  session.initialCwd = cwd ?? session.initialCwd;
+  session.initialCwd = launch.cwd ?? session.initialCwd;
+  if ('profileId' in launch) session.profileId = launch.profileId;
   session.startupError = null;
   session.rendererError = null;
   session.callbacks.onError?.(null);
@@ -446,6 +485,7 @@ function ensureSession(
   leafId: number,
   backend: GhosttyBackend,
   initialCwd?: string,
+  profileId?: string,
   font?: TerminalFontSpec,
 ): GhosttySession {
   const existing = sessions.get(leafId);
@@ -465,6 +505,7 @@ function ensureSession(
     leafId,
     backend,
     initialCwd,
+    profileId,
     lastCwd: null,
     model: null,
     surface: null,
@@ -522,7 +563,10 @@ function initializeSession(session: GhosttySession): Promise<void> {
         session.writer.clear();
         session.ptyResize.reset();
       }
-      session.startupError = toError(error).message;
+      session.startupError = {
+        message: toError(error).message,
+        launch: error instanceof PtyLaunchError ? error.launch : undefined,
+      };
       console.error('[lut] Ghostty session initialization failed:', error);
       session.callbacks.onError?.(sessionFailure(session));
     },
@@ -744,7 +788,12 @@ async function initializeSessionGeneration(
         session.callbacks.onExit?.(code);
       },
     },
-    { cwd: session.initialCwd, paneId: session.leafId, colors: theme },
+    {
+      profileId: session.profileId,
+      cwd: session.initialCwd,
+      paneId: session.leafId,
+      colors: theme,
+    },
   );
   if (session.disposed || generation !== session.generation) {
     await pty.close();
@@ -756,6 +805,10 @@ async function initializeSessionGeneration(
   }
   mark('ptyReadyMs');
   session.pty = pty;
+  if (pty.profileId !== null) {
+    session.profileId = pty.profileId;
+    session.callbacks.onProfile?.(pty.profileId);
+  }
   session.writer.attach(pty);
   if (model.cols !== startCols || model.rows !== startRows) {
     session.ptyResize.send(model.cols, model.rows);
@@ -957,7 +1010,7 @@ async function retryGhosttyRenderer(session: GhosttySession): Promise<void> {
 }
 
 function sessionFailure(session: GhosttySession): GhosttySessionFailure | null {
-  if (session.startupError) return { kind: 'startup', message: session.startupError };
+  if (session.startupError) return { kind: 'startup', ...session.startupError };
   if (session.rendererError) return { kind: 'renderer', message: session.rendererError };
   return null;
 }

@@ -4279,16 +4279,17 @@ scope: ui
 size: M
 ```
 
-**Goal:** Pane leaves carry `profileId`; sessions open, respawn and split with their profile instead of `preferences.terminalShell`.
+**Goal:** Pane leaves carry `profileId`; sessions open, respawn and split with their profile.
 
 **Acceptance criteria:**
 
 - [ ] The leaf has an optional `profileId`; a split inherits the source pane's profile unless one is given.
-- [ ] `useGhosttyTerminalSession` opens through E14-13 (`useGhosttyTerminalSession.ts:832-858` no longer reads `terminalShell`); respawn reuses the same profile.
-- [ ] Missing profile: the pane shows a repairable error with "open with default profile", using existing components; no app crash (13.2:12).
+- [ ] `useGhosttyTerminalSession` opens through E14-13 with the leaf's profile; respawn reuses the same profile.
+- [ ] `pty_open` answers the profile it opened and the leaf keeps it, so a pane opened with the default profile stays on it when the default changes.
+- [ ] Missing profile, uninstalled distro or missing executable: the pane shows a repairable error with "open with default profile", using existing components; no app crash (13.2:12).
 - [ ] Tests for the missing-profile, unavailable-cwd and uninstalled-distro paths (F3:7).
 
-**Verification:** `pnpm test`; `pnpm typecheck`; manual: a pwsh and a WSL pane in the same tab.
+**Verification:** `pnpm test`; `pnpm typecheck`; manual: with pwsh as the default open a tab, set the default to a WSL distro and open another; splitting or restarting each pane keeps its own profile. Two profiles in the same tab need the picker (E15-01), which checks them.
 
 **Notes:** The error presentation is functional only, using existing components (decision 7); it is replaced by the designed in-pane error state in E15-01 (design E11-04).
 
@@ -4363,7 +4364,7 @@ size: S
 - [ ] Round-trip test with two leaves that have different profiles and cwds.
 - [ ] Manual gate run documented in the PR.
 
-**Verification:** `pnpm test`; manual: open pwsh + WSL panes with different themes, restart, both restore with their profile.
+**Verification:** `pnpm test`; manual: a pwsh tab and a WSL tab with different themes, restart, both restore with their profile. Two profiles in the same tab are checked with the picker (E15-01).
 
 ### E14-19 — Emit the PowerShell prompt markers before the user's prompt runs
 

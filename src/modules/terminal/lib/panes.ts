@@ -11,7 +11,14 @@ export type PaneBounds = {
 };
 
 export type PaneNode =
-  | { kind: 'leaf'; id: PaneId; slotId?: PaneId; cwd?: string }
+  | {
+      kind: 'leaf';
+      id: PaneId;
+      slotId?: PaneId;
+      cwd?: string;
+      /** The terminal profile the pane opens with; none is the default profile. */
+      profileId?: string;
+    }
   | {
       kind: 'split';
       id: PaneId;
@@ -91,27 +98,39 @@ export function firstLeafSlotId(n: PaneNode): PaneId {
   return firstLeafSlotId(n.children[0]);
 }
 
-export function findLeafCwd(n: PaneNode, id: PaneId): string | undefined {
-  if (isLeaf(n)) return n.id === id ? n.cwd : undefined;
+export function findLeaf(n: PaneNode, id: PaneId): LeafNode | undefined {
+  if (isLeaf(n)) return n.id === id ? n : undefined;
   for (const c of n.children) {
-    const found = findLeafCwd(c, id);
-    if (found !== undefined) return found;
+    const found = findLeaf(c, id);
+    if (found) return found;
   }
   return undefined;
 }
 
-export function setLeafCwd(n: PaneNode, id: PaneId, cwd: string): PaneNode {
-  if (isLeaf(n)) {
-    if (n.id !== id || n.cwd === cwd) return n;
-    return { ...n, cwd };
-  }
+export function findLeafCwd(n: PaneNode, id: PaneId): string | undefined {
+  return findLeaf(n, id)?.cwd;
+}
+
+/** The tree with leaf `id` changed by `update`; the same tree when nothing changed. */
+function updateLeaf(n: PaneNode, id: PaneId, update: (leaf: LeafNode) => LeafNode): PaneNode {
+  if (isLeaf(n)) return n.id === id ? update(n) : n;
   let changed = false;
   const next = n.children.map((c) => {
-    const u = setLeafCwd(c, id, cwd);
+    const u = updateLeaf(c, id, update);
     if (u !== c) changed = true;
     return u;
   });
   return changed ? { ...n, children: next } : n;
+}
+
+export function setLeafCwd(n: PaneNode, id: PaneId, cwd: string): PaneNode {
+  return updateLeaf(n, id, (leaf) => (leaf.cwd === cwd ? leaf : { ...leaf, cwd }));
+}
+
+export function setLeafProfile(n: PaneNode, id: PaneId, profileId: string): PaneNode {
+  return updateLeaf(n, id, (leaf) =>
+    leaf.profileId === profileId ? leaf : { ...leaf, profileId },
+  );
 }
 
 export type LeafNode = Extract<PaneNode, { kind: 'leaf' }>;
@@ -129,9 +148,15 @@ export function splitLeaf(
   newSplitId: PaneId,
   newLeafId: PaneId,
   dir: SplitDir,
-  newCwd?: string,
+  { cwd, profileId }: { cwd?: string; profileId?: string } = {},
 ): PaneNode {
-  return insertLeaf(tree, targetId, newSplitId, { kind: 'leaf', id: newLeafId, cwd: newCwd }, dir);
+  return insertLeaf(
+    tree,
+    targetId,
+    newSplitId,
+    { kind: 'leaf', id: newLeafId, cwd, profileId },
+    dir,
+  );
 }
 
 /** `splitLeaf` with an existing leaf, such as one detached from another tab. */
@@ -289,15 +314,6 @@ function directionalTarget(
     );
   });
   return candidates[0]?.id ?? null;
-}
-
-function findLeaf(node: PaneNode, id: PaneId): Extract<PaneNode, { kind: 'leaf' }> | null {
-  if (isLeaf(node)) return node.id === id ? node : null;
-  for (const child of node.children) {
-    const found = findLeaf(child, id);
-    if (found) return found;
-  }
-  return null;
 }
 
 function swapLeaves(

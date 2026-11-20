@@ -6,6 +6,7 @@ import { forwardRef, lazy, memo, Suspense, useEffect, useImperativeHandle, useRe
 import type { TerminalBackendKind } from './backend/contracts';
 import { terminalBackendFor } from './backend/selection';
 import { useGhosttyTerminalSession } from './ghostty/useGhosttyTerminalSession';
+import type { LaunchError } from './lib/launchError';
 import { usePaneLifecycle } from './lib/paneLifecycle';
 
 export type TerminalPaneHandle = {
@@ -25,10 +26,21 @@ export type TerminalPaneProps = {
   /** This leaf is the active pane within its tab and receives auto-focus. */
   focused?: boolean;
   initialCwd?: string;
+  /** The pane's terminal profile; none opens the default one. */
+  profileId?: string;
   onSearchReady?: (leafId: number, addon: TerminalSearchController) => void;
   onExit?: (leafId: number, code: number) => void;
   onCwd?: (leafId: number, cwd: string) => void;
+  /** The profile the pane's terminal opened with. */
+  onProfile?: (leafId: number, profileId: string) => void;
 };
+
+/** The pane's profile itself cannot open: it is gone, or what it runs is missing. */
+function opensWithDefaultProfile(launch: LaunchError | undefined): boolean {
+  return (
+    launch?.code === 'profileNotFound' || launch?.code === 'distroNotInstalled' || launch?.code === 'executableNotFound'
+  );
+}
 
 const TerminalAccessibleOutput = lazy(() => import('./ghostty/TerminalAccessibleOutput'));
 
@@ -39,7 +51,7 @@ const GhosttyTerminalPane = memo(
       backend: Extract<TerminalBackendKind, `ghostty-${string}`>;
     }
   >(function GhosttyTerminalPane(
-    { leafId, visible, focused = true, initialCwd, onSearchReady, onExit, onCwd, backend },
+    { leafId, visible, focused = true, initialCwd, profileId, onSearchReady, onExit, onCwd, onProfile, backend },
     ref,
   ) {
     const screenReader = usePreferencesStore((state) => state.terminalScreenReader);
@@ -52,9 +64,11 @@ const GhosttyTerminalPane = memo(
       visible,
       focused,
       initialCwd,
+      profileId,
       onSearchReady: (search) => onSearchReady?.(leafId, search),
       onExit: (code) => onExit?.(leafId, code),
       onCwd: (cwd) => onCwd?.(leafId, cwd),
+      onProfile: (id) => onProfile?.(leafId, id),
     });
 
     useEffect(() => {
@@ -108,9 +122,16 @@ const GhosttyTerminalPane = memo(
             {session.error.kind === 'renderer' && (
               <p className="text-muted-foreground">Your terminal session is preserved. Retry to restore its display.</p>
             )}
-            <Button variant="outline" onClick={session.retry}>
-              {session.error.kind === 'renderer' ? 'Retry display' : 'Retry'}
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={session.retry}>
+                {session.error.kind === 'renderer' ? 'Retry display' : 'Retry'}
+              </Button>
+              {opensWithDefaultProfile(session.error.launch) && (
+                <Button variant="outline" onClick={session.openWithDefaultProfile}>
+                  Open with default profile
+                </Button>
+              )}
+            </div>
           </div>
         )}
       </div>

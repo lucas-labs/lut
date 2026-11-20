@@ -307,6 +307,12 @@ mod tests {
         };
         assert_eq!(program(Some("mine")), Ok(Some("nu.exe".into())));
         assert_eq!(program(None), Ok(Some("pwsh.exe".into())));
+        // The pane keeps the profile that opened, the default one included.
+        let opened = |requested: Option<&str>| {
+            resolve_launch(&state, requested, None).map(|launch| launch.profile_id)
+        };
+        assert_eq!(opened(Some("mine")), Ok(Some("mine".into())));
+        assert_eq!(opened(None), Ok(Some("detected:pwsh".into())));
         assert_eq!(
             program(Some("gone")),
             Err(LaunchError::ProfileNotFound { id: "gone".into() })
