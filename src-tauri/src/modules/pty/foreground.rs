@@ -131,6 +131,10 @@ struct Process {
 /// (`usr\bin\bash.exe`), and MSYS emulates `exec` by running the new program as a child the old
 /// one waits for: an rc file's `exec zsh` leaves bash with zsh as its only child. So under the
 /// launcher, a lone shell child stands in for its parent, and what runs below the last one counts.
+///
+/// Limits, as the snapshot has no command lines: a shell busy only with builtins (a `while` loop)
+/// starts no child and reads as idle, at the top as in any shell this checks; and under the
+/// launcher, an idle shell started by hand (typing `zsh`) reads as idle too.
 #[cfg(any(windows, test))]
 fn has_children(processes: &[Process], shell: u32, git_bash_launcher: bool) -> bool {
     const MSYS_SHELLS: [&str; 4] = ["bash.exe", "zsh.exe", "fish.exe", "sh.exe"];
