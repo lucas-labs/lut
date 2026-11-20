@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use portable_pty::CommandBuilder;
 
 use crate::modules::control::ShellControlEnv;
-use crate::modules::workspace::{self, WorkspaceEnv};
+use crate::modules::workspace;
 
 #[cfg(windows)]
 const BASHRC_SCRIPT: &str = include_str!("scripts/bashrc.bash");
@@ -51,71 +51,163 @@ fn fish_init_script() -> &'static str {
 }
 
 /// What a PTY starts: a program and its arguments, each passed to the child on its own and never
-/// joined into one shell string.
+/// joined into one shell string, plus where it starts.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LaunchSpec {
-    /// An absolute path, or a bare name looked up on `PATH`.
-    pub program: String,
+    /// An absolute path, or a bare name looked up on `PATH` (inside the distro for WSL). `None`
+    /// starts the default shell on the host, or the distro's login shell in WSL.
+    pub program: Option<String>,
     pub args: Vec<String>,
     /// PowerShell only: `false` starts it with `-NoProfile`, so it skips the user's profile
     /// scripts while lut's own integration script still runs.
     pub load_user_profile: bool,
     /// Set over the inherited environment and under lut's own variables (`apply_common`).
     pub env: ProfileEnv,
+    /// The start directory, already checked (`pty_open`). `None` leaves it to the process on the
+    /// host and to the home directory in WSL.
+    pub cwd: Option<String>,
+    pub target: LaunchTarget,
 }
 
 /// A profile's variables: a value sets one, `None` removes an inherited one. Names starting with
 /// `LUT_` are rejected when the profile is saved.
 pub type ProfileEnv = BTreeMap<String, Option<String>>;
 
+/// Where a launch runs, chosen per launch and not by the window's workspace.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub enum LaunchTarget {
+    #[default]
+    Native,
+    /// `None` is the distro `wsl.exe` marks as the default.
+    Wsl { distro: Option<String> },
+}
+
 impl LaunchSpec {
-    /// `program` with no arguments, the user's profile loaded and no variables of its own.
-    pub fn new(program: String) -> Self {
+    /// The default shell on the host, with no arguments, the user's profile loaded, no variables
+    /// of its own and no start directory.
+    pub fn new() -> Self {
         Self {
-            program,
+            program: None,
             args: Vec::new(),
             load_user_profile: true,
             env: ProfileEnv::new(),
+            cwd: None,
+            target: LaunchTarget::Native,
         }
     }
 }
 
+impl Default for LaunchSpec {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Why a launch failed, or, for `CwdUnavailable`, why it started somewhere else. The frontend
+/// tells them apart by `code` and shows `message`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LaunchError {
-    /// The program is not a file, or a bare name not found on `PATH`.
-    ExecutableNotFound {
-        program: String,
-    },
-    Failed(String),
+    /// The program is not a file, or a bare name not found on `PATH` (the distro's, for WSL).
+    ExecutableNotFound { program: String },
+    /// The requested start directory is missing, not a directory or on an unmounted drive. A
+    /// warning: the launch falls back to the home directory.
+    CwdUnavailable { cwd: String, reason: String },
+    /// The distro is not installed; `None` when no distro is installed at all.
+    DistroNotInstalled { distro: Option<String> },
+    /// Anything else: the pseudoconsole, the spawn itself, or `wsl.exe`.
+    SpawnFailed { reason: String },
+}
+
+impl LaunchError {
+    pub fn spawn_failed(reason: impl std::fmt::Display) -> Self {
+        Self::SpawnFailed {
+            reason: reason.to_string(),
+        }
+    }
+
+    fn code(&self) -> &'static str {
+        match self {
+            Self::ExecutableNotFound { .. } => "executableNotFound",
+            Self::CwdUnavailable { .. } => "cwdUnavailable",
+            Self::DistroNotInstalled { .. } => "distroNotInstalled",
+            Self::SpawnFailed { .. } => "spawnFailed",
+        }
+    }
 }
 
 impl std::fmt::Display for LaunchError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::ExecutableNotFound { program } => write!(f, "executable not found: {program}"),
-            Self::Failed(reason) => f.write_str(reason),
+            Self::CwdUnavailable { cwd, reason } => {
+                write!(f, "directory not available: {cwd} ({reason})")
+            }
+            Self::DistroNotInstalled {
+                distro: Some(distro),
+            } => {
+                write!(f, "WSL distro {distro} is not installed")
+            }
+            Self::DistroNotInstalled { distro: None } => f.write_str("no WSL distro is installed"),
+            Self::SpawnFailed { reason } => f.write_str(reason),
         }
     }
 }
 
 impl std::error::Error for LaunchError {}
 
-/// Builds the command for `launch`, or for the default shell when it is `None`.
+/// `{ code, ...fields, message }`, the fields in camelCase.
+impl serde::Serialize for LaunchError {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        use serde::ser::SerializeMap;
+        let mut map = serializer.serialize_map(None)?;
+        map.serialize_entry("code", self.code())?;
+        match self {
+            Self::ExecutableNotFound { program } => map.serialize_entry("program", program)?,
+            Self::CwdUnavailable { cwd, reason } => {
+                map.serialize_entry("cwd", cwd)?;
+                map.serialize_entry("reason", reason)?;
+            }
+            Self::DistroNotInstalled { distro } => map.serialize_entry("distro", distro)?,
+            Self::SpawnFailed { reason } => map.serialize_entry("reason", reason)?,
+        }
+        map.serialize_entry("message", &self.to_string())?;
+        map.end()
+    }
+}
+
+/// Builds the command for `spec`.
 pub fn build_command(
-    cwd: Option<String>,
-    workspace: WorkspaceEnv,
-    launch: Option<LaunchSpec>,
+    spec: LaunchSpec,
     control: Option<ShellControlEnv>,
 ) -> Result<CommandBuilder, LaunchError> {
     #[cfg(unix)]
     {
-        let _ = workspace;
-        unix::build(cwd, launch, control)
+        if let LaunchTarget::Wsl { .. } = spec.target {
+            return Err(LaunchError::spawn_failed(
+                "WSL is only available on Windows",
+            ));
+        }
+        unix::build(spec, control)
     }
     #[cfg(windows)]
     {
-        windows::build(cwd, workspace, launch, control)
+        windows::build(spec, control)
     }
+}
+
+/// The start directory when none was asked for: the directory lut was started in, then home.
+pub fn default_cwd() -> Option<String> {
+    workspace::launch_cwd_snapshot()
+        .filter(|path| path.is_dir())
+        .map(|path| path.to_string_lossy().into_owned())
+        .or_else(home_cwd)
+}
+
+/// The home directory, where a launch goes when its requested directory cannot be used.
+pub fn home_cwd() -> Option<String> {
+    dirs::home_dir()
+        .filter(|path| path.is_dir())
+        .map(|path| path.to_string_lossy().into_owned())
 }
 
 /// Finds the file a launch names: an absolute path as is, a bare name on `PATH`. A relative path
@@ -580,12 +672,8 @@ fn apply_common(
         ensure_utf8_locale(cmd);
     }
 
-    let resolved_cwd = cwd
-        .map(PathBuf::from)
-        .filter(|p| p.is_dir())
-        .or_else(|| workspace::launch_cwd_snapshot().filter(|p| p.is_dir()))
-        .or_else(|| dirs::home_dir().filter(|p| p.is_dir()));
-    if let Some(cwd) = resolved_cwd {
+    // `pty_open` already chose and checked it (`default_cwd`, `home_cwd`).
+    if let Some(cwd) = cwd.map(PathBuf::from) {
         #[cfg(windows)]
         let cwd = PathBuf::from(cwd.to_string_lossy().replace('/', "\\"));
         log::info!("pty cwd: {}", cwd.display());
@@ -673,24 +761,17 @@ mod unix {
     }
 
     pub fn build(
-        cwd: Option<String>,
-        launch: Option<super::LaunchSpec>,
+        spec: super::LaunchSpec,
         control: Option<super::ShellControlEnv>,
     ) -> Result<CommandBuilder, super::LaunchError> {
-        let (program, spec) = match launch {
-            Some(spec) => (
-                super::resolve_program(&spec.program)?
-                    .to_string_lossy()
-                    .into_owned(),
-                spec,
-            ),
-            None => {
-                let program = default_shell();
-                (program.clone(), super::LaunchSpec::new(program))
-            }
+        let program = match spec.program.as_deref() {
+            Some(program) => super::resolve_program(program)?
+                .to_string_lossy()
+                .into_owned(),
+            None => default_shell(),
         };
         let mut cmd = CommandBuilder::new(&program);
-        super::apply_common(&mut cmd, cwd, control.as_ref(), &spec.env);
+        super::apply_common(&mut cmd, spec.cwd, control.as_ref(), &spec.env);
         let kind = ShellKind::classify(&program);
         if super::uses_integration(kind, &spec.args, false) {
             apply_shell_init(&mut cmd, kind, &spec.args);
@@ -914,7 +995,6 @@ mod windows {
     use std::path::{Path, PathBuf};
 
     use super::ShellKind;
-    use crate::modules::workspace::WorkspaceEnv;
     use portable_pty::CommandBuilder;
 
     const PROFILE_PS1: &str = include_str!("scripts/profile.ps1");
@@ -938,31 +1018,27 @@ mod windows {
     }
 
     pub fn build(
-        cwd: Option<String>,
-        workspace: WorkspaceEnv,
-        launch: Option<super::LaunchSpec>,
+        spec: super::LaunchSpec,
         control: Option<super::ShellControlEnv>,
     ) -> Result<CommandBuilder, super::LaunchError> {
-        if let WorkspaceEnv::Wsl { distro } = workspace {
-            // Only the variables reach WSL for now; its program and arguments come with E14-10.
+        if let super::LaunchTarget::Wsl { distro } = &spec.target {
+            // lut's control variables name a Windows helper that cannot run inside WSL, and
+            // `pty_open` does not pass them there.
             let _ = control;
-            let env = launch.map(|spec| spec.env).unwrap_or_default();
-            return build_wsl(cwd, distro, &env).map_err(super::LaunchError::Failed);
+            return build_wsl(distro.clone(), &spec);
         }
-        let (program, spec) = match launch {
-            Some(spec) => (super::resolve_program(&spec.program)?, spec),
-            None => {
-                let program = super::windows_shell_path();
-                let spec = super::LaunchSpec::new(program.to_string_lossy().into_owned());
-                (program, spec)
-            }
-        };
         let super::LaunchSpec {
+            program,
             args: user_args,
             load_user_profile,
             env,
+            cwd,
             ..
         } = spec;
+        let program = match program.as_deref() {
+            Some(program) => super::resolve_program(program)?,
+            None => super::windows_shell_path(),
+        };
         let mut cmd = CommandBuilder::new(&program);
         super::apply_common(&mut cmd, cwd, control.as_ref(), &env);
         let kind = ShellKind::classify(&program.to_string_lossy());
@@ -1035,21 +1111,162 @@ mod windows {
         ));
     }
 
+    /// A WSL launch: the distro (the default one when unset), then the program (the distro's
+    /// login shell when unset), each checked inside the distro so a failure has its own error.
     fn build_wsl(
-        cwd: Option<String>,
-        distro: String,
+        distro: Option<String>,
+        spec: &super::LaunchSpec,
+    ) -> Result<CommandBuilder, super::LaunchError> {
+        let distro = match distro {
+            Some(distro) => distro,
+            None => default_wsl_distro()?,
+        };
+        crate::modules::workspace::validate_wsl_distro_name(&distro)
+            .map_err(super::LaunchError::spawn_failed)?;
+        let env = &spec.env;
+        let program_path = match spec.program.as_deref() {
+            Some(program) => find_wsl_program(&distro, program, env)?,
+            None => crate::modules::workspace::wsl_login_shell(distro.clone())
+                .map_err(|reason| wsl_failure(&distro, reason))?,
+        };
+        let program = WslProgram {
+            path: &program_path,
+            kind: ShellKind::classify(&program_path),
+            args: &spec.args,
+            load_user_profile: spec.load_user_profile,
+        };
+        let integration = if super::uses_integration(program.kind, program.args, false) {
+            wsl_integration(&distro, &program, env)
+        } else {
+            log::info!("spawning WSL '{program_path}' without shell integration");
+            WslShellIntegration::None
+        };
+        let launch =
+            build_wsl_launch_spec(spec.cwd.as_deref(), &distro, &program, integration, env);
+        let mut cmd = CommandBuilder::new("wsl.exe");
+        cmd.env("LUT_WSL_LOGIN_SHELL", &program_path);
+        for arg in &launch.args {
+            cmd.arg(arg);
+        }
+        cmd.env("TERM", "xterm-256color");
+        cmd.env("COLORTERM", "truecolor");
+        cmd.env("LUT_TERMINAL", "1");
+        super::ensure_utf8_locale(&mut cmd);
+        log::info!("spawning WSL program: {distro} ({program_path})");
+        Ok(cmd)
+    }
+
+    /// The program a WSL launch runs, already found inside the distro.
+    struct WslProgram<'a> {
+        path: &'a str,
+        kind: ShellKind,
+        args: &'a [String],
+        load_user_profile: bool,
+    }
+
+    /// The distro `wsl.exe` runs without `-d`, from the registry (`registered_distros`).
+    fn default_wsl_distro() -> Result<String, super::LaunchError> {
+        let distros = crate::modules::workspace::registered_distros()
+            .map_err(super::LaunchError::spawn_failed)?;
+        pick_default_distro(&distros)
+    }
+
+    /// The one marked as the default, else the first; none registered is `DistroNotInstalled`.
+    fn pick_default_distro(
+        distros: &[crate::modules::workspace::RegisteredDistro],
+    ) -> Result<String, super::LaunchError> {
+        distros
+            .iter()
+            .find(|d| d.default)
+            .or_else(|| distros.first())
+            .map(|d| d.name.clone())
+            .ok_or(super::LaunchError::DistroNotInstalled { distro: None })
+    }
+
+    /// A failed `wsl.exe` call for `distro`, typed. The registered distros are read only once a
+    /// call failed, to tell a missing distro from anything else.
+    fn wsl_failure(distro: &str, reason: String) -> super::LaunchError {
+        classify_wsl_failure(
+            distro,
+            reason,
+            crate::modules::workspace::registered_distros(),
+        )
+    }
+
+    /// `DistroNotInstalled` when the registered distros were read and do not name `distro`
+    /// (`wsl.exe` matches names in any case), none registered included; `SpawnFailed` with
+    /// `wsl.exe`'s own text otherwise.
+    fn classify_wsl_failure(
+        distro: &str,
+        reason: String,
+        installed: Result<Vec<crate::modules::workspace::RegisteredDistro>, String>,
+    ) -> super::LaunchError {
+        match installed {
+            Ok(distros) if !distros.iter().any(|d| d.name.eq_ignore_ascii_case(distro)) => {
+                super::LaunchError::DistroNotInstalled {
+                    distro: Some(distro.to_string()),
+                }
+            }
+            _ => super::LaunchError::SpawnFailed { reason },
+        }
+    }
+
+    /// The path of `program` inside the distro, or `ExecutableNotFound`.
+    fn find_wsl_program(
+        distro: &str,
+        program: &str,
         env: &super::ProfileEnv,
-    ) -> Result<CommandBuilder, String> {
-        crate::modules::workspace::validate_wsl_distro_name(&distro)?;
-        let shell_path = crate::modules::workspace::wsl_login_shell(distro.clone())?;
-        let shell_kind = ShellKind::classify(&shell_path);
-        let integration = match shell_kind {
-            ShellKind::Zsh => match prepare_wsl_zdotdir(&distro) {
+    ) -> Result<String, super::LaunchError> {
+        let (probe, args) = wsl_program_probe(program, env);
+        let args: Vec<&str> = args.iter().map(String::as_str).collect();
+        let out = crate::modules::workspace::wsl_exec_capture(distro, &probe, &args)
+            .map_err(|reason| wsl_failure(distro, reason))?;
+        let found = crate::modules::workspace::normalize_wsl_value(out, "");
+        if found.is_empty() {
+            Err(super::LaunchError::ExecutableNotFound {
+                program: program.to_string(),
+            })
+        } else {
+            Ok(found)
+        }
+    }
+
+    /// Program and arguments of the lookup: `command -v` in `/bin/sh`, behind `env` when the
+    /// profile has variables, so a profile's `PATH` counts for the program but not for the shell
+    /// (`env` looks its command up in the `PATH` it sets). It searches the `PATH` that `wsl.exe --exec`
+    /// gives, the one the launch uses. It always exits 0, so a failure is `wsl.exe`'s and empty
+    /// output means not found.
+    fn wsl_program_probe(program: &str, env: &super::ProfileEnv) -> (String, Vec<String>) {
+        let probe = [
+            "-c".to_string(),
+            r#"command -v "$1" || true"#.to_string(),
+            "sh".to_string(),
+            program.to_string(),
+        ];
+        if env.is_empty() {
+            return ("/bin/sh".to_string(), probe.to_vec());
+        }
+        let mut args = wsl_env_args(env);
+        args.push("/bin/sh".to_string());
+        args.extend(probe);
+        ("env".to_string(), args)
+    }
+
+    /// lut's integration for an integrated WSL shell, prepared inside the distro; `None` when
+    /// preparing it failed or lut does not integrate that shell.
+    fn wsl_integration(
+        distro: &str,
+        program: &WslProgram,
+        env: &super::ProfileEnv,
+    ) -> WslShellIntegration {
+        let shell_path = program.path;
+        match program.kind {
+            ShellKind::Zsh => match prepare_wsl_zdotdir(distro) {
                 Ok(zdotdir) => {
                     // A ZDOTDIR the profile sets is the user's, as the distro's own would be.
                     let user_zdotdir = match env.get("ZDOTDIR") {
                         Some(set) => set.clone(),
-                        None => match probe_wsl_zdotdir(&distro, &shell_path, env) {
+                        None => match probe_wsl_zdotdir(distro, shell_path, env) {
                             Ok(path) => Some(path),
                             Err(e) => {
                                 log::warn!("WSL zsh ZDOTDIR probe failed for {distro}: {e}");
@@ -1068,14 +1285,14 @@ mod windows {
                     WslShellIntegration::None
                 }
             },
-            ShellKind::Bash => match prepare_wsl_bash_rcfile(&distro) {
+            ShellKind::Bash => match prepare_wsl_bash_rcfile(distro) {
                 Ok(rcfile) => WslShellIntegration::Bash { rcfile },
                 Err(e) => {
                     log::warn!("WSL bash shell integration disabled for {distro}: {e}");
                     WslShellIntegration::None
                 }
             },
-            ShellKind::Fish => match prepare_wsl_fish_conf_d(&distro) {
+            ShellKind::Fish => match prepare_wsl_fish_conf_d(distro) {
                 Ok(()) => WslShellIntegration::Fish,
                 Err(e) => {
                     log::warn!("WSL fish shell integration disabled for {distro}: {e}");
@@ -1083,32 +1300,10 @@ mod windows {
                 }
             },
             ShellKind::Pwsh | ShellKind::Cmd | ShellKind::Other => {
-                log::info!(
-                    "unsupported WSL shell '{}', spawning without integration",
-                    shell_path
-                );
+                log::info!("unsupported WSL shell '{shell_path}', spawning without integration");
                 WslShellIntegration::None
             }
-        };
-        let spec = build_wsl_launch_spec(
-            cwd.as_deref(),
-            &distro,
-            &shell_path,
-            shell_kind,
-            integration,
-            env,
-        );
-        let mut cmd = CommandBuilder::new("wsl.exe");
-        cmd.env("LUT_WSL_LOGIN_SHELL", &shell_path);
-        for arg in &spec.args {
-            cmd.arg(arg);
         }
-        cmd.env("TERM", "xterm-256color");
-        cmd.env("COLORTERM", "truecolor");
-        cmd.env("LUT_TERMINAL", "1");
-        super::ensure_utf8_locale(&mut cmd);
-        log::info!("spawning WSL shell: {distro} ({shell_path})");
-        Ok(cmd)
     }
 
     /// The profile's variables as `env` arguments inside the distro. `wsl.exe` passes no Windows
@@ -1133,11 +1328,13 @@ mod windows {
 
     /// `wsl.exe --exec` arguments: the profile's variables (`wsl_env_args`), then lut's
     /// integration variables, so they win. Without profile variables the prefix is lut's alone.
+    /// An integrated shell gets its integrated arguments (`integrated_args`), which keep the
+    /// user's covered flags. Any other launch gets the user's arguments as they are, or, with
+    /// none, the login or interactive flag the shell needs to start as a terminal shell.
     fn build_wsl_launch_spec(
         cwd: Option<&str>,
         distro: &str,
-        shell_path: &str,
-        shell_kind: ShellKind,
+        program: &WslProgram,
         integration: WslShellIntegration,
         env: &super::ProfileEnv,
     ) -> WslLaunchSpec {
@@ -1149,42 +1346,40 @@ mod windows {
             "--exec".to_string(),
         ];
         let mut prefix = wsl_env_args(env);
-        let mut shell = vec![shell_path.to_string()];
-        match (shell_kind, integration) {
-            (
-                ShellKind::Zsh,
-                WslShellIntegration::Zsh {
-                    zdotdir,
-                    user_zdotdir,
-                },
-            ) => {
+        let kind = program.kind;
+        let program_args = match integration {
+            WslShellIntegration::Zsh {
+                zdotdir,
+                user_zdotdir,
+            } => {
                 if let Some(user_zdotdir) = user_zdotdir {
                     prefix.push(format!("LUT_USER_ZDOTDIR={user_zdotdir}"));
                 }
                 prefix.push(format!("ZDOTDIR={zdotdir}"));
-                shell.push("-l".to_string());
+                super::integrated_args(kind, program.args, None, true)
             }
-            (ShellKind::Bash, WslShellIntegration::Bash { rcfile }) => {
-                shell.extend(["--rcfile".to_string(), rcfile, "-i".to_string()]);
+            WslShellIntegration::Bash { rcfile } => {
+                super::integrated_args(kind, program.args, Some(&rcfile), true)
             }
-            (ShellKind::Fish, WslShellIntegration::Fish) => {
+            WslShellIntegration::Fish => {
                 prefix.push("fish_features=no-mark-prompt".to_string());
-                shell.extend([
-                    "-i".to_string(),
-                    "-C".to_string(),
-                    super::FISH_REINSTALL_PROMPT.to_string(),
-                ]);
+                super::integrated_args(kind, program.args, None, true)
             }
-            (ShellKind::Zsh, WslShellIntegration::None) => shell.push("-l".to_string()),
-            (ShellKind::Bash, WslShellIntegration::None)
-            | (ShellKind::Fish, WslShellIntegration::None) => shell.push("-i".to_string()),
-            _ => {}
-        }
+            WslShellIntegration::None if program.args.is_empty() => match kind {
+                ShellKind::Zsh => vec!["-l".to_string()],
+                ShellKind::Bash | ShellKind::Fish => vec!["-i".to_string()],
+                _ => super::bare_args(kind, program.args, program.load_user_profile),
+            },
+            WslShellIntegration::None => {
+                super::bare_args(kind, program.args, program.load_user_profile)
+            }
+        };
         if !prefix.is_empty() {
             args.push("env".to_string());
             args.extend(prefix);
         }
-        args.extend(shell);
+        args.push(program.path.to_string());
+        args.extend(program_args);
         WslLaunchSpec { args }
     }
 
@@ -1616,6 +1811,16 @@ mod windows {
             super::super::ProfileEnv::new()
         }
 
+        /// A WSL program started with no arguments of the user's.
+        fn login(path: &str, kind: ShellKind) -> WslProgram<'_> {
+            WslProgram {
+                path,
+                kind,
+                args: &[],
+                load_user_profile: true,
+            }
+        }
+
         fn wsl_args(shell: &str, kind: ShellKind, integration: WslShellIntegration) -> Vec<String> {
             let env = super::super::ProfileEnv::from([
                 ("PAGER".to_string(), None),
@@ -1624,7 +1829,8 @@ mod windows {
                 ("GREETING".to_string(), Some("hello world".to_string())),
                 ("ZDOTDIR".to_string(), Some("/mine".to_string())),
             ]);
-            let spec = build_wsl_launch_spec(None, "Ubuntu", shell, kind, integration, &env);
+            let spec =
+                build_wsl_launch_spec(None, "Ubuntu", &login(shell, kind), integration, &env);
             // The part after `--exec`.
             spec.args[5..].to_vec()
         }
@@ -1727,8 +1933,7 @@ mod windows {
             let spec = build_wsl_launch_spec(
                 Some("/home/vinicios/repo"),
                 "Ubuntu",
-                "/usr/bin/zsh",
-                ShellKind::Zsh,
+                &login("/usr/bin/zsh", ShellKind::Zsh),
                 WslShellIntegration::Zsh {
                     zdotdir: "/home/vinicios/.cache/dev.lucode.lut/shell-integration/zsh".into(),
                     user_zdotdir: None,
@@ -1757,8 +1962,7 @@ mod windows {
             let spec = build_wsl_launch_spec(
                 Some("/home/vinicios/repo"),
                 "Ubuntu",
-                "/usr/bin/zsh",
-                ShellKind::Zsh,
+                &login("/usr/bin/zsh", ShellKind::Zsh),
                 WslShellIntegration::Zsh {
                     zdotdir: "/home/vinicios/.cache/dev.lucode.lut/shell-integration/zsh".into(),
                     user_zdotdir: Some("/home/vinicios/.config/zsh".into()),
@@ -1788,8 +1992,7 @@ mod windows {
             let spec = build_wsl_launch_spec(
                 Some("/home/vinicios/repo"),
                 "Ubuntu",
-                "/usr/bin/zsh",
-                ShellKind::Zsh,
+                &login("/usr/bin/zsh", ShellKind::Zsh),
                 WslShellIntegration::None,
                 &no_env(),
             );
@@ -1812,8 +2015,7 @@ mod windows {
             let spec = build_wsl_launch_spec(
                 Some("/home/vinicios/repo"),
                 "Ubuntu",
-                "/bin/bash",
-                ShellKind::Bash,
+                &login("/bin/bash", ShellKind::Bash),
                 WslShellIntegration::Bash {
                     rcfile: "/home/vinicios/.cache/dev.lucode.lut/shell-integration/bash/bashrc"
                         .into(),
@@ -1842,8 +2044,7 @@ mod windows {
             let spec = build_wsl_launch_spec(
                 Some("/home/vinicios/repo"),
                 "Ubuntu",
-                "/usr/bin/fish",
-                ShellKind::Fish,
+                &login("/usr/bin/fish", ShellKind::Fish),
                 WslShellIntegration::Fish,
                 &no_env(),
             );
@@ -1870,8 +2071,7 @@ mod windows {
             let spec = build_wsl_launch_spec(
                 None,
                 "Ubuntu",
-                "/usr/bin/nu",
-                ShellKind::Other,
+                &login("/usr/bin/nu", ShellKind::Other),
                 WslShellIntegration::None,
                 &no_env(),
             );
@@ -1885,6 +2085,200 @@ mod windows {
                     "--exec".to_string(),
                     "/usr/bin/nu".to_string(),
                 ]
+            );
+        }
+
+        /// The part after `--exec` for `program` started with the user's `args`.
+        fn wsl_program_args(
+            path: &str,
+            args: &[&str],
+            load_user_profile: bool,
+            integration: WslShellIntegration,
+        ) -> Vec<String> {
+            let args: Vec<String> = args.iter().map(|arg| arg.to_string()).collect();
+            let program = WslProgram {
+                path,
+                kind: ShellKind::classify(path),
+                args: &args,
+                load_user_profile,
+            };
+            build_wsl_launch_spec(None, "Ubuntu", &program, integration, &no_env()).args[5..]
+                .to_vec()
+        }
+
+        #[test]
+        fn a_wsl_profiles_covered_flags_keep_the_integration() {
+            let zsh = WslShellIntegration::Zsh {
+                zdotdir: "/lut/zsh".into(),
+                user_zdotdir: None,
+            };
+            assert_eq!(
+                wsl_program_args("/usr/bin/zsh", &["-l", "-i"], true, zsh),
+                ["env", "ZDOTDIR=/lut/zsh", "/usr/bin/zsh", "-l", "-i"]
+            );
+            // bash's rcfile runs the login files itself, so `-l` is not passed on.
+            let bash = WslShellIntegration::Bash {
+                rcfile: "/lut/bashrc".into(),
+            };
+            assert_eq!(
+                wsl_program_args("/bin/bash", &["-l"], true, bash),
+                ["/bin/bash", "--rcfile", "/lut/bashrc", "-i"]
+            );
+            assert_eq!(
+                wsl_program_args(
+                    "/usr/bin/fish",
+                    &["--login"],
+                    true,
+                    WslShellIntegration::Fish
+                ),
+                [
+                    "env",
+                    "fish_features=no-mark-prompt",
+                    "/usr/bin/fish",
+                    "-l",
+                    "-i",
+                    "-C",
+                    super::super::FISH_REINSTALL_PROMPT
+                ]
+            );
+        }
+
+        #[test]
+        fn a_wsl_profiles_other_arguments_are_passed_as_they_are() {
+            assert_eq!(
+                wsl_program_args(
+                    "/bin/bash",
+                    &["-c", "htop"],
+                    true,
+                    WslShellIntegration::None
+                ),
+                ["/bin/bash", "-c", "htop"]
+            );
+            assert_eq!(
+                wsl_program_args(
+                    "/usr/bin/htop",
+                    &["-d", "10"],
+                    true,
+                    WslShellIntegration::None
+                ),
+                ["/usr/bin/htop", "-d", "10"]
+            );
+        }
+
+        #[test]
+        fn a_wsl_pwsh_can_skip_the_users_profile() {
+            assert_eq!(
+                wsl_program_args("/usr/bin/pwsh", &[], false, WslShellIntegration::None),
+                ["/usr/bin/pwsh", "-NoProfile"]
+            );
+            assert_eq!(
+                wsl_program_args(
+                    "/usr/bin/pwsh",
+                    &["-NoLogo"],
+                    false,
+                    WslShellIntegration::None
+                ),
+                ["/usr/bin/pwsh", "-NoProfile", "-NoLogo"]
+            );
+            assert_eq!(
+                wsl_program_args("/usr/bin/pwsh", &[], true, WslShellIntegration::None),
+                ["/usr/bin/pwsh"]
+            );
+        }
+
+        #[test]
+        fn the_wsl_program_lookup_sees_the_profiles_variables() {
+            let script = r#"command -v "$1" || true"#;
+            assert_eq!(
+                wsl_program_probe("fish", &no_env()),
+                (
+                    "/bin/sh".to_string(),
+                    ["-c", script, "sh", "fish"].map(String::from).to_vec()
+                )
+            );
+            let env = super::super::ProfileEnv::from([
+                ("PATH".to_string(), Some("/opt/bin:/usr/bin".to_string())),
+                ("PAGER".to_string(), None),
+            ]);
+            assert_eq!(
+                wsl_program_probe("fish", &env),
+                (
+                    "env".to_string(),
+                    [
+                        "-u",
+                        "PAGER",
+                        "--",
+                        "PATH=/opt/bin:/usr/bin",
+                        "/bin/sh",
+                        "-c",
+                        script,
+                        "sh",
+                        "fish"
+                    ]
+                    .map(String::from)
+                    .to_vec()
+                )
+            );
+        }
+
+        #[test]
+        fn a_wsl_failure_names_a_missing_distro() {
+            use super::super::LaunchError;
+            use crate::modules::workspace::RegisteredDistro;
+            let installed = || {
+                Ok(vec![RegisteredDistro {
+                    name: "Ubuntu".into(),
+                    default: true,
+                }])
+            };
+            assert_eq!(
+                classify_wsl_failure("Debian", "wsl failed".into(), installed()),
+                LaunchError::DistroNotInstalled {
+                    distro: Some("Debian".into())
+                }
+            );
+            // `wsl.exe` matches names in any case: the distro is there, so the failure is another.
+            assert_eq!(
+                classify_wsl_failure("ubuntu", "wsl failed".into(), installed()),
+                LaunchError::SpawnFailed {
+                    reason: "wsl failed".into()
+                }
+            );
+            // The last distro was removed: none registered.
+            assert_eq!(
+                classify_wsl_failure("Debian", "wsl failed".into(), Ok(Vec::new())),
+                LaunchError::DistroNotInstalled {
+                    distro: Some("Debian".into())
+                }
+            );
+            // The registry could not be read: `wsl.exe`'s own text.
+            assert_eq!(
+                classify_wsl_failure("Debian", "wsl failed".into(), Err("no list".into())),
+                LaunchError::SpawnFailed {
+                    reason: "wsl failed".into()
+                }
+            );
+        }
+
+        #[test]
+        fn the_default_distro_is_the_marked_one_else_the_first_else_none() {
+            use super::super::LaunchError;
+            use crate::modules::workspace::RegisteredDistro;
+            let distro = |name: &str, default: bool| RegisteredDistro {
+                name: name.into(),
+                default,
+            };
+            assert_eq!(
+                pick_default_distro(&[distro("Ubuntu", false), distro("Debian", true)]),
+                Ok("Debian".to_string())
+            );
+            assert_eq!(
+                pick_default_distro(&[distro("Ubuntu", false)]),
+                Ok("Ubuntu".to_string())
+            );
+            assert_eq!(
+                pick_default_distro(&[]),
+                Err(LaunchError::DistroNotInstalled { distro: None })
             );
         }
     }
@@ -1987,6 +2381,63 @@ mod tests {
             resolve_program(&missing).unwrap_err().to_string(),
             format!("executable not found: {missing}")
         );
+    }
+
+    #[test]
+    fn launch_errors_serialize_with_a_code_and_a_message() {
+        let cases = [
+            (
+                LaunchError::ExecutableNotFound {
+                    program: "fish".into(),
+                },
+                serde_json::json!({
+                    "code": "executableNotFound",
+                    "program": "fish",
+                    "message": "executable not found: fish"
+                }),
+            ),
+            (
+                LaunchError::CwdUnavailable {
+                    cwd: r"D:\gone".into(),
+                    reason: "cwd not accessible".into(),
+                },
+                serde_json::json!({
+                    "code": "cwdUnavailable",
+                    "cwd": r"D:\gone",
+                    "reason": "cwd not accessible",
+                    "message": r"directory not available: D:\gone (cwd not accessible)"
+                }),
+            ),
+            (
+                LaunchError::DistroNotInstalled {
+                    distro: Some("Debian".into()),
+                },
+                serde_json::json!({
+                    "code": "distroNotInstalled",
+                    "distro": "Debian",
+                    "message": "WSL distro Debian is not installed"
+                }),
+            ),
+            (
+                LaunchError::DistroNotInstalled { distro: None },
+                serde_json::json!({
+                    "code": "distroNotInstalled",
+                    "distro": null,
+                    "message": "no WSL distro is installed"
+                }),
+            ),
+            (
+                LaunchError::spawn_failed("openpty failed"),
+                serde_json::json!({
+                    "code": "spawnFailed",
+                    "reason": "openpty failed",
+                    "message": "openpty failed"
+                }),
+            ),
+        ];
+        for (error, json) in cases {
+            assert_eq!(serde_json::to_value(&error).unwrap(), json);
+        }
     }
 
     #[test]

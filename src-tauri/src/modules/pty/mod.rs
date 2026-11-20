@@ -24,11 +24,12 @@ use portable_pty::PtySize;
 use tauri::Manager;
 
 use crate::modules::control::ControlState;
-use crate::modules::workspace::{user_spawn_cwd_or_home, WorkspaceEnv, WorkspaceRegistry};
+use crate::modules::workspace::{user_spawn_cwd, SpawnCwd, WorkspaceEnv, WorkspaceRegistry};
 use hub::{Command, Hub};
 pub use presentation::PresentationClass;
 pub use protocol::stream_protocol;
 use session::Session;
+use shell_init::{LaunchError, LaunchSpec, LaunchTarget};
 use terminal_colors::TerminalColors;
 
 /// Largest `pty_set_presentation` batch accepted; a window never has more
@@ -167,6 +168,57 @@ fn reap(id: u32, session: Arc<Session>, reason: &str) {
         .expect("spawn pty drop thread");
 }
 
+/// What `pty_open` answers: the terminal, the directory it started in (`~` is the distro's home)
+/// and, when the requested one could not be used, why (`LaunchError::CwdUnavailable`).
+#[derive(Debug, serde::Serialize)]
+pub struct PtyOpened {
+    pub id: u32,
+    pub cwd: Option<String>,
+    pub warning: Option<LaunchError>,
+}
+
+/// The directory a launch starts in, and the warning when the requested one could not be used.
+/// Unusable falls back to home; none asked for is the default (`default_cwd`). In WSL both are
+/// left to `wsl.exe`, which starts in the distro's home.
+fn launch_cwd(spawn: SpawnCwd, wsl: bool) -> (Option<String>, Option<LaunchError>) {
+    match spawn {
+        SpawnCwd::Requested(cwd) => (Some(cwd), None),
+        SpawnCwd::Default => ((!wsl).then(shell_init::default_cwd).flatten(), None),
+        SpawnCwd::Unusable { requested, reason } => (
+            (!wsl).then(shell_init::home_cwd).flatten(),
+            Some(LaunchError::CwdUnavailable {
+                cwd: requested,
+                reason,
+            }),
+        ),
+    }
+}
+
+/// The spec `pty_open` starts until panes open by profile id (E14-12), in the target of the
+/// window's workspace. On the host it runs the `terminalShell` preference (empty means the
+/// default shell); in WSL the distro's login shell, as the preference names a host program.
+fn workspace_launch(shell: Option<String>, workspace: &WorkspaceEnv) -> LaunchSpec {
+    let (program, target) = match workspace {
+        WorkspaceEnv::Local => (
+            shell
+                .map(|program| program.trim().to_string())
+                .filter(|program| !program.is_empty()),
+            LaunchTarget::Native,
+        ),
+        WorkspaceEnv::Wsl { distro } => (
+            None,
+            LaunchTarget::Wsl {
+                distro: Some(distro.clone()),
+            },
+        ),
+    };
+    LaunchSpec {
+        program,
+        target,
+        ..LaunchSpec::new()
+    }
+}
+
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
 pub async fn pty_open(
@@ -182,14 +234,9 @@ pub async fn pty_open(
     pane_id: Option<u32>,
     presentation: Option<PresentationClass>,
     colors: Option<TerminalColors>,
-) -> Result<u32, String> {
+) -> Result<PtyOpened, LaunchError> {
     let workspace = WorkspaceEnv::from_option(workspace);
-    // The `terminalShell` preference until panes open by profile id (E14-12); empty means the
-    // default shell.
-    let launch = shell
-        .map(|program| program.trim().to_string())
-        .filter(|program| !program.is_empty())
-        .map(shell_init::LaunchSpec::new);
+    let mut launch = workspace_launch(shell, &workspace);
     // A Windows helper cannot execute inside WSL without explicit path and
     // network translation. Do not inject credentials for a broken command.
     let control_env = if workspace.is_wsl() {
@@ -204,14 +251,19 @@ pub async fn pty_open(
     let owner: Arc<str> = Arc::from(webview.label());
     let hub = state.hub.clone();
     let class = presentation.unwrap_or_default();
-    let session = tauri::async_runtime::spawn_blocking(move || {
+    let (session, opened_cwd, warning) = tauri::async_runtime::spawn_blocking(move || {
         // Authorizing the directory canonicalizes it, which touches the disk
         // (a network volume, or wsl.exe for a WSL workspace): never on a worker.
-        let cwd = user_spawn_cwd_or_home(
+        let requested = user_spawn_cwd(
             &app.state::<WorkspaceRegistry>(),
             cwd.as_deref(),
             &workspace,
         );
+        let (cwd, warning) = launch_cwd(requested, workspace.is_wsl());
+        let opened_cwd = cwd
+            .clone()
+            .or_else(|| workspace.is_wsl().then(|| "~".to_string()));
+        launch.cwd = cwd;
         session::spawn(
             id,
             app,
@@ -220,18 +272,28 @@ pub async fn pty_open(
             class,
             cols,
             rows,
-            cwd,
-            workspace,
             launch,
             control_env,
             colors,
             pane_id,
         )
+        .map(|session| match opened_cwd {
+            // `portable-pty` checks the directory again at spawn and starts in home when it is
+            // gone, which a directory removed since `user_spawn_cwd` is: report that.
+            Some(gone) if !workspace.is_wsl() && !std::path::Path::new(&gone).is_dir() => {
+                let warning = warning.or(Some(LaunchError::CwdUnavailable {
+                    cwd: gone,
+                    reason: "removed before the shell started".into(),
+                }));
+                (session, shell_init::home_cwd(), warning)
+            }
+            cwd => (session, cwd, warning),
+        })
     })
     .await
     .map_err(|e| {
         log::error!("pty_open join failed: {e}");
-        e.to_string()
+        LaunchError::spawn_failed(e)
     })?
     .map_err(|e| {
         log::error!("pty_open failed: {e}");
@@ -265,7 +327,11 @@ pub async fn pty_open(
         }
     }
     log::info!("pty opened id={id} cols={cols} rows={rows}");
-    Ok(id)
+    Ok(PtyOpened {
+        id,
+        cwd: opened_cwd,
+        warning,
+    })
 }
 
 // Input is the latency-critical path: raw body + id header skips JSON
@@ -555,6 +621,65 @@ pub fn pty_session_shell(
 #[tauri::command]
 pub fn pty_list_shells() -> Vec<shell_init::ShellInfo> {
     shell_init::list_shells()
+}
+
+#[cfg(test)]
+mod launch_tests {
+    use super::*;
+
+    #[test]
+    fn the_workspace_sets_the_target_and_wsl_runs_the_login_shell() {
+        let wsl = WorkspaceEnv::Wsl {
+            distro: "Ubuntu".into(),
+        };
+        // The preference names a host program; WSL starts the distro's login shell.
+        let spec = workspace_launch(Some("pwsh.exe".into()), &wsl);
+        assert_eq!(spec.program, None);
+        assert_eq!(
+            spec.target,
+            LaunchTarget::Wsl {
+                distro: Some("Ubuntu".into())
+            }
+        );
+        let spec = workspace_launch(Some(" pwsh.exe ".into()), &WorkspaceEnv::Local);
+        assert_eq!(spec.program.as_deref(), Some("pwsh.exe"));
+        assert_eq!(spec.target, LaunchTarget::Native);
+        assert_eq!((spec.args.len(), spec.cwd), (0, None));
+        // An empty preference is the default shell.
+        let spec = workspace_launch(Some("  ".into()), &WorkspaceEnv::Local);
+        assert_eq!(spec.program, None);
+    }
+
+    #[test]
+    fn an_unusable_directory_opens_home_with_a_warning() {
+        let unusable = || SpawnCwd::Unusable {
+            requested: r"D:\gone".into(),
+            reason: "cwd not accessible".into(),
+        };
+        let warning = Some(LaunchError::CwdUnavailable {
+            cwd: r"D:\gone".into(),
+            reason: "cwd not accessible".into(),
+        });
+        assert_eq!(
+            launch_cwd(unusable(), false),
+            (shell_init::home_cwd(), warning.clone())
+        );
+        // `wsl.exe` starts in the distro's home.
+        assert_eq!(launch_cwd(unusable(), true), (None, warning));
+    }
+
+    #[test]
+    fn a_usable_or_absent_directory_has_no_warning() {
+        assert_eq!(
+            launch_cwd(SpawnCwd::Requested("/repo".into()), true),
+            (Some("/repo".to_string()), None)
+        );
+        assert_eq!(
+            launch_cwd(SpawnCwd::Default, false),
+            (shell_init::default_cwd(), None)
+        );
+        assert_eq!(launch_cwd(SpawnCwd::Default, true), (None, None));
+    }
 }
 
 #[cfg(all(test, unix))]

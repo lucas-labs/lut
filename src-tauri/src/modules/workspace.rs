@@ -226,19 +226,34 @@ pub fn authorize_user_spawn_cwd(
     Ok(Some(canonical))
 }
 
-// A saved cwd can be stale or from another environment (e.g. a Windows path in
-// a now-WSL space); the terminal must still open, so fall back to home.
-pub fn user_spawn_cwd_or_home(
+/// Where a user-started terminal may open, from the directory it asked for.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SpawnCwd {
+    /// It asked for none.
+    Default,
+    /// The requested directory, now authorized.
+    Requested(String),
+    /// A saved cwd can be stale or from another environment (a Windows path in a now-WSL
+    /// space): the terminal still opens, elsewhere, and says why.
+    Unusable { requested: String, reason: String },
+}
+
+pub fn user_spawn_cwd(
     registry: &WorkspaceRegistry,
     cwd: Option<&str>,
     workspace: &WorkspaceEnv,
-) -> Option<String> {
-    let cwd = cwd.map(str::trim).filter(|s| !s.is_empty())?;
+) -> SpawnCwd {
+    let Some(cwd) = cwd.map(str::trim).filter(|s| !s.is_empty()) else {
+        return SpawnCwd::Default;
+    };
     match authorize_user_spawn_cwd(registry, Some(cwd), workspace) {
-        Ok(_) => Some(cwd.to_owned()),
-        Err(e) => {
-            log::warn!("pty cwd {cwd:?} unusable in {workspace:?} ({e}); opening home");
-            None
+        Ok(_) => SpawnCwd::Requested(cwd.to_owned()),
+        Err(reason) => {
+            log::warn!("pty cwd {cwd:?} unusable in {workspace:?} ({reason})");
+            SpawnCwd::Unusable {
+                requested: cwd.to_owned(),
+                reason,
+            }
         }
     }
 }
@@ -661,6 +676,178 @@ pub(crate) fn parse_wsl_list(out: &str) -> Vec<WslDistro> {
     distros
 }
 
+/// The distro `wsl.exe` runs without `-d`: the one marked as the default, else the first.
+#[cfg_attr(not(windows), allow(dead_code))]
+pub(crate) fn default_distro_name(distros: &[WslDistro]) -> Option<String> {
+    distros
+        .iter()
+        .find(|d| d.default)
+        .or_else(|| distros.first())
+        .map(|d| d.name.clone())
+}
+
+/// A distro registered for the current user, as the registry lists it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(not(windows), allow(dead_code))]
+pub(crate) struct RegisteredDistro {
+    pub name: String,
+    pub default: bool,
+}
+
+/// `(subkey, DistributionName)` pairs and the `DefaultDistribution` subkey as distros: an entry
+/// without a name is skipped, subkeys (GUIDs) match in any case, and a name that could not be
+/// read fails the whole list, so a distro is never dropped from it.
+#[cfg_attr(not(windows), allow(dead_code))]
+pub(crate) fn registered_from(
+    entries: Vec<(String, Result<Option<String>, String>)>,
+    default: Option<&str>,
+) -> Result<Vec<RegisteredDistro>, String> {
+    let mut distros = Vec::new();
+    for (id, name) in entries {
+        if let Some(name) = name? {
+            distros.push(RegisteredDistro {
+                name,
+                default: default.is_some_and(|default| default.eq_ignore_ascii_case(&id)),
+            });
+        }
+    }
+    Ok(distros)
+}
+
+/// The distros registered for the current user. `wsl.exe` keeps one subkey per distro under
+/// `HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss`, holding its `DistributionName`; the
+/// key's `DefaultDistribution` names the default one's subkey. Reading it starts no process and
+/// has no localized text, so no distro at all (an empty list, or no key) is told apart from a
+/// failed `wsl.exe` call.
+#[cfg(windows)]
+pub(crate) fn registered_distros() -> Result<Vec<RegisteredDistro>, String> {
+    use windows_sys::Win32::Foundation::{ERROR_FILE_NOT_FOUND, ERROR_SUCCESS};
+    use windows_sys::Win32::System::Registry::{
+        RegCloseKey, RegOpenKeyExW, HKEY, HKEY_CURRENT_USER, KEY_READ,
+    };
+
+    let path = wide(r"Software\Microsoft\Windows\CurrentVersion\Lxss");
+    let mut key: HKEY = std::ptr::null_mut();
+    // SAFETY: `path` is NUL-terminated and `key` is a valid out pointer.
+    let status = unsafe { RegOpenKeyExW(HKEY_CURRENT_USER, path.as_ptr(), 0, KEY_READ, &mut key) };
+    if status == ERROR_FILE_NOT_FOUND {
+        // WSL never registered a distro for this user.
+        return Ok(Vec::new());
+    }
+    if status != ERROR_SUCCESS {
+        return Err(format!("could not read the WSL distros (error {status})"));
+    }
+    let distros = read_lxss(key);
+    // SAFETY: `key` was opened above and is closed once, whatever `read_lxss` returned.
+    unsafe { RegCloseKey(key) };
+    distros
+}
+
+/// The distros under the open `Lxss` key.
+#[cfg(windows)]
+fn read_lxss(
+    key: windows_sys::Win32::System::Registry::HKEY,
+) -> Result<Vec<RegisteredDistro>, String> {
+    use windows_sys::Win32::Foundation::{ERROR_NO_MORE_ITEMS, ERROR_SUCCESS};
+    use windows_sys::Win32::System::Registry::RegEnumKeyExW;
+
+    let default = registry_string(key, None, "DefaultDistribution")?;
+    let mut entries = Vec::new();
+    for index in 0.. {
+        // Subkeys are GUIDs; 256 is the registry's key name limit (255) plus the NUL.
+        let mut id = [0u16; 256];
+        let mut len = id.len() as u32;
+        // SAFETY: `id` holds `len` UTF-16 units; the optional out pointers are null.
+        let status = unsafe {
+            RegEnumKeyExW(
+                key,
+                index,
+                id.as_mut_ptr(),
+                &mut len,
+                std::ptr::null(),
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+            )
+        };
+        if status == ERROR_NO_MORE_ITEMS {
+            break;
+        }
+        if status != ERROR_SUCCESS {
+            return Err(format!("could not read the WSL distros (error {status})"));
+        }
+        let mut subkey = id[..len as usize].to_vec();
+        subkey.push(0);
+        let name = registry_string(key, Some(&subkey), "DistributionName");
+        entries.push((String::from_utf16_lossy(&id[..len as usize]), name));
+    }
+    registered_from(entries, default.as_deref())
+}
+
+/// A string value of `key` (or of its NUL-terminated `subkey`): `None` when it is missing, an
+/// error when it could not be read.
+#[cfg(windows)]
+fn registry_string(
+    key: windows_sys::Win32::System::Registry::HKEY,
+    subkey: Option<&[u16]>,
+    name: &str,
+) -> Result<Option<String>, String> {
+    use windows_sys::Win32::Foundation::{ERROR_FILE_NOT_FOUND, ERROR_SUCCESS};
+    use windows_sys::Win32::System::Registry::{RegGetValueW, RRF_RT_REG_SZ};
+
+    let failed = |status: u32| format!("could not read the WSL distros' {name} (error {status})");
+    let value = wide(name);
+    let subkey = subkey.map_or(std::ptr::null(), <[u16]>::as_ptr);
+    let mut size = 0u32;
+    // SAFETY: a size query: no data pointer, `size` is a valid out pointer.
+    let status = unsafe {
+        RegGetValueW(
+            key,
+            subkey,
+            value.as_ptr(),
+            RRF_RT_REG_SZ,
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+            &mut size,
+        )
+    };
+    if status == ERROR_FILE_NOT_FOUND || (status == ERROR_SUCCESS && size == 0) {
+        return Ok(None);
+    }
+    if status != ERROR_SUCCESS {
+        return Err(failed(status));
+    }
+    let mut data = vec![0u16; (size as usize).div_ceil(2)];
+    // SAFETY: `data` holds at least `size` bytes.
+    let status = unsafe {
+        RegGetValueW(
+            key,
+            subkey,
+            value.as_ptr(),
+            RRF_RT_REG_SZ,
+            std::ptr::null_mut(),
+            data.as_mut_ptr().cast(),
+            &mut size,
+        )
+    };
+    if status == ERROR_FILE_NOT_FOUND {
+        return Ok(None);
+    }
+    if status != ERROR_SUCCESS {
+        return Err(failed(status));
+    }
+    let len = data
+        .iter()
+        .position(|&unit| unit == 0)
+        .unwrap_or(data.len());
+    Ok(Some(String::from_utf16_lossy(&data[..len])))
+}
+
+#[cfg(windows)]
+fn wide(text: &str) -> Vec<u16> {
+    text.encode_utf16().chain(Some(0)).collect()
+}
+
 #[cfg(windows)]
 pub(crate) fn list_distros_blocking() -> Result<Vec<WslDistro>, String> {
     run_wsl(&["--list", "--verbose"]).map(|out| parse_wsl_list(&out))
@@ -689,12 +876,7 @@ pub async fn wsl_default_distro() -> Result<Option<String>, String> {
     #[cfg(windows)]
     {
         tauri::async_runtime::spawn_blocking(|| {
-            let distros = list_distros_blocking()?;
-            Ok(distros
-                .iter()
-                .find(|d| d.default)
-                .map(|d| d.name.clone())
-                .or_else(|| distros.first().map(|d| d.name.clone())))
+            list_distros_blocking().map(|distros| default_distro_name(&distros))
         })
         .await
         .map_err(|e| e.to_string())?
@@ -924,6 +1106,58 @@ mod auth_tests {
         p.push(format!("lut-auth-{label}-{nanos}-{}", std::process::id()));
         fs::create_dir_all(&p).expect("create tempdir");
         fs::canonicalize(&p).expect("canonicalize tempdir")
+    }
+
+    #[test]
+    fn the_default_distro_is_the_marked_one_else_the_first() {
+        let distro = |name: &str, default: bool| WslDistro {
+            name: name.into(),
+            default,
+            running: false,
+        };
+        assert_eq!(
+            default_distro_name(&[distro("Ubuntu", false), distro("Debian", true)]),
+            Some("Debian".to_string())
+        );
+        assert_eq!(
+            default_distro_name(&[distro("Ubuntu", false), distro("Debian", false)]),
+            Some("Ubuntu".to_string())
+        );
+        assert_eq!(default_distro_name(&[]), None);
+    }
+
+    #[test]
+    fn registry_entries_become_distros_with_the_default_marked() {
+        let entries = vec![
+            ("{AAA-1}".to_string(), Ok(Some("Ubuntu".to_string()))),
+            ("{bbb-2}".to_string(), Ok(Some("Debian".to_string()))),
+            // A subkey without a name is not a distro.
+            ("{CCC-3}".to_string(), Ok(None)),
+        ];
+        let distro = |name: &str, default: bool| RegisteredDistro {
+            name: name.into(),
+            default,
+        };
+        assert_eq!(
+            registered_from(entries.clone(), Some("{BBB-2}")),
+            Ok(vec![distro("Ubuntu", false), distro("Debian", true)])
+        );
+        assert_eq!(
+            registered_from(entries, None),
+            Ok(vec![distro("Ubuntu", false), distro("Debian", false)])
+        );
+    }
+
+    #[test]
+    fn a_name_that_could_not_be_read_fails_the_list() {
+        let entries = vec![
+            ("{AAA-1}".to_string(), Ok(Some("Ubuntu".to_string()))),
+            ("{BBB-2}".to_string(), Err("access denied".to_string())),
+        ];
+        assert_eq!(
+            registered_from(entries, Some("{AAA-1}")),
+            Err("access denied".to_string())
+        );
     }
 
     #[test]
@@ -1225,39 +1459,42 @@ mod auth_tests {
     }
 
     #[test]
-    fn user_spawn_cwd_or_home_keeps_accessible_dir() {
+    fn user_spawn_cwd_keeps_an_accessible_dir() {
         let dir = tempdir("orhome-ok");
         let reg = WorkspaceRegistry::default();
         let s = dir.to_string_lossy().into_owned();
         assert_eq!(
-            user_spawn_cwd_or_home(&reg, Some(&s), &WorkspaceEnv::Local),
-            Some(s)
+            user_spawn_cwd(&reg, Some(&s), &WorkspaceEnv::Local),
+            SpawnCwd::Requested(s)
         );
         assert!(reg.is_authorized(&dir));
     }
 
     #[test]
-    fn user_spawn_cwd_or_home_falls_back_when_inaccessible() {
+    fn user_spawn_cwd_reports_an_inaccessible_dir() {
         let mut missing = env::temp_dir();
         missing.push(format!("lut-orhome-missing-{}", std::process::id()));
         let reg = WorkspaceRegistry::default();
         let s = missing.to_string_lossy().into_owned();
-        assert_eq!(
-            user_spawn_cwd_or_home(&reg, Some(&s), &WorkspaceEnv::Local),
-            None
-        );
+        match user_spawn_cwd(&reg, Some(&s), &WorkspaceEnv::Local) {
+            SpawnCwd::Unusable { requested, reason } => {
+                assert_eq!(requested, s);
+                assert!(reason.starts_with("cwd not accessible"), "{reason}");
+            }
+            other => panic!("expected Unusable, got {other:?}"),
+        }
     }
 
     #[test]
-    fn user_spawn_cwd_or_home_passes_through_empty() {
+    fn user_spawn_cwd_without_a_dir_is_the_default() {
         let reg = WorkspaceRegistry::default();
         assert_eq!(
-            user_spawn_cwd_or_home(&reg, None, &WorkspaceEnv::Local),
-            None
+            user_spawn_cwd(&reg, None, &WorkspaceEnv::Local),
+            SpawnCwd::Default
         );
         assert_eq!(
-            user_spawn_cwd_or_home(&reg, Some("  "), &WorkspaceEnv::Local),
-            None
+            user_spawn_cwd(&reg, Some("  "), &WorkspaceEnv::Local),
+            SpawnCwd::Default
         );
     }
 

@@ -14,7 +14,10 @@ const mocks = vi.hoisted(() => ({
   signal: null as
     null | ((event: { payload: { id: number; kind: string; agent?: string } }) => void),
   listen: vi.fn(),
+  toast: { warning: vi.fn(), error: vi.fn(() => 'notice'), dismiss: vi.fn() },
 }));
+
+vi.mock('sonner', () => ({ toast: mocks.toast }));
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: mocks.invoke,
@@ -82,6 +85,9 @@ const heldPoll = () => {
 };
 const flush = () => vi.advanceTimersByTimeAsync(0);
 
+/** What native answers a `pty_open` that started where it was asked. */
+const opened = (id: number) => ({ id, cwd: '/work', warning: null });
+
 /** The arguments of the most recent pty_open call. */
 function openArguments(): Record<string, unknown> {
   const call = mocks.invoke.mock.calls.find(([c]) => c === 'pty_open');
@@ -93,7 +99,7 @@ function nativeInvoke(firstId = 41) {
   let nextId = firstId;
   mocks.invoke.mockImplementation((command: string) => {
     if (command === 'pty_stream_open') return Promise.resolve('00000000000000aa');
-    if (command === 'pty_open') return Promise.resolve(nextId++);
+    if (command === 'pty_open') return Promise.resolve(opened(nextId++));
     return Promise.resolve();
   });
 }
@@ -125,7 +131,7 @@ describe('PTY bridge over the multiplexed stream', () => {
       if (command === 'pty_stream_open') return Promise.resolve('00000000000000aa');
       if (command === 'pty_open') {
         expect(mocks.signal).not.toBeNull();
-        return Promise.resolve(nextId++);
+        return Promise.resolve(opened(nextId++));
       }
       return Promise.resolve();
     });
@@ -180,6 +186,49 @@ describe('PTY bridge over the multiplexed stream', () => {
     expect(open).not.toHaveProperty('onData');
     expect(open).not.toHaveProperty('onExit');
     expect(commands).not.toContain('pty_ack_output');
+  });
+
+  it('warns once per folder when the terminal opened somewhere else', async () => {
+    const { openPty } = await load();
+    mocks.invoke.mockImplementation((command: string) => {
+      if (command === 'pty_stream_open') return Promise.resolve('00000000000000aa');
+      if (command === 'pty_open')
+        return Promise.resolve({
+          id: 7,
+          cwd: '/home/me',
+          warning: {
+            code: 'cwdUnavailable',
+            cwd: '/mnt/d/gone',
+            reason: 'cwd not accessible',
+            message: 'directory not available: /mnt/d/gone (cwd not accessible)',
+          },
+        });
+      return Promise.resolve();
+    });
+    const session = await openPty(80, 24, { onData: vi.fn() }, '/mnt/d/gone');
+    expect(session.id).toBe(7);
+    expect(mocks.toast.warning).toHaveBeenCalledWith("Couldn't open /mnt/d/gone", {
+      id: 'pty-cwd:/mnt/d/gone',
+      description: 'Opened /home/me instead.',
+    });
+    await session.close();
+  });
+
+  it('rejects with a readable error that keeps the launch error code', async () => {
+    const { openPty } = await load();
+    mocks.invoke.mockImplementation((command: string) => {
+      if (command === 'pty_stream_open') return Promise.resolve('00000000000000aa');
+      if (command === 'pty_open')
+        return Promise.reject({
+          code: 'distroNotInstalled',
+          distro: 'Debian',
+          message: 'WSL distro Debian is not installed',
+        });
+      return Promise.resolve();
+    });
+    const opening = openPty(80, 24, { onData: vi.fn() });
+    await expect(opening).rejects.toThrow('WSL distro Debian is not installed');
+    await expect(opening).rejects.toMatchObject({ code: 'distroNotInstalled' });
   });
 
   it('starts the output stream by announcing the terminal on the first poll', async () => {

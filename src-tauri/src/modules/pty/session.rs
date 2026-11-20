@@ -15,9 +15,8 @@ use super::da_filter::DaFilter;
 use super::hub::{Command, Hub};
 use super::presentation::PresentationClass;
 use super::queue::{OutputQueue, QueueDiagnostics};
-use super::shell_init;
+use super::shell_init::{self, LaunchError};
 use super::terminal_colors::{ColorState, TerminalColors};
-use crate::modules::workspace::WorkspaceEnv;
 
 const AGENT_EVENT: &str = "lut:agent-signal";
 const NOTIFICATION_EVENT: &str = "lut:terminal-notification";
@@ -250,13 +249,11 @@ pub fn spawn(
     class: PresentationClass,
     cols: u16,
     rows: u16,
-    cwd: Option<String>,
-    workspace: WorkspaceEnv,
-    launch: Option<shell_init::LaunchSpec>,
+    launch: shell_init::LaunchSpec,
     control: Option<crate::modules::control::ShellControlEnv>,
     colors: Option<TerminalColors>,
     pane_id: Option<u32>,
-) -> Result<Arc<Session>, String> {
+) -> Result<Arc<Session>, LaunchError> {
     let emitter = app.clone();
     let notifier = app.clone();
     spawn_with(
@@ -288,17 +285,15 @@ pub fn spawn(
             pixel_width: 0,
             pixel_height: 0,
         },
-        move || {
-            shell_init::build_command(cwd, workspace, launch, control).map_err(|e| e.to_string())
-        },
+        move || shell_init::build_command(launch, control),
     )
 }
 
 pub(super) fn spawn_with(
     host: Host,
     size: PtySize,
-    build_command: impl FnOnce() -> Result<CommandBuilder, String>,
-) -> Result<Arc<Session>, String> {
+    build_command: impl FnOnce() -> Result<CommandBuilder, LaunchError>,
+) -> Result<Arc<Session>, LaunchError> {
     #[cfg(windows)]
     let _spawn_guard = lock_lifecycle(&CONPTY_LIFECYCLE_LOCK);
 
@@ -315,11 +310,16 @@ pub(super) fn spawn_with(
         colors,
     } = host;
     let pty_system = native_pty_system();
-    let pair = pty_system.openpty(size).map_err(|e| e.to_string())?;
+    let pair = pty_system
+        .openpty(size)
+        .map_err(LaunchError::spawn_failed)?;
 
     let mut cmd = build_command()?;
     let shell_program = super::shell_init::launched_shell(&mut cmd);
-    let mut child = pair.slave.spawn_command(cmd).map_err(|e| e.to_string())?;
+    let mut child = pair
+        .slave
+        .spawn_command(cmd)
+        .map_err(LaunchError::spawn_failed)?;
     drop(pair.slave);
 
     // Kill the child if any of the pipe setup below fails so the spawned shell
@@ -327,11 +327,17 @@ pub(super) fn spawn_with(
     let mut guard = ChildKillGuard::new(child.clone_killer());
     let killer = child.clone_killer();
     #[cfg(windows)]
-    let mut reader = pair.master.try_clone_reader().map_err(|e| e.to_string())?;
+    let mut reader = pair
+        .master
+        .try_clone_reader()
+        .map_err(LaunchError::spawn_failed)?;
     #[cfg(unix)]
-    let (mut reader, reader_control) =
-        super::unix_reader::UnixPtyReader::new(pair.master.as_ref()).map_err(|e| e.to_string())?;
-    let mut writer = pair.master.take_writer().map_err(|e| e.to_string())?;
+    let (mut reader, reader_control) = super::unix_reader::UnixPtyReader::new(pair.master.as_ref())
+        .map_err(LaunchError::spawn_failed)?;
+    let mut writer = pair
+        .master
+        .take_writer()
+        .map_err(LaunchError::spawn_failed)?;
     guard.disarm();
 
     let shell_pid = child.process_id().unwrap_or(0);
@@ -394,8 +400,9 @@ pub(super) fn spawn_with(
 
     // The writer thread owns the PTY input: one ordered queue for keystrokes,
     // pastes and terminal replies, with no per-write task or lock.
-    let spawn_error =
-        |what: &str, e: std::io::Error| format!("could not start PTY {what} thread: {e}");
+    let spawn_error = |what: &str, e: std::io::Error| {
+        LaunchError::spawn_failed(format!("could not start PTY {what} thread: {e}"))
+    };
     thread::Builder::new()
         .name("lut-pty-writer".into())
         .stack_size(WRITER_STACK)
