@@ -318,6 +318,8 @@ const StreamHandler = struct {
     events: *std.ArrayListUnmanaged(u8),
     dropped_events: *u32,
     semantic_markers: *SemanticMarkers,
+    /// A prompt started (OSC 133;A) and no command ran since (133;C or 133;D).
+    prompt_open: bool = false,
     apc: ghostty.apc.Handler = .{},
     dcs: ghostty.dcs.Handler = .{},
     apc_debug: std.ArrayListUnmanaged(u8) = .empty,
@@ -340,6 +342,7 @@ const StreamHandler = struct {
             .events = events,
             .dropped_events = dropped_events,
             .semantic_markers = semantic_markers,
+            .prompt_open = false,
             .apc = .{},
             .dcs = .{},
             .apc_debug = .empty,
@@ -891,7 +894,18 @@ const StreamHandler = struct {
                 try self.emitEvent(.notification, &.{ &title_len, value.title, value.body });
             },
             .semantic_prompt => {
-                self.readonly.vt(action, value);
+                // A shell that draws its prompt again on each keystroke (nushell's reedline) sends
+                // 133;A each time. Through ConPTY the marker can arrive before the cursor moves back
+                // to the prompt's first column, and its fresh-line then scrolls the screen one row
+                // per key (E14-20). An A inside an open prompt only marks the prompt (133;P).
+                var prompt = value;
+                if (prompt.action == .fresh_line_new_prompt and self.prompt_open) prompt.action = .prompt_start;
+                switch (value.action) {
+                    .fresh_line_new_prompt => self.prompt_open = true,
+                    .end_input_start_output, .end_command => self.prompt_open = false,
+                    else => {},
+                }
+                self.readonly.vt(action, prompt);
                 switch (value.action) {
                     .fresh_line_new_prompt, .prompt_start => {
                         var marker: [4]u8 = undefined;

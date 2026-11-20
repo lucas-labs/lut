@@ -33,10 +33,19 @@ describe.each(['ghostty-vt', 'ghostty-vt-scalar'])(
     }
 
     it('reports where each prompt starts, BEL or ST terminated', () => {
-      // Without a preceding command marker, A starts a fresh line.
-      expect(markers(['out\r\n\x1b]133;A\x07new> \x1b]133;A;cl=m\x1b\\tail'])).toEqual([
+      // The prompt after a command starts a fresh line.
+      expect(
+        markers(['out\r\n\x1b]133;A\x07new> \x1b]133;D;0\x07\x1b]133;A;cl=m\x1b\\tail']),
+      ).toEqual([
         { line: 1, column: 0 },
         { line: 2, column: 0 },
+      ]);
+    });
+
+    it('reports a prompt drawn again where it is, without a fresh line (E14-20)', () => {
+      expect(markers(['out\r\n\x1b]133;A\x07new> typed\x1b]133;A\x07'])).toEqual([
+        { line: 1, column: 0 },
+        { line: 1, column: 10 },
       ]);
     });
 
@@ -49,7 +58,7 @@ describe.each(['ghostty-vt', 'ghostty-vt-scalar'])(
     });
 
     it('follows a sequence split at any byte', () => {
-      const text = 'x\x1b]133;A\x1b\\y\x1b]133;A\x07z';
+      const text = 'x\x1b]133;A\x1b\\y\x1b]133;D\x07\x1b]133;A\x07z';
       for (let split = 1; split < text.length; split++) {
         expect(markers([text.slice(0, split), text.slice(split)]), `split at ${split}`).toEqual([
           { line: 1, column: 0 },
