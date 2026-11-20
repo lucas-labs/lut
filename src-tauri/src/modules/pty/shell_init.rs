@@ -294,13 +294,11 @@ fn is_no_profile(arg: &str) -> bool {
 
 /// The arguments of a launch without lut's integration: the user's own, plus `-NoProfile` for a
 /// PowerShell that should skip the user's profile. It goes first, as PowerShell hands everything
-/// after `-File` or `-Command` to the script or command.
+/// after `-File` or `-Command` to the script or command, so a `-NoProfile` among the user's own
+/// arguments may be the script's. PowerShell accepts the switch twice.
 fn bare_args(kind: ShellKind, user_args: &[String], load_user_profile: bool) -> Vec<String> {
     let mut args = Vec::with_capacity(user_args.len() + 1);
-    if kind == ShellKind::Pwsh
-        && !load_user_profile
-        && !user_args.iter().any(|arg| is_no_profile(arg))
-    {
+    if kind == ShellKind::Pwsh && !load_user_profile {
         args.push("-NoProfile".to_string());
     }
     args.extend(user_args.iter().cloned());
@@ -2147,10 +2145,14 @@ mod tests {
             bare_args(ShellKind::Pwsh, &strings(&["-Command", "Get-Date"]), false),
             strings(&["-NoProfile", "-Command", "Get-Date"])
         );
-        // Not twice when the user already asked for it.
+        // A -NoProfile after -File is the script's argument: the host still gets its own.
         assert_eq!(
-            bare_args(ShellKind::Pwsh, &strings(&["-NOPROFILE", "-c", "x"]), false),
-            strings(&["-NOPROFILE", "-c", "x"])
+            bare_args(
+                ShellKind::Pwsh,
+                &strings(&["-File", "task.ps1", "-NoProfile"]),
+                false
+            ),
+            strings(&["-NoProfile", "-File", "task.ps1", "-NoProfile"])
         );
         assert_eq!(
             bare_args(ShellKind::Pwsh, &strings(&["-c", "x"]), true),
