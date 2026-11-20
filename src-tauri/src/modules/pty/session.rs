@@ -244,7 +244,7 @@ pub fn spawn(
     rows: u16,
     cwd: Option<String>,
     workspace: WorkspaceEnv,
-    shell: Option<String>,
+    launch: Option<shell_init::LaunchSpec>,
     control: Option<crate::modules::control::ShellControlEnv>,
     colors: Option<TerminalColors>,
     pane_id: Option<u32>,
@@ -280,7 +280,9 @@ pub fn spawn(
             pixel_width: 0,
             pixel_height: 0,
         },
-        move || shell_init::build_command(cwd, workspace, shell, control),
+        move || {
+            shell_init::build_command(cwd, workspace, launch, control).map_err(|e| e.to_string())
+        },
     )
 }
 

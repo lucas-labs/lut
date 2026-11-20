@@ -184,6 +184,15 @@ pub async fn pty_open(
     colors: Option<TerminalColors>,
 ) -> Result<u32, String> {
     let workspace = WorkspaceEnv::from_option(workspace);
+    // The `terminalShell` preference until panes open by profile id (E14-12); empty means the
+    // default shell.
+    let launch = shell
+        .map(|program| program.trim().to_string())
+        .filter(|program| !program.is_empty())
+        .map(|program| shell_init::LaunchSpec {
+            program,
+            args: Vec::new(),
+        });
     // A Windows helper cannot execute inside WSL without explicit path and
     // network translation. Do not inject credentials for a broken command.
     let control_env = if workspace.is_wsl() {
@@ -216,7 +225,7 @@ pub async fn pty_open(
             rows,
             cwd,
             workspace,
-            shell,
+            launch,
             control_env,
             colors,
             pane_id,
