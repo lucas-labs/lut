@@ -573,7 +573,12 @@ fn apply_common(
             }
         }
     }
-    ensure_utf8_locale(cmd);
+    // The UTF-8 fallback is a default: a profile that sets or removes a locale variable (even
+    // `LANG=C`) gets exactly that.
+    const LOCALE: [&str; 3] = ["LC_ALL", "LC_CTYPE", "LANG"];
+    if !LOCALE.iter().any(|name| profile_names(env, name)) {
+        ensure_utf8_locale(cmd);
+    }
 
     let resolved_cwd = cwd
         .map(PathBuf::from)
@@ -1108,8 +1113,10 @@ mod windows {
 
     /// `wsl.exe` passes no Windows variable to Linux unless `WSLENV` lists it, and `WSLENV` cannot
     /// remove one. So the profile's variables go through an `env` prefix inside the distro:
-    /// `-u NAME` for a removed one (options come before any assignment), `NAME=value` for a set
-    /// one, and lut's integration variables last, so they win.
+    /// `-u NAME` for a removed one (options come before any assignment), then `--` so a name that
+    /// starts with `-` is never read as an option, `NAME=value` for a set one, and lut's
+    /// integration variables last, so they win. Without profile variables the prefix is lut's
+    /// alone, as before.
     fn build_wsl_launch_spec(
         cwd: Option<&str>,
         distro: &str,
@@ -1129,6 +1136,9 @@ mod windows {
         let mut prefix: Vec<String> = removed
             .flat_map(|(name, _)| ["-u".to_string(), name.clone()])
             .collect();
+        if !env.is_empty() {
+            prefix.push("--".to_string());
+        }
         prefix.extend(
             env.iter()
                 .filter_map(|(name, value)| Some(format!("{name}={}", value.as_ref()?))),
@@ -1580,6 +1590,7 @@ mod windows {
         fn wsl_args(shell: &str, kind: ShellKind, integration: WslShellIntegration) -> Vec<String> {
             let env = super::super::ProfileEnv::from([
                 ("PAGER".to_string(), None),
+                ("--split-string".to_string(), Some("printf x".to_string())),
                 ("EDITOR".to_string(), Some("nvim".to_string())),
                 ("GREETING".to_string(), Some("hello world".to_string())),
                 ("ZDOTDIR".to_string(), Some("/mine".to_string())),
@@ -1595,6 +1606,9 @@ mod windows {
                 "env",
                 "-u",
                 "PAGER",
+                // A name that starts with `-` stays an assignment.
+                "--",
+                "--split-string=printf x",
                 "EDITOR=nvim",
                 "GREETING=hello world",
                 "ZDOTDIR=/mine",
@@ -2419,6 +2433,33 @@ mod tests {
         let env = ProfileEnv::from([("PATH".to_string(), None)]);
         apply_common(&mut command, None, Some(&control(1)), &env);
         assert_eq!(command.get_env("PATH"), Some(OsStr::new("/app/bin")));
+    }
+
+    #[test]
+    fn a_locale_the_profile_sets_or_removes_is_kept() {
+        for (name, value) in [("LANG", Some("C")), ("LANG", None), ("LC_ALL", Some("C"))] {
+            let mut command = CommandBuilder::new("shell");
+            command.env_remove("LC_ALL");
+            command.env_remove("LC_CTYPE");
+            command.env_remove("LANG");
+            let env = ProfileEnv::from([(name.to_string(), value.map(String::from))]);
+            apply_common(&mut command, None, None, &env);
+            assert_eq!(
+                command.get_env(name).and_then(|v| v.to_str()),
+                value,
+                "{name}={value:?}"
+            );
+            if name != "LANG" {
+                assert_eq!(command.get_env("LANG"), None, "{name}={value:?}");
+            }
+        }
+        // Without one, the fallback still applies.
+        let mut command = CommandBuilder::new("shell");
+        command.env_remove("LC_ALL");
+        command.env_remove("LC_CTYPE");
+        command.env_remove("LANG");
+        apply_common(&mut command, None, None, &ProfileEnv::new());
+        assert!(command.get_env("LANG").is_some());
     }
 
     #[test]
