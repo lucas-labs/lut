@@ -1049,7 +1049,7 @@ mod windows {
                     // A ZDOTDIR the profile sets is the user's, as the distro's own would be.
                     let user_zdotdir = match env.get("ZDOTDIR") {
                         Some(set) => set.clone(),
-                        None => match probe_wsl_zdotdir(&distro, &shell_path) {
+                        None => match probe_wsl_zdotdir(&distro, &shell_path, env) {
                             Ok(path) => Some(path),
                             Err(e) => {
                                 log::warn!("WSL zsh ZDOTDIR probe failed for {distro}: {e}");
@@ -1111,12 +1111,28 @@ mod windows {
         Ok(cmd)
     }
 
-    /// `wsl.exe` passes no Windows variable to Linux unless `WSLENV` lists it, and `WSLENV` cannot
-    /// remove one. So the profile's variables go through an `env` prefix inside the distro:
-    /// `-u NAME` for a removed one (options come before any assignment), then `--` so a name that
-    /// starts with `-` is never read as an option, `NAME=value` for a set one, and lut's
-    /// integration variables last, so they win. Without profile variables the prefix is lut's
-    /// alone, as before.
+    /// The profile's variables as `env` arguments inside the distro. `wsl.exe` passes no Windows
+    /// variable to Linux unless `WSLENV` lists it, and `WSLENV` cannot remove one, so: `-u NAME`
+    /// for a removed one (options come before any assignment), then `--` so a name that starts
+    /// with `-` is never read as an option, then `NAME=value` for a set one. Empty without
+    /// profile variables.
+    fn wsl_env_args(env: &super::ProfileEnv) -> Vec<String> {
+        let removed = env.iter().filter(|(_, value)| value.is_none());
+        let mut args: Vec<String> = removed
+            .flat_map(|(name, _)| ["-u".to_string(), name.clone()])
+            .collect();
+        if !env.is_empty() {
+            args.push("--".to_string());
+        }
+        args.extend(
+            env.iter()
+                .filter_map(|(name, value)| Some(format!("{name}={}", value.as_ref()?))),
+        );
+        args
+    }
+
+    /// `wsl.exe --exec` arguments: the profile's variables (`wsl_env_args`), then lut's
+    /// integration variables, so they win. Without profile variables the prefix is lut's alone.
     fn build_wsl_launch_spec(
         cwd: Option<&str>,
         distro: &str,
@@ -1132,17 +1148,7 @@ mod windows {
             cwd.filter(|s| !s.is_empty()).unwrap_or("~").to_string(),
             "--exec".to_string(),
         ];
-        let removed = env.iter().filter(|(_, value)| value.is_none());
-        let mut prefix: Vec<String> = removed
-            .flat_map(|(name, _)| ["-u".to_string(), name.clone()])
-            .collect();
-        if !env.is_empty() {
-            prefix.push("--".to_string());
-        }
-        prefix.extend(
-            env.iter()
-                .filter_map(|(name, value)| Some(format!("{name}={}", value.as_ref()?))),
-        );
+        let mut prefix = wsl_env_args(env);
         let mut shell = vec![shell_path.to_string()];
         match (shell_kind, integration) {
             (
@@ -1182,13 +1188,33 @@ mod windows {
         WslLaunchSpec { args }
     }
 
-    fn probe_wsl_zdotdir(distro: &str, shell_path: &str) -> Result<String, String> {
-        let out = crate::modules::workspace::wsl_exec_capture(
-            distro,
-            shell_path,
-            &["-c", r#"printf %s "${ZDOTDIR:-$HOME}""#],
-        )?;
+    /// The user's zsh directory as the launched shell will see it: the probe runs with the
+    /// profile's variables, so a profile's `HOME` counts.
+    fn probe_wsl_zdotdir(
+        distro: &str,
+        shell_path: &str,
+        env: &super::ProfileEnv,
+    ) -> Result<String, String> {
+        let (program, args) = wsl_zdotdir_probe(shell_path, env);
+        let args: Vec<&str> = args.iter().map(String::as_str).collect();
+        let out = crate::modules::workspace::wsl_exec_capture(distro, &program, &args)?;
         Ok(crate::modules::workspace::normalize_wsl_value(out, ""))
+    }
+
+    /// Program and arguments of the ZDOTDIR probe: the shell itself, behind `env` when the
+    /// profile has variables.
+    fn wsl_zdotdir_probe(shell_path: &str, env: &super::ProfileEnv) -> (String, Vec<String>) {
+        let probe = [
+            "-c".to_string(),
+            r#"printf %s "${ZDOTDIR:-$HOME}""#.to_string(),
+        ];
+        if env.is_empty() {
+            return (shell_path.to_string(), probe.to_vec());
+        }
+        let mut args = wsl_env_args(env);
+        args.push(shell_path.to_string());
+        args.extend(probe);
+        ("env".to_string(), args)
     }
 
     fn prepare_wsl_integration_dir(distro: &str, shell: &str) -> Result<(String, PathBuf), String> {
@@ -1598,6 +1624,39 @@ mod windows {
             let spec = build_wsl_launch_spec(None, "Ubuntu", shell, kind, integration, &env);
             // The part after `--exec`.
             spec.args[5..].to_vec()
+        }
+
+        #[test]
+        fn the_wsl_zdotdir_probe_sees_the_profiles_variables() {
+            let script = r#"printf %s "${ZDOTDIR:-$HOME}""#;
+            assert_eq!(
+                wsl_zdotdir_probe("/usr/bin/zsh", &no_env()),
+                (
+                    "/usr/bin/zsh".to_string(),
+                    vec!["-c".to_string(), script.to_string()]
+                )
+            );
+            let env = super::super::ProfileEnv::from([
+                ("HOME".to_string(), Some("/home/other".to_string())),
+                ("ZDOTDIR".to_string(), None),
+            ]);
+            assert_eq!(
+                wsl_zdotdir_probe("/usr/bin/zsh", &env),
+                (
+                    "env".to_string(),
+                    [
+                        "-u",
+                        "ZDOTDIR",
+                        "--",
+                        "HOME=/home/other",
+                        "/usr/bin/zsh",
+                        "-c",
+                        script
+                    ]
+                    .map(String::from)
+                    .to_vec()
+                )
+            );
         }
 
         #[test]
