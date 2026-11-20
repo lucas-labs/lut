@@ -1,21 +1,48 @@
 //! Crash-safe file writes shared by the editor and backend-owned stores.
 
-use std::io::Write;
+use std::fmt::{Display, Formatter};
+use std::io::{self, Write};
 use std::path::Path;
 
 use tempfile::NamedTempFile;
 
+/// A failed atomic write, and whether the target had already been replaced when it failed.
+#[derive(Debug)]
+pub(crate) struct AtomicWriteError {
+    pub error: io::Error,
+    /// The new content is in place; only making the rename durable failed.
+    pub committed: bool,
+}
+
+impl From<io::Error> for AtomicWriteError {
+    fn from(error: io::Error) -> Self {
+        Self {
+            error,
+            committed: false,
+        }
+    }
+}
+
+impl Display for AtomicWriteError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        self.error.fmt(f)
+    }
+}
+
 /// Atomic write via O_EXCL tempfile in the target's parent, then rename.
 /// The random suffix is what blocks pre-staged symlink attacks.
-pub(crate) fn write_atomic(target: &Path, content: &[u8]) -> std::io::Result<()> {
-    let parent = target.parent().ok_or_else(|| {
-        std::io::Error::new(std::io::ErrorKind::InvalidInput, "path has no parent")
-    })?;
+pub(crate) fn write_atomic(target: &Path, content: &[u8]) -> Result<(), AtomicWriteError> {
+    let parent = target
+        .parent()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "path has no parent"))?;
     let mut tmp = NamedTempFile::new_in(parent)?;
     tmp.as_file_mut().write_all(content)?;
     tmp.as_file_mut().sync_all()?;
     tmp.persist(target).map_err(|e| e.error)?;
-    sync_dir(parent)
+    sync_dir(parent).map_err(|error| AtomicWriteError {
+        error,
+        committed: true,
+    })
 }
 
 /// Makes the rename itself durable. Windows has no directory fsync; NTFS journals the rename.

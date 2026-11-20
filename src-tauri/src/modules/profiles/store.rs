@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use super::model::TerminalProfile;
 use super::validate::validate_profiles;
-use crate::modules::fs::atomic::write_atomic;
+use crate::modules::fs::atomic::{write_atomic, AtomicWriteError};
 
 /// Store file name inside lut's app config dir.
 pub const PROFILES_FILE: &str = "profiles.json";
@@ -86,7 +86,7 @@ pub fn load(dir: &Path) -> LoadOutcome {
 }
 
 /// Writes the store atomically, creating `dir` when it does not exist yet.
-pub fn save(dir: &Path, file: &ProfilesFile) -> io::Result<()> {
+pub(crate) fn save(dir: &Path, file: &ProfilesFile) -> Result<(), AtomicWriteError> {
     std::fs::create_dir_all(dir)?;
     let mut json = serde_json::to_vec_pretty(file).map_err(io::Error::other)?;
     json.push(b'\n');
@@ -125,6 +125,8 @@ pub struct ProfilesState {
     pub dir: PathBuf,
     pub file: Mutex<ProfilesFile>,
     load_error: Mutex<Option<RecoveredFile>>,
+    /// Set when startup left an unusable `profiles.json` in place: saving would overwrite it.
+    writes_blocked: Option<String>,
 }
 
 impl ProfilesState {
@@ -137,11 +139,27 @@ impl ProfilesState {
                 recovered.backup_path
             );
         }
+        let writes_blocked = outcome
+            .recovered
+            .as_ref()
+            .filter(|recovered| recovered.backup_path.is_empty())
+            .map(|recovered| {
+                format!(
+                    "{PROFILES_FILE} could not be used and was left in place ({}); fix or move it                      and restart lut before changing profiles",
+                    recovered.reason
+                )
+            });
         Self {
             dir,
             file: Mutex::new(outcome.file),
             load_error: Mutex::new(outcome.recovered),
+            writes_blocked,
         }
+    }
+
+    /// Why profiles cannot be saved this session, if they cannot.
+    pub fn writes_blocked(&self) -> Option<&str> {
+        self.writes_blocked.as_deref()
     }
 }
 
