@@ -4237,7 +4237,7 @@ profile and builds the launch spec (decision 10). The frontend never sends execu
 
 - [ ] `pty_open { profileId?, cwd?, cols, rows, paneId, colors }`; no `profileId` means the default profile; the positional `shell` parameter and the window's `workspace` are removed (decision 29: the target comes from the profile, also in a WSL Space).
 - [ ] The default profile is the stored one while it is listed, else the first profile not hidden (the rule for deleting the default); `profiles_list` reports that one.
-- [ ] An unknown profile id returns `ProfileNotFound` (no silent fallback in the backend), also a detected distro no longer registered.
+- [ ] An unknown profile id (not among the detected and stored profiles) returns `ProfileNotFound`, with no silent fallback in the backend; a distro removed since the last detection fails at launch with `DistroNotInstalled`.
 - [ ] The `terminalShell` preference is removed with nothing migrated (lut has no releases); Settings' shell selector becomes a "Default profile" selector over the listed profiles.
 - [ ] Detection lists WSL distros from the registry instead of `wsl.exe`, and `pty_open` waits for the first detection, so a terminal opened at startup finds the detected profiles.
 - [ ] Integration test: open by detected and by custom profile id; open by unknown id fails cleanly.

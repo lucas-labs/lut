@@ -112,8 +112,9 @@ export function TerminalSection() {
           if (current) setProfiles(list);
         })
         .catch(() => {});
-    void load();
     const unlisten = listen(PROFILES_CHANGED_EVENT, () => void load());
+    // Read once subscribed (or failed to), so a change published in between is not missed.
+    void unlisten.then(load, load);
     return () => {
       current = false;
       void unlisten.then((stop) => stop()).catch(() => {});
