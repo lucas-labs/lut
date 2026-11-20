@@ -4461,11 +4461,40 @@ spawned program, so every Git Bash pane read as busy and the quit dialog always 
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml --lib foreground`; manual: quit with an idle Git Bash
 tab does not ask; with `sleep 60` running it asks.
 
+### E14-23 — fish integration loads when XDG_CONFIG_HOME is set
+
+```yaml
+id: E14-23
+depends-on: []
+refs: [.docs/plan/analysis/backend-core.md]
+covers: [backend-core/shell-integration-scripts]
+type: task
+scope: be
+size: S
+```
+
+**Goal:** fish panes keep cwd reporting (OSC 7) and prompt marks when `XDG_CONFIG_HOME` points elsewhere. Found in the
+E14-09 review: lut writes `lut.fish` to `~/.config/fish/conf.d` (`prepare_fish_conf_d`, `prepare_wsl_fish_conf_d`),
+but fish reads `conf.d` from `$XDG_CONFIG_HOME/fish` when it is set, so the file is skipped and the launch's
+`-C __lut_install_prompt` has nothing to call. It already happens when lut inherits the variable; a profile's `env`
+(E14-09) is one more way to set it.
+
+**Acceptance criteria:**
+
+- [ ] Native Unix and WSL fish load lut's integration whatever `XDG_CONFIG_HOME` the child gets (inherited, the
+      profile's, or unset), e.g. by sourcing the prepared file from the launch instead of relying on `conf.d`.
+- [ ] Without `XDG_CONFIG_HOME` the launch keeps today's behaviour, and the prompt is still re-installed after
+      `config.fish`.
+- [ ] Unit tests for the fish launch arguments, native and WSL, with and without the variable.
+
+**Verification:** `cargo test --manifest-path src-tauri/Cargo.toml --lib shell_init`; manual: a fish pane with
+`XDG_CONFIG_HOME=/tmp/xdg` still reports its cwd.
+
 ### E14-18 — Close-out: profiles model and launch
 
 ```yaml
 id: E14-18
-depends-on: [E14-01, E14-02, E14-03, E14-04, E14-05, E14-06, E14-07, E14-08, E14-09, E14-10, E14-11, E14-12, E14-13, E14-14, E14-15, E14-16, E14-17, E14-19, E14-20, E14-21, E14-22]
+depends-on: [E14-01, E14-02, E14-03, E14-04, E14-05, E14-06, E14-07, E14-08, E14-09, E14-10, E14-11, E14-12, E14-13, E14-14, E14-15, E14-16, E14-17, E14-19, E14-20, E14-21, E14-22, E14-23]
 refs: [F3]
 covers: []
 type: closeout
