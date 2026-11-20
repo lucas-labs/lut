@@ -277,7 +277,18 @@ pub async fn pty_open(
             colors,
             pane_id,
         )
-        .map(|session| (session, opened_cwd, warning))
+        .map(|session| match opened_cwd {
+            // `portable-pty` checks the directory again at spawn and starts in home when it is
+            // gone, which a directory removed since `user_spawn_cwd` is: report that.
+            Some(gone) if !workspace.is_wsl() && !std::path::Path::new(&gone).is_dir() => {
+                let warning = warning.or(Some(LaunchError::CwdUnavailable {
+                    cwd: gone,
+                    reason: "removed before the shell started".into(),
+                }));
+                (session, shell_init::home_cwd(), warning)
+            }
+            cwd => (session, cwd, warning),
+        })
     })
     .await
     .map_err(|e| {

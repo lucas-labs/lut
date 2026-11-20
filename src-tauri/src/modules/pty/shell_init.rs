@@ -1164,30 +1164,42 @@ mod windows {
         load_user_profile: bool,
     }
 
-    /// The distro `wsl.exe` marks as the default (`workspace::default_distro_name`).
+    /// The distro `wsl.exe` runs without `-d`, from the registry (`registered_distros`).
     fn default_wsl_distro() -> Result<String, super::LaunchError> {
-        let distros = crate::modules::workspace::list_distros_blocking()
+        let distros = crate::modules::workspace::registered_distros()
             .map_err(super::LaunchError::spawn_failed)?;
-        crate::modules::workspace::default_distro_name(&distros)
+        pick_default_distro(&distros)
+    }
+
+    /// The one marked as the default, else the first; none registered is `DistroNotInstalled`.
+    fn pick_default_distro(
+        distros: &[crate::modules::workspace::RegisteredDistro],
+    ) -> Result<String, super::LaunchError> {
+        distros
+            .iter()
+            .find(|d| d.default)
+            .or_else(|| distros.first())
+            .map(|d| d.name.clone())
             .ok_or(super::LaunchError::DistroNotInstalled { distro: None })
     }
 
-    /// A failed `wsl.exe` call for `distro`, typed. The list of installed distros is read only
-    /// once a call failed, to tell a missing distro from anything else.
+    /// A failed `wsl.exe` call for `distro`, typed. The registered distros are read only once a
+    /// call failed, to tell a missing distro from anything else.
     fn wsl_failure(distro: &str, reason: String) -> super::LaunchError {
         classify_wsl_failure(
             distro,
             reason,
-            crate::modules::workspace::list_distros_blocking(),
+            crate::modules::workspace::registered_distros(),
         )
     }
 
-    /// `DistroNotInstalled` when the list was read and does not name `distro` (`wsl.exe` matches
-    /// names in any case); `SpawnFailed` with `wsl.exe`'s own text otherwise.
+    /// `DistroNotInstalled` when the registered distros were read and do not name `distro`
+    /// (`wsl.exe` matches names in any case), none registered included; `SpawnFailed` with
+    /// `wsl.exe`'s own text otherwise.
     fn classify_wsl_failure(
         distro: &str,
         reason: String,
-        installed: Result<Vec<crate::modules::workspace::WslDistro>, String>,
+        installed: Result<Vec<crate::modules::workspace::RegisteredDistro>, String>,
     ) -> super::LaunchError {
         match installed {
             Ok(distros) if !distros.iter().any(|d| d.name.eq_ignore_ascii_case(distro)) => {
@@ -1219,8 +1231,9 @@ mod windows {
         }
     }
 
-    /// Program and arguments of the lookup: `command -v` in `sh`, behind `env` when the profile
-    /// has variables, so a profile's `PATH` counts. It searches the `PATH` that `wsl.exe --exec`
+    /// Program and arguments of the lookup: `command -v` in `/bin/sh`, behind `env` when the
+    /// profile has variables, so a profile's `PATH` counts for the program but not for the shell
+    /// (`env` looks its command up in the `PATH` it sets). It searches the `PATH` that `wsl.exe --exec`
     /// gives, the one the launch uses. It always exits 0, so a failure is `wsl.exe`'s and empty
     /// output means not found.
     fn wsl_program_probe(program: &str, env: &super::ProfileEnv) -> (String, Vec<String>) {
@@ -1231,10 +1244,10 @@ mod windows {
             program.to_string(),
         ];
         if env.is_empty() {
-            return ("sh".to_string(), probe.to_vec());
+            return ("/bin/sh".to_string(), probe.to_vec());
         }
         let mut args = wsl_env_args(env);
-        args.push("sh".to_string());
+        args.push("/bin/sh".to_string());
         args.extend(probe);
         ("env".to_string(), args)
     }
@@ -2179,7 +2192,7 @@ mod windows {
             assert_eq!(
                 wsl_program_probe("fish", &no_env()),
                 (
-                    "sh".to_string(),
+                    "/bin/sh".to_string(),
                     ["-c", script, "sh", "fish"].map(String::from).to_vec()
                 )
             );
@@ -2196,7 +2209,7 @@ mod windows {
                         "PAGER",
                         "--",
                         "PATH=/opt/bin:/usr/bin",
-                        "sh",
+                        "/bin/sh",
                         "-c",
                         script,
                         "sh",
@@ -2211,12 +2224,11 @@ mod windows {
         #[test]
         fn a_wsl_failure_names_a_missing_distro() {
             use super::super::LaunchError;
-            use crate::modules::workspace::WslDistro;
+            use crate::modules::workspace::RegisteredDistro;
             let installed = || {
-                Ok(vec![WslDistro {
+                Ok(vec![RegisteredDistro {
                     name: "Ubuntu".into(),
                     default: true,
-                    running: false,
                 }])
             };
             assert_eq!(
@@ -2232,11 +2244,41 @@ mod windows {
                     reason: "wsl failed".into()
                 }
             );
+            // The last distro was removed: none registered.
+            assert_eq!(
+                classify_wsl_failure("Debian", "wsl failed".into(), Ok(Vec::new())),
+                LaunchError::DistroNotInstalled {
+                    distro: Some("Debian".into())
+                }
+            );
+            // The registry could not be read: `wsl.exe`'s own text.
             assert_eq!(
                 classify_wsl_failure("Debian", "wsl failed".into(), Err("no list".into())),
                 LaunchError::SpawnFailed {
                     reason: "wsl failed".into()
                 }
+            );
+        }
+
+        #[test]
+        fn the_default_distro_is_the_marked_one_else_the_first_else_none() {
+            use super::super::LaunchError;
+            use crate::modules::workspace::RegisteredDistro;
+            let distro = |name: &str, default: bool| RegisteredDistro {
+                name: name.into(),
+                default,
+            };
+            assert_eq!(
+                pick_default_distro(&[distro("Ubuntu", false), distro("Debian", true)]),
+                Ok("Debian".to_string())
+            );
+            assert_eq!(
+                pick_default_distro(&[distro("Ubuntu", false)]),
+                Ok("Ubuntu".to_string())
+            );
+            assert_eq!(
+                pick_default_distro(&[]),
+                Err(LaunchError::DistroNotInstalled { distro: None })
             );
         }
     }

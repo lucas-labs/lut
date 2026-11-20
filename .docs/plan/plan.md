@@ -7104,7 +7104,7 @@ size: XS
 
 ```yaml
 id: E26
-depends-on: [E10, E12]
+depends-on: [E10, E12, E14]
 refs: [.docs/plan/README.md]
 ```
 
@@ -7249,11 +7249,40 @@ Today the terminal hides Mica: both renderers draw opaque (WebGPU `alphaMode: 'o
 
 **Verification:** manual on Windows 11 with Mica active.
 
+### E26-07 — Check a WSL start directory inside the distro
+
+```yaml
+id: E26-07
+depends-on: [E14-10]
+refs: [13.5:7, .docs/plan/analysis/backend-core.md]
+covers: [backend-core/pty-session]
+type: task
+scope: be
+size: M
+```
+
+**Goal:** A WSL start directory the distro cannot enter falls back to the distro's home with the `CwdUnavailable`
+warning, as an unusable host directory does (E14-10).
+
+Today the start directory is checked on the Windows side only (`user_spawn_cwd`, through its UNC or drive path). A
+path Windows sees but the distro does not (`/mnt/d/repo` with automount off) passes, and `wsl.exe --cd` then prints
+`chdir(...) failed 2` and starts the shell in `/`, with no warning to the frontend. Found in the review of #450.
+
+**Acceptance criteria:**
+
+- [ ] The directory is tried inside the distro within the lookup a WSL launch already runs (login shell or
+      `command -v`), so no `wsl.exe` call is added.
+- [ ] One the distro cannot enter starts the shell in `~` and the open result carries `CwdUnavailable`.
+- [ ] Unit tests for the probe's arguments and for the fallback.
+
+**Verification:** `cargo test --manifest-path src-tauri/Cargo.toml pty`; manual: a WSL pane with a missing `/mnt/...`
+directory opens in home with the toast.
+
 ### E26-03 — Close-out: accessory improvements
 
 ```yaml
 id: E26-03
-depends-on: [E26-01, E26-02, E26-04, E26-05, E26-06]
+depends-on: [E26-01, E26-02, E26-04, E26-05, E26-06, E26-07]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
