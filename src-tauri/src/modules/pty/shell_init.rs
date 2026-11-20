@@ -149,9 +149,9 @@ fn parse_etc_shells(content: &str) -> impl Iterator<Item = String> + '_ {
         .map(str::to_string)
 }
 
-/// Each shell once, the login shell first, spelled as `listed` first names it: the same binary
+/// Each shell once, the login shell first, spelled as `listed` first names it: the same shell
 /// often has two paths (`/bin/zsh`, `/usr/bin/zsh`), and its id must not depend on which one the
-/// login shell uses. `key` names the binary behind a path, `None` when there is none.
+/// login shell uses. `key` names the shell behind a path, `None` when there is none.
 #[cfg_attr(not(unix), allow(dead_code))]
 fn unique_shell_paths<K: Eq + std::hash::Hash>(
     login: &str,
@@ -354,11 +354,15 @@ mod unix {
                 listed.push(format!("{prefix}/{name}"));
             }
         }
-        // Symlinks (/bin -> /usr/bin, Homebrew links) name the same shell twice.
+        // Symlinks (/bin -> /usr/bin, Homebrew links) name the same shell twice. The name is part
+        // of the key: a shell reads it (bash run as `sh` is a POSIX shell with other startup
+        // files), so `/bin/sh` linked to bash stays apart from `/bin/bash`.
         let binary = |path: &str| {
-            Path::new(path)
-                .is_file()
-                .then(|| fs::canonicalize(path).unwrap_or_else(|_| PathBuf::from(path)))
+            let name = Path::new(path).file_name()?.to_os_string();
+            Path::new(path).is_file().then(|| {
+                let target = fs::canonicalize(path).unwrap_or_else(|_| PathBuf::from(path));
+                (target, name)
+            })
         };
         let mut out = Vec::new();
         for path in super::unique_shell_paths(&login, &listed, binary) {
@@ -1379,6 +1383,28 @@ mod tests {
         );
         // A login shell nothing lists keeps its own path.
         assert_eq!(unique_shell_paths("/opt/nu", &listed, binary)[0], "/opt/nu");
+    }
+
+    #[test]
+    fn a_shell_under_another_name_stays_apart() {
+        // As `list_shells` keys them: target and name. `/bin/sh` runs bash, but as a POSIX sh.
+        let key = |path: &str| {
+            let target = match path {
+                "/bin/sh" | "/bin/bash" | "/usr/bin/bash" => "/usr/bin/bash",
+                other => other,
+            };
+            Some((
+                target.to_string(),
+                path.rsplit('/').next().unwrap().to_string(),
+            ))
+        };
+        let listed: Vec<String> = ["/bin/sh", "/bin/bash", "/usr/bin/bash"]
+            .map(String::from)
+            .into();
+        assert_eq!(
+            unique_shell_paths("/usr/bin/bash", &listed, key),
+            ["/bin/bash", "/bin/sh"]
+        );
     }
 
     #[test]
