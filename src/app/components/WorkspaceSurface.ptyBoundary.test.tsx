@@ -41,7 +41,6 @@ vi.mock('@/modules/terminal/lib/pty-bridge', async (importOriginal) => ({
     _rows: number,
     handlers: { onData: (bytes: Uint8Array) => unknown },
     _cwd?: string,
-    _shell?: string,
     leafId?: number,
   ) => {
     pty.opened.push(leafId ?? -1);
