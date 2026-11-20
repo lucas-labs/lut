@@ -206,11 +206,10 @@ and E05-14, E05-15 and E05-16 removed the 26 that only the AI used.
 The tables below list each one with the frontend files that call it; for the wrapper objects the caller is written as
 `` `git.method` → users ``; `workspaceNative` is in `modules/workspace/native.ts`.
 
-**Commands without a real caller (2):**
+**Commands without a real caller (1):**
 
 | Commands                 | Why                                                   | Removed by |
 | ------------------------ | ----------------------------------------------------- | ---------- |
-| `pty_has_foreground_job` | No caller                                             | E14-11     |
 | `wsl_default_distro`     | No caller; kept as an input for WSL profile detection | (E14-06)   |
 
 **Callers the running app never loads:** `agent_decisions_ready` and `agent_decision_respond`
@@ -233,7 +232,6 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 | `pty_close`                  | `pty`   | `modules/terminal/lib/pty-bridge.ts`                    |
 | `pty_close_all`              | `pty`   | `app/bootstrap.ts`                                      |
 | `pty_has_foreground_process` | `pty`   | `modules/terminal/ghostty/useGhosttyTerminalSession.ts` |
-| `pty_has_foreground_job`     | `pty`   | **no caller**                                           |
 | `pty_session_shell`          | `pty`   | `modules/terminal/lib/useTerminalFileDrop.ts`           |
 | `pty_list_shells`            | `pty`   | `settings/sections/GeneralSection.tsx`                  |
 

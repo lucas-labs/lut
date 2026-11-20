@@ -460,39 +460,6 @@ pub fn pty_has_foreground_process(state: tauri::State<PtyState>, id: u32) -> Res
     }
 }
 
-// Foreground-only check for the renderer hibernation path: true while a job
-// owns the tty (tcgetpgrp != shell pgid). Stricter and cheaper than
-// pty_has_foreground_process, which counts background children too.
-#[tauri::command]
-pub fn pty_has_foreground_job(state: tauri::State<PtyState>, id: u32) -> Result<bool, String> {
-    let sessions = state.sessions.read().unwrap();
-    let session = sessions.get(&id).ok_or_else(|| {
-        log::warn!("pty_has_foreground_job: unknown session id={id}");
-        "no session".to_string()
-    })?;
-    let shell_pid = session.shell_pid;
-    if shell_pid == 0 {
-        return Ok(false);
-    }
-    #[cfg(unix)]
-    {
-        let leader = session
-            .master
-            .lock()
-            .unwrap()
-            .as_ref()
-            .and_then(|master| master.process_group_leader());
-        Ok(matches!(leader, Some(pid) if pid > 0 && pid as u32 != shell_pid))
-    }
-    #[cfg(windows)]
-    {
-        Ok(foreground::shell_has_children(
-            shell_pid,
-            session.git_bash_launcher,
-        ))
-    }
-}
-
 // A fresh webview load orphans the previous frontend's sessions in this still
 // running process; reap them on boot before any new tab spawns.
 #[tauri::command]
