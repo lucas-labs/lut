@@ -304,6 +304,11 @@ pub fn run() {
         .manage(LaunchFiles(Mutex::new(launch.files)))
         .invoke_handler(tauri::generate_handler![
             modules::profiles::store::profiles_take_load_error,
+            modules::profiles::commands::profiles_list,
+            modules::profiles::commands::profiles_get,
+            modules::profiles::commands::profiles_save,
+            modules::profiles::commands::profiles_delete,
+            modules::profiles::commands::profiles_set_default,
             pty::pty_open,
             pty::pty_write,
             pty::pty_stream_open,
