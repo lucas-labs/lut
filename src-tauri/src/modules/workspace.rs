@@ -695,21 +695,23 @@ pub(crate) struct RegisteredDistro {
 }
 
 /// `(subkey, DistributionName)` pairs and the `DefaultDistribution` subkey as distros: an entry
-/// without a name is skipped, subkeys (GUIDs) match in any case.
+/// without a name is skipped, subkeys (GUIDs) match in any case, and a name that could not be
+/// read fails the whole list, so a distro is never dropped from it.
 #[cfg_attr(not(windows), allow(dead_code))]
 pub(crate) fn registered_from(
-    entries: Vec<(String, Option<String>)>,
+    entries: Vec<(String, Result<Option<String>, String>)>,
     default: Option<&str>,
-) -> Vec<RegisteredDistro> {
-    entries
-        .into_iter()
-        .filter_map(|(id, name)| {
-            Some(RegisteredDistro {
-                name: name?,
+) -> Result<Vec<RegisteredDistro>, String> {
+    let mut distros = Vec::new();
+    for (id, name) in entries {
+        if let Some(name) = name? {
+            distros.push(RegisteredDistro {
+                name,
                 default: default.is_some_and(|default| default.eq_ignore_ascii_case(&id)),
-            })
-        })
-        .collect()
+            });
+        }
+    }
+    Ok(distros)
 }
 
 /// The distros registered for the current user. `wsl.exe` keeps one subkey per distro under
@@ -719,11 +721,9 @@ pub(crate) fn registered_from(
 /// failed `wsl.exe` call.
 #[cfg(windows)]
 pub(crate) fn registered_distros() -> Result<Vec<RegisteredDistro>, String> {
-    use windows_sys::Win32::Foundation::{
-        ERROR_FILE_NOT_FOUND, ERROR_NO_MORE_ITEMS, ERROR_SUCCESS,
-    };
+    use windows_sys::Win32::Foundation::{ERROR_FILE_NOT_FOUND, ERROR_SUCCESS};
     use windows_sys::Win32::System::Registry::{
-        RegCloseKey, RegEnumKeyExW, RegOpenKeyExW, HKEY, HKEY_CURRENT_USER, KEY_READ,
+        RegCloseKey, RegOpenKeyExW, HKEY, HKEY_CURRENT_USER, KEY_READ,
     };
 
     let path = wide(r"Software\Microsoft\Windows\CurrentVersion\Lxss");
@@ -737,9 +737,22 @@ pub(crate) fn registered_distros() -> Result<Vec<RegisteredDistro>, String> {
     if status != ERROR_SUCCESS {
         return Err(format!("could not read the WSL distros (error {status})"));
     }
-    let default = registry_string(key, None, "DefaultDistribution");
+    let distros = read_lxss(key);
+    // SAFETY: `key` was opened above and is closed once, whatever `read_lxss` returned.
+    unsafe { RegCloseKey(key) };
+    distros
+}
+
+/// The distros under the open `Lxss` key.
+#[cfg(windows)]
+fn read_lxss(
+    key: windows_sys::Win32::System::Registry::HKEY,
+) -> Result<Vec<RegisteredDistro>, String> {
+    use windows_sys::Win32::Foundation::{ERROR_NO_MORE_ITEMS, ERROR_SUCCESS};
+    use windows_sys::Win32::System::Registry::RegEnumKeyExW;
+
+    let default = registry_string(key, None, "DefaultDistribution")?;
     let mut entries = Vec::new();
-    let mut failure = None;
     for index in 0.. {
         // Subkeys are GUIDs; 256 is the registry's key name limit (255) plus the NUL.
         let mut id = [0u16; 256];
@@ -761,33 +774,29 @@ pub(crate) fn registered_distros() -> Result<Vec<RegisteredDistro>, String> {
             break;
         }
         if status != ERROR_SUCCESS {
-            failure = Some(format!("could not read the WSL distros (error {status})"));
-            break;
+            return Err(format!("could not read the WSL distros (error {status})"));
         }
         let mut subkey = id[..len as usize].to_vec();
         subkey.push(0);
         let name = registry_string(key, Some(&subkey), "DistributionName");
         entries.push((String::from_utf16_lossy(&id[..len as usize]), name));
     }
-    // SAFETY: `key` was opened above and is closed once.
-    unsafe { RegCloseKey(key) };
-    match failure {
-        Some(failure) => Err(failure),
-        None => Ok(registered_from(entries, default.as_deref())),
-    }
+    registered_from(entries, default.as_deref())
 }
 
-/// A string value of `key` (or of its NUL-terminated `subkey`); `None` when it is missing.
+/// A string value of `key` (or of its NUL-terminated `subkey`): `None` when it is missing, an
+/// error when it could not be read.
 #[cfg(windows)]
 fn registry_string(
     key: windows_sys::Win32::System::Registry::HKEY,
     subkey: Option<&[u16]>,
-    value: &str,
-) -> Option<String> {
-    use windows_sys::Win32::Foundation::ERROR_SUCCESS;
+    name: &str,
+) -> Result<Option<String>, String> {
+    use windows_sys::Win32::Foundation::{ERROR_FILE_NOT_FOUND, ERROR_SUCCESS};
     use windows_sys::Win32::System::Registry::{RegGetValueW, RRF_RT_REG_SZ};
 
-    let value = wide(value);
+    let failed = |status: u32| format!("could not read the WSL distros' {name} (error {status})");
+    let value = wide(name);
     let subkey = subkey.map_or(std::ptr::null(), <[u16]>::as_ptr);
     let mut size = 0u32;
     // SAFETY: a size query: no data pointer, `size` is a valid out pointer.
@@ -802,8 +811,11 @@ fn registry_string(
             &mut size,
         )
     };
-    if status != ERROR_SUCCESS || size == 0 {
-        return None;
+    if status == ERROR_FILE_NOT_FOUND || (status == ERROR_SUCCESS && size == 0) {
+        return Ok(None);
+    }
+    if status != ERROR_SUCCESS {
+        return Err(failed(status));
     }
     let mut data = vec![0u16; (size as usize).div_ceil(2)];
     // SAFETY: `data` holds at least `size` bytes.
@@ -818,14 +830,17 @@ fn registry_string(
             &mut size,
         )
     };
+    if status == ERROR_FILE_NOT_FOUND {
+        return Ok(None);
+    }
     if status != ERROR_SUCCESS {
-        return None;
+        return Err(failed(status));
     }
     let len = data
         .iter()
         .position(|&unit| unit == 0)
         .unwrap_or(data.len());
-    Some(String::from_utf16_lossy(&data[..len]))
+    Ok(Some(String::from_utf16_lossy(&data[..len])))
 }
 
 #[cfg(windows)]
@@ -1114,10 +1129,10 @@ mod auth_tests {
     #[test]
     fn registry_entries_become_distros_with_the_default_marked() {
         let entries = vec![
-            ("{AAA-1}".to_string(), Some("Ubuntu".to_string())),
-            ("{bbb-2}".to_string(), Some("Debian".to_string())),
+            ("{AAA-1}".to_string(), Ok(Some("Ubuntu".to_string()))),
+            ("{bbb-2}".to_string(), Ok(Some("Debian".to_string()))),
             // A subkey without a name is not a distro.
-            ("{CCC-3}".to_string(), None),
+            ("{CCC-3}".to_string(), Ok(None)),
         ];
         let distro = |name: &str, default: bool| RegisteredDistro {
             name: name.into(),
@@ -1125,11 +1140,23 @@ mod auth_tests {
         };
         assert_eq!(
             registered_from(entries.clone(), Some("{BBB-2}")),
-            [distro("Ubuntu", false), distro("Debian", true)]
+            Ok(vec![distro("Ubuntu", false), distro("Debian", true)])
         );
         assert_eq!(
             registered_from(entries, None),
-            [distro("Ubuntu", false), distro("Debian", false)]
+            Ok(vec![distro("Ubuntu", false), distro("Debian", false)])
+        );
+    }
+
+    #[test]
+    fn a_name_that_could_not_be_read_fails_the_list() {
+        let entries = vec![
+            ("{AAA-1}".to_string(), Ok(Some("Ubuntu".to_string()))),
+            ("{BBB-2}".to_string(), Err("access denied".to_string())),
+        ];
+        assert_eq!(
+            registered_from(entries, Some("{AAA-1}")),
+            Err("access denied".to_string())
         );
     }
 
