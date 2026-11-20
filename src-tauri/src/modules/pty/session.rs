@@ -57,6 +57,9 @@ pub struct Session {
     /// PID of the shell process. 0 means unknown; callers must skip checks when 0.
     pub shell_pid: u32,
     pub shell_program: String,
+    /// The program is an interactive shell: idle at its prompt, so only what it starts counts as
+    /// running. Any other program (an editor, a REPL) is itself the running process.
+    pub program_is_shell: bool,
     /// The shell is Git for Windows' `bin\bash.exe` launcher, whose child is the real bash.
     #[cfg(windows)]
     pub git_bash_launcher: bool,
@@ -368,6 +371,7 @@ pub(super) fn spawn_with(
         #[cfg(windows)]
         _job: job,
         shell_pid,
+        program_is_shell: super::shell_init::is_shell(&shell_program),
         #[cfg(windows)]
         git_bash_launcher: super::shell_init::is_git_bash_launcher(std::path::Path::new(
             &shell_program,

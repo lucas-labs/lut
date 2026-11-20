@@ -132,6 +132,8 @@ fn which_in_path(name: &str) -> Option<PathBuf> {
 }
 
 /// `extensions` is a `PATHEXT`-style list; empty means the name is tried only as written.
+/// Relative directories (`.` in `PATH`) are skipped: lut's own working directory has nothing to
+/// do with the pane's, and the child would resolve the path against its cwd.
 fn find_in_dirs(
     name: &str,
     dirs: impl IntoIterator<Item = PathBuf>,
@@ -148,12 +150,65 @@ fn find_in_dirs(
             .map(|ext| format!("{name}{}", ext.to_ascii_lowercase()))
             .collect()
     };
-    dirs.into_iter().find_map(|dir| {
-        candidates
-            .iter()
-            .map(|candidate| dir.join(candidate))
-            .find(|path| path.is_file())
-    })
+    dirs.into_iter()
+        .filter(|dir| dir.is_absolute())
+        .find_map(|dir| {
+            candidates
+                .iter()
+                .map(|candidate| dir.join(candidate))
+                .find(|path| is_executable(path))
+        })
+}
+
+/// A file the PATH search may pick. On Unix it also needs an execute bit, so a later executable
+/// in `PATH` wins over a plain file of the same name.
+fn is_executable(path: &Path) -> bool {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        path.metadata()
+            .is_ok_and(|meta| meta.is_file() && meta.permissions().mode() & 0o111 != 0)
+    }
+    #[cfg(not(unix))]
+    {
+        path.is_file()
+    }
+}
+
+/// The program's file name in lower case, without `.exe`.
+fn program_name(program: &str) -> String {
+    let name = program
+        .rsplit(['/', '\\'])
+        .next()
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    match name.strip_suffix(".exe") {
+        Some(stem) => stem.to_string(),
+        None => name,
+    }
+}
+
+/// Whether the program is an interactive shell, integrated by lut or not. At its prompt a shell is
+/// idle, so only what it starts counts as running; any other program is the running process.
+pub(crate) fn is_shell(program: &str) -> bool {
+    const SHELLS: [&str; 15] = [
+        "pwsh",
+        "powershell",
+        "cmd",
+        "bash",
+        "zsh",
+        "fish",
+        "nu",
+        "sh",
+        "dash",
+        "ksh",
+        "mksh",
+        "tcsh",
+        "csh",
+        "elvish",
+        "xonsh",
+    ];
+    SHELLS.contains(&program_name(program).as_str())
 }
 
 /// The shells lut knows, by the program's file name (any case, with or without `.exe`).
@@ -170,12 +225,7 @@ pub(crate) enum ShellKind {
 
 impl ShellKind {
     pub(crate) fn classify(program: &str) -> Self {
-        let name = program
-            .rsplit(['/', '\\'])
-            .next()
-            .unwrap_or("")
-            .to_ascii_lowercase();
-        match name.strip_suffix(".exe").unwrap_or(&name) {
+        match program_name(program).as_str() {
             "pwsh" | "powershell" => Self::Pwsh,
             "bash" => Self::Bash,
             "zsh" => Self::Zsh,
@@ -1587,9 +1637,9 @@ mod tests {
     use std::path::PathBuf;
 
     use super::{
-        apply_common, cmd_prompt, find_in_dirs, integrated_args, parse_etc_shells, resolve_program,
-        unique_shell_paths, uses_integration, LaunchError, ShellControlEnv, ShellKind,
-        FISH_REINSTALL_PROMPT,
+        apply_common, cmd_prompt, find_in_dirs, integrated_args, is_shell, parse_etc_shells,
+        resolve_program, unique_shell_paths, uses_integration, LaunchError, ShellControlEnv,
+        ShellKind, FISH_REINSTALL_PROMPT,
     };
 
     fn strings(args: &[&str]) -> Vec<String> {
@@ -1627,13 +1677,23 @@ mod tests {
         }
     }
 
+    /// An empty file the PATH search accepts (with an execute bit on Unix).
+    fn executable(path: &std::path::Path) {
+        std::fs::write(path, "").unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755)).unwrap();
+        }
+    }
+
     #[test]
     fn a_bare_name_is_found_in_the_path_dirs() {
         let first = tempfile::tempdir().unwrap();
         let second = tempfile::tempdir().unwrap();
-        std::fs::write(second.path().join("nu"), "").unwrap();
-        std::fs::write(second.path().join("nu.cmd"), "").unwrap();
-        std::fs::write(first.path().join("nu.exe"), "").unwrap();
+        executable(&second.path().join("nu"));
+        executable(&second.path().join("nu.cmd"));
+        executable(&first.path().join("nu.exe"));
         let dirs = || [first.path().to_path_buf(), second.path().to_path_buf()];
         // As written when there is no PATHEXT, or the name has an extension.
         assert_eq!(
@@ -1651,6 +1711,53 @@ mod tests {
         );
         assert_eq!(find_in_dirs("fish", dirs(), ".EXE"), None);
         assert_eq!(find_in_dirs("nu", Vec::<PathBuf>::new(), ""), None);
+    }
+
+    #[test]
+    fn relative_path_dirs_are_skipped() {
+        // Tests run in the crate root, which holds Cargo.toml.
+        assert!(std::path::Path::new("Cargo.toml").is_file());
+        for dir in [".", "./", ""] {
+            assert_eq!(
+                find_in_dirs("Cargo.toml", [PathBuf::from(dir)], ""),
+                None,
+                "{dir:?}"
+            );
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_file_without_an_execute_bit_does_not_hide_a_later_executable() {
+        let first = tempfile::tempdir().unwrap();
+        let second = tempfile::tempdir().unwrap();
+        std::fs::write(first.path().join("nu"), "").unwrap();
+        executable(&second.path().join("nu"));
+        assert_eq!(
+            find_in_dirs(
+                "nu",
+                [first.path().to_path_buf(), second.path().to_path_buf()],
+                ""
+            ),
+            Some(second.path().join("nu"))
+        );
+    }
+
+    #[test]
+    fn shells_are_told_from_other_programs() {
+        for program in [
+            r"C:\Windows\System32\cmd.exe",
+            r"C:\Program Files\nu\bin\nu.exe",
+            "/bin/sh",
+            "/usr/bin/dash",
+            "/usr/local/bin/xonsh",
+            "Pwsh.EXE",
+        ] {
+            assert!(is_shell(program), "{program}");
+        }
+        for program in [r"C:\tools\nvim.exe", "/usr/bin/python3", "htop", "shell"] {
+            assert!(!is_shell(program), "{program}");
+        }
     }
 
     #[test]
