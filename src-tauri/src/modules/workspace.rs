@@ -633,9 +633,10 @@ pub(crate) fn normalize_wsl_value(output: String, fallback: &str) -> String {
     }
 }
 
-#[cfg(windows)]
-fn list_distros_blocking() -> Result<Vec<WslDistro>, String> {
-    let out = run_wsl(&["--list", "--verbose"])?;
+/// Parses `wsl --list --verbose` (already decoded): a header row, then
+/// `[*] NAME STATE VERSION` per distro; names may hold spaces.
+#[cfg_attr(not(windows), allow(dead_code))]
+pub(crate) fn parse_wsl_list(out: &str) -> Vec<WslDistro> {
     let mut distros = Vec::new();
     for raw in out.lines().skip(1) {
         let line = raw.trim();
@@ -657,7 +658,12 @@ fn list_distros_blocking() -> Result<Vec<WslDistro>, String> {
             running: state.eq_ignore_ascii_case("Running"),
         });
     }
-    Ok(distros)
+    distros
+}
+
+#[cfg(windows)]
+pub(crate) fn list_distros_blocking() -> Result<Vec<WslDistro>, String> {
+    run_wsl(&["--list", "--verbose"]).map(|out| parse_wsl_list(&out))
 }
 
 #[tauri::command]
@@ -772,6 +778,31 @@ mod tests {
         // heuristic.
         let bytes = [0x74, 0x00, 0x65, 0x00, 0x73, 0x00, 0x74, 0x00];
         assert_eq!(decode_command_output(&bytes), "test");
+    }
+
+    #[test]
+    fn parse_wsl_list_reads_utf16_output() {
+        let text = concat!(
+            "  NAME            STATE           VERSION\r\n",
+            "* Ubuntu          Running         2\r\n",
+            "  Debian          Stopped         2\r\n",
+            "  My Distro       Stopped         2\r\n",
+            "\r\n",
+        );
+        let bytes: Vec<u8> = text.encode_utf16().flat_map(u16::to_le_bytes).collect();
+        let distros = parse_wsl_list(&decode_command_output(&bytes));
+        let summary: Vec<_> = distros
+            .iter()
+            .map(|d| (d.name.as_str(), d.default, d.running))
+            .collect();
+        assert_eq!(
+            summary,
+            [
+                ("Ubuntu", true, true),
+                ("Debian", false, false),
+                ("My Distro", false, false)
+            ]
+        );
     }
 
     #[test]

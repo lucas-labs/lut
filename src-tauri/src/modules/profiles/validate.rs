@@ -3,7 +3,7 @@ use std::fmt::{Display, Formatter};
 
 use serde::Serialize;
 
-use super::model::TerminalProfile;
+use super::model::{ProfileEnvironment, TerminalProfile};
 
 /// One problem with one field of a profile, for the UI to mark next to that field.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -20,10 +20,13 @@ pub struct ProfileError {
 pub enum ProfileErrorCode {
     EmptyId,
     EmptyName,
+    /// Missing or blank; only a WSL profile may leave it unset, for the distro's login shell.
     EmptyExecutable,
     /// Empty, or holding `=` or NUL, which break the environment block on every platform.
     InvalidEnvName,
     DuplicateId,
+    /// Starts with `detected:`, which only detected profiles use.
+    ReservedId,
 }
 
 impl ProfileError {
@@ -44,6 +47,7 @@ impl Display for ProfileError {
             ProfileErrorCode::EmptyExecutable => "executable is empty",
             ProfileErrorCode::InvalidEnvName => "environment variable name is invalid",
             ProfileErrorCode::DuplicateId => "id is used by another profile",
+            ProfileErrorCode::ReservedId => "id uses the prefix of detected profiles",
         };
         write!(
             f,
@@ -55,6 +59,9 @@ impl Display for ProfileError {
 
 impl std::error::Error for ProfileError {}
 
+/// Ids of detected profiles start with this; the user's own profiles may not use it.
+pub const DETECTED_ID_PREFIX: &str = "detected:";
+
 fn is_blank(value: &str) -> bool {
     value.trim().is_empty()
 }
@@ -63,11 +70,18 @@ fn is_valid_env_name(name: &str) -> bool {
     !name.is_empty() && !name.contains(['=', '\0'])
 }
 
-/// Every problem in one profile, not only the first.
+/// Every problem in one of the user's profiles, not only the first. Detected profiles are built
+/// by lut and not checked here.
 pub fn validate_profile(profile: &TerminalProfile) -> Vec<ProfileError> {
     let mut errors = Vec::new();
     if is_blank(&profile.id) {
         errors.push(ProfileError::new(profile, "id", ProfileErrorCode::EmptyId));
+    } else if profile.id.starts_with(DETECTED_ID_PREFIX) {
+        errors.push(ProfileError::new(
+            profile,
+            "id",
+            ProfileErrorCode::ReservedId,
+        ));
     }
     if is_blank(&profile.name) {
         errors.push(ProfileError::new(
@@ -76,7 +90,11 @@ pub fn validate_profile(profile: &TerminalProfile) -> Vec<ProfileError> {
             ProfileErrorCode::EmptyName,
         ));
     }
-    if is_blank(&profile.executable) {
+    let executable_ok = match profile.executable.as_deref() {
+        Some(executable) => !is_blank(executable),
+        None => matches!(profile.environment, ProfileEnvironment::Wsl { .. }),
+    };
+    if !executable_ok {
         errors.push(ProfileError::new(
             profile,
             "executable",
@@ -149,12 +167,33 @@ mod tests {
 
     #[test]
     fn rejects_an_empty_executable() {
-        let mut p = profile("pwsh");
-        p.executable = " ".into();
+        for executable in [None, Some(" ".to_string())] {
+            let mut p = profile("pwsh");
+            p.executable = executable;
+            assert_eq!(
+                codes(&validate_profile(&p)),
+                [("executable", ProfileErrorCode::EmptyExecutable)]
+            );
+        }
+    }
+
+    #[test]
+    fn a_wsl_profile_may_leave_the_executable_to_the_login_shell() {
+        let mut p = profile("ubuntu");
+        p.environment = ProfileEnvironment::Wsl { distro: None };
+        p.executable = None;
+        assert!(validate_profile(&p).is_empty());
+        p.executable = Some(" ".into());
         assert_eq!(
             codes(&validate_profile(&p)),
             [("executable", ProfileErrorCode::EmptyExecutable)]
         );
+    }
+
+    #[test]
+    fn rejects_the_detected_id_prefix() {
+        let errors = validate_profile(&profile("detected:wsl:Ubuntu"));
+        assert_eq!(codes(&errors), [("id", ProfileErrorCode::ReservedId)]);
     }
 
     #[test]
@@ -187,7 +226,7 @@ mod tests {
     fn reports_every_problem_at_once() {
         let mut p = profile("pwsh");
         p.name = String::new();
-        p.executable = String::new();
+        p.executable = None;
         assert_eq!(
             codes(&validate_profile(&p)),
             [

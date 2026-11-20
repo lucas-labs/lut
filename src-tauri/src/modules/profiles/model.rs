@@ -9,7 +9,10 @@ pub struct TerminalProfile {
     /// Stable id the UI and saved panes refer to; set once when the profile is created.
     pub id: String,
     pub name: String,
-    pub executable: String,
+    /// What to run. Optional only inside WSL, where unset means the distro's login shell
+    /// (resolved at launch, so listing profiles never starts a distro).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub executable: Option<String>,
     /// Each argument on its own, never one shell string.
     #[serde(default)]
     pub args: Vec<String>,
@@ -104,6 +107,19 @@ impl Default for ProfileTab {
     }
 }
 
+/// The user's changes to a detected profile, kept in the store by profile id. Detection owns
+/// everything else, so it can change (a new path, a removed distro) without losing these.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DetectedOverride {
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub hidden: bool,
+    #[serde(default)]
+    pub appearance: ProfileAppearance,
+    #[serde(default)]
+    pub tab: ProfileTab,
+}
+
 /// What happens to the pane when its process exits.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -123,7 +139,7 @@ mod tests {
         TerminalProfile {
             id: "ubuntu-wsl".into(),
             name: "Ubuntu".into(),
-            executable: "bash".into(),
+            executable: Some("bash".into()),
             args: vec!["-l".into()],
             env: BTreeMap::from([("EDITOR".into(), "nvim".into())]),
             starting_directory: Some("~/code".into()),
