@@ -1,6 +1,6 @@
 # lut — Especificación técnica y plan de implementación
 
-## Terminal multiplataforma orientada a proyectos, perfiles y agentes CLI
+## Terminal multiplataforma orientada a spaces, perfiles y agentes CLI
 
 **Estado:** documento de referencia para iniciar el desarrollo con Codex / Claude Code  
 **Versión del documento:** 1.2  
@@ -24,7 +24,7 @@
 | **Origen**                       | **lu** (Lucas) + **t** (terminal)                                                                         |
 | **Escritura oficial**            | Siempre en minúsculas: `lut`; evitar `LUT`, `LuT`, `luT` como marca                                       |
 | **Ejecutable principal deseado** | `lut`                                                                                                     |
-| **Categoría**                    | Terminal desktop multiplataforma, orientada a proyectos, perfiles y agentes CLI                           |
+| **Categoría**                    | Terminal desktop multiplataforma, orientada a spaces, perfiles y agentes CLI                              |
 | **Nombre de trabajo anterior**   | «Terminal Workspace» queda descartado; no utilizarlo en UI, documentación nueva ni identidad del producto |
 
 **Implicaciones para implementación:** la aplicación final deberá mostrar `lut` en su título, About, accesos directos, instaladores, ejecutable y documentación. Los identificadores de paquete, bundle, repositorio, comandos auxiliares, rutas de configuración, URL de actualizaciones y eventual dominio se definirán en la Fase 0 con comprobaciones de disponibilidad y compatibilidad; **no inventarlos en este documento**.
@@ -47,7 +47,7 @@ El producto debe permitir:
 1. Ejecutar shells y herramientas habituales: PowerShell 7, Windows PowerShell, CMD, WSL, Bash, Zsh y otros compatibles con PTY.
 2. Administrar **pestañas horizontales o verticales**, según preferencia del usuario, y paneles divididos (_splits_) dentro de cada pestaña.
 3. Definir **perfiles de terminal**, al estilo Windows Terminal: shell, argumentos, directorio inicial, entorno, apariencia y comportamiento.
-4. Definir **proyectos/workspaces persistentes**, capaces de restaurar disposición de ventanas, pestañas y splits, así como iniciar herramientas y comandos habituales. Al abrir lut se restaura la última sesión de proyectos, y en cualquier momento se pueden abrir otros proyectos guardados.
+4. Definir **spaces/workspaces persistentes**, capaces de restaurar disposición de ventanas, pestañas y splits, así como iniciar herramientas y comandos habituales. Al abrir lut se restaura la última sesión de spaces, y en cualquier momento se pueden abrir otros spaces guardados.
 5. Ofrecer una **UI/UX radicalmente propia**, con temas, fuentes, colores, disposición, densidad, atajos y personalización.
 6. Detectar e integrar **Claude Code, Codex y otros agentes CLI** mediante mecanismos públicos de hooks y señales de proceso, mostrando estado, finalización y necesidades de atención sin API keys propias.
 7. Mantener funciones de exploración, Git, diff o edición como **utilidades secundarias, invocables bajo demanda** y no como elementos centrales o siempre visibles.
@@ -65,9 +65,9 @@ El producto debe permitir:
 
 El usuario utiliza terminales para múltiples proyectos, shells, herramientas de desarrollo y agentes. Cada vez que abre la terminal suele reconstruir manualmente el entorno de trabajo: abrir ventanas, moverse a directorios, crear pestañas/splits y lanzar programas. Quiere:
 
-- Guardar ese entorno como un **proyecto reutilizable**.
-- Que **al iniciar lut se restaure la última sesión**: los proyectos que estaban abiertos, el proyecto activo y su disposición de tabs/splits, aplicando las políticas de arranque de comandos (§8.4).
-- **Abrir otros proyectos guardados** en cualquier momento, y tener varios abiertos a la vez.
+- Guardar ese entorno como un **space reutilizable**.
+- Que **al iniciar lut se restaure la última sesión**: los spaces que estaban abiertos, el space activo y su disposición de tabs/splits, aplicando las políticas de arranque de comandos (§8.4).
+- **Abrir otros spaces guardados** en cualquier momento, y tener varios abiertos a la vez.
 
 **No se requiere** que lut arranque con el sistema operativo; la restauración ocurre al abrir la aplicación.
 
@@ -111,7 +111,7 @@ Usar identificadores estables para tareas, pruebas y trazabilidad. Las prioridad
 | TER-002 | P0        | Tabs múltiples                           | Crear, cerrar, renombrar, reordenar y cambiar tabs sin terminar las otras sesiones |
 | TER-003 | P0        | Orientación horizontal/vertical de tabs  | Cambio en Settings en tiempo de ejecución, sin reiniciar procesos                  |
 | TER-004 | P0        | Splits horizontales/verticales           | Dividir, enfocar, redimensionar y cerrar panes sin afectar otros                   |
-| TER-005 | P0        | Sesiones ocultas activas                 | Un comando de larga duración continúa al cambiar de pestaña/proyecto               |
+| TER-005 | P0        | Sesiones ocultas activas                 | Un comando de larga duración continúa al cambiar de pestaña/space                  |
 | TER-006 | P0        | Copiar, pegar, selección, búsqueda       | Funcionan en una terminal real y con Unicode                                       |
 | TER-007 | P0        | Teclado y TUI fiables                    | Neovim, lazygit, Ctrl+C, flechas, teclado internacional, resize y mouse en TUI     |
 | TER-008 | P1        | Atajos configurables                     | Acciones globales, navegación y split; evitar colisiones con shells                |
@@ -137,34 +137,34 @@ Usar identificadores estables para tareas, pruebas y trazabilidad. Las prioridad
 | PRO-005 | P0        | Apariencia por perfil                | Fuente, tamaño, peso, colores, tema, cursor, scrollback y padding dentro del pane; override sobre defaults                                                |
 | PRO-006 | P1        | Entorno Windows/WSL/macOS/Linux      | El perfil puede definir destino y compatibilidad                                                                                                          |
 | PRO-007 | P1        | Exportar/importar perfiles           | Esquema versionado, validación, merge sin duplicados                                                                                                      |
-| PRO-009 | P1        | Perfil en cada pane                  | Diferentes panes del mismo proyecto pueden usar perfiles distintos                                                                                        |
+| PRO-009 | P1        | Perfil en cada pane                  | Diferentes panes del mismo space pueden usar perfiles distintos                                                                                           |
 | PRO-010 | P1        | Validación de perfiles               | Explicar ausencia de executable/entorno/workingDir, con opción de reparar                                                                                 |
 
-Ejemplos de perfiles: PowerShell 7 normal; PowerShell sin perfil; Ubuntu WSL; CMD; Bash; shell para scripts; perfil de terminal de alto contraste; perfil con tema nocturno. **Perfiles no equivalen a agentes**: un perfil puede iniciar `pwsh`; un proyecto puede pedir al shell que ejecute `claude` cuando esté listo.
+Ejemplos de perfiles: PowerShell 7 normal; PowerShell sin perfil; Ubuntu WSL; CMD; Bash; shell para scripts; perfil de terminal de alto contraste; perfil con tema nocturno. **Perfiles no equivalen a agentes**: un perfil puede iniciar `pwsh`; un space puede pedir al shell que ejecute `claude` cuando esté listo.
 
-## 3.3. Proyectos y workspaces persistentes
+## 3.3. Spaces y workspaces persistentes
 
-| ID      | Prioridad | Requisito                                 | Criterio verificable                                                                                                                                                                                                                                                                                |
-| ------- | --------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PRJ-001 | P0        | Lista de proyectos                        | Crear, renombrar, duplicar, archivar/borrar                                                                                                                                                                                                                                                         |
-| PRJ-002 | P0        | Guardar tabs y splits                     | Cerrar aplicación y restaurar árbol y tabs en siguiente inicio                                                                                                                                                                                                                                      |
-| PRJ-003 | P0        | Directorio por pane                       | Mantener cwd específico, no solo raíz del proyecto                                                                                                                                                                                                                                                  |
-| PRJ-004 | P0        | Relanzar comandos                         | Al restaurar, relanzar a pedido (P0) o con confirmación (P1) los comandos que seguían corriendo en cada pane                                                                                                                                                                                        |
-| PRJ-005 | P0        | Distintos perfiles en un proyecto         | Por ejemplo PowerShell, WSL y shell de scripts                                                                                                                                                                                                                                                      |
-| PRJ-006 | P1        | Ratios de splits                          | Guardar proporciones reales, no sólo la topología                                                                                                                                                                                                                                                   |
-| PRJ-007 | P1        | Confirmación de relanzamiento             | Ejecutar / ejecutar siempre en este proyecto / no ejecutar, por comando                                                                                                                                                                                                                             |
-| PRJ-008 | P1        | Estados de inicio por pane                | Pending, starting, ready, running, failed, exited                                                                                                                                                                                                                                                   |
-| PRJ-009 | P1        | Reabrir proyecto existente                | Elegir enfocar instancia activa vs crear una segunda                                                                                                                                                                                                                                                |
-| PRJ-010 | P1        | Reanudar agentes                          | Mecanismo específico y opcional según CLI, sin prometer persistencia de procesos                                                                                                                                                                                                                    |
-| PRJ-011 | P1        | Varios proyectos activos                  | Cambiar entre ellos sin terminar sesiones existentes                                                                                                                                                                                                                                                |
-| PRJ-012 | P2        | Ventanas múltiples por proyecto           | Guardar y restaurar geometría y asignación de tabs por ventana                                                                                                                                                                                                                                      |
-| PRJ-013 | P1        | Estado vivo, sin presets                  | El proyecto es su último estado de sesión; no hay plantillas separadas                                                                                                                                                                                                                              |
-| PRJ-014 | P1        | Migraciones de esquema                    | Actualizar formatos persistidos conservando datos y rollback                                                                                                                                                                                                                                        |
-| PRJ-015 | P1        | Exportar/importar proyectos               | Formato portable, sin incluir secretos inadvertidamente                                                                                                                                                                                                                                             |
-| PRJ-016 | P0        | Restaurar la última sesión al iniciar lut | Al abrir la app se reabren los proyectos que estaban abiertos al cerrar, con el proyecto activo y su layout; los comandos a relanzar piden confirmación (§8.4). Comportamiento configurable: restaurar última sesión (por defecto) / abrir un proyecto por defecto / iniciar con una terminal vacía |
-| PRJ-017 | P0        | Abrir otros proyectos desde la app        | Desde el navegador de proyectos o la command palette, sin cerrar los ya abiertos (ver PRJ-011)                                                                                                                                                                                                      |
+| ID      | Prioridad | Requisito                                 | Criterio verificable                                                                                                                                                                                                                                                                       |
+| ------- | --------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| PRJ-001 | P0        | Lista de spaces                           | Crear, renombrar, duplicar, archivar/borrar                                                                                                                                                                                                                                                |
+| PRJ-002 | P0        | Guardar tabs y splits                     | Cerrar aplicación y restaurar árbol y tabs en siguiente inicio                                                                                                                                                                                                                             |
+| PRJ-003 | P0        | Directorio por pane                       | Mantener cwd específico, no solo raíz del space                                                                                                                                                                                                                                            |
+| PRJ-004 | P0        | Relanzar comandos                         | Al restaurar, relanzar a pedido (P0) o con confirmación (P1) los comandos que seguían corriendo en cada pane                                                                                                                                                                               |
+| PRJ-005 | P0        | Distintos perfiles en un space            | Por ejemplo PowerShell, WSL y shell de scripts                                                                                                                                                                                                                                             |
+| PRJ-006 | P1        | Ratios de splits                          | Guardar proporciones reales, no sólo la topología                                                                                                                                                                                                                                          |
+| PRJ-007 | P1        | Confirmación de relanzamiento             | Ejecutar / ejecutar siempre en este space / no ejecutar, por comando                                                                                                                                                                                                                       |
+| PRJ-008 | P1        | Estados de inicio por pane                | Pending, starting, ready, running, failed, exited                                                                                                                                                                                                                                          |
+| PRJ-009 | P1        | Reabrir space existente                   | Elegir enfocar instancia activa vs crear una segunda                                                                                                                                                                                                                                       |
+| PRJ-010 | P1        | Reanudar agentes                          | Mecanismo específico y opcional según CLI, sin prometer persistencia de procesos                                                                                                                                                                                                           |
+| PRJ-011 | P1        | Varios spaces activos                     | Cambiar entre ellos sin terminar sesiones existentes                                                                                                                                                                                                                                       |
+| PRJ-012 | P2        | Ventanas múltiples por space              | Guardar y restaurar geometría y asignación de tabs por ventana                                                                                                                                                                                                                             |
+| PRJ-013 | P1        | Estado vivo, sin presets                  | El space es su último estado de sesión; no hay plantillas separadas                                                                                                                                                                                                                        |
+| PRJ-014 | P1        | Migraciones de esquema                    | Actualizar formatos persistidos conservando datos y rollback                                                                                                                                                                                                                               |
+| PRJ-015 | P1        | Exportar/importar spaces                  | Formato portable, sin incluir secretos inadvertidamente                                                                                                                                                                                                                                    |
+| PRJ-016 | P0        | Restaurar la última sesión al iniciar lut | Al abrir la app se reabren los spaces que estaban abiertos al cerrar, con el space activo y su layout; los comandos a relanzar piden confirmación (§8.4). Comportamiento configurable: restaurar última sesión (por defecto) / abrir un space por defecto / iniciar con una terminal vacía |
+| PRJ-017 | P0        | Abrir otros spaces desde la app           | Desde el navegador de spaces o la command palette, sin cerrar los ya abiertos (ver PRJ-011)                                                                                                                                                                                                |
 
-**Definición fundamental:** un _Project_ es el contexto de trabajo nombrado; su _estado guardado_ (tabs, splits, perfiles, cwd y comandos que seguían corriendo) es lo que se reconstruye; un _Running Workspace_ representa las sesiones activas. No hay presets: el proyecto es su estado vivo, que se guarda mientras se trabaja (decisión 26 de `.docs/plan/analysis/decisions.md`).
+**Definición fundamental:** un _Space_ es el contexto de trabajo nombrado; su _estado guardado_ (tabs, splits, perfiles, cwd y comandos que seguían corriendo) es lo que se reconstruye; un _Running Workspace_ representa las sesiones activas. No hay presets: el space es su estado vivo, que se guarda mientras se trabaja (decisión 26 de `.docs/plan/analysis/decisions.md`).
 
 ## 3.4. Interfaz y personalización
 
@@ -172,12 +172,12 @@ Ejemplos de perfiles: PowerShell 7 normal; PowerShell sin perfil; Ubuntu WSL; CM
 | ------ | --------- | ------------------------------------------------------------------------------------- |
 | UX-001 | P0        | Terminal ocupa el área central y predominante                                         |
 | UX-002 | P0        | Navegación de tabs vertical, horizontal, o auto si se agrega más adelante             |
-| UX-003 | P0        | Sidebar de proyectos opcional, colapsable y con ancho persistido                      |
+| UX-003 | P0        | Sidebar de spaces opcional, colapsable y con ancho persistido                         |
 | UX-004 | P0        | Temas claros/oscuros y temas personalizados mediante tokens                           |
 | UX-005 | P0        | Fuentes configurables y soporte de Nerd Fonts/powerline cuando el renderer lo permita |
 | UX-006 | P1        | UI minimalista, densidad compacta/normal, iconografía coherente                       |
-| UX-007 | P1        | Menús contextuales para tabs/panes/proyectos                                          |
-| UX-008 | P1        | Command palette orientado a acciones de terminal/proyectos                            |
+| UX-007 | P1        | Menús contextuales para tabs/panes/spaces                                             |
+| UX-008 | P1        | Command palette orientado a acciones de terminal/spaces                               |
 | UX-009 | P1        | Paneles secundarios opcionales: explorer, Git, diff, logs de agentes                  |
 | UX-010 | P1        | Estados de carga/error/falta de permisos accesibles y no intrusivos                   |
 | UX-011 | P1        | Layout compatible con DPI, tamaño mínimo, pantallas de alta densidad y teclado        |
@@ -192,7 +192,7 @@ Ejemplos de perfiles: PowerShell 7 normal; PowerShell sin perfil; Ubuntu WSL; CM
 | AGT-001 | P0        | Detectar Claude Code oficial que corre dentro de PTY propia                               |
 | AGT-002 | P0        | Detectar Codex CLI oficial y sus eventos cuando la versión soporta hooks correspondientes |
 | AGT-003 | P0        | No solicitar API key de Anthropic/OpenAI para monitorizar estos procesos                  |
-| AGT-004 | P0        | Asociar agente con pane, PTY, tab, proyecto y sesión de agente                            |
+| AGT-004 | P0        | Asociar agente con pane, PTY, tab, space y sesión de agente                               |
 | AGT-005 | P0        | Estado visible: iniciando, trabajando, atención, finalizado/error/salido                  |
 | AGT-006 | P0        | Notificar finalización y requerimientos de atención con acción de enfoque                 |
 | AGT-007 | P1        | Gestionar instalación de hooks con previsualización y desinstalación selectiva            |
@@ -211,7 +211,7 @@ Ejemplos de perfiles: PowerShell 7 normal; PowerShell sin perfil; Ubuntu WSL; CM
 ## ADR-001: base técnica
 
 **Elegido:** importar el código fuente de Terax (commit de origen fijado en la portada) a este repositorio y desarrollarlo aquí como producto independiente.  
-**Descartado:** fork mantenido en GitHub con sincronización o merges desde upstream. lut cambia aproximadamente la mitad del producto (shell visual, navegación, proyectos, perfiles, retirada de la IA BYOK), así que mantener compatibilidad con upstream no tiene sentido.  
+**Descartado:** fork mantenido en GitHub con sincronización o merges desde upstream. lut cambia aproximadamente la mitad del producto (shell visual, navegación, spaces, perfiles, retirada de la IA BYOK), así que mantener compatibilidad con upstream no tiene sentido.  
 **Descartado para MVP:** construir motor PTY/VT/GPU desde cero.  
 **Motivo:** Terax ya dispone de infraestructura multiplataforma de PTY, shell integration, Ghostty/WASM, renderizado WebGPU/WebGL, sesiones persistentes mientras están ocultas y bridge de hooks. Los costos técnicos y riesgos de volver a desarrollar esas piezas serían elevados.
 
@@ -246,9 +246,9 @@ Ejemplos de perfiles: PowerShell 7 normal; PowerShell sin perfil; Ubuntu WSL; CM
 **Recrear/refactorizar:** `App.tsx`, header, TabBar, navegación y modelo amplio de tabs.  
 **No hacer:** borrar masivamente frontend para luego intentar reconstruir renderizador y protocolo sin necesidad.
 
-## ADR-006: proyectos
+## ADR-006: spaces
 
-**Elegido:** extender `Spaces` hacia proyectos que guardan su estado vivo y relanzan sus procesos, manteniendo migración de datos.  
+**Elegido:** extender `Spaces` para que guarden su estado vivo y relancen sus procesos, manteniendo migración de datos.  
 **No elegido:** solamente almacenar una lista de directorios.  
 **Motivo:** el valor es restaurar el entorno completo, incluido el arranque de herramientas.
 
@@ -337,7 +337,7 @@ La documentación actual describe:
 
 **Invariantes críticos:**
 
-1. No volver a montar un pane por cambiar la posición de la barra de tabs, expandir sidebar o cambiar de proyecto.
+1. No volver a montar un pane por cambiar la posición de la barra de tabs, expandir sidebar o cambiar de space.
 2. No crear un canvas nuevo por cada cambio visual de tab.
 3. No acoplar layout de tabs a lifecycle de sesión.
 4. Conservar el mecanismo de notificación/resize y sincronización entre modelo y PTY.
@@ -357,7 +357,7 @@ La documentación actual describe:
 
 **Interpretación:** los motores están modularizados, pero el coordinador de la aplicación y el tipo de tab agrupan funcionalidades de terminal e IDE. Para introducir una nueva navegación no basta cambiar CSS de `TabBar`.
 
-## 5.6. Spaces: ya hay persistencia de parte del proyecto
+## 5.6. Spaces: ya hay persistencia de parte del estado
 
 `src/modules/spaces/lib/store.ts` define:
 
@@ -435,7 +435,7 @@ Incluye `AgentHookEvent` con `paneId`, `ptyId`, `agent`, `kind`, `sessionId`, `t
 | Ghostty/WASM y GPU             | Medio/alto riesgo de modificación        | Conservar sin grandes cambios            | Mucha optimización e invariantes              |
 | `TerminalStack`/`TerminalPane` | Medio                                    | Conservar y adaptar contratos mínimos    | No desmontar tabs ocultas                     |
 | Helpers `panes.ts`             | Bajo                                     | Reutilizar                               | Árbol y operaciones puras                     |
-| `Spaces` + serialización       | Medio                                    | Extender con migraciones                 | Base útil para proyectos                      |
+| `Spaces` + serialización       | Medio                                    | Extender con migraciones                 | Base para el estado guardado de cada space    |
 | `useTabs.ts`                   | Alto                                     | Dividir en modelo de sesión y navegación | Unión de tabs de IDE                          |
 | `App.tsx`                      | Alto                                     | Reescribir como coordinador pequeño      | Altas interdependencias                       |
 | Header/TabBar/Sidebar          | Alto como UX; bajo valor de conservación | Recrear                                  | Producto exige otra navegación                |
@@ -460,7 +460,7 @@ Las etiquetas son una **estimación estática**. Se deben validar con `cargo che
 │  FRONTEND React/TypeScript                                    │
 │  ┌─────────────────────────────────────────────────────────┐  │
 │  │ AppShell / Theme / Keymap / CommandPalette              │  │
-│  │   ├─ ProjectNavigator                                   │  │
+│  │   ├─ SpaceNavigator                                   │  │
 │  │   ├─ TabNavigator (horizontal | vertical)               │  │
 │  │   ├─ WorkspaceView                                      │  │
 │  │   │   └─ TerminalStack (reutilizado)                     │  │
@@ -476,7 +476,7 @@ Las etiquetas son una **estimación estática**. Se deben validar con `cargo che
 │  │ PTY Manager + portable-pty / ConPTY / Unix PTY          │  │
 │  │ Shell Integration + Session Registry                    │  │
 │  │ Control Server + Agent Hooks + Hook Broker              │  │
-│  │ Project/Profile Persistence + Launcher                  │  │
+│  │ Space/Profile Persistence + Launcher                  │  │
 │  │ Notifications + OS Integration                          │  │
 │  └─────────────────────────────────────────────────────────┘  │
 └───────────────────────────────────────────────────────────────┘
@@ -495,10 +495,10 @@ Se recomienda diferenciar los siguientes dominios lógicos:
 - `navigation`: tabs, orientación, selección, orden y grupos. **No** crea el PTY por sí mismo.
 - `layouts`: árboles de split y ratios; operaciones puras con identificadores estables.
 - `profiles`: configuración y validación de procesos/estilo de sesión.
-- `projects`: metadatos, estado guardado, lifecycle de restauración y relanzamiento de comandos.
+- `spaces`: metadatos, estado guardado, lifecycle de restauración y relanzamiento de comandos.
 - `agents`: eventos normalizados, estados, plugins/adaptadores, notificaciones.
 - `optional-tools`: editor, Git, explorer, diff como capabilities con carga bajo demanda.
-- `settings`: preferencias globales y overrides por perfil/proyecto.
+- `settings`: preferencias globales y overrides por perfil/space.
 - `platform`: Windows/WSL/macOS/Linux, rutas, ventanas, permisos y menú nativo.
 
 **Regla:** la UI observa servicios y emite intenciones; las acciones sobre procesos y archivos pertenecen al backend/controlador. Los módulos pueden compartir tipos y eventos, pero evitar importaciones circulares de componentes.
@@ -517,11 +517,11 @@ src/
 │   │   ├── VerticalTabs.tsx
 │   │   ├── HorizontalTabs.tsx
 │   │   └── navigationStore.ts
-│   ├── projects/
-│   │   ├── ProjectNavigator.tsx
-│   │   ├── ProjectEditor.tsx
-│   │   ├── projectStore.ts
-│   │   └── projectSchema.ts
+│   ├── spaces/
+│   │   ├── SpaceNavigator.tsx
+│   │   ├── SpaceEditor.tsx
+│   │   ├── spaceStore.ts
+│   │   └── spaceSchema.ts
 │   ├── profiles/
 │   │   ├── ProfilePicker.tsx
 │   │   ├── ProfileEditor.tsx
@@ -549,24 +549,24 @@ La estructura es orientativa. No reorganizar archivos del renderer sólo por est
 
 Cada entidad debe tener identificadores estables, separados:
 
-- `projectId`: proyecto lógico persistido.
+- `spaceId`: space lógico persistido.
 - `windowId`: ventana desktop.
 - `tabId`: agrupación visual de panes.
 - `paneId`/`leafId`: posición/identidad funcional de panel (confirmar su semántica real en Terax).
 - `ptyId`: sesión PTY real.
 - `agentSessionId`: conversación/sesión del CLI, no necesariamente igual a `ptyId`.
 
-**No usar cwd o nombre de tab como clave de correlación:** dos agentes pueden correr simultáneamente en el mismo directorio. Un mismo proceso puede cambiar de cwd. Un proyecto puede tener múltiples instancias.
+**No usar cwd o nombre de tab como clave de correlación:** dos agentes pueden correr simultáneamente en el mismo directorio. Un mismo proceso puede cambiar de cwd. Un space puede tener múltiples instancias.
 
 ## 6.5. Reglas de estado y persistencia
 
 - El PTY es recurso vivo y no debe almacenarse en JSON.
-- El proyecto se guarda como su **estado vivo**; no hay plantillas declarativas (presets).
+- El space se guarda como su **estado vivo**; no hay plantillas declarativas (presets).
 - Un snapshot captura estructura visual y configuración de reinicio.
 - Un comando a relanzar se guarda como texto mientras sigue corriendo, nunca como estado del proceso, y se borra cuando termina.
 - Las migraciones de esquema requieren `schemaVersion` y transformaciones probadas.
 - Los IDs de recursos de runtime deben regenerarse y reconciliarse durante hidratación.
-- El cierre de proyecto activo debe definir política: cerrar PTY, suspender presentación o mantener recursos en memoria.
+- El cierre de space activo debe definir política: cerrar PTY, suspender presentación o mantener recursos en memoria.
 - Un reinicio de aplicación recrea shells, pero no preserva memoria de procesos ni estado interactivo salvo soporte del programa en cuestión.
 
 ---
@@ -611,9 +611,9 @@ type TerminalProfile = {
 
 Los overrides deben resolverse mediante capas:
 
-`globalDefaults` → `terminalProfile` → `projectPaneOverrides` → `runtimeTransientOverrides`.
+`globalDefaults` → `terminalProfile` → `spacePaneOverrides` → `runtimeTransientOverrides`.
 
-Definir con tests qué propiedades se fusionan (por ejemplo env) y cuáles se reemplazan completas (por ejemplo `args`). Los secretos no deben exportarse automáticamente en proyectos compartidos.
+Definir con tests qué propiedades se fusionan (por ejemplo env) y cuáles se reemplazan completas (por ejemplo `args`). Los secretos no deben exportarse automáticamente en spaces compartidos.
 
 ## 7.2. Ejemplos de perfiles
 
@@ -650,19 +650,19 @@ En Windows conservar cuidadosamente scripts de PowerShell y el sourcing de perfi
 
 ---
 
-# 8. Diseño de proyectos: estado guardado, restauración y relanzamiento
+# 8. Diseño de spaces: estado guardado, restauración y relanzamiento
 
-## 8.1. Semántica: proyecto, estado guardado y sesión
+## 8.1. Semántica: space, estado guardado y sesión
 
-**Project:** entidad estable: `id`, nombre, repositorio/directorio base, metadatos, color, entornos autorizados y una
+**Space:** entidad estable: `id`, nombre, repositorio/directorio base, metadatos, color, entornos autorizados y una
 carpeta fija opcional (`pinnedFolder`). Las herramientas (archivos, Git, editor, LSP) usan esa carpeta si está fijada;
 si no, la ubicación del pane de terminal con foco (o el último que lo tuvo), en su propio sistema de archivos. El entorno
-(Windows o una distro WSL) lo da el perfil de cada pane, no el proyecto (decisión 29).  
+(Windows o una distro WSL) lo da el perfil de cada pane, no el space (decisión 29).  
 **Estado guardado:** ventanas/tabs/splits con ratios y, por pane, perfil, cwd y el comando que seguía corriendo; se guarda
 solo mientras se trabaja (no hay presets ni editor de presets).  
 **Running Workspace:** instancia con sesiones reales, estado de ejecución y errores.
 
-Un proyecto puede ofrecer: “Abrir proyecto”, “Abrir como nueva instancia” y “Cerrar sesiones del proyecto”. Evitar
+Un space puede ofrecer: “Abrir space”, “Abrir como nueva instancia” y “Cerrar sesiones del space”. Evitar
 duplicar procesos accidentalmente si ya está abierto.
 
 ## 8.2. Modelo propuesto del estado guardado
@@ -703,24 +703,24 @@ type WindowState = {
   activeTabId?: string;
 };
 
-type ProjectState = {
+type SpaceState = {
   schemaVersion: 2;               // v1: Spaces migrados (layout y cwd); v2 agrega runningCommand y relaunchApprovals
-  projectId: string;
+  spaceId: string;
   windows: WindowState[];
   panes: Record<string, PaneState>;
-  // "Ejecutar siempre en este proyecto": cada aprobación vale para ese comando, cwd y perfil.
+  // "Ejecutar siempre en este space": cada aprobación vale para ese comando, cwd y perfil.
   relaunchApprovals: { command: string; cwd?: string; profileId: string }[];
 };
 ```
 
 **MVP:** mantener `windows` preparado en el esquema aunque sólo se implemente una ventana, o aceptar temporalmente un solo `WindowState` con migración explícita posterior. Evitar agregar una UI multiwindow sin resolver antes el modelo de ownership del PTY y canvas.
 
-## 8.3. Ejemplo de proyecto “Reforge”
+## 8.3. Ejemplo de space “Reforge”
 
 Concepto (nombres de rutas y comandos ficticios, adaptar a cada máquina):
 
 ```yaml
-project:
+space:
   id: reforge
   name: Reforge
   root: 'D:\dev\ayi\reforge'
@@ -750,33 +750,33 @@ Este YAML es sólo un ejemplo legible. La implementación puede persistir en JSO
 
 ## 8.4. Restauración segura: algoritmo propuesto
 
-1. Cargar metadatos y estado guardado del proyecto, validar `schemaVersion` y existencia de perfiles.
+1. Cargar metadatos y estado guardado del space, validar `schemaVersion` y existencia de perfiles.
 2. Resolver disponibilidad de entornos (WSL distro, cwd, ejecutables) y mostrar correcciones si faltan.
 3. Resolver si hay una instancia viva: enfocar, crear otra o cancelar.
 4. Crear **estructura visual** con IDs guardados y de runtime separados, sin ejecutar todavía comandos.
 5. Crear sesiones PTY, respetando límites del renderer y carga progresiva. Conservar sesión oculta si está activa.
 6. Esperar evento de sesión lista / prompt reconocido; no usar un simple `sleep(500)` como contrato de shell-ready.
 7. Aplicar overrides del perfil y cwd de pane antes de ejecutar startup.
-8. Para cada pane con comando a relanzar: si no está aprobado en el proyecto, preguntar “Ejecutar”, “Ejecutar siempre en este proyecto” o “No ejecutar”; evitar doble ejecución.
+8. Para cada pane con comando a relanzar: si no está aprobado en el space, preguntar “Ejecutar”, “Ejecutar siempre en este space” o “No ejecutar”; evitar doble ejecución.
 9. Registrar resultado por pane, errores y acciones “Reintentar” y “Abrir shell sin ejecutar comando”.
 10. Sólo después de hidratar correctamente, habilitar la persistencia automática para evitar sobreescribir datos guardados con un estado parcial.
 
 ## 8.5. Riesgos del autoarranque
 
-Nunca relanzar sin confirmación un comando que no fue aprobado en este proyecto, incluido un proyecto importado de otro equipo o descargado de Internet (las aprobaciones no se exportan). Comandos como `git reset --hard`, `rm`, `del`, despliegues, scripts de infraestructura o `npm run ...` pueden tener efectos secundarios. Ofrecer:
+Nunca relanzar sin confirmación un comando que no fue aprobado en este space, incluido un space importado de otro equipo o descargado de Internet (las aprobaciones no se exportan). Comandos como `git reset --hard`, `rm`, `del`, despliegues, scripts de infraestructura o `npm run ...` pueden tener efectos secundarios. Ofrecer:
 
-- Permiso por proyecto y comando (“Ejecutar siempre en este proyecto”).
+- Permiso por space y comando (“Ejecutar siempre en este space”).
 - Modal de previsualización de los comandos a relanzar.
 - Indicadores de contexto: directorio, shell/WSL y variables relevantes.
 - Detección de perfil inaccesible y comandos fallidos.
 - Posibilidad de desactivar autoarranque globalmente.
-- Prohibición de ejecutar comandos automáticamente al **simplemente previsualizar** un proyecto.
+- Prohibición de ejecutar comandos automáticamente al **simplemente previsualizar** un space.
 
 ## 8.6. Reanudar Claude/Codex
 
 No confundir “abrir `claude` en una nueva PTY” con “restaurar el proceso anterior”. Para Claude se pueden evaluar opciones oficiales como `--continue`, `--resume` o sesión específica según versión. Para Codex, validar en la versión instalada sus flags oficiales de resume. Estos comandos deben configurarse mediante adaptadores y pasar por las mismas políticas de arranque.
 
-**No asumir compatibilidad uniforme entre CLIs.** Si falla una reanudación, ofrecer shell normal e informar el fallo sin invalidar el proyecto.
+**No asumir compatibilidad uniforme entre CLIs.** Si falla una reanudación, ofrecer shell normal e informar el fallo sin invalidar el space.
 
 ---
 
@@ -798,7 +798,7 @@ CLI Bridge / comando auxiliar instalado con consentimiento
        ▼
 Backend Rust: control server + autenticación + normalización
        │
-       ├─ correlación: paneId, ptyId, agent sessionId, projectId
+       ├─ correlación: paneId, ptyId, agent sessionId, spaceId
        ├─ deduplicación, límites de tamaño/frecuencia, estados
        └─ optional decision broker (aprobaciones futuras)
        │
@@ -880,7 +880,7 @@ Las capacidades oficiales de Codex cambian por versión. Confirmar cuáles hooks
 - Si `needs-approval`: cambiar badge, destacar tab y permitir atajo “Ir al próximo agente que requiere atención”.
 - Si `response-done`: badge y notificación configurable; no sustituir output del CLI.
 - Vista `Agent Activity` **colapsada por defecto**, accesible mediante atajo o menú de tab. **No planificada** (decisión 27).
-- Panel de proyecto opcional con todas las sesiones activas, estado y conteo de subagentes.
+- Panel de space opcional con todas las sesiones activas, estado y conteo de subagentes.
 - Historial corto de eventos locales, con política explícita de retención.
 - Notificaciones nativas sólo en casos relevantes; evitar spam por cada herramienta o token.
 
@@ -940,7 +940,7 @@ La integración del shell nuevo debe respetar props, callbacks, identidad y dura
 - `src/modules/tabs/TabBar.tsx`: navegador orientable vertical/horizontal.
 - `src/modules/tabs/NewTabMenu.tsx`: catálogo de perfiles, no lista central de herramientas IDE.
 - `src/app/components/WorkspaceSurface.tsx`: adaptar para que terminal sea superficie por defecto y tools secundarias sean lazy; no es obligatorio borrar inmediatamente el componente.
-- Sidebar actual: nueva navegación de proyectos, sin explorer/source control permanente.
+- Sidebar actual: nueva navegación de spaces, sin explorer/source control permanente.
 
 ## 10.3. Estrategia de tabs
 
@@ -967,15 +967,15 @@ Diseñar un único estado de navegación y dos presentaciones. No mantener dos s
 - Scroll de lista y accesibilidad.
 - Sesiones montadas.
 
-El sidebar de proyectos y el navegador de tabs **son componentes distintos**, aunque puedan compartir una columna izquierda. Soportar combinaciones: proyectos ocultos/tabs verticales; proyectos visibles/tabs horizontales; ambas navegaciones visibles; modo foco.
+El sidebar de spaces y el navegador de tabs **son componentes distintos**, aunque puedan compartir una columna izquierda. Soportar combinaciones: spaces ocultos/tabs verticales; spaces visibles/tabs horizontales; ambas navegaciones visibles; modo foco.
 
 ## 10.5. Layout visual conceptual
 
 ```text
 ┌──────────────────────────────────────────────────────────────────────┐
-│ Barra compacta: proyecto activo | acciones | buscar | perfil         │
+│ Barra compacta: space activo | acciones | buscar | perfil         │
 ├──────────────┬────────────────┬──────────────────────────────────────┤
-│ Proyectos    │ Tabs verticales│ Terminal / splits                    │
+│ Spaces    │ Tabs verticales│ Terminal / splits                    │
 │ (opcional)   │ (configurable) │                                      │
 │              │ pwsh           │  ┌────────────────────────────────┐  │
 │ Reforge      │ Claude · activo│  │ PowerShell / Claude / Neovim    │  │
@@ -1006,7 +1006,7 @@ diagnósticos en la línea de estado del editor, la rama en la vista Git del sid
 3. Unificar documentación en `.docs/`: reubicar toda la documentación importada de Terax (`TERAX.md`, `README.md`, `CONTRIBUTING.md`, `ROADMAP.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md` y `docs/`) en `.docs/origin-terax/`, como referencia de origen y no como instrucciones para lut. Descartar `AGENTS.md`/`CLAUDE.md` de Terax. **Hecho** (ver `.docs/origin-terax/ORIGIN.md`).
 4. **Neutralizar el updater de Terax antes del primer build ejecutable:** quitar el endpoint de releases de Terax y su clave pública de `tauri.conf.json` (o desactivar el plugin) para que lut **nunca** descargue ni instale binarios de Terax. lut sí tendrá auto-actualización, pero con infraestructura propia (endpoint de releases de lut y clave de firma propia), que se configura cuando exista el pipeline de releases (Fase 7).
 5. Auditar las llamadas de red salientes (módulo `net`, IA BYOK, updater, telemetría si la hubiera) y desactivar las que apunten a servicios de Terax o de terceros no necesarios para la terminal.
-6. Instalar `pnpm` exacto y dependencias Rust/Zig/WASM requeridas por el proyecto (seguir las instrucciones del código importado).
+6. Instalar `pnpm` exacto y dependencias Rust/Zig/WASM requeridas por el space (seguir las instrucciones del código importado).
 7. Registrar OS, toolchains y prerequisitos; documentar comandos efectivos de build.
 8. Ejecutar test/lint/check existentes; guardar baseline de fallos previos.
 9. Compilar y abrir la app en Windows 11. Probar pwsh, WSL, splits, tabs, Ghostty/WebGPU/WebGL, agentes con hooks desactivados y activados con consentimiento.
@@ -1029,7 +1029,7 @@ El rebranding visual (títulos, About, iconos, textos) no es parte de la Fase 0.
 1. Nuevo `AppShell` con área principal de terminal.
 2. Integrar `TerminalStack` intacto con callbacks y lifecycle actuales.
 3. Nueva barra/navegación de tabs horizontal/vertical.
-4. Sidebar de proyectos placeholder ocultable, sin implementar persistencia nueva.
+4. Sidebar de spaces placeholder ocultable, sin implementar persistencia nueva.
 5. Theming básico y shortcuts de tabs/splits.
 6. Hacer opcional/ocultar editor, explorer, Source Control, AI integrada y demás chrome; **no eliminar backend todavía**.
 7. Tests para switch tab/split, salida TUI, reordenamiento, orientación y ocultamiento.
@@ -1069,23 +1069,23 @@ El rebranding visual (títulos, About, iconos, textos) no es parte de la Fase 0.
 
 **Gate:** abrir dos panes con shells y preferencias distintas, persistir y restaurar.
 
-## Fase 4 — Proyectos y restauración
+## Fase 4 — Spaces y restauración
 
 **Objetivo:** resolver el problema de reconstruir el entorno al arrancar.
 
 **Tareas:**
 
-1. Modelo versionado de `Project`, su estado guardado y `RunningWorkspace`.
+1. Modelo versionado de `Space`, su estado guardado y `RunningWorkspace`.
 2. Migrar `Spaces` actual conservando datos.
-3. Confirmación para relanzar comandos (ejecutar / siempre en este proyecto / no ejecutar).
+3. Confirmación para relanzar comandos (ejecutar / siempre en este space / no ejecutar).
 4. Guardar árbol, orden, ratios, cwd, perfil, active tab y comandos que siguen corriendo.
 5. Ejecutar restauración con estado, confirmación y guardas contra duplicados.
-6. Soporte multi-proyecto activo y reglas de foco/instancia; abrir otros proyectos desde la app (PRJ-017).
-7. Restauración de la última sesión al iniciar lut (PRJ-016): persistir qué proyectos estaban abiertos y cuál era el activo; al arrancar, reabrirlos con el algoritmo de §8.4.
+6. Soporte multi-space activo y reglas de foco/instancia; abrir otros spaces desde la app (PRJ-017).
+7. Restauración de la última sesión al iniciar lut (PRJ-016): persistir qué spaces estaban abiertos y cuál era el activo; al arrancar, reabrirlos con el algoritmo de §8.4.
 8. Export/import de esquema portable (sin secretos).
 9. Tests unitarios de serialización e integración de arranque, incluida la restauración de la última sesión.
 
-**Gate:** reiniciar app, abrir proyecto de tres panes y recuperar su estructura; iniciar sólo comandos autorizados, informar errores y no duplicar procesos.
+**Gate:** reiniciar app, abrir space de tres panes y recuperar su estructura; iniciar sólo comandos autorizados, informar errores y no duplicar procesos.
 
 ## Fase 5 — Experiencia avanzada de agentes
 
@@ -1114,7 +1114,7 @@ El rebranding visual (títulos, About, iconos, textos) no es parte de la Fase 0.
 
 ## Fase 7 — Multiwindow y portabilidad completa
 
-**Objetivo:** múltiples ventanas por proyecto y soporte real macOS/Linux.
+**Objetivo:** múltiples ventanas por space y soporte real macOS/Linux.
 
 **Tareas:** definir ownership de PTY/renderer por ventana; creación/cierre de ventanas; transferencia de tab/pane si se decide; restauración de geometría por monitor; pruebas OS específicas de clipboard, IME, WSL, fonts, WebKit y DPI; empaquetado y actualizaciones.
 
@@ -1154,11 +1154,11 @@ Orden sugerido de PRs iniciales:
 - PR-001: baseline, documentación y verificación de build.
 - PR-002: `AppShell` y `TerminalStack` encapsulado sin cambios de renderer.
 - PR-003: adaptador de tabs visuales y orientación configurable.
-- PR-004: nueva sidebar de proyectos vacía y estado de navegación.
+- PR-004: nueva sidebar de spaces vacía y estado de navegación.
 - PR-005: aislamiento de `AiComposerProvider`/chat BYOK.
 - PR-006: perfiles y contratos entre profile → pane → PTY.
-- PR-007: schema de proyectos versionado y migration de Spaces.
-- PR-008: orquestador de arranque de proyecto.
+- PR-007: schema de spaces versionado y migration de Spaces.
+- PR-008: orquestador de arranque de space.
 - PR-009: puente del reducer de agentes al UI.
 
 Los PRs son hitos, no obligación de numeración literal.
@@ -1194,30 +1194,30 @@ Estos comandos deben ejecutarse en un entorno con dependencias instaladas y tool
 
 ## 13.2. Matriz de pruebas funcionales
 
-| Escenario                                       | Resultado esperado                                                                                               |
-| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Abrir pwsh                                      | Shell interactiva y prompt correcto                                                                              |
-| Abrir WSL Ubuntu                                | Shell con cwd correcto y teclado operativo                                                                       |
-| Ejecutar Neovim                                 | Pantalla alterna y combinaciones de teclas funcionan                                                             |
-| Ejecutar lazygit                                | Mouse/resize/Unicode correctos                                                                                   |
-| Switch horizontal → vertical                    | PTY y output siguen vivos, sin reiniciar procesos                                                                |
-| Colapsar proyectos sidebar                      | Ningún proceso se detiene                                                                                        |
-| Split y resize continuo                         | Una sesión por pane, geometry/TTY consistentes                                                                   |
-| Tabs ocultas con `pnpm dev`                     | Proceso continúa, output no corrompido al volver                                                                 |
-| Cerrar tab con proceso activo                   | Política de confirmación y cleanup                                                                               |
-| Guardar y restaurar proyecto                    | Topología, perfiles, cwd, ratios y comandos correctos                                                            |
-| Abrir proyecto dos veces                        | No duplica accidentalmente procesos                                                                              |
-| Abrir perfil inexistente                        | Error reparable, sin crash general                                                                               |
-| Claude + Codex en tabs distintos                | Estados y notificaciones correlacionados                                                                         |
-| Dos Claude en mismo cwd                         | Cada evento pertenece a su PTY                                                                                   |
-| Desinstalar hooks                               | Preserva hooks ajenos                                                                                            |
-| Hooks ausentes                                  | Terminal funciona; degradación de badges explícita                                                               |
-| Proveedor BYOK sin key                          | Terminal y agentes CLI funcionan igual                                                                           |
-| Reiniciar con comando peligroso a relanzar      | Exige confirmación antes de ejecutar                                                                             |
-| Cambiar tema/fuente                             | Presentación se actualiza sin reiniciar proceso                                                                  |
-| Cerrar y reabrir lut con dos proyectos abiertos | Se restauran ambos proyectos, el activo y sus layouts; comandos según política                                   |
-| Terax instalado en la misma máquina             | lut no lee ni escribe datos, stores, hooks ni variables de Terax; desinstalar hooks de lut preserva los de Terax |
-| Comprobación de actualizaciones                 | Sólo consulta el endpoint de lut; rechaza binarios sin firma válida de lut                                       |
+| Escenario                                    | Resultado esperado                                                                                               |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Abrir pwsh                                   | Shell interactiva y prompt correcto                                                                              |
+| Abrir WSL Ubuntu                             | Shell con cwd correcto y teclado operativo                                                                       |
+| Ejecutar Neovim                              | Pantalla alterna y combinaciones de teclas funcionan                                                             |
+| Ejecutar lazygit                             | Mouse/resize/Unicode correctos                                                                                   |
+| Switch horizontal → vertical                 | PTY y output siguen vivos, sin reiniciar procesos                                                                |
+| Colapsar spaces sidebar                      | Ningún proceso se detiene                                                                                        |
+| Split y resize continuo                      | Una sesión por pane, geometry/TTY consistentes                                                                   |
+| Tabs ocultas con `pnpm dev`                  | Proceso continúa, output no corrompido al volver                                                                 |
+| Cerrar tab con proceso activo                | Política de confirmación y cleanup                                                                               |
+| Guardar y restaurar space                    | Topología, perfiles, cwd, ratios y comandos correctos                                                            |
+| Abrir space dos veces                        | No duplica accidentalmente procesos                                                                              |
+| Abrir perfil inexistente                     | Error reparable, sin crash general                                                                               |
+| Claude + Codex en tabs distintos             | Estados y notificaciones correlacionados                                                                         |
+| Dos Claude en mismo cwd                      | Cada evento pertenece a su PTY                                                                                   |
+| Desinstalar hooks                            | Preserva hooks ajenos                                                                                            |
+| Hooks ausentes                               | Terminal funciona; degradación de badges explícita                                                               |
+| Proveedor BYOK sin key                       | Terminal y agentes CLI funcionan igual                                                                           |
+| Reiniciar con comando peligroso a relanzar   | Exige confirmación antes de ejecutar                                                                             |
+| Cambiar tema/fuente                          | Presentación se actualiza sin reiniciar proceso                                                                  |
+| Cerrar y reabrir lut con dos spaces abiertos | Se restauran ambos spaces, el activo y sus layouts; comandos según política                                      |
+| Terax instalado en la misma máquina          | lut no lee ni escribe datos, stores, hooks ni variables de Terax; desinstalar hooks de lut preserva los de Terax |
+| Comprobación de actualizaciones              | Sólo consulta el endpoint de lut; rechaza binarios sin firma válida de lut                                       |
 
 ## 13.3. Matriz por plataforma
 
@@ -1237,7 +1237,7 @@ No fijar cifras absolutas sin baseline. Registrar inicialmente:
 - Consumo de CPU en reposo y con tabs ocultas.
 - Memoria de scrollback a largo plazo y liberación tras cierre.
 - Reflow y errores durante resize/zoom/DPI.
-- Tiempo de restaurar proyecto con múltiples herramientas.
+- Tiempo de restaurar space con múltiples herramientas.
 
 **Criterio de no regresión:** cualquier empeoramiento material respecto al baseline debe investigarse antes de aceptar el cambio; documentar umbrales una vez existan mediciones.
 
@@ -1247,7 +1247,7 @@ No fijar cifras absolutas sin baseline. Registrar inicialmente:
 - Matar inesperadamente el proceso de shell o el agente.
 - Reiniciar frontend/HMR durante desarrollo.
 - Hook duplicado, JSON malformado, fuera de orden y tardío.
-- Cerrar proyecto mientras se restauran panes.
+- Cerrar space mientras se restauran panes.
 - Desconexión de webview durante stream PTY.
 - `cwd` no accesible, disco/montaje ausente, distro WSL desinstalada.
 - Comando de startup que jamás devuelve prompt.
@@ -1262,7 +1262,7 @@ No fijar cifras absolutas sin baseline. Registrar inicialmente:
 ## 14.1. Seguridad de ejecución
 
 - Ejecutar programas mediante argv cuando sea posible; separar argumentos en arrays y no interpolar rutas en strings de shell.
-- Si los comandos de proyecto se ejecutan dentro de shell, usar un mecanismo de entrada/quoting de la shell activa, no construir una línea no escapada.
+- Si los comandos de space se ejecutan dentro de shell, usar un mecanismo de entrada/quoting de la shell activa, no construir una línea no escapada.
 - Mostrar claramente qué se va a relanzar y con qué cwd/entorno.
 - Nunca registrar tokens de auth ni variables de entorno secretas.
 - Mantener restricciones de workspace authorization existentes hasta que se evalúe su modelo de amenaza.
@@ -1273,9 +1273,9 @@ No fijar cifras absolutas sin baseline. Registrar inicialmente:
 
 ## 14.2. Privacidad
 
-El proyecto debe funcionar totalmente local para terminal/sesiones/proyectos y no enviar prompts, rutas, transcripciones ni métricas de agentes a servidores propios. La información que podría persistirse localmente debe categorizarse:
+El space debe funcionar totalmente local para terminal/sesiones/spaces y no enviar prompts, rutas, transcripciones ni métricas de agentes a servidores propios. La información que podría persistirse localmente debe categorizarse:
 
-- **Permitido por defecto:** IDs, agente, estado, tiempo, PTY, tab, proyecto, metadatos mínimos.
+- **Permitido por defecto:** IDs, agente, estado, tiempo, PTY, tab, space, metadatos mínimos.
 - **Opt-in explícito:** comandos, nombres de herramientas, previews, mensajes, errores detallados, timeline persistente.
   El opt-in para guardar los comandos que siguen corriendo (para relanzarlos, §8) es la opción de inicio “restaurar la
   última sesión” con el relanzamiento activado, que advierte que esas líneas se guardan localmente y pueden contener
@@ -1332,20 +1332,20 @@ Al terminar la Fase 0, exigir estos artefactos dentro del repo. **Toda la docume
 - [ ] PowerShell/WSL funcionan correctamente.
 - [ ] Neovim y lazygit funcionan con teclado, selección y resize.
 - [ ] Cambiar orientación de tabs no reinicia PTYs.
-- [ ] Cambiar tabs/proyectos mantiene procesos y output vivos.
+- [ ] Cambiar tabs/spaces mantiene procesos y output vivos.
 - [ ] Splits no provocan leaks evidentes del renderer.
 - [ ] Tema/fuente/cursor son personalizables.
 
-## Proyectos y perfiles
+## Spaces y perfiles
 
 - [ ] Mi entorno de trabajo (tabs, splits, cwd, perfiles y procesos) se guarda solo mientras trabajo.
 - [ ] Puedo restaurarlo después de reiniciar la aplicación.
-- [ ] Al abrir lut se restaura la última sesión (proyectos abiertos, proyecto activo y layouts).
-- [ ] Puedo abrir otros proyectos guardados sin cerrar los que ya están abiertos.
+- [ ] Al abrir lut se restaura la última sesión (spaces abiertos, space activo y layouts).
+- [ ] Puedo abrir otros spaces guardados sin cerrar los que ya están abiertos.
 - [ ] Cada pane puede tener shell/cwd/perfil propios.
 - [ ] Los comandos relanzados arrancan una sola vez y sólo con confirmación o aprobación previa.
 - [ ] Los errores de configuración no bloquean toda la aplicación.
-- [ ] Un proyecto importado no relanza comandos sin consentimiento.
+- [ ] Un space importado no relanza comandos sin consentimiento.
 
 ## Agentes
 
@@ -1427,6 +1427,6 @@ Copiar este mensaje como primer prompt junto a este documento:
 
 El valor de **lut** no está en reinventar la PTY ni fabricar otro agente de IA. Está en ofrecer una terminal de primera categoría que guarde y reconstruya el entorno de desarrollo, permita una interfaz moderna profundamente configurable y conozca el estado de agentes CLI ejecutados con las suscripciones existentes.
 
-La ruta más eficiente es **importar el código de Terax como punto de partida, conservar sus piezas técnicamente difíciles y reconstruir su experiencia de aplicación**, desarrollándolo en este repositorio como producto independiente, sin dependencia de upstream y con los créditos debidos en el README. El esfuerzo central es separar un frontend hoy orientado a múltiples funciones de IDE/IA, convertir Spaces en proyectos/presets completos y materializar una integración UI con los eventos de Claude Code/Codex que el backend ya recibe parcialmente.
+La ruta más eficiente es **importar el código de Terax como punto de partida, conservar sus piezas técnicamente difíciles y reconstruir su experiencia de aplicación**, desarrollándolo en este repositorio como producto independiente, sin dependencia de upstream y con los créditos debidos en el README. El esfuerzo central es separar un frontend hoy orientado a múltiples funciones de IDE/IA, convertir Spaces en spaces/presets completos y materializar una integración UI con los eventos de Claude Code/Codex que el backend ya recibe parcialmente.
 
-**Primera prioridad real: producir una terminal-first funcional sin romper la terminal existente.** Luego implementar perfiles y proyectos. Finalmente explotar los hooks de agentes para crear la experiencia diferenciadora.
+**Primera prioridad real: producir una terminal-first funcional sin romper la terminal existente.** Luego implementar perfiles y spaces. Finalmente explotar los hooks de agentes para crear la experiencia diferenciadora.

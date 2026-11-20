@@ -62,7 +62,7 @@ columns are out of date.
 | PRJ-009 | P1       | Reabrir proyecto existente                | E17-08                                                                                                 |                |       |
 | PRJ-010 | P1       | Reanudar agentes                          | E21-02, E21-03                                                                                         |                |       |
 | PRJ-011 | P1       | Varios proyectos activos                  | E17-08                                                                                                 |                |       |
-| PRJ-012 | P2       | Ventanas múltiples por proyecto           | Not planned: P2: multiple windows per project (post-v1).                                               |                |       |
+| PRJ-012 | P2       | Ventanas múltiples por proyecto           | Not planned: P2: multiple windows per space (post-v1).                                                 |                |       |
 | PRJ-013 | P1       | Estado vivo, sin presets                  | E16-05                                                                                                 |                |       |
 | PRJ-014 | P1       | Migraciones de esquema                    | Not planned: P1: schema migrations start with the first release; lut has no releases or user data yet. |                |       |
 | PRJ-015 | P1       | Exportar/importar proyectos               | E23-03                                                                                                 |                |       |

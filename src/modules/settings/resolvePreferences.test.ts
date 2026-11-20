@@ -28,7 +28,7 @@ describe('resolvePreferences', () => {
     expect(resolved.terminalCursorStyle).toBe('bar');
   });
 
-  it('lets a project override the profile, and the global values the profile leaves', () => {
+  it('lets a space override the profile, and the global values the profile leaves', () => {
     const resolved = resolvePreferences(
       global,
       { terminalFontSize: 16, terminalCursorStyle: 'block' },

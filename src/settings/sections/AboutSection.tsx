@@ -60,7 +60,7 @@ export function AboutSection() {
         <AppLogo size={72} />
         <div className="flex min-w-0 flex-col gap-1">
           <h1 className="text-[20px] leading-7 font-semibold">{name}</h1>
-          <span className="text-muted-foreground">A terminal built around projects, profiles and CLI agents</span>
+          <span className="text-muted-foreground">A terminal built around spaces, profiles and CLI agents</span>
           <span className="font-mono text-[12px] leading-4 text-muted-foreground">Version {version || '—'}</span>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import type { Preferences } from './store';
 
 /**
- * Layered preferences: global values overridden by a profile, then by a project (E14-02).
+ * Layered preferences: global values overridden by a profile, then by a space (E14-02).
  *
  * This is lut's only preference resolver. Later layers (the pane override of E14-16) are
  * appended to the end of the layer list, so existing callers keep working; no separate
@@ -18,9 +18,9 @@ export type PreferenceLayer = Partial<Preferences>;
 export function resolvePreferences(
   global: Preferences,
   profile?: PreferenceLayer,
-  project?: PreferenceLayer,
+  space?: PreferenceLayer,
 ): Preferences {
-  const layers = [profile, project];
+  const layers = [profile, space];
   const resolved: Preferences = { ...global };
   for (const layer of layers) {
     if (!layer) continue;

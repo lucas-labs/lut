@@ -16,14 +16,14 @@ From §6.1, with what exists today:
 | Target layer                                     | Today                                                                        | Changed by    |
 | ------------------------------------------------ | ---------------------------------------------------------------------------- | ------------- |
 | `AppShell` / theme / keymap / command palette    | `app/App.tsx` (1484-line coordinator), `modules/theme`, `shortcuts`, palette | E07, E09, E12 |
-| `ProjectNavigator`                               | `modules/spaces` (switcher), sidebar with explorer and source control        | E16, E18      |
+| `SpaceNavigator`                                 | `modules/spaces` (switcher), sidebar with explorer and source control        | E16, E18      |
 | `TabNavigator` (horizontal or vertical)          | `modules/tabs` (`TabBar`, `useTabs` React state, 8 tab kinds)                | E07, E08, E12 |
 | `WorkspaceView` → `TerminalStack` (kept)         | `app/components/WorkspaceSurface.tsx` → `modules/terminal/TerminalStack.tsx` | E07           |
 | Agent status, activity, notifications            | `modules/agents`, `modules/control`, `lut:agent-signal`                      | E19, E20, E21 |
 | Optional tools (editor, Git, explorer), lazy     | Always-mounted IDE modules                                                   | E10           |
 | PTY manager, shell integration, session registry | `src-tauri/src/modules/pty/`                                                 | E14, E17      |
 | Control server, agent hooks, hook broker         | `control.rs`, `agent_events.rs`, `agent.rs`, `lut-cli`                       | E02, E19, E20 |
-| Project/profile persistence and launcher         | Spaces store (`lut-spaces.json`); no profiles                                | E14, E16, E17 |
+| Space/profile persistence and launcher           | Spaces store (`lut-spaces.json`); no profiles                                | E14, E16, E17 |
 | Notifications and OS integration                 | notification plugin, `vibrancy.rs`, `window_presentation.rs`                 | E09, E20      |
 
 The built-in BYOK AI (`modules/ai`, `net`, `ai_sessions`, `secrets`) and command-blocks mode have no target layer:
@@ -36,18 +36,18 @@ processes and files belong to the backend or a controller.** Modules may share t
 other's components in cycles (today: tabs ↔ terminal, spaces ↔ terminal, agents ↔ ai; see
 [module-dependencies.md](module-dependencies.md)).
 
-| Domain           | Owns                                                      | Contract                                                                                                                                                                                                 | Source                               |
-| ---------------- | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| `terminal-core`  | Ghostty WASM model, WebGPU/WebGL renderers, PTY transport | Unchanged at first (§10.1). `TerminalStack` takes `{ id, paneTree, activeLeafId }[]` instead of `Tab[]`.                                                                                                 | §10.1, E07-02                        |
-| `sessions`       | PTY lifecycle, `leafId ↔ ptyId`, resize, write, dispose   | Sessions outlive tab and layout changes; the UI asks for a pane by **profile id** and the backend resolves and validates the launch (executable, args, env, cwd, WSL distro) from stored profiles.       | §6.2, decision 10, E08-04, E14-12    |
-| `navigation`     | Tabs, orientation, selection, order, groups               | One store, two presentations. `TabNavigator` receives id, title, icon, state, active, close, reorder, focus, orientation. It **never creates a PTY**.                                                    | §10.3, §10.4, decision 11, E08-02/03 |
-| `layouts`        | Split trees and ratios                                    | Pure operations on stable ids; ratios are part of the model and persisted. At most 4 panes per tab (the renderer slot pool).                                                                             | §5.4, decision 12, E08-05/06         |
-| `profiles`       | Process and style of a session                            | `TerminalProfile` (§7.1), validated by Zod and Serde across IPC. Overrides resolve `globalDefaults` → profile → project pane → runtime. Detected shells and one profile per WSL distro are profiles too. | §7.1, decisions 10 and 18, E14       |
-| `projects`       | Project metadata, presets, snapshots, restore lifecycle   | Project, Preset, Running Workspace and Layout Snapshot are separate (§8.1). Evolves Spaces; versioned with `schemaVersion`.                                                                              | §8, ADR-006, decision 4, E16, E17    |
-| `agents`         | Normalized events, statuses, adapters, notifications      | Statuses `starting`, `working`, `needs-input`, `needs-approval`, `done`, `error`, `idle`, `exited` (§9.3), from structured hooks first and process/OSC signals as a fallback with their source.          | §9, decision 13, E19                 |
-| `optional-tools` | Editor, LSP, Git, explorer, diff, previews                | Capabilities loaded on demand (`ContentTab` / `ToolWindow`); nothing loads them at startup.                                                                                                              | §10.3, decision 2, E10               |
-| `settings`       | Global preferences and overrides per profile and project  | Layered preferences (global, profile, project).                                                                                                                                                          | §6.2, E14-02, E13                    |
-| `platform`       | OS detection, paths, windows, permissions, native menu    | One module for platform-specific code.                                                                                                                                                                   | §6.2, E09-05/06                      |
+| Domain           | Owns                                                      | Contract                                                                                                                                                                                               | Source                               |
+| ---------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------ |
+| `terminal-core`  | Ghostty WASM model, WebGPU/WebGL renderers, PTY transport | Unchanged at first (§10.1). `TerminalStack` takes `{ id, paneTree, activeLeafId }[]` instead of `Tab[]`.                                                                                               | §10.1, E07-02                        |
+| `sessions`       | PTY lifecycle, `leafId ↔ ptyId`, resize, write, dispose   | Sessions outlive tab and layout changes; the UI asks for a pane by **profile id** and the backend resolves and validates the launch (executable, args, env, cwd, WSL distro) from stored profiles.     | §6.2, decision 10, E08-04, E14-12    |
+| `navigation`     | Tabs, orientation, selection, order, groups               | One store, two presentations. `TabNavigator` receives id, title, icon, state, active, close, reorder, focus, orientation. It **never creates a PTY**.                                                  | §10.3, §10.4, decision 11, E08-02/03 |
+| `layouts`        | Split trees and ratios                                    | Pure operations on stable ids; ratios are part of the model and persisted. At most 4 panes per tab (the renderer slot pool).                                                                           | §5.4, decision 12, E08-05/06         |
+| `profiles`       | Process and style of a session                            | `TerminalProfile` (§7.1), validated by Zod and Serde across IPC. Overrides resolve `globalDefaults` → profile → space pane → runtime. Detected shells and one profile per WSL distro are profiles too. | §7.1, decisions 10 and 18, E14       |
+| `spaces`         | Space metadata, presets, snapshots, restore lifecycle     | Space, Preset, Running Workspace and Layout Snapshot are separate (§8.1). Versioned with `schemaVersion`.                                                                                              | §8, ADR-006, decision 4, E16, E17    |
+| `agents`         | Normalized events, statuses, adapters, notifications      | Statuses `starting`, `working`, `needs-input`, `needs-approval`, `done`, `error`, `idle`, `exited` (§9.3), from structured hooks first and process/OSC signals as a fallback with their source.        | §9, decision 13, E19                 |
+| `optional-tools` | Editor, LSP, Git, explorer, diff, previews                | Capabilities loaded on demand (`ContentTab` / `ToolWindow`); nothing loads them at startup.                                                                                                            | §10.3, decision 2, E10               |
+| `settings`       | Global preferences and overrides per profile and space    | Layered preferences (global, profile, space).                                                                                                                                                          | §6.2, E14-02, E13                    |
+| `platform`       | OS detection, paths, windows, permissions, native menu    | One module for platform-specific code.                                                                                                                                                                 | §6.2, E09-05/06                      |
 
 The folder layout of §6.3 is orientative: renderer files are not moved for the sake of folders, and Terax paths stay
 until builds and tests allow a safe move.
@@ -56,15 +56,15 @@ until builds and tests allow a safe move.
 
 ### Identity (§6.4)
 
-Each entity has its own stable id, never derived from another or from the cwd or a tab name: `projectId`, `presetId`,
+Each entity has its own stable id, never derived from another or from the cwd or a tab name: `spaceId`, `presetId`,
 `windowId`, `tabId`, `paneId`/`leafId`, `ptyId`, `agentSessionId`. Two agents can run in the same directory, a process
-can change cwd, a project can have several instances. Today: tab and leaf ids share one counter in `useTabs`, `ptyId`
+can change cwd, a space can have several instances. Today: tab and leaf ids share one counter in `useTabs`, `ptyId`
 is a backend counter mapped from the leaf (`terminalSessionApi`), and agent events are correlated by pane id and a
 per-pane control token.
 
 ### Renderer and sessions (§5.4)
 
-1. A pane is never remounted because the tab bar moves, the sidebar expands or the project changes.
+1. A pane is never remounted because the tab bar moves, the sidebar expands or the space changes.
 2. No new canvas per visual tab change.
 3. Tab layout is not coupled to the session lifecycle.
 4. The notification/resize mechanism and the model ↔ PTY synchronization are kept.
@@ -80,7 +80,7 @@ Invariants 1–3 are locked by the lifecycle tests of E07-01 and E08-10; 4–6 b
 - A preset is declarative, not a process snapshot; a snapshot captures visual structure and restart configuration.
 - The last app state never overwrites a saved template without an explicit action.
 - Schema changes carry `schemaVersion` and tested migrations.
-- Closing the active project follows a defined policy (close PTYs, suspend presentation or keep resources).
+- Closing the active space follows a defined policy (close PTYs, suspend presentation or keep resources).
 - Restarting the app recreates shells; process memory and interactive state are not preserved unless the program
   supports it.
 
@@ -111,9 +111,9 @@ UI intent (new tab / split, profile id)
 Today the frontend sends the shell path and the backend accepts it only if it is a detected shell; the profile id
 replaces that (E14-12).
 
-### Starting the app and restoring a project (§8.4)
+### Starting the app and restoring a space (§8.4)
 
-1. Load project metadata and preset; validate `schemaVersion` and that profiles exist.
+1. Load space metadata and preset; validate `schemaVersion` and that profiles exist.
 2. Resolve environments (WSL distro, cwd, executables); offer corrections when something is missing.
 3. If an instance is already running: focus it, create another or cancel.
 4. Build the visual structure with separate preset and runtime ids, without running commands.
@@ -132,7 +132,7 @@ In the first version restore covers layout and cwd; commands start manually (dec
 Agent CLI in a lut shell → official hook (JSON on stdin)
   → lut-cli hook (installed with consent): pane id, control address and token from the shell environment
   → control server (loopback, per-pane token, replay dedupe)
-  → normalization per agent adapter, size and rate limits, correlation (pane, PTY, agent session, project)
+  → normalization per agent adapter, size and rate limits, correlation (pane, PTY, agent session, space)
   → optional decision broker (approvals, later phase, §9.8)
   → frontend event adapter and reducer
   → tab badges, notifications and focus, activity panel
