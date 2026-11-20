@@ -226,19 +226,34 @@ pub fn authorize_user_spawn_cwd(
     Ok(Some(canonical))
 }
 
-// A saved cwd can be stale or from another environment (e.g. a Windows path in
-// a now-WSL space); the terminal must still open, so fall back to home.
-pub fn user_spawn_cwd_or_home(
+/// Where a user-started terminal may open, from the directory it asked for.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SpawnCwd {
+    /// It asked for none.
+    Default,
+    /// The requested directory, now authorized.
+    Requested(String),
+    /// A saved cwd can be stale or from another environment (a Windows path in a now-WSL
+    /// space): the terminal still opens, elsewhere, and says why.
+    Unusable { requested: String, reason: String },
+}
+
+pub fn user_spawn_cwd(
     registry: &WorkspaceRegistry,
     cwd: Option<&str>,
     workspace: &WorkspaceEnv,
-) -> Option<String> {
-    let cwd = cwd.map(str::trim).filter(|s| !s.is_empty())?;
+) -> SpawnCwd {
+    let Some(cwd) = cwd.map(str::trim).filter(|s| !s.is_empty()) else {
+        return SpawnCwd::Default;
+    };
     match authorize_user_spawn_cwd(registry, Some(cwd), workspace) {
-        Ok(_) => Some(cwd.to_owned()),
-        Err(e) => {
-            log::warn!("pty cwd {cwd:?} unusable in {workspace:?} ({e}); opening home");
-            None
+        Ok(_) => SpawnCwd::Requested(cwd.to_owned()),
+        Err(reason) => {
+            log::warn!("pty cwd {cwd:?} unusable in {workspace:?} ({reason})");
+            SpawnCwd::Unusable {
+                requested: cwd.to_owned(),
+                reason,
+            }
         }
     }
 }
@@ -661,6 +676,16 @@ pub(crate) fn parse_wsl_list(out: &str) -> Vec<WslDistro> {
     distros
 }
 
+/// The distro `wsl.exe` runs without `-d`: the one marked as the default, else the first.
+#[cfg_attr(not(windows), allow(dead_code))]
+pub(crate) fn default_distro_name(distros: &[WslDistro]) -> Option<String> {
+    distros
+        .iter()
+        .find(|d| d.default)
+        .or_else(|| distros.first())
+        .map(|d| d.name.clone())
+}
+
 #[cfg(windows)]
 pub(crate) fn list_distros_blocking() -> Result<Vec<WslDistro>, String> {
     run_wsl(&["--list", "--verbose"]).map(|out| parse_wsl_list(&out))
@@ -689,12 +714,7 @@ pub async fn wsl_default_distro() -> Result<Option<String>, String> {
     #[cfg(windows)]
     {
         tauri::async_runtime::spawn_blocking(|| {
-            let distros = list_distros_blocking()?;
-            Ok(distros
-                .iter()
-                .find(|d| d.default)
-                .map(|d| d.name.clone())
-                .or_else(|| distros.first().map(|d| d.name.clone())))
+            list_distros_blocking().map(|distros| default_distro_name(&distros))
         })
         .await
         .map_err(|e| e.to_string())?
@@ -924,6 +944,24 @@ mod auth_tests {
         p.push(format!("lut-auth-{label}-{nanos}-{}", std::process::id()));
         fs::create_dir_all(&p).expect("create tempdir");
         fs::canonicalize(&p).expect("canonicalize tempdir")
+    }
+
+    #[test]
+    fn the_default_distro_is_the_marked_one_else_the_first() {
+        let distro = |name: &str, default: bool| WslDistro {
+            name: name.into(),
+            default,
+            running: false,
+        };
+        assert_eq!(
+            default_distro_name(&[distro("Ubuntu", false), distro("Debian", true)]),
+            Some("Debian".to_string())
+        );
+        assert_eq!(
+            default_distro_name(&[distro("Ubuntu", false), distro("Debian", false)]),
+            Some("Ubuntu".to_string())
+        );
+        assert_eq!(default_distro_name(&[]), None);
     }
 
     #[test]
@@ -1225,39 +1263,42 @@ mod auth_tests {
     }
 
     #[test]
-    fn user_spawn_cwd_or_home_keeps_accessible_dir() {
+    fn user_spawn_cwd_keeps_an_accessible_dir() {
         let dir = tempdir("orhome-ok");
         let reg = WorkspaceRegistry::default();
         let s = dir.to_string_lossy().into_owned();
         assert_eq!(
-            user_spawn_cwd_or_home(&reg, Some(&s), &WorkspaceEnv::Local),
-            Some(s)
+            user_spawn_cwd(&reg, Some(&s), &WorkspaceEnv::Local),
+            SpawnCwd::Requested(s)
         );
         assert!(reg.is_authorized(&dir));
     }
 
     #[test]
-    fn user_spawn_cwd_or_home_falls_back_when_inaccessible() {
+    fn user_spawn_cwd_reports_an_inaccessible_dir() {
         let mut missing = env::temp_dir();
         missing.push(format!("lut-orhome-missing-{}", std::process::id()));
         let reg = WorkspaceRegistry::default();
         let s = missing.to_string_lossy().into_owned();
-        assert_eq!(
-            user_spawn_cwd_or_home(&reg, Some(&s), &WorkspaceEnv::Local),
-            None
-        );
+        match user_spawn_cwd(&reg, Some(&s), &WorkspaceEnv::Local) {
+            SpawnCwd::Unusable { requested, reason } => {
+                assert_eq!(requested, s);
+                assert!(reason.starts_with("cwd not accessible"), "{reason}");
+            }
+            other => panic!("expected Unusable, got {other:?}"),
+        }
     }
 
     #[test]
-    fn user_spawn_cwd_or_home_passes_through_empty() {
+    fn user_spawn_cwd_without_a_dir_is_the_default() {
         let reg = WorkspaceRegistry::default();
         assert_eq!(
-            user_spawn_cwd_or_home(&reg, None, &WorkspaceEnv::Local),
-            None
+            user_spawn_cwd(&reg, None, &WorkspaceEnv::Local),
+            SpawnCwd::Default
         );
         assert_eq!(
-            user_spawn_cwd_or_home(&reg, Some("  "), &WorkspaceEnv::Local),
-            None
+            user_spawn_cwd(&reg, Some("  "), &WorkspaceEnv::Local),
+            SpawnCwd::Default
         );
     }
 

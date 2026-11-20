@@ -4191,8 +4191,8 @@ size: M
 
 - [ ] The launch spec carries `cwd` and `distro`; profile args are honoured for WSL (ignored today, `shell_init.rs:652-653`).
 - [ ] A WSL profile without `executable` (every detected distro, E14-06) launches the distro's login shell, resolved at launch as today (`wsl_login_shell`).
-- [ ] An unusable cwd (missing path, unmounted drive) falls back to home and the open result reports the cwd used plus a warning.
-- [ ] Errors are a serialized enum: `ExecutableNotFound`, `CwdUnavailable`, `DistroNotInstalled`, `ProfileNotFound`, `SpawnFailed`.
+- [ ] An unusable cwd (missing path, unmounted drive) falls back to home and the open result reports the cwd used plus a `CwdUnavailable` warning, which the frontend shows as a toast.
+- [ ] Errors are a serialized enum: `ExecutableNotFound`, `CwdUnavailable`, `DistroNotInstalled`, `SpawnFailed` (`ProfileNotFound` comes with E14-12, which looks profiles up).
 - [ ] Unit tests for each error path.
 
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml pty`; manual: a pane in an uninstalled distro gets a typed error and the app keeps working.

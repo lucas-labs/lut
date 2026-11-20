@@ -93,6 +93,39 @@ export type PtySession = {
   close: () => Promise<void>;
 };
 
+/**
+ * A launch problem from `pty_open`, as native's `LaunchError` serializes it:
+ * `code` names it and `message` reads as is.
+ */
+type PtyLaunchError = { code: string; message: string; cwd?: string };
+
+/** What `pty_open` answers: `cwd` is where the terminal started (`~` is the WSL distro's home). */
+type PtyOpened = { id: number; cwd: string | null; warning: PtyLaunchError | null };
+
+function isLaunchError(error: unknown): error is PtyLaunchError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    typeof (error as PtyLaunchError).code === 'string' &&
+    typeof (error as PtyLaunchError).message === 'string'
+  );
+}
+
+/** A rejected `pty_open` as an `Error` the pane can show, keeping the launch error's `code`. */
+function launchFailure(error: unknown): unknown {
+  if (!isLaunchError(error)) return error;
+  return Object.assign(new Error(error.message), { code: error.code });
+}
+
+function warnCwdFallback(warning: PtyLaunchError, cwd: string | null): void {
+  const requested = warning.cwd ?? '';
+  // One toast per directory: restoring a Space whose folder is gone opens many panes there.
+  toast.warning(`Couldn't open ${requested}`, {
+    id: `pty-cwd:${requested}`,
+    description: `Opened ${cwd ?? 'the default folder'} instead.`,
+  });
+}
+
 export async function openPty(
   cols: number,
   rows: number,
@@ -146,7 +179,7 @@ export async function openPty(
   try {
     await ensureAgentActivityListener();
     await stream.ensureStream();
-    id = await invoke<number>('pty_open', {
+    const opened = await invoke<PtyOpened>('pty_open', {
       cols,
       rows,
       cwd: cwd ?? null,
@@ -156,9 +189,11 @@ export async function openPty(
       presentation: presentation ?? null,
       colors: colors ?? null,
     });
+    id = opened.id;
+    if (opened.warning?.code === 'cwdUnavailable') warnCwdFallback(opened.warning, opened.cwd);
   } catch (error) {
     releaseHandlers();
-    throw error;
+    throw launchFailure(error);
   }
   const sessionId = id;
   if (released) {
