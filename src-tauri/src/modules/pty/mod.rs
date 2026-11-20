@@ -24,6 +24,8 @@ use portable_pty::PtySize;
 use tauri::Manager;
 
 use crate::modules::control::ControlState;
+use crate::modules::profiles::commands::resolve_launch;
+use crate::modules::profiles::store::ProfilesState;
 use crate::modules::workspace::{user_spawn_cwd, SpawnCwd, WorkspaceEnv, WorkspaceRegistry};
 use hub::{Command, Hub};
 pub use presentation::PresentationClass;
@@ -194,31 +196,21 @@ fn launch_cwd(spawn: SpawnCwd, wsl: bool) -> (Option<String>, Option<LaunchError
     }
 }
 
-/// The spec `pty_open` starts until panes open by profile id (E14-12), in the target of the
-/// window's workspace. On the host it runs the `terminalShell` preference (empty means the
-/// default shell); in WSL the distro's login shell, as the preference names a host program.
-fn workspace_launch(shell: Option<String>, workspace: &WorkspaceEnv) -> LaunchSpec {
-    let (program, target) = match workspace {
-        WorkspaceEnv::Local => (
-            shell
-                .map(|program| program.trim().to_string())
-                .filter(|program| !program.is_empty()),
-            LaunchTarget::Native,
-        ),
-        WorkspaceEnv::Wsl { distro } => (
-            None,
-            LaunchTarget::Wsl {
-                distro: Some(distro.clone()),
-            },
-        ),
-    };
-    LaunchSpec {
-        program,
-        target,
-        ..LaunchSpec::new()
+/// The filesystem a launch's directory is checked in: the host's, or the distro's. A WSL launch
+/// without a distro gets the default one named here, so the check and the launch agree on it.
+fn launch_env(spec: &mut LaunchSpec) -> Result<WorkspaceEnv, LaunchError> {
+    match &mut spec.target {
+        LaunchTarget::Native => Ok(WorkspaceEnv::Local),
+        LaunchTarget::Wsl { distro } => {
+            let name = shell_init::wsl_distro(distro.take())?;
+            *distro = Some(name.clone());
+            Ok(WorkspaceEnv::Wsl { distro: name })
+        }
     }
 }
 
+/// Opens a terminal with the profile `profile_id`, or the default profile when `None`; `cwd`
+/// overrides the profile's starting directory. The profile is resolved here (decision 10).
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
 pub async fn pty_open(
@@ -228,77 +220,83 @@ pub async fn pty_open(
     control: tauri::State<'_, ControlState>,
     cols: u16,
     rows: u16,
+    profile_id: Option<String>,
     cwd: Option<String>,
-    workspace: Option<WorkspaceEnv>,
-    shell: Option<String>,
     pane_id: Option<u32>,
     presentation: Option<PresentationClass>,
     colors: Option<TerminalColors>,
 ) -> Result<PtyOpened, LaunchError> {
-    let workspace = WorkspaceEnv::from_option(workspace);
-    let mut launch = workspace_launch(shell, &workspace);
-    // A Windows helper cannot execute inside WSL without explicit path and
-    // network translation. Do not inject credentials for a broken command.
-    let control_env = if workspace.is_wsl() {
-        None
-    } else {
-        pane_id.and_then(|pane_id| control.shell_env(pane_id))
-    };
     let id = state.next_id.fetch_add(1, Ordering::Relaxed);
-    let credential = control_env.clone();
-    let pending_credential = credential.as_ref().map(|env| control.pending_shell(env));
+    let shell_control = control.inner().clone();
     let control_app = app.clone();
     let owner: Arc<str> = Arc::from(webview.label());
     let hub = state.hub.clone();
     let class = presentation.unwrap_or_default();
-    let (session, opened_cwd, warning) = tauri::async_runtime::spawn_blocking(move || {
-        // Authorizing the directory canonicalizes it, which touches the disk
-        // (a network volume, or wsl.exe for a WSL workspace): never on a worker.
-        let requested = user_spawn_cwd(
-            &app.state::<WorkspaceRegistry>(),
-            cwd.as_deref(),
-            &workspace,
-        );
-        let (cwd, warning) = launch_cwd(requested, workspace.is_wsl());
-        let opened_cwd = cwd
-            .clone()
-            .or_else(|| workspace.is_wsl().then(|| "~".to_string()));
-        launch.cwd = cwd;
-        session::spawn(
-            id,
-            app,
-            owner,
-            hub,
-            class,
-            cols,
-            rows,
-            launch,
-            control_env,
-            colors,
-            pane_id,
-        )
-        .map(|session| match opened_cwd {
-            // `portable-pty` checks the directory again at spawn and starts in home when it is
-            // gone, which a directory removed since `user_spawn_cwd` is: report that.
-            Some(gone) if !workspace.is_wsl() && !std::path::Path::new(&gone).is_dir() => {
-                let warning = warning.or(Some(LaunchError::CwdUnavailable {
-                    cwd: gone,
-                    reason: "removed before the shell started".into(),
-                }));
-                (session, shell_init::home_cwd(), warning)
-            }
-            cwd => (session, cwd, warning),
+    let (session, opened_cwd, warning, credential, pending_credential) =
+        tauri::async_runtime::spawn_blocking(move || {
+            // Waiting for the first profile detection, naming the default distro (the registry)
+            // and authorizing the directory (a network volume, or wsl.exe) all touch the disk:
+            // never on a worker.
+            let resolved =
+                resolve_launch(&app.state::<ProfilesState>(), profile_id.as_deref(), cwd)?;
+            let mut launch = resolved.spec;
+            let env = launch_env(&mut launch)?;
+            let wsl = env.is_wsl();
+            // A Windows helper cannot execute inside WSL without explicit path and
+            // network translation. Do not inject credentials for a broken command.
+            let control_env = if wsl {
+                None
+            } else {
+                pane_id.and_then(|pane_id| shell_control.shell_env(pane_id))
+            };
+            let credential = control_env.clone();
+            let pending = credential
+                .as_ref()
+                .map(|env| shell_control.pending_shell(env));
+            let requested = user_spawn_cwd(
+                &app.state::<WorkspaceRegistry>(),
+                resolved.cwd.as_deref(),
+                &env,
+            );
+            let (cwd, warning) = launch_cwd(requested, wsl);
+            let opened_cwd = cwd.clone().or_else(|| wsl.then(|| "~".to_string()));
+            launch.cwd = cwd;
+            let session = session::spawn(
+                id,
+                app,
+                owner,
+                hub,
+                class,
+                cols,
+                rows,
+                launch,
+                control_env,
+                colors,
+                pane_id,
+            )?;
+            let (opened_cwd, warning) = match opened_cwd {
+                // `portable-pty` checks the directory again at spawn and starts in home when it is
+                // gone, which a directory removed since `user_spawn_cwd` is: report that.
+                Some(gone) if !wsl && !std::path::Path::new(&gone).is_dir() => {
+                    let warning = warning.or(Some(LaunchError::CwdUnavailable {
+                        cwd: gone,
+                        reason: "removed before the shell started".into(),
+                    }));
+                    (shell_init::home_cwd(), warning)
+                }
+                cwd => (cwd, warning),
+            };
+            Ok::<_, LaunchError>((session, opened_cwd, warning, credential, pending))
         })
-    })
-    .await
-    .map_err(|e| {
-        log::error!("pty_open join failed: {e}");
-        LaunchError::spawn_failed(e)
-    })?
-    .map_err(|e| {
-        log::error!("pty_open failed: {e}");
-        e
-    })?;
+        .await
+        .map_err(|e| {
+            log::error!("pty_open join failed: {e}");
+            LaunchError::spawn_failed(e)
+        })?
+        .map_err(|e| {
+            log::error!("pty_open failed: {e}");
+            e
+        })?;
     state.sessions.write().unwrap().insert(id, session);
     if let Some(env) = credential {
         control.activate_shell(
@@ -595,26 +593,29 @@ mod launch_tests {
     use super::*;
 
     #[test]
-    fn the_workspace_sets_the_target_and_wsl_runs_the_login_shell() {
-        let wsl = WorkspaceEnv::Wsl {
-            distro: "Ubuntu".into(),
+    fn the_directory_is_checked_where_the_profile_runs() {
+        let mut native = LaunchSpec::new();
+        assert!(matches!(launch_env(&mut native), Ok(WorkspaceEnv::Local)));
+        assert_eq!(native.target, LaunchTarget::Native);
+        let mut ubuntu = LaunchSpec {
+            target: LaunchTarget::Wsl {
+                distro: Some("Ubuntu".into()),
+            },
+            ..LaunchSpec::new()
         };
-        // The preference names a host program; WSL starts the distro's login shell.
-        let spec = workspace_launch(Some("pwsh.exe".into()), &wsl);
-        assert_eq!(spec.program, None);
-        assert_eq!(
-            spec.target,
-            LaunchTarget::Wsl {
-                distro: Some("Ubuntu".into())
-            }
-        );
-        let spec = workspace_launch(Some(" pwsh.exe ".into()), &WorkspaceEnv::Local);
-        assert_eq!(spec.program.as_deref(), Some("pwsh.exe"));
-        assert_eq!(spec.target, LaunchTarget::Native);
-        assert_eq!((spec.args.len(), spec.cwd), (0, None));
-        // An empty preference is the default shell.
-        let spec = workspace_launch(Some("  ".into()), &WorkspaceEnv::Local);
-        assert_eq!(spec.program, None);
+        let env = launch_env(&mut ubuntu);
+        #[cfg(windows)]
+        {
+            assert!(matches!(env, Ok(WorkspaceEnv::Wsl { distro }) if distro == "Ubuntu"));
+            assert_eq!(
+                ubuntu.target,
+                LaunchTarget::Wsl {
+                    distro: Some("Ubuntu".into())
+                }
+            );
+        }
+        #[cfg(not(windows))]
+        assert!(matches!(env, Err(LaunchError::SpawnFailed { .. })));
     }
 
     #[test]

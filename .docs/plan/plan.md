@@ -4235,12 +4235,14 @@ profile and builds the launch spec (decision 10). The frontend never sends execu
 
 **Acceptance criteria:**
 
-- [ ] `pty_open { profileId?, cwd?, cols, rows, paneId, colors }`; no `profileId` means the default profile; the positional `shell` parameter is removed.
-- [ ] An unknown profile id returns `ProfileNotFound` (no silent fallback in the backend).
-- [ ] The `terminalShell` preference seeds the default profile once and is no longer read by the PTY path.
+- [ ] `pty_open { profileId?, cwd?, cols, rows, paneId, colors }`; no `profileId` means the default profile; the positional `shell` parameter and the window's `workspace` are removed (decision 29: the target comes from the profile, also in a WSL Space).
+- [ ] The default profile is the stored one while it is listed, else the first profile not hidden (the rule for deleting the default); `profiles_list` reports that one.
+- [ ] An unknown profile id returns `ProfileNotFound` (no silent fallback in the backend), also a detected distro no longer registered.
+- [ ] The `terminalShell` preference is removed with nothing migrated (lut has no releases); Settings' shell selector becomes a "Default profile" selector over the listed profiles.
+- [ ] Detection lists WSL distros from the registry instead of `wsl.exe`, and `pty_open` waits for the first detection, so a terminal opened at startup finds the detected profiles.
 - [ ] Integration test: open by detected and by custom profile id; open by unknown id fails cleanly.
 
-**Verification:** `cargo test --manifest-path src-tauri/Cargo.toml pty`; `pnpm tauri dev`: a new tab opens the default profile.
+**Verification:** `cargo test --manifest-path src-tauri/Cargo.toml pty`; `pnpm tauri dev`: a new tab opens the default profile chosen in Settings.
 
 ### E14-13 — Frontend profiles client and openPty options object
 
@@ -7273,6 +7275,8 @@ path Windows sees but the distro does not (`/mnt/d/repo` with automount off) pas
 - [ ] The directory is tried inside the distro within the lookup a WSL launch already runs (login shell or
       `command -v`), so no `wsl.exe` call is added.
 - [ ] One the distro cannot enter starts the shell in `~` and the open result carries `CwdUnavailable`.
+- [ ] A profile's `startingDirectory` under `~` (`~/code`) is resolved in the distro's home; today the Windows-side
+      check cannot read `~`, so it opens in home with the toast (found in E14-12).
 - [ ] Unit tests for the probe's arguments and for the fallback.
 
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml pty`; manual: a WSL pane with a missing `/mnt/...`

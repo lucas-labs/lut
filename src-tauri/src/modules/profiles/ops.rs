@@ -1,6 +1,7 @@
 use serde::Serialize;
 
 use super::detect::{self, is_detected_id};
+use super::launch::first_visible;
 use super::model::{DetectedOverride, TerminalProfile};
 use super::store::ProfilesFile;
 use super::validate::{validate_profiles, ProfileError};
@@ -56,10 +57,8 @@ pub fn remove(
     let index = position(file, id)?;
     file.profiles.remove(index);
     if file.default_profile_id.as_deref() == Some(id) {
-        file.default_profile_id = detect::entries(file, detected)
-            .into_iter()
-            .find(|entry| !entry.hidden)
-            .map(|entry| entry.profile.id);
+        file.default_profile_id =
+            first_visible(&detect::entries(file, detected)).map(|entry| entry.profile.id.clone());
     }
     Ok(())
 }

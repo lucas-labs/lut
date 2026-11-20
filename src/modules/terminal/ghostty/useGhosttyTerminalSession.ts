@@ -745,7 +745,6 @@ async function initializeSessionGeneration(
       },
     },
     session.initialCwd,
-    preferences.terminalShell || undefined,
     session.leafId,
     theme,
   );

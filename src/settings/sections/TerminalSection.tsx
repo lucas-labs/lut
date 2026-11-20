@@ -18,7 +18,6 @@ import {
   setTerminalScreenReader,
   setTerminalScrollback,
   setTerminalScrollSpeed,
-  setTerminalShell,
   setTerminalSubpixelText,
   TERMINAL_FONT_SIZES,
   TERMINAL_SCROLLBACK_PRESETS,
@@ -26,7 +25,9 @@ import {
 import { subpixelTextUnavailable } from '@/modules/terminal/ghostty/gpu/subpixelText';
 import { coerceMacOptionAsAlt } from '@/modules/terminal/ghostty/input/macOptionAsAlt';
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { SectionHeader } from '../components/SectionHeader';
 import { SettingRow } from '../components/SettingRow';
 import { SettingsGroup } from '../components/SettingsGroup';
@@ -54,7 +55,24 @@ const SUBPIXEL_TEXT_DESCRIPTION =
   'Draw terminal text with ClearType-style subpixel antialiasing: sharper on LCD screens, with colour fringes on OLED or rotated ones. Follows the ClearType colour order on Windows.';
 
 type ShellInfo = { name: string; path: string; integrated: boolean };
-const SHELL_AUTO = 'auto';
+/** The fields of a `profiles_list` entry this section reads. */
+type ProfileEntry = { id: string; name: string; executable?: string; hidden: boolean };
+type ProfilesList = { profiles: ProfileEntry[]; defaultProfileId: string | null };
+const PROFILES_CHANGED_EVENT = 'lut:profiles-changed';
+
+/** The profiles the default can be set to: the visible ones, and the current default even if hidden. */
+function defaultChoices({ profiles, defaultProfileId }: ProfilesList): ProfileEntry[] {
+  return profiles.filter((profile) => !profile.hidden || profile.id === defaultProfileId);
+}
+
+function setDefaultProfile(id: string) {
+  invoke('profiles_set_default', { id }).catch((error: unknown) => {
+    toast.error("Couldn't set the default profile", {
+      description:
+        typeof error === 'object' && error !== null && 'message' in error ? String(error.message) : String(error),
+    });
+  });
+}
 
 export function TerminalSection() {
   const terminalRenderer = usePreferencesStore((s) => s.terminalRenderer);
@@ -64,7 +82,6 @@ export function TerminalSection() {
   const terminalCursorStyle = usePreferencesStore((s) => s.terminalCursorStyle);
   const terminalFontFamily = usePreferencesStore((s) => s.terminalFontFamily);
   const terminalFontWeight = usePreferencesStore((s) => s.terminalFontWeight);
-  const terminalShell = usePreferencesStore((s) => s.terminalShell);
   const defaultWorkspaceEnv = usePreferencesStore((s) => s.defaultWorkspaceEnv);
   const terminalLetterSpacing = usePreferencesStore((s) => s.terminalLetterSpacing);
   const terminalFontSize = usePreferencesStore((s) => s.terminalFontSize);
@@ -73,6 +90,7 @@ export function TerminalSection() {
   const terminalMacOptionAsAlt = usePreferencesStore((s) => s.terminalMacOptionAsAlt);
   const confirmCloseRunningTerminal = usePreferencesStore((s) => s.confirmCloseRunningTerminal);
   const [shells, setShells] = useState<ShellInfo[]>([]);
+  const [profiles, setProfiles] = useState<ProfilesList>({ profiles: [], defaultProfileId: null });
   const [wslDistros, setWslDistros] = useState<{ name: string }[]>([]);
   // Why this webview and renderer cannot draw subpixel text; unknown until the GPU answers.
   const [subpixelUnavailable, setSubpixelUnavailable] = useState<string | null | undefined>(undefined);
@@ -85,6 +103,24 @@ export function TerminalSection() {
       .then(setWslDistros)
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    let current = true;
+    const load = () =>
+      invoke<ProfilesList>('profiles_list')
+        .then((list) => {
+          if (current) setProfiles(list);
+        })
+        .catch(() => {});
+    void load();
+    const unlisten = listen(PROFILES_CHANGED_EVENT, () => void load());
+    return () => {
+      current = false;
+      void unlisten.then((stop) => stop()).catch(() => {});
+    };
+  }, []);
+
+  const defaultProfile = profiles.profiles.find((p) => p.id === profiles.defaultProfileId);
 
   useEffect(() => {
     let current = true;
@@ -239,28 +275,22 @@ export function TerminalSection() {
 
       <SettingsGroup title="Shell">
         <SettingRow
-          title="Integrated terminal shell"
+          title="Default profile"
           description={
-            shells.find((s) => s.path === terminalShell)?.integrated === false
+            shells.find((s) => s.path === defaultProfile?.executable)?.integrated === false
               ? 'Command blocks and directory tracking are unavailable for this shell.'
-              : wslDistros.length > 0
-                ? 'Shell for the integrated terminal. WSL spaces use the distro login shell. Existing tabs keep their shell.'
-                : 'Shell for new terminal tabs. Existing tabs keep their shell.'
+              : 'Profile new terminal tabs open with. Existing tabs keep theirs.'
           }
         >
           {(a11y) => (
-            <Select
-              value={terminalShell || SHELL_AUTO}
-              onValueChange={(v) => void setTerminalShell(v === SHELL_AUTO ? '' : v)}
-            >
-              <SelectTrigger {...a11y} value={terminalShell || SHELL_AUTO}>
+            <Select value={profiles.defaultProfileId ?? ''} onValueChange={setDefaultProfile}>
+              <SelectTrigger {...a11y} value={profiles.defaultProfileId ?? ''}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={SHELL_AUTO}>Auto</SelectItem>
-                {shells.map((s) => (
-                  <SelectItem key={s.path} value={s.path}>
-                    {s.name}
+                {defaultChoices(profiles).map((profile) => (
+                  <SelectItem key={profile.id} value={profile.id}>
+                    {profile.name}
                   </SelectItem>
                 ))}
               </SelectContent>

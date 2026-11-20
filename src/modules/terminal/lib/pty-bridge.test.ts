@@ -31,10 +31,6 @@ vi.mock('@tauri-apps/api/event', () => ({
   }),
 }));
 
-vi.mock('@/modules/workspace', () => ({
-  currentWorkspaceEnv: () => null,
-}));
-
 // The bridge owns a process-wide hub, so every test gets a fresh module graph.
 async function load() {
   vi.resetModules();
@@ -172,17 +168,19 @@ describe('PTY bridge over the multiplexed stream', () => {
   it('opens the stream before pty_open and no longer passes output channels', async () => {
     const { openPty } = await load();
     nativeInvoke();
-    await openPty(80, 24, { onData: vi.fn() }, '/work', 'zsh', 9);
+    await openPty(80, 24, { onData: vi.fn() }, '/work', 9);
     const commands = mocks.invoke.mock.calls.map(([command]) => command);
     expect(commands.indexOf('pty_stream_open')).toBeLessThan(commands.indexOf('pty_open'));
     const open = openArguments();
     expect(open).toMatchObject({
       cols: 80,
       rows: 24,
+      profileId: null,
       cwd: '/work',
-      shell: 'zsh',
       paneId: 9,
     });
+    expect(open).not.toHaveProperty('shell');
+    expect(open).not.toHaveProperty('workspace');
     expect(open).not.toHaveProperty('onData');
     expect(open).not.toHaveProperty('onExit');
     expect(commands).not.toContain('pty_ack_output');
@@ -314,7 +312,7 @@ describe('PTY bridge over the multiplexed stream', () => {
     nativeInvoke(70);
     setLeafPresentation(31, false, false);
     await flush();
-    const session = await openPty(80, 24, { onData: vi.fn() }, undefined, undefined, 31);
+    const session = await openPty(80, 24, { onData: vi.fn() }, undefined, 31);
     const open = openArguments();
     expect(open.presentation).toBe('hidden');
     await flush();

@@ -12,7 +12,6 @@ import {
   unbindLeafPty,
 } from '@/modules/terminal/lib/ptyPresentation';
 import { tokenBytes } from '@/modules/terminal/lib/ptyWire';
-import { currentWorkspaceEnv } from '@/modules/workspace';
 import { convertFileSrc, invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
 
@@ -131,7 +130,6 @@ export async function openPty(
   rows: number,
   handlers: PtyHandlers,
   cwd?: string,
-  shell?: string,
   paneId?: number,
   colors?: PtyColors,
 ): Promise<PtySession> {
@@ -182,9 +180,9 @@ export async function openPty(
     const opened = await invoke<PtyOpened>('pty_open', {
       cols,
       rows,
+      // No profile yet: native opens the default one (E14-13 adds the option).
+      profileId: null,
       cwd: cwd ?? null,
-      workspace: currentWorkspaceEnv(),
-      shell: shell ?? null,
       paneId: paneId ?? null,
       presentation: presentation ?? null,
       colors: colors ?? null,

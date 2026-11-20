@@ -1,12 +1,15 @@
 use std::sync::{Mutex, MutexGuard};
+use std::time::Duration;
 
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State};
 
 use super::detect::{self, ProfileEntry};
+use super::launch::{self, ProfileLaunch};
 use super::model::{DetectedOverride, TerminalProfile};
 use super::ops::{self, ProfilesCommandError};
 use super::store::{self, ProfilesFile, ProfilesState};
+use crate::modules::pty::shell_init::LaunchError;
 
 /// Emitted after every change to the listed profiles (a mutation that reached the disk, or a
 /// detection that found something different); listeners read the profiles again.
@@ -79,20 +82,45 @@ fn mutate(
     applied.result
 }
 
-/// Every profile the UI can offer, detected ones first, and the default.
+/// Every profile the UI can offer, detected ones first, and the one a new terminal opens with.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProfilesList {
     pub profiles: Vec<ProfileEntry>,
+    /// The stored default while it is listed, else the first profile not hidden.
     pub default_profile_id: Option<String>,
 }
 
 fn list(state: &ProfilesState) -> ProfilesList {
     let file = lock(&state.file);
+    let profiles = detect::entries(&file, &detected(state));
+    let default_profile_id =
+        launch::effective_default(&profiles, file.default_profile_id.as_deref())
+            .map(|entry| entry.profile.id.clone());
     ProfilesList {
-        profiles: detect::entries(&file, &detected(state)),
-        default_profile_id: file.default_profile_id.clone(),
+        profiles,
+        default_profile_id,
     }
+}
+
+/// How long a terminal opened at startup waits for the first detection, which only checks files
+/// and the registry: a hung `git --exec-path` is the one thing that could make it slow.
+const DETECTION_WAIT: Duration = Duration::from_secs(5);
+
+/// The launch for the profile `requested`, or for the default one when `None`. Blocking: at
+/// startup it waits for the first detection, so a detected profile is never reported missing.
+pub fn resolve_launch(
+    state: &ProfilesState,
+    requested: Option<&str>,
+    pane_cwd: Option<String>,
+) -> Result<ProfileLaunch, LaunchError> {
+    if !state.wait_for_detection(DETECTION_WAIT) {
+        log::warn!("profile detection still running; opening with the profiles found so far");
+    }
+    let file = lock(&state.file);
+    let entries = detect::entries(&file, &detected(state));
+    let profile = launch::pick(&entries, file.default_profile_id.as_deref(), requested)?;
+    Ok(launch::profile_launch(profile, pane_cwd))
 }
 
 /// Detects the shells and distros again and swaps the list in; `true` when it changed.
@@ -100,15 +128,17 @@ fn list(state: &ProfilesState) -> ProfilesList {
 fn redetect(state: &ProfilesState) -> bool {
     let _detecting = lock(&state.detecting);
     let found = detect::detect();
-    let mut current = lock(&state.detected);
-    if *current == found {
-        return false;
-    }
-    *current = found;
-    true
+    let changed = {
+        let mut current = lock(&state.detected);
+        let changed = *current != found;
+        *current = found;
+        changed
+    };
+    state.detection_finished();
+    changed
 }
 
-/// The startup detection, in the background: `wsl.exe` can take seconds to answer.
+/// The startup detection, off the main thread: finding Git Bash may run `git`.
 pub fn detect_in_background(app: &AppHandle) {
     let app = app.clone();
     tauri::async_runtime::spawn_blocking(move || {
@@ -239,6 +269,48 @@ mod tests {
         let listed = list(&state);
         assert_eq!(listed.default_profile_id.as_deref(), Some("detected:pwsh"));
         assert_eq!(listed.profiles[0].profile.id, "detected:pwsh");
+    }
+
+    #[test]
+    fn the_listed_default_is_the_one_a_terminal_opens() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = ProfilesState::load(dir.path().to_path_buf());
+        *lock(&state.detected) = vec![profile("detected:pwsh"), profile("detected:cmd")];
+        assert_eq!(
+            list(&state).default_profile_id.as_deref(),
+            Some("detected:pwsh")
+        );
+        lock(&state.file).default_profile_id = Some("detected:git-bash".into());
+        assert_eq!(
+            list(&state).default_profile_id.as_deref(),
+            Some("detected:pwsh")
+        );
+        lock(&state.file).default_profile_id = Some("detected:cmd".into());
+        assert_eq!(
+            list(&state).default_profile_id.as_deref(),
+            Some("detected:cmd")
+        );
+    }
+
+    #[test]
+    fn a_launch_resolves_after_detection_by_id_or_default() {
+        let dir = tempfile::tempdir().unwrap();
+        let state = ProfilesState::load(dir.path().to_path_buf());
+        *lock(&state.detected) = vec![profile("detected:pwsh")];
+        state.detection_finished();
+        lock(&state.file).profiles.push(TerminalProfile {
+            executable: Some("nu.exe".into()),
+            ..profile("mine")
+        });
+        let program = |requested: Option<&str>| {
+            resolve_launch(&state, requested, None).map(|launch| launch.spec.program)
+        };
+        assert_eq!(program(Some("mine")), Ok(Some("nu.exe".into())));
+        assert_eq!(program(None), Ok(Some("pwsh.exe".into())));
+        assert_eq!(
+            program(Some("gone")),
+            Err(LaunchError::ProfileNotFound { id: "gone".into() })
+        );
     }
 
     #[test]
