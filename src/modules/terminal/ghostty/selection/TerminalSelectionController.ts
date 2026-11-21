@@ -140,8 +140,8 @@ export class TerminalSelectionController {
 
     const point = this.pointFromEvent(event);
     if (!point) return;
+    // The press still reaches the page: open menus and popovers close on a press outside them.
     event.preventDefault();
-    event.stopPropagation();
     this.pointerId = event.pointerId;
     this.options.target.setPointerCapture(event.pointerId);
     this.lastClientX = event.clientX;
