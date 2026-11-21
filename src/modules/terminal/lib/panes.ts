@@ -127,7 +127,8 @@ export function setLeafCwd(n: PaneNode, id: PaneId, cwd: string): PaneNode {
   return updateLeaf(n, id, (leaf) => (leaf.cwd === cwd ? leaf : { ...leaf, cwd }));
 }
 
-export function setLeafProfile(n: PaneNode, id: PaneId, profileId: string): PaneNode {
+/** Sets the profile leaf `id` opened with; `undefined` when it opened without one. */
+export function setLeafProfile(n: PaneNode, id: PaneId, profileId: string | undefined): PaneNode {
   return updateLeaf(n, id, (leaf) =>
     leaf.profileId === profileId ? leaf : { ...leaf, profileId },
   );

@@ -96,7 +96,7 @@ type NavigationActions = {
   selectByIndex: (idx: number, spaceId?: string) => void;
   setLeafCwd: (leafId: number, cwd: string) => void;
   /** Remember the terminal profile a leaf opened with, so splits and restarts reuse it. */
-  setLeafProfile: (leafId: number, profileId: string) => void;
+  setLeafProfile: (leafId: number, profileId: string | undefined) => void;
   focusPane: (tabId: number, leafId: number) => void;
   focusNextPaneInTab: (tabId: number, delta: 1 | -1) => void;
   /** Focus the pane beside the active one in `direction`; nothing at an edge. */

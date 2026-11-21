@@ -26,7 +26,7 @@ const pty = vi.hoisted(() => ({
   /** Launch errors the next opens of a leaf fail with. */
   failures: new Map<number, { code: 'profileNotFound'; id: string; message: string }>(),
   /** Profiles the panes reported they opened with. */
-  reported: [] as { leaf: number; profileId: string }[],
+  reported: [] as { leaf: number; profileId: string | undefined }[],
   /** Each PTY's exit handler, to end its shell. */
   exit: new Map<number, (code: number) => void>(),
   /** Panes the workspace was told to close after their process exited. */
@@ -221,7 +221,7 @@ function surface(tabs: Tab[], activeId: number) {
     registerTerminalHandle: noop,
     onSearchReady: noop,
     onCwd: noop,
-    onProfile: (leaf: number, profileId: string) => pty.reported.push({ leaf, profileId }),
+    onProfile: (leaf: number, profileId: string | undefined) => pty.reported.push({ leaf, profileId }),
     onExit: (leaf: number, code: number) => pty.closedByExit.push({ leaf, code }),
     onFocusLeaf: noop,
     registerEditorHandle: noop,

@@ -136,7 +136,7 @@ export function useTerminalPanes({ tabs, activeId, activeLeafId }: TerminalPanes
     }
   }, []);
 
-  const onProfile = useCallback((leafId: number, profileId: string) => {
+  const onProfile = useCallback((leafId: number, profileId: string | undefined) => {
     nav().setLeafProfile(leafId, profileId);
   }, []);
 

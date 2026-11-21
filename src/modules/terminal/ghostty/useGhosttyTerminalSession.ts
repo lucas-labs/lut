@@ -72,7 +72,7 @@ type Callbacks = {
   onSearchReady?: (search: TerminalSearchController) => void;
   onExit?: (code: number) => void;
   onCwd?: (cwd: string) => void;
-  onProfile?: (profileId: string) => void;
+  onProfile?: (profileId: string | undefined) => void;
 };
 
 type GhosttySession = {
@@ -140,7 +140,7 @@ type Options = {
   onExit?: (code: number) => void;
   onCwd?: (cwd: string) => void;
   /** The profile that opened, so the pane keeps it. */
-  onProfile?: (profileId: string) => void;
+  onProfile?: (profileId: string | undefined) => void;
   onSearchReady?: (search: TerminalSearchController) => void;
 };
 
@@ -185,7 +185,7 @@ export function useGhosttyTerminalSession({
   );
   const reportExit = useEffectEvent((code: number) => onExit?.(code));
   const reportCwd = useEffectEvent((cwd: string) => onCwd?.(cwd));
-  const reportProfile = useEffectEvent((id: string) => onProfile?.(id));
+  const reportProfile = useEffectEvent((id: string | undefined) => onProfile?.(id));
   const initialCwdRef = useRef(initialCwd);
   const initialProfileRef = useRef(profileId);
 
@@ -839,10 +839,9 @@ async function initializeSessionGeneration(
   }
   mark('ptyReadyMs');
   session.pty = pty;
-  if (pty.profileId !== null) {
-    session.profileId = pty.profileId;
-    session.callbacks.onProfile?.(pty.profileId);
-  }
+  // No profile at all opens the system's shell; the pane then keeps none, so a split opens the default.
+  session.profileId = pty.profileId ?? undefined;
+  session.callbacks.onProfile?.(session.profileId);
   session.writer.attach(pty);
   if (model.cols !== startCols || model.rows !== startRows) {
     session.ptyResize.send(model.cols, model.rows);

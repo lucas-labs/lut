@@ -34,7 +34,7 @@ export type TerminalPaneProps = {
   onExit?: (leafId: number, code: number) => void;
   onCwd?: (leafId: number, cwd: string) => void;
   /** The profile the pane's terminal opened with. */
-  onProfile?: (leafId: number, profileId: string) => void;
+  onProfile?: (leafId: number, profileId: string | undefined) => void;
 };
 
 /** The pane's profile itself cannot open: it is gone, or what it runs is missing. */

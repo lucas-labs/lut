@@ -17,7 +17,7 @@ type Props = {
   onSearchReady: (leafId: number, addon: TerminalSearchController) => void;
   onCwd: (leafId: number, cwd: string) => void;
   /** The terminal profile a pane opened with. */
-  onProfile: (leafId: number, profileId: string) => void;
+  onProfile: (leafId: number, profileId: string | undefined) => void;
   onExit: (leafId: number, code: number) => void;
   /** The user resized a split: its children's new shares, in child order. */
   onSplitRatios?: (splitId: number, ratios: number[]) => void;

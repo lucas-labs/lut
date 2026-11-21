@@ -30,6 +30,17 @@ describe('the terminal profile of each pane', () => {
     expect(profileOf(1, second)).toBeUndefined();
   });
 
+  it('forgets the profile when the pane opens again without one', () => {
+    const first = tab(1).activeLeafId;
+    store().setLeafProfile(first, 'deleted');
+    store().setLeafProfile(first, undefined);
+    expect(profileOf(1, first)).toBeUndefined();
+
+    const second = store().splitActivePane(1, 'row');
+    if (second === null) throw new Error('Expected a split');
+    expect(profileOf(1, second)).toBeUndefined();
+  });
+
   it('keeps the profile when the pane moves to another tab', () => {
     const second = store().splitActivePane(1, 'row');
     if (second === null) throw new Error('Expected a split');

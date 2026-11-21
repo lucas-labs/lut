@@ -14,7 +14,7 @@ type Props = {
   registerHandle: (leafId: number, handle: TerminalPaneHandle | null) => void;
   onSearchReady: (leafId: number, addon: TerminalSearchController) => void;
   onCwd: (leafId: number, cwd: string) => void;
-  onProfile: (leafId: number, profileId: string) => void;
+  onProfile: (leafId: number, profileId: string | undefined) => void;
   onExit: (leafId: number, code: number) => void;
   onFocusLeaf: (tabId: number, leafId: number) => void;
   /** The user resized a split of a tab: its children's new shares. */
