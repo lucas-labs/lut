@@ -380,6 +380,21 @@ export class WebGpuTerminalRuntime {
     this.requestFrame();
   }
 
+  /**
+   * Whether `acquireGlyphAtlas` can serve `metrics`: its atlas exists, the budget has room, or an
+   * unused atlas can be evicted. An atlas only `user` holds counts as unused, since a surface
+   * changing font releases its old atlas first.
+   */
+  hasRoomForAtlas(metrics: TerminalFontMetrics, user?: WebGpuRuntimeSurface): boolean {
+    if (this.atlases.has(fontAtlasKey(metrics)) || this.atlases.size < MAX_ATLAS_COUNT) return true;
+    for (const entry of this.atlases.values()) {
+      if (entry.atlas.hasRetired) continue;
+      const heldByUser = user !== undefined && entry.references === 1 && entry.users.has(user);
+      if (entry.references === 0 || heldByUser) return true;
+    }
+    return false;
+  }
+
   acquireGlyphAtlas(metrics: TerminalFontMetrics, user?: WebGpuRuntimeSurface): GlyphAtlasLease {
     this.assertLive();
     const key = fontAtlasKey(metrics);

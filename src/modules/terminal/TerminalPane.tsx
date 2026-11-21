@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { type ProfileEntry, useCloseBehavior } from '@/modules/profiles';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import type { TerminalSearchController } from '@/modules/terminal/search/TerminalSearchController';
-import { useTheme } from '@/modules/theme';
 import {
   forwardRef,
   lazy,
@@ -20,6 +19,7 @@ import { terminalBackendFor } from './backend/selection';
 import { useGhosttyTerminalSession } from './ghostty/useGhosttyTerminalSession';
 import type { LaunchError } from './lib/launchError';
 import { usePaneLifecycle } from './lib/paneLifecycle';
+import { usePaneAppearance } from './lib/usePaneAppearance';
 
 export type TerminalPaneHandle = {
   write: (data: string) => void;
@@ -69,7 +69,7 @@ const GhosttyTerminalPane = memo(
     const screenReader = usePreferencesStore((state) => state.terminalScreenReader);
     const closeBehavior = useCloseBehavior(profileId);
     const containerRef = useRef<HTMLDivElement>(null);
-    const { resolvedMode, activeTheme } = useTheme();
+    const appearance = usePaneAppearance(profileId);
     const session = useGhosttyTerminalSession({
       leafId,
       backend,
@@ -78,6 +78,7 @@ const GhosttyTerminalPane = memo(
       focused,
       initialCwd,
       profileId,
+      appearance,
       onSearchReady: (search) => onSearchReady?.(leafId, search),
       onCwd: (cwd) => onCwd?.(leafId, cwd),
       onProfile: (id) => onProfile?.(leafId, id),
@@ -94,13 +95,6 @@ const GhosttyTerminalPane = memo(
     useEffect(() => {
       if (exitBehavior === 'close' && session.exitCode !== null) closePane(session.exitCode);
     }, [exitBehavior, session.exitCode]);
-
-    useEffect(() => {
-      void resolvedMode;
-      void activeTheme;
-      const id = requestAnimationFrame(() => session.applyTheme());
-      return () => cancelAnimationFrame(id);
-    }, [resolvedMode, activeTheme, session]);
 
     useImperativeHandle(
       ref,

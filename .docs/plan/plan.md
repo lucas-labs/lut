@@ -4329,7 +4329,7 @@ scope: ui
 size: M
 ```
 
-**Goal:** Resolve appearance as global → profile → pane override and apply it per session, within the scope decided by E14-01 (`.docs/architecture/per-pane-appearance.md`). No second resolver: the pane layer is appended to `resolvePreferences` (E14-02).
+**Goal:** Resolve appearance as global → profile and apply it per session, within the scope decided by E14-01 (`.docs/architecture/per-pane-appearance.md`). Each pane's layer is its profile: no issue stores a per-pane override, so none is added here. No second resolver: the profile layer goes through `resolvePreferences` (E14-02).
 
 Per pane in v1: colour scheme, font family, size and weight, cursor style and blink, and scrollback (for sessions
 started after the change). Global: letter spacing, line height, symbol fonts, zoom, background opacity, image and blur,
@@ -4337,7 +4337,7 @@ subpixel text and the renderer. Padding is out of v1.
 
 **Acceptance criteria:**
 
-- [ ] `resolvePreferences` (E14-02) gains an optional pane-override layer; tests define which appearance fields merge and which replace. No separate `resolveTerminalAppearance` is added.
+- [ ] A pane's appearance resolves through `resolvePreferences` (E14-02) with its profile as the layer; tests define which appearance fields replace. No separate `resolveTerminalAppearance` is added.
 - [ ] Sessions consume the resolved palette/font via `applyThemeToSession`/`updateSessionFont`; panes without overrides still follow global changes.
 - [ ] A pane's palette is built from its resolved theme id, not from the document's CSS tokens (`readTerminalGpuTheme`); the app chrome keeps the app theme.
 - [ ] Editing a profile's appearance updates open panes without respawning the PTY.

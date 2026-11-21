@@ -3,10 +3,10 @@ import type { Preferences } from './store';
 /**
  * Layered preferences: global values overridden by a profile, then by a space (E14-02).
  *
- * This is lut's only preference resolver. Later layers (the pane override of E14-16) are
- * appended to the end of the layer list, so existing callers keep working; no separate
- * terminal-appearance resolver is added. Preferences hold appearance choices such as the
- * theme id; the theme's colour tokens live in `modules/theme`, apart from them.
+ * This is lut's only preference resolver: a terminal pane resolves its appearance with its
+ * profile as the layer (E14-16). A later layer is appended to the end of the layer list, so
+ * existing callers keep working. Preferences hold appearance choices such as the theme id; the
+ * theme's colour tokens live in `modules/theme`, apart from them.
  */
 export type PreferenceLayer = Partial<Preferences>;
 

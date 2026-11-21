@@ -528,6 +528,26 @@ describe('WebGpuTerminalRuntime', () => {
     expect(formats).toContain('rgba8unorm');
   });
 
+  it('has room for one more font only while the atlas budget does (E14-16)', async () => {
+    createHarness();
+    const runtime = await createRuntime();
+    const font = (size: number) => ({ ...METRICS, font: { ...METRICS.font, size } });
+    const owner = createSurface();
+    join(runtime, owner);
+    const leases = [runtime.acquireGlyphAtlas(font(10), owner)];
+    for (let size = 11; size < 18; size++) leases.push(runtime.acquireGlyphAtlas(font(size)));
+
+    // Eight atlases, all in use: a ninth font has no room, a font already drawn has.
+    expect(runtime.hasRoomForAtlas(font(30))).toBe(false);
+    expect(runtime.hasRoomForAtlas(font(12))).toBe(true);
+    expect(() => runtime.acquireGlyphAtlas(font(30))).toThrow(/budget exhausted/);
+    // A surface changing font releases its own atlas first.
+    expect(runtime.hasRoomForAtlas(font(30), owner)).toBe(true);
+    // An unused atlas can be evicted.
+    leases[3].release();
+    expect(runtime.hasRoomForAtlas(font(30))).toBe(true);
+  });
+
   it('releases the warm glyph atlas after the bounded idle window', async () => {
     vi.useFakeTimers();
     createHarness();

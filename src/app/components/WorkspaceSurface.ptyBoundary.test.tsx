@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { usePreferencesStore } from '@/modules/settings/preferences';
 import type { Tab } from '@/modules/tabs';
 import { disposeGhosttySession } from '@/modules/terminal/ghostty/useGhosttyTerminalSession';
 import { detachLeaf, insertLeaf, type PaneNode, splitLeaf } from '@/modules/terminal/lib/panes';
@@ -52,8 +53,43 @@ const listed = vi.hoisted(() => {
     },
   };
 });
-/** What reached each terminal model (the Ghostty core), and how many WebGL surfaces were built. */
-const terminal = vi.hoisted(() => ({ written: new Map<number, string>(), webGlSurfaces: 0 }));
+/** What `useProfileAppearance` answers from: each profile's appearance, or `null` before the first read. */
+const appearances = vi.hoisted(() => {
+  let byProfile: Record<string, object> | null = {};
+  const listeners = new Set<() => void>();
+  return {
+    // A pane without a profile opens the default one.
+    get: (profileId: string | undefined) => (byProfile === null ? null : byProfile[profileId ?? 'detected:pwsh']),
+    set(next: Record<string, object> | null) {
+      byProfile = next;
+      for (const listener of listeners) listener();
+    },
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  };
+});
+/** What reached each terminal model (the Ghostty core) and the renderer surfaces, and how many WebGL surfaces were built. */
+const terminal = vi.hoisted(() => ({
+  written: new Map<number, string>(),
+  webGlSurfaces: 0,
+  themes: 0,
+  cursors: [] as string[],
+  fonts: 0,
+  /** The size of each font a surface was given after it started. */
+  fontSizes: [] as number[],
+  /** Whether the renderer has room for another font. */
+  fontsFit: true,
+  warnings: [] as string[],
+}));
+vi.mock('sonner', () => ({
+  toast: Object.assign(() => {}, {
+    warning: (title: string) => terminal.warnings.push(title),
+  }),
+}));
 
 /** An object with the given members; any other member is a no-op function (never a thenable). */
 const stub = vi.hoisted(
@@ -100,6 +136,8 @@ vi.mock('@/modules/profiles', async (importOriginal) => {
     ...(await importOriginal<object>()),
     useCloseBehavior: (profileId: string | undefined) =>
       useSyncExternalStore(listed.subscribe, () => listed.get(profileId)),
+    useProfileAppearance: (profileId: string | undefined) =>
+      useSyncExternalStore(appearances.subscribe, () => appearances.get(profileId)),
   };
 });
 vi.mock('@/lib/fonts', async (importOriginal) => ({
@@ -108,9 +146,9 @@ vi.mock('@/lib/fonts', async (importOriginal) => ({
 }));
 vi.mock('@/modules/terminal/ghostty/gpu/terminalVisuals', async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  measureTerminalFont: async () => ({ cellWidth: 8, cellHeight: 16, baseline: 12 }),
+  measureTerminalFont: async (font: object) => ({ font, cellWidth: 8, cellHeight: 16, baseline: 12 }),
   // The real one converts CSS colours through a canvas, which happy-dom lacks.
-  readTerminalGpuTheme: () => ({
+  terminalGpuTheme: () => ({
     background: [0, 0, 0],
     foreground: [255, 255, 255],
     cursor: [255, 255, 255],
@@ -152,6 +190,17 @@ vi.mock('@/modules/terminal/ghostty/loadSessionRenderer', () => {
         gridShiftY: () => 0,
         getSelection: () => null,
         searchController: () => stub({}),
+        fitsFont: () => terminal.fontsFit,
+        setTheme: () => {
+          terminal.themes += 1;
+        },
+        setCursorOptions: (_blink: boolean, style: string) => {
+          terminal.cursors.push(style);
+        },
+        setFontMetrics: (metrics: { font: { size: number } }) => {
+          terminal.fonts += 1;
+          terminal.fontSizes.push(metrics.font.size);
+        },
       });
     }
   }
@@ -184,7 +233,7 @@ vi.mock('@/modules/git-history', () => ({ GitHistoryStack: () => null }));
 vi.mock('@/modules/markdown', () => ({ MarkdownStack: () => null }));
 vi.mock('@/modules/preview', () => ({ PreviewStack: () => null }));
 
-type ThemeValue = { resolvedMode: string; activeTheme: unknown };
+type ThemeValue = { resolvedMode: string; activeTheme: unknown; customThemes: unknown[] };
 const { ThemeContext } = themeModule as unknown as { ThemeContext: Context<ThemeValue> };
 const [firstTheme, secondTheme] = themeModule.listBuiltinThemes();
 
@@ -250,7 +299,7 @@ function shell(
   const strip = createElement('div', { 'data-tabs': '' });
   return createElement(
     ThemeContext.Provider,
-    { value: { resolvedMode: mode, activeTheme: theme } },
+    { value: { resolvedMode: mode, activeTheme: theme, customThemes: [] } },
     createElement(AppShell, {
       focusMode: false,
       titleBar: createElement('header', null, vertical ? null : strip),
@@ -310,8 +359,15 @@ beforeEach(() => {
   pty.exit.clear();
   pty.closedByExit = [];
   listed.set({ ...CLOSE_BEHAVIORS });
+  appearances.set({});
   terminal.written.clear();
   terminal.webGlSurfaces = 0;
+  terminal.themes = 0;
+  terminal.cursors = [];
+  terminal.fonts = 0;
+  terminal.fontSizes = [];
+  terminal.fontsFit = true;
+  terminal.warnings = [];
   rendered.clear();
   host = document.createElement('div');
   document.body.append(host);
@@ -560,5 +616,53 @@ describe('the profile decides what a pane does when its process exits (E14-15)',
     await act(async () => listed.set({ ...CLOSE_BEHAVIORS, stays: 'close' }));
     expect(pty.closedByExit).toEqual([]);
     expect(host.textContent).toContain('Process exited with code 3');
+  });
+});
+
+describe('each pane looks as its profile says (E14-16)', () => {
+  it('waits for the profiles to be listed before starting the terminal', async () => {
+    appearances.set(null);
+    const tab = term();
+    await render(shell([tab], tab.id));
+    expect(pty.requested).toEqual([]);
+    await act(async () => appearances.set({}));
+    await waitForOpens(1);
+  });
+
+  it('applies an edited profile appearance to the open pane without reopening it', async () => {
+    const tab = term();
+    await render(shell([tab], tab.id));
+    await waitForOpens(1);
+    const before = { themes: terminal.themes, fonts: terminal.fonts };
+
+    await act(async () =>
+      appearances.set({
+        'detected:pwsh': { themeId: secondTheme.id, cursorStyle: 'underline', fontSize: 21 },
+      }),
+    );
+    for (let i = 0; i < 20; i++) await tick();
+
+    expect(terminal.themes).toBe(before.themes + 1);
+    expect(terminal.cursors[terminal.cursors.length - 1]).toBe('underline');
+    expect(terminal.fonts).toBe(before.fonts + 1);
+    expect(pty.opened).toEqual([tab.activeLeafId]);
+    expect(pty.closed).toEqual([]);
+  });
+
+  it('draws the global font, with one warning per font, when the renderer has no room for its own', async () => {
+    const tab = term();
+    await render(shell([tab], tab.id));
+    await waitForOpens(1);
+    terminal.fontsFit = false;
+    const globalSize = usePreferencesStore.getState().terminalFontSize;
+
+    for (const fontSize of [21, 22, 21]) {
+      await act(async () => appearances.set({ 'detected:pwsh': { fontSize } }));
+      for (let i = 0; i < 20; i++) await tick();
+    }
+
+    expect(terminal.fontSizes).toEqual([globalSize, globalSize, globalSize]);
+    expect(terminal.warnings).toEqual(['Too many terminal fonts', 'Too many terminal fonts']);
+    expect(pty.opened).toEqual([tab.activeLeafId]);
   });
 });

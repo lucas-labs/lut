@@ -348,6 +348,11 @@ export class WebGlTerminalSurface implements TerminalSurface, WebGlRuntimeSurfac
     }
   }
 
+  /** Every renderer slot owns its atlas, so any font fits. */
+  fitsFont(_metrics: TerminalFontMetrics): boolean {
+    return true;
+  }
+
   setFontMetrics(metrics: TerminalFontMetrics): void {
     const next = metricsForScale(metrics, this.scale);
     if (metricsEqual(this.metrics, next)) return;

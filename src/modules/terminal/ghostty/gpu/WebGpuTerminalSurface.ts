@@ -428,6 +428,11 @@ export class WebGpuTerminalSurface implements TerminalSurface, WebGpuRuntimeSurf
     this.updateScrollbar();
   }
 
+  /** Whether the window has room for this font's glyph atlas (8 fonts at most). */
+  fitsFont(metrics: TerminalFontMetrics): boolean {
+    return this.runtime.hasRoomForAtlas(metricsForScale(metrics, devicePixelScale()), this);
+  }
+
   /** CSS-pixel cell size (device cell / ratio); hit-testing and overlays use it. */
   cellSize(): { readonly width: number; readonly height: number } {
     return { width: this.metrics.cellWidth, height: this.metrics.cellHeight };
