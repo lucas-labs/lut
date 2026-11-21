@@ -32,35 +32,16 @@ const pty = vi.hoisted(() => ({
   /** Panes the workspace was told to close after their process exited. */
   closedByExit: [] as { leaf: number; code: number }[],
 }));
-/** One custom profile per close behaviour, as `profiles_list` lists them. */
-const profilesList = vi.hoisted(() => {
-  const profile = (id: string, closeBehavior: string) => ({
-    id,
-    name: id,
-    executable: 'cmd.exe',
-    args: [],
-    env: {},
-    loadUserProfile: true,
-    environment: { kind: 'native' },
-    appearance: {},
-    tab: { allowShellTitle: true },
-    closeBehavior,
-    source: 'custom',
-    hidden: false,
-  });
-  return {
-    profiles: [profile('asks', 'ask'), profile('closes', 'close'), profile('stays', 'keepOpen')],
-    defaultProfileId: 'closes',
-  };
-});
-/** What `useProfiles` answers: the list, or `null` before it is first read. */
+/** One custom profile per close behaviour. */
+const CLOSE_BEHAVIORS: Record<string, string> = { asks: 'ask', closes: 'close', stays: 'keepOpen' };
+/** What `useCloseBehavior` answers from: each profile's behaviour, or `null` before the first read. */
 const listed = vi.hoisted(() => {
-  let list: unknown = null;
+  let behaviors: Record<string, string> | null = null;
   const listeners = new Set<() => void>();
   return {
-    get: () => list,
-    set(next: unknown) {
-      list = next;
+    get: (profileId: string | undefined) => (behaviors === null ? null : (behaviors[profileId ?? ''] ?? 'close')),
+    set(next: Record<string, string> | null) {
+      behaviors = next;
       for (const listener of listeners) listener();
     },
     subscribe(listener: () => void) {
@@ -117,7 +98,8 @@ vi.mock('@/modules/profiles', async (importOriginal) => {
   const { useSyncExternalStore } = await import('react');
   return {
     ...(await importOriginal<object>()),
-    useProfiles: () => useSyncExternalStore(listed.subscribe, listed.get),
+    useCloseBehavior: (profileId: string | undefined) =>
+      useSyncExternalStore(listed.subscribe, () => listed.get(profileId)),
   };
 });
 vi.mock('@/lib/fonts', async (importOriginal) => ({
@@ -327,7 +309,7 @@ beforeEach(() => {
   pty.reported = [];
   pty.exit.clear();
   pty.closedByExit = [];
-  listed.set(structuredClone(profilesList));
+  listed.set({ ...CLOSE_BEHAVIORS });
   terminal.written.clear();
   terminal.webGlSurfaces = 0;
   rendered.clear();
@@ -560,7 +542,7 @@ describe('the profile decides what a pane does when its process exits (E14-15)',
     listed.set(null);
     await exited('stays', 3);
     expect(host.textContent).not.toContain('Process exited');
-    await act(async () => listed.set(structuredClone(profilesList)));
+    await act(async () => listed.set({ ...CLOSE_BEHAVIORS }));
     expect(pty.closedByExit).toEqual([]);
     expect(host.textContent).toContain('Process exited with code 3');
   });
@@ -569,15 +551,13 @@ describe('the profile decides what a pane does when its process exits (E14-15)',
     listed.set(null);
     const leaf = await exited('closes', 0);
     expect(pty.closedByExit).toEqual([]);
-    await act(async () => listed.set(structuredClone(profilesList)));
+    await act(async () => listed.set({ ...CLOSE_BEHAVIORS }));
     expect(pty.closedByExit).toEqual([{ leaf, code: 0 }]);
   });
 
   it('keeps the notice when the profile changes after the exit', async () => {
     await exited('stays', 3);
-    const changed = structuredClone(profilesList);
-    for (const profile of changed.profiles) profile.closeBehavior = 'close';
-    await act(async () => listed.set(changed));
+    await act(async () => listed.set({ ...CLOSE_BEHAVIORS, stays: 'close' }));
     expect(pty.closedByExit).toEqual([]);
     expect(host.textContent).toContain('Process exited with code 3');
   });

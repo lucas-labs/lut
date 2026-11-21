@@ -2,7 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useEffect } from 'react';
 import { create } from 'zustand';
-import { parseProfilesList, type ProfilesList } from './model';
+import { parseProfilesList, type ProfileEntry, type ProfilesList } from './model';
 
 /** Native emits it after any change to the list: an edit, a new default or a detection. */
 const PROFILES_CHANGED_EVENT = 'lut:profiles-changed';
@@ -10,9 +10,11 @@ const PROFILES_CHANGED_EVENT = 'lut:profiles-changed';
 type State = {
   /** `null` until the first `profiles_list` answer arrives. */
   list: ProfilesList | null;
+  /** The last read failed; cleared by the next one that succeeds. */
+  readFailed: boolean;
 };
 
-const useProfilesStore = create<State>(() => ({ list: null }));
+const useProfilesStore = create<State>(() => ({ list: null, readFailed: false }));
 
 let latestRequest = 0;
 
@@ -21,9 +23,10 @@ async function load(): Promise<void> {
   try {
     const list = parseProfilesList(await invoke('profiles_list'));
     // An older answer arriving late must not replace a newer one.
-    if (request === latestRequest) useProfilesStore.setState({ list });
+    if (request === latestRequest) useProfilesStore.setState({ list, readFailed: false });
   } catch (error) {
     console.error('[lut] could not list terminal profiles:', error);
+    if (request === latestRequest) useProfilesStore.setState({ readFailed: true });
   }
 }
 
@@ -62,6 +65,20 @@ function watchProfiles(): void {
 export function useProfiles(): ProfilesList | null {
   useEffect(watchProfiles, []);
   return useProfilesStore((state) => state.list);
+}
+
+/**
+ * What a pane with `profileId` does when its process exits; `null` only while the first read runs.
+ * A profile that is not listed, or a list that could not be read, closes the pane.
+ */
+export function useCloseBehavior(
+  profileId: string | undefined,
+): ProfileEntry['closeBehavior'] | null {
+  useEffect(watchProfiles, []);
+  return useProfilesStore(({ list, readFailed }) => {
+    if (list === null) return readFailed ? 'close' : null;
+    return list.profiles.find((profile) => profile.id === profileId)?.closeBehavior ?? 'close';
+  });
 }
 
 export function setDefaultProfile(id: string): Promise<void> {

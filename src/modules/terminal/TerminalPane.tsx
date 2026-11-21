@@ -1,6 +1,6 @@
 import { Alert, AlertAction, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { type ProfileEntry, useProfiles } from '@/modules/profiles';
+import { type ProfileEntry, useCloseBehavior } from '@/modules/profiles';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import type { TerminalSearchController } from '@/modules/terminal/search/TerminalSearchController';
 import { useTheme } from '@/modules/theme';
@@ -67,13 +67,7 @@ const GhosttyTerminalPane = memo(
     ref,
   ) {
     const screenReader = usePreferencesStore((state) => state.terminalScreenReader);
-    const profiles = useProfiles();
-    // What the pane does when its process exits; a pane without a listed profile closes, as it always did.
-    // Unknown until the profiles are listed.
-    const closeBehavior =
-      profiles === null
-        ? null
-        : (profiles.profiles.find((profile) => profile.id === profileId)?.closeBehavior ?? 'close');
+    const closeBehavior = useCloseBehavior(profileId);
     const containerRef = useRef<HTMLDivElement>(null);
     const { resolvedMode, activeTheme } = useTheme();
     const session = useGhosttyTerminalSession({

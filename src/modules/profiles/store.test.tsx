@@ -12,6 +12,19 @@ vi.mock('@tauri-apps/api/core', () => ({ invoke: mocks.invoke }));
 vi.mock('@tauri-apps/api/event', () => ({ listen: mocks.listen }));
 
 const LIST = { profiles: [], defaultProfileId: null };
+const STAYS = {
+  id: 'stays',
+  name: 'Stays',
+  args: [],
+  env: {},
+  loadUserProfile: true,
+  environment: { kind: 'native' },
+  appearance: {},
+  tab: { allowShellTitle: true },
+  closeBehavior: 'keepOpen',
+  source: 'custom',
+  hidden: false,
+};
 
 let roots: Root[] = [];
 
@@ -79,5 +92,29 @@ describe('useProfiles', () => {
     const second = await mountWith(useProfiles);
     expect(mocks.listen).toHaveBeenCalledTimes(2);
     expect(second()).toEqual({ ...LIST, defaultProfileId: 'new' });
+  });
+});
+
+describe('useCloseBehavior', () => {
+  it('is unknown while the first read runs, then follows the profile', async () => {
+    const { useCloseBehavior } = await import('./store');
+    let answer: (list: unknown) => void = () => {};
+    mocks.invoke.mockReturnValue(new Promise((resolve) => (answer = resolve)));
+
+    const stays = await mountWith(() => useCloseBehavior('stays'));
+    const missing = await mountWith(() => useCloseBehavior('missing'));
+    expect(stays()).toBeNull();
+
+    await act(async () => answer({ profiles: [STAYS], defaultProfileId: 'stays' }));
+    expect(stays()).toBe('keepOpen');
+    expect(missing()).toBe('close');
+  });
+
+  it('closes when the list could not be read', async () => {
+    const { useCloseBehavior } = await import('./store');
+    mocks.invoke.mockRejectedValue(new Error('not ready'));
+
+    const stays = await mountWith(() => useCloseBehavior('stays'));
+    expect(stays()).toBe('close');
   });
 });
