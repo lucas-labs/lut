@@ -10,6 +10,7 @@ export type ShortcutId =
   | 'commandPalette.files'
   | 'commandPalette.content'
   | 'tab.new'
+  | 'tab.newWithProfile'
   | 'tab.newPrivate'
   | 'tab.newPreview'
   | 'tab.newEditor'
@@ -117,6 +118,11 @@ const SHORTCUT_META: Omit<Shortcut, 'defaultBindings'>[] = [
   {
     id: 'tab.new',
     label: 'New tab',
+    group: 'Tabs',
+  },
+  {
+    id: 'tab.newWithProfile',
+    label: 'New tab with profile',
     group: 'Tabs',
   },
   {

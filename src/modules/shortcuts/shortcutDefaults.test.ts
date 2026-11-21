@@ -25,6 +25,7 @@ commandPalette.files: Cmd+p
 commandPalette.content: Shift+Cmd+h
 settings.open: Cmd+,
 tab.new: Cmd+t
+tab.newWithProfile: Shift+Cmd+t
 tab.newPrivate: Cmd+r
 tab.newPreview: Shift+Cmd+o
 tab.newEditor: Cmd+e

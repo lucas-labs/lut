@@ -191,6 +191,16 @@ export function createCommandItems(ctx: CommandPaletteActionContext): PaletteIte
       run: ctx.openNewTab,
     },
     {
+      // The palette opens its profiles page for it.
+      id: 'tab.newWithProfile',
+      title: 'New tab with profile...',
+      group: 'Tabs',
+      keywords: ['profile', 'shell', 'terminal', 'wsl', 'new tab'],
+      icon: TerminalIcon,
+      shortcutId: 'tab.newWithProfile',
+      run: noop,
+    },
+    {
       id: 'tab.newPrivate',
       title: 'New private terminal',
       group: 'Tabs',

@@ -4,10 +4,9 @@ import { WindowControls } from '@/components/WindowControls';
 import { TitleBarHoldProvider } from '@/lib/titleBarHold';
 import { cn } from '@/lib/utils';
 import { NotificationBell } from '@/modules/agents';
-import type { AgentLaunchRequest } from '@/modules/agents/lib/launcher';
 import type { TabNavigatorActions, TabNavigatorItem } from '@/modules/navigation';
 import { dragRegion, IS_MAC, USE_CUSTOM_WINDOW_CONTROLS, useWindowFullScreen } from '@/modules/platform';
-import { TabNavigator } from '@/modules/tabs';
+import { type NewTabMenuActions, TabNavigator } from '@/modules/tabs';
 import { OptionsIcon, PanelArrowRightIcon } from '@lut/lut-icons';
 import { type RefObject, useEffect, useRef, useState } from 'react';
 import { CwdBreadcrumb } from './CwdBreadcrumb';
@@ -25,12 +24,7 @@ type Props = {
   /** The active space's tabs, for the strip (inline only). */
   tabs: TabNavigatorItem[];
   tabActions: TabNavigatorActions;
-  onNew: () => void;
-  onNewPrivate: () => void;
-  onNewPreview: () => void;
-  onNewEditor: () => void;
-  onNewGitGraph: () => void;
-  onLaunchAgents: (request: AgentLaunchRequest) => void;
+  newTabMenu: NewTabMenuActions;
   /** False while the sidebar (and the vertical tab rail) are closed. */
   sidePanelsOpen: boolean;
   /** Hides the sidebar (and the vertical tab rail) while either is open, shows them otherwise. */
@@ -77,12 +71,7 @@ function TitleBarRow({
   placement,
   tabs,
   tabActions,
-  onNew,
-  onNewPrivate,
-  onNewPreview,
-  onNewEditor,
-  onNewGitGraph,
-  onLaunchAgents,
+  newTabMenu,
   sidePanelsOpen,
   onToggleSidebar,
   onActivateAgent,
@@ -152,12 +141,7 @@ function TitleBarRow({
           actions={tabActions}
           compact={compact}
           dragRegion={drag}
-          onNew={onNew}
-          onNewPrivate={onNewPrivate}
-          onNewPreview={onNewPreview}
-          onNewEditor={onNewEditor}
-          onNewGitGraph={onNewGitGraph}
-          onLaunchAgents={onLaunchAgents}
+          newTabMenu={newTabMenu}
         />
       )}
       <span data-tauri-drag-region={drag} className="h-full min-w-24 flex-1" />

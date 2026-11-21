@@ -8,8 +8,8 @@ import { getLaunchDir } from '@/modules/platform';
 import { useProfilesLoadNotice } from '@/modules/profiles';
 import { openSettingsWindow } from '@/modules/settings/openSettingsWindow';
 import { usePreferencesStore } from '@/modules/settings/preferences';
-import { TabNavigator, useTabs, useWindowTitle, useWorkspaceCwd } from '@/modules/tabs';
-import { findLeafCwd } from '@/modules/terminal';
+import { type NewTabMenuActions, TabNavigator, useTabs, useWindowTitle, useWorkspaceCwd } from '@/modules/tabs';
+import { canAddPane, findLeafCwd } from '@/modules/terminal';
 import { ThemeProvider, useThemeFileEditing } from '@/modules/theme';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppShell } from './AppShell';
@@ -136,8 +136,11 @@ export default function App() {
 
   const navigatorItems = useNavigatorItems(activeSpaceId ?? DEFAULT_SPACE_ID);
   // The new-tab menu, in the header and in the vertical tab column.
-  const newTabMenu = {
+  const newTabMenu: NewTabMenuActions = {
     onNew: commands.openNewTab,
+    onNewWithProfile: commands.openNewTabWithProfile,
+    onSplit: commands.splitActivePaneInActiveTab,
+    canSplit: activeTab?.kind === 'terminal' && canAddPane(activeTab.paneTree),
     onNewPrivate: commands.openNewPrivateTab,
     onNewPreview: () => previews.openPreviewTab(''),
     onNewEditor: () => setNewEditorOpen(true),
@@ -157,7 +160,7 @@ export default function App() {
               placement={verticalTabs ? 'overlay' : 'inline'}
               tabs={navigatorItems}
               tabActions={commands.tabActions}
-              {...newTabMenu}
+              newTabMenu={newTabMenu}
               sidePanelsOpen={panels.sidePanelsOpen}
               onToggleSidebar={panels.toggleSidePanels}
               onActivateAgent={commands.activateAgentTarget}
@@ -178,7 +181,7 @@ export default function App() {
                   heading={workspace.activeSpaceName}
                   items={navigatorItems}
                   actions={commands.tabActions}
-                  {...newTabMenu}
+                  newTabMenu={newTabMenu}
                 />
               </div>
             ) : null
@@ -243,6 +246,7 @@ export default function App() {
             explorerRoot={explorerRoot}
             home={home}
             openFile={commands.openFile}
+            openProfile={commands.openNewTabWithProfile}
             openFileAtLine={editors.openFileAtLine}
             newEditorOpen={newEditorOpen}
             setNewEditorOpen={setNewEditorOpen}

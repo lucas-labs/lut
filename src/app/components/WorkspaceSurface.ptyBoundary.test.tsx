@@ -583,8 +583,9 @@ describe('each pane opens with its own profile (E14-14)', () => {
 });
 
 describe('the profile decides what a pane does when its process exits (E14-15)', () => {
+  /** A button by its label; the exit bar's buttons also show their key. */
   const button = (name: string) =>
-    [...host.querySelectorAll('button')].find((b) => b.textContent === name) as HTMLButtonElement | undefined;
+    [...host.querySelectorAll('button')].find((b) => b.textContent?.startsWith(name)) as HTMLButtonElement | undefined;
 
   async function exited(profileId: string, code: number) {
     const tab = term({ kind: 'leaf', id: nextId * 100, profileId });
@@ -604,14 +605,14 @@ describe('the profile decides what a pane does when its process exits (E14-15)',
   it('keeps the pane and its output with a notice', async () => {
     await exited('stays', 3);
     expect(pty.closedByExit).toEqual([]);
-    expect(host.textContent).toContain('Process exited with code 3');
+    expect(host.textContent).toMatch(/Process exited\s*code 3/);
     expect(button('Restart')).toBeUndefined();
   });
 
   it('asks, then restarts with the same profile', async () => {
     const leaf = await exited('asks', 1);
     expect(pty.closedByExit).toEqual([]);
-    expect(host.textContent).toContain('Process exited with code 1');
+    expect(host.textContent).toMatch(/Process exited\s*code 1/);
     await act(async () => button('Restart')?.click());
     await waitForOpens(2);
     expect(pty.requested.map((r) => r.profileId)).toEqual(['asks', 'asks']);
@@ -621,7 +622,7 @@ describe('the profile decides what a pane does when its process exits (E14-15)',
 
   it('asks, then closes the pane', async () => {
     const leaf = await exited('asks', 0);
-    await act(async () => button('Close')?.click());
+    await act(async () => button('Close pane')?.click());
     expect(pty.closedByExit).toEqual([{ leaf, code: 0 }]);
   });
 
@@ -631,7 +632,7 @@ describe('the profile decides what a pane does when its process exits (E14-15)',
     expect(host.textContent).not.toContain('Process exited');
     await act(async () => listed.set({ ...CLOSE_BEHAVIORS }));
     expect(pty.closedByExit).toEqual([]);
-    expect(host.textContent).toContain('Process exited with code 3');
+    expect(host.textContent).toMatch(/Process exited\s*code 3/);
   });
 
   it('waits for the profiles to be listed before closing the pane', async () => {
@@ -646,7 +647,7 @@ describe('the profile decides what a pane does when its process exits (E14-15)',
     await exited('stays', 3);
     await act(async () => listed.set({ ...CLOSE_BEHAVIORS, stays: 'close' }));
     expect(pty.closedByExit).toEqual([]);
-    expect(host.textContent).toContain('Process exited with code 3');
+    expect(host.textContent).toMatch(/Process exited\s*code 3/);
   });
 });
 

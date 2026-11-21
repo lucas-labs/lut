@@ -4547,11 +4547,12 @@ size: M
 
 **Acceptance criteria:**
 
-- [ ] `src/modules/tabs/NewTabMenu.tsx` lists visible profiles from the profiles store; no IDE tools in this list (10.2:4).
-- [ ] Choosing a profile opens a tab/split with that `profileId`; a split without explicit choice inherits the pane's profile.
-- [ ] Keybindings: new tab with the default profile, and open the profile picker (IR-24), registered in the shortcuts registry (E13-01).
-- [ ] The functional in-pane states of E14-14 (missing profile) and E14-15 (process exited / ask) are replaced by the E11-04 design, with "open with default profile" and "choose profile" opening this picker.
+- [ ] `src/modules/tabs/NewTabMenu.tsx` lists visible profiles from the profiles store, the default first; no IDE tools in this list (10.2:4).
+- [ ] Choosing a profile opens a tab/split with that `profileId` ("Split right/down" submenus); a split without explicit choice inherits the pane's profile.
+- [ ] Keybindings: new tab with the default profile, and open the profile picker (IR-24) as a "Profiles" page of the command palette, so it works in every layout; both registered in the shortcuts registry (E13-01).
+- [ ] The functional in-pane states of E14-14 (missing profile) and E14-15 (process exited / ask) are replaced by the E11-04 design, with "open with default profile" and "choose profile" opening this picker; the "ask" bar restarts with Enter and closes the pane with Esc.
 - [ ] Component tests for listing and selection.
+- [ ] "Manage profiles…" in these menus comes with E15-02, which adds the profiles screen.
 
 **Verification:** `pnpm test`; `pnpm typecheck`; manual: open a WSL profile in a new tab and pwsh in a split.
 
@@ -4573,6 +4574,7 @@ size-exception: one form over the whole TerminalProfile model; splitting it leav
 **Acceptance criteria:**
 
 - [ ] List of detected (non-deletable, hideable) and custom profiles; set default.
+- [ ] "Manage profiles…" in the new-tab menu and the in-pane "choose profile" menu opens it.
 - [ ] Editor fields: name, executable, args (list), env (key/value, unset), starting directory, environment/distro, PowerShell user-profile option, appearance overrides, closeBehavior, allowShellTitle.
 - [ ] Backend validation errors (E14-03) are shown per field; invalid profiles cannot be saved.
 - [ ] Component tests for validation display and save.

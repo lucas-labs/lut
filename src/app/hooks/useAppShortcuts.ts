@@ -100,6 +100,7 @@ export function createAppShortcutHandlers({
     'commandPalette.files': () => openCommandPalette('files'),
     'commandPalette.content': () => openCommandPalette('content'),
     'tab.new': openNewTab,
+    'tab.newWithProfile': () => openCommandPalette('profiles'),
     'tab.newPrivate': openNewPrivateTab,
     'tab.newPreview': () => openPreviewTab(''),
     'tab.newEditor': () => setNewEditorOpen(true),
