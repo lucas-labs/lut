@@ -11,7 +11,7 @@ import {
   type TerminalProfile,
 } from '@/modules/profiles';
 import { PlusIcon } from '@lut/lut-icons';
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { FieldError } from './fields';
 
 /** A new custom profile with nothing set but what it runs. */
@@ -37,6 +37,9 @@ export function NewProfileDialog({ onCreated }: { onCreated: (id: string) => voi
   const [executable, setExecutable] = useState('');
   const [errors, setErrors] = useState<Record<string, ProfileErrorCode>>({});
   const [failure, setFailure] = useState<string | null>(null);
+  // A profile is being created: another submit would create a second one under another id.
+  const creating = useRef(false);
+  const [busy, setBusy] = useState(false);
   const formId = useId();
 
   const reset = (next: boolean) => {
@@ -49,13 +52,22 @@ export function NewProfileDialog({ onCreated }: { onCreated: (id: string) => voi
   };
 
   const create = () => {
+    if (creating.current) return;
+    creating.current = true;
+    setBusy(true);
     const profile = blankProfile(name, executable);
+    const settled = () => {
+      creating.current = false;
+      setBusy(false);
+    };
     saveProfile(profile).then(
       () => {
+        settled();
         reset(false);
         onCreated(profile.id);
       },
       (error: unknown) => {
+        settled();
         const read = readFailure(error);
         if (read.kind === 'invalid') {
           setErrors(errorsByField(read.errors, profile.id));
@@ -68,7 +80,8 @@ export function NewProfileDialog({ onCreated }: { onCreated: (id: string) => voi
   };
 
   return (
-    <Dialog open={open} onOpenChange={reset}>
+    // While a profile is created the dialog stays open, so its answer lands in the dialog that asked for it.
+    <Dialog open={open} onOpenChange={(next) => !creating.current && reset(next)}>
       <DialogTrigger asChild>
         <Button variant="ghost" className="mt-2 w-full justify-start">
           <PlusIcon size="sm" />
@@ -111,7 +124,7 @@ export function NewProfileDialog({ onCreated }: { onCreated: (id: string) => voi
           </div>
           {failure ? <p className="text-[12px] text-destructive">{failure}</p> : null}
           <DialogFooter>
-            <Button type="submit" size="lg">
+            <Button type="submit" size="lg" disabled={busy}>
               Create
             </Button>
           </DialogFooter>

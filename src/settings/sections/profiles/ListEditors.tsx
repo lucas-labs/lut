@@ -15,21 +15,25 @@ const keyedSaved = <T extends object>(items: T[]): Keyed<T>[] =>
 
 /**
  * Rows edited as a draft, each with a key of its own so a removed row takes its field with it. A list saved
- * elsewhere replaces them.
+ * elsewhere replaces them; the list this editor sent, coming back saved, leaves them (their keys, focus and any
+ * edit made since) as they are.
  */
 function useRows<T extends object>(saved: T[], same: (a: T[], b: T[]) => boolean) {
   const added = useRef(0);
   const [rows, setRows] = useState(() => keyedSaved(saved));
   const [rowsOf, setRowsOf] = useState(saved);
+  // The list last sent, as native lists it, until a new list arrives.
+  const [sent, setSent] = useState<T[] | null>(null);
   if (!same(saved, rowsOf)) {
     setRowsOf(saved);
-    setRows(keyedSaved(saved));
+    setSent(null);
+    if (sent === null || !same(saved, sent)) setRows(keyedSaved(saved));
   }
   const add = (item: T) => {
     added.current += 1;
     setRows([...rows, { ...item, key: `added-${added.current}` }]);
   };
-  return { rows, setRows, add };
+  return { rows, setRows, add, markSent: setSent };
 }
 
 const blurOnEnter = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -40,14 +44,19 @@ type Arg = { value: string };
 
 const sameArgs = (a: Arg[], b: Arg[]) => a.length === b.length && a.every((arg, i) => arg.value === b[i].value);
 
-/** The program's arguments, one field each; empty fields are left out when saved. */
+/**
+ * The program's arguments, one field each. A field added here and left empty is not saved; an empty argument
+ * already saved is one, kept until it is removed.
+ */
 export function ArgsEditor({ args, onCommit }: { args: string[]; onCommit: (args: string[]) => void }) {
   const saved = args.map((value) => ({ value }));
-  const { rows, setRows, add } = useRows(saved, sameArgs);
+  const { rows, setRows, add, markSent } = useRows(saved, sameArgs);
 
-  const commit = (next: Arg[]) => {
-    const kept = next.filter((arg) => arg.value !== '');
-    if (!sameArgs(kept, saved)) onCommit(kept.map((arg) => arg.value));
+  const commit = (next: Keyed<Arg>[]) => {
+    const kept = next.filter((arg) => arg.value !== '' || !arg.key.startsWith('added-'));
+    if (sameArgs(kept, saved)) return;
+    markSent(kept);
+    onCommit(kept.map((arg) => arg.value));
   };
 
   return (
@@ -105,9 +114,15 @@ const toEnv = (rows: EnvRow[]): Record<string, string | null> =>
     rows.filter((row) => row.name.trim() !== '').map((row) => [row.name, row.unset ? null : row.value]),
   );
 
-const sameEnv = (a: EnvRow[], b: EnvRow[]) =>
-  a.length === b.length &&
-  a.every((row, i) => row.name === b[i].name && row.value === b[i].value && row.unset === b[i].unset);
+/** The same variables, in any order. */
+const sameEnv = (a: EnvRow[], b: EnvRow[]) => {
+  const other = toEnv(b);
+  const own = toEnv(a);
+  return (
+    Object.keys(own).length === Object.keys(other).length &&
+    Object.entries(own).every(([n, v]) => other[n] === v && n in other)
+  );
+};
 
 type EnvEditorProps = {
   env: Record<string, string | null>;
@@ -122,10 +137,13 @@ type EnvEditorProps = {
  */
 export function EnvEditor({ env, onCommit, errors }: EnvEditorProps) {
   const saved = toRows(env);
-  const { rows, setRows, add } = useRows(saved, sameEnv);
+  const { rows, setRows, add, markSent } = useRows(saved, sameEnv);
 
   const commit = (next: EnvRow[]) => {
-    if (!sameEnv(toRows(toEnv(next)), saved)) onCommit(toEnv(next));
+    const env = toEnv(next);
+    if (sameEnv(toRows(env), saved)) return;
+    markSent(toRows(env));
+    onCommit(env);
   };
   const update = (key: string, patch: Partial<EnvRow>) => rows.map((r) => (r.key === key ? { ...r, ...patch } : r));
 

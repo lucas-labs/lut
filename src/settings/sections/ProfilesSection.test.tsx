@@ -215,6 +215,27 @@ describe('a custom profile', () => {
     expect(native.save).toHaveBeenCalledWith({ ...PYTHON_SAVED, name: 'Py' });
   });
 
+  it('keeps text typed while the last save is on its way back', async () => {
+    await render();
+    await choose('Python');
+    await type(inputOf('Name'), 'Py');
+    await act(async () => {
+      inputOf('Name').dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+    });
+    await type(inputOf('Name'), 'Pyt');
+    // The saved name arrives now.
+    await settle();
+    expect(inputOf('Name').value).toBe('Pyt');
+  });
+
+  it('takes a name changed elsewhere', async () => {
+    await render();
+    await choose('Python');
+    listSaved({ ...PYTHON_SAVED, name: 'Python 3' });
+    await settle();
+    expect(inputOf('Name').value).toBe('Python 3');
+  });
+
   it('shows a refused field under it and keeps what was typed', async () => {
     native.save.mockRejectedValueOnce({
       kind: 'invalid',
@@ -246,6 +267,18 @@ describe('a custom profile', () => {
     expect(native.save).toHaveBeenCalledWith({ ...PYTHON_SAVED, args: [] });
   });
 
+  it('keeps a saved empty argument, and leaves out a new field left empty', async () => {
+    listSaved({ ...PYTHON_SAVED, args: ['-c', '', 'marker'] });
+    await render();
+    await choose('Python');
+    const args = rowOf('Arguments') as HTMLElement;
+    await act(async () => buttonNamed(args, 'Add argument').click());
+    const last = args.querySelector('[aria-label="Argument 3"]') as HTMLInputElement;
+    await type(last, 'next');
+    await leave(last);
+    expect(native.save).toHaveBeenLastCalledWith({ ...PYTHON_SAVED, args: ['-c', '', 'next'] });
+  });
+
   it('unsets a variable', async () => {
     await render();
     await choose('Python');
@@ -270,6 +303,26 @@ describe('a custom profile', () => {
     expect(native.save).toHaveBeenLastCalledWith({ ...PYTHON_SAVED, env: { FOO: 'bar', BAR: 'x' } });
   });
 
+  it('keeps a row, its field and what was typed in it when its own save comes back', async () => {
+    await render();
+    await choose('Python');
+    const variables = rowOf('Variables') as HTMLElement;
+    await act(async () => buttonNamed(variables, 'Add variable').click());
+    const name = variables.querySelector('[aria-label="Variable 2 name"]') as HTMLInputElement;
+    await type(name, 'TOKEN');
+    await act(async () => {
+      name.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+    });
+    const value = variables.querySelector('[aria-label="Variable 2 value"]') as HTMLInputElement;
+    await type(value, 'secret');
+    // The saved TOKEN arrives now.
+    await settle();
+    expect(variables.querySelector('[aria-label="Variable 2 value"]')).toBe(value);
+    expect(value.value).toBe('secret');
+    await leave(value);
+    expect(native.save).toHaveBeenLastCalledWith({ ...PYTHON_SAVED, env: { FOO: 'bar', TOKEN: 'secret' } });
+  });
+
   it('sets an appearance field, and follows the setting again', async () => {
     await render();
     await choose('Python');
@@ -289,6 +342,26 @@ describe('a custom profile', () => {
       ...PYTHON_SAVED,
       appearance: { fontSize: 16, cursorStyle: 'block' },
     });
+  });
+
+  it('saves in order, on top of each other, across choosing another profile and coming back', async () => {
+    let answer: () => void = () => {};
+    native.save.mockImplementationOnce(() => new Promise<void>((resolve) => (answer = resolve)));
+    await render();
+    await choose('Python');
+    await type(inputOf('Name'), 'Py');
+    await act(async () => {
+      inputOf('Name').dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+    });
+    await choose('Ubuntu');
+    await choose('Python');
+    await pick('When the program exits', 'Ask');
+    // The second save waits for the first.
+    expect(native.save).toHaveBeenCalledTimes(1);
+    await act(async () => answer());
+    await settle();
+    expect(native.save).toHaveBeenCalledTimes(2);
+    expect(native.save).toHaveBeenLastCalledWith({ ...PYTHON_SAVED, name: 'Py', closeBehavior: 'ask' });
   });
 
   it('sets the close behavior', async () => {
@@ -389,6 +462,44 @@ describe('profile actions', () => {
     expect(native.save).toHaveBeenLastCalledWith(
       expect.objectContaining({ name: 'Node', executable: 'node', args: [], env: {} }),
     );
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it('creates one profile however often Create is pressed while it is saved', async () => {
+    let answer: () => void = () => {};
+    native.save.mockImplementationOnce(() => new Promise<void>((resolve) => (answer = resolve)));
+    await render();
+    await act(async () => buttonNamed(nav(), 'New profile').click());
+    const dialog = document.querySelector('[role="dialog"]') as HTMLElement;
+    const [name, executable] = [...dialog.querySelectorAll('input')];
+    await type(name, 'Node');
+    await type(executable, 'node');
+    const form = dialog.querySelector('form') as HTMLFormElement;
+    await act(async () => {
+      form.requestSubmit();
+      form.requestSubmit();
+    });
+    expect(buttonNamed(dialog, 'Create').disabled).toBe(true);
+    await act(async () => answer());
+    expect(native.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('stays open while the profile is created', async () => {
+    let answer: () => void = () => {};
+    native.save.mockImplementationOnce(() => new Promise<void>((resolve) => (answer = resolve)));
+    await render();
+    await act(async () => buttonNamed(nav(), 'New profile').click());
+    const dialog = document.querySelector('[role="dialog"]') as HTMLElement;
+    const [name, executable] = [...dialog.querySelectorAll('input')];
+    await type(name, 'Node');
+    await type(executable, 'node');
+    await act(async () => (dialog.querySelector('form') as HTMLFormElement).requestSubmit());
+    await act(async () => {
+      dialog.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    });
+    expect(document.querySelector('[role="dialog"]')).toBe(dialog);
+    await act(async () => answer());
+    await settle();
     expect(document.querySelector('[role="dialog"]')).toBeNull();
   });
 });
