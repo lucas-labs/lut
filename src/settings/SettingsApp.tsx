@@ -9,6 +9,7 @@ import {
   FileEditIcon,
   InfoIcon,
   KeyboardIcon,
+  LayersIcon,
   type LutIconComponent,
   OptionsIcon,
   TerminalIcon,
@@ -36,7 +37,7 @@ const TABS: {
 }[] = [
   { id: 'general', label: 'General', icon: OptionsIcon, component: GeneralSection },
   { id: 'terminal', label: 'Terminal', icon: TerminalIcon, component: TerminalSection },
-  { id: 'profiles', label: 'Profiles', icon: TerminalIcon, component: ProfilesSection, wide: true },
+  { id: 'profiles', label: 'Profiles', icon: LayersIcon, component: ProfilesSection, wide: true },
   { id: 'editor', label: 'Editor', icon: FileEditIcon, component: EditorSection },
   { id: 'themes', label: 'Themes', icon: ThemesIcon, component: ThemesSection },
   { id: 'shortcuts', label: 'Shortcuts', icon: KeyboardIcon, component: ShortcutsSection },

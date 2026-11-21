@@ -56,6 +56,7 @@ export { IncognitoIcon } from './icons/incognito';
 export { InfoIcon } from './icons/info';
 export { KeyIcon } from './icons/key';
 export { KeyboardIcon } from './icons/keyboard';
+export { LayersIcon } from './icons/layers';
 export { LinkIcon } from './icons/link';
 export { MathIcon } from './icons/math';
 export { MinusIcon } from './icons/minus';
