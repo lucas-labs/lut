@@ -186,12 +186,14 @@ for `app/hooks/useAppCloseGuard.ts`, `onWindowResized` for `components/WindowCon
 | `agent_events.rs`        | Server side of `lut hook`: validation, normalization, rate limit, decision broker, events to the frontend.                                          | 1     | 1 388  |
 | `agent.rs`               | Agent hook installer (Claude, Codex, Gemini, Pi): plan/apply/status.                                                                                | 1     | 1 358  |
 | `workspace.rs`           | Workspace registry (authorized roots), launch cwd, WSL distros and homes.                                                                           | 1     | 1 350  |
+| `profiles/`              | Terminal profiles: model, validation, store, shell detection and launch specs.                                                                      | 8     | 2 097  |
 | `lsp/`                   | Language-server processes and JSON-RPC framing.                                                                                                     | 4     | 1 070  |
 | `agent_json.rs`          | Format-preserving edits of agents' JSON settings files.                                                                                             | 1     | 910    |
 | `shell/`                 | One-shot non-PTY commands (the editor's external formatters).                                                                                       | 1     | 210    |
 | `bench.rs`               | App benchmark support (feature `bench`).                                                                                                            | 1     | 779    |
 | `proc/`                  | Child-output capture, Windows Job Objects, RSS, `hide_console`.                                                                                     | 4     | 525    |
 | `vibrancy.rs`            | Window backdrop (Mica, NSVisualEffectView).                                                                                                         | 1     | 320    |
+| `fonts.rs`               | Installed font files for the terminal's hinted glyph rasterizer.                                                                                    | 1     | 183    |
 | `window_presentation.rs` | Live-resize and occlusion state for the renderers.                                                                                                  | 1     | 287    |
 | `runtime.rs`             | The async runtime behind commands.                                                                                                                  | 1     | 124    |
 | `app_menu.rs`            | macOS menu with a guarded Quit.                                                                                                                     | 1     | 83     |
@@ -200,17 +202,18 @@ for `app/hooks/useAppCloseGuard.ts`, `onWindowResized` for `components/WindowCon
 
 ### Commands
 
-85 commands are registered (3 of them only with the `bench` feature). E02-05 removed the 22 of the git agent-task
+95 commands are registered (3 of them only with the `bench` feature). E02-05 removed the 22 of the git agent-task
 backend, E02-18 removed `fs_grep`, `fs_glob` and `git_show_commit`, E06-06 removed the four `history_*` commands,
-and E05-14, E05-15 and E05-16 removed the 26 that only the AI used.
+E05-14, E05-15 and E05-16 removed the 26 that only the AI used, E14-11 removed `pty_has_foreground_job`, E14-18
+removed `wsl_default_distro`, and E14-05 added the eight `profiles_*` commands.
 The tables below list each one with the frontend files that call it; for the wrapper objects the caller is written as
 `` `git.method` → users ``; `workspaceNative` is in `modules/workspace/native.ts`.
 
-**Commands without a real caller (1):**
+**Commands without a real caller (5):**
 
-| Commands             | Why                                                   | Removed by |
-| -------------------- | ----------------------------------------------------- | ---------- |
-| `wsl_default_distro` | No caller; kept as an input for WSL profile detection | (E14-06)   |
+| Commands                                                                                                | Why                                                      | Resolved by |
+| ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ----------- |
+| `profiles_get`, `profiles_save`, `profiles_delete`, `profiles_detect`, `profiles_set_detected_override` | The profile manager that edits profiles is not built yet | (E15-02)    |
 
 **Callers the running app never loads:** `agent_decisions_ready` and `agent_decision_respond`
 (`modules/control/lib/agentDecisions.ts`) and `agent_disable_hooks`, `agent_hooks_plan`, `agent_hooks_apply` (only
@@ -233,7 +236,7 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 | `pty_close_all`              | `pty`   | `app/bootstrap.ts`                                      |
 | `pty_has_foreground_process` | `pty`   | `modules/terminal/ghostty/useGhosttyTerminalSession.ts` |
 | `pty_session_shell`          | `pty`   | `modules/terminal/lib/useTerminalFileDrop.ts`           |
-| `pty_list_shells`            | `pty`   | `settings/sections/GeneralSection.tsx`                  |
+| `pty_list_shells`            | `pty`   | `settings/sections/TerminalSection.tsx`                 |
 
 #### fs
 
@@ -308,11 +311,23 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 
 | Command                 | Handler          | Frontend caller(s)                                                                                                                                 |
 | ----------------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `wsl_list_distros`      | `workspace`      | `modules/workspace/env.ts`, `settings/sections/GeneralSection.tsx`                                                                                 |
-| `wsl_default_distro`    | `workspace`      | **no caller**                                                                                                                                      |
+| `wsl_list_distros`      | `workspace`      | `modules/workspace/env.ts`, `settings/sections/TerminalSection.tsx`                                                                                |
 | `wsl_home`              | `workspace::ipc` | `modules/workspace/env.ts`                                                                                                                         |
 | `workspace_authorize`   | `workspace`      | `workspaceNative.workspaceAuthorize` → `app/hooks/useTerminalPanes.ts`, `app/hooks/useWorkspaceSwitcher.ts`, `modules/spaces/lib/useSpacesBoot.ts` |
 | `workspace_current_dir` | `workspace`      | `modules/platform/launchDir.ts`, `workspaceNative.workspaceCurrentDir` → `app/hooks/useWorkspaceSwitcher.ts`                                       |
+
+#### profiles
+
+| Command                          | Handler              | Frontend caller(s)              |
+| -------------------------------- | -------------------- | ------------------------------- |
+| `profiles_list`                  | `profiles::commands` | `modules/profiles/store.ts`     |
+| `profiles_get`                   | `profiles::commands` | **no caller**                   |
+| `profiles_save`                  | `profiles::commands` | **no caller**                   |
+| `profiles_delete`                | `profiles::commands` | **no caller**                   |
+| `profiles_set_default`           | `profiles::commands` | `modules/profiles/store.ts`     |
+| `profiles_detect`                | `profiles::commands` | **no caller**                   |
+| `profiles_set_detected_override` | `profiles::commands` | **no caller**                   |
+| `profiles_take_load_error`       | `profiles::store`    | `modules/profiles/loadError.ts` |
 
 #### control
 
@@ -334,6 +349,7 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 | ---------------------- | -------- | ---------------------------------------- |
 | `get_launch_dir`       | `lib.rs` | `modules/platform/launchDir.ts`          |
 | `get_launch_files`     | `lib.rs` | `modules/platform/launchDir.ts`          |
+| `app_about`            | `lib.rs` | `settings/sections/AboutSection.tsx`     |
 | `open_settings_window` | `lib.rs` | `modules/settings/openSettingsWindow.ts` |
 
 #### agent
@@ -352,6 +368,14 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 | ---------------------- | ---------- | --------------------------- |
 | `window_backdrop_kind` | `vibrancy` | `modules/theme/vibrancy.ts` |
 | `window_set_backdrop`  | `vibrancy` | `modules/theme/vibrancy.ts` |
+
+#### fonts
+
+| Command               | Handler | Frontend caller(s)                             |
+| --------------------- | ------- | ---------------------------------------------- |
+| `font_face_find`      | `fonts` | `modules/terminal/ghostty/gpu/hintedGlyphs.ts` |
+| `font_face_data`      | `fonts` | `modules/terminal/ghostty/gpu/hintedGlyphs.ts` |
+| `font_subpixel_order` | `fonts` | `modules/terminal/ghostty/gpu/subpixelText.ts` |
 
 #### window_presentation
 
