@@ -7295,11 +7295,39 @@ path Windows sees but the distro does not (`/mnt/d/repo` with automount off) pas
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml pty`; manual: a WSL pane with a missing `/mnt/...`
 directory opens in home with the toast.
 
+### E26-08 — Nushell shell integration
+
+```yaml
+id: E26-08
+depends-on: []
+refs: [.docs/plan/analysis/backend-core.md]
+covers: [backend-core/shell-integration-scripts]
+type: task
+scope: be
+size: M
+```
+
+**Goal:** Nushell panes report their cwd (OSC 7) and prompt marks (OSC 133) like bash, zsh, fish and PowerShell do.
+lut detects Nushell as a profile on every platform, but has no integration script for it (`ShellKind::Other`), so a
+`nu` pane does not track its directory or prompts.
+
+**Acceptance criteria:**
+
+- [ ] An integration script for `nu`, loaded without writing into the user's Nushell config, natively on Windows,
+      macOS and Linux and inside WSL.
+- [ ] It emits OSC 7 and OSC 133 A/B/C/D, only in lut-spawned shells (`LUT_TERMINAL`), once per shell, and defines
+      the `lut` command when `LUT_CLI` is set, as the other scripts do.
+- [ ] A `nu` launch with arguments the integration cannot coexist with runs without it, as for the other shells.
+- [ ] Unit tests for the launch arguments and environment; a script test like `init.test.fish`.
+
+**Verification:** `cargo test --manifest-path src-tauri/Cargo.toml --lib shell_init`; manual: a Nushell pane follows
+`cd` in the header breadcrumb.
+
 ### E26-03 — Close-out: accessory improvements
 
 ```yaml
 id: E26-03
-depends-on: [E26-01, E26-02, E26-04, E26-05, E26-06, E26-07]
+depends-on: [E26-01, E26-02, E26-04, E26-05, E26-06, E26-07, E26-08]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
