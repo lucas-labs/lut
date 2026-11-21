@@ -374,7 +374,6 @@ pub fn run() {
             git::commands::git_unwatch,
             shell::shell_run_command,
             workspace::wsl_list_distros,
-            workspace::wsl_default_distro,
             workspace::ipc::wsl_home,
             workspace::workspace_authorize,
             workspace::workspace_current_dir,
