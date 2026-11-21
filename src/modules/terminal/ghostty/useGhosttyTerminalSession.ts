@@ -130,6 +130,8 @@ type GhosttySession = {
   look: SessionLook | null;
   /** A full-screen program is running: the pane has no padding meanwhile. */
   alternateScreen: boolean;
+  /** Room kept under the text for a bar the pane shows over its bottom edge, in CSS pixels. */
+  barInset: number;
 };
 
 type GhosttyStartupTimings = {
@@ -342,11 +344,26 @@ export function useGhosttyTerminalSession({
     );
   }, [leafId]);
 
-  const openWithDefaultProfile = useCallback(() => {
-    void respawnGhosttySession(leafId, { profileId: undefined }).catch((error: unknown) =>
-      setError({ kind: 'startup', message: toError(error).message }),
-    );
-  }, [leafId]);
+  /** Opens the pane again with another profile; none is the default one. */
+  const openWithProfile = useCallback(
+    (profileId?: string) => {
+      void respawnGhosttySession(leafId, { profileId }).catch((error: unknown) =>
+        setError({ kind: 'startup', message: toError(error).message }),
+      );
+    },
+    [leafId],
+  );
+
+  /** Keeps `px` under the text, so a bar over the pane's bottom edge hides none of it. */
+  const setBarInset = useCallback(
+    (px: number) => {
+      const session = sessions.get(leafId);
+      if (!session || session.barInset === px) return;
+      session.barInset = px;
+      applyPadding(session);
+    },
+    [leafId],
+  );
 
   return useMemo(
     () => ({
@@ -355,7 +372,8 @@ export function useGhosttyTerminalSession({
       model,
       retry,
       restart,
-      openWithDefaultProfile,
+      openWithProfile,
+      setBarInset,
       write,
       writeAtPrompt,
       focus,
@@ -372,7 +390,8 @@ export function useGhosttyTerminalSession({
       exitCode,
       retry,
       restart,
-      openWithDefaultProfile,
+      openWithProfile,
+      setBarInset,
       model,
     ],
   );
@@ -540,6 +559,7 @@ async function respawnGhosttySession(
   session.commandTracked = false;
   session.lastCwd = null;
   session.alternateScreen = false;
+  session.barInset = 0;
   session.initialCwd = launch.cwd ?? session.initialCwd;
   if ('profileId' in launch) session.profileId = launch.profileId;
   session.startupError = null;
@@ -601,6 +621,7 @@ function ensureSession(
     promptIntegrated: false,
     commandRunning: false,
     commandTracked: false,
+    barInset: 0,
     disposed: false,
     generation: 0,
     initializing: null,
@@ -997,10 +1018,12 @@ function focusSessionSurface(session: GhosttySession, surface: GhosttySurface | 
   });
 }
 
-/** The pane's padding, or none while a full-screen program runs. */
+/** The pane's padding, or none while a full-screen program runs, plus the room a bar keeps. */
 function applyPadding(session: GhosttySession, surface = session.surface): void {
   const padding = session.alternateScreen ? NO_PADDING : (session.look?.padding ?? NO_PADDING);
-  surface?.setPadding(padding);
+  surface?.setPadding(
+    session.barInset === 0 ? padding : { ...padding, bottom: padding.bottom + session.barInset },
+  );
 }
 
 function attachGhosttySurface(session: GhosttySession, surface: GhosttySurface): void {

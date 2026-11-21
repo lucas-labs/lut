@@ -1,10 +1,11 @@
-import { Alert, AlertAction, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { type ProfileEntry, useCloseBehavior } from '@/modules/profiles';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import type { TerminalSearchController } from '@/modules/terminal/search/TerminalSearchController';
 import {
   forwardRef,
+  type KeyboardEvent,
   lazy,
   memo,
   Suspense,
@@ -20,6 +21,7 @@ import { useGhosttyTerminalSession } from './ghostty/useGhosttyTerminalSession';
 import type { LaunchError } from './lib/launchError';
 import { usePaneLifecycle } from './lib/paneLifecycle';
 import { usePaneAppearance } from './lib/usePaneAppearance';
+import { PANE_BAR_HEIGHT, PaneExitBar, PaneLaunchBar } from './PaneStatusBar';
 
 export type TerminalPaneHandle = {
   write: (data: string) => void;
@@ -48,7 +50,7 @@ export type TerminalPaneProps = {
 };
 
 /** The pane's profile itself cannot open: it is gone, or what it runs is missing. */
-function opensWithDefaultProfile(launch: LaunchError | undefined): boolean {
+function profileCannotOpen(launch: LaunchError | undefined): boolean {
   return (
     launch?.code === 'profileNotFound' || launch?.code === 'distroNotInstalled' || launch?.code === 'executableNotFound'
   );
@@ -96,6 +98,23 @@ const GhosttyTerminalPane = memo(
       if (exitBehavior === 'close' && session.exitCode !== null) closePane(session.exitCode);
     }, [exitBehavior, session.exitCode]);
 
+    const exitBar = session.exitCode !== null && (exitBehavior === 'ask' || exitBehavior === 'keepOpen');
+    const launchBar = session.error?.kind === 'startup' && profileCannotOpen(session.error.launch);
+    const showsBar = exitBar || launchBar;
+    const { setBarInset } = session;
+    useEffect(() => setBarInset(showsBar ? PANE_BAR_HEIGHT : 0), [showsBar, setBarInset]);
+
+    // The exit bar's keys: Enter restarts, Esc closes; nothing else reaches the exited terminal anyway.
+    const onKeyDownCapture = (event: KeyboardEvent<HTMLDivElement>) => {
+      if (!exitBar || exitBehavior !== 'ask' || session.exitCode === null) return;
+      if (event.key !== 'Enter' && event.key !== 'Escape') return;
+      if (event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.key === 'Enter') session.restart();
+      else onExit?.(leafId, session.exitCode);
+    };
+
     useImperativeHandle(
       ref,
       () => ({
@@ -116,8 +135,9 @@ const GhosttyTerminalPane = memo(
           pointerEvents: visible ? 'auto' : 'none',
         }}
         data-terminal-backend={backend}
+        onKeyDownCapture={onKeyDownCapture}
       >
-        <div ref={containerRef} className="absolute inset-0" />
+        <div ref={containerRef} className={cn('absolute inset-0 transition-opacity', showsBar && 'opacity-55')} />
         {screenReader && session.model && (
           <Suspense fallback={null}>
             <TerminalAccessibleOutput
@@ -128,24 +148,18 @@ const GhosttyTerminalPane = memo(
             />
           </Suspense>
         )}
-        {session.exitCode !== null && (exitBehavior === 'ask' || exitBehavior === 'keepOpen') && (
-          <div className="absolute inset-x-3 bottom-3 z-10">
-            <Alert>
-              <AlertTitle>Process exited with code {session.exitCode}</AlertTitle>
-              {exitBehavior === 'ask' && (
-                <AlertAction className="flex gap-2">
-                  <Button variant="outline" onClick={() => onExit?.(leafId, session.exitCode ?? 0)}>
-                    Close
-                  </Button>
-                  <Button variant="outline" onClick={session.restart}>
-                    Restart
-                  </Button>
-                </AlertAction>
-              )}
-            </Alert>
-          </div>
+        {exitBar && session.exitCode !== null && (
+          <PaneExitBar
+            code={session.exitCode}
+            ask={exitBehavior === 'ask'}
+            onRestart={session.restart}
+            onClose={() => onExit?.(leafId, session.exitCode ?? 0)}
+          />
         )}
-        {session.error && (
+        {launchBar && session.error && (
+          <PaneLaunchBar message={session.error.message} onRetry={session.retry} onOpenWith={session.openWithProfile} />
+        )}
+        {session.error && !launchBar && (
           <div
             role="alert"
             className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background p-6 text-center text-sm"
@@ -157,16 +171,9 @@ const GhosttyTerminalPane = memo(
             {session.error.kind === 'renderer' && (
               <p className="text-muted-foreground">Your terminal session is preserved. Retry to restore its display.</p>
             )}
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={session.retry}>
-                {session.error.kind === 'renderer' ? 'Retry display' : 'Retry'}
-              </Button>
-              {opensWithDefaultProfile(session.error.launch) && (
-                <Button variant="outline" onClick={session.openWithDefaultProfile}>
-                  Open with default profile
-                </Button>
-              )}
-            </div>
+            <Button variant="outline" onClick={session.retry}>
+              {session.error.kind === 'renderer' ? 'Retry display' : 'Retry'}
+            </Button>
           </div>
         )}
       </div>

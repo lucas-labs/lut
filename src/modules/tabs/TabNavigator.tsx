@@ -8,7 +8,6 @@ import {
 } from '@/components/ui/context-menu';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import type { AgentLaunchRequest } from '@/modules/agents/lib/launcher';
 import {
   TabIcon,
   type TabNavigatorActions,
@@ -19,7 +18,7 @@ import {
 import { ShortcutKeys, useShortcutLabel } from '@/modules/shortcuts';
 import { CancelCircleIcon, ChevronIcon, PencilIcon, XIcon } from '@lut/lut-icons';
 import { Fragment, type KeyboardEvent, useEffect, useRef, useState } from 'react';
-import { NewTabMenu } from './NewTabMenu';
+import { NewTabMenu, type NewTabMenuActions } from './NewTabMenu';
 
 type Props = {
   /** The active space's tabs, in strip order. */
@@ -33,12 +32,7 @@ type Props = {
   compact?: boolean;
   /** The strip's `data-tauri-drag-region` value: "false" while the window is full screen. */
   dragRegion?: '' | 'false';
-  onNew: () => void;
-  onNewPrivate: () => void;
-  onNewPreview: () => void;
-  onNewEditor: () => void;
-  onNewGitGraph: () => void;
-  onLaunchAgents: (request: AgentLaunchRequest) => void;
+  newTabMenu: NewTabMenuActions;
 };
 
 /** Why a private terminal's tab carries the incognito icon. */
@@ -47,20 +41,7 @@ const PRIVATE_TAB_HINT = "This terminal isn't saved in the Space, so it won't co
 const HIDDEN_SCROLLBAR = '[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
 
 /** The tabs of the active space, per the E11-02 design: a strip (horizontal) or a rail (vertical). */
-export function TabNavigator({
-  items,
-  actions,
-  orientation,
-  heading,
-  compact,
-  dragRegion = '',
-  onNew,
-  onNewPrivate,
-  onNewPreview,
-  onNewEditor,
-  onNewGitGraph,
-  onLaunchAgents,
-}: Props) {
+export function TabNavigator({ items, actions, orientation, heading, compact, dragRegion = '', newTabMenu }: Props) {
   const vertical = orientation === 'vertical';
   const activeId = items.find((t) => t.active)?.id;
   const closeHint = useShortcutLabel('tab.close');
@@ -297,24 +278,14 @@ export function TabNavigator({
     );
   });
 
-  const newTabMenu = (
-    <NewTabMenu
-      size={vertical ? 'rail' : 'strip'}
-      onNew={onNew}
-      onNewPrivate={onNewPrivate}
-      onNewPreview={onNewPreview}
-      onNewEditor={onNewEditor}
-      onNewGitGraph={onNewGitGraph}
-      onLaunchAgents={onLaunchAgents}
-    />
-  );
+  const newTabButton = <NewTabMenu size={vertical ? 'rail' : 'strip'} {...newTabMenu} />;
 
   if (vertical) {
     return (
       <nav aria-label="Tabs" className="flex h-full min-h-0 w-full flex-col">
         <div className="flex h-[30px] shrink-0 items-center gap-2 pr-1.5 pl-[18px]">
           <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{heading}</span>
-          {newTabMenu}
+          {newTabButton}
         </div>
         <div
           ref={scrollRef}
@@ -339,7 +310,7 @@ export function TabNavigator({
       >
         {cells}
       </div>
-      {newTabMenu}
+      {newTabButton}
     </div>
   );
 }

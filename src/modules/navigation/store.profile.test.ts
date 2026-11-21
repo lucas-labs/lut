@@ -50,6 +50,18 @@ describe('the terminal profile of each pane', () => {
     expect(profileOf(other, second)).toBe('mine');
   });
 
+  it('opens a new tab with the chosen profile', () => {
+    const second = store().newTab('/work', 'detected:pwsh');
+    expect(profileOf(second, tab(second).activeLeafId)).toBe('detected:pwsh');
+  });
+
+  it('opens a split with the chosen profile instead of the one of the pane it splits', () => {
+    store().setLeafProfile(tab(1).activeLeafId, 'detected:wsl:Ubuntu');
+    const second = store().splitActivePane(1, 'row', 'detected:pwsh');
+    if (second === null) throw new Error('Expected a split');
+    expect(profileOf(1, second)).toBe('detected:pwsh');
+  });
+
   it('leaves the tabs untouched when the profile does not change', () => {
     const first = tab(1).activeLeafId;
     store().setLeafProfile(first, 'mine');
