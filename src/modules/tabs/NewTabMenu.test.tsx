@@ -115,6 +115,14 @@ describe('NewTabMenu', () => {
     expect(actions.onNew).toHaveBeenCalled();
   });
 
+  it('offers one terminal when every profile is hidden and none is default', async () => {
+    profiles.list = { profiles: [profile('detected:cmd', 'Command Prompt', true)], defaultProfileId: null };
+    await openMenu();
+    expect(itemsOf(menus()[0]).some((el) => el.textContent?.includes('Command Prompt'))).toBe(false);
+    await act(async () => itemNamed(menus()[0], 'Terminal').click());
+    expect(actions.onNew).toHaveBeenCalled();
+  });
+
   it('splits with the profile chosen in the split submenu', async () => {
     await openMenu();
     await act(async () => itemNamed(menus()[0], 'Split down').click());

@@ -12,14 +12,19 @@ type State = {
   list: ProfilesList | null;
   /** The last read failed; cleared by the next one that succeeds. */
   readFailed: boolean;
+  /** A read is running. */
+  reading: boolean;
 };
 
-const useProfilesStore = create<State>(() => ({ list: null, readFailed: false }));
+const useProfilesStore = create<State>(() => ({ list: null, readFailed: false, reading: false }));
 
 let latestRequest = 0;
+let runningReads = 0;
 
 async function load(): Promise<void> {
   const request = ++latestRequest;
+  runningReads += 1;
+  useProfilesStore.setState({ reading: true });
   try {
     const list = parseProfilesList(await invoke('profiles_list'));
     // An older answer arriving late must not replace a newer one.
@@ -27,6 +32,9 @@ async function load(): Promise<void> {
   } catch (error) {
     console.error('[lut] could not list terminal profiles:', error);
     if (request === latestRequest) useProfilesStore.setState({ readFailed: true });
+  } finally {
+    runningReads -= 1;
+    useProfilesStore.setState({ reading: runningReads > 0 });
   }
 }
 
@@ -65,6 +73,20 @@ function watchProfiles(): void {
 export function useProfiles(): ProfilesList | null {
   useEffect(watchProfiles, []);
   return useProfilesStore((state) => state.list);
+}
+
+/** Whether the list is listed, still being read, or could not be read (see `readProfilesAgain`). */
+export function useProfilesRead(): 'reading' | 'failed' | 'listed' {
+  useEffect(watchProfiles, []);
+  return useProfilesStore(({ list, readFailed, reading }) => {
+    if (list !== null) return 'listed';
+    return readFailed && !reading ? 'failed' : 'reading';
+  });
+}
+
+/** Reads the list again when none was listed yet; a listed one is already kept current. */
+export function readProfilesAgain(): void {
+  watchProfiles();
 }
 
 /**

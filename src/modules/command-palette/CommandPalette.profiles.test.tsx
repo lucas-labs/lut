@@ -5,10 +5,16 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PaletteInitialMode, PaletteItem } from './types';
 
-const profiles = vi.hoisted(() => ({ list: null as ProfilesList | null }));
+const profiles = vi.hoisted(() => ({
+  list: null as ProfilesList | null,
+  read: 'listed' as 'reading' | 'failed' | 'listed',
+  readAgain: vi.fn(),
+}));
 vi.mock('@tauri-apps/api/core', () => ({ invoke: () => Promise.resolve([]) }));
 vi.mock('@/modules/profiles/store', () => ({
   useProfiles: () => profiles.list,
+  useProfilesRead: () => profiles.read,
+  readProfilesAgain: profiles.readAgain,
   useCloseBehavior: () => 'close',
   useProfileAppearance: () => undefined,
   setDefaultProfile: () => Promise.resolve(),
@@ -58,6 +64,8 @@ beforeEach(() => {
     ],
     defaultProfileId: 'detected:pwsh',
   };
+  profiles.read = 'listed';
+  profiles.readAgain.mockClear();
   onOpenProfile.mockClear();
   host = document.createElement('div');
   document.body.append(host);
@@ -110,13 +118,25 @@ describe('the palette profiles page', () => {
   it('opens on the profiles, the default first, hidden ones left out', async () => {
     await render('profiles');
     expect(input().placeholder).toBe('Search profiles...');
-    expect(rows()).toEqual(['Back', 'PowerShell 7Default', 'Command Prompt']);
+    expect(rows()).toEqual(['PowerShell 7Default', 'Command Prompt', 'Back']);
   });
 
-  it('filters the profiles and opens a tab with the one picked', async () => {
+  it('opens a tab with the default profile on Enter', async () => {
+    await render('profiles');
+    await pressEnter();
+    expect(onOpenProfile).toHaveBeenCalledWith('detected:pwsh');
+  });
+
+  it('filters the profiles and opens a tab with the best match on Enter', async () => {
     await render('profiles');
     await type('comm');
-    expect(rows()).toEqual(['Back', 'Command Prompt']);
+    expect(rows()).toEqual(['Command Prompt', 'Back']);
+    await pressEnter();
+    expect(onOpenProfile).toHaveBeenCalledWith('detected:cmd');
+  });
+
+  it('opens a tab with the profile clicked', async () => {
+    await render('profiles');
     await act(async () =>
       (document.querySelector('[cmdk-item][data-value="profile:detected:cmd"]') as HTMLElement).click(),
     );
@@ -128,6 +148,23 @@ describe('the palette profiles page', () => {
     await render('commands');
     expect(rows()).toEqual(['New tab with profile...']);
     await pressEnter();
-    expect(rows()).toEqual(['Back', 'PowerShell 7Default', 'Command Prompt']);
+    expect(rows()).toEqual(['PowerShell 7Default', 'Command Prompt', 'Back']);
+  });
+
+  it('tells when the profiles could not be read, and reads them again', async () => {
+    profiles.list = null;
+    profiles.read = 'failed';
+    await render('profiles');
+    expect(profiles.readAgain).toHaveBeenCalledTimes(1);
+    expect(rows()).toEqual(['Could not read profiles', 'Try again', 'Back']);
+    await pressEnter();
+    expect(profiles.readAgain).toHaveBeenCalledTimes(2);
+  });
+
+  it('tells while the profiles are being read', async () => {
+    profiles.list = null;
+    profiles.read = 'reading';
+    await render('profiles');
+    expect(rows()).toEqual(['Loading profiles...', 'Back']);
   });
 });

@@ -11,11 +11,11 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { FileIcon } from '@/modules/explorer/FileIcon';
-import { useProfiles, visibleProfiles } from '@/modules/profiles';
+import { readProfilesAgain, useProfiles, useProfilesRead, visibleProfiles } from '@/modules/profiles';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { getBindingTokens, type KeyBinding, type ShortcutId, ShortcutKeys, SHORTCUTS } from '@/modules/shortcuts';
 import { listBuiltinThemes, useTheme } from '@/modules/theme';
-import { AlertIcon, ArrowTurnBackIcon, CheckmarkIcon, CommandIcon, TerminalIcon } from '@lut/lut-icons';
+import { AlertIcon, ArrowTurnBackIcon, CheckmarkIcon, CommandIcon, RefreshIcon, TerminalIcon } from '@lut/lut-icons';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { COMMAND_GROUPS } from './commands';
 import { CONTENT_SEARCH_MIN_QUERY, useContentSearch } from './hooks/useContentSearch';
@@ -69,6 +69,7 @@ export function CommandPalette({
   const inPage = page !== 'root';
   const themeFilter = inThemes ? query.trim() : '';
   const profilesList = useProfiles();
+  const profilesRead = useProfilesRead();
 
   const content = useContentSearch(workspaceRoot, parsed.term, open && !inPage && parsed.mode === 'content');
 
@@ -128,6 +129,11 @@ export function CommandPalette({
       .sort((a, b) => (b.s ?? 0) - (a.s ?? 0))
       .map((x) => x.p);
   }, [inProfiles, profilesList, query]);
+
+  // A list that could not be read at startup is read again each time the page opens.
+  useEffect(() => {
+    if (inProfiles) readProfilesAgain();
+  }, [inProfiles]);
 
   const resetPalette = useCallback(() => {
     setQuery('');
@@ -317,11 +323,8 @@ export function CommandPalette({
                 {themes.length === 0 ? <StatusItem label="No themes" /> : null}
               </CommandGroup>
             ) : inProfiles ? (
+              // Back comes last: cmdk selects the first row, which must be a profile so Enter opens it.
               <CommandGroup heading="Profiles">
-                <CommandItem value="profile:back" onSelect={exitPage} className="text-[12.5px]">
-                  <ArrowTurnBackIcon size="sm" />
-                  <span>Back</span>
-                </CommandItem>
                 {profiles.map((p) => (
                   <CommandItem
                     key={p.id}
@@ -338,8 +341,21 @@ export function CommandPalette({
                     ) : null}
                   </CommandItem>
                 ))}
-                {profilesList === null ? <StatusItem label="Loading profiles..." /> : null}
-                {profilesList !== null && profiles.length === 0 ? <StatusItem label="No profiles" /> : null}
+                {profilesRead === 'reading' ? <StatusItem label="Loading profiles..." /> : null}
+                {profilesRead === 'failed' ? (
+                  <>
+                    <StatusItem label="Could not read profiles" tone="error" />
+                    <CommandItem value="profile:retry" onSelect={readProfilesAgain} className="text-[12.5px]">
+                      <RefreshIcon size="sm" />
+                      <span>Try again</span>
+                    </CommandItem>
+                  </>
+                ) : null}
+                {profilesRead === 'listed' && profiles.length === 0 ? <StatusItem label="No profiles" /> : null}
+                <CommandItem value="profile:back" onSelect={exitPage} className="text-[12.5px]">
+                  <ArrowTurnBackIcon size="sm" />
+                  <span>Back</span>
+                </CommandItem>
               </CommandGroup>
             ) : parsed.mode === 'commands' ? (
               rankedCommands.length === 0 ? (

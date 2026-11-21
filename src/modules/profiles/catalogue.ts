@@ -9,3 +9,8 @@ export function visibleProfiles(list: ProfilesList): ProfileEntry[] {
   const others = list.profiles.filter((profile) => !profile.hidden && profile !== fallback);
   return fallback ? [fallback, ...others] : others;
 }
+
+/** A list read that offers at least one profile; with every profile hidden and no default, none. */
+export function offersProfiles(list: ProfilesList | null): list is ProfilesList {
+  return list !== null && visibleProfiles(list).length > 0;
+}

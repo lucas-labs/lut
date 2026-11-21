@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { visibleProfiles } from './catalogue';
+import { offersProfiles, visibleProfiles } from './catalogue';
 import type { ProfileEntry } from './model';
 
 function profile(id: string, hidden = false): ProfileEntry {
@@ -42,5 +42,16 @@ describe('visibleProfiles', () => {
   it('lists the profiles in order when there is no default', () => {
     const list = { profiles: [profile('a'), profile('b')], defaultProfileId: null };
     expect(ids(visibleProfiles(list))).toEqual(['a', 'b']);
+  });
+});
+
+describe('offersProfiles', () => {
+  it('offers none before the list is read, or when every profile is hidden and none is default', () => {
+    expect(offersProfiles(null)).toBe(false);
+    expect(offersProfiles({ profiles: [profile('a', true)], defaultProfileId: null })).toBe(false);
+    expect(offersProfiles({ profiles: [profile('a', true)], defaultProfileId: 'a' })).toBe(true);
+    expect(
+      offersProfiles({ profiles: [profile('a', true), profile('b')], defaultProfileId: null }),
+    ).toBe(true);
   });
 });

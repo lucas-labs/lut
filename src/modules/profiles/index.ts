@@ -1,6 +1,13 @@
 export { profileLayer } from './appearance';
-export { visibleProfiles } from './catalogue';
+export { offersProfiles, visibleProfiles } from './catalogue';
 export type { ProfileEntry, ProfilesList } from './model';
 export { ProfileMenuItems } from './ProfileMenuItems';
-export { setDefaultProfile, useCloseBehavior, useProfileAppearance, useProfiles } from './store';
+export {
+  readProfilesAgain,
+  setDefaultProfile,
+  useCloseBehavior,
+  useProfileAppearance,
+  useProfiles,
+  useProfilesRead,
+} from './store';
 export { useProfilesLoadNotice } from './useProfilesLoadNotice';

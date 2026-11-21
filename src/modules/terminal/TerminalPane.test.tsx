@@ -91,6 +91,26 @@ const button = (name: string) => {
   return found;
 };
 
+/** Opens a dropdown from its trigger, as a pointer press does. */
+const openMenu = (trigger: Element) =>
+  act(async () => {
+    trigger.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerId: 1 }));
+  });
+
+/** An item of the open menus, by its text. */
+const menuItem = (name: string) => {
+  const found = [...document.querySelectorAll('[role="menuitem"]')].find((el) => el.textContent?.includes(name));
+  if (!found) throw new Error(`no menu item "${name}"`);
+  return found as HTMLElement;
+};
+
+/** The one button a narrow pane shows in place of the bar's buttons. */
+const compactActions = () => {
+  const found = host.querySelector('[aria-label="Pane actions"]');
+  if (!found) throw new Error('no compact actions');
+  return found;
+};
+
 /** A key pressed in the terminal, which sits inside the pane. */
 function press(key: string) {
   const target = host.querySelector('[data-terminal-backend] > div') as HTMLElement;
@@ -109,6 +129,27 @@ describe('TerminalPane exit bar', () => {
     expect(state.session.restart).toHaveBeenCalledTimes(1);
     act(() => press('Escape'));
     expect(onExit).toHaveBeenCalledWith(7, 2);
+  });
+
+  it('leaves Enter on a bar button to the button', async () => {
+    state.session.exitCode = 2;
+    await render();
+    const close = button('Close pane');
+    act(() => {
+      close.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    });
+    expect(state.session.restart).not.toHaveBeenCalled();
+  });
+
+  it('offers Restart and Close pane in one menu for a narrow pane', async () => {
+    state.session.exitCode = 1;
+    await render();
+    await openMenu(compactActions());
+    await act(async () => menuItem('Close pane').click());
+    expect(onExit).toHaveBeenCalledWith(7, 1);
+    await openMenu(compactActions());
+    await act(async () => menuItem('Restart').click());
+    expect(state.session.restart).toHaveBeenCalledTimes(1);
   });
 
   it('only tells when the profile keeps the pane open, and leaves the keys alone', async () => {
@@ -148,17 +189,22 @@ describe('TerminalPane launch bar', () => {
 
   it('opens the pane with the profile chosen in its menu', async () => {
     await render();
-    await act(async () => {
-      button('Choose profile').dispatchEvent(
-        new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerId: 1 }),
-      );
-    });
-    const item = [...document.querySelectorAll('[role="menuitem"]')].find((el) =>
-      el.textContent?.includes('Command Prompt'),
-    );
-    if (!item) throw new Error('no profile item');
-    await act(async () => (item as HTMLElement).click());
+    await openMenu(button('Choose profile'));
+    await act(async () => menuItem('Command Prompt').click());
     expect(state.session.openWithProfile).toHaveBeenCalledWith('detected:cmd');
+  });
+
+  it('offers every action in one menu for a narrow pane', async () => {
+    await render();
+    await openMenu(compactActions());
+    await act(async () => menuItem('Retry').click());
+    expect(state.session.retry).toHaveBeenCalledTimes(1);
+    await openMenu(compactActions());
+    await act(async () => menuItem('Open with default profile').click());
+    expect(state.session.openWithProfile).toHaveBeenCalledWith();
+    await openMenu(compactActions());
+    await act(async () => menuItem('Command Prompt').click());
+    expect(state.session.openWithProfile).toHaveBeenLastCalledWith('detected:cmd');
   });
 
   it('leaves other startup failures on the full-pane error', async () => {

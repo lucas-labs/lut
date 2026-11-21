@@ -104,7 +104,8 @@ const GhosttyTerminalPane = memo(
     const { setBarInset } = session;
     useEffect(() => setBarInset(showsBar ? PANE_BAR_HEIGHT : 0), [showsBar, setBarInset]);
 
-    // The exit bar's keys: Enter restarts, Esc closes; nothing else reaches the exited terminal anyway.
+    // The exit bar's keys, typed in the terminal: Enter restarts, Esc closes. The bar's own buttons
+    // sit outside the terminal's container and keep their Enter.
     const onKeyDownCapture = (event: KeyboardEvent<HTMLDivElement>) => {
       if (!exitBar || exitBehavior !== 'ask' || session.exitCode === null) return;
       if (event.key !== 'Enter' && event.key !== 'Escape') return;
@@ -135,9 +136,12 @@ const GhosttyTerminalPane = memo(
           pointerEvents: visible ? 'auto' : 'none',
         }}
         data-terminal-backend={backend}
-        onKeyDownCapture={onKeyDownCapture}
       >
-        <div ref={containerRef} className={cn('absolute inset-0 transition-opacity', showsBar && 'opacity-55')} />
+        <div
+          ref={containerRef}
+          className={cn('absolute inset-0 transition-opacity', showsBar && 'opacity-55')}
+          onKeyDownCapture={onKeyDownCapture}
+        />
         {screenReader && session.model && (
           <Suspense fallback={null}>
             <TerminalAccessibleOutput

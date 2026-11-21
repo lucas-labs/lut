@@ -15,7 +15,7 @@ import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover'
 import { useHoldTitleBar } from '@/lib/titleBarHold';
 import { AgentLauncherPanel } from '@/modules/agents/components/AgentLauncherPanel';
 import type { AgentLaunchRequest } from '@/modules/agents/lib/launcher';
-import { ProfileMenuItems, useProfiles } from '@/modules/profiles';
+import { offersProfiles, ProfileMenuItems, useProfiles } from '@/modules/profiles';
 import { type ShortcutId, ShortcutKeys, useShortcutLabel } from '@/modules/shortcuts';
 import {
   ChevronIcon,
@@ -127,14 +127,14 @@ export function NewTabMenu({
               }}
             >
               <DropdownMenuLabel>New tab</DropdownMenuLabel>
-              {profiles && profiles.profiles.length > 0 ? (
+              {offersProfiles(profiles) ? (
                 <ProfileMenuItems
                   list={profiles}
                   onPick={onNewWithProfile}
                   defaultHint={<ShortcutKeys label={terminalHint} />}
                 />
               ) : (
-                // Until the profiles are listed, or when they cannot be: the default one.
+                // Until the profiles are listed, or when none is offered: the default shell.
                 <DropdownMenuItem onSelect={onNew}>
                   <TerminalIcon size="sm" />
                   <span className="flex-1">Terminal</span>
@@ -185,7 +185,7 @@ export function NewTabMenu({
                     </DropdownMenuShortcut>
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent className="min-w-56">
-                    {profiles && profiles.profiles.length > 0 ? (
+                    {offersProfiles(profiles) ? (
                       <ProfileMenuItems list={profiles} onPick={(id) => onSplit(dir, id)} />
                     ) : (
                       <DropdownMenuItem disabled>
