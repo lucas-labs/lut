@@ -116,8 +116,18 @@ export function fitPaddedViewport(
     const share = free / asked;
     return [Math.floor(Math.max(0, start) * share), Math.floor(Math.max(0, end) * share)];
   };
-  const [left, right] = room(padding.left, padding.right, hostWidth, MIN_COLUMNS * metrics.cellWidth);
-  const [top, bottom] = room(padding.top, padding.bottom, hostHeight, MIN_ROWS * metrics.cellHeight);
+  const [left, right] = room(
+    padding.left,
+    padding.right,
+    hostWidth,
+    MIN_COLUMNS * metrics.cellWidth,
+  );
+  const [top, bottom] = room(
+    padding.top,
+    padding.bottom,
+    hostHeight,
+    MIN_ROWS * metrics.cellHeight,
+  );
   const fitted = left || right || top || bottom ? { top, right, bottom, left } : NO_PADDING;
   const device = (value: number) => Math.round(value * metrics.scale);
   const devicePadding = {

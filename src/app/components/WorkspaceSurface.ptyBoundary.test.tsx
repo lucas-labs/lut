@@ -679,7 +679,7 @@ describe('each pane looks as its profile says (E14-16)', () => {
     expect(pty.opened).toEqual([tab.activeLeafId]);
   });
 
-  it("pads the pane as its profile says, and not while a full-screen program runs (E14-21)", async () => {
+  it('pads the pane as its profile says, and not while a full-screen program runs (E14-21)', async () => {
     const padded = { top: 8, right: 12, bottom: 8, left: 12 };
     const none = { top: 0, right: 0, bottom: 0, left: 0 };
     appearances.set({ 'detected:pwsh': { padding: padded } });

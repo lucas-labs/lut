@@ -190,8 +190,17 @@ describe('fitPaddedViewport (E14-21)', () => {
   it('fits the grid in the host less its padding', () => {
     const metrics = metricsAt(1);
     const padding = { top: 10, right: 20, bottom: 30, left: 40 };
-    const padded = fitPaddedViewport(800, 400, metrics, null, padding, TERMINAL_RIGHT_GUTTER_CSS_PX);
-    expect(padded.fit).toEqual(fitTerminalViewport(740, 360, metrics, null, TERMINAL_RIGHT_GUTTER_CSS_PX));
+    const padded = fitPaddedViewport(
+      800,
+      400,
+      metrics,
+      null,
+      padding,
+      TERMINAL_RIGHT_GUTTER_CSS_PX,
+    );
+    expect(padded.fit).toEqual(
+      fitTerminalViewport(740, 360, metrics, null, TERMINAL_RIGHT_GUTTER_CSS_PX),
+    );
     expect(padded.padding).toEqual(padding);
     expect(padded.devicePadding).toEqual(padding);
   });
@@ -206,16 +215,20 @@ describe('fitPaddedViewport (E14-21)', () => {
 
   it('takes the padding off the exact device box in whole device pixels', () => {
     const metrics = metricsAt(1.25);
-    const padded = fitPaddedViewport(800, 400, metrics, { width: 1000, height: 500 }, {
-      top: 3,
-      right: 3,
-      bottom: 3,
-      left: 3,
-    });
-    expect(padded.devicePadding).toEqual({ top: 4, right: 4, bottom: 4, left: 4 });
-    expect(padded.fit).toEqual(
-      fitTerminalViewport(794, 394, metrics, { width: 992, height: 492 }),
+    const padded = fitPaddedViewport(
+      800,
+      400,
+      metrics,
+      { width: 1000, height: 500 },
+      {
+        top: 3,
+        right: 3,
+        bottom: 3,
+        left: 3,
+      },
     );
+    expect(padded.devicePadding).toEqual({ top: 4, right: 4, bottom: 4, left: 4 });
+    expect(padded.fit).toEqual(fitTerminalViewport(794, 394, metrics, { width: 992, height: 492 }));
   });
 
   it('keeps the minimum grid in a pane too small for its padding, sharing what is left', () => {
@@ -234,6 +247,8 @@ describe('fitPaddedViewport (E14-21)', () => {
     expect(padded.padding.left + padded.padding.right).toBeLessThanOrEqual(10);
     expect(padded.padding.left).toBeGreaterThan(padded.padding.right);
     expect(padded.padding.top + padded.padding.bottom).toBeLessThanOrEqual(10);
-    expect(fitPaddedViewport(cell.width, cell.height, metrics, null, padded.padding).padding).toEqual(NONE);
+    expect(
+      fitPaddedViewport(cell.width, cell.height, metrics, null, padded.padding).padding,
+    ).toEqual(NONE);
   });
 });

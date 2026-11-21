@@ -54,7 +54,13 @@ describe('the terminal colours of a theme', () => {
 
   it("are the theme's own terminal colours", () => {
     const own = theme('own', {
-      dark: { terminal: { background: 'rgb(20, 0, 0)', cursor: 'rgb(0, 0, 200)', selection: 'rgb(9, 9, 9)' } },
+      dark: {
+        terminal: {
+          background: 'rgb(20, 0, 0)',
+          cursor: 'rgb(0, 0, 200)',
+          selection: 'rgb(9, 9, 9)',
+        },
+      },
     });
     expect(terminalTokensFor(own, 'dark')).toMatchObject({
       background: 'rgb(20, 0, 0)',

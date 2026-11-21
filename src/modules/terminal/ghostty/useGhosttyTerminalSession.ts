@@ -902,7 +902,10 @@ async function initializeSessionGeneration(
   // was attached found no PTY to tell, so look again.
   if (session.look?.theme !== theme) applyThemeToSession(session);
   const current = session.look;
-  if (current && (current.cursorBlink !== look.cursorBlink || current.cursorStyle !== look.cursorStyle)) {
+  if (
+    current &&
+    (current.cursorBlink !== look.cursorBlink || current.cursorStyle !== look.cursorStyle)
+  ) {
     surface.setCursorOptions(current.cursorBlink, current.cursorStyle);
   }
 }

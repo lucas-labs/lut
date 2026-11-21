@@ -11,7 +11,12 @@ const { coerceTerminalPadding, DEFAULT_PREFERENCES } = await import('./store');
 
 describe('the terminal padding preference', () => {
   it('is 10 px above and below the text and 14 px beside it by default', () => {
-    expect(DEFAULT_PREFERENCES.terminalPadding).toEqual({ top: 10, right: 14, bottom: 10, left: 14 });
+    expect(DEFAULT_PREFERENCES.terminalPadding).toEqual({
+      top: 10,
+      right: 14,
+      bottom: 10,
+      left: 14,
+    });
   });
 
   it('loads the default when none is saved, or what is saved is not a padding', () => {

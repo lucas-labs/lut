@@ -17,7 +17,11 @@ describe('the alternate screen', () => {
   });
 
   it('is reported once on entering and once on leaving, as the output that switches it is written', () => {
-    const model = new AdaptedGhosttyTerminalModel(core, { backend: 'ghostty-webgpu', cols: 40, rows: 6 });
+    const model = new AdaptedGhosttyTerminalModel(core, {
+      backend: 'ghostty-webgpu',
+      cols: 40,
+      rows: 6,
+    });
     try {
       const seen: boolean[] = [];
       model.subscribeAlternateScreen((active) => seen.push(active));
@@ -37,7 +41,11 @@ describe('the alternate screen', () => {
   });
 
   it('stops reporting once unsubscribed', () => {
-    const model = new AdaptedGhosttyTerminalModel(core, { backend: 'ghostty-webgpu', cols: 40, rows: 6 });
+    const model = new AdaptedGhosttyTerminalModel(core, {
+      backend: 'ghostty-webgpu',
+      cols: 40,
+      rows: 6,
+    });
     try {
       const seen: boolean[] = [];
       const unsubscribe = model.subscribeAlternateScreen((active) => seen.push(active));

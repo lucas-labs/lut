@@ -26,13 +26,7 @@ const fake = vi.hoisted(() => ({
 vi.mock('@/modules/terminal/ghostty/useGhosttyTerminalSession', async () => {
   const { useEffect } = await import('react');
   return {
-    useGhosttyTerminalSession: ({
-      leafId,
-      appearance,
-    }: {
-      leafId: number;
-      appearance: { theme: object } | null;
-    }) => {
+    useGhosttyTerminalSession: ({ leafId, appearance }: { leafId: number; appearance: { theme: object } | null }) => {
       if (!fake.live.has(leafId)) {
         fake.live.add(leafId);
         fake.opened.push(leafId);

@@ -77,10 +77,7 @@ export function WorkspaceSurface({
 
   return (
     <div className="relative h-full min-h-0">
-      <div
-        className={cn(LAYER, !isTerminalTab && 'invisible pointer-events-none')}
-        aria-hidden={!isTerminalTab}
-      >
+      <div className={cn(LAYER, !isTerminalTab && 'invisible pointer-events-none')} aria-hidden={!isTerminalTab}>
         <TerminalStack
           terminals={terminals}
           activeId={activeId}
