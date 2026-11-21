@@ -4424,8 +4424,9 @@ size: S
 ```
 
 **Goal:** Each profile sets the padding around the terminal grid, inside its panes, as Windows Terminal profiles do.
-The workspace adds none of its own (only a 12px left gap while a side panel is open, E12-03), so full-screen programs
-like nvim fill the pane by default.
+The workspace adds none of its own (only a 12px left gap while a side panel is open, E12-03). Full-screen programs
+(nvim, htop, less: anything on the alternate screen) always fill the pane: the padding applies to the normal screen
+only.
 
 **Acceptance criteria:**
 
@@ -4433,10 +4434,13 @@ like nvim fill the pane by default.
       other appearance fields (E14-16).
 - [ ] The terminal fit (`fitTerminalViewport`) subtracts the padding before counting columns and rows, so nothing is
       cut and the PTY gets the real size; the pane's background fills the padding.
+- [ ] While the pane is on the alternate screen (`modes().alternateScreen`) the padding is 0; entering and leaving it
+      resizes the pane once each, without respawning.
 - [ ] Changing a profile's padding resizes its open panes once each, without respawning.
-- [ ] Tests for the fit with padding, including a pane too small for it.
+- [ ] Tests for the fit with padding, including a pane too small for it, and for the switch on the alternate screen.
 
-**Verification:** `pnpm test`; manual: two panes with different profiles and paddings, nvim in one of them.
+**Verification:** `pnpm test`; manual: two panes with different profiles and paddings; nvim in a padded one fills the
+pane, and the padding is back after quitting it.
 
 ### E14-22 — Git Bash's launcher is not a running process
 
