@@ -63,6 +63,7 @@ beforeEach(() => {
     terminalCursorStyle: 'bar',
     terminalCursorBlink: false,
     terminalScrollback: 5000,
+    terminalPadding: { top: 0, right: 0, bottom: 0, left: 0 },
   });
   root = createRoot(document.createElement('div'));
 });
@@ -84,6 +85,7 @@ describe("a pane's appearance", () => {
         cursorStyle: 'bar',
         cursorBlink: false,
         scrollback: 5000,
+        padding: { top: 0, right: 0, bottom: 0, left: 0 },
       });
     }
   });
@@ -103,6 +105,7 @@ describe("a pane's appearance", () => {
       cursorStyle: 'block',
       cursorBlink: true,
       scrollback: 100,
+      padding: { top: 6, right: 6, bottom: 6, left: 6 },
     });
     expect(appearance).toMatchObject({
       font: { fontFamily: 'Profile Mono', fontSize: 18, fontWeight: '400' },
@@ -110,6 +113,7 @@ describe("a pane's appearance", () => {
       cursorStyle: 'block',
       cursorBlink: true,
       scrollback: 100,
+      padding: { top: 6, right: 6, bottom: 6, left: 6 },
     });
   });
 });

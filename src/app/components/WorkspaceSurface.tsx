@@ -33,11 +33,6 @@ type Props = {
   onSetMarkdownView: EditorStackProps['onSetMarkdownView'];
   /** Opens a file a markdown document links to, as the explorer does. */
   onOpenFile?: (path: string) => void;
-  /**
-   * A panel (sidebar or vertical tab rail) is open on the terminals' left: the terminal layer then keeps a gap from
-   * it. With nothing beside them, terminals reach the window's edge (full-screen programs like nvim fill it).
-   */
-  insetFromSidePanel?: boolean;
 };
 
 const LAYER = 'absolute inset-0';
@@ -70,7 +65,6 @@ export function WorkspaceSurface({
   onGitHistorySearchHandle,
   onSetMarkdownView,
   onOpenFile,
-  insetFromSidePanel = false,
 }: Props) {
   const terminals = useMemo(() => selectLiveTerminals(tabs), [tabs]);
   const kind = activeTab?.kind;
@@ -84,7 +78,7 @@ export function WorkspaceSurface({
   return (
     <div className="relative h-full min-h-0">
       <div
-        className={cn(LAYER, insetFromSidePanel && 'pl-3', !isTerminalTab && 'invisible pointer-events-none')}
+        className={cn(LAYER, !isTerminalTab && 'invisible pointer-events-none')}
         aria-hidden={!isTerminalTab}
       >
         <TerminalStack

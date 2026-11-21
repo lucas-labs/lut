@@ -32,6 +32,8 @@ export const SCREEN_OFFSET = {
   origin: 120,
   /** Device pixels of the pane cut off at the canvas's left and top edge (viewport starts there). */
   clip: 128,
+  /** Device pixels from the pane's corner to the grid's: the pane's padding (left, top). */
+  grid: 136,
   decoration: 144,
   cursorText: 160,
 } as const;
@@ -72,6 +74,7 @@ struct Screen {
   selection_columns: vec2i,
   origin: vec2i,
   clip: vec2u,
+  grid: vec2u,
   decoration: vec4u,
   cursor_text: vec4f,
 }
@@ -213,7 +216,11 @@ fn decoration_color(
 
 @fragment
 fn fragment_main(@builtin(position) position: vec4f) -> @location(0) vec4f {
-  let local_position = position.xy - vec2f(screen.origin) + vec2f(0.0, f32(screen.shift_y));
+  let grid_position = position.xy - vec2f(screen.origin) - vec2f(screen.grid);
+  if (grid_position.x < 0.0 || grid_position.y < 0.0) {
+    return vec4f(screen.theme_background.rgb, 1.0);
+  }
+  let local_position = grid_position + vec2f(0.0, f32(screen.shift_y));
   let pixel = vec2u(local_position);
   let cell = pixel / screen.cell_size;
   if (cell.x >= screen.dims.x || cell.y >= screen.dims.y) {
@@ -343,8 +350,8 @@ fn vertex_main(
     vec2f(0.0, 1.0), vec2f(1.0, 0.0), vec2f(1.0, 1.0),
   );
   let corner = corners[vertex_index];
-  let pixel = vec2f(origin) + corner * vec2f(drawn) - vec2f(0.0, f32(screen.shift_y)) -
-    vec2f(screen.clip);
+  let in_grid = vec2f(origin) + corner * vec2f(drawn) - vec2f(0.0, f32(screen.shift_y));
+  let pixel = in_grid + vec2f(screen.grid) - vec2f(screen.clip);
   var output: VertexOutput;
   output.position = vec4f(
     pixel.x / screen.viewport_size.x * 2.0 - 1.0,
@@ -390,13 +397,15 @@ fn glyph_sample(
   cursor_box: vec4f,
 ) -> GlyphSample {
   var color = base_color;
-  let local_position = position.xy - vec2f(screen.origin) + vec2f(0.0, f32(screen.shift_y));
+  let local_position = position.xy - vec2f(screen.origin) - vec2f(screen.grid) +
+    vec2f(0.0, f32(screen.shift_y));
   if (local_position.x >= cursor_box.x && local_position.y >= cursor_box.y &&
       local_position.x < cursor_box.z && local_position.y < cursor_box.w) {
     color = vec4f(screen.cursor_text.rgb, 1.0);
   }
-  let texel = texel_origin + vec2i(floor(position.xy)) - vec2i(screen.origin) +
-    vec2i(0, i32(screen.shift_y)) - quad_origin;
+  let in_pane = vec2i(floor(position.xy)) - vec2i(screen.origin);
+  let texel = texel_origin + in_pane - vec2i(screen.grid) + vec2i(0, i32(screen.shift_y)) -
+    quad_origin;
   if ((glyph_flags & 1u) != 0u) {
     let sample = textureLoad(color_texture, texel, 0);
     return GlyphSample(sample.rgb, vec3f(sample.a * color.a));

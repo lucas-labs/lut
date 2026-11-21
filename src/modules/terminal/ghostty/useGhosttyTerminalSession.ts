@@ -4,6 +4,7 @@ import {
   subscribeSymbolFonts,
   symbolFontEpoch,
 } from '@/lib/fonts';
+import { NO_PADDING, type Padding } from '@/lib/padding';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { useSpaces } from '@/modules/spaces/lib/useSpaces';
 import type { TerminalBackendKind } from '@/modules/terminal/backend/contracts';
@@ -85,6 +86,7 @@ type SessionLook = {
   readonly scrollback: number;
   /** Drawn instead of the pane's font when the renderer has no room for that one. */
   readonly globalFont: TerminalFontSpec;
+  readonly padding: Padding;
 };
 
 type GhosttySession = {
@@ -124,6 +126,8 @@ type GhosttySession = {
   font: TerminalFontSpec;
   /** `null` until the pane resolves it; the terminal starts after that. */
   look: SessionLook | null;
+  /** A full-screen program is running: the pane has no padding meanwhile. */
+  alternateScreen: boolean;
 };
 
 type GhosttyStartupTimings = {
@@ -200,6 +204,7 @@ export function useGhosttyTerminalSession({
         cursorBlink: appearance.cursorBlink,
         scrollback: appearance.scrollback,
         globalFont: spec(appearance.globalFont),
+        padding: appearance.padding,
       } satisfies SessionLook,
     };
   }, [appearance, letterSpacing, zoomLevel, symbols]);
@@ -395,6 +400,7 @@ function applySessionLook(
       };
     }
   }
+  if (previous.padding !== look.padding) applyPadding(session);
   const globalChanged = fontSpecKey(previous.globalFont) !== fontSpecKey(look.globalFont);
   void updateSessionFont(session, font, globalChanged);
 }
@@ -530,6 +536,7 @@ async function respawnGhosttySession(
   session.commandRunning = false;
   session.commandTracked = false;
   session.lastCwd = null;
+  session.alternateScreen = false;
   session.initialCwd = launch.cwd ?? session.initialCwd;
   if ('profileId' in launch) session.profileId = launch.profileId;
   session.startupError = null;
@@ -603,6 +610,7 @@ function ensureSession(
       weight: '400',
     },
     look: null,
+    alternateScreen: false,
   };
   sessions.set(leafId, session);
   return session;
@@ -730,6 +738,12 @@ async function initializeSessionGeneration(
   }
   mark('modelReadyMs');
   session.model = model;
+  // Full-screen programs fill the pane: its padding goes while they run, with one refit each way.
+  model.subscribeAlternateScreen((active) => {
+    if (session.model !== model) return;
+    session.alternateScreen = active;
+    applyPadding(session);
+  });
   session.callbacks.onModel?.(model);
   const surfaceBaseOptions: GhosttySurfaceBaseOptions = {
     model,
@@ -963,8 +977,15 @@ function focusSessionSurface(session: GhosttySession, surface: GhosttySurface | 
   });
 }
 
+/** The pane's padding, or none while a full-screen program runs. */
+function applyPadding(session: GhosttySession, surface = session.surface): void {
+  const padding = session.alternateScreen ? NO_PADDING : (session.look?.padding ?? NO_PADDING);
+  surface?.setPadding(padding);
+}
+
 function attachGhosttySurface(session: GhosttySession, surface: GhosttySurface): void {
   if (!session.container) return;
+  applyPadding(session, surface);
   surface.attach(session.container);
   surface.setVisible(true);
   surface.setFocused(session.focused);

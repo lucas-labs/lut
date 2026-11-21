@@ -4424,14 +4424,20 @@ size: S
 ```
 
 **Goal:** Each profile sets the padding around the terminal grid, inside its panes, as Windows Terminal profiles do.
-The workspace adds none of its own (only a 12px left gap while a side panel is open, E12-03). Full-screen programs
+The workspace adds none of its own: the 12px left gap it kept beside an open side panel (E12-03) is replaced by the
+padding. Full-screen programs
 (nvim, htop, less: anything on the alternate screen) always fill the pane: the padding applies to the normal screen
 only.
 
 **Acceptance criteria:**
 
-- [ ] Profiles gain a padding field (top, right, bottom, left; default 0) resolved through `resolvePreferences` like the
-      other appearance fields (E14-16).
+- [ ] Profiles gain a padding field (top, right, bottom, left) resolved through `resolvePreferences` like the other
+      appearance fields (E14-16), over a global `terminalPadding` preference (10 px top and bottom, 14 px left and right
+      by default).
+- [ ] The terminal layer no longer keeps a 12px left gap beside an open side panel (E12-03); the pane padding is the
+      only space between the panel and the text.
+- [ ] Settings → Terminal → Text sets the global padding with a reusable `PaddingInput` (`src/components/ui`): one field
+      per axis, and a toggle that splits them into one field per side, as Figma's does.
 - [ ] The terminal fit (`fitTerminalViewport`) subtracts the padding before counting columns and rows, so nothing is
       cut and the PTY gets the real size; the pane's background fills the padding.
 - [ ] While the pane is on the alternate screen (`modes().alternateScreen`) the padding is 0; entering and leaving it

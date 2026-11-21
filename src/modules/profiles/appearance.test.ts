@@ -23,6 +23,7 @@ describe('a profile appearance over the global preferences', () => {
         cursorStyle: 'underline',
         cursorBlink: true,
         scrollback: 2000,
+        padding: { top: 2, right: 6, bottom: 2, left: 6 },
       }),
     );
     expect(resolved).toMatchObject({
@@ -33,7 +34,16 @@ describe('a profile appearance over the global preferences', () => {
       terminalCursorStyle: 'underline',
       terminalCursorBlink: true,
       terminalScrollback: 2000,
+      terminalPadding: { top: 2, right: 6, bottom: 2, left: 6 },
     });
+  });
+
+  it('keeps a profile padding whole numbers from 0 to the most Settings offers', () => {
+    const resolved = resolvePreferences(
+      DEFAULT_PREFERENCES,
+      profileLayer({ padding: { top: -4, right: 3.6, bottom: 500, left: 10 } }),
+    );
+    expect(resolved.terminalPadding).toEqual({ top: 0, right: 4, bottom: 64, left: 10 });
   });
 
   it('keeps the global value of every field the profile leaves unset', () => {

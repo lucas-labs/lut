@@ -1,3 +1,4 @@
+import type { Padding } from '@/lib/padding';
 import { profileLayer, useProfileAppearance } from '@/modules/profiles';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { resolvePreferences } from '@/modules/settings/resolvePreferences';
@@ -23,6 +24,8 @@ export type PaneAppearance = {
   readonly cursorBlink: boolean;
   /** Lines of history; it applies when the terminal starts. */
   readonly scrollback: number;
+  /** Space around the text; full-screen programs (the alternate screen) fill the pane anyway. */
+  readonly padding: Padding;
 };
 
 /**
@@ -71,6 +74,7 @@ export function usePaneAppearance(profileId: string | undefined): PaneAppearance
       cursorStyle: resolved.terminalCursorStyle,
       cursorBlink: resolved.terminalCursorBlink,
       scrollback: resolved.terminalScrollback,
+      padding: resolved.terminalPadding,
     };
   }, [resolved, theme, colors, preferences, activeTheme, resolvedMode]);
 }

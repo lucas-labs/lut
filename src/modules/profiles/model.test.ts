@@ -31,6 +31,7 @@ const custom = {
     cursorStyle: 'block',
     cursorBlink: false,
     scrollback: 5000,
+    padding: { top: 4, right: 8, bottom: 4, left: 8 },
   },
   tab: { title: 'dev', color: '#ff8800', icon: 'code', allowShellTitle: false },
   closeBehavior: 'keepOpen',
@@ -50,7 +51,12 @@ describe('parseProfilesList', () => {
     expect(list.profiles[1]).toMatchObject({
       env: { EDITOR: 'nvim', PAGER: null },
       environment: { kind: 'wsl', distro: 'Ubuntu' },
-      appearance: { themeId: 'dark', fontSize: 13, cursorStyle: 'block' },
+      appearance: {
+        themeId: 'dark',
+        fontSize: 13,
+        cursorStyle: 'block',
+        padding: { top: 4, right: 8, bottom: 4, left: 8 },
+      },
       tab: { title: 'dev', allowShellTitle: false },
       closeBehavior: 'keepOpen',
       hidden: true,
@@ -77,6 +83,13 @@ describe('parseProfilesList', () => {
     [
       'an unknown environment',
       { profiles: [{ ...detected, environment: { kind: 'ssh' } }], defaultProfileId: null },
+    ],
+    [
+      'a padding without all its sides',
+      {
+        profiles: [{ ...detected, appearance: { padding: { top: 1, left: 1 } } }],
+        defaultProfileId: null,
+      },
     ],
     [
       'an argument that is not text',

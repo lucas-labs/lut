@@ -1,4 +1,5 @@
 import { smoothHooks } from '@/bench/smoothHooks';
+import { NO_PADDING, type Padding } from '@/lib/padding';
 import { isPrimaryModifierPressed } from '@/modules/platform';
 import type { TerminalSurface } from '@/modules/terminal/backend/contracts';
 import {
@@ -25,7 +26,7 @@ import { type RasterBudget, TerminalGlyphMap } from './GlyphMap';
 import { type DeviceRect, deviceRectsEqual } from './PaneRects';
 import { ScreenUniform, type ScreenUniformState } from './ScreenUniform';
 import { SCREEN_UNIFORM_BYTES } from './shaders';
-import { fitTerminalViewport, TERMINAL_RIGHT_GUTTER_CSS_PX } from './TerminalFit';
+import { fitPaddedViewport, TERMINAL_RIGHT_GUTTER_CSS_PX } from './TerminalFit';
 import {
   type TerminalFitBounds,
   TerminalFitQueue,
@@ -189,6 +190,10 @@ export class WebGpuTerminalSurface implements TerminalSurface, WebGpuRuntimeSurf
   private drawCells = 0;
   /** What the uniform last held, kept to repack it when only the pane's rectangle moves. */
   private lastScreenState: ScreenUniformState | null = null;
+  /** The padding asked for, in CSS pixels; `setPadding`. */
+  private padding: Padding = NO_PADDING;
+  /** The padding the last fit had room for, in device pixels: where the grid starts. */
+  private devicePadding: Padding = NO_PADDING;
 
   private constructor(
     private readonly runtime: WebGpuTerminalRuntime,
@@ -313,6 +318,7 @@ export class WebGpuTerminalSurface implements TerminalSurface, WebGpuRuntimeSurf
 
     this.host = container;
     container.appendChild(this.root);
+    this.updateRootBackground();
     observeHost(this.resizeObserver, container);
     window.addEventListener?.('resize', this.handleWindowResize);
     this.pixelRatioMonitor.start();
@@ -337,6 +343,7 @@ export class WebGpuTerminalSurface implements TerminalSurface, WebGpuRuntimeSurf
     this.clearTextBlinkTimer();
     this.deactivateGpuResources();
     this.root.remove();
+    this.host.style.backgroundColor = '';
     this.host = null;
   }
 
@@ -426,6 +433,16 @@ export class WebGpuTerminalSurface implements TerminalSurface, WebGpuRuntimeSurf
       this.runtime.schedule(this);
     }
     this.updateScrollbar();
+  }
+
+  /**
+   * Space around the grid inside the pane, in CSS pixels. The grid refits once to the rest of the
+   * pane; the window canvas paints the padding in the theme background.
+   */
+  setPadding(padding: Padding): void {
+    if (paddingEqual(padding, this.padding)) return;
+    this.padding = padding;
+    this.queueFit();
   }
 
   /** Whether the window has room for this font's glyph atlas (8 fonts at most). */
@@ -649,7 +666,10 @@ export class WebGpuTerminalSurface implements TerminalSurface, WebGpuRuntimeSurf
     if (deviceRectsEqual(state.viewport, rect)) return false;
     // The held frame is the grid of the previous size: keep its shift (the cursor row stays on
     // screen, as during the gesture) but never past what the new rectangle leaves out.
-    const deficit = Math.max(0, state.rows * state.cellHeight - rect.height);
+    const deficit = Math.max(
+      0,
+      state.rows * state.cellHeight - gridHeight(rect.height, state.padding),
+    );
     const shiftY = Math.min(state.shiftY, deficit);
     this.packAndUpload({ ...state, viewport: rect, shiftY }, device);
     return this.hasFrame;
@@ -922,11 +942,12 @@ export class WebGpuTerminalSurface implements TerminalSurface, WebGpuRuntimeSurf
   /** App lab only: the grid this host size asks for, for the smoothness probe. */
   private benchWant(bounds: TerminalFitBounds): void {
     if (!__LUT_BENCH__) return;
-    const fit = fitTerminalViewport(
+    const { fit } = fitPaddedViewport(
       bounds.width,
       bounds.height,
       this.metrics,
       bounds.device,
+      this.padding,
       TERMINAL_RIGHT_GUTTER_CSS_PX,
     );
     if (fit) smoothHooks()?.want(this.benchId, performance.now(), fit.cols, fit.rows);
@@ -934,8 +955,9 @@ export class WebGpuTerminalSurface implements TerminalSurface, WebGpuRuntimeSurf
 
   private boundsFromEntry(entry: ResizeObserverEntry): TerminalFitBounds {
     const device = entry.devicePixelContentBoxSize?.[0];
-    // Layout is clean inside a ResizeObserver callback, so this read is free.
-    const origin = this.root.getBoundingClientRect();
+    // Layout is clean inside a ResizeObserver callback, so this read is free. The host is the
+    // pane's rectangle; the root sits inside it, inset by the padding.
+    const origin = (this.host ?? this.root).getBoundingClientRect();
     return {
       width: entry.contentRect.width,
       height: entry.contentRect.height,
@@ -946,16 +968,12 @@ export class WebGpuTerminalSurface implements TerminalSurface, WebGpuRuntimeSurf
   }
 
   private measureHost(): TerminalFitBounds {
-    const rect = this.host?.getBoundingClientRect() ?? {
-      width: 0,
-      height: 0,
-    };
-    const origin = this.root.getBoundingClientRect();
+    const rect = this.host?.getBoundingClientRect();
     return {
-      width: rect.width,
-      height: rect.height,
-      left: origin.left,
-      top: origin.top,
+      width: rect?.width ?? 0,
+      height: rect?.height ?? 0,
+      left: rect?.left,
+      top: rect?.top,
     };
   }
 
@@ -1006,19 +1024,27 @@ export class WebGpuTerminalSurface implements TerminalSurface, WebGpuRuntimeSurf
     this.reportBounds(bounds);
     const scale = devicePixelScale();
     this.scrollbarSync.invalidate();
-    this.scrollbarViewportHeight = Math.round(bounds.height);
     if (scale !== this.metrics.scale) {
       // New ratio: re-measure the font, then rebuild atlas and buffers.
       this.metrics = metricsForScale(this.metrics, scale);
       this.handleRuntimeReset(this.runtime.resources());
     }
-    const fit = fitTerminalViewport(
+    const { fit, padding, devicePadding } = fitPaddedViewport(
       bounds.width,
       bounds.height,
       this.metrics,
       bounds.device,
+      this.padding,
       TERMINAL_RIGHT_GUTTER_CSS_PX,
     );
+    // Everything measured against the root (selection, links, IME, scrollbar) follows the grid.
+    this.root.style.inset = `${padding.top}px ${padding.right}px ${padding.bottom}px ${padding.left}px`;
+    this.scrollbarViewportHeight = Math.round(bounds.height - padding.top - padding.bottom);
+    if (!paddingEqual(devicePadding, this.devicePadding)) {
+      this.devicePadding = devicePadding;
+      this.forceFullRedraw = true;
+      if (scheduleRender) this.runtime.schedule(this);
+    }
     if (!fit || !this.binding) return;
     const { cols, rows, pixelWidth, pixelHeight } = fit;
     if (cols * rows > MAX_WEBGPU_SURFACE_CELLS) {
@@ -1280,6 +1306,7 @@ export class WebGpuTerminalSurface implements TerminalSurface, WebGpuRuntimeSurf
         height: frame.rows * this.metrics.deviceCellHeight,
       },
       shiftY: 0,
+      padding: this.devicePadding,
       textBlinkVisible: this.textBlinkVisible,
       searchActive: this.searchBuffer !== null,
       cursor: showCursor ? cursorRect(cursor, cursor.style, this.metrics) : null,
@@ -1298,7 +1325,8 @@ export class WebGpuTerminalSurface implements TerminalSurface, WebGpuRuntimeSurf
       // The cursor the application asked for, whatever phase its blink is in.
       const rect = cursorRect(cursor, cursor.style, this.metrics);
       const bottom = rect.y + rect.height - shiftY;
-      smoothHooks()?.cursor(this.benchId, bottom > 0 && bottom <= state.viewport.height + 1);
+      const height = gridHeight(state.viewport.height, state.padding);
+      smoothHooks()?.cursor(this.benchId, bottom > 0 && bottom <= height + 1);
     }
     return this.packAndUpload({ ...state, shiftY }, device);
   }
@@ -1315,10 +1343,11 @@ export class WebGpuTerminalSurface implements TerminalSurface, WebGpuRuntimeSurf
   ): number {
     if (!this.resizeInteractionActive && this.heldBounds === null) return 0;
     const cell = state.cellHeight;
-    const deficit = state.rows * cell - state.viewport.height;
+    const height = gridHeight(state.viewport.height, state.padding);
+    const deficit = state.rows * cell - height;
     if (deficit <= 0) return 0;
     const row = Math.min(state.rows - 1, Math.max(0, cursor.y));
-    return Math.min(deficit, Math.max(0, (row + 1) * cell - state.viewport.height));
+    return Math.min(deficit, Math.max(0, (row + 1) * cell - height));
   }
 
   /** Packs the uniform and uploads it when it differs from what the GPU holds. */
@@ -1396,14 +1425,29 @@ export class WebGpuTerminalSurface implements TerminalSurface, WebGpuRuntimeSurf
    * frame the pane's own DOM covers whatever the canvas still holds from another tab.
    */
   private updateRootBackground(): void {
-    this.root.style.backgroundColor = this.revealed
-      ? 'transparent'
-      : rgbToCss(this.theme.background);
+    const color = this.revealed ? 'transparent' : rgbToCss(this.theme.background);
+    this.root.style.backgroundColor = color;
+    // The padding is the host's, outside the root.
+    if (this.host) this.host.style.backgroundColor = this.revealed ? '' : color;
   }
 
   private assertLive(): void {
     if (this.disposed) throw new Error('WebGPU terminal surface is disposed');
   }
+}
+
+function paddingEqual(left: Padding, right: Padding): boolean {
+  return (
+    left.top === right.top &&
+    left.right === right.right &&
+    left.bottom === right.bottom &&
+    left.left === right.left
+  );
+}
+
+/** Device pixels of a pane's height the grid can use, inside its padding. */
+function gridHeight(viewportHeight: number, padding: Padding): number {
+  return Math.max(0, viewportHeight - padding.top - padding.bottom);
 }
 
 /** Asks for the exact device-pixel box where the engine supports it. */

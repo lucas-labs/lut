@@ -42,16 +42,22 @@ function subpathD(sp, o) {
 
 const paintAttr = paint => (paint && paint.type === 'solid' ? 'currentColor' : 'none');
 
-function styleAttrs(appearance, rule) {
+// An object's opacity (`node.opacity`, its own and its groups') multiplies the opacity of its fill or stroke
+// (`item.opacity`): VectorCraft keeps them apart, the icon draws them as one.
+const opacity = (item, objectOpacity) => (item?.opacity ?? 1) * objectOpacity;
+
+function styleAttrs(appearance, rule, objectOpacity = 1) {
   const items = appearance?.items ?? [];
   const fill = items.find(i => i.kind === 'fill');
   const stroke = items.find(i => i.kind === 'stroke');
   const at = [`fill="${paintAttr(fill?.paint)}"`];
   if (fill?.paint?.type === 'solid' && rule === 'EvenOdd') at.push('fill-rule="evenodd"');
-  if (fill?.paint?.type === 'solid' && (fill.opacity ?? 1) !== 1) at.push(`fill-opacity="${r(fill.opacity)}"`);
+  const fillOpacity = opacity(fill, objectOpacity);
+  if (fill?.paint?.type === 'solid' && fillOpacity !== 1) at.push(`fill-opacity="${r(fillOpacity)}"`);
   if (stroke && stroke.paint?.type === 'solid') {
     at.push('stroke="currentColor"', `stroke-width="${r(stroke.width ?? 1)}"`);
-    if ((stroke.opacity ?? 1) !== 1) at.push(`stroke-opacity="${r(stroke.opacity)}"`);
+    const strokeOpacity = opacity(stroke, objectOpacity);
+    if (strokeOpacity !== 1) at.push(`stroke-opacity="${r(strokeOpacity)}"`);
     if (stroke.cap && stroke.cap !== 'Butt') at.push(`stroke-linecap="${stroke.cap.toLowerCase()}"`);
     if (stroke.join && stroke.join !== 'Miter') at.push(`stroke-linejoin="${stroke.join.toLowerCase()}"`);
     if (stroke.miter_limit != null && stroke.join !== 'Round') at.push(`stroke-miterlimit="${r(stroke.miter_limit)}"`);
@@ -59,19 +65,23 @@ function styleAttrs(appearance, rule) {
   return at.join(' ');
 }
 
-function nodeSvg(node, o, warn) {
+function nodeSvg(node, o, warn, parentOpacity = 1) {
   const k = node.kind;
+  const objectOpacity = parentOpacity * (node.opacity ?? 1);
   if (k.type === 'path') {
     const d = k.path.subpaths.map(sp => subpathD(sp, o)).join('');
-    return `<path d="${d}" ${styleAttrs(node.appearance)}/>`;
+    return `<path d="${d}" ${styleAttrs(node.appearance, undefined, objectOpacity)}/>`;
   }
   if (k.type === 'compound') {
     const d = k.children.flatMap(c => c.kind.path?.subpaths ?? []).map(sp => subpathD(sp, o)).join('');
-    return `<path d="${d}" ${styleAttrs(node.appearance, k.rule)}/>`;
+    return `<path d="${d}" ${styleAttrs(node.appearance, k.rule, objectOpacity)}/>`;
   }
   if (k.type === 'group') {
     if (k.clip) warn(`clipping group ${node.id} exported without its clip`);
-    return `<g>${k.children.map(c => nodeSvg(c, o, warn)).join('')}</g>`;
+    if (objectOpacity !== 1 && k.children.length > 1) {
+      warn(`group ${node.id}: its opacity is applied to each child, so where they overlap it stacks`);
+    }
+    return `<g>${k.children.map(c => nodeSvg(c, o, warn, objectOpacity)).join('')}</g>`;
   }
   warn(`node ${node.id} of type "${k.type}" skipped`);
   return '';
@@ -81,11 +91,14 @@ function nodeSvg(node, o, warn) {
 // with (they are part of the design: square ends that match the native window controls, butt
 // lines that fill a dot). Colour is left to the component (currentColor); an opacity below 1 is
 // kept, since it is part of the drawing too (the spinner's faint track).
-const opacityOf = item => ((item?.opacity ?? 1) !== 1 ? { opacity: r(item.opacity) } : {});
-function paintOf(appearance) {
+const opacityOf = (item, objectOpacity) => {
+  const value = opacity(item, objectOpacity);
+  return value !== 1 ? { opacity: r(value) } : {};
+};
+function paintOf(appearance, objectOpacity) {
   const items = appearance?.items ?? [];
   const f = items.find(i => i.kind === 'fill' && i.paint?.type === 'solid');
-  if (f) return { paint: 'fill', ...opacityOf(f) };
+  if (f) return { paint: 'fill', ...opacityOf(f, objectOpacity) };
   const s = items.find(i => i.kind === 'stroke' && i.paint?.type === 'solid');
   const join = (s?.join ?? 'Miter').toLowerCase();
   return {
@@ -94,19 +107,21 @@ function paintOf(appearance) {
     linecap: (s?.cap ?? 'Butt').toLowerCase(),
     linejoin: join,
     ...(join === 'miter' && s?.miter_limit != null ? { miterLimit: r(s.miter_limit) } : {}),
-    ...opacityOf(s),
+    ...opacityOf(s, objectOpacity),
   };
 }
 
 // Geometry and paint. Groups have no transforms, so their children are flattened.
-function nodeElements(node, o) {
+function nodeElements(node, o, parentOpacity = 1) {
   const k = node.kind;
-  if (k.type === 'path') return [{ type: 'path', ...paintOf(node.appearance), d: k.path.subpaths.map(sp => subpathD(sp, o)).join('') }];
+  const objectOpacity = parentOpacity * (node.opacity ?? 1);
+  const paint = paintOf(node.appearance, objectOpacity);
+  if (k.type === 'path') return [{ type: 'path', ...paint, d: k.path.subpaths.map(sp => subpathD(sp, o)).join('') }];
   if (k.type === 'compound') {
     const d = k.children.flatMap(c => c.kind.path?.subpaths ?? []).map(sp => subpathD(sp, o)).join('');
-    return [{ type: 'path', ...paintOf(node.appearance), d, ...(k.rule === 'EvenOdd' ? { fillRule: 'evenodd' } : {}) }];
+    return [{ type: 'path', ...paint, d, ...(k.rule === 'EvenOdd' ? { fillRule: 'evenodd' } : {}) }];
   }
-  if (k.type === 'group') return k.children.flatMap(c => nodeElements(c, o));
+  if (k.type === 'group') return k.children.flatMap(c => nodeElements(c, o, objectOpacity));
   return [];
 }
 

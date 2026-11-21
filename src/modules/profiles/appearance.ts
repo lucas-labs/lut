@@ -1,4 +1,5 @@
 import type { PreferenceLayer } from '@/modules/settings/resolvePreferences';
+import { coerceTerminalPadding } from '@/modules/settings/store';
 import type { ProfileEntry } from './model';
 
 /**
@@ -14,5 +15,6 @@ export function profileLayer(appearance: ProfileEntry['appearance']): Preference
     terminalCursorStyle: appearance.cursorStyle,
     terminalCursorBlink: appearance.cursorBlink,
     terminalScrollback: appearance.scrollback,
+    terminalPadding: appearance.padding && coerceTerminalPadding(appearance.padding),
   };
 }

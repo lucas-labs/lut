@@ -1,3 +1,4 @@
+import { NO_PADDING, type Padding } from '@/lib/padding';
 import type { TerminalFontMetrics } from './terminalVisuals';
 
 const MIN_COLUMNS = 2;
@@ -85,6 +86,57 @@ export function fitTerminalViewport(
     pixelWidth,
     pixelHeight,
   };
+}
+
+export type TerminalPaddedFit = {
+  readonly fit: TerminalViewportFit | null;
+  /** The padding the host had room for, in CSS pixels: the grid's inset in the host. */
+  readonly padding: Padding;
+  /** The same padding in whole device pixels: where the grid starts in the host's rectangle. */
+  readonly devicePadding: Padding;
+};
+
+/**
+ * Fits the grid into a host less its `padding` (CSS pixels). A host too small for the padding
+ * keeps the minimum grid (two columns, one row): each axis gives up the padding it has no room
+ * for, shared between its two sides as they asked for it.
+ */
+export function fitPaddedViewport(
+  hostWidth: number,
+  hostHeight: number,
+  metrics: TerminalFontMetrics,
+  deviceBounds: TerminalDeviceBounds | null | undefined,
+  padding: Padding,
+  gutter = 0,
+): TerminalPaddedFit {
+  const room = (start: number, end: number, size: number, min: number): [number, number] => {
+    const free = Math.max(0, size - min);
+    const asked = Math.max(0, start) + Math.max(0, end);
+    if (asked <= free) return [Math.max(0, start), Math.max(0, end)];
+    const share = free / asked;
+    return [Math.floor(Math.max(0, start) * share), Math.floor(Math.max(0, end) * share)];
+  };
+  const [left, right] = room(padding.left, padding.right, hostWidth, MIN_COLUMNS * metrics.cellWidth);
+  const [top, bottom] = room(padding.top, padding.bottom, hostHeight, MIN_ROWS * metrics.cellHeight);
+  const fitted = left || right || top || bottom ? { top, right, bottom, left } : NO_PADDING;
+  const device = (value: number) => Math.round(value * metrics.scale);
+  const devicePadding = {
+    top: device(fitted.top),
+    right: device(fitted.right),
+    bottom: device(fitted.bottom),
+    left: device(fitted.left),
+  };
+  const fit = fitTerminalViewport(
+    hostWidth - fitted.left - fitted.right,
+    hostHeight - fitted.top - fitted.bottom,
+    metrics,
+    deviceBounds && {
+      width: deviceBounds.width - devicePadding.left - devicePadding.right,
+      height: deviceBounds.height - devicePadding.top - devicePadding.bottom,
+    },
+    gutter,
+  );
+  return { fit, padding: fitted, devicePadding };
 }
 
 /**

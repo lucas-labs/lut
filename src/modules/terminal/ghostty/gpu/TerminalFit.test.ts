@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { fitTerminalViewport, snapOffsetCss, TERMINAL_RIGHT_GUTTER_CSS_PX } from './TerminalFit';
+import {
+  fitPaddedViewport,
+  fitTerminalViewport,
+  snapOffsetCss,
+  TERMINAL_RIGHT_GUTTER_CSS_PX,
+} from './TerminalFit';
 import { deriveFontMetrics, type TerminalFontMetrics } from './terminalVisuals';
 
 const FONT = {
@@ -176,5 +181,59 @@ describe('snapOffsetCss', () => {
     expect(snapOffsetCss(40, 80, 2)).toEqual({ x: 0, y: 0 });
     expect(snapOffsetCss(Number.NaN, 4, 2).x).toBe(0);
     expect(snapOffsetCss(4, 4, 0)).toEqual({ x: 0, y: 0 });
+  });
+});
+
+describe('fitPaddedViewport (E14-21)', () => {
+  const NONE = { top: 0, right: 0, bottom: 0, left: 0 };
+
+  it('fits the grid in the host less its padding', () => {
+    const metrics = metricsAt(1);
+    const padding = { top: 10, right: 20, bottom: 30, left: 40 };
+    const padded = fitPaddedViewport(800, 400, metrics, null, padding, TERMINAL_RIGHT_GUTTER_CSS_PX);
+    expect(padded.fit).toEqual(fitTerminalViewport(740, 360, metrics, null, TERMINAL_RIGHT_GUTTER_CSS_PX));
+    expect(padded.padding).toEqual(padding);
+    expect(padded.devicePadding).toEqual(padding);
+  });
+
+  it('is the plain fit without padding', () => {
+    const metrics = metricsAt(1.5);
+    const bounds = { width: 1200, height: 600 };
+    expect(fitPaddedViewport(800, 400, metrics, bounds, NONE).fit).toEqual(
+      fitTerminalViewport(800, 400, metrics, bounds),
+    );
+  });
+
+  it('takes the padding off the exact device box in whole device pixels', () => {
+    const metrics = metricsAt(1.25);
+    const padded = fitPaddedViewport(800, 400, metrics, { width: 1000, height: 500 }, {
+      top: 3,
+      right: 3,
+      bottom: 3,
+      left: 3,
+    });
+    expect(padded.devicePadding).toEqual({ top: 4, right: 4, bottom: 4, left: 4 });
+    expect(padded.fit).toEqual(
+      fitTerminalViewport(794, 394, metrics, { width: 992, height: 492 }),
+    );
+  });
+
+  it('keeps the minimum grid in a pane too small for its padding, sharing what is left', () => {
+    const metrics = metricsAt(1);
+    const cell = { width: metrics.cellWidth, height: metrics.cellHeight };
+    // Room for two columns and one row, and 10 px more each way.
+    const width = 2 * cell.width + 10;
+    const height = cell.height + 10;
+    const padded = fitPaddedViewport(width, height, metrics, null, {
+      top: 30,
+      right: 10,
+      bottom: 10,
+      left: 30,
+    });
+    expect(padded.fit).toMatchObject({ cols: 2, rows: 1 });
+    expect(padded.padding.left + padded.padding.right).toBeLessThanOrEqual(10);
+    expect(padded.padding.left).toBeGreaterThan(padded.padding.right);
+    expect(padded.padding.top + padded.padding.bottom).toBeLessThanOrEqual(10);
+    expect(fitPaddedViewport(cell.width, cell.height, metrics, null, padded.padding).padding).toEqual(NONE);
   });
 });

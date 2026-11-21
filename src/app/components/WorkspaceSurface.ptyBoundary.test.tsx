@@ -83,6 +83,10 @@ const terminal = vi.hoisted(() => ({
   fontSizes: [] as number[],
   /** Whether the renderer has room for another font. */
   fontsFit: true,
+  /** Each padding a surface was given, in order. */
+  paddings: [] as { top: number; right: number; bottom: number; left: number }[],
+  /** Each model's alternate screen listener, to switch it as a full-screen program would. */
+  alternateScreen: new Map<number, (active: boolean) => void>(),
   warnings: [] as string[],
 }));
 vi.mock('sonner', () => ({
@@ -167,6 +171,10 @@ vi.mock('@/modules/terminal/ghostty/GhosttyCoreRuntime', () => ({
         write: (bytes: Uint8Array) => {
           terminal.written.set(leafId, (terminal.written.get(leafId) ?? '') + new TextDecoder().decode(bytes));
         },
+        subscribeAlternateScreen: (listener: (active: boolean) => void) => {
+          terminal.alternateScreen.set(leafId, listener);
+          return () => terminal.alternateScreen.delete(leafId);
+        },
       }),
   }),
 }));
@@ -191,6 +199,9 @@ vi.mock('@/modules/terminal/ghostty/loadSessionRenderer', () => {
         getSelection: () => null,
         searchController: () => stub({}),
         fitsFont: () => terminal.fontsFit,
+        setPadding: (padding: { top: number; right: number; bottom: number; left: number }) => {
+          terminal.paddings.push(padding);
+        },
         setTheme: () => {
           terminal.themes += 1;
         },
@@ -368,6 +379,8 @@ beforeEach(() => {
   terminal.fontSizes = [];
   terminal.fontsFit = true;
   terminal.warnings = [];
+  terminal.paddings = [];
+  terminal.alternateScreen.clear();
   rendered.clear();
   host = document.createElement('div');
   document.body.append(host);
@@ -664,5 +677,29 @@ describe('each pane looks as its profile says (E14-16)', () => {
     expect(terminal.fontSizes).toEqual([globalSize, globalSize, globalSize]);
     expect(terminal.warnings).toEqual(['Too many terminal fonts', 'Too many terminal fonts']);
     expect(pty.opened).toEqual([tab.activeLeafId]);
+  });
+
+  it("pads the pane as its profile says, and not while a full-screen program runs (E14-21)", async () => {
+    const padded = { top: 8, right: 12, bottom: 8, left: 12 };
+    const none = { top: 0, right: 0, bottom: 0, left: 0 };
+    appearances.set({ 'detected:pwsh': { padding: padded } });
+    const tab = term();
+    await render(shell([tab], tab.id));
+    await waitForOpens(1);
+    const last = () => terminal.paddings[terminal.paddings.length - 1];
+    expect(last()).toEqual(padded);
+
+    const switchScreen = terminal.alternateScreen.get(tab.activeLeafId);
+    await act(async () => switchScreen?.(true));
+    expect(last()).toEqual(none);
+    await act(async () => switchScreen?.(false));
+    expect(last()).toEqual(padded);
+
+    const wider = { top: 4, right: 20, bottom: 4, left: 20 };
+    await act(async () => appearances.set({ 'detected:pwsh': { padding: wider } }));
+    for (let i = 0; i < 5; i++) await tick();
+    expect(last()).toEqual(wider);
+    expect(pty.opened).toEqual([tab.activeLeafId]);
+    expect(pty.closed).toEqual([]);
   });
 });
