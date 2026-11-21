@@ -7315,8 +7315,9 @@ lut detects Nushell as a profile on every platform, but has no integration scrip
 
 - [ ] An integration script for `nu`, loaded without writing into the user's Nushell config, natively on Windows,
       macOS and Linux and inside WSL.
-- [ ] It emits OSC 7 and OSC 133 A/B/C/D, only in lut-spawned shells (`LUT_TERMINAL`), once per shell, and defines
-      the `lut` command when `LUT_CLI` is set, as the other scripts do.
+- [ ] Only in lut-spawned shells (`LUT_TERMINAL`), it installs its hooks once per shell, guarded against a second
+      load, and emits OSC 7 and OSC 133 A/B/C/D on each prompt and command; it defines the `lut` command when
+      `LUT_CLI` is set, as the other scripts do.
 - [ ] A `nu` launch with arguments the integration cannot coexist with runs without it, as for the other shells.
 - [ ] Unit tests for the launch arguments and environment; a script test like `init.test.fish`.
 
