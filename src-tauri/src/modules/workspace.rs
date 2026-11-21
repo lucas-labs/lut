@@ -676,16 +676,6 @@ pub(crate) fn parse_wsl_list(out: &str) -> Vec<WslDistro> {
     distros
 }
 
-/// The distro `wsl.exe` runs without `-d`: the one marked as the default, else the first.
-#[cfg_attr(not(windows), allow(dead_code))]
-pub(crate) fn default_distro_name(distros: &[WslDistro]) -> Option<String> {
-    distros
-        .iter()
-        .find(|d| d.default)
-        .or_else(|| distros.first())
-        .map(|d| d.name.clone())
-}
-
 /// A distro registered for the current user, as the registry lists it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(not(windows), allow(dead_code))]
@@ -864,22 +854,6 @@ pub async fn wsl_list_distros() -> Result<Vec<WslDistro>, String> {
         tauri::async_runtime::spawn_blocking(list_distros_blocking)
             .await
             .map_err(|e| e.to_string())?
-    }
-}
-
-#[tauri::command]
-pub async fn wsl_default_distro() -> Result<Option<String>, String> {
-    #[cfg(not(windows))]
-    {
-        Ok(None)
-    }
-    #[cfg(windows)]
-    {
-        tauri::async_runtime::spawn_blocking(|| {
-            list_distros_blocking().map(|distros| default_distro_name(&distros))
-        })
-        .await
-        .map_err(|e| e.to_string())?
     }
 }
 
@@ -1106,24 +1080,6 @@ mod auth_tests {
         p.push(format!("lut-auth-{label}-{nanos}-{}", std::process::id()));
         fs::create_dir_all(&p).expect("create tempdir");
         fs::canonicalize(&p).expect("canonicalize tempdir")
-    }
-
-    #[test]
-    fn the_default_distro_is_the_marked_one_else_the_first() {
-        let distro = |name: &str, default: bool| WslDistro {
-            name: name.into(),
-            default,
-            running: false,
-        };
-        assert_eq!(
-            default_distro_name(&[distro("Ubuntu", false), distro("Debian", true)]),
-            Some("Debian".to_string())
-        );
-        assert_eq!(
-            default_distro_name(&[distro("Ubuntu", false), distro("Debian", false)]),
-            Some("Ubuntu".to_string())
-        );
-        assert_eq!(default_distro_name(&[]), None);
     }
 
     #[test]
