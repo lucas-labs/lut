@@ -107,6 +107,40 @@ describe('PaddingInput', () => {
     expect(fields()).toEqual(['Horizontal padding', 'Vertical padding']);
   });
 
+  it('joins at once when the joined value arrives after the click, as Settings writes it', () => {
+    value = { top: 2, right: 10, bottom: 6, left: 12 };
+    let pending: Padding | null = null;
+    const renderLater = () =>
+      act(() =>
+        root.render(
+          createElement(PaddingInput, {
+            value,
+            max: 64,
+            onChange: (next: Padding) => {
+              pending = next;
+            },
+          }),
+        ),
+      );
+    renderLater();
+    act(() => toggle().click());
+    // The click rendered with the old, differing value: the control is joined anyway.
+    expect(fields()).toEqual(['Horizontal padding', 'Vertical padding']);
+    value = pending ?? value;
+    renderLater();
+    expect(fields()).toEqual(['Horizontal padding', 'Vertical padding']);
+    expect(field('Horizontal padding').value).toBe('12');
+  });
+
+  it('opens one field per side when a value set elsewhere makes the sides differ', () => {
+    value = { top: 4, right: 4, bottom: 4, left: 4 };
+    render();
+    expect(fields()).toEqual(['Horizontal padding', 'Vertical padding']);
+    value = { top: 4, right: 9, bottom: 4, left: 4 };
+    render();
+    expect(fields()).toEqual(['Left padding', 'Top padding', 'Right padding', 'Bottom padding']);
+  });
+
   it('keeps each side between 0 and the maximum, in whole pixels', () => {
     value = { top: 0, right: 0, bottom: 0, left: 0 };
     render();

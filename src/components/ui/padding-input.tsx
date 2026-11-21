@@ -50,9 +50,14 @@ type PaddingInputProps = Omit<React.ComponentProps<"div">, "onChange"> & {
 function PaddingInput({ value, onChange, max = Number.POSITIVE_INFINITY, className, ...props }: PaddingInputProps) {
   const differs = value.left !== value.right || value.top !== value.bottom
   // Split stays split while a side is edited, even when the sides match on the way; only the
-  // toggle joins them. A value that arrives with differing sides opens it.
+  // toggle joins them. Sides that start to differ (a value set elsewhere) open it; a joined value
+  // that has not arrived yet (the parent writes it later) does not reopen it.
   const [split, setSplit] = React.useState(differs)
-  if (differs && !split) setSplit(true)
+  const [differed, setDiffered] = React.useState(differs)
+  if (differs !== differed) {
+    setDiffered(differs)
+    if (differs) setSplit(true)
+  }
   const fields = split ? SIDES : AXES
 
   const toggle = () => {
