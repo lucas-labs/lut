@@ -11,7 +11,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Kbd } from '@/components/ui/kbd';
 import { offersProfiles, ProfileMenuItems, useProfiles } from '@/modules/profiles';
-import { AlertIcon, CheckmarkCircleIcon, ChevronIcon, MoreIcon } from '@lut/lut-icons';
+import { openSettingsWindow } from '@/modules/settings/openSettingsWindow';
+import { AlertIcon, CheckmarkCircleIcon, ChevronIcon, MoreIcon, OptionsIcon } from '@lut/lut-icons';
 import type { ReactNode } from 'react';
 
 /** The bar's height: the terminal keeps this much room under its text while a bar shows. */
@@ -74,6 +75,19 @@ function PaneActionsMenu({ children }: { children: ReactNode }) {
         {children}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/** Opens the profiles in Settings, under a menu's profiles. */
+function ManageProfilesItem() {
+  return (
+    <>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem onSelect={() => void openSettingsWindow('profiles')}>
+        <OptionsIcon size="sm" />
+        <span className="flex-1">Manage profiles…</span>
+      </DropdownMenuItem>
+    </>
   );
 }
 
@@ -167,6 +181,7 @@ export function PaneLaunchBar({ message, onRetry, onOpenWith }: LaunchBarProps) 
               <DropdownMenuContent side="top" align="end" className="min-w-56">
                 <DropdownMenuLabel>Open with</DropdownMenuLabel>
                 <ProfileMenuItems list={profiles} onPick={(id) => onOpenWith(id)} />
+                <ManageProfilesItem />
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -181,6 +196,7 @@ export function PaneLaunchBar({ message, onRetry, onOpenWith }: LaunchBarProps) 
               <DropdownMenuSeparator />
               <DropdownMenuLabel>Open with</DropdownMenuLabel>
               <ProfileMenuItems list={profiles} onPick={(id) => onOpenWith(id)} />
+              <ManageProfilesItem />
             </>
           )}
         </PaneActionsMenu>

@@ -34,6 +34,9 @@ vi.mock('@/modules/profiles/store', () => ({
   setDefaultProfile: () => Promise.resolve(),
 }));
 
+const settings = vi.hoisted(() => ({ open: vi.fn(async (_tab?: string) => {}) }));
+vi.mock('@/modules/settings/openSettingsWindow', () => ({ openSettingsWindow: settings.open }));
+
 const { TerminalPane } = await import('./TerminalPane');
 
 function profile(id: string, name: string): ProfileEntry {
@@ -192,6 +195,13 @@ describe('TerminalPane launch bar', () => {
     await openMenu(button('Choose profile'));
     await act(async () => menuItem('Command Prompt').click());
     expect(state.session.openWithProfile).toHaveBeenCalledWith('detected:cmd');
+  });
+
+  it('opens the profiles in Settings from the profile menu', async () => {
+    await render();
+    await openMenu(button('Choose profile'));
+    await act(async () => menuItem('Manage profiles…').click());
+    expect(settings.open).toHaveBeenCalledWith('profiles');
   });
 
   it('offers every action in one menu for a narrow pane', async () => {

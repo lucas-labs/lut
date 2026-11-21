@@ -16,6 +16,7 @@ import { useHoldTitleBar } from '@/lib/titleBarHold';
 import { AgentLauncherPanel } from '@/modules/agents/components/AgentLauncherPanel';
 import type { AgentLaunchRequest } from '@/modules/agents/lib/launcher';
 import { offersProfiles, ProfileMenuItems, useProfiles } from '@/modules/profiles';
+import { openSettingsWindow } from '@/modules/settings/openSettingsWindow';
 import { type ShortcutId, ShortcutKeys, useShortcutLabel } from '@/modules/shortcuts';
 import {
   ChevronIcon,
@@ -25,6 +26,7 @@ import {
   GlobeIcon,
   IncognitoIcon,
   type LutIconComponent,
+  OptionsIcon,
   PlusIcon,
   SparklesIcon,
   TerminalIcon,
@@ -143,6 +145,10 @@ export function NewTabMenu({
                   </DropdownMenuShortcut>
                 </DropdownMenuItem>
               )}
+              <DropdownMenuItem onSelect={() => void openSettingsWindow('profiles')}>
+                <OptionsIcon size="sm" />
+                <span className="flex-1">Manage profiles…</span>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={openLauncher}>
                 <SparklesIcon size="sm" />

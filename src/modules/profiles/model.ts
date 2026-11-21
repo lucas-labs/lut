@@ -5,12 +5,12 @@ import type { Padding } from '@/lib/padding';
  * each `profiles_list` answer before the app reads it.
  */
 
-type ProfileEnvironment = { kind: 'native' } | { kind: 'wsl'; distro?: string };
+export type ProfileEnvironment = { kind: 'native' } | { kind: 'wsl'; distro?: string };
 
 type CursorStyle = 'bar' | 'block' | 'underline';
 
 /** Appearance a profile sets over the global settings; every field is optional. */
-type ProfileAppearance = {
+export type ProfileAppearance = {
   themeId?: string;
   fontFamily?: string;
   fontSize?: number;
@@ -21,7 +21,7 @@ type ProfileAppearance = {
   padding?: Padding;
 };
 
-type ProfileTab = {
+export type ProfileTab = {
   title?: string;
   color?: string;
   icon?: string;
@@ -29,9 +29,9 @@ type ProfileTab = {
 };
 
 /** What a pane does when its process exits. */
-type CloseBehavior = 'ask' | 'close' | 'keepOpen';
+export type CloseBehavior = 'ask' | 'close' | 'keepOpen';
 
-type TerminalProfile = {
+export type TerminalProfile = {
   id: string;
   name: string;
   executable?: string;
@@ -179,6 +179,15 @@ function entry(value: unknown, path: string): ProfileEntry {
     source: source(raw.source, `${path}.source`),
     hidden: flag(raw.hidden, `${path}.hidden`),
   };
+}
+
+/** The profile a listed entry describes, as `profiles_save` takes it. */
+export function toTerminalProfile({
+  source: _source,
+  hidden: _hidden,
+  ...profile
+}: ProfileEntry): TerminalProfile {
+  return profile;
 }
 
 /** Reads a `profiles_list` answer; throws when it does not match the model. */
