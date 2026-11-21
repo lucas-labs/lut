@@ -83,6 +83,8 @@ const terminal = vi.hoisted(() => ({
   fontSizes: [] as number[],
   /** The font size each surface was built with. */
   startSizes: [] as number[],
+  /** The cursor style each surface was built with. */
+  startCursors: [] as string[],
   /** Whether the renderer has room for a font of this size. */
   fits: (_size: number) => true as boolean,
   /** Applying a font fails, as the WebGPU renderer does when no atlas can be had. */
@@ -196,9 +198,10 @@ vi.mock('@/modules/terminal/ghostty/gpu/WebGpuTerminalRuntime', async (importOri
 // The hook loads the WebGL renderer through loadSessionRenderer (a dynamic import); hand it a fake surface class.
 vi.mock('@/modules/terminal/ghostty/loadSessionRenderer', () => {
   class FakeWebGlSurface {
-    constructor(options: { metrics: { font: { size: number } } }) {
+    constructor(options: { metrics: { font: { size: number } }; cursorStyle: string }) {
       terminal.webGlSurfaces += 1;
       terminal.startSizes.push(options.metrics.font.size);
+      terminal.startCursors.push(options.cursorStyle);
       return stub({
         backend: 'ghostty-webgl',
         eventTarget: () => document.createElement('div'),
@@ -389,6 +392,7 @@ beforeEach(() => {
   terminal.fonts = 0;
   terminal.fontSizes = [];
   terminal.startSizes = [];
+  terminal.startCursors = [];
   terminal.fits = () => true;
   terminal.fontFails = false;
   terminal.modelGate = null;
@@ -748,6 +752,37 @@ describe('each pane looks as its profile says (E14-16)', () => {
     expect(host.textContent).toContain('Unable to display terminal');
     expect(host.textContent).toContain('Retry display');
     expect(pty.closed).toEqual([]);
+
+    // The retry builds a new surface and tries the font that failed on it.
+    terminal.fontFails = false;
+    const retry = [...host.querySelectorAll('button')].find((b) => b.textContent === 'Retry display');
+    await act(async () => retry?.click());
+    for (let i = 0; i < 20; i++) await tick();
+    expect(host.textContent).not.toContain('Unable to display terminal');
+    expect(terminal.fontSizes[terminal.fontSizes.length - 1]).toBe(32);
+    expect(pty.opened).toEqual([tab.activeLeafId]);
+  });
+
+  it('keeps a cursor changed while the terminal starts through a renderer retry', async () => {
+    let release = () => {};
+    terminal.modelGate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const tab = term();
+    await render(shell([tab], tab.id));
+    await act(async () => appearances.set({ 'detected:pwsh': { cursorStyle: 'underline' } }));
+    release();
+    await waitForOpens(1);
+    for (let i = 0; i < 10; i++) await tick();
+    // A font that fails to apply shows the renderer error; its retry rebuilds the surface.
+    terminal.fontFails = true;
+    await act(async () => appearances.set({ 'detected:pwsh': { cursorStyle: 'underline', fontSize: 33 } }));
+    for (let i = 0; i < 20; i++) await tick();
+    terminal.fontFails = false;
+    const retry = [...host.querySelectorAll('button')].find((b) => b.textContent === 'Retry display');
+    await act(async () => retry?.click());
+    for (let i = 0; i < 20; i++) await tick();
+    expect(terminal.startCursors[terminal.startCursors.length - 1]).toBe('underline');
   });
 
   it('draws a font asked for while the terminal is still starting', async () => {

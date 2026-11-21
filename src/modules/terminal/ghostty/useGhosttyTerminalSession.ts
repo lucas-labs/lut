@@ -913,6 +913,14 @@ async function initializeSessionGeneration(
     (current.cursorBlink !== look.cursorBlink || current.cursorStyle !== look.cursorStyle)
   ) {
     surface.setCursorOptions(current.cursorBlink, current.cursorStyle);
+    // A renderer retry or fallback builds its surface from these.
+    if (session.surfaceOptions) {
+      session.surfaceOptions = {
+        ...session.surfaceOptions,
+        cursorBlink: current.cursorBlink,
+        cursorStyle: current.cursorStyle,
+      };
+    }
   }
   // A font update with no surface yet to apply to (a symbol face that arrived, a profile edit) is
   // applied now.
@@ -1087,6 +1095,11 @@ async function replaceGhosttySurface(
       session.rendererError = null;
       session.callbacks.onError?.(sessionFailure(session));
       session.callbacks.onSearchReady?.(replacement.searchController());
+      // The replacement is built with the last font that applied; one asked for since (one that
+      // failed to apply) is tried on it.
+      if (fontSpecKey(currentOptions.metrics.font) !== fontSpecKey(session.font)) {
+        void updateSessionFont(session, session.font, true);
+      }
       return replacement;
     },
   );
