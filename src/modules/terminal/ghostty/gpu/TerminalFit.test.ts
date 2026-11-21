@@ -231,6 +231,28 @@ describe('fitPaddedViewport (E14-21)', () => {
     expect(padded.fit).toEqual(fitTerminalViewport(794, 394, metrics, { width: 992, height: 492 }));
   });
 
+  it('keeps the minimum grid at a fractional ratio, where the padding rounds up in device pixels', () => {
+    const metrics = metricsAt(1.25);
+    expect(metrics.deviceCellWidth).toBe(11);
+    // 45.6 CSS px holds two 8.8 px columns and 2 × 14 px of padding exactly; in device pixels the
+    // padding rounds to 2 × 18 of 57 and would leave 21 for the 22 the columns need.
+    const padded = fitPaddedViewport(
+      45.6,
+      100,
+      metrics,
+      { width: 57, height: 125 },
+      {
+        top: 0,
+        right: 14,
+        bottom: 0,
+        left: 14,
+      },
+    );
+    expect(padded.fit).toMatchObject({ cols: 2 });
+    expect(padded.devicePadding.left + padded.devicePadding.right).toBeLessThanOrEqual(57 - 22);
+    expect(padded.padding.left).toBeCloseTo(padded.devicePadding.left / 1.25, 6);
+  });
+
   it('keeps the minimum grid in a pane too small for its padding, sharing what is left', () => {
     const metrics = metricsAt(1);
     const cell = { width: metrics.cellWidth, height: metrics.cellHeight };

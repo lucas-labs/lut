@@ -44,20 +44,22 @@ type PaddingInputProps = Omit<React.ComponentProps<"div">, "onChange"> & {
 
 /**
  * Padding in px, like Figma's: a horizontal (left + right) and a vertical (top + bottom) field, and a button that
- * splits them into one field per side. It opens split when opposite sides differ; joining them again sets left and
- * right to the left value, and top and bottom to the top one.
+ * splits them into one field per side. It opens split when opposite sides differ and stays split until the button
+ * joins them, which sets left and right to the left value, and top and bottom to the top one.
  */
 function PaddingInput({ value, onChange, max = Number.POSITIVE_INFINITY, className, ...props }: PaddingInputProps) {
-  const [open, setOpen] = React.useState(false)
   const differs = value.left !== value.right || value.top !== value.bottom
-  const split = open || differs
+  // Split stays split while a side is edited, even when the sides match on the way; only the
+  // toggle joins them. A value that arrives with differing sides opens it.
+  const [split, setSplit] = React.useState(differs)
+  if (differs && !split) setSplit(true)
   const fields = split ? SIDES : AXES
 
   const toggle = () => {
     if (split && differs) {
       onChange({ top: value.top, right: value.left, bottom: value.top, left: value.left })
     }
-    setOpen(!split)
+    setSplit(!split)
   }
 
   const set = (field: Field, n: number) => {

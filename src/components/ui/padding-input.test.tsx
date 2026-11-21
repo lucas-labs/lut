@@ -86,6 +86,27 @@ describe('PaddingInput', () => {
     expect(fields()).toEqual(['Horizontal padding', 'Vertical padding']);
   });
 
+  it('stays split while a side is typed, even when the sides match on the way', () => {
+    value = { top: 0, right: 10, bottom: 0, left: 2 };
+    render();
+    type('Right padding', '2');
+    expect(value.right).toBe(2);
+    expect(fields()).toEqual(['Left padding', 'Top padding', 'Right padding', 'Bottom padding']);
+    type('Right padding', '20');
+    expect(value).toEqual({ top: 0, right: 20, bottom: 0, left: 2 });
+  });
+
+  it('stays split after it is opened with matching sides, until the toggle joins them', () => {
+    value = { top: 4, right: 4, bottom: 4, left: 4 };
+    render();
+    act(() => toggle().click());
+    type('Left padding', '6');
+    type('Left padding', '4');
+    expect(fields()).toEqual(['Left padding', 'Top padding', 'Right padding', 'Bottom padding']);
+    act(() => toggle().click());
+    expect(fields()).toEqual(['Horizontal padding', 'Vertical padding']);
+  });
+
   it('keeps each side between 0 and the maximum, in whole pixels', () => {
     value = { top: 0, right: 0, bottom: 0, left: 0 };
     render();

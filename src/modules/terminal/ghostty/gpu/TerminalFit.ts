@@ -97,9 +97,11 @@ export type TerminalPaddedFit = {
 };
 
 /**
- * Fits the grid into a host less its `padding` (CSS pixels). A host too small for the padding
- * keeps the minimum grid (two columns, one row): each axis gives up the padding it has no room
- * for, shared between its two sides as they asked for it.
+ * Fits the grid into a host less its `padding` (CSS pixels). The padding is taken in whole device
+ * pixels, as the grid is, so a host too small for it still keeps the minimum grid (two columns, one
+ * row) at any pixel ratio: each axis gives up the padding it has no room for, shared between its two
+ * sides as they asked for it. The CSS padding is the device one over the ratio, so the grid drawn
+ * and the root measured for the pointer start at the same place.
  */
 export function fitPaddedViewport(
   hostWidth: number,
@@ -109,44 +111,51 @@ export function fitPaddedViewport(
   padding: Padding,
   gutter = 0,
 ): TerminalPaddedFit {
+  const { scale } = metrics;
+  const toDevice = (value: number) => Math.round(Math.max(0, value) * scale);
   const room = (start: number, end: number, size: number, min: number): [number, number] => {
-    const free = Math.max(0, size - min);
-    const asked = Math.max(0, start) + Math.max(0, end);
-    if (asked <= free) return [Math.max(0, start), Math.max(0, end)];
-    const share = free / asked;
-    return [Math.floor(Math.max(0, start) * share), Math.floor(Math.max(0, end) * share)];
+    const free = Math.max(0, Math.floor(size + DEVICE_ROUNDING_TOLERANCE_PX) - min);
+    if (start + end <= free) return [start, end];
+    const share = free / (start + end);
+    return [Math.floor(start * share), Math.floor(end * share)];
   };
   const [left, right] = room(
-    padding.left,
-    padding.right,
-    hostWidth,
-    MIN_COLUMNS * metrics.cellWidth,
+    toDevice(padding.left),
+    toDevice(padding.right),
+    deviceBounds?.width ?? hostWidth * scale,
+    MIN_COLUMNS * metrics.deviceCellWidth,
   );
   const [top, bottom] = room(
-    padding.top,
-    padding.bottom,
-    hostHeight,
-    MIN_ROWS * metrics.cellHeight,
+    toDevice(padding.top),
+    toDevice(padding.bottom),
+    deviceBounds?.height ?? hostHeight * scale,
+    MIN_ROWS * metrics.deviceCellHeight,
   );
-  const fitted = left || right || top || bottom ? { top, right, bottom, left } : NO_PADDING;
-  const device = (value: number) => Math.round(value * metrics.scale);
-  const devicePadding = {
-    top: device(fitted.top),
-    right: device(fitted.right),
-    bottom: device(fitted.bottom),
-    left: device(fitted.left),
+  if (!left && !right && !top && !bottom) {
+    return {
+      fit: fitTerminalViewport(hostWidth, hostHeight, metrics, deviceBounds, gutter),
+      padding: NO_PADDING,
+      devicePadding: NO_PADDING,
+    };
+  }
+  const devicePadding = { top, right, bottom, left };
+  const css = {
+    top: top / scale,
+    right: right / scale,
+    bottom: bottom / scale,
+    left: left / scale,
   };
   const fit = fitTerminalViewport(
-    hostWidth - fitted.left - fitted.right,
-    hostHeight - fitted.top - fitted.bottom,
+    hostWidth - css.left - css.right,
+    hostHeight - css.top - css.bottom,
     metrics,
     deviceBounds && {
-      width: deviceBounds.width - devicePadding.left - devicePadding.right,
-      height: deviceBounds.height - devicePadding.top - devicePadding.bottom,
+      width: deviceBounds.width - left - right,
+      height: deviceBounds.height - top - bottom,
     },
     gutter,
   );
-  return { fit, padding: fitted, devicePadding };
+  return { fit, padding: css, devicePadding };
 }
 
 /**
