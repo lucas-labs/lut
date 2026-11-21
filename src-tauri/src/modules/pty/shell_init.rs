@@ -1694,6 +1694,18 @@ mod windows {
         if let Some(p) = git_bash_path() {
             add(&mut out, "git-bash", "Git Bash", p, true);
         }
+        // winget, scoop and cargo put nu on the PATH; the MSI installs it under Program Files.
+        if let Some(p) = super::which_in_path("nu.exe") {
+            add(&mut out, "nu", "Nushell", p, false);
+        } else if let Some(pf) = std::env::var_os("ProgramFiles").map(PathBuf::from) {
+            add(
+                &mut out,
+                "nu",
+                "Nushell",
+                pf.join("nu").join("bin").join("nu.exe"),
+                false,
+            );
+        }
         out
     }
 
