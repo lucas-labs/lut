@@ -5,7 +5,14 @@ function fish_prompt
     printf base
 end
 
+# Started by lut: its data dir leads XDG_DATA_DIRS, and loading takes it out again.
+set -gx LUT_FISH_XDG_DATA_DIR /lut/fish
+set -gx XDG_DATA_DIRS /lut/fish:/opt/share:/usr/share
+
 source "$script_dir/init.fish"
+
+test "$XDG_DATA_DIRS" = /opt/share:/usr/share; or exit 1
+set -q LUT_FISH_XDG_DATA_DIR; and exit 1
 
 # Conda preserves the prompt installed from conf.d before wrapping it.
 functions -c fish_prompt __fish_prompt_orig

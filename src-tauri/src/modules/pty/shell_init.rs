@@ -20,6 +20,20 @@ const ZSHRC_SCRIPT: &str = include_str!("scripts/zshrc.zsh");
 const FISH_INIT_SCRIPT: &str = include_str!("scripts/init.fish");
 const FISH_REINSTALL_PROMPT: &str = "functions -q __lut_install_prompt; and __lut_install_prompt";
 
+/// lut's fish integration inside an XDG data directory. fish sources the `vendor_conf.d` files of
+/// every directory in `XDG_DATA_DIRS` before `config.fish`, wherever `XDG_CONFIG_HOME` points. The
+/// name differs from the user's `conf.d` files, which would hide a vendor file of the same name.
+const FISH_VENDOR_FILE: &str = "fish/vendor_conf.d/lut-shell-integration.fish";
+
+/// `XDG_DATA_DIRS` for a fish launch: lut's directory first, then the child's own list, or the
+/// spec's default when it has none. `init.fish` takes lut's directory out again once loaded.
+fn fish_xdg_data_dirs(lut_dir: &str, inherited: Option<&str>) -> String {
+    let rest = inherited
+        .filter(|dirs| !dirs.is_empty())
+        .unwrap_or("/usr/local/share:/usr/share");
+    format!("{lut_dir}:{rest}")
+}
+
 #[cfg(windows)]
 fn bashrc_script() -> &'static str {
     BASHRC_SCRIPT
@@ -858,8 +872,22 @@ mod unix {
                 }
             },
             ShellKind::Fish => {
-                if let Err(e) = prepare_fish_conf_d() {
-                    log::warn!("fish shell integration disabled: {e}");
+                match prepare_fish_data_dir() {
+                    Ok(dir) => {
+                        let dir = dir.to_string_lossy().into_owned();
+                        // The child's list so far, inherited or the profile's.
+                        let inherited = cmd
+                            .get_env("XDG_DATA_DIRS")
+                            .map(|dirs| dirs.to_string_lossy().into_owned());
+                        cmd.env(
+                            "XDG_DATA_DIRS",
+                            super::fish_xdg_data_dirs(&dir, inherited.as_deref()),
+                        );
+                        cmd.env("LUT_FISH_XDG_DATA_DIR", &dir);
+                    }
+                    Err(e) => {
+                        log::warn!("fish shell integration disabled: {e}");
+                    }
                 }
                 // fish 4.0+ writes its own OSC 133 A/B; ours would double it.
                 cmd.env("fish_features", "no-mark-prompt");
@@ -901,12 +929,15 @@ mod unix {
         Ok(rc)
     }
 
-    fn prepare_fish_conf_d() -> Result<(), String> {
-        let home = dirs::home_dir().ok_or_else(|| "could not resolve home dir".to_string())?;
-        let dir = home.join(".config").join("fish").join("conf.d");
-        fs::create_dir_all(&dir).map_err(|e| format!("create {}: {e}", dir.display()))?;
-        write_if_changed(&dir.join("lut.fish"), FISH_INIT)?;
-        Ok(())
+    /// lut's XDG data directory for fish, holding `FISH_VENDOR_FILE`.
+    fn prepare_fish_data_dir() -> Result<PathBuf, String> {
+        let dir = integration_root()?.join("fish");
+        let file = dir.join(super::FISH_VENDOR_FILE);
+        if let Some(parent) = file.parent() {
+            fs::create_dir_all(parent).map_err(|e| format!("create {}: {e}", parent.display()))?;
+        }
+        write_if_changed(&file, FISH_INIT)?;
+        Ok(dir)
     }
 
     fn write_if_changed(path: &Path, content: &str) -> Result<(), String> {
@@ -987,6 +1018,44 @@ mod unix {
         }
 
         #[test]
+        fn fish_loads_lut_from_its_data_dir_whatever_the_config_dir() {
+            for (config, data) in [
+                (None, None),
+                (Some("/tmp/xdg"), None),
+                (Some("/tmp/xdg"), Some("/opt/share:/usr/share")),
+            ] {
+                let mut cmd = CommandBuilder::new("/usr/bin/fish");
+                // As apply_common leaves them, inherited or from the profile.
+                cmd.env_remove("XDG_CONFIG_HOME");
+                cmd.env_remove("XDG_DATA_DIRS");
+                if let Some(config) = config {
+                    cmd.env("XDG_CONFIG_HOME", config);
+                }
+                if let Some(data) = data {
+                    cmd.env("XDG_DATA_DIRS", data);
+                }
+                apply_shell_init(&mut cmd, ShellKind::Fish, &[]);
+                let dir = cmd
+                    .get_env("LUT_FISH_XDG_DATA_DIR")
+                    .expect("lut's data dir is set")
+                    .to_string_lossy()
+                    .into_owned();
+                assert!(Path::new(&dir)
+                    .join(super::super::FISH_VENDOR_FILE)
+                    .is_file());
+                assert_eq!(
+                    cmd.get_env("XDG_DATA_DIRS")
+                        .map(|dirs| dirs.to_string_lossy().into_owned()),
+                    Some(super::super::fish_xdg_data_dirs(&dir, data))
+                );
+                assert_eq!(
+                    cmd.get_env("XDG_CONFIG_HOME"),
+                    config.map(std::ffi::OsStr::new)
+                );
+            }
+        }
+
+        #[test]
         fn builds_unix_fish_launch_with_post_config_rewrap() {
             let mut cmd = CommandBuilder::new("/usr/bin/fish");
             apply_shell_init(&mut cmd, ShellKind::Fish, &[]);
@@ -1028,7 +1097,10 @@ mod windows {
         Bash {
             rcfile: String,
         },
-        Fish,
+        /// lut's XDG data directory inside the distro (`FISH_VENDOR_FILE`).
+        Fish {
+            data_dir: String,
+        },
         None,
     }
 
@@ -1312,8 +1384,8 @@ mod windows {
                     WslShellIntegration::None
                 }
             },
-            ShellKind::Fish => match prepare_wsl_fish_conf_d(distro) {
-                Ok(()) => WslShellIntegration::Fish,
+            ShellKind::Fish => match prepare_wsl_fish_data_dir(distro) {
+                Ok(data_dir) => WslShellIntegration::Fish { data_dir },
                 Err(e) => {
                     log::warn!("WSL fish shell integration disabled for {distro}: {e}");
                     WslShellIntegration::None
@@ -1381,7 +1453,14 @@ mod windows {
             WslShellIntegration::Bash { rcfile } => {
                 super::integrated_args(kind, program.args, Some(&rcfile), true)
             }
-            WslShellIntegration::Fish => {
+            WslShellIntegration::Fish { data_dir } => {
+                // The distro's own list is not known from here: the profile's, else the default.
+                let profile_dirs = env.get("XDG_DATA_DIRS").cloned().flatten();
+                prefix.push(format!(
+                    "XDG_DATA_DIRS={}",
+                    super::fish_xdg_data_dirs(&data_dir, profile_dirs.as_deref())
+                ));
+                prefix.push(format!("LUT_FISH_XDG_DATA_DIR={data_dir}"));
                 prefix.push("fish_features=no-mark-prompt".to_string());
                 super::integrated_args(kind, program.args, None, true)
             }
@@ -1481,15 +1560,16 @@ mod windows {
         Ok(linux_rc)
     }
 
-    fn prepare_wsl_fish_conf_d(distro: &str) -> Result<(), String> {
-        let home = crate::modules::workspace::wsl_home(distro.to_string())?;
-        let linux_dir = format!("{}/.config/fish/conf.d", home.trim_end_matches('/'));
-        let unc_dir = crate::modules::workspace::wsl_path_to_unc(distro, &linux_dir);
-        fs::create_dir_all(&unc_dir).map_err(|e| format!("create {}: {e}", unc_dir.display()))?;
-        let unc_file = unc_dir.join("lut.fish");
-        let content = normalize_script(super::fish_init_script());
-        write_if_changed(&unc_file, &content)?;
-        Ok(())
+    /// lut's XDG data directory for fish inside the distro, holding `FISH_VENDOR_FILE`.
+    fn prepare_wsl_fish_data_dir(distro: &str) -> Result<String, String> {
+        let (linux_dir, _unc_dir) = prepare_wsl_integration_dir(distro, "fish")?;
+        let linux_file = format!("{linux_dir}/{}", super::FISH_VENDOR_FILE);
+        let unc_file = crate::modules::workspace::wsl_path_to_unc(distro, &linux_file);
+        if let Some(parent) = unc_file.parent() {
+            fs::create_dir_all(parent).map_err(|e| format!("create {}: {e}", parent.display()))?;
+        }
+        write_if_changed(&unc_file, &normalize_script(super::fish_init_script()))?;
+        Ok(linux_dir)
     }
 
     fn integration_root() -> Result<PathBuf, String> {
@@ -1933,8 +2013,16 @@ mod windows {
                 with(&["/bin/bash", "--rcfile", "/lut/bashrc", "-i"])
             );
             assert_eq!(
-                wsl_args("/usr/bin/fish", ShellKind::Fish, WslShellIntegration::Fish),
+                wsl_args(
+                    "/usr/bin/fish",
+                    ShellKind::Fish,
+                    WslShellIntegration::Fish {
+                        data_dir: "/lut/fish".into()
+                    }
+                ),
                 with(&[
+                    "XDG_DATA_DIRS=/lut/fish:/usr/local/share:/usr/share",
+                    "LUT_FISH_XDG_DATA_DIR=/lut/fish",
                     "fish_features=no-mark-prompt",
                     "/usr/bin/fish",
                     "-i",
@@ -2065,7 +2153,9 @@ mod windows {
                 Some("/home/vinicios/repo"),
                 "Ubuntu",
                 &login("/usr/bin/fish", ShellKind::Fish),
-                WslShellIntegration::Fish,
+                WslShellIntegration::Fish {
+                    data_dir: "/home/vinicios/.cache/dev.lucode.lut/shell-integration/fish".into(),
+                },
                 &no_env(),
             );
             assert_eq!(
@@ -2077,6 +2167,8 @@ mod windows {
                     "/home/vinicios/repo".to_string(),
                     "--exec".to_string(),
                     "env".to_string(),
+                    "XDG_DATA_DIRS=/home/vinicios/.cache/dev.lucode.lut/shell-integration/fish:/usr/local/share:/usr/share".to_string(),
+                    "LUT_FISH_XDG_DATA_DIR=/home/vinicios/.cache/dev.lucode.lut/shell-integration/fish".to_string(),
                     "fish_features=no-mark-prompt".to_string(),
                     "/usr/bin/fish".to_string(),
                     "-i".to_string(),
@@ -2084,6 +2176,50 @@ mod windows {
                     super::super::FISH_REINSTALL_PROMPT.to_string(),
                 ]
             );
+        }
+
+        #[test]
+        fn wsl_fish_loads_lut_whatever_xdg_dirs_the_profile_sets() {
+            let fish = || WslShellIntegration::Fish {
+                data_dir: "/lut/fish".into(),
+            };
+            let launch = |env: &super::super::ProfileEnv| {
+                build_wsl_launch_spec(
+                    None,
+                    "Ubuntu",
+                    &login("/usr/bin/fish", ShellKind::Fish),
+                    fish(),
+                    env,
+                )
+                .args
+            };
+            let lut_vars = |data_dirs: &str| {
+                [
+                    format!("XDG_DATA_DIRS=/lut/fish:{data_dirs}"),
+                    "LUT_FISH_XDG_DATA_DIR=/lut/fish".to_string(),
+                ]
+            };
+            // The profile's config dir is passed on; lut's data dir goes first in its data dirs.
+            let set = super::super::ProfileEnv::from([
+                ("XDG_CONFIG_HOME".to_string(), Some("/tmp/xdg".to_string())),
+                ("XDG_DATA_DIRS".to_string(), Some("/opt/share".to_string())),
+            ]);
+            let args = launch(&set);
+            assert!(args.contains(&"XDG_CONFIG_HOME=/tmp/xdg".to_string()));
+            assert!(args.ends_with(&[
+                lut_vars("/opt/share")[0].clone(),
+                lut_vars("/opt/share")[1].clone(),
+                "fish_features=no-mark-prompt".to_string(),
+                "/usr/bin/fish".to_string(),
+                "-i".to_string(),
+                "-C".to_string(),
+                super::super::FISH_REINSTALL_PROMPT.to_string(),
+            ]));
+            // A profile that removes the data dirs gets the default list after lut's.
+            let removed = super::super::ProfileEnv::from([("XDG_DATA_DIRS".to_string(), None)]);
+            let args = launch(&removed);
+            let defaults = lut_vars("/usr/local/share:/usr/share");
+            assert!(args.windows(2).any(|pair| pair == defaults));
         }
 
         #[test]
@@ -2149,10 +2285,14 @@ mod windows {
                     "/usr/bin/fish",
                     &["--login"],
                     true,
-                    WslShellIntegration::Fish
+                    WslShellIntegration::Fish {
+                        data_dir: "/lut/fish".into()
+                    }
                 ),
                 [
                     "env",
+                    "XDG_DATA_DIRS=/lut/fish:/usr/local/share:/usr/share",
+                    "LUT_FISH_XDG_DATA_DIR=/lut/fish",
                     "fish_features=no-mark-prompt",
                     "/usr/bin/fish",
                     "-l",

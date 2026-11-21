@@ -4496,9 +4496,10 @@ but fish reads `conf.d` from `$XDG_CONFIG_HOME/fish` when it is set, so the file
 **Acceptance criteria:**
 
 - [ ] Native Unix and WSL fish load lut's integration whatever `XDG_CONFIG_HOME` the child gets (inherited, the
-      profile's, or unset), e.g. by sourcing the prepared file from the launch instead of relying on `conf.d`.
-- [ ] Without `XDG_CONFIG_HOME` the launch keeps today's behaviour, and the prompt is still re-installed after
-      `config.fish`.
+      profile's, or unset): lut puts its own data directory first in `XDG_DATA_DIRS`, fish loads the integration from
+      its `vendor_conf.d`, and the integration takes the directory out of `XDG_DATA_DIRS` again.
+- [ ] The integration still loads before `config.fish` and the prompt is still re-installed after it; lut no longer
+      writes into the user's `~/.config/fish`.
 - [ ] Unit tests for the fish launch arguments, native and WSL, with and without the variable.
 
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml --lib shell_init`; manual: a fish pane with
