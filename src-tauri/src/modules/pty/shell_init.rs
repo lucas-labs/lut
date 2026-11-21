@@ -1510,14 +1510,15 @@ mod windows {
     }
 
     /// `sh -c` that puts `data_dir` first in the distro's own `XDG_DATA_DIRS` (or the spec's
-    /// default) and then runs the program after it. Each value is its own argument.
+    /// default) and then runs the program after it. Each value is its own argument. `/bin/sh` by
+    /// its path: `env` looks a bare name up in the profile's `PATH`, which may not hold it.
     fn wsl_fish_launcher(data_dir: &str) -> Vec<String> {
         let script = format!(
             "export XDG_DATA_DIRS=\"$1:${{XDG_DATA_DIRS:-{}}}\"; shift; exec \"$@\"",
             super::XDG_DATA_DIRS_DEFAULT
         );
         vec![
-            "sh".to_string(),
+            "/bin/sh".to_string(),
             "-c".to_string(),
             script,
             "sh".to_string(),
@@ -2065,7 +2066,7 @@ mod windows {
                 with(&[
                     "LUT_FISH_XDG_DATA_DIR=/lut/fish",
                     "fish_features=no-mark-prompt",
-                    "sh",
+                    "/bin/sh",
                     "-c",
                     FISH_LAUNCHER,
                     "sh",
@@ -2215,7 +2216,7 @@ mod windows {
                     "env".to_string(),
                     "LUT_FISH_XDG_DATA_DIR=/home/vinicios/.cache/dev.lucode.lut/shell-integration/fish".to_string(),
                     "fish_features=no-mark-prompt".to_string(),
-                    "sh".to_string(),
+                    "/bin/sh".to_string(),
                     "-c".to_string(),
                     FISH_LAUNCHER.to_string(),
                     "sh".to_string(),
@@ -2249,12 +2250,12 @@ mod windows {
             )
             .args;
             let at = |arg: &str| args.iter().position(|a| a == arg).expect(arg);
-            assert!(at("XDG_DATA_DIRS=/opt/share") < at("sh"));
-            assert!(at("XDG_CONFIG_HOME=/tmp/xdg") < at("sh"));
+            assert!(at("XDG_DATA_DIRS=/opt/share") < at("/bin/sh"));
+            assert!(at("XDG_CONFIG_HOME=/tmp/xdg") < at("/bin/sh"));
             assert_eq!(
-                &args[at("sh")..],
+                &args[at("/bin/sh")..],
                 [
-                    "sh",
+                    "/bin/sh",
                     "-c",
                     FISH_LAUNCHER,
                     "sh",
@@ -2339,7 +2340,7 @@ mod windows {
                     "env",
                     "LUT_FISH_XDG_DATA_DIR=/lut/fish",
                     "fish_features=no-mark-prompt",
-                    "sh",
+                    "/bin/sh",
                     "-c",
                     FISH_LAUNCHER,
                     "sh",
