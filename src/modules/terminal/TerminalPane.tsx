@@ -1,10 +1,20 @@
 import { Alert, AlertAction, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { useProfiles } from '@/modules/profiles';
+import { type ProfileEntry, useProfiles } from '@/modules/profiles';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import type { TerminalSearchController } from '@/modules/terminal/search/TerminalSearchController';
 import { useTheme } from '@/modules/theme';
-import { forwardRef, lazy, memo, Suspense, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import {
+  forwardRef,
+  lazy,
+  memo,
+  Suspense,
+  useEffect,
+  useEffectEvent,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 import type { TerminalBackendKind } from './backend/contracts';
 import { terminalBackendFor } from './backend/selection';
 import { useGhosttyTerminalSession } from './ghostty/useGhosttyTerminalSession';
@@ -59,7 +69,11 @@ const GhosttyTerminalPane = memo(
     const screenReader = usePreferencesStore((state) => state.terminalScreenReader);
     const profiles = useProfiles();
     // What the pane does when its process exits; a pane without a listed profile closes, as it always did.
-    const closeBehavior = profiles?.profiles.find((profile) => profile.id === profileId)?.closeBehavior ?? 'close';
+    // Unknown until the profiles are listed.
+    const closeBehavior =
+      profiles === null
+        ? null
+        : (profiles.profiles.find((profile) => profile.id === profileId)?.closeBehavior ?? 'close');
     const containerRef = useRef<HTMLDivElement>(null);
     const { resolvedMode, activeTheme } = useTheme();
     const session = useGhosttyTerminalSession({
@@ -71,12 +85,21 @@ const GhosttyTerminalPane = memo(
       initialCwd,
       profileId,
       onSearchReady: (search) => onSearchReady?.(leafId, search),
-      onExit: (code) => {
-        if (closeBehavior === 'close') onExit?.(leafId, code);
-      },
       onCwd: (cwd) => onCwd?.(leafId, cwd),
       onProfile: (id) => onProfile?.(leafId, id),
     });
+
+    // Each exit is decided once, with the profile as it was when the process exited, or when the
+    // profiles were first listed after that; a restart clears it.
+    const [exitBehavior, setExitBehavior] = useState<ProfileEntry['closeBehavior'] | null>(null);
+    if (session.exitCode === null && exitBehavior !== null) setExitBehavior(null);
+    if (session.exitCode !== null && exitBehavior === null && closeBehavior !== null) {
+      setExitBehavior(closeBehavior);
+    }
+    const closePane = useEffectEvent((code: number) => onExit?.(leafId, code));
+    useEffect(() => {
+      if (exitBehavior === 'close' && session.exitCode !== null) closePane(session.exitCode);
+    }, [exitBehavior, session.exitCode]);
 
     useEffect(() => {
       void resolvedMode;
@@ -117,11 +140,11 @@ const GhosttyTerminalPane = memo(
             />
           </Suspense>
         )}
-        {session.exitCode !== null && closeBehavior !== 'close' && (
+        {session.exitCode !== null && (exitBehavior === 'ask' || exitBehavior === 'keepOpen') && (
           <div className="absolute inset-x-3 bottom-3 z-10">
             <Alert>
               <AlertTitle>Process exited with code {session.exitCode}</AlertTitle>
-              {closeBehavior === 'ask' && (
+              {exitBehavior === 'ask' && (
                 <AlertAction className="flex gap-2">
                   <Button variant="outline" onClick={() => onExit?.(leafId, session.exitCode ?? 0)}>
                     Close

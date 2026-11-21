@@ -137,7 +137,6 @@ type Options = {
   initialCwd?: string;
   /** The pane's profile; none opens the default one. */
   profileId?: string;
-  onExit?: (code: number) => void;
   onCwd?: (cwd: string) => void;
   /** The profile that opened, so the pane keeps it. */
   onProfile?: (profileId: string | undefined) => void;
@@ -156,7 +155,6 @@ export function useGhosttyTerminalSession({
   initialCwd,
   profileId,
   onSearchReady,
-  onExit,
   onCwd,
   onProfile,
 }: Options) {
@@ -183,7 +181,6 @@ export function useGhosttyTerminalSession({
   const reportSearchReady = useEffectEvent((search: TerminalSearchController) =>
     onSearchReady?.(search),
   );
-  const reportExit = useEffectEvent((code: number) => onExit?.(code));
   const reportCwd = useEffectEvent((cwd: string) => onCwd?.(cwd));
   const reportProfile = useEffectEvent((id: string | undefined) => onProfile?.(id));
   const initialCwdRef = useRef(initialCwd);
@@ -204,10 +201,7 @@ export function useGhosttyTerminalSession({
       onModel: setModel,
       onError: setError,
       onSearchReady: (search) => reportSearchReady(search),
-      onExit: (code) => {
-        setExitCode(code);
-        reportExit(code);
-      },
+      onExit: setExitCode,
       onCwd: (cwd) => reportCwd(cwd),
       onProfile: (id) => reportProfile(id),
     };

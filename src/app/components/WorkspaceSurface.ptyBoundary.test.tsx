@@ -53,6 +53,24 @@ const profilesList = vi.hoisted(() => {
     defaultProfileId: 'closes',
   };
 });
+/** What `useProfiles` answers: the list, or `null` before it is first read. */
+const listed = vi.hoisted(() => {
+  let list: unknown = null;
+  const listeners = new Set<() => void>();
+  return {
+    get: () => list,
+    set(next: unknown) {
+      list = next;
+      for (const listener of listeners) listener();
+    },
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  };
+});
 /** What reached each terminal model (the Ghostty core), and how many WebGL surfaces were built. */
 const terminal = vi.hoisted(() => ({ written: new Map<number, string>(), webGlSurfaces: 0 }));
 
@@ -95,10 +113,13 @@ vi.mock('@/modules/terminal/lib/pty-bridge', async (importOriginal) => ({
     };
   },
 }));
-vi.mock('@tauri-apps/api/core', async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  invoke: async (command: string) => (command === 'profiles_list' ? structuredClone(profilesList) : null),
-}));
+vi.mock('@/modules/profiles', async (importOriginal) => {
+  const { useSyncExternalStore } = await import('react');
+  return {
+    ...(await importOriginal<object>()),
+    useProfiles: () => useSyncExternalStore(listed.subscribe, listed.get),
+  };
+});
 vi.mock('@/lib/fonts', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   ensureMonoFontsLoaded: async () => {},
@@ -306,6 +327,7 @@ beforeEach(() => {
   pty.reported = [];
   pty.exit.clear();
   pty.closedByExit = [];
+  listed.set(structuredClone(profilesList));
   terminal.written.clear();
   terminal.webGlSurfaces = 0;
   rendered.clear();
@@ -532,5 +554,31 @@ describe('the profile decides what a pane does when its process exits (E14-15)',
     const leaf = await exited('asks', 0);
     await act(async () => button('Close')?.click());
     expect(pty.closedByExit).toEqual([{ leaf, code: 0 }]);
+  });
+
+  it('waits for the profiles to be listed before showing the notice', async () => {
+    listed.set(null);
+    await exited('stays', 3);
+    expect(host.textContent).not.toContain('Process exited');
+    await act(async () => listed.set(structuredClone(profilesList)));
+    expect(pty.closedByExit).toEqual([]);
+    expect(host.textContent).toContain('Process exited with code 3');
+  });
+
+  it('waits for the profiles to be listed before closing the pane', async () => {
+    listed.set(null);
+    const leaf = await exited('closes', 0);
+    expect(pty.closedByExit).toEqual([]);
+    await act(async () => listed.set(structuredClone(profilesList)));
+    expect(pty.closedByExit).toEqual([{ leaf, code: 0 }]);
+  });
+
+  it('keeps the notice when the profile changes after the exit', async () => {
+    await exited('stays', 3);
+    const changed = structuredClone(profilesList);
+    for (const profile of changed.profiles) profile.closeBehavior = 'close';
+    await act(async () => listed.set(changed));
+    expect(pty.closedByExit).toEqual([]);
+    expect(host.textContent).toContain('Process exited with code 3');
   });
 });
