@@ -1,3 +1,4 @@
+import { NO_PADDING, type Padding } from '@/lib/padding';
 import type { TerminalFontMetrics } from './terminalVisuals';
 
 const MIN_COLUMNS = 2;
@@ -85,6 +86,76 @@ export function fitTerminalViewport(
     pixelWidth,
     pixelHeight,
   };
+}
+
+export type TerminalPaddedFit = {
+  readonly fit: TerminalViewportFit | null;
+  /** The padding the host had room for, in CSS pixels: the grid's inset in the host. */
+  readonly padding: Padding;
+  /** The same padding in whole device pixels: where the grid starts in the host's rectangle. */
+  readonly devicePadding: Padding;
+};
+
+/**
+ * Fits the grid into a host less its `padding` (CSS pixels). The padding is taken in whole device
+ * pixels, as the grid is, so a host too small for it still keeps the minimum grid (two columns, one
+ * row) at any pixel ratio: each axis gives up the padding it has no room for, shared between its two
+ * sides as they asked for it. The CSS padding is the device one over the ratio, so the grid drawn
+ * and the root measured for the pointer start at the same place.
+ */
+export function fitPaddedViewport(
+  hostWidth: number,
+  hostHeight: number,
+  metrics: TerminalFontMetrics,
+  deviceBounds: TerminalDeviceBounds | null | undefined,
+  padding: Padding,
+  gutter = 0,
+): TerminalPaddedFit {
+  const { scale } = metrics;
+  const toDevice = (value: number) => Math.round(Math.max(0, value) * scale);
+  const room = (start: number, end: number, size: number, min: number): [number, number] => {
+    const free = Math.max(0, Math.floor(size + DEVICE_ROUNDING_TOLERANCE_PX) - min);
+    if (start + end <= free) return [start, end];
+    const share = free / (start + end);
+    return [Math.floor(start * share), Math.floor(end * share)];
+  };
+  const [left, right] = room(
+    toDevice(padding.left),
+    toDevice(padding.right),
+    deviceBounds?.width ?? hostWidth * scale,
+    MIN_COLUMNS * metrics.deviceCellWidth,
+  );
+  const [top, bottom] = room(
+    toDevice(padding.top),
+    toDevice(padding.bottom),
+    deviceBounds?.height ?? hostHeight * scale,
+    MIN_ROWS * metrics.deviceCellHeight,
+  );
+  if (!left && !right && !top && !bottom) {
+    return {
+      fit: fitTerminalViewport(hostWidth, hostHeight, metrics, deviceBounds, gutter),
+      padding: NO_PADDING,
+      devicePadding: NO_PADDING,
+    };
+  }
+  const devicePadding = { top, right, bottom, left };
+  const css = {
+    top: top / scale,
+    right: right / scale,
+    bottom: bottom / scale,
+    left: left / scale,
+  };
+  const fit = fitTerminalViewport(
+    hostWidth - css.left - css.right,
+    hostHeight - css.top - css.bottom,
+    metrics,
+    deviceBounds && {
+      width: deviceBounds.width - left - right,
+      height: deviceBounds.height - top - bottom,
+    },
+    gutter,
+  );
+  return { fit, padding: css, devicePadding };
 }
 
 /**

@@ -50,3 +50,16 @@ export function getBuiltinTheme(id: string): Theme | undefined {
 export function getDefaultTheme(): Theme {
   return BY_ID.get(DEFAULT_THEME_ID) ?? BUILTIN[0];
 }
+
+/**
+ * The theme `id` names among the built-in and the user's themes. Built-in ids are reserved
+ * (validateTheme rejects them for custom themes), so a built-in wins over a custom theme.
+ */
+export function findTheme(id: string, custom: readonly Theme[]): Theme | undefined {
+  return getBuiltinTheme(id) ?? custom.find((t) => t.id === id);
+}
+
+/** Like `findTheme`, with the default theme for an id that names none. */
+export function resolveTheme(id: string, custom: readonly Theme[]): Theme {
+  return findTheme(id, custom) ?? getDefaultTheme();
+}

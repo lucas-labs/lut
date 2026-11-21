@@ -1,4 +1,4 @@
-import type { TerminalPalette, Theme, ThemeColors, ThemeMode } from './types';
+import type { TerminalPalette, Theme, ThemeColors, ThemeMode, ThemeVariant } from './types';
 
 const COLOR_VAR: Record<keyof ThemeColors, string> = {
   background: '--background',
@@ -64,18 +64,25 @@ const ALL_VARS: readonly string[] = [
 
 let lastApplied: string | null = null;
 
+/** The variant a theme shows in `mode`: the other one when it has only one. */
+export function themeVariant(theme: Theme, mode: ThemeMode): ThemeVariant | undefined {
+  return theme.variants[mode] ?? theme.variants.dark ?? theme.variants.light;
+}
+
+/** Writes the variant's colours on `element`, replacing any written before. */
+export function writeThemeVars(element: HTMLElement, variant: ThemeVariant): void {
+  for (const v of ALL_VARS) element.style.removeProperty(v);
+  if (variant.colors) writeColors(element, variant.colors);
+  if (variant.terminal) writeTerminal(element, variant.terminal);
+}
+
 export function applyTheme(theme: Theme, mode: ThemeMode): void {
-  const root = document.documentElement;
-  const variant = theme.variants[mode] ?? theme.variants.dark ?? theme.variants.light;
+  const variant = themeVariant(theme, mode);
   if (!variant) {
     clearTheme();
     return;
   }
-  const colors = variant.colors;
-  const terminal = variant.terminal;
-  for (const v of ALL_VARS) root.style.removeProperty(v);
-  if (colors) writeColors(root, colors);
-  if (terminal) writeTerminal(root, terminal);
+  writeThemeVars(document.documentElement, variant);
   lastApplied = theme.id;
 }
 
@@ -86,22 +93,25 @@ export function clearTheme(): void {
   lastApplied = null;
 }
 
-function writeColors(root: HTMLElement, c: ThemeColors): void {
+function writeColors(element: HTMLElement, c: ThemeColors): void {
   for (const k of Object.keys(c) as (keyof ThemeColors)[]) {
     const v = c[k];
-    if (v) root.style.setProperty(COLOR_VAR[k], v);
+    if (v) element.style.setProperty(COLOR_VAR[k], v);
   }
 }
 
-function writeTerminal(root: HTMLElement, t: TerminalPalette): void {
-  if (t.background) root.style.setProperty('--terminal-background', t.background);
-  if (t.foreground) root.style.setProperty('--terminal-foreground', t.foreground);
-  if (t.cursor) root.style.setProperty('--terminal-cursor', t.cursor);
-  if (t.cursorAccent) root.style.setProperty('--terminal-cursor-accent', t.cursorAccent);
-  if (t.selection) root.style.setProperty('--terminal-selection', t.selection);
+function writeTerminal(element: HTMLElement, t: TerminalPalette): void {
+  const set = (name: string, value: string | undefined) => {
+    if (value) element.style.setProperty(name, value);
+  };
+  set('--terminal-background', t.background);
+  set('--terminal-foreground', t.foreground);
+  set('--terminal-cursor', t.cursor);
+  set('--terminal-cursor-accent', t.cursorAccent);
+  set('--terminal-selection', t.selection);
   if (t.ansi) {
     for (let i = 0; i < ANSI_VARS.length && i < t.ansi.length; i++) {
-      root.style.setProperty(ANSI_VARS[i], t.ansi[i]);
+      element.style.setProperty(ANSI_VARS[i], t.ansi[i]);
     }
   }
 }

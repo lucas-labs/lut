@@ -48,16 +48,17 @@ const VAR_BY_KEY: Record<keyof TerminalTokens, string> = {
 
 const KEYS = Object.keys(VAR_BY_KEY) as (keyof TerminalTokens)[];
 
-let probe: HTMLDivElement | null = null;
+const probes = new WeakMap<HTMLElement, HTMLDivElement>();
 
-function getProbe(): HTMLDivElement {
-  if (probe?.isConnected) return probe;
+function getProbe(scope: HTMLElement): HTMLDivElement {
+  const existing = probes.get(scope);
+  if (existing?.isConnected) return existing;
   const el = document.createElement('div');
   el.setAttribute('aria-hidden', 'true');
   el.style.cssText =
     'position:absolute;visibility:hidden;pointer-events:none;contain:strict;width:0;height:0;';
-  document.body.appendChild(el);
-  probe = el;
+  scope.appendChild(el);
+  probes.set(scope, el);
   return el;
 }
 
@@ -66,8 +67,9 @@ function resolve(el: HTMLDivElement, varName: string): string {
   return getComputedStyle(el).color;
 }
 
-export function readTerminalTokens(): TerminalTokens {
-  const el = getProbe();
+/** The terminal colours as they compute inside `scope`: the document's theme by default. */
+export function readTerminalTokens(scope: HTMLElement = document.body): TerminalTokens {
+  const el = getProbe(scope);
   const out = {} as TerminalTokens;
   for (const k of KEYS) {
     out[k] = resolve(el, VAR_BY_KEY[k]);

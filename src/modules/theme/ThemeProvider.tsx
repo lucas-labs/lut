@@ -10,7 +10,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { applyTheme, clearTheme } from './applyTheme';
 import { listCustomThemes, onCustomThemesChange } from './customThemes';
 import { SurfaceLayer } from './SurfaceLayer';
-import { getBuiltinTheme, getDefaultTheme } from './themes';
+import { resolveTheme } from './themes';
 import type { Theme } from './types';
 
 export type { Theme };
@@ -63,11 +63,6 @@ function writeFastThemeId(id: string): void {
   } catch {
     /* ignore */
   }
-}
-
-/** Built-in ids are reserved (validateTheme rejects them for custom themes), so a built-in wins over a custom theme. */
-function resolveTheme(id: string, custom: Theme[]): Theme {
-  return getBuiltinTheme(id) ?? custom.find((t) => t.id === id) ?? getDefaultTheme();
 }
 
 export function ThemeProvider({ children, defaultMode = 'system' }: ThemeProviderProps) {

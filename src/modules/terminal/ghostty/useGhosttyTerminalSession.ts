@@ -4,6 +4,7 @@ import {
   subscribeSymbolFonts,
   symbolFontEpoch,
 } from '@/lib/fonts';
+import { NO_PADDING, type Padding } from '@/lib/padding';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { useSpaces } from '@/modules/spaces/lib/useSpaces';
 import type { TerminalBackendKind } from '@/modules/terminal/backend/contracts';
@@ -13,7 +14,7 @@ import { initializeSessionGeneration as startSessionInitialization } from '@/mod
 import { LatestClipboardWrite } from '@/modules/terminal/lib/LatestClipboardWrite';
 import { setLeafPresentation } from '@/modules/terminal/lib/ptyPresentation';
 import { PtyResizeDelivery } from '@/modules/terminal/lib/ptyResizeDelivery';
-import { useTerminalFont } from '@/modules/terminal/lib/useTerminalFont';
+import type { PaneAppearance, PaneFont } from '@/modules/terminal/lib/usePaneAppearance';
 import type { TerminalSearchController } from '@/modules/terminal/search/TerminalSearchController';
 import { currentWorkspaceEnv, workspaceScopeKey } from '@/modules/workspace';
 import { invoke } from '@tauri-apps/api/core';
@@ -26,6 +27,7 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
+import { toast } from 'sonner';
 import { isAgentActivePty } from '../lib/agentActivity';
 import { type LaunchError, PtyLaunchError } from '../lib/launchError';
 import { openPty, type PtySession } from '../lib/pty-bridge';
@@ -37,9 +39,10 @@ import { prepareHintedFonts } from './gpu/hintedGlyphs';
 import {
   fontSpecKey,
   measureTerminalFont,
-  readTerminalGpuTheme,
   rgbToInt,
+  type TerminalFontMetrics,
   type TerminalFontSpec,
+  type TerminalGpuTheme,
 } from './gpu/terminalVisuals';
 import { getWebGpuTerminalRuntime } from './gpu/WebGpuTerminalRuntime';
 import { WebGpuTerminalSurface } from './gpu/WebGpuTerminalSurface';
@@ -75,6 +78,17 @@ type Callbacks = {
   onProfile?: (profileId: string | undefined) => void;
 };
 
+/** What the pane's appearance gives a session; the font itself is `GhosttySession.font`. */
+type SessionLook = {
+  readonly theme: TerminalGpuTheme;
+  readonly cursorStyle: PaneAppearance['cursorStyle'];
+  readonly cursorBlink: boolean;
+  readonly scrollback: number;
+  /** Drawn instead of the pane's font when the renderer has no room for that one. */
+  readonly globalFont: TerminalFontSpec;
+  readonly padding: Padding;
+};
+
 type GhosttySession = {
   readonly leafId: number;
   readonly backend: GhosttyBackend;
@@ -108,7 +122,14 @@ type GhosttySession = {
   generation: number;
   initializing: Promise<void> | null;
   startup: GhosttyStartupTimings;
+  /** The pane's font; the renderer may draw the global one instead (`fontThatFits`). */
   font: TerminalFontSpec;
+  /** Counts font updates: an update still loading when a later one starts is dropped. */
+  fontRevision: number;
+  /** `null` until the pane resolves it; the terminal starts after that. */
+  look: SessionLook | null;
+  /** A full-screen program is running: the pane has no padding meanwhile. */
+  alternateScreen: boolean;
 };
 
 type GhosttyStartupTimings = {
@@ -137,6 +158,8 @@ type Options = {
   initialCwd?: string;
   /** The pane's profile; none opens the default one. */
   profileId?: string;
+  /** The pane's resolved appearance; the terminal starts once it is known. */
+  appearance: PaneAppearance | null;
   onCwd?: (cwd: string) => void;
   /** The profile that opened, so the pane keeps it. */
   onProfile?: (profileId: string | undefined) => void;
@@ -154,6 +177,7 @@ export function useGhosttyTerminalSession({
   focused,
   initialCwd,
   profileId,
+  appearance,
   onSearchReady,
   onCwd,
   onProfile,
@@ -161,23 +185,32 @@ export function useGhosttyTerminalSession({
   const [model, setModel] = useState<GhosttyTerminalModelApi | null>(null);
   const [error, setError] = useState<GhosttySessionFailure | null>(null);
   const [exitCode, setExitCode] = useState<number | null>(null);
-  const { fontFamily, fontSize, fontWeight } = useTerminalFont();
   const letterSpacing = usePreferencesStore((state) => state.terminalLetterSpacing);
   const zoomLevel = usePreferencesStore((state) => state.zoomLevel);
   const symbols = useSyncExternalStore(subscribeSymbolFonts, symbolFontEpoch);
-  const font = useMemo<TerminalFontSpec>(
-    () => ({
+  const look = useMemo(() => {
+    if (!appearance) return null;
+    const spec = ({ fontFamily, fontSize, fontWeight }: PaneFont): TerminalFontSpec => ({
       family: resolveFontFamily(fontFamily),
       size: Math.max(4, Math.round(fontSize * zoomLevel)),
       lineHeight: 1.2,
       letterSpacing,
       weight: fontWeight,
       symbols,
-    }),
-    [fontFamily, fontSize, fontWeight, letterSpacing, zoomLevel, symbols],
-  );
-  // The session outlives renders: it reads the font it starts with, and reports to the pane's latest callbacks.
-  const currentFont = useEffectEvent(() => font);
+    });
+    return {
+      font: spec(appearance.font),
+      look: {
+        theme: appearance.theme,
+        cursorStyle: appearance.cursorStyle,
+        cursorBlink: appearance.cursorBlink,
+        scrollback: appearance.scrollback,
+        globalFont: spec(appearance.globalFont),
+        padding: appearance.padding,
+      } satisfies SessionLook,
+    };
+  }, [appearance, letterSpacing, zoomLevel, symbols]);
+  // The session outlives renders: it reports to the pane's latest callbacks.
   const reportSearchReady = useEffectEvent((search: TerminalSearchController) =>
     onSearchReady?.(search),
   );
@@ -192,7 +225,6 @@ export function useGhosttyTerminalSession({
       backend,
       initialCwdRef.current,
       initialProfileRef.current,
-      currentFont(),
     );
     const node = container.current;
     session.container = node;
@@ -211,7 +243,6 @@ export function useGhosttyTerminalSession({
       session.callbacks.onSearchReady?.(session.surface.searchController());
     }
     if (session.lastCwd !== null) session.callbacks.onCwd?.(session.lastCwd);
-    void initializeSession(session);
     return () => {
       if (session.container === node) {
         session.cancelFocusRetry?.();
@@ -224,9 +255,16 @@ export function useGhosttyTerminalSession({
 
   useEffect(() => {
     const session = sessions.get(leafId);
-    if (!session || session.backend !== backend) return;
-    void updateSessionFont(session, font);
-  }, [leafId, backend, font]);
+    if (!look || !session || session.backend !== backend) return;
+    applySessionLook(session, look.font, look.look);
+  }, [leafId, backend, look]);
+
+  // Declared after the look is applied, so a terminal starts with it.
+  const resolved = look !== null;
+  useEffect(() => {
+    const session = sessions.get(leafId);
+    if (resolved && session?.backend === backend) void initializeSession(session);
+  }, [leafId, backend, container, resolved]);
 
   useEffect(() => {
     const session = ensureSession(
@@ -252,20 +290,6 @@ export function useGhosttyTerminalSession({
       surface.detach();
     }
   }, [leafId, backend, visible, focused]);
-
-  const cursorBlink = usePreferencesStore((state) => state.terminalCursorBlink);
-  const cursorStyle = usePreferencesStore((state) => state.terminalCursorStyle);
-  useEffect(() => {
-    const session = sessions.get(leafId);
-    session?.surface?.setCursorOptions(cursorBlink, cursorStyle);
-    if (session?.surfaceOptions) {
-      session.surfaceOptions = {
-        ...session.surfaceOptions,
-        cursorBlink,
-        cursorStyle,
-      };
-    }
-  }, [leafId, cursorBlink, cursorStyle]);
 
   const write = useCallback(
     (data: string) => {
@@ -298,11 +322,6 @@ export function useGhosttyTerminalSession({
     () => sessions.get(leafId)?.surface?.getSelection() ?? null,
     [leafId],
   );
-  const applyTheme = useCallback(() => {
-    const session = sessions.get(leafId);
-    if (session) applyThemeToSession(session);
-  }, [leafId]);
-
   const retry = useCallback(() => {
     const session = sessions.get(leafId);
     if (session?.rendererError) {
@@ -342,7 +361,6 @@ export function useGhosttyTerminalSession({
       focus,
       getBuffer,
       getSelection,
-      applyTheme,
     }),
     [
       write,
@@ -350,7 +368,6 @@ export function useGhosttyTerminalSession({
       focus,
       getBuffer,
       getSelection,
-      applyTheme,
       error,
       exitCode,
       retry,
@@ -361,9 +378,39 @@ export function useGhosttyTerminalSession({
   );
 }
 
+/** Applies a new appearance to a running terminal, without restarting it. */
+function applySessionLook(
+  session: GhosttySession,
+  font: TerminalFontSpec,
+  look: SessionLook,
+): void {
+  const previous = session.look;
+  session.look = look;
+  if (!previous) {
+    // Not started yet: it starts with this font.
+    session.font = font;
+    return;
+  }
+  if (previous.theme !== look.theme) applyThemeToSession(session);
+  if (previous.cursorBlink !== look.cursorBlink || previous.cursorStyle !== look.cursorStyle) {
+    session.surface?.setCursorOptions(look.cursorBlink, look.cursorStyle);
+    if (session.surfaceOptions) {
+      session.surfaceOptions = {
+        ...session.surfaceOptions,
+        cursorBlink: look.cursorBlink,
+        cursorStyle: look.cursorStyle,
+      };
+    }
+  }
+  if (previous.padding !== look.padding) applyPadding(session);
+  // A pane drawn with the global font because its own did not fit is measured again.
+  const globalChanged = fontSpecKey(previous.globalFont) !== fontSpecKey(look.globalFont);
+  void updateSessionFont(session, font, globalChanged);
+}
+
 function applyThemeToSession(session: GhosttySession): void {
-  if (!session.model || !session.surface) return;
-  const theme = readTerminalGpuTheme();
+  if (!session.model || !session.surface || !session.look) return;
+  const { theme } = session.look;
   session.model.setColors(
     rgbToInt(theme.foreground),
     rgbToInt(theme.background),
@@ -492,6 +539,7 @@ async function respawnGhosttySession(
   session.commandRunning = false;
   session.commandTracked = false;
   session.lastCwd = null;
+  session.alternateScreen = false;
   session.initialCwd = launch.cwd ?? session.initialCwd;
   if ('profileId' in launch) session.profileId = launch.profileId;
   session.startupError = null;
@@ -512,7 +560,6 @@ function ensureSession(
   backend: GhosttyBackend,
   initialCwd?: string,
   profileId?: string,
-  font?: TerminalFontSpec,
 ): GhosttySession {
   const existing = sessions.get(leafId);
   if (existing) {
@@ -558,15 +605,16 @@ function ensureSession(
     generation: 0,
     initializing: null,
     startup: createStartupTimings(),
-    font:
-      font ??
-      ({
-        family: 'monospace',
-        size: 14,
-        lineHeight: 1.2,
-        letterSpacing: 0,
-        weight: '400',
-      } satisfies TerminalFontSpec),
+    font: {
+      family: 'monospace',
+      size: 14,
+      lineHeight: 1.2,
+      letterSpacing: 0,
+      weight: '400',
+    },
+    fontRevision: 0,
+    look: null,
+    alternateScreen: false,
   };
   sessions.set(leafId, session);
   return session;
@@ -604,7 +652,9 @@ async function initializeSessionGeneration(
   session: GhosttySession,
   generation: number,
 ): Promise<void> {
-  const preferences = usePreferencesStore.getState();
+  const look = session.look;
+  if (!look) throw new Error('The terminal started before its appearance was resolved');
+  const fontRevision = session.fontRevision;
   const startup = createStartupTimings();
   session.startup = startup;
   const alive = () => !session.disposed && generation === session.generation;
@@ -613,7 +663,7 @@ async function initializeSessionGeneration(
       startup[key] = performance.now() - startup.startedAt;
     }
   };
-  const theme = readTerminalGpuTheme();
+  const { theme } = look;
   const coreRuntime = getGhosttyCoreRuntime();
   const metricsPromise = (async () => {
     await ensureMonoFontsLoaded();
@@ -638,7 +688,15 @@ async function initializeSessionGeneration(
           })
           .then(() => mark('gpuReadyMs'))
       : Promise.resolve().then(() => mark('gpuReadyMs'));
-  const [metrics] = await Promise.all([metricsPromise, corePromise, rendererPromise]);
+  const [measured] = await Promise.all([metricsPromise, corePromise, rendererPromise]);
+  if (!alive()) return;
+  // With no room for any font, the WebGPU surface fails to build and the pane falls back to WebGL.
+  const metrics =
+    session.backend === 'ghostty-webgpu' && !webGpuPreload.error
+      ? ((await getWebGpuTerminalRuntime().then((runtime) =>
+          fontThatFits(session, measured, (wanted) => runtime.hasRoomForAtlas(wanted)),
+        )) ?? measured)
+      : measured;
   if (!alive()) return;
 
   const semanticEvents = new GhosttySemanticEventRouter({
@@ -669,13 +727,13 @@ async function initializeSessionGeneration(
     cols: DEFAULT_COLS,
     rows: DEFAULT_ROWS,
     config: {
-      scrollbackLimit: preferences.terminalScrollback,
+      scrollbackLimit: look.scrollback,
       fgColor: rgbToInt(theme.foreground),
       bgColor: rgbToInt(theme.background),
       cursorColor: rgbToInt(theme.cursor),
       palette: theme.palette.map(rgbToInt),
-      cursorStyle: preferences.terminalCursorStyle,
-      cursorBlink: preferences.terminalCursorBlink,
+      cursorStyle: look.cursorStyle,
+      cursorBlink: look.cursorBlink,
     },
     onReply: (bytes) => session.writer.enqueue(bytes),
     onEvent: (event) => semanticEvents.handle(event),
@@ -686,13 +744,19 @@ async function initializeSessionGeneration(
   }
   mark('modelReadyMs');
   session.model = model;
+  // Full-screen programs fill the pane: its padding goes while they run, with one refit each way.
+  model.subscribeAlternateScreen((active) => {
+    if (session.model !== model) return;
+    session.alternateScreen = active;
+    applyPadding(session);
+  });
   session.callbacks.onModel?.(model);
   const surfaceBaseOptions: GhosttySurfaceBaseOptions = {
     model,
     metrics,
     theme,
-    cursorBlink: preferences.terminalCursorBlink,
-    cursorStyle: preferences.terminalCursorStyle,
+    cursorBlink: look.cursorBlink,
+    cursorStyle: look.cursorStyle,
     onResize: (cols: number, rows: number) => {
       session.ptyResize.send(cols, rows);
     },
@@ -840,11 +904,27 @@ async function initializeSessionGeneration(
   if (model.cols !== startCols || model.rows !== startRows) {
     session.ptyResize.send(model.cols, model.rows);
   }
-  // The theme can change while fonts, WASM and the renderer load; a change
-  // before the PTY was attached found no PTY to tell, so look again.
-  if (JSON.stringify(readTerminalGpuTheme()) !== JSON.stringify(theme)) {
-    applyThemeToSession(session);
+  // The appearance can change while fonts, WASM and the renderer load; a change before the PTY
+  // was attached found no PTY to tell, so look again.
+  if (session.look?.theme !== theme) applyThemeToSession(session);
+  const current = session.look;
+  if (
+    current &&
+    (current.cursorBlink !== look.cursorBlink || current.cursorStyle !== look.cursorStyle)
+  ) {
+    surface.setCursorOptions(current.cursorBlink, current.cursorStyle);
+    // A renderer retry or fallback builds its surface from these.
+    if (session.surfaceOptions) {
+      session.surfaceOptions = {
+        ...session.surfaceOptions,
+        cursorBlink: current.cursorBlink,
+        cursorStyle: current.cursorStyle,
+      };
+    }
   }
+  // A font update with no surface yet to apply to (a symbol face that arrived, a profile edit) is
+  // applied now.
+  if (session.fontRevision !== fontRevision) void updateSessionFont(session, session.font, true);
 }
 
 function createGhosttyInput(
@@ -917,8 +997,15 @@ function focusSessionSurface(session: GhosttySession, surface: GhosttySurface | 
   });
 }
 
+/** The pane's padding, or none while a full-screen program runs. */
+function applyPadding(session: GhosttySession, surface = session.surface): void {
+  const padding = session.alternateScreen ? NO_PADDING : (session.look?.padding ?? NO_PADDING);
+  surface?.setPadding(padding);
+}
+
 function attachGhosttySurface(session: GhosttySession, surface: GhosttySurface): void {
   if (!session.container) return;
+  applyPadding(session, surface);
   surface.attach(session.container);
   surface.setVisible(true);
   surface.setFocused(session.focused);
@@ -1008,6 +1095,11 @@ async function replaceGhosttySurface(
       session.rendererError = null;
       session.callbacks.onError?.(sessionFailure(session));
       session.callbacks.onSearchReady?.(replacement.searchController());
+      // The replacement is built with the last font that applied; one asked for since (one that
+      // failed to apply) is tried on it.
+      if (fontSpecKey(currentOptions.metrics.font) !== fontSpecKey(session.font)) {
+        void updateSessionFont(session, session.font, true);
+      }
       return replacement;
     },
   );
@@ -1065,20 +1157,65 @@ function createStartupTimings(): GhosttyStartupTimings {
   };
 }
 
-async function updateSessionFont(session: GhosttySession, font: TerminalFontSpec): Promise<void> {
-  if (fontSpecKey(session.font) === fontSpecKey(font)) return;
+/**
+ * Draws the pane's new font. `force` measures it again although it did not change: the global font
+ * it may fall back to changed, or it was asked for before the surface existed. Only the latest
+ * update applies; one that fails to apply shows the renderer error and its retry.
+ */
+async function updateSessionFont(
+  session: GhosttySession,
+  font: TerminalFontSpec,
+  force = false,
+): Promise<void> {
+  if (fontSpecKey(session.font) === fontSpecKey(font) && !force) return;
   session.font = font;
-  if (!session.surface || session.disposed) return;
+  const revision = ++session.fontRevision;
+  const surface = session.surface;
+  if (!surface || session.disposed) return;
+  const latest = () =>
+    !session.disposed && session.surface === surface && session.fontRevision === revision;
 
   await ensureMonoFontsLoaded();
   await document.fonts.ready;
   await prepareHintedFonts(font.family, font.weight);
-  const metrics = await measureTerminalFont(font);
-  if (session.disposed || !session.surface || fontSpecKey(session.font) !== fontSpecKey(font)) {
+  const measured = await measureTerminalFont(font);
+  if (!latest()) return;
+  const metrics = await fontThatFits(session, measured, (wanted) => surface.fitsFont(wanted));
+  if (!metrics || !latest()) return;
+  try {
+    surface.setFontMetrics(metrics);
+  } catch (error) {
+    reportRendererFailure(session, toError(error));
     return;
   }
-  session.surface.setFontMetrics(metrics);
   if (session.surfaceOptions) session.surfaceOptions = { ...session.surfaceOptions, metrics };
+}
+
+const warnedFonts = new Set<string>();
+
+/**
+ * `metrics` when the renderer has room for its glyphs; else the global font's, or `null` when that
+ * one has no room either and the pane keeps the font it has. A WebGPU window draws up to 8 fonts at
+ * once; the first time a font does not fit, a warning says so.
+ */
+async function fontThatFits(
+  session: GhosttySession,
+  metrics: TerminalFontMetrics,
+  fits: (metrics: TerminalFontMetrics) => boolean,
+): Promise<TerminalFontMetrics | null> {
+  if (fits(metrics)) return metrics;
+  const key = fontSpecKey(metrics.font);
+  if (!warnedFonts.has(key)) {
+    warnedFonts.add(key);
+    toast.warning('Too many terminal fonts', {
+      description: `${metrics.font.family} ${metrics.font.size}px is not shown: a window draws up to 8 terminal fonts at once.`,
+    });
+  }
+  const fallback = session.look?.globalFont;
+  if (!fallback || fontSpecKey(fallback) === key) return null;
+  await prepareHintedFonts(fallback.family, fallback.weight);
+  const global = await measureTerminalFont(fallback);
+  return fits(global) ? global : null;
 }
 
 class BoundedPtyWriter {

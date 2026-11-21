@@ -81,6 +81,22 @@ export function useCloseBehavior(
   });
 }
 
+/**
+ * The appearance of the profile a pane opens with: its own, or the default profile when it has
+ * none. `null` only while the first read runs; a profile that is not listed, or a list that could
+ * not be read, sets nothing (`undefined`).
+ */
+export function useProfileAppearance(
+  profileId: string | undefined,
+): ProfileEntry['appearance'] | undefined | null {
+  useEffect(watchProfiles, []);
+  return useProfilesStore(({ list, readFailed }) => {
+    if (list === null) return readFailed ? undefined : null;
+    const id = profileId ?? list.defaultProfileId;
+    return list.profiles.find((profile) => profile.id === id)?.appearance;
+  });
+}
+
 export function setDefaultProfile(id: string): Promise<void> {
   return invoke('profiles_set_default', { id });
 }

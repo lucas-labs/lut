@@ -4329,7 +4329,7 @@ scope: ui
 size: M
 ```
 
-**Goal:** Resolve appearance as global → profile → pane override and apply it per session, within the scope decided by E14-01 (`.docs/architecture/per-pane-appearance.md`). No second resolver: the pane layer is appended to `resolvePreferences` (E14-02).
+**Goal:** Resolve appearance as global → profile and apply it per session, within the scope decided by E14-01 (`.docs/architecture/per-pane-appearance.md`). Each pane's layer is its profile: no issue stores a per-pane override, so none is added here. No second resolver: the profile layer goes through `resolvePreferences` (E14-02).
 
 Per pane in v1: colour scheme, font family, size and weight, cursor style and blink, and scrollback (for sessions
 started after the change). Global: letter spacing, line height, symbol fonts, zoom, background opacity, image and blur,
@@ -4337,7 +4337,7 @@ subpixel text and the renderer. Padding is out of v1.
 
 **Acceptance criteria:**
 
-- [ ] `resolvePreferences` (E14-02) gains an optional pane-override layer; tests define which appearance fields merge and which replace. No separate `resolveTerminalAppearance` is added.
+- [ ] A pane's appearance resolves through `resolvePreferences` (E14-02) with its profile as the layer; tests define which appearance fields replace. No separate `resolveTerminalAppearance` is added.
 - [ ] Sessions consume the resolved palette/font via `applyThemeToSession`/`updateSessionFont`; panes without overrides still follow global changes.
 - [ ] A pane's palette is built from its resolved theme id, not from the document's CSS tokens (`readTerminalGpuTheme`); the app chrome keeps the app theme.
 - [ ] Editing a profile's appearance updates open panes without respawning the PTY.
@@ -4424,14 +4424,20 @@ size: S
 ```
 
 **Goal:** Each profile sets the padding around the terminal grid, inside its panes, as Windows Terminal profiles do.
-The workspace adds none of its own (only a 12px left gap while a side panel is open, E12-03). Full-screen programs
+The workspace adds none of its own: the 12px left gap it kept beside an open side panel (E12-03) is replaced by the
+padding. Full-screen programs
 (nvim, htop, less: anything on the alternate screen) always fill the pane: the padding applies to the normal screen
 only.
 
 **Acceptance criteria:**
 
-- [ ] Profiles gain a padding field (top, right, bottom, left; default 0) resolved through `resolvePreferences` like the
-      other appearance fields (E14-16).
+- [ ] Profiles gain a padding field (top, right, bottom, left) resolved through `resolvePreferences` like the other
+      appearance fields (E14-16), over a global `terminalPadding` preference (10 px top and bottom, 14 px left and right
+      by default).
+- [ ] The terminal layer no longer keeps a 12px left gap beside an open side panel (E12-03); the pane padding is the
+      only space between the panel and the text.
+- [ ] Settings → Terminal → Text sets the global padding with a reusable `PaddingInput` (`src/components/ui`): one field
+      per axis, and a toggle that splits them into one field per side, as Figma's does.
 - [ ] The terminal fit (`fitTerminalViewport`) subtracts the padding before counting columns and rows, so nothing is
       cut and the PTY gets the real size; the pane's background fills the padding.
 - [ ] While the pane is on the alternate screen (`modes().alternateScreen`) the padding is 0; entering and leaving it
@@ -4490,9 +4496,10 @@ but fish reads `conf.d` from `$XDG_CONFIG_HOME/fish` when it is set, so the file
 **Acceptance criteria:**
 
 - [ ] Native Unix and WSL fish load lut's integration whatever `XDG_CONFIG_HOME` the child gets (inherited, the
-      profile's, or unset), e.g. by sourcing the prepared file from the launch instead of relying on `conf.d`.
-- [ ] Without `XDG_CONFIG_HOME` the launch keeps today's behaviour, and the prompt is still re-installed after
-      `config.fish`.
+      profile's, or unset): lut puts its own data directory first in `XDG_DATA_DIRS`, fish loads the integration from
+      its `vendor_conf.d`, and the integration takes the directory out of `XDG_DATA_DIRS` again.
+- [ ] The integration still loads before `config.fish` and the prompt is still re-installed after it; lut no longer
+      writes into the user's `~/.config/fish`.
 - [ ] Unit tests for the fish launch arguments, native and WSL, with and without the variable.
 
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml --lib shell_init`; manual: a fish pane with

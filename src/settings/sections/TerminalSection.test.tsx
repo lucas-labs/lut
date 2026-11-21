@@ -19,6 +19,7 @@ const defaults = {
   terminalScrollSpeed: 1,
   terminalMacOptionAsAlt: 'off',
   confirmCloseRunningTerminal: true,
+  terminalPadding: { top: 0, right: 0, bottom: 0, left: 0 },
 };
 const prefs = vi.hoisted(() => ({ state: {} as Record<string, unknown> }));
 vi.mock('@/modules/settings/preferences', () => ({
@@ -26,6 +27,7 @@ vi.mock('@/modules/settings/preferences', () => ({
 }));
 const store = vi.hoisted(() => ({
   setTerminalSubpixelText: vi.fn(async (_enabled: boolean) => {}),
+  setTerminalPadding: vi.fn(async (_padding: object) => {}),
 }));
 vi.mock('@/modules/settings/store', async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -148,9 +150,26 @@ describe('TerminalSection', () => {
     const controls = host.querySelectorAll('[role="switch"], [role="combobox"], input');
     expect(controls.length).toBeGreaterThan(10);
     for (const control of controls) {
-      const name = document.getElementById(control.getAttribute('aria-labelledby') ?? '')?.textContent;
+      // A field of a group of fields (the padding) is named by its own label inside the named group.
+      const named = control.closest('[role="group"][aria-labelledby]') ?? control;
+      const name = document.getElementById(named.getAttribute('aria-labelledby') ?? '')?.textContent;
       expect(name, control.outerHTML).toBeTruthy();
     }
+  });
+
+  it('sets the padding of every pane, both sides of an axis at once (E14-21)', () => {
+    render({ terminalPadding: { top: 4, right: 8, bottom: 4, left: 8 } });
+    const row = rowOf('Padding');
+    expect(groupOf('Padding')).toBe('Text');
+    expect(row?.textContent).toContain('Full-screen programs fill the pane.');
+    const horizontal = row?.querySelector('input[aria-label="Horizontal padding"]') as HTMLInputElement;
+    expect(horizontal.value).toBe('8');
+    const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+    act(() => {
+      setValue?.call(horizontal, '12');
+      horizontal.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    expect(store.setTerminalPadding).toHaveBeenLastCalledWith({ top: 4, right: 12, bottom: 4, left: 12 });
   });
 
   it('sets the default profile from the visible profiles', async () => {

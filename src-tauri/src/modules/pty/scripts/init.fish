@@ -4,8 +4,20 @@
 # A/B (the `mark-prompt` feature); lut disables it at spawn via
 # fish_features=no-mark-prompt so these markers aren't emitted twice.
 
-# Installed into conf.d, which every fish session sources; only lut-spawned
-# shells (LUT_TERMINAL=1) may get their prompt wrapped.
+# Loaded from vendor_conf.d: lut puts its own data directory first in
+# XDG_DATA_DIRS, so fish finds this file whatever XDG_CONFIG_HOME is, before
+# config.fish. Take that directory out again, so the programs started from here
+# do not inherit it.
+if set -q LUT_FISH_XDG_DATA_DIR
+    set --global --export --path XDG_DATA_DIRS "$XDG_DATA_DIRS"
+    if set -l index (contains -i -- "$LUT_FISH_XDG_DATA_DIR" $XDG_DATA_DIRS)
+        set --erase --global XDG_DATA_DIRS[$index]
+        test -n "$XDG_DATA_DIRS"; or set --erase --global XDG_DATA_DIRS
+    end
+    set --erase --global LUT_FISH_XDG_DATA_DIR
+end
+
+# Only lut-spawned shells (LUT_TERMINAL=1) may get their prompt wrapped.
 if not set -q LUT_TERMINAL
     exit 0
 end

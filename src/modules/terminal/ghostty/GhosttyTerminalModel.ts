@@ -136,6 +136,11 @@ export interface GhosttyTerminalModelApi extends TerminalModel {
   renderCells(): TerminalCellReader;
   presentationSuppressed(): boolean;
   deferPresentation(): boolean;
+  /**
+   * Calls `listener` each time the terminal enters or leaves the alternate screen (full-screen
+   * programs), as the output that switches it is written.
+   */
+  subscribeAlternateScreen(listener: (active: boolean) => void): () => void;
   /** App lab only: a resize erased the prompt and the shell has not printed it again. */
   promptErased?(): boolean;
   releasePresentationResources(): void;

@@ -1,3 +1,4 @@
+import type { Padding } from '@/lib/padding';
 import {
   type AgentLaunchCommands,
   DEFAULT_AGENT_LAUNCH_COMMANDS,
@@ -151,6 +152,8 @@ export type Preferences = {
   terminalFontSize: number;
   terminalScrollback: number;
   terminalScrollSpeed: number;
+  /** Space around the terminal text in each pane; a profile can set its own. */
+  terminalPadding: Padding;
   terminalMacOptionAsAlt: MacOptionAsAlt;
   confirmCloseRunningTerminal: boolean;
   lastWslDistro: string | null;
@@ -227,6 +230,7 @@ const KEY_TERMINAL_LETTER_SPACING = 'terminalLetterSpacing';
 const KEY_TERMINAL_FONT_SIZE = 'terminalFontSize';
 const KEY_TERMINAL_SCROLLBACK = 'terminalScrollback';
 const KEY_TERMINAL_SCROLL_SPEED = 'terminalScrollSpeed';
+const KEY_TERMINAL_PADDING = 'terminalPadding';
 const KEY_TERMINAL_MAC_OPTION_AS_ALT = 'terminalMacOptionAsAlt';
 const KEY_CONFIRM_CLOSE_RUNNING_TERMINAL = 'confirmCloseRunningTerminal';
 const KEY_LAST_WSL_DISTRO = 'lastWslDistro';
@@ -263,6 +267,8 @@ export const EDITOR_WORD_WRAP_COLUMN_MAX = 500;
 const TERMINAL_SCROLLBACK_DEFAULT = 2000;
 const TERMINAL_SCROLLBACK_MIN = 200;
 const TERMINAL_SCROLLBACK_MAX = 50_000;
+export const TERMINAL_PADDING_MAX = 64;
+const TERMINAL_PADDING_DEFAULT: Padding = { top: 10, right: 14, bottom: 10, left: 14 };
 export const TERMINAL_SCROLLBACK_PRESETS = [500, 1000, 2000, 5000, 10_000, 25_000] as const;
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -297,6 +303,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   terminalFontSize: TERMINAL_FONT_SIZE_DEFAULT,
   terminalScrollback: TERMINAL_SCROLLBACK_DEFAULT,
   terminalScrollSpeed: DEFAULT_SCROLL_SPEED,
+  terminalPadding: TERMINAL_PADDING_DEFAULT,
   terminalMacOptionAsAlt: DEFAULT_MAC_OPTION_AS_ALT,
   confirmCloseRunningTerminal: true,
   lastWslDistro: null,
@@ -386,6 +393,7 @@ export async function loadPreferences(): Promise<Preferences> {
       get<number>(KEY_TERMINAL_SCROLLBACK) ?? DEFAULT_PREFERENCES.terminalScrollback,
     ),
     terminalScrollSpeed: clampScrollSpeed(get<number>(KEY_TERMINAL_SCROLL_SPEED)),
+    terminalPadding: coerceTerminalPadding(get<unknown>(KEY_TERMINAL_PADDING)),
     terminalMacOptionAsAlt: coerceMacOptionAsAlt(get<unknown>(KEY_TERMINAL_MAC_OPTION_AS_ALT)),
     confirmCloseRunningTerminal:
       get<boolean>(KEY_CONFIRM_CLOSE_RUNNING_TERMINAL) ??
@@ -613,6 +621,26 @@ export async function setTerminalScrollback(value: number): Promise<void> {
   await writePref(KEY_TERMINAL_SCROLLBACK, clampScrollback(value));
 }
 
+/**
+ * Each side a whole number of pixels from 0 to `TERMINAL_PADDING_MAX`, a side that is not a number
+ * 0; no padding saved, or something else than one, is the default.
+ */
+export function coerceTerminalPadding(value: unknown): Padding {
+  if (typeof value !== 'object' || value === null) return TERMINAL_PADDING_DEFAULT;
+  const raw = value as Record<string, unknown>;
+  const side = (key: keyof Padding) => {
+    const n = raw[key];
+    return typeof n === 'number' && Number.isFinite(n)
+      ? Math.min(TERMINAL_PADDING_MAX, Math.max(0, Math.round(n)))
+      : 0;
+  };
+  return { top: side('top'), right: side('right'), bottom: side('bottom'), left: side('left') };
+}
+
+export async function setTerminalPadding(value: Padding): Promise<void> {
+  await writePref(KEY_TERMINAL_PADDING, coerceTerminalPadding(value));
+}
+
 export async function setConfirmCloseRunningTerminal(value: boolean): Promise<void> {
   await writePref(KEY_CONFIRM_CLOSE_RUNNING_TERMINAL, value);
 }
@@ -733,6 +761,7 @@ export async function onPreferencesChange(
     [KEY_TERMINAL_FONT_SIZE]: 'terminalFontSize',
     [KEY_TERMINAL_SCROLLBACK]: 'terminalScrollback',
     [KEY_TERMINAL_SCROLL_SPEED]: 'terminalScrollSpeed',
+    [KEY_TERMINAL_PADDING]: 'terminalPadding',
     [KEY_TERMINAL_MAC_OPTION_AS_ALT]: 'terminalMacOptionAsAlt',
     [KEY_CONFIRM_CLOSE_RUNNING_TERMINAL]: 'confirmCloseRunningTerminal',
     [KEY_LAST_WSL_DISTRO]: 'lastWslDistro',

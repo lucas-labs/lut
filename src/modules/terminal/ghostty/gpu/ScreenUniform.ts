@@ -1,3 +1,4 @@
+import type { Padding } from '@/lib/padding';
 import {
   SCREEN_FLAG_CURSOR_BLOCK,
   SCREEN_FLAG_SEARCH_ACTIVE,
@@ -29,6 +30,8 @@ export type ScreenUniformState = {
    * (a resize gesture in progress) keeps the cursor row on screen. Zero at rest.
    */
   readonly shiftY: number;
+  /** The pane's padding in whole device pixels: the grid starts `left`/`top` into the viewport. */
+  readonly padding: Padding;
   readonly textBlinkVisible: boolean;
   readonly searchActive: boolean;
   readonly cursor: CursorRect | null;
@@ -70,6 +73,8 @@ export class ScreenUniform {
     ints[SCREEN_OFFSET.origin / 4 + 1] = state.viewport.y - clipY;
     uints[SCREEN_OFFSET.clip / 4] = clipX;
     uints[SCREEN_OFFSET.clip / 4 + 1] = clipY;
+    uints[SCREEN_OFFSET.grid / 4] = Math.max(0, state.padding.left);
+    uints[SCREEN_OFFSET.grid / 4 + 1] = Math.max(0, state.padding.top);
     uints[SCREEN_OFFSET.cellSize / 4] = state.cellWidth;
     uints[SCREEN_OFFSET.cellSize / 4 + 1] = state.cellHeight;
     uints[SCREEN_OFFSET.dims / 4] = state.cols;

@@ -26,7 +26,7 @@ const fake = vi.hoisted(() => ({
 vi.mock('@/modules/terminal/ghostty/useGhosttyTerminalSession', async () => {
   const { useEffect } = await import('react');
   return {
-    useGhosttyTerminalSession: ({ leafId }: { leafId: number }) => {
+    useGhosttyTerminalSession: ({ leafId, appearance }: { leafId: number; appearance: { theme: object } | null }) => {
       if (!fake.live.has(leafId)) {
         fake.live.add(leafId);
         fake.opened.push(leafId);
@@ -37,6 +37,11 @@ vi.mock('@/modules/terminal/ghostty/useGhosttyTerminalSession', async () => {
           fake.mounted.delete(leafId);
         };
       }, [leafId]);
+      // The real hook recolors the existing model, surface and PTY in place when the theme changes.
+      const theme = appearance?.theme;
+      useEffect(() => {
+        if (theme) fake.themed.push(leafId);
+      }, [leafId, theme]);
       // Stable per leaf, like the real hook's memoized handle.
       let session = fake.sessions.get(leafId);
       if (!session) {
@@ -48,8 +53,6 @@ vi.mock('@/modules/terminal/ghostty/useGhosttyTerminalSession', async () => {
           focus: () => {},
           getBuffer: () => null,
           getSelection: () => null,
-          // The real one recolors the existing model, surface and PTY in place.
-          applyTheme: () => fake.themed.push(leafId),
           retry: () => {},
         };
         fake.sessions.set(leafId, session);
@@ -71,6 +74,17 @@ vi.mock('@/modules/theme', async () => {
     activeTheme: null,
   });
   return { ThemeContext, useTheme: () => useContext(ThemeContext) };
+});
+// A pane without a theme of its own follows the app's, as the real hook resolves it.
+vi.mock('@/modules/terminal/lib/usePaneAppearance', async () => {
+  const { useMemo } = await import('react');
+  const { useTheme } = await import('@/modules/theme');
+  return {
+    usePaneAppearance: () => {
+      const { resolvedMode, activeTheme } = useTheme();
+      return useMemo(() => ({ theme: { resolvedMode, activeTheme } }), [resolvedMode, activeTheme]);
+    },
+  };
 });
 // The other surfaces render nothing without their own tabs; stubbing them keeps their code out of the test.
 vi.mock('@/modules/editor', () => ({ EditorStack: () => null, GitDiffStack: () => null }));

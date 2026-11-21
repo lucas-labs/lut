@@ -91,6 +91,7 @@ export class AdaptedGhosttyTerminalModel implements GhosttyTerminalModelApi {
   private blockMatch: { line: number; col: number; len: number } | null = null;
   private readonly directCellReader = new GhosttyRenderCellView();
   private readonly damageListeners = new Set<() => void>();
+  private readonly alternateScreenListeners = new Set<(active: boolean) => void>();
   private replySink: ((bytes: Uint8Array) => void) | null;
   private eventSink: ((event: GhosttyTerminalEvent) => void) | null;
   private onDispose: (() => void) | null;
@@ -696,8 +697,19 @@ export class AdaptedGhosttyTerminalModel implements GhosttyTerminalModelApi {
   private refreshModes(): void {
     const modeBits = this.terminal.modeBits();
     if (modeBits === this.modeBitsValue) return;
+    const wasAlternate = this.modesValue.alternateScreen;
     this.modeBitsValue = modeBits;
     this.modesValue = modesFromBits(modeBits);
+    const active = this.modesValue.alternateScreen;
+    if (active !== wasAlternate) {
+      for (const listener of this.alternateScreenListeners) listener(active);
+    }
+  }
+
+  subscribeAlternateScreen(listener: (active: boolean) => void): () => void {
+    this.assertLive();
+    this.alternateScreenListeners.add(listener);
+    return () => this.alternateScreenListeners.delete(listener);
   }
 
   readText(maxLines: number): string {
@@ -744,6 +756,7 @@ export class AdaptedGhosttyTerminalModel implements GhosttyTerminalModelApi {
     if (this.disposed) return;
     this.disposed = true;
     this.damageListeners.clear();
+    this.alternateScreenListeners.clear();
     this.replySink = null;
     this.eventSink = null;
     this.renderState = null;

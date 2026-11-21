@@ -1,3 +1,4 @@
+import { NO_PADDING, type Padding } from '@/lib/padding';
 import { isPrimaryModifierPressed } from '@/modules/platform';
 import type { TerminalSurface } from '@/modules/terminal/backend/contracts';
 import { TerminalScrollbarSync } from '@/modules/terminal/ghostty/gpu/terminalScrollbar';
@@ -25,7 +26,7 @@ import {
   measureGestureBackingEnvironment,
   windowInnerSize,
 } from '../gpu/GestureBacking';
-import { fitTerminalViewport, TERMINAL_RIGHT_GUTTER_CSS_PX } from '../gpu/TerminalFit';
+import { fitPaddedViewport, TERMINAL_RIGHT_GUTTER_CSS_PX } from '../gpu/TerminalFit';
 import { TerminalFitQueue, type TerminalFitQueueDiagnostics } from '../gpu/TerminalFitQueue';
 import type { TerminalFontMetrics, TerminalGpuTheme } from '../gpu/terminalVisuals';
 import { devicePixelScale, metricsEqual, metricsForScale, rgbToCss } from '../gpu/terminalVisuals';
@@ -96,6 +97,8 @@ export class WebGlTerminalSurface implements TerminalSurface, WebGlRuntimeSurfac
   private visible = true;
   private readonly scrollbarSync = new TerminalScrollbarSync();
   private scrollbarViewportHeight = 0;
+  /** The padding asked for, in CSS pixels; `setPadding`. */
+  private padding: Padding = NO_PADDING;
   private focused = false;
   private documentSuspended = !terminalWindowPresentation().visible;
   private resizeInteractionActive = terminalResizeInteractionActive();
@@ -242,6 +245,7 @@ export class WebGlTerminalSurface implements TerminalSurface, WebGlRuntimeSurfac
     if (this.host) this.detach();
     this.host = container;
     container.appendChild(this.root);
+    this.updateRootBackground();
     this.syncScale();
     this.scrollbarSync.forget();
     this.pixelRatioMonitor.start();
@@ -269,6 +273,7 @@ export class WebGlTerminalSurface implements TerminalSurface, WebGlRuntimeSurfac
     this.runtime.release(this);
     this.renderer = null;
     this.root.remove();
+    this.host.style.backgroundColor = '';
     this.host = null;
   }
 
@@ -346,6 +351,26 @@ export class WebGlTerminalSurface implements TerminalSurface, WebGlRuntimeSurfac
     } catch (error) {
       this.handleRendererError(toError(error));
     }
+  }
+
+  /** Space around the grid inside the pane, in CSS pixels; the grid refits once to the rest. */
+  setPadding(padding: Padding): void {
+    const current = this.padding;
+    if (
+      padding.top === current.top &&
+      padding.right === current.right &&
+      padding.bottom === current.bottom &&
+      padding.left === current.left
+    ) {
+      return;
+    }
+    this.padding = padding;
+    this.queueFit();
+  }
+
+  /** Every renderer slot owns its atlas, so any font fits. */
+  fitsFont(_metrics: TerminalFontMetrics): boolean {
+    return true;
   }
 
   setFontMetrics(metrics: TerminalFontMetrics): void {
@@ -644,14 +669,18 @@ export class WebGlTerminalSurface implements TerminalSurface, WebGlRuntimeSurfac
 
     const bounds = measuredBounds ?? this.host.getBoundingClientRect();
     this.scrollbarSync.invalidate();
-    this.scrollbarViewportHeight = Math.round(bounds.height);
-    const fit = fitTerminalViewport(
+    const { fit, padding } = fitPaddedViewport(
       bounds.width,
       bounds.height,
       this.metrics,
       undefined,
+      this.padding,
       TERMINAL_RIGHT_GUTTER_CSS_PX,
     );
+    // The canvas and everything measured against the root (selection, links, IME, scrollbar)
+    // follow the grid; the host paints the padding.
+    this.root.style.inset = `${padding.top}px ${padding.right}px ${padding.bottom}px ${padding.left}px`;
+    this.scrollbarViewportHeight = Math.round(bounds.height - padding.top - padding.bottom);
     if (!fit) return;
     const { cols, rows, pixelWidth, pixelHeight } = fit;
     if (cols * rows > MAX_SURFACE_CELLS) {
@@ -777,7 +806,10 @@ export class WebGlTerminalSurface implements TerminalSurface, WebGlRuntimeSurfac
   }
 
   private updateRootBackground(): void {
-    this.root.style.backgroundColor = rgbToCss(this.theme.background);
+    const color = rgbToCss(this.theme.background);
+    this.root.style.backgroundColor = color;
+    // The padding is the host's, outside the root.
+    if (this.host) this.host.style.backgroundColor = color;
   }
 
   private assertLive(): void {

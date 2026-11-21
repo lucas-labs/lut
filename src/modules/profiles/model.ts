@@ -1,3 +1,5 @@
+import type { Padding } from '@/lib/padding';
+
 /**
  * The terminal profile model as native serializes it (`profiles/model.rs`), with parsers that check
  * each `profiles_list` answer before the app reads it.
@@ -16,6 +18,7 @@ type ProfileAppearance = {
   cursorStyle?: CursorStyle;
   cursorBlink?: boolean;
   scrollback?: number;
+  padding?: Padding;
 };
 
 type ProfileTab = {
@@ -122,6 +125,17 @@ function appearance(value: unknown, path: string): ProfileAppearance {
     cursorStyle: optional(raw.cursorStyle, `${path}.cursorStyle`, cursorStyle),
     cursorBlink: optional(raw.cursorBlink, `${path}.cursorBlink`, flag),
     scrollback: optional(raw.scrollback, `${path}.scrollback`, count),
+    padding: optional(raw.padding, `${path}.padding`, padding),
+  };
+}
+
+function padding(value: unknown, path: string): Padding {
+  const raw = dict(value, path);
+  return {
+    top: count(raw.top, `${path}.top`),
+    right: count(raw.right, `${path}.right`),
+    bottom: count(raw.bottom, `${path}.bottom`),
+    left: count(raw.left, `${path}.left`),
   };
 }
 

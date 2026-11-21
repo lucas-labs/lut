@@ -72,6 +72,19 @@ pub struct ProfileAppearance {
     pub cursor_blink: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scrollback: Option<u32>,
+    /// Space around the terminal text inside the pane, in CSS pixels. Full-screen programs (the
+    /// alternate screen) fill the pane whatever it is.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub padding: Option<Padding>,
+}
+
+/// Each side's padding, in CSS pixels.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Padding {
+    pub top: u16,
+    pub right: u16,
+    pub bottom: u16,
+    pub left: u16,
 }
 
 /// Same values as the frontend's `TerminalCursorStyle`.
@@ -169,6 +182,12 @@ mod tests {
                 cursor_style: Some(CursorStyle::Block),
                 cursor_blink: Some(false),
                 scrollback: Some(5000),
+                padding: Some(Padding {
+                    top: 4,
+                    right: 8,
+                    bottom: 4,
+                    left: 8,
+                }),
             },
             tab: ProfileTab {
                 title: Some("ubuntu".into()),
@@ -202,7 +221,8 @@ mod tests {
                     "fontWeight": "500",
                     "cursorStyle": "block",
                     "cursorBlink": false,
-                    "scrollback": 5000
+                    "scrollback": 5000,
+                    "padding": { "top": 4, "right": 8, "bottom": 4, "left": 8 }
                 },
                 "tab": {
                     "title": "ubuntu",

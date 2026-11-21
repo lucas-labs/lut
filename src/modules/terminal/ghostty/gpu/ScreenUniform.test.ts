@@ -21,6 +21,7 @@ const STATE: ScreenUniformState = {
   cellHeight: 21,
   viewport: { x: 0, y: 0, width: 120 * 11, height: 40 * 21 },
   shiftY: 0,
+  padding: { top: 0, right: 0, bottom: 0, left: 0 },
   textBlinkVisible: true,
   searchActive: false,
   cursor: { x: 22, y: 42, width: 11, height: 21 },
@@ -50,6 +51,7 @@ describe('ScreenUniform', () => {
     uniform.pack({
       ...STATE,
       viewport: { x: 1005, y: 33, width: 1400, height: 900 },
+      padding: { top: 6, right: 10, bottom: 8, left: 12 },
       searchActive: true,
       selection: {
         active: true,
@@ -70,6 +72,8 @@ describe('ScreenUniform', () => {
       1400, 900,
     ]);
     expect([u[at(SCREEN_OFFSET.origin)], u[at(SCREEN_OFFSET.origin, 1)]]).toEqual([1005, 33]);
+    // The grid starts inside the pane's padding (E14-21).
+    expect([u[at(SCREEN_OFFSET.grid)], u[at(SCREEN_OFFSET.grid, 1)]]).toEqual([12, 6]);
     expect([u[at(SCREEN_OFFSET.cellSize)], u[at(SCREEN_OFFSET.cellSize, 1)]]).toEqual([11, 21]);
     expect([u[at(SCREEN_OFFSET.dims)], u[at(SCREEN_OFFSET.dims, 1)]]).toEqual([120, 40]);
     expect(u[at(SCREEN_OFFSET.flags)]).toBe(
@@ -191,6 +195,7 @@ describe('shader uniform layout', () => {
       viewport_size: SCREEN_OFFSET.viewportSize,
       origin: SCREEN_OFFSET.origin,
       clip: SCREEN_OFFSET.clip,
+      grid: SCREEN_OFFSET.grid,
       cell_size: SCREEN_OFFSET.cellSize,
       dims: SCREEN_OFFSET.dims,
       flags: SCREEN_OFFSET.flags,
@@ -210,7 +215,7 @@ describe('shader uniform layout', () => {
     // Fragment positions are relative to the whole canvas, but a pane's cells, cursor and
     // glyph quads are relative to its viewport.
     expect(BACKGROUND_SHADER).toMatch(
-      /let local_position = position\.xy - vec2f\(screen\.origin\) \+ vec2f\(0\.0, f32\(screen\.shift_y\)\);/,
+      /let grid_position = position\.xy - vec2f\(screen\.origin\) - vec2f\(screen\.grid\);/,
     );
     expect(BACKGROUND_SHADER).not.toMatch(/vec2u\(position\.xy\)/);
     expect(GLYPH_SHADER).toMatch(/vec2i\(screen\.origin\)/);
@@ -239,6 +244,15 @@ describe('shader uniform layout', () => {
     // Glyph quads leave the vertex stage relative to the viewport, which starts at the clip.
     expect(GLYPH_SHADER).toMatch(/-\s+vec2f\(screen\.clip\)/);
     expect(GLYPH_SHADER).toMatch(/origin: vec2i,\s+clip: vec2u,/);
+  });
+
+  it('starts the grid inside the padding in both passes, and paints the padding in the background (E14-21)', () => {
+    expect(BACKGROUND_SHADER).toMatch(
+      /if \(grid_position\.x < 0\.0 \|\| grid_position\.y < 0\.0\) \{\s*return vec4f\(screen\.theme_background\.rgb, 1\.0\);/,
+    );
+    // Glyph quads move into the grid in the vertex stage, and the fragment stage undoes it to find the texel.
+    expect(GLYPH_SHADER).toMatch(/let pixel = in_grid \+ vec2f\(screen\.grid\)/);
+    expect(GLYPH_SHADER).toMatch(/- vec2i\(screen\.grid\)/);
   });
 
   it('moves the grid up by the shift in the cell pass and in the glyph pass alike', () => {

@@ -175,7 +175,11 @@
   }
 }
 
-:root {
+/* Like the baseline tokens, `.light` and `.dark` also scope these to an element: a pane whose
+ * profile has its own theme reads its colours from one (`terminalTokensFor`). */
+:root,
+.light,
+.dark {
   --terminal-background: var(--background);
   --terminal-foreground: var(--foreground);
   --terminal-cursor: var(--primary);

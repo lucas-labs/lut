@@ -209,7 +209,6 @@ export default function App() {
           }
           workspace={
             <WorkspaceSurface
-              insetFromSidePanel={!focusMode && panels.sidePanelsOpen}
               tabs={tabs}
               activeId={activeId}
               activeTab={activeTab}

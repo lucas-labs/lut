@@ -1,4 +1,4 @@
-import { readTerminalTokens } from '@/styles/tokens';
+import type { TerminalTokens } from '@/styles/tokens';
 import type { Rgb } from '../core/packedCells';
 import { resolveCursorText } from './cursorText';
 
@@ -155,8 +155,8 @@ export function fontCss(font: TerminalFontSpec, bold: boolean, italic: boolean):
   return `${italic ? 'italic ' : ''}${weight} ${font.size}px ${font.family}`;
 }
 
-export function readTerminalGpuTheme(): TerminalGpuTheme {
-  const tokens = readTerminalTokens();
+/** The renderer's colours from a theme's terminal colours (`terminalTokensFor`). */
+export function terminalGpuTheme(tokens: TerminalTokens): TerminalGpuTheme {
   const selection = cssColorToRgba(tokens.selection);
   const background = cssColorToRgb(tokens.background);
   const cursor = cssColorToRgb(tokens.cursor);

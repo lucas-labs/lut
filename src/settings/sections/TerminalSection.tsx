@@ -1,4 +1,5 @@
 import { Input } from '@/components/ui/input';
+import { PaddingInput } from '@/components/ui/padding-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { IS_MAC } from '@/modules/platform';
@@ -15,12 +16,14 @@ import {
   setTerminalFontWeight,
   setTerminalLetterSpacing,
   setTerminalMacOptionAsAlt,
+  setTerminalPadding,
   setTerminalRenderer,
   setTerminalScreenReader,
   setTerminalScrollback,
   setTerminalScrollSpeed,
   setTerminalSubpixelText,
   TERMINAL_FONT_SIZES,
+  TERMINAL_PADDING_MAX,
   TERMINAL_SCROLLBACK_PRESETS,
 } from '@/modules/settings/store';
 import { subpixelTextUnavailable } from '@/modules/terminal/ghostty/gpu/subpixelText';
@@ -84,6 +87,7 @@ export function TerminalSection() {
   const terminalLetterSpacing = usePreferencesStore((s) => s.terminalLetterSpacing);
   const terminalFontSize = usePreferencesStore((s) => s.terminalFontSize);
   const terminalScrollback = usePreferencesStore((s) => s.terminalScrollback);
+  const terminalPadding = usePreferencesStore((s) => s.terminalPadding);
   const terminalScrollSpeed = usePreferencesStore((s) => s.terminalScrollSpeed);
   const terminalMacOptionAsAlt = usePreferencesStore((s) => s.terminalMacOptionAsAlt);
   const confirmCloseRunningTerminal = usePreferencesStore((s) => s.confirmCloseRunningTerminal);
@@ -224,6 +228,19 @@ export function TerminalSection() {
                 ))}
               </SelectContent>
             </Select>
+          )}
+        </SettingRow>
+        <SettingRow
+          title="Padding"
+          description="Space around the text in each pane (px). Full-screen programs fill the pane."
+        >
+          {(a11y) => (
+            <PaddingInput
+              {...a11y}
+              value={terminalPadding}
+              max={TERMINAL_PADDING_MAX}
+              onChange={(v) => void setTerminalPadding(v)}
+            />
           )}
         </SettingRow>
       </SettingsGroup>
