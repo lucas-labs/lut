@@ -216,6 +216,7 @@ export default function App() {
               registerTerminalHandle={terminals.registerTerminalHandle}
               onSearchReady={terminals.onSearchReady}
               onCwd={terminals.onCwd}
+              onProfile={terminals.onProfile}
               onExit={terminals.onExit}
               onFocusLeaf={terminals.onFocusLeaf}
               onSplitRatios={setSplitRatios}

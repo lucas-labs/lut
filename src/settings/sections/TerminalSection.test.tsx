@@ -31,19 +31,36 @@ vi.mock('@/modules/settings/store', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   ...store,
 }));
-const native = vi.hoisted(() => ({
-  profiles: {
-    profiles: [
-      { id: 'detected:pwsh', name: 'PowerShell', executable: 'C:/pwsh.exe', hidden: false },
-      { id: 'detected:cmd', name: 'Command Prompt', executable: 'C:/cmd.exe', hidden: true },
-      { id: 'detected:wsl:Ubuntu', name: 'Ubuntu', hidden: false },
-    ],
-    defaultProfileId: 'detected:pwsh' as string | null,
-  },
-  shells: [{ name: 'Command Prompt', path: 'C:/cmd.exe', integrated: false }],
-  setDefault: vi.fn(async (_id: string) => {}),
-  changed: null as null | (() => void),
-}));
+const native = vi.hoisted(() => {
+  // A detected profile as `profiles_list` lists it.
+  const detected = (id: string, name: string, hidden: boolean, executable?: string) => ({
+    id,
+    name,
+    ...(executable ? { executable } : {}),
+    args: [],
+    env: {},
+    loadUserProfile: true,
+    environment: executable ? { kind: 'native' } : { kind: 'wsl', distro: name },
+    appearance: {},
+    tab: { allowShellTitle: true },
+    closeBehavior: 'ask',
+    source: 'detected',
+    hidden,
+  });
+  return {
+    profiles: {
+      profiles: [
+        detected('detected:pwsh', 'PowerShell', false, 'C:/pwsh.exe'),
+        detected('detected:cmd', 'Command Prompt', true, 'C:/cmd.exe'),
+        detected('detected:wsl:Ubuntu', 'Ubuntu', false),
+      ],
+      defaultProfileId: 'detected:pwsh' as string | null,
+    },
+    shells: [{ name: 'Command Prompt', path: 'C:/cmd.exe', integrated: false }],
+    setDefault: vi.fn(async (_id: string) => {}),
+    changed: null as null | (() => void),
+  };
+});
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: (command: string, args?: { id: string }) => {
     if (command === 'profiles_list') return Promise.resolve(structuredClone(native.profiles));
@@ -80,10 +97,12 @@ const render = (state: Partial<typeof defaults> = {}) => {
   act(() => root.render(createElement(TerminalSection)));
 };
 
-beforeEach(() => {
+beforeEach(async () => {
   store.setTerminalSubpixelText.mockClear();
   native.setDefault.mockReset();
   native.profiles.defaultProfileId = 'detected:pwsh';
+  // The profiles list outlives each mount: read the reset one again.
+  await act(async () => native.changed?.());
   toasts.error.mockClear();
   subpixel.unavailable.mockReset();
   subpixel.unavailable.mockResolvedValue(null);

@@ -4256,11 +4256,11 @@ scope: ui
 size: S
 ```
 
-**Goal:** Typed TS access to the profile commands (validated with Zod at the IPC boundary) and an `openPty` that takes an options object with `profileId`.
+**Goal:** Typed TS access to the profile commands (validated at the IPC boundary) and an `openPty` that takes an options object with `profileId`.
 
 **Acceptance criteria:**
 
-- [ ] `src/modules/profiles/` with Zod schemas mirroring the serde model and a store refreshed on `lut:profiles-changed`.
+- [ ] `src/modules/profiles/` with hand-written parsers mirroring the serde model (the project's IPC convention; no Zod dependency) and a store refreshed on `lut:profiles-changed`.
 - [ ] `openPty({ profileId, cwd, paneId, colors })` replaces the positional signature (`pty-bridge.ts:110-119`).
 - [ ] Typed errors from E14-10 surface as a discriminated union.
 - [ ] `pty-bridge.test.ts` and the profile schema tests are updated.
@@ -4279,16 +4279,17 @@ scope: ui
 size: M
 ```
 
-**Goal:** Pane leaves carry `profileId`; sessions open, respawn and split with their profile instead of `preferences.terminalShell`.
+**Goal:** Pane leaves carry `profileId`; sessions open, respawn and split with their profile.
 
 **Acceptance criteria:**
 
 - [ ] The leaf has an optional `profileId`; a split inherits the source pane's profile unless one is given.
-- [ ] `useGhosttyTerminalSession` opens through E14-13 (`useGhosttyTerminalSession.ts:832-858` no longer reads `terminalShell`); respawn reuses the same profile.
-- [ ] Missing profile: the pane shows a repairable error with "open with default profile", using existing components; no app crash (13.2:12).
+- [ ] `useGhosttyTerminalSession` opens through E14-13 with the leaf's profile; respawn reuses the same profile.
+- [ ] `pty_open` answers the profile it opened and the leaf keeps it, so a pane opened with the default profile stays on it when the default changes.
+- [ ] Missing profile, uninstalled distro or missing executable: the pane shows a repairable error with "open with default profile", using existing components; no app crash (13.2:12).
 - [ ] Tests for the missing-profile, unavailable-cwd and uninstalled-distro paths (F3:7).
 
-**Verification:** `pnpm test`; `pnpm typecheck`; manual: a pwsh and a WSL pane in the same tab.
+**Verification:** `pnpm test`; `pnpm typecheck`; manual: with pwsh as the default open a tab, set the default to a WSL distro and open another; splitting or restarting each pane keeps its own profile. Two profiles in the same tab need the picker (E15-01), which checks them.
 
 **Notes:** The error presentation is functional only, using existing components (decision 7); it is replaced by the designed in-pane error state in E15-01 (design E11-04).
 
@@ -4308,8 +4309,9 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] On PTY exit the session lifecycle reads the pane's profile `closeBehavior`: `close` closes the pane (and the tab if it was the last pane), `keepOpen` keeps the pane with its output and an exit notice, `ask` keeps the pane and offers close/restart.
-- [ ] Restart reuses the same profile and cwd (no app restart); a missing profile falls back to the E14-14 missing-profile path.
+- [ ] On PTY exit the session lifecycle reads the pane's profile `closeBehavior`: `close` closes the pane as before (the tab with its last pane, the window with the last pane of the last tab), `keepOpen` keeps the pane with its output and an exit notice, `ask` keeps the pane and offers close/restart.
+- [ ] `close` is the default, also for detected profiles (which cannot change it), so `exit` keeps closing the pane.
+- [ ] Restart reuses the same profile and the pane's last cwd, clearing the screen (no app restart); a missing profile falls back to the E14-14 missing-profile path.
 - [ ] The notice and prompt reuse existing components as-is (decision 7); the designed state comes with E15-01 (E11-04).
 - [ ] Tests for the three behaviours, including the last pane of a tab and a non-zero exit code.
 
@@ -4363,7 +4365,7 @@ size: S
 - [ ] Round-trip test with two leaves that have different profiles and cwds.
 - [ ] Manual gate run documented in the PR.
 
-**Verification:** `pnpm test`; manual: open pwsh + WSL panes with different themes, restart, both restore with their profile.
+**Verification:** `pnpm test`; manual: a pwsh tab and a WSL tab with different themes, restart, both restore with their profile. Two profiles in the same tab are checked with the picker (E15-01).
 
 ### E14-19 — Emit the PowerShell prompt markers before the user's prompt runs
 

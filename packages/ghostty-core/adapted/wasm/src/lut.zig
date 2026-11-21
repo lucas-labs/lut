@@ -318,6 +318,8 @@ const StreamHandler = struct {
     events: *std.ArrayListUnmanaged(u8),
     dropped_events: *u32,
     semantic_markers: *SemanticMarkers,
+    /// A prompt started (OSC 133;A) and no command ran since (133;C or 133;D).
+    prompt_open: bool = false,
     apc: ghostty.apc.Handler = .{},
     dcs: ghostty.dcs.Handler = .{},
     apc_debug: std.ArrayListUnmanaged(u8) = .empty,
@@ -340,6 +342,7 @@ const StreamHandler = struct {
             .events = events,
             .dropped_events = dropped_events,
             .semantic_markers = semantic_markers,
+            .prompt_open = false,
             .apc = .{},
             .dcs = .{},
             .apc_debug = .empty,
@@ -847,6 +850,7 @@ const StreamHandler = struct {
             .full_reset => {
                 defer self.readonly.vt(action, value);
                 try self.clearSemanticMarkers();
+                self.prompt_open = false;
                 if (self.term.modes.get(.synchronized_output))
                     try self.emitEvent(.synchronized_output_reset, &.{});
             },
@@ -891,7 +895,29 @@ const StreamHandler = struct {
                 try self.emitEvent(.notification, &.{ &title_len, value.title, value.body });
             },
             .semantic_prompt => {
-                self.readonly.vt(action, value);
+                // A shell that draws its prompt again on each keystroke (nushell's reedline) sends
+                // 133;A each time. Through ConPTY the marker can arrive before the cursor moves back
+                // to the prompt's first column, and its fresh-line then scrolls the screen one row
+                // per key (E14-20). An A inside an open prompt only marks the prompt (133;P) and keeps
+                // the rest of what an A sets, as Ghostty's `Terminal.semanticPrompt` applies it.
+                var prompt = value;
+                const redrawn = prompt.action == .fresh_line_new_prompt and self.prompt_open;
+                if (redrawn) prompt.action = .prompt_start;
+                switch (value.action) {
+                    .fresh_line_new_prompt => self.prompt_open = true,
+                    .end_input_start_output, .end_command => self.prompt_open = false,
+                    else => {},
+                }
+                self.readonly.vt(action, prompt);
+                if (redrawn) {
+                    if (value.readOption(.redraw)) |v| self.term.flags.shell_redraws_prompt = v;
+                    const screen = self.term.screens.active;
+                    if (value.readOption(.click_events)) |v| {
+                        screen.semantic_prompt.click = .{ .click_events = v };
+                    } else if (value.readOption(.cl)) |v| {
+                        screen.semantic_prompt.click = .{ .cl = v };
+                    }
+                }
                 switch (value.action) {
                     .fresh_line_new_prompt, .prompt_start => {
                         var marker: [4]u8 = undefined;

@@ -14,10 +14,10 @@ per-terminal frame loop, or per-pane GPU lifecycle.
 - Restty commit: `7700b14a7643ba9240818209ef1e0aa90d83ad77`
 - Zig: `0.16.0`
 - Optimization: `ReleaseFast`, WebAssembly SIMD and scalar variants
-- SIMD artifact size: `755975` bytes
-- Scalar artifact size: `753894` bytes
-- SIMD SHA-256: `a51cd05050968edc2ddeafe70c630badfbf35c55edd101b032c17e4c0190113c`
-- Scalar SHA-256: `910ec0b1dd380e1a56b8dbe2476c6edd69f9c5c43fcca506ac30d5460118ddd9`
+- SIMD artifact size: `756622` bytes
+- Scalar artifact size: `754609` bytes
+- SIMD SHA-256: `7c0fa9a74899a9ceb704981575eae56b6be984ab0e578a4f15b188b8961a7a3d`
+- Scalar SHA-256: `355a57edaa57ae989ed4768252ff4b72eb0933296141a9fe06b2a5d9f64fb8b2`
 
 lut-specific changes include:
 
@@ -31,6 +31,9 @@ lut-specific changes include:
 - native tracked selections that survive streaming and reflow, clamp when
   partially pruned, and release their tracked pins deterministically;
 - bounded parser-owned semantic events for shell and product integration;
+- an OSC 133;A inside a prompt that is still open (no 133;C or 133;D since the last A)
+  marks the prompt without the fresh-line, so a shell that redraws its prompt on
+  each keystroke never scrolls the screen;
 - optional parser-time command markers with 2,048 tracked pins per terminal,
   exact endpoint columns, full signed exit codes, and deterministic cleanup;
 - parser-time block invalidation for primary-screen clear and reset, retaining
@@ -137,6 +140,22 @@ memory; instances past the eighth use explicit bounds checks and parse about
 1.8x slower in a pure-parse microbenchmark (14.7 ms to 27 ms per 200,000 lines).
 Calls from JavaScript into many different instances are polymorphic, which adds
 about 0.4 microseconds to a write plus render-state update.
+
+## November prompt redraw fix (E14-20)
+
+nushell (reedline) prints its prompt again on every keystroke, OSC 133;A included. Through the
+inbox Windows ConPTY the marker can reach lut before the cursor move back to the prompt's first
+column, so Ghostty's fresh-line for `A` ran at the end of the typed text and scrolled the screen one
+row per key at the bottom row. `lut.zig` now passes an `A` that arrives while a prompt is open as
+`133;P` (prompt start without fresh-line) and applies that `A`'s `redraw`, `click_events` and `cl`
+options itself, as Ghostty's `Terminal.semanticPrompt` does; a full reset closes the open prompt.
+The first `A` after a command still starts a fresh line.
+`promptRedraw.test.ts` replays the reordered sequence, an option change and a reset on both
+artifacts.
+
+The artifacts were rebuilt on Windows 11 with the official Zig 0.16.0. Built from the previous
+source, that build came out 4 bytes larger than the previous artifacts in both variants, so the
+size change of this fix is 643 (SIMD) and 711 (scalar) bytes.
 
 ## October 14 upstream update
 

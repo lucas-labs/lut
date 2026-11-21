@@ -16,32 +16,31 @@ import type {
   TypedArray,
   TypedArrayConstructor,
   ViewCacheEntry,
-} from "./types";
-import { GPU_CELL_BYTES, GPU_CELL_WORDS } from "./gpuCells";
-import { GpuGlyphBatch } from "./gpuGlyphs";
-import { createViewCacheEntry, getCachedView } from "./viewCache";
-import type { GhosttyTerminalEvent } from "../types";
+} from './types';
+import { GPU_CELL_BYTES, GPU_CELL_WORDS } from './gpuCells';
+import { GpuGlyphBatch } from './gpuGlyphs';
+import { createViewCacheEntry, getCachedView } from './viewCache';
+import type { GhosttyTerminalEvent } from '../types';
 
-export const ADAPTED_GHOSTTY_COMMIT =
-  "ad97d331459a0762f7aea5f56fe86748e03b860f";
-export const ADAPTED_RESTTY_COMMIT =
-  "7700b14a7643ba9240818209ef1e0aa90d83ad77";
+export const ADAPTED_GHOSTTY_COMMIT = 'ad97d331459a0762f7aea5f56fe86748e03b860f';
+export const ADAPTED_RESTTY_COMMIT = '7700b14a7643ba9240818209ef1e0aa90d83ad77';
 export const ADAPTED_GHOSTTY_WASM_SHA256 =
-  "a51cd05050968edc2ddeafe70c630badfbf35c55edd101b032c17e4c0190113c";
+  '7c0fa9a74899a9ceb704981575eae56b6be984ab0e578a4f15b188b8961a7a3d';
 
 export const ADAPTED_GHOSTTY_SCALAR_WASM_SHA256 =
-  "910ec0b1dd380e1a56b8dbe2476c6edd69f9c5c43fcca506ac30d5460118ddd9";
+  '355a57edaa57ae989ed4768252ff4b72eb0933296141a9fe06b2a5d9f64fb8b2';
 
 let wasmSimdAvailable: boolean | undefined;
 
 export function supportsWasmSimd(): boolean {
   if (wasmSimdAvailable !== undefined) return wasmSimdAvailable;
   try {
-    wasmSimdAvailable = WebAssembly.validate(Uint8Array.from([
-      0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, 0x01, 0x05, 0x01, 0x60,
-      0x00, 0x01, 0x7b, 0x03, 0x02, 0x01, 0x00, 0x0a, 0x08, 0x01, 0x06, 0x00,
-      0x41, 0x00, 0xfd, 0x0f, 0x0b,
-    ]));
+    wasmSimdAvailable = WebAssembly.validate(
+      Uint8Array.from([
+        0x00, 0x61, 0x73, 0x6d, 0x01, 0x00, 0x00, 0x00, 0x01, 0x05, 0x01, 0x60, 0x00, 0x01, 0x7b,
+        0x03, 0x02, 0x01, 0x00, 0x0a, 0x08, 0x01, 0x06, 0x00, 0x41, 0x00, 0xfd, 0x0f, 0x0b,
+      ]),
+    );
   } catch {
     wasmSimdAvailable = false;
   }
@@ -66,115 +65,115 @@ const LINE_CHUNK_LINES = 64;
 const RECLAIM_DELAY_MS = 250;
 
 const requiredExports = [
-  "memory",
-  "restty_create_with_limits",
-  "restty_destroy",
-  "restty_set_scrollback_limits",
-  "restty_scrollback_page_bytes",
-  "restty_write",
-  "restty_resize",
-  "restty_set_pixel_size",
-  "restty_render_update",
-  "restty_render_release",
-  "restty_render_compact",
-  "restty_cell_capacity",
-  "restty_row_capacity",
-  "restty_render_reset_count",
-  "restty_alloc",
-  "restty_free",
-  "restty_output_ptr",
-  "restty_output_len",
-  "restty_output_consume",
-  "restty_events_ptr",
-  "restty_events_len",
-  "restty_events_consume",
-  "restty_take_dropped_events",
-  "restty_scroll_viewport",
-  "restty_scroll_viewport_to",
-  "restty_scrollbar_total",
-  "restty_scrollbar_offset",
-  "restty_scrollbar_len",
-  "restty_active_cursor_x",
-  "restty_active_cursor_y",
-  "restty_selection_set",
-  "restty_semantic_markers_enable",
-  "restty_semantic_marker_line",
-  "restty_semantic_marker_column",
-  "restty_semantic_marker_count",
-  "restty_text_range_prepare",
-  "restty_selection_clear",
-  "restty_selection_active",
-  "restty_selection_start_line",
-  "restty_selection_start_col",
-  "restty_selection_end_line",
-  "restty_selection_end_col",
-  "restty_selection_rectangular",
-  "restty_selection_text_prepare",
-  "restty_selection_text_ptr",
-  "restty_selection_text_len",
-  "restty_set_default_colors",
-  "restty_set_palette",
-  "restty_reset_palette",
-  "restty_mode",
-  "restty_mode_bits",
-  "restty_kitty_keyboard_flags",
-  "restty_set_cursor_options",
-  "restty_encode_key",
-  "restty_key_output_ptr",
-  "restty_key_output_len",
-  "restty_search_set_query",
-  "restty_search_clear",
-  "restty_search_step",
-  "restty_search_status_ptr",
-  "restty_search_viewport_match_count",
-  "restty_search_viewport_matches_ptr",
-  "restty_search_select_next",
-  "restty_search_select_prev",
-  "restty_rows",
-  "restty_cols",
-  "restty_cell_codepoints_ptr",
-  "restty_cell_content_tags_ptr",
-  "restty_cell_wide_ptr",
-  "restty_cell_flags_ptr",
-  "restty_cell_style_flags_ptr",
-  "restty_cell_underline_styles_ptr",
-  "restty_cell_link_ids_ptr",
-  "restty_cell_fg_rgba_ptr",
-  "restty_cell_bg_rgba_ptr",
-  "restty_cell_ul_rgba_ptr",
-  "restty_cell_grapheme_offsets_ptr",
-  "restty_cell_grapheme_lengths_ptr",
-  "restty_grapheme_buffer_ptr",
-  "restty_grapheme_buffer_len",
-  "restty_row_selection_start_ptr",
-  "restty_row_selection_end_ptr",
-  "restty_row_wrapped_ptr",
-  "restty_row_dirty_ptr",
-  "restty_damage_full",
-  "restty_cursor_info_ptr",
-  "restty_link_offsets_ptr",
-  "restty_link_lengths_ptr",
-  "restty_link_buffer_ptr",
-  "restty_link_count",
-  "restty_link_buffer_len",
-  "restty_set_render_format",
-  "restty_render_format",
-  "restty_gpu_cell_stride",
-  "restty_gpu_cells_ptr",
-  "restty_gpu_any_dirty",
-  "restty_gpu_epoch",
-  "restty_gpu_blinking_cells",
-  "restty_gpu_glyph_count",
-  "restty_gpu_glyph_overflow",
-  "restty_gpu_new_glyphs_ptr",
-  "restty_gpu_new_glyphs_len",
-  "restty_gpu_glyphs_ack",
-  "restty_gpu_glyphs_ptr",
-  "restty_gpu_glyphs_len",
-  "restty_line_cells_prepare",
-  "restty_line_cells_ptr",
-  "restty_line_cells_len",
-  "restty_line_cells_release",
+  'memory',
+  'restty_create_with_limits',
+  'restty_destroy',
+  'restty_set_scrollback_limits',
+  'restty_scrollback_page_bytes',
+  'restty_write',
+  'restty_resize',
+  'restty_set_pixel_size',
+  'restty_render_update',
+  'restty_render_release',
+  'restty_render_compact',
+  'restty_cell_capacity',
+  'restty_row_capacity',
+  'restty_render_reset_count',
+  'restty_alloc',
+  'restty_free',
+  'restty_output_ptr',
+  'restty_output_len',
+  'restty_output_consume',
+  'restty_events_ptr',
+  'restty_events_len',
+  'restty_events_consume',
+  'restty_take_dropped_events',
+  'restty_scroll_viewport',
+  'restty_scroll_viewport_to',
+  'restty_scrollbar_total',
+  'restty_scrollbar_offset',
+  'restty_scrollbar_len',
+  'restty_active_cursor_x',
+  'restty_active_cursor_y',
+  'restty_selection_set',
+  'restty_semantic_markers_enable',
+  'restty_semantic_marker_line',
+  'restty_semantic_marker_column',
+  'restty_semantic_marker_count',
+  'restty_text_range_prepare',
+  'restty_selection_clear',
+  'restty_selection_active',
+  'restty_selection_start_line',
+  'restty_selection_start_col',
+  'restty_selection_end_line',
+  'restty_selection_end_col',
+  'restty_selection_rectangular',
+  'restty_selection_text_prepare',
+  'restty_selection_text_ptr',
+  'restty_selection_text_len',
+  'restty_set_default_colors',
+  'restty_set_palette',
+  'restty_reset_palette',
+  'restty_mode',
+  'restty_mode_bits',
+  'restty_kitty_keyboard_flags',
+  'restty_set_cursor_options',
+  'restty_encode_key',
+  'restty_key_output_ptr',
+  'restty_key_output_len',
+  'restty_search_set_query',
+  'restty_search_clear',
+  'restty_search_step',
+  'restty_search_status_ptr',
+  'restty_search_viewport_match_count',
+  'restty_search_viewport_matches_ptr',
+  'restty_search_select_next',
+  'restty_search_select_prev',
+  'restty_rows',
+  'restty_cols',
+  'restty_cell_codepoints_ptr',
+  'restty_cell_content_tags_ptr',
+  'restty_cell_wide_ptr',
+  'restty_cell_flags_ptr',
+  'restty_cell_style_flags_ptr',
+  'restty_cell_underline_styles_ptr',
+  'restty_cell_link_ids_ptr',
+  'restty_cell_fg_rgba_ptr',
+  'restty_cell_bg_rgba_ptr',
+  'restty_cell_ul_rgba_ptr',
+  'restty_cell_grapheme_offsets_ptr',
+  'restty_cell_grapheme_lengths_ptr',
+  'restty_grapheme_buffer_ptr',
+  'restty_grapheme_buffer_len',
+  'restty_row_selection_start_ptr',
+  'restty_row_selection_end_ptr',
+  'restty_row_wrapped_ptr',
+  'restty_row_dirty_ptr',
+  'restty_damage_full',
+  'restty_cursor_info_ptr',
+  'restty_link_offsets_ptr',
+  'restty_link_lengths_ptr',
+  'restty_link_buffer_ptr',
+  'restty_link_count',
+  'restty_link_buffer_len',
+  'restty_set_render_format',
+  'restty_render_format',
+  'restty_gpu_cell_stride',
+  'restty_gpu_cells_ptr',
+  'restty_gpu_any_dirty',
+  'restty_gpu_epoch',
+  'restty_gpu_blinking_cells',
+  'restty_gpu_glyph_count',
+  'restty_gpu_glyph_overflow',
+  'restty_gpu_new_glyphs_ptr',
+  'restty_gpu_new_glyphs_len',
+  'restty_gpu_glyphs_ack',
+  'restty_gpu_glyphs_ptr',
+  'restty_gpu_glyphs_len',
+  'restty_line_cells_prepare',
+  'restty_line_cells_ptr',
+  'restty_line_cells_len',
+  'restty_line_cells_release',
 ] as const;
 
 const textDecoder = new TextDecoder();
@@ -227,14 +226,12 @@ export class LutGhostty {
     private readonly options: LutGhosttyLoadOptions,
   ) {}
 
-  static async load(
-    wasmPath?: string,
-    options: LutGhosttyLoadOptions = {},
-  ): Promise<LutGhostty> {
+  static async load(wasmPath?: string, options: LutGhosttyLoadOptions = {}): Promise<LutGhostty> {
     const path =
-      wasmPath ?? (supportsWasmSimd()
-        ? new URL("../../adapted/ghostty-vt.wasm", import.meta.url).href
-        : new URL("../../adapted/ghostty-vt-scalar.wasm", import.meta.url).href);
+      wasmPath ??
+      (supportsWasmSimd()
+        ? new URL('../../adapted/ghostty-vt.wasm', import.meta.url).href
+        : new URL('../../adapted/ghostty-vt-scalar.wasm', import.meta.url).href);
     const response = await fetch(path);
     if (!response.ok) {
       throw new Error(
@@ -259,13 +256,8 @@ export class LutGhostty {
     return LutGhostty.fromModule(await compileBytes(bytes), options);
   }
 
-  static fromModule(
-    module: WebAssembly.Module,
-    options: LutGhosttyLoadOptions = {},
-  ): LutGhostty {
-    const available = new Set(
-      WebAssembly.Module.exports(module).map((entry) => entry.name),
-    );
+  static fromModule(module: WebAssembly.Module, options: LutGhosttyLoadOptions = {}): LutGhostty {
+    const available = new Set(WebAssembly.Module.exports(module).map((entry) => entry.name));
     for (const name of requiredExports) {
       if (!available.has(name)) {
         throw new Error(`Missing adapted Ghostty WASM export: ${name}`);
@@ -289,7 +281,7 @@ export class LutGhostty {
     const raw = instantiate(this.module, createImports(holder, this.options));
     const exports = raw.exports as LutGhosttyWasmExports;
     if (!(exports.memory instanceof WebAssembly.Memory)) {
-      throw new Error("Adapted Ghostty WASM does not export its memory");
+      throw new Error('Adapted Ghostty WASM does not export its memory');
     }
     holder.current = exports.memory;
     const instance = new LutGhosttyInstance(this, exports, holder);
@@ -348,9 +340,7 @@ export class LutGhostty {
 
   private scheduleReclaim(bytes: number): void {
     const reclaim =
-      this.options.reclaim === undefined
-        ? hintGarbageCollection
-        : this.options.reclaim;
+      this.options.reclaim === undefined ? hintGarbageCollection : this.options.reclaim;
     if (reclaim === null || bytes <= 0) return;
     this.reclaimBytes += bytes;
     if (this.reclaimTimer !== null) return;
@@ -376,11 +366,7 @@ export class LutGhosttyInstance {
   private holder: MemoryHolder | null;
   private readonly terminals = new Set<LutGhosttyTerminal>();
 
-  constructor(
-    owner: LutGhostty,
-    exports: LutGhosttyWasmExports,
-    holder: MemoryHolder,
-  ) {
+  constructor(owner: LutGhostty, exports: LutGhosttyWasmExports, holder: MemoryHolder) {
     this.owner = owner;
     this.liveExports = exports;
     this.holder = holder;
@@ -392,7 +378,7 @@ export class LutGhosttyInstance {
 
   get exports(): LutGhosttyWasmExports {
     if (!this.liveExports) {
-      throw new Error("Adapted Ghostty instance has been disposed");
+      throw new Error('Adapted Ghostty instance has been disposed');
     }
     return this.liveExports;
   }
@@ -452,7 +438,7 @@ export class LutGhosttyTerminal {
   private inputPointer = 0;
   private inputCapacity = 0;
   private readonly textEncoder = new TextEncoder();
-  private format: LutGhosttyRenderFormat = "soa";
+  private format: LutGhosttyRenderFormat = 'soa';
   private disposed = false;
 
   constructor(
@@ -484,7 +470,7 @@ export class LutGhosttyTerminal {
       maxScrollbackLines,
     );
     if (!this.handle) {
-      throw new Error("Failed to create adapted Ghostty terminal");
+      throw new Error('Failed to create adapted Ghostty terminal');
     }
     instance.register(this);
   }
@@ -507,10 +493,7 @@ export class LutGhosttyTerminal {
       const pointer = this.allocate(bytes.byteLength);
       try {
         new Uint8Array(this.memory.buffer, pointer, bytes.byteLength).set(bytes);
-        checkResult(
-          this.exports.restty_write(this.handle, pointer, bytes.byteLength),
-          "write",
-        );
+        checkResult(this.exports.restty_write(this.handle, pointer, bytes.byteLength), 'write');
       } finally {
         this.exports.restty_free(pointer, bytes.byteLength);
       }
@@ -518,38 +501,24 @@ export class LutGhosttyTerminal {
     }
 
     this.ensureInputCapacity(bytes.byteLength);
-    new Uint8Array(
-      this.memory.buffer,
-      this.inputPointer,
-      bytes.byteLength,
-    ).set(bytes);
+    new Uint8Array(this.memory.buffer, this.inputPointer, bytes.byteLength).set(bytes);
     checkResult(
-      this.exports.restty_write(
-        this.handle,
-        this.inputPointer,
-        bytes.byteLength,
-      ),
-      "write",
+      this.exports.restty_write(this.handle, this.inputPointer, bytes.byteLength),
+      'write',
     );
   }
 
   resize(cols: number, rows: number): void {
     this.assertLive();
     validateDimensions(cols, rows);
-    checkResult(
-      this.exports.restty_resize(this.handle, cols, rows),
-      "resize",
-    );
+    checkResult(this.exports.restty_resize(this.handle, cols, rows), 'resize');
   }
 
   setPixelSize(widthPx: number, heightPx: number): void {
     this.assertLive();
     const width = clampInteger(widthPx, 0, 0xffff_ffff);
     const height = clampInteger(heightPx, 0, 0xffff_ffff);
-    checkResult(
-      this.exports.restty_set_pixel_size(this.handle, width, height),
-      "set pixel size",
-    );
+    checkResult(this.exports.restty_set_pixel_size(this.handle, width, height), 'set pixel size');
   }
 
   /**
@@ -589,7 +558,7 @@ export class LutGhosttyTerminal {
         clampInteger(maxBytes, 1, MAX_SCROLLBACK_BYTES),
         clampInteger(maxLines, 1, MAX_SCROLLBACK_LINES),
       ),
-      "set scrollback limits",
+      'set scrollback limits',
     );
   }
 
@@ -607,22 +576,16 @@ export class LutGhosttyTerminal {
     this.assertLive();
     if (format === this.format) return;
     checkResult(
-      this.exports.restty_set_render_format(
-        this.handle,
-        format === "gpu" ? 1 : 0,
-      ),
-      "set render format",
+      this.exports.restty_set_render_format(this.handle, format === 'gpu' ? 1 : 0),
+      'set render format',
     );
     this.format = format;
   }
 
   updateRenderState(): LutGhosttyRenderState {
     this.assertLive();
-    this.assertFormat("soa", "updateRenderState");
-    checkResult(
-      this.exports.restty_render_update(this.handle),
-      "update render state",
-    );
+    this.assertFormat('soa', 'updateRenderState');
+    checkResult(this.exports.restty_render_update(this.handle), 'update render state');
     return this.readRenderState();
   }
 
@@ -633,11 +596,8 @@ export class LutGhosttyTerminal {
    */
   updateGpuRenderState(): LutGhosttyGpuRenderState {
     this.assertLive();
-    this.assertFormat("gpu", "updateGpuRenderState");
-    checkResult(
-      this.exports.restty_render_update(this.handle),
-      "update GPU render state",
-    );
+    this.assertFormat('gpu', 'updateGpuRenderState');
+    checkResult(this.exports.restty_render_update(this.handle), 'update GPU render state');
     return this.readGpuRenderState();
   }
 
@@ -707,18 +667,14 @@ export class LutGhosttyTerminal {
       const chunkLast = Math.min(last, first + LINE_CHUNK_LINES - 1);
       checkResult(
         this.exports.restty_line_cells_prepare(this.handle, first, chunkLast),
-        "read buffer lines",
+        'read buffer lines',
       );
       const length = this.exports.restty_line_cells_len(this.handle);
       try {
         if (length === 0) continue;
         const pointer = this.exports.restty_line_cells_ptr(this.handle);
         validateRange(this.memory.buffer, pointer, length * 4);
-        decodeLines(
-          new Uint32Array(this.memory.buffer, pointer, length),
-          cols,
-          lines,
-        );
+        decodeLines(new Uint32Array(this.memory.buffer, pointer, length), cols, lines);
       } finally {
         this.exports.restty_line_cells_release(this.handle);
       }
@@ -733,10 +689,7 @@ export class LutGhosttyTerminal {
 
   compactRenderState(): void {
     this.assertLive();
-    checkResult(
-      this.exports.restty_render_compact(this.handle),
-      "compact render state",
-    );
+    checkResult(this.exports.restty_render_compact(this.handle), 'compact render state');
   }
 
   resourceStats(): LutGhosttyTerminalResourceStats {
@@ -759,10 +712,7 @@ export class LutGhosttyTerminal {
     validateRange(this.memory.buffer, pointer, length);
     const result = new Uint8Array(length);
     result.set(new Uint8Array(this.memory.buffer, pointer, length));
-    checkResult(
-      this.exports.restty_output_consume(this.handle, length),
-      "consume terminal output",
-    );
+    checkResult(this.exports.restty_output_consume(this.handle, length), 'consume terminal output');
     return result;
   }
 
@@ -771,7 +721,7 @@ export class LutGhosttyTerminal {
     const length = this.exports.restty_events_len(this.handle);
     if (length === 0) {
       const dropped = this.exports.restty_take_dropped_events(this.handle);
-      return dropped > 0 ? [{ type: "overflow", dropped }] : emptyEvents;
+      return dropped > 0 ? [{ type: 'overflow', dropped }] : emptyEvents;
     }
 
     const events: GhosttyTerminalEvent[] = [];
@@ -783,32 +733,26 @@ export class LutGhosttyTerminal {
     try {
       while (offset < bytes.byteLength) {
         if (bytes.byteLength - offset < EVENT_HEADER_BYTES) {
-          throw new Error("Truncated Ghostty semantic event header");
+          throw new Error('Truncated Ghostty semantic event header');
         }
         const type = bytes[offset];
         const payloadLength = view.getUint32(offset + 1, true);
         offset += EVENT_HEADER_BYTES;
-        if (
-          payloadLength > MAX_EVENT_PAYLOAD_BYTES ||
-          offset + payloadLength > bytes.byteLength
-        ) {
-          throw new Error("Invalid Ghostty semantic event payload");
+        if (payloadLength > MAX_EVENT_PAYLOAD_BYTES || offset + payloadLength > bytes.byteLength) {
+          throw new Error('Invalid Ghostty semantic event payload');
         }
-        const event = decodeTerminalEvent(
-          type,
-          bytes.subarray(offset, offset + payloadLength),
-        );
+        const event = decodeTerminalEvent(type, bytes.subarray(offset, offset + payloadLength));
         if (event) events.push(event);
         offset += payloadLength;
       }
     } finally {
       checkResult(
         this.exports.restty_events_consume(this.handle, length),
-        "consume semantic events",
+        'consume semantic events',
       );
     }
     const dropped = this.exports.restty_take_dropped_events(this.handle);
-    if (dropped > 0) events.push({ type: "overflow", dropped });
+    if (dropped > 0) events.push({ type: 'overflow', dropped });
     return events;
   }
 
@@ -850,8 +794,24 @@ export class LutGhosttyTerminal {
   readTextRange(startLine: number, endLine: number, startCol = 0, endCol = this.cols - 1): string {
     this.assertLive();
     const total = this.scrollbar().total;
-    if (!Number.isSafeInteger(startLine) || !Number.isSafeInteger(endLine) || startLine < 0 || endLine < startLine || startLine >= total) return "";
-    checkResult(this.exports.restty_text_range_prepare(this.handle, startLine, clampInteger(startCol, 0, this.cols - 1), Math.min(total - 1, endLine), clampInteger(endCol, 0, this.cols - 1)), "read terminal text range");
+    if (
+      !Number.isSafeInteger(startLine) ||
+      !Number.isSafeInteger(endLine) ||
+      startLine < 0 ||
+      endLine < startLine ||
+      startLine >= total
+    )
+      return '';
+    checkResult(
+      this.exports.restty_text_range_prepare(
+        this.handle,
+        startLine,
+        clampInteger(startCol, 0, this.cols - 1),
+        Math.min(total - 1, endLine),
+        clampInteger(endCol, 0, this.cols - 1),
+      ),
+      'read terminal text range',
+    );
     const length = this.exports.restty_selection_text_len(this.handle);
     const pointer = this.exports.restty_selection_text_ptr(this.handle);
     validateRange(this.memory.buffer, pointer, length);
@@ -861,10 +821,7 @@ export class LutGhosttyTerminal {
   scrollViewport(deltaRows: number): void {
     this.assertLive();
     const delta = clampInteger(deltaRows, -0x7fff_ffff, 0x7fff_ffff);
-    checkResult(
-      this.exports.restty_scroll_viewport(this.handle, delta),
-      "scroll viewport",
-    );
+    checkResult(this.exports.restty_scroll_viewport(this.handle, delta), 'scroll viewport');
   }
 
   scrollViewportTo(row: number): void {
@@ -872,18 +829,14 @@ export class LutGhosttyTerminal {
     const target = clampInteger(row, 0, 0xffff_ffff);
     checkResult(
       this.exports.restty_scroll_viewport_to(this.handle, target),
-      "scroll viewport to row",
+      'scroll viewport to row',
     );
   }
 
   mode(value: number, ansi = false): boolean {
     this.assertLive();
     return (
-      this.exports.restty_mode(
-        this.handle,
-        clampInteger(value, 0, 0xffff),
-        ansi ? 1 : 0,
-      ) !== 0
+      this.exports.restty_mode(this.handle, clampInteger(value, 0, 0xffff), ansi ? 1 : 0) !== 0
     );
   }
 
@@ -915,18 +868,15 @@ export class LutGhosttyTerminal {
     return this.exports.restty_kitty_keyboard_flags(this.handle);
   }
 
-  setCursorOptions(
-    style: "block" | "underline" | "bar",
-    blinking: boolean,
-  ): void {
+  setCursorOptions(style: 'block' | 'underline' | 'bar', blinking: boolean): void {
     this.assertLive();
     checkResult(
       this.exports.restty_set_cursor_options(
         this.handle,
-        style === "block" ? 0 : style === "underline" ? 1 : 2,
+        style === 'block' ? 0 : style === 'underline' ? 1 : 2,
         blinking ? 1 : 0,
       ),
-      "set cursor options",
+      'set cursor options',
     );
   }
 
@@ -935,11 +885,7 @@ export class LutGhosttyTerminal {
     const utf8 = event.utf8 ? this.textEncoder.encode(event.utf8) : emptyBytes;
     if (utf8.byteLength > 0) {
       this.ensureInputCapacity(utf8.byteLength);
-      new Uint8Array(
-        this.memory.buffer,
-        this.inputPointer,
-        utf8.byteLength,
-      ).set(utf8);
+      new Uint8Array(this.memory.buffer, this.inputPointer, utf8.byteLength).set(utf8);
     }
     checkResult(
       this.exports.restty_encode_key(
@@ -953,7 +899,7 @@ export class LutGhosttyTerminal {
         utf8.byteLength > 0 ? this.inputPointer : 0,
         utf8.byteLength,
       ),
-      "encode key",
+      'encode key',
     );
     const length = this.exports.restty_key_output_len(this.handle);
     if (length === 0) return emptyBytes;
@@ -970,46 +916,35 @@ export class LutGhosttyTerminal {
       return this.searchStatus();
     }
     if (bytes.byteLength > MAX_SEARCH_QUERY_BYTES) {
-      throw new RangeError(
-        `Ghostty search query exceeds ${MAX_SEARCH_QUERY_BYTES} UTF-8 bytes`,
-      );
+      throw new RangeError(`Ghostty search query exceeds ${MAX_SEARCH_QUERY_BYTES} UTF-8 bytes`);
     }
     this.ensureInputCapacity(bytes.byteLength);
-    new Uint8Array(this.memory.buffer, this.inputPointer, bytes.byteLength).set(
-      bytes,
-    );
+    new Uint8Array(this.memory.buffer, this.inputPointer, bytes.byteLength).set(bytes);
     checkResult(
-      this.exports.restty_search_set_query(
-        this.handle,
-        this.inputPointer,
-        bytes.byteLength,
-      ),
-      "set search query",
+      this.exports.restty_search_set_query(this.handle, this.inputPointer, bytes.byteLength),
+      'set search query',
     );
     return this.searchStatus();
   }
 
   clearSearch(): void {
     this.assertLive();
-    checkResult(this.exports.restty_search_clear(this.handle), "clear search");
+    checkResult(this.exports.restty_search_clear(this.handle), 'clear search');
   }
 
   stepSearch(budget = 256): LutGhosttySearchStatus {
     this.assertLive();
     checkResult(
-      this.exports.restty_search_step(
-        this.handle,
-        clampInteger(budget, 1, 4_096),
-      ),
-      "step search",
+      this.exports.restty_search_step(this.handle, clampInteger(budget, 1, 4_096)),
+      'step search',
     );
     return this.searchStatus();
   }
 
-  selectSearchMatch(direction: "next" | "previous"): LutGhosttySearchStatus {
+  selectSearchMatch(direction: 'next' | 'previous'): LutGhosttySearchStatus {
     this.assertLive();
     const result =
-      direction === "next"
+      direction === 'next'
         ? this.exports.restty_search_select_next(this.handle)
         : this.exports.restty_search_select_prev(this.handle);
     checkResult(result, `select ${direction} search match`);
@@ -1020,11 +955,7 @@ export class LutGhosttyTerminal {
     this.assertLive();
     const pointer = this.exports.restty_search_status_ptr(this.handle);
     validateRange(this.memory.buffer, pointer, SEARCH_STATUS_BYTES);
-    const view = new DataView(
-      this.memory.buffer,
-      pointer,
-      SEARCH_STATUS_BYTES,
-    );
+    const view = new DataView(this.memory.buffer, pointer, SEARCH_STATUS_BYTES);
     return {
       active: view.getUint8(0) !== 0,
       pending: view.getUint8(1) !== 0,
@@ -1040,16 +971,8 @@ export class LutGhosttyTerminal {
     const count = this.exports.restty_search_viewport_match_count(this.handle);
     if (count === 0) return [];
     const pointer = this.exports.restty_search_viewport_matches_ptr(this.handle);
-    validateRange(
-      this.memory.buffer,
-      pointer,
-      count * SEARCH_VIEWPORT_SPAN_BYTES,
-    );
-    const view = new DataView(
-      this.memory.buffer,
-      pointer,
-      count * SEARCH_VIEWPORT_SPAN_BYTES,
-    );
+    validateRange(this.memory.buffer, pointer, count * SEARCH_VIEWPORT_SPAN_BYTES);
+    const view = new DataView(this.memory.buffer, pointer, count * SEARCH_VIEWPORT_SPAN_BYTES);
     const matches = new Array<LutGhosttySearchViewportSpan>(count);
     for (let index = 0; index < count; index += 1) {
       const offset = index * SEARCH_VIEWPORT_SPAN_BYTES;
@@ -1079,10 +1002,7 @@ export class LutGhosttyTerminal {
   setSelection(selection: LutGhosttySelection | null): void {
     this.assertLive();
     if (!selection) {
-      checkResult(
-        this.exports.restty_selection_clear(this.handle),
-        "clear selection",
-      );
+      checkResult(this.exports.restty_selection_clear(this.handle), 'clear selection');
       return;
     }
     checkResult(
@@ -1094,7 +1014,7 @@ export class LutGhosttyTerminal {
         clampInteger(selection.focus.column, 0, 0xffff),
         selection.rectangular ? 1 : 0,
       ),
-      "set selection",
+      'set selection',
     );
   }
 
@@ -1110,31 +1030,21 @@ export class LutGhosttyTerminal {
         line: this.exports.restty_selection_end_line(this.handle),
         column: this.exports.restty_selection_end_col(this.handle),
       },
-      rectangular:
-        this.exports.restty_selection_rectangular(this.handle) !== 0,
+      rectangular: this.exports.restty_selection_rectangular(this.handle) !== 0,
     };
   }
 
   selectionText(): string {
     this.assertLive();
-    checkResult(
-      this.exports.restty_selection_text_prepare(this.handle),
-      "prepare selection text",
-    );
+    checkResult(this.exports.restty_selection_text_prepare(this.handle), 'prepare selection text');
     const length = this.exports.restty_selection_text_len(this.handle);
-    if (length === 0) return "";
+    if (length === 0) return '';
     const pointer = this.exports.restty_selection_text_ptr(this.handle);
     validateRange(this.memory.buffer, pointer, length);
-    return textDecoder.decode(
-      new Uint8Array(this.memory.buffer, pointer, length),
-    );
+    return textDecoder.decode(new Uint8Array(this.memory.buffer, pointer, length));
   }
 
-  setDefaultColors(
-    foreground: number,
-    background: number,
-    cursor: number,
-  ): void {
+  setDefaultColors(foreground: number, background: number, cursor: number): void {
     this.assertLive();
     checkResult(
       this.exports.restty_set_default_colors(
@@ -1143,26 +1053,22 @@ export class LutGhosttyTerminal {
         background >>> 0,
         cursor >>> 0,
       ),
-      "set default colors",
+      'set default colors',
     );
   }
 
   setPalette(colors: Uint8Array): void {
     this.assertLive();
     if (colors.byteLength % 3 !== 0 || colors.byteLength > 256 * 3) {
-      throw new RangeError("Ghostty palette must contain at most 256 RGB triples");
+      throw new RangeError('Ghostty palette must contain at most 256 RGB triples');
     }
     if (colors.byteLength === 0) return;
     const pointer = this.allocate(colors.byteLength);
     try {
       new Uint8Array(this.memory.buffer, pointer, colors.byteLength).set(colors);
       checkResult(
-        this.exports.restty_set_palette(
-          this.handle,
-          pointer,
-          colors.byteLength / 3,
-        ),
-        "set palette",
+        this.exports.restty_set_palette(this.handle, pointer, colors.byteLength / 3),
+        'set palette',
       );
     } finally {
       this.exports.restty_free(pointer, colors.byteLength);
@@ -1171,25 +1077,19 @@ export class LutGhosttyTerminal {
 
   resetPalette(): void {
     this.assertLive();
-    checkResult(
-      this.exports.restty_reset_palette(this.handle),
-      "reset palette",
-    );
+    checkResult(this.exports.restty_reset_palette(this.handle), 'reset palette');
   }
 
-  graphemeAt(
-    state: LutGhosttyRenderState,
-    cellIndex: number,
-  ): string {
+  graphemeAt(state: LutGhosttyRenderState, cellIndex: number): string {
     const index = validateCellIndex(state, cellIndex);
     const length = state.graphemeLengths[index];
     if (length === 0) {
       const codepoint = state.codepoints[index];
-      return codepoint === 0 ? "" : String.fromCodePoint(codepoint);
+      return codepoint === 0 ? '' : String.fromCodePoint(codepoint);
     }
     const offset = state.graphemeOffsets[index];
     if (offset + length > state.graphemeCodepoints.length) {
-      throw new RangeError("Invalid Ghostty grapheme range");
+      throw new RangeError('Invalid Ghostty grapheme range');
     }
     return String.fromCodePoint(
       state.codepoints[index],
@@ -1197,20 +1097,17 @@ export class LutGhosttyTerminal {
     );
   }
 
-  hyperlinkAt(
-    state: LutGhosttyRenderBase,
-    cellIndex: number,
-  ): string | null {
+  hyperlinkAt(state: LutGhosttyRenderBase, cellIndex: number): string | null {
     const linkId = state.linkIds[validateCellIndex(state, cellIndex)];
     if (linkId === 0) return null;
     const linkIndex = linkId - 1;
     if (linkIndex >= state.linkOffsets.length) {
-      throw new RangeError("Invalid Ghostty hyperlink ID");
+      throw new RangeError('Invalid Ghostty hyperlink ID');
     }
     const offset = state.linkOffsets[linkIndex];
     const length = state.linkLengths[linkIndex];
     if (offset + length > state.linkBytes.length) {
-      throw new RangeError("Invalid Ghostty hyperlink range");
+      throw new RangeError('Invalid Ghostty hyperlink range');
     }
     return textDecoder.decode(state.linkBytes.subarray(offset, offset + length));
   }
@@ -1410,7 +1307,7 @@ export class LutGhosttyTerminal {
    */
   readGpuRenderState(): LutGhosttyGpuRenderState {
     this.assertLive();
-    this.assertFormat("gpu", "readGpuRenderState");
+    this.assertFormat('gpu', 'readGpuRenderState');
     const rows = this.exports.restty_rows(this.handle);
     const cols = this.exports.restty_cols(this.handle);
     validateDimensions(cols, rows);
@@ -1430,12 +1327,7 @@ export class LutGhosttyTerminal {
       epoch: this.exports.restty_gpu_epoch(this.handle),
       anyDirty: this.exports.restty_gpu_any_dirty(this.handle) !== 0,
       cellsPtr,
-      cellsBytes: this.view(
-        this.cache.gpuCells,
-        cellsPtr,
-        cellCount * GPU_CELL_BYTES,
-        Uint8Array,
-      ),
+      cellsBytes: this.view(this.cache.gpuCells, cellsPtr, cellCount * GPU_CELL_BYTES, Uint8Array),
       cellWords: this.view(
         this.cache.gpuCellWords,
         cellsPtr,
@@ -1498,10 +1390,7 @@ export class LutGhosttyTerminal {
     };
   }
 
-  private assertFormat(
-    expected: LutGhosttyRenderFormat,
-    operation: string,
-  ): void {
+  private assertFormat(expected: LutGhosttyRenderFormat, operation: string): void {
     if (this.format !== expected) {
       throw new Error(
         `Adapted Ghostty ${operation} requires the "${expected}" render format (current: "${this.format}")`,
@@ -1515,13 +1404,7 @@ export class LutGhosttyTerminal {
     length: number,
     Constructor: TypedArrayConstructor<T>,
   ): T {
-    return getCachedView(
-      entry,
-      this.memory.buffer,
-      pointer,
-      length,
-      Constructor,
-    );
+    return getCachedView(entry, this.memory.buffer, pointer, length, Constructor);
   }
 
   private optionalView<T extends TypedArray>(
@@ -1531,14 +1414,12 @@ export class LutGhosttyTerminal {
     Constructor: TypedArrayConstructor<T>,
     empty: T,
   ): T {
-    return length === 0
-      ? empty
-      : this.view(entry, pointer, length, Constructor);
+    return length === 0 ? empty : this.view(entry, pointer, length, Constructor);
   }
 
   private allocate(length: number): number {
     const pointer = this.exports.restty_alloc(length);
-    if (!pointer) throw new Error("Adapted Ghostty WASM allocation failed");
+    if (!pointer) throw new Error('Adapted Ghostty WASM allocation failed');
     return pointer;
   }
 
@@ -1551,10 +1432,7 @@ export class LutGhosttyTerminal {
     this.inputCapacity = 0;
     const capacity = Math.max(
       INPUT_CAPACITY_ALIGNMENT,
-      alignCapacity(
-        Math.ceil(length * 1.125),
-        INPUT_CAPACITY_ALIGNMENT,
-      ),
+      alignCapacity(Math.ceil(length * 1.125), INPUT_CAPACITY_ALIGNMENT),
     );
     this.inputPointer = this.allocate(capacity);
     this.inputCapacity = capacity;
@@ -1562,7 +1440,7 @@ export class LutGhosttyTerminal {
 
   private assertLive(): void {
     if (this.disposed) {
-      throw new Error("Adapted Ghostty terminal has been disposed");
+      throw new Error('Adapted Ghostty terminal has been disposed');
     }
   }
 }
@@ -1582,7 +1460,7 @@ function hintGarbageCollection(): void {
 }
 
 function unrefTimer(timer: ReturnType<typeof setTimeout>): void {
-  if (typeof timer === "object" && timer !== null && "unref" in timer) {
+  if (typeof timer === 'object' && timer !== null && 'unref' in timer) {
     (timer as { unref(): void }).unref();
   }
 }
@@ -1596,7 +1474,7 @@ function defaultInstantiate(
 
 async function compileBytes(bytes: ArrayBuffer): Promise<WebAssembly.Module> {
   if (bytes.byteLength === 0) {
-    throw new Error("Adapted Ghostty WASM is empty");
+    throw new Error('Adapted Ghostty WASM is empty');
   }
   return WebAssembly.compile(bytes);
 }
@@ -1614,19 +1492,14 @@ function detachMemoryViews(memory: WebAssembly.Memory): void {
   }
 }
 
-function createImports(
-  holder: MemoryHolder,
-  options: LutGhosttyLoadOptions,
-): WebAssembly.Imports {
+function createImports(holder: MemoryHolder, options: LutGhosttyLoadOptions): WebAssembly.Imports {
   return {
     env: {
       log: (pointer: number, length: number) => {
         const memory = holder.current;
         if (!memory || pointer <= 0 || length <= 0) return;
         validateRange(memory.buffer, pointer, length);
-        options.log?.(
-          textDecoder.decode(new Uint8Array(memory.buffer, pointer, length)),
-        );
+        options.log?.(textDecoder.decode(new Uint8Array(memory.buffer, pointer, length)));
       },
     },
   };
@@ -1684,11 +1557,7 @@ function validateDimensions(cols: number, rows: number): void {
   }
 }
 
-function validateRange(
-  buffer: ArrayBuffer,
-  pointer: number,
-  byteLength: number,
-): void {
+function validateRange(buffer: ArrayBuffer, pointer: number, byteLength: number): void {
   if (
     !Number.isSafeInteger(pointer) ||
     !Number.isSafeInteger(byteLength) ||
@@ -1696,17 +1565,11 @@ function validateRange(
     byteLength < 0 ||
     pointer + byteLength > buffer.byteLength
   ) {
-    throw new RangeError(
-      `Invalid Ghostty WASM range: ptr=${pointer}, bytes=${byteLength}`,
-    );
+    throw new RangeError(`Invalid Ghostty WASM range: ptr=${pointer}, bytes=${byteLength}`);
   }
 }
 
-function normalizeLimit(
-  value: number | undefined,
-  fallback: number,
-  maximum: number,
-): number {
+function normalizeLimit(value: number | undefined, fallback: number, maximum: number): number {
   if (value === undefined) return fallback;
   if (!Number.isFinite(value)) return fallback;
   return clampInteger(value, 0, maximum);
@@ -1724,61 +1587,48 @@ function checkResult(code: number, operation: string): void {
   if (code === 0) return;
   const reason =
     code === 1
-      ? "invalid handle"
+      ? 'invalid handle'
       : code === 2
-        ? "out of memory"
+        ? 'out of memory'
         : code === 3
-          ? "invalid argument"
-          : "internal error";
+          ? 'invalid argument'
+          : 'internal error';
   throw new Error(`Adapted Ghostty ${operation} failed: ${reason} (${code})`);
 }
 
-function decodeCursorStyle(value: number): "block" | "underline" | "bar" {
+function decodeCursorStyle(value: number): 'block' | 'underline' | 'bar' {
   // Render-state ABI (cursorStyleToAbi), distinct from setCursorOptions input.
-  if (value === 1) return "bar";
-  if (value === 2) return "underline";
-  return "block";
+  if (value === 1) return 'bar';
+  if (value === 2) return 'underline';
+  return 'block';
 }
 
-function validateCellIndex(
-  state: LutGhosttyRenderBase,
-  cellIndex: number,
-): number {
-  if (
-    !Number.isSafeInteger(cellIndex) ||
-    cellIndex < 0 ||
-    cellIndex >= state.cellCount
-  ) {
+function validateCellIndex(state: LutGhosttyRenderBase, cellIndex: number): number {
+  if (!Number.isSafeInteger(cellIndex) || cellIndex < 0 || cellIndex >= state.cellCount) {
     throw new RangeError(`Invalid Ghostty cell index: ${cellIndex}`);
   }
   return cellIndex;
 }
 
-function decodeLines(
-  words: Uint32Array,
-  cols: number,
-  into: LutGhosttyLine[],
-): void {
+function decodeLines(words: Uint32Array, cols: number, into: LutGhosttyLine[]): void {
   let index = 0;
   while (index < words.length) {
     const wrapped = words[index++] !== 0;
     const cells = new Array<string>(cols);
     for (let column = 0; column < cols; column += 1) {
       if (index >= words.length) {
-        throw new RangeError("Truncated Ghostty line cell data");
+        throw new RangeError('Truncated Ghostty line cell data');
       }
       const count = words[index++];
       if (index + count > words.length) {
-        throw new RangeError("Invalid Ghostty line cell data");
+        throw new RangeError('Invalid Ghostty line cell data');
       }
       if (count === 0) {
-        cells[column] = "";
+        cells[column] = '';
       } else if (count === 1) {
         cells[column] = String.fromCodePoint(words[index]);
       } else {
-        cells[column] = String.fromCodePoint(
-          ...words.subarray(index, index + count),
-        );
+        cells[column] = String.fromCodePoint(...words.subarray(index, index + count));
       }
       index += count;
     }
@@ -1786,21 +1636,18 @@ function decodeLines(
   }
 }
 
-function decodeTerminalEvent(
-  type: number,
-  payload: Uint8Array,
-): GhosttyTerminalEvent | null {
+function decodeTerminalEvent(type: number, payload: Uint8Array): GhosttyTerminalEvent | null {
   switch (type) {
     case 1:
-      return { type: "bell" };
+      return { type: 'bell' };
     case 2:
-      return { type: "title", title: textDecoder.decode(payload) };
+      return { type: 'title', title: textDecoder.decode(payload) };
     case 3:
-      return { type: "pwd", uri: textDecoder.decode(payload) };
+      return { type: 'pwd', uri: textDecoder.decode(payload) };
     case 4:
       if (payload.byteLength < 1) return null;
       return {
-        type: "clipboard",
+        type: 'clipboard',
         selection: String.fromCharCode(payload[0]),
         data: textDecoder.decode(payload.subarray(1)),
       };
@@ -1813,41 +1660,49 @@ function decodeTerminalEvent(
       ).getUint32(0, true);
       if (titleLength > payload.byteLength - 4) return null;
       return {
-        type: "notification",
+        type: 'notification',
         title: textDecoder.decode(payload.subarray(4, 4 + titleLength)),
         body: textDecoder.decode(payload.subarray(4 + titleLength)),
       };
     }
     case 6: {
-      if (payload.byteLength < 4) return { type: "prompt-start" };
-      const marker = new DataView(payload.buffer, payload.byteOffset, payload.byteLength).getUint32(0, true);
-      return marker ? { type: "prompt-start", marker } : { type: "prompt-start" };
+      if (payload.byteLength < 4) return { type: 'prompt-start' };
+      const marker = new DataView(payload.buffer, payload.byteOffset, payload.byteLength).getUint32(
+        0,
+        true,
+      );
+      return marker ? { type: 'prompt-start', marker } : { type: 'prompt-start' };
     }
     case 7:
-      return { type: "prompt-continuation" };
+      return { type: 'prompt-continuation' };
     case 8:
       return payload.byteLength > 0 && payload[0] === 0
-        ? { type: "prompt-end", blockInput: false }
-        : { type: "prompt-end" };
+        ? { type: 'prompt-end', blockInput: false }
+        : { type: 'prompt-end' };
     case 9: {
       if (payload.byteLength < 4) return null;
-      const marker = new DataView(payload.buffer, payload.byteOffset, payload.byteLength).getUint32(0, true);
-      return marker ? { type: "end-of-input", marker, command: textDecoder.decode(payload.subarray(4)) } : { type: "end-of-input" };
+      const marker = new DataView(payload.buffer, payload.byteOffset, payload.byteLength).getUint32(
+        0,
+        true,
+      );
+      return marker
+        ? { type: 'end-of-input', marker, command: textDecoder.decode(payload.subarray(4)) }
+        : { type: 'end-of-input' };
     }
     case 10: {
       if (payload.byteLength < 9) return null;
       const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
       const marker = view.getUint32(0, true);
       return {
-        type: "end-of-command",
+        type: 'end-of-command',
         exitCode: payload[4] ? view.getInt32(5, true) : null,
         ...(marker ? { marker } : {}),
       };
     }
     case 11:
-      return { type: "screen-cleared" };
+      return { type: 'screen-cleared' };
     case 12:
-      return { type: "synchronized-output-reset" };
+      return { type: 'synchronized-output-reset' };
     default:
       return null;
   }

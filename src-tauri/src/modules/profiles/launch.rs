@@ -44,6 +44,8 @@ pub fn pick<'a>(
 /// What a profile starts, and the directory it asks for, not checked yet (`pty_open` checks it).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProfileLaunch {
+    /// The profile that opens, so the pane keeps it; `None` is the system's default shell.
+    pub profile_id: Option<String>,
     pub spec: LaunchSpec,
     pub cwd: Option<String>,
 }
@@ -57,6 +59,7 @@ pub fn profile_launch(
     let pane_cwd = pane_cwd.filter(|cwd| !cwd.trim().is_empty());
     let Some(profile) = profile else {
         return ProfileLaunch {
+            profile_id: None,
             spec: LaunchSpec::new(),
             cwd: pane_cwd,
         };
@@ -68,6 +71,7 @@ pub fn profile_launch(
         },
     };
     ProfileLaunch {
+        profile_id: Some(profile.id.clone()),
         spec: LaunchSpec {
             program: profile.executable.clone(),
             args: profile.args.clone(),
@@ -194,6 +198,7 @@ mod tests {
         assert_eq!(
             profile_launch(None, Some("/work".into())),
             ProfileLaunch {
+                profile_id: None,
                 spec: LaunchSpec::new(),
                 cwd: Some("/work".into()),
             }
@@ -208,6 +213,7 @@ mod tests {
             "startingDirectory": r"D:\repo"
         }));
         let launch = profile_launch(Some(&profile), None);
+        assert_eq!(launch.profile_id.as_deref(), Some("dev"));
         assert_eq!(
             launch.spec,
             LaunchSpec {

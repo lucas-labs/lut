@@ -242,7 +242,7 @@ mod tests {
                 "environment": { "kind": "wsl", "distro": "Ubuntu" },
                 "appearance": {},
                 "tab": { "allowShellTitle": true },
-                "closeBehavior": "ask",
+                "closeBehavior": "close",
                 "source": "detected",
                 "hidden": false
             })

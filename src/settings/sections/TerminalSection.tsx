@@ -2,6 +2,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { IS_MAC } from '@/modules/platform';
+import { type ProfileEntry, type ProfilesList, setDefaultProfile, useProfiles } from '@/modules/profiles';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import {
   coerceTerminalRenderer,
@@ -25,7 +26,6 @@ import {
 import { subpixelTextUnavailable } from '@/modules/terminal/ghostty/gpu/subpixelText';
 import { coerceMacOptionAsAlt } from '@/modules/terminal/ghostty/input/macOptionAsAlt';
 import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { SectionHeader } from '../components/SectionHeader';
@@ -55,18 +55,16 @@ const SUBPIXEL_TEXT_DESCRIPTION =
   'Draw terminal text with ClearType-style subpixel antialiasing: sharper on LCD screens, with colour fringes on OLED or rotated ones. Follows the ClearType colour order on Windows.';
 
 type ShellInfo = { name: string; path: string; integrated: boolean };
-/** The fields of a `profiles_list` entry this section reads. */
-type ProfileEntry = { id: string; name: string; executable?: string; hidden: boolean };
-type ProfilesList = { profiles: ProfileEntry[]; defaultProfileId: string | null };
-const PROFILES_CHANGED_EVENT = 'lut:profiles-changed';
+
+const NO_PROFILES: ProfilesList = { profiles: [], defaultProfileId: null };
 
 /** The profiles the default can be set to: the visible ones, and the current default even if hidden. */
 function defaultChoices({ profiles, defaultProfileId }: ProfilesList): ProfileEntry[] {
   return profiles.filter((profile) => !profile.hidden || profile.id === defaultProfileId);
 }
 
-function setDefaultProfile(id: string) {
-  invoke('profiles_set_default', { id }).catch((error: unknown) => {
+function chooseDefaultProfile(id: string) {
+  setDefaultProfile(id).catch((error: unknown) => {
     toast.error("Couldn't set the default profile", {
       description:
         typeof error === 'object' && error !== null && 'message' in error ? String(error.message) : String(error),
@@ -90,7 +88,7 @@ export function TerminalSection() {
   const terminalMacOptionAsAlt = usePreferencesStore((s) => s.terminalMacOptionAsAlt);
   const confirmCloseRunningTerminal = usePreferencesStore((s) => s.confirmCloseRunningTerminal);
   const [shells, setShells] = useState<ShellInfo[]>([]);
-  const [profiles, setProfiles] = useState<ProfilesList>({ profiles: [], defaultProfileId: null });
+  const profiles = useProfiles() ?? NO_PROFILES;
   const [wslDistros, setWslDistros] = useState<{ name: string }[]>([]);
   // Why this webview and renderer cannot draw subpixel text; unknown until the GPU answers.
   const [subpixelUnavailable, setSubpixelUnavailable] = useState<string | null | undefined>(undefined);
@@ -102,23 +100,6 @@ export function TerminalSection() {
     void invoke<{ name: string }[]>('wsl_list_distros')
       .then(setWslDistros)
       .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    let current = true;
-    const load = () =>
-      invoke<ProfilesList>('profiles_list')
-        .then((list) => {
-          if (current) setProfiles(list);
-        })
-        .catch(() => {});
-    const unlisten = listen(PROFILES_CHANGED_EVENT, () => void load());
-    // Read once subscribed (or failed to), so a change published in between is not missed.
-    void unlisten.then(load, load);
-    return () => {
-      current = false;
-      void unlisten.then((stop) => stop()).catch(() => {});
-    };
   }, []);
 
   const defaultProfile = profiles.profiles.find((p) => p.id === profiles.defaultProfileId);
@@ -284,7 +265,7 @@ export function TerminalSection() {
           }
         >
           {(a11y) => (
-            <Select value={profiles.defaultProfileId ?? ''} onValueChange={setDefaultProfile}>
+            <Select value={profiles.defaultProfileId ?? ''} onValueChange={chooseDefaultProfile}>
               <SelectTrigger {...a11y} value={profiles.defaultProfileId ?? ''}>
                 <SelectValue />
               </SelectTrigger>
