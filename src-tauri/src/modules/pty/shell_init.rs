@@ -25,12 +25,30 @@ const FISH_REINSTALL_PROMPT: &str = "functions -q __lut_install_prompt; and __lu
 /// name differs from the user's `conf.d` files, which would hide a vendor file of the same name.
 const FISH_VENDOR_FILE: &str = "fish/vendor_conf.d/lut-shell-integration.fish";
 
+/// A temporary file next to `path`, named for this process and call: panes starting at once each
+/// write their own, so one rename never takes another's file away.
+fn unique_tmp_path(path: &std::path::Path) -> std::path::PathBuf {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static NEXT: AtomicU64 = AtomicU64::new(0);
+    let mut tmp = path.as_os_str().to_owned();
+    tmp.push(format!(
+        ".__lut_tmp__{}_{}",
+        std::process::id(),
+        NEXT.fetch_add(1, Ordering::Relaxed)
+    ));
+    std::path::PathBuf::from(tmp)
+}
+
+/// The XDG spec's `XDG_DATA_DIRS` when it is unset or empty.
+const XDG_DATA_DIRS_DEFAULT: &str = "/usr/local/share:/usr/share";
+
 /// `XDG_DATA_DIRS` for a fish launch: lut's directory first, then the child's own list, or the
 /// spec's default when it has none. `init.fish` takes lut's directory out again once loaded.
+#[cfg(unix)]
 fn fish_xdg_data_dirs(lut_dir: &str, inherited: Option<&str>) -> String {
     let rest = inherited
         .filter(|dirs| !dirs.is_empty())
-        .unwrap_or("/usr/local/share:/usr/share");
+        .unwrap_or(XDG_DATA_DIRS_DEFAULT);
     format!("{lut_dir}:{rest}")
 }
 
@@ -513,6 +531,20 @@ mod launched_shell_tests {
     use super::*;
 
     #[test]
+    fn each_integration_write_gets_its_own_temporary_file() {
+        let path = Path::new("/cache/lut/fish/lut-shell-integration.fish");
+        let first = unique_tmp_path(path);
+        let second = unique_tmp_path(path);
+        assert_ne!(first, second);
+        for tmp in [first, second] {
+            assert_eq!(tmp.parent(), path.parent());
+            assert!(tmp
+                .to_string_lossy()
+                .starts_with("/cache/lut/fish/lut-shell-integration.fish.__lut_tmp__"));
+        }
+    }
+
+    #[test]
     fn wsl_preserves_the_resolved_shell_instead_of_the_launcher() {
         for shell in [
             "/usr/bin/pwsh",
@@ -719,7 +751,6 @@ fn apply_common(
 
 #[cfg(unix)]
 mod unix {
-    use std::ffi::OsString;
     use std::fs;
     use std::path::{Path, PathBuf};
 
@@ -947,9 +978,7 @@ mod unix {
             }
         }
         // Atomic replace: a parallel shell startup must never source a half-written file.
-        let mut tmp: OsString = path.as_os_str().to_owned();
-        tmp.push(".__lut_tmp__");
-        let tmp = PathBuf::from(tmp);
+        let tmp = super::unique_tmp_path(path);
         fs::write(&tmp, content).map_err(|e| format!("write {}: {e}", tmp.display()))?;
         fs::rename(&tmp, path).map_err(|e| {
             let _ = fs::remove_file(&tmp);
@@ -1079,7 +1108,6 @@ mod unix {
 
 #[cfg(windows)]
 mod windows {
-    use std::ffi::OsString;
     use std::fs;
     use std::path::{Path, PathBuf};
 
@@ -1438,6 +1466,7 @@ mod windows {
             "--exec".to_string(),
         ];
         let mut prefix = wsl_env_args(env);
+        let mut launcher: Vec<String> = Vec::new();
         let kind = program.kind;
         let program_args = match integration {
             WslShellIntegration::Zsh {
@@ -1454,14 +1483,11 @@ mod windows {
                 super::integrated_args(kind, program.args, Some(&rcfile), true)
             }
             WslShellIntegration::Fish { data_dir } => {
-                // The distro's own list is not known from here: the profile's, else the default.
-                let profile_dirs = env.get("XDG_DATA_DIRS").cloned().flatten();
-                prefix.push(format!(
-                    "XDG_DATA_DIRS={}",
-                    super::fish_xdg_data_dirs(&data_dir, profile_dirs.as_deref())
-                ));
                 prefix.push(format!("LUT_FISH_XDG_DATA_DIR={data_dir}"));
                 prefix.push("fish_features=no-mark-prompt".to_string());
+                // The list fish starts with is only known inside the distro (one WSLENV passes,
+                // or the profile's): `sh` puts lut's directory first there, then runs fish.
+                launcher = wsl_fish_launcher(&data_dir);
                 super::integrated_args(kind, program.args, None, true)
             }
             WslShellIntegration::None if program.args.is_empty() => match kind {
@@ -1477,9 +1503,26 @@ mod windows {
             args.push("env".to_string());
             args.extend(prefix);
         }
+        args.extend(launcher);
         args.push(program.path.to_string());
         args.extend(program_args);
         WslLaunchSpec { args }
+    }
+
+    /// `sh -c` that puts `data_dir` first in the distro's own `XDG_DATA_DIRS` (or the spec's
+    /// default) and then runs the program after it. Each value is its own argument.
+    fn wsl_fish_launcher(data_dir: &str) -> Vec<String> {
+        let script = format!(
+            "export XDG_DATA_DIRS=\"$1:${{XDG_DATA_DIRS:-{}}}\"; shift; exec \"$@\"",
+            super::XDG_DATA_DIRS_DEFAULT
+        );
+        vec![
+            "sh".to_string(),
+            "-c".to_string(),
+            script,
+            "sh".to_string(),
+            data_dir.to_string(),
+        ]
     }
 
     /// The user's zsh directory as the launched shell will see it: the probe runs with the
@@ -1722,9 +1765,8 @@ mod windows {
                 return Ok(());
             }
         }
-        let mut tmp: OsString = path.as_os_str().to_owned();
-        tmp.push(".__lut_tmp__");
-        let tmp = PathBuf::from(tmp);
+        // Atomic replace: a parallel shell startup must never source a half-written file.
+        let tmp = super::unique_tmp_path(path);
         fs::write(&tmp, content).map_err(|e| format!("write {}: {e}", tmp.display()))?;
         fs::rename(&tmp, path).map_err(|e| {
             let _ = fs::remove_file(&tmp);
@@ -2021,9 +2063,13 @@ mod windows {
                     }
                 ),
                 with(&[
-                    "XDG_DATA_DIRS=/lut/fish:/usr/local/share:/usr/share",
                     "LUT_FISH_XDG_DATA_DIR=/lut/fish",
                     "fish_features=no-mark-prompt",
+                    "sh",
+                    "-c",
+                    FISH_LAUNCHER,
+                    "sh",
+                    "/lut/fish",
                     "/usr/bin/fish",
                     "-i",
                     "-C",
@@ -2167,9 +2213,13 @@ mod windows {
                     "/home/vinicios/repo".to_string(),
                     "--exec".to_string(),
                     "env".to_string(),
-                    "XDG_DATA_DIRS=/home/vinicios/.cache/dev.lucode.lut/shell-integration/fish:/usr/local/share:/usr/share".to_string(),
                     "LUT_FISH_XDG_DATA_DIR=/home/vinicios/.cache/dev.lucode.lut/shell-integration/fish".to_string(),
                     "fish_features=no-mark-prompt".to_string(),
+                    "sh".to_string(),
+                    "-c".to_string(),
+                    FISH_LAUNCHER.to_string(),
+                    "sh".to_string(),
+                    "/home/vinicios/.cache/dev.lucode.lut/shell-integration/fish".to_string(),
                     "/usr/bin/fish".to_string(),
                     "-i".to_string(),
                     "-C".to_string(),
@@ -2178,48 +2228,44 @@ mod windows {
             );
         }
 
+        /// What the fish launcher runs in the distro, as `wsl_fish_launcher` writes it.
+        const FISH_LAUNCHER: &str = "export XDG_DATA_DIRS=\"$1:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}\"; shift; exec \"$@\"";
+
         #[test]
-        fn wsl_fish_loads_lut_whatever_xdg_dirs_the_profile_sets() {
-            let fish = || WslShellIntegration::Fish {
-                data_dir: "/lut/fish".into(),
-            };
-            let launch = |env: &super::super::ProfileEnv| {
-                build_wsl_launch_spec(
-                    None,
-                    "Ubuntu",
-                    &login("/usr/bin/fish", ShellKind::Fish),
-                    fish(),
-                    env,
-                )
-                .args
-            };
-            let lut_vars = |data_dirs: &str| {
-                [
-                    format!("XDG_DATA_DIRS=/lut/fish:{data_dirs}"),
-                    "LUT_FISH_XDG_DATA_DIR=/lut/fish".to_string(),
-                ]
-            };
-            // The profile's config dir is passed on; lut's data dir goes first in its data dirs.
-            let set = super::super::ProfileEnv::from([
+        fn wsl_fish_puts_lut_first_in_the_distros_own_data_dirs() {
+            // The profile's variables are set first, so the launcher sees its list (or WSLENV's).
+            let env = super::super::ProfileEnv::from([
                 ("XDG_CONFIG_HOME".to_string(), Some("/tmp/xdg".to_string())),
                 ("XDG_DATA_DIRS".to_string(), Some("/opt/share".to_string())),
             ]);
-            let args = launch(&set);
-            assert!(args.contains(&"XDG_CONFIG_HOME=/tmp/xdg".to_string()));
-            assert!(args.ends_with(&[
-                lut_vars("/opt/share")[0].clone(),
-                lut_vars("/opt/share")[1].clone(),
-                "fish_features=no-mark-prompt".to_string(),
-                "/usr/bin/fish".to_string(),
-                "-i".to_string(),
-                "-C".to_string(),
-                super::super::FISH_REINSTALL_PROMPT.to_string(),
-            ]));
-            // A profile that removes the data dirs gets the default list after lut's.
-            let removed = super::super::ProfileEnv::from([("XDG_DATA_DIRS".to_string(), None)]);
-            let args = launch(&removed);
-            let defaults = lut_vars("/usr/local/share:/usr/share");
-            assert!(args.windows(2).any(|pair| pair == defaults));
+            let args = build_wsl_launch_spec(
+                None,
+                "Ubuntu",
+                &login("/usr/bin/fish", ShellKind::Fish),
+                WslShellIntegration::Fish {
+                    data_dir: "/lut/fish".into(),
+                },
+                &env,
+            )
+            .args;
+            let at = |arg: &str| args.iter().position(|a| a == arg).expect(arg);
+            assert!(at("XDG_DATA_DIRS=/opt/share") < at("sh"));
+            assert!(at("XDG_CONFIG_HOME=/tmp/xdg") < at("sh"));
+            assert_eq!(
+                &args[at("sh")..],
+                [
+                    "sh",
+                    "-c",
+                    FISH_LAUNCHER,
+                    "sh",
+                    "/lut/fish",
+                    "/usr/bin/fish",
+                    "-i",
+                    "-C",
+                    super::super::FISH_REINSTALL_PROMPT,
+                ]
+            );
+            assert!(!args.iter().any(|a| a.starts_with("XDG_DATA_DIRS=/lut")));
         }
 
         #[test]
@@ -2291,9 +2337,13 @@ mod windows {
                 ),
                 [
                     "env",
-                    "XDG_DATA_DIRS=/lut/fish:/usr/local/share:/usr/share",
                     "LUT_FISH_XDG_DATA_DIR=/lut/fish",
                     "fish_features=no-mark-prompt",
+                    "sh",
+                    "-c",
+                    FISH_LAUNCHER,
+                    "sh",
+                    "/lut/fish",
                     "/usr/bin/fish",
                     "-l",
                     "-i",
