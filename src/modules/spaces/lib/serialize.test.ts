@@ -111,6 +111,34 @@ describe('hydrateTabs', () => {
     expect(restored.cwd).toBe('/b');
   });
 
+  it('round-trips the profile and cwd of each pane, and a pane without a profile (E14-17)', () => {
+    const tree: PaneNode = {
+      kind: 'split',
+      id: 10,
+      dir: 'row',
+      ratios: [1 / 3, 1 / 3, 1 / 3],
+      children: [
+        { kind: 'leaf', id: 11, cwd: 'C:\\work', profileId: 'detected:pwsh' },
+        { kind: 'leaf', id: 12, cwd: '/home/me', profileId: 'detected:wsl:Ubuntu' },
+        { kind: 'leaf', id: 13 },
+      ],
+    };
+    const serialized = serializeTabs([term({ paneTree: tree, activeLeafId: 12 })]);
+    const [restored] = hydrateTabs(JSON.parse(JSON.stringify(serialized)), 's1', counter());
+    if (restored.kind !== 'terminal' || restored.paneTree.kind !== 'split') {
+      throw new Error('Expected a restored split');
+    }
+    expect(
+      restored.paneTree.children.map((leaf) =>
+        leaf.kind === 'leaf' ? { cwd: leaf.cwd, profileId: leaf.profileId } : null,
+      ),
+    ).toEqual([
+      { cwd: 'C:\\work', profileId: 'detected:pwsh' },
+      { cwd: '/home/me', profileId: 'detected:wsl:Ubuntu' },
+      { cwd: undefined, profileId: undefined },
+    ]);
+  });
+
   it('restores a tab persisted with the removed blocks flag as a plain terminal tab', () => {
     const [saved] = serializeTabs([term({})]);
     const legacy = { ...saved, blocks: true } as unknown as SerializedTab;

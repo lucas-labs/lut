@@ -2,7 +2,7 @@ import type { EditorTab, MarkdownTab, PreviewTab, Tab, TerminalTab } from '@/mod
 import { isLeaf, type PaneNode, type SplitDir, splitNode } from '@/modules/terminal/lib/panes';
 
 type SerializedNode =
-  | { kind: 'leaf'; cwd?: string; active?: boolean }
+  | { kind: 'leaf'; cwd?: string; profileId?: string; active?: boolean }
   | { kind: 'split'; dir: SplitDir; children: SerializedNode[] };
 
 export type SerializedTab =
@@ -33,6 +33,7 @@ function serializeNode(node: PaneNode, activeLeafId: number): SerializedNode {
     return {
       kind: 'leaf',
       ...(node.cwd !== undefined && { cwd: node.cwd }),
+      ...(node.profileId !== undefined && { profileId: node.profileId }),
       ...(node.id === activeLeafId && { active: true }),
     };
   }
@@ -103,6 +104,7 @@ function hydrateNode(
       kind: 'leaf',
       id,
       ...(node.cwd !== undefined && { cwd: node.cwd }),
+      ...(node.profileId !== undefined && { profileId: node.profileId }),
     };
   }
   const children = node.children.map((c) => hydrateNode(c, allocId, acc));
