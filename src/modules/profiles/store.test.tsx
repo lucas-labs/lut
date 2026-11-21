@@ -15,7 +15,8 @@ const LIST = { profiles: [], defaultProfileId: null };
 
 let roots: Root[] = [];
 
-async function mountWith(useProfiles: () => unknown) {
+/** Mounts `copies` components that call `useProfiles` at once; answers what the last one saw. */
+async function mountWith(useProfiles: () => unknown, copies = 1) {
   const seen: unknown[] = [];
   function Host() {
     seen.push(useProfiles());
@@ -24,7 +25,7 @@ async function mountWith(useProfiles: () => unknown) {
   const root = createRoot(document.createElement('div'));
   roots.push(root);
   await act(async () => {
-    root.render(createElement(Host));
+    root.render(Array.from({ length: copies }, (_, key) => createElement(Host, { key })));
   });
   return () => seen[seen.length - 1];
 }
@@ -60,10 +61,23 @@ describe('useProfiles', () => {
     const { useProfiles } = await import('./store');
     mocks.invoke.mockResolvedValue(LIST);
 
-    await Promise.all([mountWith(useProfiles), mountWith(useProfiles), mountWith(useProfiles)]);
+    await mountWith(useProfiles, 3);
     expect(mocks.invoke).toHaveBeenCalledOnce();
 
     await mountWith(useProfiles);
     expect(mocks.invoke).toHaveBeenCalledOnce();
+  });
+
+  it('reads the list again once a failed subscription succeeds', async () => {
+    const { useProfiles } = await import('./store');
+    mocks.listen.mockRejectedValueOnce(new Error('no events'));
+    mocks.invoke.mockResolvedValueOnce(LIST).mockResolvedValue({ ...LIST, defaultProfileId: 'new' });
+
+    const first = await mountWith(useProfiles);
+    expect(first()).toEqual(LIST);
+
+    const second = await mountWith(useProfiles);
+    expect(mocks.listen).toHaveBeenCalledTimes(2);
+    expect(second()).toEqual({ ...LIST, defaultProfileId: 'new' });
   });
 });

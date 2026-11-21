@@ -41,12 +41,21 @@ let subscribed: Promise<unknown> | null = null;
 
 /** Keeps this window's list current: subscribes once, then reads it, so no change is missed. */
 function watchProfiles(): void {
-  subscribed ??= listen(PROFILES_CHANGED_EVENT, () => void load()).catch((error: unknown) => {
-    // Not subscribed: a later call tries again.
-    subscribed = null;
-    console.error('[lut] could not watch terminal profiles:', error);
-  });
-  void subscribed.then(readUntilListed);
+  if (subscribed !== null) {
+    // Subscribed or subscribing: read again only while no read has succeeded.
+    void subscribed.then(readUntilListed);
+    return;
+  }
+  subscribed = listen(PROFILES_CHANGED_EVENT, () => void load()).then(
+    // Changes made before the subscription were missed: read the list even when one is kept.
+    () => load(),
+    (error: unknown) => {
+      // Not subscribed: a later call tries again.
+      subscribed = null;
+      console.error('[lut] could not watch terminal profiles:', error);
+      return load();
+    },
+  );
 }
 
 /** The listed profiles, kept current; `null` until they are first read. */
