@@ -74,7 +74,8 @@ type NavigationActions = {
   reorderTab: (tabId: number, targetTabId: number, edge: 'top' | 'bottom') => boolean;
   reorderTabByGap: (fromId: number, toGapIndex: number) => void;
   removeTabsForSpace: (spaceId: string, fallbackSpaceId: string, fallbackCwd?: string) => void;
-  newTab: (cwd?: string) => number;
+  /** A terminal tab; without `profileId` it opens the default profile. */
+  newTab: (cwd?: string, profileId?: string) => number;
   newAgentGroupTab: (
     cwd: string | undefined,
     title: string,
@@ -108,7 +109,8 @@ type NavigationActions = {
     direction: PaneDirection,
     bounds?: PaneBounds[],
   ) => void;
-  splitActivePane: (tabId: number, dir: SplitDir) => number | null;
+  /** Splits the active pane; the new one opens with `profileId`, else with the split pane's. */
+  splitActivePane: (tabId: number, dir: SplitDir, profileId?: string) => number | null;
   /**
    * Moves a pane, session and all, to another terminal tab of its space (next to that tab's
    * focused pane) or to a new tab after its own. An emptied source tab closes. Returns the
@@ -428,7 +430,7 @@ export const useNavigationStore = create<NavigationState>()((set, get) => {
       commit({ tabs: plan.tabs, activeId: plan.activeId });
     },
 
-    newTab: (cwd) => {
+    newTab: (cwd, profileId) => {
       const tabId = alloc();
       const leafId = alloc();
       openTerminal(
@@ -436,7 +438,7 @@ export const useNavigationStore = create<NavigationState>()((set, get) => {
           kind: 'terminal',
           title: 'shell',
           cwd,
-          paneTree: { kind: 'leaf', id: leafId, cwd },
+          paneTree: { kind: 'leaf', id: leafId, cwd, profileId },
           activeLeafId: leafId,
         },
         tabId,
@@ -692,7 +694,7 @@ export const useNavigationStore = create<NavigationState>()((set, get) => {
       }),
 
     /** Split the active leaf of `tabId` along `dir`. Returns the new leaf id. */
-    splitActivePane: (tabId, dir) => {
+    splitActivePane: (tabId, dir, profileId) => {
       const tab = get().tabs.find((t) => t.id === tabId);
       if (tab?.kind !== 'terminal' || !canAddPane(tab.paneTree)) {
         return null;
@@ -701,10 +703,10 @@ export const useNavigationStore = create<NavigationState>()((set, get) => {
       const leafId = alloc();
       mapTerminal(tabId, (t) => ({
         ...t,
-        // The new pane opens with the profile of the pane it splits.
+        // Without a chosen profile, the new pane opens with the profile of the pane it splits.
         paneTree: splitLeaf(t.paneTree, t.activeLeafId, splitId, leafId, dir, {
           cwd: t.cwd,
-          profileId: findLeaf(t.paneTree, t.activeLeafId)?.profileId,
+          profileId: profileId ?? findLeaf(t.paneTree, t.activeLeafId)?.profileId,
         }),
         activeLeafId: leafId,
       }));

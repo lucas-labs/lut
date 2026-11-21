@@ -54,6 +54,7 @@ vi.mock('@/modules/terminal/ghostty/useGhosttyTerminalSession', async () => {
           getBuffer: () => null,
           getSelection: () => null,
           retry: () => {},
+          setBarInset: () => {},
         };
         fake.sessions.set(leafId, session);
       }

@@ -55,6 +55,13 @@ export function useTabCommands({
     nav().newTab(inheritedCwdForNewTab());
   }, [inheritedCwdForNewTab]);
 
+  const openNewTabWithProfile = useCallback(
+    (profileId: string) => {
+      nav().newTab(inheritedCwdForNewTab(), profileId);
+    },
+    [inheritedCwdForNewTab],
+  );
+
   const openNewPrivateTab = useCallback(() => {
     nav().newPrivateTab(inheritedCwdForNewTab());
   }, [inheritedCwdForNewTab]);
@@ -73,10 +80,10 @@ export function useTabCommands({
   }, []);
 
   const splitActivePaneInActiveTab = useCallback(
-    (dir: 'row' | 'col') => {
+    (dir: 'row' | 'col', profileId?: string) => {
       const t = nav().tabs.find((x) => x.id === activeId);
       if (!t || t.kind !== 'terminal') return;
-      nav().splitActivePane(activeId, dir);
+      nav().splitActivePane(activeId, dir, profileId);
     },
     [activeId],
   );
@@ -165,6 +172,7 @@ export function useTabCommands({
 
   return {
     openNewTab,
+    openNewTabWithProfile,
     openNewPrivateTab,
     launchAgentGroup,
     openFile,

@@ -17,7 +17,8 @@ export type PaletteItem = {
 /** What a query without a sigil means. */
 export type PaletteBase = 'commands' | 'files';
 export type PaletteMode = PaletteBase | 'content' | 'help';
-export type PaletteInitialMode = PaletteBase | 'content';
+/** `profiles` opens on the list of terminal profiles, to open a tab with one. */
+export type PaletteInitialMode = PaletteBase | 'content' | 'profiles';
 
 /** How to open a file picked in the palette. */
 export type OpenFileTarget = {

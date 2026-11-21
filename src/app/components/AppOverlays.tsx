@@ -35,6 +35,8 @@ type Props = {
   explorerRoot: string | null;
   home: string | null;
   openFile: (path: string, pin?: boolean) => void;
+  /** Opens a terminal tab with a profile picked in the palette. */
+  openProfile: (profileId: string) => void;
   openFileAtLine: (path: string, line: number) => void;
   newEditorOpen: boolean;
   setNewEditorOpen: (open: boolean) => void;
@@ -58,6 +60,7 @@ export function AppOverlays({
   explorerRoot,
   home,
   openFile,
+  openProfile,
   openFileAtLine,
   newEditorOpen,
   setNewEditorOpen,
@@ -108,6 +111,7 @@ export function AppOverlays({
         workspaceRoot={explorerRoot}
         onOpenContentHit={openFileAtLine}
         onOpenFile={openPaletteFile}
+        onOpenProfile={openProfile}
       />
 
       <NewEditorDialog

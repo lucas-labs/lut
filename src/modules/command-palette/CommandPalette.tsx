@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge';
 import {
   Command,
   CommandDialog,
@@ -10,10 +11,11 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { FileIcon } from '@/modules/explorer/FileIcon';
+import { readProfilesAgain, useProfiles, useProfilesRead, visibleProfiles } from '@/modules/profiles';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { getBindingTokens, type KeyBinding, type ShortcutId, ShortcutKeys, SHORTCUTS } from '@/modules/shortcuts';
 import { listBuiltinThemes, useTheme } from '@/modules/theme';
-import { AlertIcon, ArrowTurnBackIcon, CheckmarkIcon, CommandIcon } from '@lut/lut-icons';
+import { AlertIcon, ArrowTurnBackIcon, CheckmarkIcon, CommandIcon, RefreshIcon, TerminalIcon } from '@lut/lut-icons';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { COMMAND_GROUPS } from './commands';
 import { CONTENT_SEARCH_MIN_QUERY, useContentSearch } from './hooks/useContentSearch';
@@ -33,6 +35,8 @@ type Props = {
   workspaceRoot: string | null;
   onOpenContentHit: (path: string, line: number) => void;
   onOpenFile: (path: string, target: OpenFileTarget) => void;
+  /** Opens a terminal tab with a profile picked on the profiles page. */
+  onOpenProfile: (profileId: string) => void;
 };
 
 const SHORTCUTS_BY_ID = new Map(SHORTCUTS.map((s) => [s.id, s]));
@@ -48,10 +52,11 @@ export function CommandPalette({
   workspaceRoot,
   onOpenContentHit,
   onOpenFile,
+  onOpenProfile,
 }: Props) {
   const [query, setQuery] = useState('');
   const [value, setValue] = useState('');
-  const [page, setPage] = useState<'root' | 'themes'>('root');
+  const [page, setPage] = useState<'root' | 'themes' | 'profiles'>('root');
   const [base, setBase] = useState<PaletteBase>('commands');
   const userShortcuts = usePreferencesStore((s) => s.shortcuts);
   const showHidden = usePreferencesStore((s) => s.showHidden);
@@ -59,15 +64,20 @@ export function CommandPalette({
 
   const parsed = parseQuery(query, base);
   const inThemes = page === 'themes';
+  const inProfiles = page === 'profiles';
+  /** A page of its own: the query filters that page, not commands, files or contents. */
+  const inPage = page !== 'root';
   const themeFilter = inThemes ? query.trim() : '';
+  const profilesList = useProfiles();
+  const profilesRead = useProfilesRead();
 
-  const content = useContentSearch(workspaceRoot, parsed.term, open && !inThemes && parsed.mode === 'content');
+  const content = useContentSearch(workspaceRoot, parsed.term, open && !inPage && parsed.mode === 'content');
 
   const fileTarget = useMemo(
     () => parseFileTarget(parsed.mode === 'files' ? parsed.term : ''),
     [parsed.mode, parsed.term],
   );
-  const filesActive = open && !inThemes && parsed.mode === 'files';
+  const filesActive = open && !inPage && parsed.mode === 'files';
   const files = useFileSearch(workspaceRoot, fileTarget.query, filesActive, showHidden);
 
   const mru = useMemo(() => (open ? mruSnapshot() : {}), [open]);
@@ -92,9 +102,9 @@ export function CommandPalette({
   }
 
   const rankedCommands = useMemo(() => {
-    if (inThemes || parsed.mode !== 'commands') return [];
+    if (inPage || parsed.mode !== 'commands') return [];
     return rankCommands(commandItems, parsed.term, mru);
-  }, [commandItems, parsed.term, parsed.mode, inThemes, mru]);
+  }, [commandItems, parsed.term, parsed.mode, inPage, mru]);
 
   const themes = useMemo(() => {
     if (!inThemes) return [];
@@ -107,6 +117,23 @@ export function CommandPalette({
       .sort((a, b) => (b.s ?? 0) - (a.s ?? 0))
       .map((x) => x.t);
   }, [inThemes, themeFilter, customThemes]);
+
+  const profiles = useMemo(() => {
+    if (!inProfiles || profilesList === null) return [];
+    const all = visibleProfiles(profilesList);
+    const q = query.trim().toLowerCase();
+    if (!q) return all;
+    return all
+      .map((p) => ({ p, s: fuzzyBest(q, [p.name, p.id]) }))
+      .filter((x) => x.s !== null)
+      .sort((a, b) => (b.s ?? 0) - (a.s ?? 0))
+      .map((x) => x.p);
+  }, [inProfiles, profilesList, query]);
+
+  // A list that could not be read at startup is read again each time the page opens.
+  useEffect(() => {
+    if (inProfiles) readProfilesAgain();
+  }, [inProfiles]);
 
   const resetPalette = useCallback(() => {
     setQuery('');
@@ -133,7 +160,7 @@ export function CommandPalette({
     if (opening) {
       setQuery(opening === 'content' ? '#' : '');
       setBase(opening === 'files' ? 'files' : 'commands');
-      setPage('root');
+      setPage(opening === 'profiles' ? 'profiles' : 'root');
     }
   }
 
@@ -167,7 +194,14 @@ export function CommandPalette({
     setValue('');
   }, []);
 
-  const exitThemes = useCallback(() => {
+  const enterProfiles = useCallback(() => {
+    setPage('profiles');
+    setQuery('');
+    setValue('');
+  }, []);
+
+  /** Back from a page to the commands. */
+  const exitPage = useCallback(() => {
     previewThemeId(null);
     setPage('root');
     setQuery('');
@@ -178,11 +212,12 @@ export function CommandPalette({
     (item: PaletteItem) => {
       if (item.disabledReason) return;
       if (item.id === 'theme.pick') return enterThemes();
+      if (item.id === 'tab.newWithProfile') return enterProfiles();
       if (item.id === 'search.content') return setQuery('#');
       recordUse(item.id);
       runAfterClose(item.run);
     },
-    [enterThemes, runAfterClose],
+    [enterThemes, enterProfiles, runAfterClose],
   );
 
   const openContent = useCallback(
@@ -215,28 +250,35 @@ export function CommandPalette({
     [setThemeId, handleOpenChange],
   );
 
+  const openProfile = useCallback(
+    (id: string) => runAfterClose(() => onOpenProfile(id)),
+    [onOpenProfile, runAfterClose],
+  );
+
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter') openSideRef.current = e.metaKey || e.ctrlKey;
-      if (!inThemes) return;
+      if (!inPage) return;
       if (e.key === 'Escape' || (e.key === 'Backspace' && query.length === 0)) {
         e.preventDefault();
         e.stopPropagation();
-        exitThemes();
+        exitPage();
       }
     },
-    [inThemes, query, exitThemes],
+    [inPage, query, exitPage],
   );
 
   const placeholder = inThemes
     ? 'Search themes...'
-    : parsed.mode === 'files'
-      ? 'Go to file... (add :line to jump)'
-      : parsed.mode === 'content'
-        ? 'Find text in files...'
-        : 'Type a command, / for files, # to find in files';
+    : inProfiles
+      ? 'Search profiles...'
+      : parsed.mode === 'files'
+        ? 'Go to file... (add :line to jump)'
+        : parsed.mode === 'content'
+          ? 'Find text in files...'
+          : 'Type a command, / for files, # to find in files';
 
-  const showFiles = !inThemes && parsed.mode === 'files';
+  const showFiles = !inPage && parsed.mode === 'files';
 
   return (
     <CommandDialog
@@ -263,7 +305,7 @@ export function CommandPalette({
           >
             {inThemes ? (
               <CommandGroup heading="Themes">
-                <CommandItem value="theme:back" onSelect={exitThemes} className="text-[12.5px]">
+                <CommandItem value="theme:back" onSelect={exitPage} className="text-[12.5px]">
                   <ArrowTurnBackIcon size="sm" />
                   <span>Back</span>
                 </CommandItem>
@@ -279,6 +321,41 @@ export function CommandPalette({
                   </CommandItem>
                 ))}
                 {themes.length === 0 ? <StatusItem label="No themes" /> : null}
+              </CommandGroup>
+            ) : inProfiles ? (
+              // Back comes last: cmdk selects the first row, which must be a profile so Enter opens it.
+              <CommandGroup heading="Profiles">
+                {profiles.map((p) => (
+                  <CommandItem
+                    key={p.id}
+                    value={`profile:${p.id}`}
+                    onSelect={() => openProfile(p.id)}
+                    className="text-[12.5px]"
+                  >
+                    <TerminalIcon size="sm" />
+                    <span className="truncate">{p.name}</span>
+                    {p.id === profilesList?.defaultProfileId ? (
+                      <Badge variant="soft" className="ml-auto">
+                        Default
+                      </Badge>
+                    ) : null}
+                  </CommandItem>
+                ))}
+                {profilesRead === 'reading' ? <StatusItem label="Loading profiles..." /> : null}
+                {profilesRead === 'failed' ? (
+                  <>
+                    <StatusItem label="Could not read profiles" tone="error" />
+                    <CommandItem value="profile:retry" onSelect={readProfilesAgain} className="text-[12.5px]">
+                      <RefreshIcon size="sm" />
+                      <span>Try again</span>
+                    </CommandItem>
+                  </>
+                ) : null}
+                {profilesRead === 'listed' && profiles.length === 0 ? <StatusItem label="No profiles" /> : null}
+                <CommandItem value="profile:back" onSelect={exitPage} className="text-[12.5px]">
+                  <ArrowTurnBackIcon size="sm" />
+                  <span>Back</span>
+                </CommandItem>
               </CommandGroup>
             ) : parsed.mode === 'commands' ? (
               rankedCommands.length === 0 ? (

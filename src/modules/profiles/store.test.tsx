@@ -95,6 +95,35 @@ describe('useProfiles', () => {
   });
 });
 
+describe('useProfilesRead', () => {
+  it('tells a failed read, and reads again on request', async () => {
+    const { readProfilesAgain, useProfilesRead } = await import('./store');
+    let answer: (list: unknown) => void = () => {};
+    mocks.invoke
+      .mockRejectedValueOnce(new Error('not ready'))
+      .mockReturnValue(new Promise((resolve) => (answer = resolve)));
+
+    const read = await mountWith(useProfilesRead);
+    expect(read()).toBe('failed');
+
+    await act(async () => readProfilesAgain());
+    expect(read()).toBe('reading');
+    await act(async () => answer(LIST));
+    expect(read()).toBe('listed');
+    expect(mocks.invoke).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not read a listed list again on request', async () => {
+    const { readProfilesAgain, useProfilesRead } = await import('./store');
+    mocks.invoke.mockResolvedValue(LIST);
+
+    const read = await mountWith(useProfilesRead);
+    expect(read()).toBe('listed');
+    await act(async () => readProfilesAgain());
+    expect(mocks.invoke).toHaveBeenCalledOnce();
+  });
+});
+
 describe('useCloseBehavior', () => {
   it('is unknown while the first read runs, then follows the profile', async () => {
     const { useCloseBehavior } = await import('./store');
