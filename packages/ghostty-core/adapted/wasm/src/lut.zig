@@ -850,6 +850,7 @@ const StreamHandler = struct {
             .full_reset => {
                 defer self.readonly.vt(action, value);
                 try self.clearSemanticMarkers();
+                self.prompt_open = false;
                 if (self.term.modes.get(.synchronized_output))
                     try self.emitEvent(.synchronized_output_reset, &.{});
             },
@@ -897,15 +898,26 @@ const StreamHandler = struct {
                 // A shell that draws its prompt again on each keystroke (nushell's reedline) sends
                 // 133;A each time. Through ConPTY the marker can arrive before the cursor moves back
                 // to the prompt's first column, and its fresh-line then scrolls the screen one row
-                // per key (E14-20). An A inside an open prompt only marks the prompt (133;P).
+                // per key (E14-20). An A inside an open prompt only marks the prompt (133;P) and keeps
+                // the rest of what an A sets, as Ghostty's `Terminal.semanticPrompt` applies it.
                 var prompt = value;
-                if (prompt.action == .fresh_line_new_prompt and self.prompt_open) prompt.action = .prompt_start;
+                const redrawn = prompt.action == .fresh_line_new_prompt and self.prompt_open;
+                if (redrawn) prompt.action = .prompt_start;
                 switch (value.action) {
                     .fresh_line_new_prompt => self.prompt_open = true,
                     .end_input_start_output, .end_command => self.prompt_open = false,
                     else => {},
                 }
                 self.readonly.vt(action, prompt);
+                if (redrawn) {
+                    if (value.readOption(.redraw)) |v| self.term.flags.shell_redraws_prompt = v;
+                    const screen = self.term.screens.active;
+                    if (value.readOption(.click_events)) |v| {
+                        screen.semantic_prompt.click = .{ .click_events = v };
+                    } else if (value.readOption(.cl)) |v| {
+                        screen.semantic_prompt.click = .{ .cl = v };
+                    }
+                }
                 switch (value.action) {
                     .fresh_line_new_prompt, .prompt_start => {
                         var marker: [4]u8 = undefined;

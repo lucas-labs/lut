@@ -59,4 +59,26 @@ describe.each(['ghostty-vt', 'ghostty-vt-scalar'])('a prompt drawn again (%s)', 
       model.dispose();
     }
   });
+
+  it('keeps the options a redraw marker sets, such as no redraw on resize', () => {
+    const { model, write, screen } = atPromptOnLastRow();
+    try {
+      // redraw=0: the shell does not draw its prompt again after a resize, so the prompt stays.
+      write(`\x1b]133;A;redraw=0\x1b\\\x1b[${ROWS};1H${PROMPT}${END}typed`);
+      model.resize(30, ROWS);
+      expect(screen()).toContain(`${PROMPT}typed`);
+    } finally {
+      model.dispose();
+    }
+  });
+
+  it('starts the first prompt after a full reset on its own line', () => {
+    const { model, write, screen } = atPromptOnLastRow();
+    try {
+      write(`\x1bcpartial${START}${PROMPT}${END}`);
+      expect(screen().slice(0, 2)).toEqual(['partial', PROMPT.trimEnd()]);
+    } finally {
+      model.dispose();
+    }
+  });
 });

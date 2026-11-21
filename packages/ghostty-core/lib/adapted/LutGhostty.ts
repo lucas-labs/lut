@@ -25,10 +25,10 @@ import type { GhosttyTerminalEvent } from '../types';
 export const ADAPTED_GHOSTTY_COMMIT = 'ad97d331459a0762f7aea5f56fe86748e03b860f';
 export const ADAPTED_RESTTY_COMMIT = '7700b14a7643ba9240818209ef1e0aa90d83ad77';
 export const ADAPTED_GHOSTTY_WASM_SHA256 =
-  'f75801068688c1d0c7bd80f866da2874665a56284bc310e90e3345c4d192eebf';
+  '7c0fa9a74899a9ceb704981575eae56b6be984ab0e578a4f15b188b8961a7a3d';
 
 export const ADAPTED_GHOSTTY_SCALAR_WASM_SHA256 =
-  '71d3f1c92cd7da7f47b558072fd2cc20204e754556d0595be816bb6644af0cca';
+  '355a57edaa57ae989ed4768252ff4b72eb0933296141a9fe06b2a5d9f64fb8b2';
 
 let wasmSimdAvailable: boolean | undefined;
 

@@ -14,10 +14,10 @@ per-terminal frame loop, or per-pane GPU lifecycle.
 - Restty commit: `7700b14a7643ba9240818209ef1e0aa90d83ad77`
 - Zig: `0.16.0`
 - Optimization: `ReleaseFast`, WebAssembly SIMD and scalar variants
-- SIMD artifact size: `756191` bytes
-- Scalar artifact size: `754110` bytes
-- SIMD SHA-256: `f75801068688c1d0c7bd80f866da2874665a56284bc310e90e3345c4d192eebf`
-- Scalar SHA-256: `71d3f1c92cd7da7f47b558072fd2cc20204e754556d0595be816bb6644af0cca`
+- SIMD artifact size: `756622` bytes
+- Scalar artifact size: `754609` bytes
+- SIMD SHA-256: `7c0fa9a74899a9ceb704981575eae56b6be984ab0e578a4f15b188b8961a7a3d`
+- Scalar SHA-256: `355a57edaa57ae989ed4768252ff4b72eb0933296141a9fe06b2a5d9f64fb8b2`
 
 lut-specific changes include:
 
@@ -147,12 +147,15 @@ nushell (reedline) prints its prompt again on every keystroke, OSC 133;A include
 inbox Windows ConPTY the marker can reach lut before the cursor move back to the prompt's first
 column, so Ghostty's fresh-line for `A` ran at the end of the typed text and scrolled the screen one
 row per key at the bottom row. `lut.zig` now passes an `A` that arrives while a prompt is open as
-`133;P` (prompt start without fresh-line); the first `A` after a command still starts a fresh line.
-`promptRedraw.test.ts` replays the reordered sequence on both artifacts.
+`133;P` (prompt start without fresh-line) and applies that `A`'s `redraw`, `click_events` and `cl`
+options itself, as Ghostty's `Terminal.semanticPrompt` does; a full reset closes the open prompt.
+The first `A` after a command still starts a fresh line.
+`promptRedraw.test.ts` replays the reordered sequence, an option change and a reset on both
+artifacts.
 
 The artifacts were rebuilt on Windows 11 with the official Zig 0.16.0. Built from the previous
 source, that build came out 4 bytes larger than the previous artifacts in both variants, so the
-size change of this fix is 212 (SIMD) and 212 (scalar) bytes.
+size change of this fix is 643 (SIMD) and 711 (scalar) bytes.
 
 ## October 14 upstream update
 
