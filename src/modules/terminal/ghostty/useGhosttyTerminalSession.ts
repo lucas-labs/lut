@@ -124,6 +124,8 @@ type GhosttySession = {
   startup: GhosttyStartupTimings;
   /** The pane's font; the renderer may draw the global one instead (`fontThatFits`). */
   font: TerminalFontSpec;
+  /** Counts font updates: an update still loading when a later one starts is dropped. */
+  fontRevision: number;
   /** `null` until the pane resolves it; the terminal starts after that. */
   look: SessionLook | null;
   /** A full-screen program is running: the pane has no padding meanwhile. */
@@ -401,6 +403,7 @@ function applySessionLook(
     }
   }
   if (previous.padding !== look.padding) applyPadding(session);
+  // A pane drawn with the global font because its own did not fit is measured again.
   const globalChanged = fontSpecKey(previous.globalFont) !== fontSpecKey(look.globalFont);
   void updateSessionFont(session, font, globalChanged);
 }
@@ -609,6 +612,7 @@ function ensureSession(
       letterSpacing: 0,
       weight: '400',
     },
+    fontRevision: 0,
     look: null,
     alternateScreen: false,
   };
@@ -650,6 +654,7 @@ async function initializeSessionGeneration(
 ): Promise<void> {
   const look = session.look;
   if (!look) throw new Error('The terminal started before its appearance was resolved');
+  const fontRevision = session.fontRevision;
   const startup = createStartupTimings();
   session.startup = startup;
   const alive = () => !session.disposed && generation === session.generation;
@@ -685,11 +690,12 @@ async function initializeSessionGeneration(
       : Promise.resolve().then(() => mark('gpuReadyMs'));
   const [measured] = await Promise.all([metricsPromise, corePromise, rendererPromise]);
   if (!alive()) return;
+  // With no room for any font, the WebGPU surface fails to build and the pane falls back to WebGL.
   const metrics =
     session.backend === 'ghostty-webgpu' && !webGpuPreload.error
-      ? await getWebGpuTerminalRuntime().then((runtime) =>
+      ? ((await getWebGpuTerminalRuntime().then((runtime) =>
           fontThatFits(session, measured, (wanted) => runtime.hasRoomForAtlas(wanted)),
-        )
+        )) ?? measured)
       : measured;
   if (!alive()) return;
 
@@ -908,6 +914,9 @@ async function initializeSessionGeneration(
   ) {
     surface.setCursorOptions(current.cursorBlink, current.cursorStyle);
   }
+  // A font update with no surface yet to apply to (a symbol face that arrived, a profile edit) is
+  // applied now.
+  if (session.fontRevision !== fontRevision) void updateSessionFont(session, session.font, true);
 }
 
 function createGhosttyInput(
@@ -1136,62 +1145,64 @@ function createStartupTimings(): GhosttyStartupTimings {
 }
 
 /**
- * Draws the pane's new font. `globalChanged`: the global font changed, so a pane drawn with it
- * because its own did not fit is measured again.
+ * Draws the pane's new font. `force` measures it again although it did not change: the global font
+ * it may fall back to changed, or it was asked for before the surface existed. Only the latest
+ * update applies; one that fails to apply shows the renderer error and its retry.
  */
 async function updateSessionFont(
   session: GhosttySession,
   font: TerminalFontSpec,
-  globalChanged = false,
+  force = false,
 ): Promise<void> {
-  if (fontSpecKey(session.font) === fontSpecKey(font) && !globalChanged) return;
+  if (fontSpecKey(session.font) === fontSpecKey(font) && !force) return;
   session.font = font;
-  if (!session.surface || session.disposed) return;
+  const revision = ++session.fontRevision;
+  const surface = session.surface;
+  if (!surface || session.disposed) return;
+  const latest = () =>
+    !session.disposed && session.surface === surface && session.fontRevision === revision;
 
   await ensureMonoFontsLoaded();
   await document.fonts.ready;
   await prepareHintedFonts(font.family, font.weight);
   const measured = await measureTerminalFont(font);
-  const surface = session.surface;
-  if (session.disposed || !surface || fontSpecKey(session.font) !== fontSpecKey(font)) {
-    return;
-  }
+  if (!latest()) return;
   const metrics = await fontThatFits(session, measured, (wanted) => surface.fitsFont(wanted));
-  if (
-    session.disposed ||
-    session.surface !== surface ||
-    fontSpecKey(session.font) !== fontSpecKey(font)
-  ) {
+  if (!metrics || !latest()) return;
+  try {
+    surface.setFontMetrics(metrics);
+  } catch (error) {
+    reportRendererFailure(session, toError(error));
     return;
   }
-  surface.setFontMetrics(metrics);
   if (session.surfaceOptions) session.surfaceOptions = { ...session.surfaceOptions, metrics };
 }
 
 const warnedFonts = new Set<string>();
 
 /**
- * `metrics` when the renderer has room for its glyphs; else the global font's, with a warning the
- * first time a font does not fit. A WebGPU window draws up to 8 fonts at once.
+ * `metrics` when the renderer has room for its glyphs; else the global font's, or `null` when that
+ * one has no room either and the pane keeps the font it has. A WebGPU window draws up to 8 fonts at
+ * once; the first time a font does not fit, a warning says so.
  */
 async function fontThatFits(
   session: GhosttySession,
   metrics: TerminalFontMetrics,
   fits: (metrics: TerminalFontMetrics) => boolean,
-): Promise<TerminalFontMetrics> {
-  const fallback = session.look?.globalFont;
-  if (!fallback || fits(metrics) || fontSpecKey(fallback) === fontSpecKey(metrics.font)) {
-    return metrics;
-  }
+): Promise<TerminalFontMetrics | null> {
+  if (fits(metrics)) return metrics;
   const key = fontSpecKey(metrics.font);
   if (!warnedFonts.has(key)) {
     warnedFonts.add(key);
     toast.warning('Too many terminal fonts', {
-      description: `${metrics.font.family} ${metrics.font.size}px shows in the default terminal font: a window draws up to 8 fonts at once.`,
+      description: `${metrics.font.family} ${metrics.font.size}px is not shown: a window draws up to 8 terminal fonts at once.`,
     });
   }
+  const fallback = session.look?.globalFont;
+  if (!fallback || fontSpecKey(fallback) === key) return null;
   await prepareHintedFonts(fallback.family, fallback.weight);
-  return measureTerminalFont(fallback);
+  const global = await measureTerminalFont(fallback);
+  return fits(global) ? global : null;
 }
 
 class BoundedPtyWriter {

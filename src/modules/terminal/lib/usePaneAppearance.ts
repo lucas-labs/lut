@@ -2,7 +2,7 @@ import type { Padding } from '@/lib/padding';
 import { profileLayer, useProfileAppearance } from '@/modules/profiles';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { resolvePreferences } from '@/modules/settings/resolvePreferences';
-import type { Preferences, TerminalCursorStyle } from '@/modules/settings/store';
+import type { TerminalCursorStyle } from '@/modules/settings/store';
 import { findTheme, resolveTerminalFont, terminalTokensFor, useTheme } from '@/modules/theme';
 import type { Theme } from '@/modules/theme/types';
 import { useMemo } from 'react';
@@ -31,16 +31,18 @@ export type PaneAppearance = {
 /**
  * The appearance of a pane opened with `profileId` (none: the default profile), resolved global →
  * profile. Without a theme of its own the pane follows the app's theme, previews included; a
- * profile's theme shows in the app's light or dark mode. `null` until the profiles are first read.
+ * profile's theme shows in the app's light or dark mode. `null` until the profiles are first read and
+ * the saved preferences are loaded (or failed to load).
  */
 export function usePaneAppearance(profileId: string | undefined): PaneAppearance | null {
   const profile = useProfileAppearance(profileId);
   const preferences = usePreferencesStore();
   const { activeTheme, resolvedMode, customThemes } = useTheme();
 
+  // A terminal keeps some values from its start (scrollback): it waits for the saved preferences.
   const resolved = useMemo(
     () =>
-      profile === null
+      profile === null || !preferences.settled
         ? null
         : resolvePreferences(
             { ...preferences, themeId: activeTheme.id },
@@ -57,24 +59,30 @@ export function usePaneAppearance(profileId: string | undefined): PaneAppearance
 
   return useMemo(() => {
     if (!resolved || !theme || !colors) return null;
-    const font = (from: Preferences, fontTheme: Theme) =>
+    const font = (fontTheme: Theme) =>
       resolveTerminalFont(
         {
-          fontFamily: from.terminalFontFamily,
-          fontWeight: from.terminalFontWeight,
-          fontSize: from.terminalFontSize,
+          fontFamily: preferences.terminalFontFamily,
+          fontWeight: preferences.terminalFontWeight,
+          fontSize: preferences.terminalFontSize,
         },
         fontTheme,
         resolvedMode,
       );
+    // Global, then the theme's font, then each font field the profile sets itself.
+    const themed = font(theme);
     return {
       theme: colors,
-      font: font(resolved, theme),
-      globalFont: font(preferences, activeTheme),
+      font: {
+        fontFamily: profile?.fontFamily ?? themed.fontFamily,
+        fontWeight: profile?.fontWeight ?? themed.fontWeight,
+        fontSize: profile?.fontSize ?? themed.fontSize,
+      },
+      globalFont: font(activeTheme),
       cursorStyle: resolved.terminalCursorStyle,
       cursorBlink: resolved.terminalCursorBlink,
       scrollback: resolved.terminalScrollback,
       padding: resolved.terminalPadding,
     };
-  }, [resolved, theme, colors, preferences, activeTheme, resolvedMode]);
+  }, [resolved, theme, colors, profile, preferences, activeTheme, resolvedMode]);
 }

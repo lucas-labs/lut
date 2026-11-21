@@ -8,6 +8,8 @@ import {
 
 type State = Preferences & {
   hydrated: boolean;
+  /** The saved preferences were read, or could not be: the values in effect are final. */
+  settled: boolean;
   /** Subscribe & hydrate. Idempotent — safe to call from multiple windows. */
   init: () => Promise<void>;
 };
@@ -48,12 +50,13 @@ export function readBgFastPath(): {
 export const usePreferencesStore = create<State>((set) => ({
   ...DEFAULT_PREFERENCES,
   hydrated: false,
+  settled: false,
   init: () => {
     if (initPromise) return initPromise;
     initPromise = (async () => {
       try {
         const prefs = await loadPreferences();
-        set({ ...prefs, hydrated: true });
+        set({ ...prefs, hydrated: true, settled: true });
         mirrorBgFastPath(prefs.backgroundKind, prefs.backgroundImageId);
         void onPreferencesChange((key, value) => {
           set({ [key]: value } as Partial<State>);
@@ -64,6 +67,8 @@ export const usePreferencesStore = create<State>((set) => ({
         });
       } catch (e) {
         initPromise = null;
+        // The defaults stay in effect; whatever waits for the saved values goes on with them.
+        set({ settled: true });
         throw e;
       }
     })();

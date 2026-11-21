@@ -14,6 +14,14 @@ const state = vi.hoisted(() => ({
   /** What `useProfileAppearance` answers: `null` while the profiles are read. */
   profile: null as object | undefined | null,
   theme: { resolvedMode: 'dark', activeTheme: { id: 'lut', name: 'Lut', variants: {} } as object },
+  /** A user theme with a terminal font of its own. */
+  custom: [
+    {
+      id: 'mono-theme',
+      name: 'Mono theme',
+      variants: { dark: { terminal: { fontFamily: 'Theme Mono', fontSize: 15, fontWeight: '600' } } },
+    },
+  ],
 }));
 vi.mock('@/modules/profiles', async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -21,7 +29,7 @@ vi.mock('@/modules/profiles', async (importOriginal) => ({
 }));
 vi.mock('@/modules/theme', async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  useTheme: () => ({ ...state.theme, customThemes: [] }),
+  useTheme: () => ({ ...state.theme, customThemes: state.custom }),
   // Which theme and mode each pane's colours come from.
   terminalTokensFor: (theme: { id: string }, mode: string) => ({ background: `${theme.id}/${mode}` }),
 }));
@@ -64,6 +72,7 @@ beforeEach(() => {
     terminalCursorBlink: false,
     terminalScrollback: 5000,
     terminalPadding: { top: 0, right: 0, bottom: 0, left: 0 },
+    settled: true,
   });
   root = createRoot(document.createElement('div'));
 });
@@ -74,6 +83,26 @@ afterEach(async () => {
 describe("a pane's appearance", () => {
   it('is unknown while the profiles are read', async () => {
     expect(await resolve(null)).toBeNull();
+  });
+
+  it('is unknown until the saved preferences are loaded, or failed to load', async () => {
+    usePreferencesStore.setState({ settled: false });
+    expect(await resolve({})).toBeNull();
+    usePreferencesStore.setState({ settled: true });
+    expect(await resolve({})).not.toBeNull();
+  });
+
+  it("takes its theme's font, and the font fields its profile sets over it", async () => {
+    expect((await resolve({ themeId: 'mono-theme' }))?.font).toEqual({
+      fontFamily: 'Theme Mono',
+      fontWeight: '600',
+      fontSize: 15,
+    });
+    expect((await resolve({ themeId: 'mono-theme', fontFamily: 'Profile Mono' }))?.font).toEqual({
+      fontFamily: 'Profile Mono',
+      fontWeight: '600',
+      fontSize: 15,
+    });
   });
 
   it("is the global one, in the app's theme, for a profile that sets nothing or is not listed", async () => {

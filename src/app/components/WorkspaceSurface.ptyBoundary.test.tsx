@@ -81,8 +81,14 @@ const terminal = vi.hoisted(() => ({
   fonts: 0,
   /** The size of each font a surface was given after it started. */
   fontSizes: [] as number[],
-  /** Whether the renderer has room for another font. */
-  fontsFit: true,
+  /** The font size each surface was built with. */
+  startSizes: [] as number[],
+  /** Whether the renderer has room for a font of this size. */
+  fits: (_size: number) => true as boolean,
+  /** Applying a font fails, as the WebGPU renderer does when no atlas can be had. */
+  fontFails: false,
+  /** Holds model creation, after the fonts were measured and before the surface exists. */
+  modelGate: null as Promise<void> | null,
   /** Each padding a surface was given, in order. */
   paddings: [] as { top: number; right: number; bottom: number; left: number }[],
   /** Each model's alternate screen listener, to switch it as a full-screen program would. */
@@ -164,8 +170,9 @@ vi.mock('@/modules/terminal/ghostty/gpu/terminalVisuals', async (importOriginal)
 vi.mock('@/modules/terminal/ghostty/GhosttyCoreRuntime', () => ({
   getGhosttyCoreRuntime: () => ({
     preload: async () => {},
-    createModel: async ({ leafId }: { leafId: number }) =>
-      stub({
+    createModel: async ({ leafId }: { leafId: number }) => {
+      await terminal.modelGate;
+      return stub({
         cols: 80,
         rows: 24,
         write: (bytes: Uint8Array) => {
@@ -175,7 +182,8 @@ vi.mock('@/modules/terminal/ghostty/GhosttyCoreRuntime', () => ({
           terminal.alternateScreen.set(leafId, listener);
           return () => terminal.alternateScreen.delete(leafId);
         },
-      }),
+      });
+    },
   }),
 }));
 // WebGPU is unavailable: a session that wants it must fall back to WebGL.
@@ -188,8 +196,9 @@ vi.mock('@/modules/terminal/ghostty/gpu/WebGpuTerminalRuntime', async (importOri
 // The hook loads the WebGL renderer through loadSessionRenderer (a dynamic import); hand it a fake surface class.
 vi.mock('@/modules/terminal/ghostty/loadSessionRenderer', () => {
   class FakeWebGlSurface {
-    constructor() {
+    constructor(options: { metrics: { font: { size: number } } }) {
       terminal.webGlSurfaces += 1;
+      terminal.startSizes.push(options.metrics.font.size);
       return stub({
         backend: 'ghostty-webgl',
         eventTarget: () => document.createElement('div'),
@@ -198,7 +207,7 @@ vi.mock('@/modules/terminal/ghostty/loadSessionRenderer', () => {
         gridShiftY: () => 0,
         getSelection: () => null,
         searchController: () => stub({}),
-        fitsFont: () => terminal.fontsFit,
+        fitsFont: (metrics: { font: { size: number } }) => terminal.fits(metrics.font.size),
         setPadding: (padding: { top: number; right: number; bottom: number; left: number }) => {
           terminal.paddings.push(padding);
         },
@@ -209,6 +218,7 @@ vi.mock('@/modules/terminal/ghostty/loadSessionRenderer', () => {
           terminal.cursors.push(style);
         },
         setFontMetrics: (metrics: { font: { size: number } }) => {
+          if (terminal.fontFails) throw new Error('Terminal glyph atlas budget exhausted (8 active atlases)');
           terminal.fonts += 1;
           terminal.fontSizes.push(metrics.font.size);
         },
@@ -371,13 +381,17 @@ beforeEach(() => {
   pty.closedByExit = [];
   listed.set({ ...CLOSE_BEHAVIORS });
   appearances.set({});
+  usePreferencesStore.setState({ settled: true });
   terminal.written.clear();
   terminal.webGlSurfaces = 0;
   terminal.themes = 0;
   terminal.cursors = [];
   terminal.fonts = 0;
   terminal.fontSizes = [];
-  terminal.fontsFit = true;
+  terminal.startSizes = [];
+  terminal.fits = () => true;
+  terminal.fontFails = false;
+  terminal.modelGate = null;
   terminal.warnings = [];
   terminal.paddings = [];
   terminal.alternateScreen.clear();
@@ -633,6 +647,15 @@ describe('the profile decides what a pane does when its process exits (E14-15)',
 });
 
 describe('each pane looks as its profile says (E14-16)', () => {
+  it('waits for the saved preferences before starting the terminal', async () => {
+    usePreferencesStore.setState({ settled: false });
+    const tab = term();
+    await render(shell([tab], tab.id));
+    expect(pty.requested).toEqual([]);
+    await act(async () => usePreferencesStore.setState({ settled: true }));
+    await waitForOpens(1);
+  });
+
   it('waits for the profiles to be listed before starting the terminal', async () => {
     appearances.set(null);
     const tab = term();
@@ -666,8 +689,8 @@ describe('each pane looks as its profile says (E14-16)', () => {
     const tab = term();
     await render(shell([tab], tab.id));
     await waitForOpens(1);
-    terminal.fontsFit = false;
     const globalSize = usePreferencesStore.getState().terminalFontSize;
+    terminal.fits = (size) => size === globalSize;
 
     for (const fontSize of [21, 22, 21]) {
       await act(async () => appearances.set({ 'detected:pwsh': { fontSize } }));
@@ -701,5 +724,48 @@ describe('each pane looks as its profile says (E14-16)', () => {
     expect(last()).toEqual(wider);
     expect(pty.opened).toEqual([tab.activeLeafId]);
     expect(pty.closed).toEqual([]);
+  });
+
+  it('keeps its font, with a warning, when not even the global font has room', async () => {
+    const tab = term();
+    await render(shell([tab], tab.id));
+    await waitForOpens(1);
+    terminal.fits = () => false;
+    await act(async () => appearances.set({ 'detected:pwsh': { fontSize: 31 } }));
+    for (let i = 0; i < 20; i++) await tick();
+    expect(terminal.fontSizes).toEqual([]);
+    expect(terminal.warnings).toEqual(['Too many terminal fonts']);
+    expect(host.textContent).not.toContain('Unable to display terminal');
+  });
+
+  it('shows the renderer error and its retry when a font fails to apply', async () => {
+    const tab = term();
+    await render(shell([tab], tab.id));
+    await waitForOpens(1);
+    terminal.fontFails = true;
+    await act(async () => appearances.set({ 'detected:pwsh': { fontSize: 32 } }));
+    for (let i = 0; i < 20; i++) await tick();
+    expect(host.textContent).toContain('Unable to display terminal');
+    expect(host.textContent).toContain('Retry display');
+    expect(pty.closed).toEqual([]);
+  });
+
+  it('draws a font asked for while the terminal is still starting', async () => {
+    let release = () => {};
+    terminal.modelGate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const tab = term();
+    await render(shell([tab], tab.id));
+    // The fonts are measured; the model, and so the surface, is not there yet.
+    await act(async () => appearances.set({ 'detected:pwsh': { fontSize: 23 } }));
+    for (let i = 0; i < 5; i++) await tick();
+    release();
+    await waitForOpens(1);
+    for (let i = 0; i < 20; i++) await tick();
+    const drawn = terminal.fontSizes.length
+      ? terminal.fontSizes[terminal.fontSizes.length - 1]
+      : terminal.startSizes[terminal.startSizes.length - 1];
+    expect(drawn).toBe(23);
   });
 });
