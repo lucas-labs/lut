@@ -27,25 +27,31 @@ async function load(): Promise<void> {
   }
 }
 
-let watching: Promise<void> | null = null;
+let firstRead: Promise<void> | null = null;
+
+/** Reads the list until one read succeeds; panes mounting at the same time share a read. */
+function readUntilListed(): void {
+  if (useProfilesStore.getState().list !== null) return;
+  firstRead ??= load().finally(() => {
+    firstRead = null;
+  });
+}
+
+let subscribed: Promise<unknown> | null = null;
 
 /** Keeps this window's list current: subscribes once, then reads it, so no change is missed. */
-function watchProfiles(): Promise<void> {
-  watching ??= listen(PROFILES_CHANGED_EVENT, () => void load()).then(
-    () => load(),
-    (error: unknown) => {
-      // Not subscribed: a later call tries again.
-      watching = null;
-      console.error('[lut] could not watch terminal profiles:', error);
-      return load();
-    },
-  );
-  return watching;
+function watchProfiles(): void {
+  subscribed ??= listen(PROFILES_CHANGED_EVENT, () => void load()).catch((error: unknown) => {
+    // Not subscribed: a later call tries again.
+    subscribed = null;
+    console.error('[lut] could not watch terminal profiles:', error);
+  });
+  void subscribed.then(readUntilListed);
 }
 
 /** The listed profiles, kept current; `null` until they are first read. */
 export function useProfiles(): ProfilesList | null {
-  useEffect(() => void watchProfiles(), []);
+  useEffect(watchProfiles, []);
   return useProfilesStore((state) => state.list);
 }
 
