@@ -7379,11 +7379,38 @@ in (E15-03). The colour belongs to the icon, apart from a tab's own colour (E15-
 **Verification:** `pnpm test`; `cargo test --manifest-path src-tauri/Cargo.toml --lib profiles`; manual: a green
 PowerShell icon in the "+" menu and its tab; changing the theme recolours a theme colour, not a hex one.
 
+### E26-10 — The strip keeps the active tab in view when it opens or grows
+
+```yaml
+id: E26-10
+depends-on: [E11-02]
+refs: [UX-002, .docs/plan/analysis/app-shell.md]
+covers: [UX-002]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** In the horizontal strip, a new tab or an active tab whose name gets longer (a rename, a folder, a title its
+shell sets) can end up partly hidden past the edge, and only scrolling by hand shows it. The strip brings the active
+tab into view only when another tab becomes active (`TabNavigator`), and a new tab is measured while its opening
+animation still shrinks it.
+
+**Acceptance criteria:**
+
+- [ ] A new tab is fully visible in the strip once its opening animation ends.
+- [ ] When the active tab's name changes width, the strip scrolls so the whole tab stays visible.
+- [ ] A tab that is not active does not move the strip when its name changes.
+- [ ] Component tests for the new tab and for a longer name of the active tab.
+
+**Verification:** `pnpm test`; manual: open tabs until the strip scrolls, open one more, then
+`echo -e "\e]0;a much longer title\a"` in the active tab.
+
 ### E26-03 — Close-out: accessory improvements
 
 ```yaml
 id: E26-03
-depends-on: [E26-01, E26-02, E26-04, E26-05, E26-06, E26-07, E26-08, E26-09]
+depends-on: [E26-01, E26-02, E26-04, E26-05, E26-06, E26-07, E26-08, E26-09, E26-10]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
