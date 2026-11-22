@@ -1,4 +1,5 @@
 import type { Padding } from '@/lib/padding';
+import { shapeReaders } from '@/lib/shape';
 
 /**
  * The terminal profile model as native serializes it (`profiles/model.rs`), with parsers that check
@@ -56,50 +57,8 @@ export type ProfilesList = {
   defaultProfileId: string | null;
 };
 
-type Dict = Record<string, unknown>;
-
-/** Thrown when native answers with something the model does not describe. */
-class ProfileShapeError extends Error {
-  constructor(path: string) {
-    super(`Unexpected terminal profile data at ${path}`);
-    this.name = 'ProfileShapeError';
-  }
-}
-
-function dict(value: unknown, path: string): Dict {
-  if (typeof value === 'object' && value !== null && !Array.isArray(value)) return value as Dict;
-  throw new ProfileShapeError(path);
-}
-
-function text(value: unknown, path: string): string {
-  if (typeof value === 'string') return value;
-  throw new ProfileShapeError(path);
-}
-
-function optional<T>(
-  value: unknown,
-  path: string,
-  read: (value: unknown, path: string) => T,
-): T | undefined {
-  return value === undefined ? undefined : read(value, path);
-}
-
-function flag(value: unknown, path: string): boolean {
-  if (typeof value === 'boolean') return value;
-  throw new ProfileShapeError(path);
-}
-
-function count(value: unknown, path: string): number {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  throw new ProfileShapeError(path);
-}
-
-function oneOf<T extends string>(choices: readonly T[]) {
-  return (value: unknown, path: string): T => {
-    if (choices.includes(value as T)) return value as T;
-    throw new ProfileShapeError(path);
-  };
-}
+const { fail, dict, text, flag, count, optional, oneOf, list } =
+  shapeReaders('terminal profile data');
 
 const cursorStyle = oneOf<CursorStyle>(['bar', 'block', 'underline']);
 const closeBehavior = oneOf<CloseBehavior>(['ask', 'close', 'keepOpen']);
@@ -110,7 +69,7 @@ function environment(value: unknown, path: string): ProfileEnvironment {
   if (raw.kind === 'native') return { kind: 'native' };
   if (raw.kind === 'wsl')
     return { kind: 'wsl', distro: optional(raw.distro, `${path}.distro`, text) };
-  throw new ProfileShapeError(`${path}.kind`);
+  return fail(`${path}.kind`);
 }
 
 function appearance(value: unknown, path: string): ProfileAppearance {
@@ -153,10 +112,7 @@ function env(value: unknown, path: string): Record<string, string | null> {
   return vars;
 }
 
-function args(value: unknown, path: string): string[] {
-  if (!Array.isArray(value)) throw new ProfileShapeError(path);
-  return value.map((arg, index) => text(arg, `${path}[${index}]`));
-}
+const args = list(text);
 
 function entry(value: unknown, path: string): ProfileEntry {
   const raw = dict(value, path);
@@ -189,7 +145,7 @@ export function toTerminalProfile({
 /** Reads a `profiles_list` answer; throws when it does not match the model. */
 export function parseProfilesList(value: unknown): ProfilesList {
   const raw = dict(value, 'profilesList');
-  if (!Array.isArray(raw.profiles)) throw new ProfileShapeError('profilesList.profiles');
+  if (!Array.isArray(raw.profiles)) return fail('profilesList.profiles');
   const defaultProfileId = raw.defaultProfileId;
   return {
     profiles: raw.profiles.map((profile, index) => entry(profile, `profiles[${index}]`)),

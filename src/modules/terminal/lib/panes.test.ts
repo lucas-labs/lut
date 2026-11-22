@@ -208,6 +208,7 @@ describe('split ratios', () => {
     expect(normaliseRatios([1], 2)).toEqual([0.5, 0.5]);
     expect(normaliseRatios([1, 0], 2)).toEqual([0.5, 0.5]);
     expect(normaliseRatios([1, Number.NaN], 2)).toEqual([0.5, 0.5]);
+    expect(normaliseRatios([1e308, 1e308], 2)).toEqual([0.5, 0.5]);
   });
 
   it('sets one split by id and leaves the tree as is when nothing changes', () => {

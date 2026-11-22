@@ -113,6 +113,9 @@ state. The terminal sessions live in a module-level map keyed by leaf id
 
 - **Tauri store files** (`@tauri-apps/plugin-store`, `LazyStore`): `lut-settings.json` (`modules/settings/store.ts`),
   `lut-spaces.json` (`modules/spaces/lib/store.ts`), `lut-custom-themes.json` (`modules/theme/customThemes.ts`).
+  `lut-spaces.json` is validated at load (`modules/spaces/lib/parse.ts`); an unusable one is moved aside as
+  `lut-spaces.corrupt-<ms>.json` by native `modules/spaces.rs`, before the plugin opens it, and a file with tabs lut
+  could not restore is copied there before it is saved again.
 - **localStorage:** `lut-ui-theme-shadow` (read by `index.html` and `settings.html` before first paint, written by
   `modules/theme/ThemeProvider.tsx`), `lut-ui-theme-id-shadow` (`ThemeProvider.tsx`), `lut-ui-bg-kind-shadow`,
   `lut-ui-bg-image-shadow`
@@ -192,6 +195,7 @@ for `app/hooks/useAppCloseGuard.ts`, `onWindowResized` for `components/WindowCon
 | `lsp/`                   | Language-server processes and JSON-RPC framing.                                                                                                     | 4     | 1 070  |
 | `agent_json.rs`          | Format-preserving edits of agents' JSON settings files.                                                                                             | 1     | 910    |
 | `shell/`                 | One-shot non-PTY commands (the editor's external formatters).                                                                                       | 1     | 210    |
+| `spaces.rs`              | Checks the Spaces store file before the store plugin opens it, moves an unusable one aside and keeps copies.                                        | 1     | 138    |
 | `bench.rs`               | App benchmark support (feature `bench`).                                                                                                            | 1     | 779    |
 | `proc/`                  | Child-output capture, Windows Job Objects, RSS, `hide_console`.                                                                                     | 4     | 525    |
 | `vibrancy.rs`            | Window backdrop (Mica, NSVisualEffectView).                                                                                                         | 1     | 320    |
@@ -204,11 +208,12 @@ for `app/hooks/useAppCloseGuard.ts`, `onWindowResized` for `components/WindowCon
 
 ### Commands
 
-97 commands are registered (3 of them only with the `bench` feature). E02-05 removed the 22 of the git agent-task
+100 commands are registered (3 of them only with the `bench` feature). E02-05 removed the 22 of the git agent-task
 backend, E02-18 removed `fs_grep`, `fs_glob` and `git_show_commit`, E06-06 removed the four `history_*` commands,
 E05-14, E05-15 and E05-16 removed the 26 that only the AI used, E14-11 removed `pty_has_foreground_job`, E14-18
-removed `wsl_default_distro`, E14-05 added the eight `profiles_*` commands, and E15-03 added `profile_icon_import` and
-`profile_icon_read`.
+removed `wsl_default_distro`, E14-05 added the eight `profiles_*` commands, E15-03 added `profile_icon_import` and
+`profile_icon_read`, and E16-03 added `spaces_store_open`, `spaces_store_move_aside` and
+`spaces_store_copy_aside`.
 The tables below list each one with the frontend files that call it; for the wrapper objects the caller is written as
 `` `git.method` → users ``; `workspaceNative` is in `modules/workspace/native.ts`.
 
@@ -333,6 +338,14 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 | `profiles_take_load_error`       | `profiles::store`    | `modules/profiles/loadError.ts` |
 | `profile_icon_import`            | `profiles::icons`    | `modules/profiles/commands.ts`  |
 | `profile_icon_read`              | `profiles::icons`    | `modules/profiles/commands.ts`  |
+
+#### spaces
+
+| Command                   | Handler  | Frontend caller(s)            |
+| ------------------------- | -------- | ----------------------------- |
+| `spaces_store_open`       | `spaces` | `modules/spaces/lib/store.ts` |
+| `spaces_store_move_aside` | `spaces` | `modules/spaces/lib/store.ts` |
+| `spaces_store_copy_aside` | `spaces` | `modules/spaces/lib/store.ts` |
 
 #### control
 

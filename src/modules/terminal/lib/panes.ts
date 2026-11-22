@@ -49,14 +49,16 @@ function equalRatios(count: number): number[] {
 }
 
 /**
- * Scales `ratios` to sum 1 for `count` children. A list of the wrong length or with a
- * non-positive or non-finite share gives equal shares instead.
+ * Scales `ratios` to sum 1 for `count` children. A list of the wrong length, with a
+ * non-positive or non-finite share, or too large to sum gives equal shares instead.
  */
 export function normaliseRatios(ratios: readonly number[], count: number): number[] {
   if (ratios.length !== count || ratios.some((r) => !(r > 0) || !Number.isFinite(r))) {
     return equalRatios(count);
   }
   const total = ratios.reduce((sum, r) => sum + r, 0);
+  // Shares too large to add up would all come out as 0.
+  if (!Number.isFinite(total)) return equalRatios(count);
   return ratios.map((r) => r / total);
 }
 

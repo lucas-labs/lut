@@ -5,6 +5,7 @@ import { isLeaf, type PaneNode } from '@/modules/terminal/lib/panes';
 import { parseWorkspaceScopeKey, type WorkspaceEnv, workspaceNative } from '@/modules/workspace';
 import { useEffect, useRef } from 'react';
 import { activeSpaceEnv, freshTabCwd } from './activeSpace';
+import { reportSpacesLoad } from './loadNotice';
 import { freshTerminalTab, hydrateTabs } from './serialize';
 import { loadAll, saveActiveId, saveSpacesList, type SpaceMeta } from './store';
 import { useSpaces } from './useSpaces';
@@ -30,8 +31,9 @@ function uniqueCwds(tabs: Tab[]): string[] {
 }
 
 /**
- * Restores the saved spaces and their tabs, or creates the default space on first run. Failures are logged: the app
- * still starts, with the launch tab.
+ * Restores the saved spaces and their tabs, or creates the default space on first run or when the saved file was
+ * unusable; what could not be restored is reported. Other failures are logged: the app still starts, with the launch
+ * tab.
  */
 async function bootSpaces({
   launchCwd,
@@ -40,7 +42,9 @@ async function bootSpaces({
 }: Omit<Params, 'ready'>): Promise<void> {
   const { allocId, replaceTabs, setActiveSpaceForNewTabs } = useNavigationStore.getState();
   try {
-    const { spaces, activeId, states } = await loadAll();
+    const load = await loadAll();
+    reportSpacesLoad(load);
+    const { spaces, activeId, states } = load.data;
 
     if (spaces.length === 0) {
       const root = launchCwd ?? home ?? null;

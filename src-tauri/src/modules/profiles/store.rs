@@ -2,13 +2,14 @@ use std::collections::BTreeMap;
 use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::{Condvar, Mutex};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
 use super::model::{DetectedOverride, TerminalProfile};
 use super::validate::validate_profiles;
 use crate::modules::fs::atomic::{write_atomic, AtomicWriteError};
+use crate::modules::fs::recover::{move_aside, RecoveredFile};
 
 /// Store file name inside lut's app config dir.
 pub const PROFILES_FILE: &str = "profiles.json";
@@ -31,15 +32,6 @@ pub struct ProfilesFile {
     pub detected: BTreeMap<String, DetectedOverride>,
 }
 
-/// A store file that could not be used, so lut started with the defaults instead.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RecoveredFile {
-    /// Where the unusable file was moved; empty when it could not be read, and was left in place.
-    pub backup_path: String,
-    pub reason: String,
-}
-
 #[derive(Debug)]
 pub struct LoadOutcome {
     pub file: ProfilesFile,
@@ -54,11 +46,10 @@ pub fn load(dir: &Path) -> LoadOutcome {
         Ok(bytes) => bytes,
         Err(error) if error.kind() == io::ErrorKind::NotFound => return defaults(None),
         Err(error) => {
-            // Leave a file we cannot read where it is: writing over it could lose it.
-            return defaults(Some(RecoveredFile {
-                backup_path: String::new(),
-                reason: format!("could not read {}: {error}", path.display()),
-            }));
+            return defaults(Some(RecoveredFile::left_in_place(format!(
+                "could not read {}: {error}",
+                path.display()
+            ))));
         }
     };
     // Checked up front: serde skips unknown values without validating their UTF-8.
@@ -79,18 +70,7 @@ pub fn load(dir: &Path) -> LoadOutcome {
         },
         Err(reason) => reason,
     };
-    let backup = backup_path(dir);
-    let recovered = match std::fs::rename(&path, &backup) {
-        Ok(()) => RecoveredFile {
-            backup_path: backup.display().to_string(),
-            reason,
-        },
-        Err(error) => RecoveredFile {
-            backup_path: String::new(),
-            reason: format!("{reason}; backup failed: {error}"),
-        },
-    };
-    defaults(Some(recovered))
+    defaults(Some(move_aside(&path, BACKUP_PREFIX, reason)))
 }
 
 /// Writes the store atomically, creating `dir` when it does not exist yet.
@@ -105,26 +85,6 @@ fn defaults(recovered: Option<RecoveredFile>) -> LoadOutcome {
     LoadOutcome {
         file: ProfilesFile::default(),
         recovered,
-    }
-}
-
-/// A backup name no earlier backup uses.
-fn backup_path(dir: &Path) -> PathBuf {
-    let millis = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |d| d.as_millis());
-    let mut n = 0;
-    loop {
-        let name = if n == 0 {
-            format!("{BACKUP_PREFIX}{millis}.json")
-        } else {
-            format!("{BACKUP_PREFIX}{millis}-{n}.json")
-        };
-        let candidate = dir.join(name);
-        if !candidate.exists() {
-            return candidate;
-        }
-        n += 1;
     }
 }
 
