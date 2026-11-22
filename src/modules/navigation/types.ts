@@ -6,6 +6,8 @@ type TabBase = {
   spaceId: string;
   /** Restored from disk, not yet activated: rendered as a placeholder, not mounted. */
   cold?: boolean;
+  /** The colour the user gave the tab: a theme colour's name or a `#rrggbb` hex. None by default. */
+  color?: string;
 };
 
 export type TerminalTab = TabBase & {
@@ -98,6 +100,8 @@ export type TabPatch = Partial<{
   /** Empty string resets a terminal tab to its cwd-derived name. */
   customTitle: string;
   overrideLanguage: string | null;
+  /** A theme colour's name or a `#rrggbb` hex; an empty string removes it. */
+  color: string;
 }>;
 
 export type GitDiffOpenInput = {

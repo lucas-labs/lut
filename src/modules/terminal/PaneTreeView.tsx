@@ -18,6 +18,7 @@ type Props = {
   onCwd: (leafId: number, cwd: string) => void;
   /** The terminal profile a pane opened with. */
   onProfile: (leafId: number, profileId: string | undefined) => void;
+  onTitle: (leafId: number, title: string | null) => void;
   onExit: (leafId: number, code: number) => void;
   /** The user resized a split: its children's new shares, in child order. */
   onSplitRatios?: (splitId: number, ratios: number[]) => void;
@@ -45,6 +46,7 @@ function PaneLeaf({
   onSearchReady,
   onCwd,
   onProfile,
+  onTitle,
   onExit,
   inSplit = false,
 }: Props & { node: LeafNode }) {
@@ -75,6 +77,7 @@ function PaneLeaf({
         onSearchReady={onSearchReady}
         onCwd={onCwd}
         onProfile={onProfile}
+        onTitle={onTitle}
         onExit={onExit}
       />
       {focused && inSplit ? <ActivePaneMark /> : null}

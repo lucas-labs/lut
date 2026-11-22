@@ -36,6 +36,7 @@ beforeEach(() => {
     closeOthers: vi.fn<TabNavigatorActions['closeOthers']>(),
     pin: vi.fn<TabNavigatorActions['pin']>(),
     rename: vi.fn<TabNavigatorActions['rename']>(),
+    setColor: vi.fn<TabNavigatorActions['setColor']>(),
     reorder: vi.fn<TabNavigatorActions['reorder']>(),
   };
   undoPresenter = registerTabPresenter('terminal', {
@@ -182,5 +183,79 @@ describe('TabNavigator', () => {
     expect(host.querySelector('[role="tablist"]')?.getAttribute('aria-orientation')).toBe('vertical');
     expect(host.textContent).toContain('Space');
     expect(tabs()).toHaveLength(items().length);
+  });
+
+  describe('tab colour', () => {
+    async function openMenu(index: number) {
+      const tab = tabs()[index];
+      await act(async () => {
+        tab.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, button: 2, clientX: 5, clientY: 5 }));
+      });
+    }
+    const swatch = (label: string) =>
+      document.querySelector<HTMLElement>(`[role="menuitemradio"][aria-label="${label}"]`);
+    function type(input: HTMLInputElement, value: string) {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(input, value);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    it('offers no colour, the theme colours and a custom one, with none checked by default', async () => {
+      await render();
+      await openMenu(1);
+      const row = document.querySelector('[role="group"][aria-label="Tab color"]');
+      expect(
+        Array.from(row?.querySelectorAll('[role="menuitemradio"]') ?? []).map((el) => el.getAttribute('aria-label')),
+      ).toEqual(['No color', 'Primary', 'Red', 'Yellow', 'Green', 'Cyan', 'Blue', 'Magenta', 'Custom color']);
+      expect(swatch('No color')?.getAttribute('aria-checked')).toBe('true');
+    });
+
+    it('gives the tab a theme colour by name, and "No color" removes it', async () => {
+      await render();
+      await openMenu(1);
+      await act(async () => swatch('Cyan')?.click());
+      expect(actions.setColor).toHaveBeenLastCalledWith(items()[1].id, 'cyan');
+
+      await openMenu(1);
+      await act(async () => swatch('No color')?.click());
+      expect(actions.setColor).toHaveBeenLastCalledWith(items()[1].id, null);
+    });
+
+    it('applies a custom colour from the picker as hex and closes the menu', async () => {
+      await render();
+      await openMenu(1);
+      await act(async () => swatch('Custom color')?.click());
+      const hex = document.querySelector<HTMLInputElement>('input[aria-label="Hex color"]');
+      expect(hex).not.toBeNull();
+      if (!hex) return;
+      const apply = () =>
+        Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find((b) => b.textContent === 'Apply');
+
+      await act(async () => type(hex, 'nope'));
+      expect(apply()?.disabled).toBe(true);
+
+      await act(async () => type(hex, 'FF8800'));
+      await act(async () => apply()?.click());
+      expect(actions.setColor).toHaveBeenLastCalledWith(items()[1].id, '#ff8800');
+      expect(document.querySelector('input[aria-label="Hex color"]')).toBeNull();
+    });
+
+    it('checks the custom swatch for a hex colour and paints it', async () => {
+      store().updateTab(items()[1].id, { color: '#ff8800' });
+      await render();
+      await openMenu(1);
+      const custom = swatch('Custom color');
+      expect(custom?.getAttribute('aria-checked')).toBe('true');
+      expect(custom?.querySelector<HTMLElement>('[data-slot="color-swatch"]')?.style.background).toBe('#ff8800');
+    });
+
+    it.each(['horizontal', 'vertical'] as const)('tints a coloured tab in the %s navigator', async (orientation) => {
+      store().updateTab(items()[1].id, { color: 'cyan' });
+      await render(orientation);
+      const [plain, coloured] = tabs();
+      expect(plain.hasAttribute('data-tab-color')).toBe(false);
+      expect(coloured.hasAttribute('data-tab-color')).toBe(true);
+      expect(coloured.dataset.orientation).toBe(orientation);
+      expect(coloured.style.getPropertyValue('--tab-color')).toBe('var(--terminal-ansi-cyan)');
+    });
   });
 });

@@ -47,6 +47,8 @@ export type TerminalPaneProps = {
   onCwd?: (leafId: number, cwd: string) => void;
   /** The profile the pane's terminal opened with. */
   onProfile?: (leafId: number, profileId: string | undefined) => void;
+  /** The title the pane's shell set; null when it cleared it or the terminal started again. */
+  onTitle?: (leafId: number, title: string | null) => void;
 };
 
 /** The pane's profile itself cannot open: it is gone, or what it runs is missing. */
@@ -65,7 +67,19 @@ const GhosttyTerminalPane = memo(
       backend: Extract<TerminalBackendKind, `ghostty-${string}`>;
     }
   >(function GhosttyTerminalPane(
-    { leafId, visible, focused = true, initialCwd, profileId, onSearchReady, onExit, onCwd, onProfile, backend },
+    {
+      leafId,
+      visible,
+      focused = true,
+      initialCwd,
+      profileId,
+      onSearchReady,
+      onExit,
+      onCwd,
+      onProfile,
+      onTitle,
+      backend,
+    },
     ref,
   ) {
     const screenReader = usePreferencesStore((state) => state.terminalScreenReader);
@@ -84,6 +98,7 @@ const GhosttyTerminalPane = memo(
       onSearchReady: (search) => onSearchReady?.(leafId, search),
       onCwd: (cwd) => onCwd?.(leafId, cwd),
       onProfile: (id) => onProfile?.(leafId, id),
+      onTitle: (title) => onTitle?.(leafId, title),
     });
 
     // Each exit is decided once, with the profile as it was when the process exited, or when the

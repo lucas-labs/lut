@@ -140,6 +140,10 @@ export function useTerminalPanes({ tabs, activeId, activeLeafId }: TerminalPanes
     nav().setLeafProfile(leafId, profileId);
   }, []);
 
+  const onTitle = useCallback((leafId: number, title: string | null) => {
+    nav().setLeafShellTitle(leafId, title ?? undefined);
+  }, []);
+
   const onExit = useCallback((leafId: number, _code: number) => {
     const all = nav().tabs;
     const tab = all.find((t) => t.kind === 'terminal' && hasLeaf(t.paneTree, leafId));
@@ -164,6 +168,7 @@ export function useTerminalPanes({ tabs, activeId, activeLeafId }: TerminalPanes
     onSearchReady,
     onCwd,
     onProfile,
+    onTitle,
     onExit,
     onFocusLeaf,
     focusTerminal,

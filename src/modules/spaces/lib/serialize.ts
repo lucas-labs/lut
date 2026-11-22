@@ -5,7 +5,7 @@ type SerializedNode =
   | { kind: 'leaf'; cwd?: string; profileId?: string; active?: boolean }
   | { kind: 'split'; dir: SplitDir; children: SerializedNode[] };
 
-export type SerializedTab =
+export type SerializedTab = (
   | {
       kind: 'terminal';
       tree: SerializedNode;
@@ -13,7 +13,11 @@ export type SerializedTab =
     }
   | { kind: 'editor'; path: string }
   | { kind: 'preview'; url: string }
-  | { kind: 'markdown'; path: string };
+  | { kind: 'markdown'; path: string }
+) & {
+  /** The colour the user gave the tab: a theme colour's name or a `#rrggbb` hex. */
+  color?: string;
+};
 
 function basename(path: string): string {
   const parts = path.split(/[\\/]/).filter(Boolean);
@@ -58,6 +62,11 @@ export function isSerializableTab(tab: Tab): boolean {
 }
 
 function serializeTab(tab: Tab): SerializedTab | null {
+  const serialized = serializeKind(tab);
+  return serialized && tab.color !== undefined ? { ...serialized, color: tab.color } : serialized;
+}
+
+function serializeKind(tab: Tab): SerializedTab | null {
   if (!isSerializableTab(tab)) return null;
   switch (tab.kind) {
     case 'terminal':
@@ -206,7 +215,7 @@ export function hydrateTabs(
   for (const s of serialized) {
     try {
       const tab = hydrateTab(s, spaceId, allocId);
-      if (tab) out.push(tab);
+      if (tab) out.push(typeof s.color === 'string' ? { ...tab, color: s.color } : tab);
     } catch {
       // Skip corrupted entries rather than failing the whole restore.
     }

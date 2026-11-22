@@ -33,7 +33,7 @@ const custom = {
     scrollback: 5000,
     padding: { top: 4, right: 8, bottom: 4, left: 8 },
   },
-  tab: { title: 'dev', color: '#ff8800', icon: 'code', allowShellTitle: false },
+  tab: { icon: 'code', allowShellTitle: false },
   closeBehavior: 'keepOpen',
   source: 'custom',
   hidden: true,
@@ -57,7 +57,7 @@ describe('parseProfilesList', () => {
         cursorStyle: 'block',
         padding: { top: 4, right: 8, bottom: 4, left: 8 },
       },
-      tab: { title: 'dev', allowShellTitle: false },
+      tab: { icon: 'code', allowShellTitle: false },
       closeBehavior: 'keepOpen',
       hidden: true,
     });

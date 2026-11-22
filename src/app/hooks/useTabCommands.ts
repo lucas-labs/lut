@@ -165,6 +165,7 @@ export function useTabCommands({
       closeOthers: handleCloseOtherTabs,
       pin: nav().pinTab,
       rename: (id: number, title: string) => nav().updateTab(id, { customTitle: title.trim() }),
+      setColor: (id: number, color: string | null) => nav().updateTab(id, { color: color ?? '' }),
       reorder: nav().reorderTabByGap,
     }),
     [handleClose, handleCloseTabsToRight, handleCloseOtherTabs],

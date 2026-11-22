@@ -5,7 +5,7 @@ import { useApplyFileIconColors } from '@/modules/explorer';
 import { type SearchInlineHandle, TitleBar } from '@/modules/header';
 import { DEFAULT_SPACE_ID, useNavigatorItems } from '@/modules/navigation';
 import { getLaunchDir } from '@/modules/platform';
-import { useProfilesLoadNotice } from '@/modules/profiles';
+import { useProfilesLoadNotice, useShellTitlePolicy } from '@/modules/profiles';
 import { openSettingsWindow } from '@/modules/settings/openSettingsWindow';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { type NewTabMenuActions, TabNavigator, useTabs, useWindowTitle, useWorkspaceCwd } from '@/modules/tabs';
@@ -134,7 +134,8 @@ export default function App() {
     setNewEditorOpen,
   });
 
-  const navigatorItems = useNavigatorItems(activeSpaceId ?? DEFAULT_SPACE_ID);
+  const allowsShellTitle = useShellTitlePolicy();
+  const navigatorItems = useNavigatorItems(activeSpaceId ?? DEFAULT_SPACE_ID, allowsShellTitle);
   // The new-tab menu, in the header and in the vertical tab column.
   const newTabMenu: NewTabMenuActions = {
     onNew: commands.openNewTab,
@@ -219,6 +220,7 @@ export default function App() {
               onSearchReady={terminals.onSearchReady}
               onCwd={terminals.onCwd}
               onProfile={terminals.onProfile}
+              onTitle={terminals.onTitle}
               onExit={terminals.onExit}
               onFocusLeaf={terminals.onFocusLeaf}
               onSplitRatios={setSplitRatios}

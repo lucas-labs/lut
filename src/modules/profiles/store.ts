@@ -1,7 +1,8 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { create } from 'zustand';
+import { allowsShellTitle } from './catalogue';
 import { parseProfilesList, type ProfileEntry, type ProfilesList } from './model';
 
 /** Native emits it after any change to the list: an edit, a new default or a detection. */
@@ -73,6 +74,12 @@ function watchProfiles(): void {
 export function useProfiles(): ProfilesList | null {
   useEffect(watchProfiles, []);
   return useProfilesStore((state) => state.list);
+}
+
+/** Whether the shell of a pane opened with a profile may name its tab, kept current with the list. */
+export function useShellTitlePolicy(): (profileId: string | undefined) => boolean {
+  const list = useProfiles();
+  return useCallback((profileId: string | undefined) => allowsShellTitle(list, profileId), [list]);
 }
 
 /** Whether the list is listed, still being read, or could not be read (see `readProfilesAgain`). */

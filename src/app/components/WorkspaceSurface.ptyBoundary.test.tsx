@@ -298,6 +298,7 @@ function surface(tabs: Tab[], activeId: number) {
     onSearchReady: noop,
     onCwd: noop,
     onProfile: (leaf: number, profileId: string | undefined) => pty.reported.push({ leaf, profileId }),
+    onTitle: () => {},
     onExit: (leaf: number, code: number) => pty.closedByExit.push({ leaf, code }),
     onFocusLeaf: noop,
     registerEditorHandle: noop,

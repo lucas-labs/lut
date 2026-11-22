@@ -16,9 +16,11 @@ import {
   TabStatus,
 } from '@/modules/navigation';
 import { ShortcutKeys, useShortcutLabel } from '@/modules/shortcuts';
+import { colorCss } from '@/modules/theme';
 import { CancelCircleIcon, ChevronIcon, PencilIcon, XIcon } from '@lut/lut-icons';
-import { Fragment, type KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { type CSSProperties, Fragment, type KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { NewTabMenu, type NewTabMenuActions } from './NewTabMenu';
+import { TabColorMenu } from './TabColorMenu';
 
 type Props = {
   /** The active space's tabs, in strip order. */
@@ -40,6 +42,17 @@ const PRIVATE_TAB_HINT = "This terminal isn't saved in the Space, so it won't co
 
 const HIDDEN_SCROLLBAR = '[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
 
+/** A coloured tab's tint (the `data-tab-color` rules of globals.css); nothing for a tab with no colour. */
+function tint(t: TabNavigatorItem, orientation: TabNavigatorOrientation) {
+  const css = t.color === null ? null : colorCss(t.color);
+  if (css === null) return {};
+  return {
+    'data-tab-color': '',
+    'data-orientation': orientation,
+    style: { '--tab-color': css } as CSSProperties,
+  };
+}
+
 /** The tabs of the active space, per the E11-02 design: a strip (horizontal) or a rail (vertical). */
 export function TabNavigator({ items, actions, orientation, heading, compact, dragRegion = '', newTabMenu }: Props) {
   const vertical = orientation === 'vertical';
@@ -47,6 +60,8 @@ export function TabNavigator({ items, actions, orientation, heading, compact, dr
   const closeHint = useShortcutLabel('tab.close');
   const scrollRef = useRef<HTMLDivElement>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
+  // The tab whose menu is open, so applying a custom colour can close it.
+  const [menuId, setMenuId] = useState<number | null>(null);
   const [draggingId, setDraggingId] = useState<number | null>(null);
   const [dropGap, setDropGap] = useState<number | null>(null);
   const drag = useRef<{ pointerId: number; start: number; fromId: number; active: boolean } | null>(null);
@@ -157,7 +172,7 @@ export function TabNavigator({ items, actions, orientation, heading, compact, dr
       return (
         <Fragment key={t.id}>
           {showGap(i) && <DropIndicator vertical={vertical} />}
-          <div data-tab-id={t.id} className={cellClass(t)}>
+          <div data-tab-id={t.id} className={cellClass(t)} {...tint(t, orientation)}>
             <TabIcon id={t.id} />
             <TabRenameInput
               initial={t.title}
@@ -180,6 +195,7 @@ export function TabNavigator({ items, actions, orientation, heading, compact, dr
         aria-selected={t.active}
         tabIndex={t.active ? 0 : -1}
         data-tab-id={t.id}
+        {...tint(t, orientation)}
         title={t.private ? PRIVATE_TAB_HINT : undefined}
         onKeyDown={(e) => onTabKeyDown(e, i)}
         onPointerDown={(e) => {
@@ -243,16 +259,23 @@ export function TabNavigator({ items, actions, orientation, heading, compact, dr
     return (
       <Fragment key={t.id}>
         {showGap(i) && <DropIndicator vertical={vertical} />}
-        <ContextMenu>
+        <ContextMenu open={menuId === t.id} onOpenChange={(open) => setMenuId(open ? t.id : null)}>
           <ContextMenuTrigger asChild>{tab}</ContextMenuTrigger>
-          <ContextMenuContent className="min-w-56" onCloseAutoFocus={(e) => e.preventDefault()}>
+          <ContextMenuContent className="min-w-64" onCloseAutoFocus={(e) => e.preventDefault()}>
             {t.renamable && (
               <ContextMenuItem onSelect={() => setEditingId(t.id)}>
                 <PencilIcon size="sm" />
                 <span className="flex-1">Rename</span>
               </ContextMenuItem>
             )}
-            {t.renamable && <ContextMenuSeparator />}
+            <TabColorMenu
+              color={t.color}
+              onChoose={(color) => {
+                actions.setColor(t.id, color);
+                setMenuId(null);
+              }}
+            />
+            <ContextMenuSeparator />
             <ContextMenuItem disabled={!hasTabsAfter} onSelect={() => actions.closeToEnd(t.id)}>
               <ChevronIcon size="sm" />
               <span className="flex-1">{vertical ? 'Close tabs below' : 'Close tabs to the right'}</span>

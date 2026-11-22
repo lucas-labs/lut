@@ -15,6 +15,7 @@ type Props = {
   onSearchReady: (leafId: number, addon: TerminalSearchController) => void;
   onCwd: (leafId: number, cwd: string) => void;
   onProfile: (leafId: number, profileId: string | undefined) => void;
+  onTitle: (leafId: number, title: string | null) => void;
   onExit: (leafId: number, code: number) => void;
   onFocusLeaf: (tabId: number, leafId: number) => void;
   /** The user resized a split of a tab: its children's new shares. */
@@ -28,6 +29,7 @@ export function TerminalStack({
   onSearchReady,
   onCwd,
   onProfile,
+  onTitle,
   onExit,
   onFocusLeaf,
   onSplitRatios,
@@ -66,6 +68,7 @@ export function TerminalStack({
               onSearchReady={onSearchReady}
               onCwd={onCwd}
               onProfile={onProfile}
+              onTitle={onTitle}
               onExit={onExit}
               onSplitRatios={onSplitRatios && ((splitId, ratios) => onSplitRatios(t.id, splitId, ratios))}
             />

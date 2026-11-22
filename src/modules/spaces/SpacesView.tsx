@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { labelFor, type Tab, TabIcon } from '@/modules/navigation';
+import { useShellTitlePolicy } from '@/modules/profiles';
 import { useShortcutLabel } from '@/modules/shortcuts';
 import { ChevronIcon, DeleteIcon, type LutIconComponent, PencilIcon, PlusIcon, XIcon } from '@lut/lut-icons';
 import { useMemo, useRef, useState } from 'react';
@@ -64,6 +65,7 @@ export function SpacesView({
   onReorderTab,
   onReorderSpaces,
 }: Props) {
+  const allowsShellTitle = useShellTitlePolicy();
   const spaces = useSpaces((s) => s.spaces);
   const activeId = useSpaces((s) => s.activeId);
   const setActive = useSpaces((s) => s.setActive);
@@ -248,7 +250,7 @@ export function SpacesView({
             {draggedSpace ? (
               <OverlayChip color={accentFor(draggedSpace)} label={draggedSpace.name} />
             ) : draggedTab ? (
-              <OverlayChip tab={draggedTab} label={labelFor(draggedTab)} />
+              <OverlayChip tab={draggedTab} label={labelFor(draggedTab, allowsShellTitle)} />
             ) : null}
           </div>,
           document.body,
@@ -414,6 +416,7 @@ function TabRow({
   onJump: () => void;
   onClose: () => void;
 }) {
+  const allowsShellTitle = useShellTitlePolicy();
   const subtitle = subtitleFor(tab);
   const isDragging = dragging?.kind === 'tab' && dragging.id === tab.id;
   const reorderEdge = drop?.kind === 'tab' && drop.tabId === tab.id ? drop.edge : null;
@@ -444,7 +447,7 @@ function TabRow({
       >
         <TabIcon id={tab.id} />
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-[11.5px] leading-tight">{labelFor(tab)}</span>
+          <span className="truncate text-[11.5px] leading-tight">{labelFor(tab, allowsShellTitle)}</span>
           {subtitle && <span className="truncate text-[9.5px] leading-tight text-muted-foreground/55">{subtitle}</span>}
         </span>
         <Button

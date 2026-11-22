@@ -22,8 +22,6 @@ export type ProfileAppearance = {
 };
 
 export type ProfileTab = {
-  title?: string;
-  color?: string;
   icon?: string;
   allowShellTitle: boolean;
 };
@@ -142,8 +140,6 @@ function padding(value: unknown, path: string): Padding {
 function tab(value: unknown, path: string): ProfileTab {
   const raw = dict(value, path);
   return {
-    title: optional(raw.title, `${path}.title`, text),
-    color: optional(raw.color, `${path}.color`, text),
     icon: optional(raw.icon, `${path}.icon`, text),
     allowShellTitle: flag(raw.allowShellTitle, `${path}.allowShellTitle`),
   };

@@ -593,9 +593,7 @@ type TerminalProfile = {
   env?: Record<string, string>;
   icon?: string;                 // id de ícono integrado o ruta a imagen
   tab?: {
-    title?: string;              // título inicial; el shell puede cambiarlo si se permite
-    allowShellTitle?: boolean;
-    color?: string;              // color de acento de la pestaña
+    allowShellTitle?: boolean;   // el título que fija el shell renombra la pestaña
   };
   appearance?: {
     themeId?: string;

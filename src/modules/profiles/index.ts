@@ -30,5 +30,6 @@ export {
   useProfileAppearance,
   useProfiles,
   useProfilesRead,
+  useShellTitlePolicy,
 } from './store';
 export { useProfilesLoadNotice } from './useProfilesLoadNotice';

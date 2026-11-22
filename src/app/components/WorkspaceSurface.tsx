@@ -20,6 +20,7 @@ type Props = {
   onSearchReady: TerminalStackProps['onSearchReady'];
   onCwd: TerminalStackProps['onCwd'];
   onProfile: TerminalStackProps['onProfile'];
+  onTitle: TerminalStackProps['onTitle'];
   onExit: TerminalStackProps['onExit'];
   onFocusLeaf: TerminalStackProps['onFocusLeaf'];
   onSplitRatios?: TerminalStackProps['onSplitRatios'];
@@ -53,6 +54,7 @@ export function WorkspaceSurface({
   onSearchReady,
   onCwd,
   onProfile,
+  onTitle,
   onExit,
   onFocusLeaf,
   onSplitRatios,
@@ -85,6 +87,7 @@ export function WorkspaceSurface({
           onSearchReady={onSearchReady}
           onCwd={onCwd}
           onProfile={onProfile}
+          onTitle={onTitle}
           onExit={onExit}
           onFocusLeaf={onFocusLeaf}
           onSplitRatios={onSplitRatios}
