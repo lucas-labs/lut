@@ -127,7 +127,9 @@ export function useProfileChanges(entry: ProfileEntry) {
             await saveProfile(profile);
           }
           writer.latest = next;
-          writer.awaiting = true;
+          // Native tells of the change before it answers, so the list may already show it; a save that changed
+          // nothing is never listed again.
+          writer.awaiting = !sameProfile(edited(writer.listed), next);
           setErrors((current) =>
             Object.fromEntries(Object.entries(current).filter(([field]) => !touches(field, keys))),
           );

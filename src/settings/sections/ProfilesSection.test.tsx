@@ -412,6 +412,28 @@ describe('a custom profile', () => {
     });
   });
 
+  it('takes a change made elsewhere after a save the list showed before it answered', async () => {
+    let answer: () => void = () => {};
+    native.save.mockImplementationOnce((saved) => {
+      listSaved(saved);
+      return new Promise<void>((resolve) => (answer = resolve));
+    });
+    await render();
+    await choose('Python');
+    await type(inputOf('Name'), 'Py');
+    await leave(inputOf('Name'));
+    await act(async () => answer());
+    listSaved({ ...PYTHON_SAVED, name: 'Py', closeBehavior: 'ask' });
+    await settle();
+    await pick('Cursor style', 'Block');
+    expect(native.save).toHaveBeenLastCalledWith({
+      ...PYTHON_SAVED,
+      name: 'Py',
+      closeBehavior: 'ask',
+      appearance: { cursorStyle: 'block' },
+    });
+  });
+
   it('sets the close behavior', async () => {
     await render();
     await choose('Python');
