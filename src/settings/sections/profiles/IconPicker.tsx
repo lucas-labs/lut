@@ -12,7 +12,7 @@ import {
   ProfileIcon,
 } from '@/modules/profiles';
 import { ArrowTurnBackIcon, ImageIcon } from '@lut/lut-icons';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico'];
 
@@ -34,8 +34,17 @@ export function IconPicker({ entry, onChoose }: Props) {
   const [imageError, setImageError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
-  /** Counts the choices made: an image copied after another choice was made is not saved. */
+  /**
+   * Counts the choices made: an image copied after another choice was made is not saved, nor one copied after the
+   * picker left (another profile was chosen), which a choice in the picker shown again would not count.
+   */
   const choices = useRef(0);
+  useEffect(
+    () => () => {
+      choices.current += 1;
+    },
+    [],
+  );
   const chosen = entry.tab.icon;
   const search = query.trim().toLowerCase();
   const matches = BUILT_IN_ICONS.filter((icon) => !search || icon.label.toLowerCase().includes(search));

@@ -85,22 +85,22 @@ fn referenced(file: &ProfilesFile) -> HashSet<String> {
 }
 
 /// The copies the store files moved aside name: one may be fixed and put back by hand. Read as
-/// text, since they did not parse.
-fn named_by_backups(dir: &Path) -> HashSet<String> {
-    let Ok(entries) = std::fs::read_dir(dir) else {
-        return HashSet::new();
-    };
-    entries
-        .flatten()
-        .filter(|entry| {
-            entry
-                .file_name()
-                .to_str()
-                .is_some_and(|name| name.starts_with(BACKUP_PREFIX))
-        })
-        .filter_map(|entry| std::fs::read(entry.path()).ok())
-        .flat_map(|bytes| image_names_in(&String::from_utf8_lossy(&bytes)))
-        .collect()
+/// text, since they did not parse. An error when a backup may have been left unread: its copies
+/// are unknown.
+fn named_by_backups(dir: &Path) -> std::io::Result<HashSet<String>> {
+    let mut names = HashSet::new();
+    for entry in std::fs::read_dir(dir)? {
+        let entry = entry?;
+        let is_backup = entry
+            .file_name()
+            .to_str()
+            .is_some_and(|name| name.starts_with(BACKUP_PREFIX));
+        if is_backup {
+            let bytes = std::fs::read(entry.path())?;
+            names.extend(image_names_in(&String::from_utf8_lossy(&bytes)));
+        }
+    }
+    Ok(names)
 }
 
 fn image_names_in(text: &str) -> Vec<String> {
@@ -117,13 +117,19 @@ fn image_names_in(text: &str) -> Vec<String> {
 
 /// Deletes the copies no profile names, in the store or in a store moved aside: a replaced or
 /// reset icon, a deleted profile. Only at startup, so a copy just imported, whose profile is not
-/// saved yet, is never deleted.
+/// saved yet, is never deleted; and not at all while a store moved aside cannot be read.
 pub fn remove_unused(dir: &Path, file: &ProfilesFile) {
     let Ok(entries) = std::fs::read_dir(dir.join(ICONS_DIR)) else {
         return;
     };
     let mut keep = referenced(file);
-    keep.extend(named_by_backups(dir));
+    match named_by_backups(dir) {
+        Ok(names) => keep.extend(names),
+        Err(error) => {
+            log::warn!("profile icons kept: the profiles moved aside could not be read: {error}");
+            return;
+        }
+    }
     for entry in entries.flatten() {
         let name = entry.file_name();
         let Some(name) = name.to_str() else {
@@ -298,6 +304,16 @@ mod tests {
         }
         assert_eq!(files(dir.path()), [kept]);
         assert!(!files(dir.path()).contains(&unused));
+    }
+
+    #[test]
+    fn nothing_is_removed_while_a_store_moved_aside_cannot_be_read() {
+        let dir = tempfile::tempdir().unwrap();
+        let unused = import(dir.path(), b"a", "png").unwrap();
+        // A folder by a backup's name: listed, but not readable as a file.
+        std::fs::create_dir(dir.path().join(format!("{BACKUP_PREFIX}1.json"))).unwrap();
+        remove_unused(dir.path(), &ProfilesFile::default());
+        assert_eq!(files(dir.path()), [unused]);
     }
 
     #[test]

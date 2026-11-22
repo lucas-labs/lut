@@ -807,6 +807,22 @@ describe('a profile icon', () => {
     expect(native.save).toHaveBeenCalledWith({ ...PYTHON_SAVED, tab: { allowShellTitle: true, icon: 'star' } });
   });
 
+  it('keeps an icon chosen after leaving the profile while an image is copied', async () => {
+    let copied: (name: string) => void = () => {};
+    native.importIcon.mockImplementationOnce(() => new Promise<string>((resolve) => (copied = resolve)));
+    await render();
+    await choose('Python');
+    await pickImage(await openIcons(), new File(['x'], 'logo.png', { type: 'image/png' }));
+    await choose('PowerShell');
+    await choose('Python');
+    await act(async () => buttonNamed(await openIcons(), 'Star').click());
+    await settle();
+    await act(async () => copied('0123456789abcdef0123456789abcdef.png'));
+    await settle();
+    expect(native.save).toHaveBeenCalledTimes(1);
+    expect(native.save).toHaveBeenCalledWith({ ...PYTHON_SAVED, tab: { allowShellTitle: true, icon: 'star' } });
+  });
+
   it('tells why an image cannot be the icon, copying nothing', async () => {
     await render();
     const popover = await openIcons();
