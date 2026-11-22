@@ -1,0 +1,127 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// The store and its write guard live at module level, so each test imports a fresh copy, after the mocks.
+const disk = vi.hoisted(() => ({
+  entries: [] as [string, unknown][],
+  calls: [] as string[],
+}));
+const native = vi.hoisted(() => ({
+  open: null as { backupPath: string; reason: string } | null,
+  moveAside: { backupPath: '/data/lut-spaces.corrupt-1.json', reason: '' },
+}));
+
+vi.mock('@tauri-apps/plugin-store', () => ({
+  LazyStore: class {
+    entries = async () => {
+      disk.calls.push('entries');
+      return disk.entries;
+    };
+    set = async (key: string) => void disk.calls.push(`set ${key}`);
+    delete = async (key: string) => void disk.calls.push(`delete ${key}`);
+    clear = async () => void disk.calls.push('clear');
+    save = async () => void disk.calls.push('save');
+  },
+}));
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: async (command: string, args?: { reason: string }) => {
+    disk.calls.push(command);
+    if (command === 'spaces_store_open') return native.open;
+    return { ...native.moveAside, reason: args?.reason };
+  },
+}));
+
+const loadStore = () => import('./store');
+
+const space = {
+  id: 'a',
+  name: 'A',
+  root: null,
+  env: { kind: 'local' },
+  createdAt: 1,
+  updatedAt: 1,
+};
+
+async function writeEverything(store: Awaited<ReturnType<typeof loadStore>>) {
+  disk.calls = [];
+  await store.saveSpacesList([]);
+  await store.saveActiveId('a');
+  await store.saveState('a', { tabs: [], activeTabIndex: 0 });
+  await store.deleteSpaceData('a');
+  return disk.calls;
+}
+
+beforeEach(() => {
+  vi.resetModules();
+  disk.entries = [];
+  disk.calls = [];
+  native.open = null;
+  native.moveAside = { backupPath: '/data/lut-spaces.corrupt-1.json', reason: '' };
+});
+
+describe('loadAll', () => {
+  it('has native check the file before the store plugin reads it, and loads a valid store', async () => {
+    disk.entries = [
+      ['spaces', [space]],
+      ['activeId', 'a'],
+    ];
+    const store = await loadStore();
+    const load = await store.loadAll();
+
+    expect(disk.calls).toEqual(['spaces_store_open', 'entries']);
+    expect(load.data.spaces).toEqual([space]);
+    expect(load.data.activeId).toBe('a');
+    expect(load.recovered).toBeNull();
+    expect(await writeEverything(store)).toHaveLength(4);
+  });
+
+  it('moves a store of the wrong shape aside, empties it and loads the defaults', async () => {
+    disk.entries = [['spaces', [{ ...space, name: 7 }]]];
+    const store = await loadStore();
+    const load = await store.loadAll();
+
+    expect(disk.calls).toEqual([
+      'spaces_store_open',
+      'entries',
+      'spaces_store_move_aside',
+      'clear',
+      'save',
+    ]);
+    expect(load.data).toEqual({ spaces: [], activeId: null, states: new Map() });
+    expect(load.recovered).toEqual({
+      backupPath: '/data/lut-spaces.corrupt-1.json',
+      reason: 'Unexpected saved Spaces data at spaces[0].name',
+    });
+    expect(await writeEverything(store)).toHaveLength(4);
+  });
+
+  it('reports a file native moved aside, and saves the defaults over it', async () => {
+    native.open = { backupPath: '/data/lut-spaces.corrupt-2.json', reason: 'EOF while parsing' };
+    const store = await loadStore();
+    const load = await store.loadAll();
+
+    expect(load.data.spaces).toEqual([]);
+    expect(load.recovered).toEqual(native.open);
+    expect(await writeEverything(store)).toHaveLength(4);
+  });
+
+  it('saves nothing when the file could not be read and was left in place', async () => {
+    native.open = { backupPath: '', reason: 'could not read lut-spaces.json: denied' };
+    const store = await loadStore();
+    const load = await store.loadAll();
+
+    expect(load.recovered).toEqual(native.open);
+    expect(await writeEverything(store)).toEqual([]);
+  });
+
+  it('saves nothing when a store of the wrong shape could not be moved aside', async () => {
+    disk.entries = [['spaces', 'not a list']];
+    native.moveAside = { backupPath: '', reason: '' };
+    const store = await loadStore();
+    const load = await store.loadAll();
+
+    expect(disk.calls).not.toContain('clear');
+    expect(load.recovered?.backupPath).toBe('');
+    expect(load.data.spaces).toEqual([]);
+    expect(await writeEverything(store)).toEqual([]);
+  });
+});

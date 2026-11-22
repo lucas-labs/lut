@@ -174,11 +174,6 @@ describe('hydrateTabs', () => {
     expect(Math.min(...ids)).toBeGreaterThanOrEqual(100);
   });
 
-  it('returns empty for corrupted input without throwing', () => {
-    expect(hydrateTabs([] as SerializedTab[], 's1', counter())).toEqual([]);
-    expect(hydrateTabs(null as unknown as SerializedTab[], 's1', counter())).toEqual([]);
-  });
-
   it('hydrates editor/preview/markdown as cold with derived titles', () => {
     const serialized: SerializedTab[] = [
       { kind: 'editor', path: '/a/foo.ts' },

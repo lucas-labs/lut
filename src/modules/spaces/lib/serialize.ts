@@ -1,7 +1,7 @@
 import type { EditorTab, MarkdownTab, PreviewTab, Tab, TerminalTab } from '@/modules/navigation';
 import { isLeaf, type PaneNode, type SplitDir, splitNode } from '@/modules/terminal/lib/panes';
 
-type SerializedNode =
+export type SerializedNode =
   | { kind: 'leaf'; cwd?: string; profileId?: string; active?: boolean }
   | { kind: 'split'; dir: SplitDir; children: SerializedNode[] };
 
@@ -136,7 +136,7 @@ function collectLeaves(node: PaneNode): Array<{ id: number; cwd?: string }> {
   return node.children.flatMap(collectLeaves);
 }
 
-function hydrateTab(s: SerializedTab, spaceId: string, allocId: () => number): Tab | null {
+function hydrateTab(s: SerializedTab, spaceId: string, allocId: () => number): Tab {
   switch (s.kind) {
     case 'terminal': {
       const { tree, activeLeafId, firstLeafCwd } = hydrateTree(s.tree, allocId);
@@ -182,8 +182,6 @@ function hydrateTab(s: SerializedTab, spaceId: string, allocId: () => number): T
         title: basename(s.path),
         path: s.path,
       } satisfies MarkdownTab;
-    default:
-      return null;
   }
 }
 
@@ -205,20 +203,14 @@ export function freshTerminalTab(
   };
 }
 
+/** Rebuilds a Space's saved tabs, already validated (`parse.ts`), with fresh ids. */
 export function hydrateTabs(
   serialized: SerializedTab[],
   spaceId: string,
   allocId: () => number,
 ): Tab[] {
-  if (!Array.isArray(serialized)) return [];
-  const out: Tab[] = [];
-  for (const s of serialized) {
-    try {
-      const tab = hydrateTab(s, spaceId, allocId);
-      if (tab) out.push(typeof s.color === 'string' ? { ...tab, color: s.color } : tab);
-    } catch {
-      // Skip corrupted entries rather than failing the whole restore.
-    }
-  }
-  return out;
+  return serialized.map((s) => {
+    const tab = hydrateTab(s, spaceId, allocId);
+    return s.color === undefined ? tab : { ...tab, color: s.color };
+  });
 }
