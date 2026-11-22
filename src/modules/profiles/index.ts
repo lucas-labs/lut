@@ -5,11 +5,14 @@ export {
   deleteProfile,
   errorMessage,
   errorsByField,
+  importProfileIcon,
+  MAX_ICON_BYTES,
   newProfileId,
   readFailure,
   saveProfile,
   setDetectedOverride,
 } from './commands';
+export { BUILT_IN_ICONS, type BuiltInIcon, IMAGE_ICON_PREFIX, ProfileIcon } from './icons';
 export type {
   CloseBehavior,
   ProfileAppearance,

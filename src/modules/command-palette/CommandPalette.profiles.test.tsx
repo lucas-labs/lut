@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
 import type { ProfileEntry, ProfilesList } from '@/modules/profiles';
+import { type LutIconComponent, ShellCmdIcon, StarIcon } from '@lut/lut-icons';
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PaletteInitialMode, PaletteItem } from './types';
 
@@ -115,6 +117,21 @@ async function pressEnter() {
 }
 
 describe('the palette profiles page', () => {
+  it('shows each profile with its icon', async () => {
+    const [cmd, pwsh] = profiles.list?.profiles ?? [];
+    pwsh.tab = { ...pwsh.tab, icon: 'star' };
+    await render('profiles');
+    const drawing = (html: string) => [...html.matchAll(/\sd="([^"]+)"/g)].map((m) => m[1]).join(' ');
+    const icon = (Icon: LutIconComponent) => drawing(renderToStaticMarkup(createElement(Icon, { size: 'sm' })));
+    const shown = (name: string) =>
+      drawing(
+        [...document.querySelectorAll('[cmdk-item]')].find((el) => el.textContent?.includes(name))?.querySelector('svg')
+          ?.outerHTML ?? '',
+      );
+    expect(shown(pwsh.name)).toBe(icon(StarIcon));
+    expect(shown(cmd.name)).toBe(icon(ShellCmdIcon));
+  });
+
   it('opens on the profiles, the default first, hidden ones left out', async () => {
     await render('profiles');
     expect(input().placeholder).toBe('Search profiles...');

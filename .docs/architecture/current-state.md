@@ -202,10 +202,11 @@ for `app/hooks/useAppCloseGuard.ts`, `onWindowResized` for `components/WindowCon
 
 ### Commands
 
-95 commands are registered (3 of them only with the `bench` feature). E02-05 removed the 22 of the git agent-task
+97 commands are registered (3 of them only with the `bench` feature). E02-05 removed the 22 of the git agent-task
 backend, E02-18 removed `fs_grep`, `fs_glob` and `git_show_commit`, E06-06 removed the four `history_*` commands,
 E05-14, E05-15 and E05-16 removed the 26 that only the AI used, E14-11 removed `pty_has_foreground_job`, E14-18
-removed `wsl_default_distro`, and E14-05 added the eight `profiles_*` commands.
+removed `wsl_default_distro`, E14-05 added the eight `profiles_*` commands, and E15-03 added `profile_icon_import` and
+`profile_icon_read`.
 The tables below list each one with the frontend files that call it; for the wrapper objects the caller is written as
 `` `git.method` → users ``; `workspaceNative` is in `modules/workspace/native.ts`.
 
@@ -328,6 +329,8 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 | `profiles_detect`                | `profiles::commands` | **no caller**                   |
 | `profiles_set_detected_override` | `profiles::commands` | `modules/profiles/commands.ts`  |
 | `profiles_take_load_error`       | `profiles::store`    | `modules/profiles/loadError.ts` |
+| `profile_icon_import`            | `profiles::icons`    | `modules/profiles/commands.ts`  |
+| `profile_icon_read`              | `profiles::icons`    | `modules/profiles/commands.ts`  |
 
 #### control
 

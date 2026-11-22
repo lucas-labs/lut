@@ -4,11 +4,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { IS_WINDOWS } from '@/modules/platform';
 import type { CloseBehavior, ProfileEntry, ProfileEnvironment } from '@/modules/profiles';
-import { CopyIcon, DeleteIcon, TerminalIcon } from '@lut/lut-icons';
+import { CopyIcon, DeleteIcon } from '@lut/lut-icons';
 import { SettingRow } from '../../components/SettingRow';
 import { SettingsGroup } from '../../components/SettingsGroup';
 import { AppearanceGroup } from './AppearanceGroup';
-import { ReadOnlySetting, TextSetting } from './fields';
+import { FieldError, ReadOnlySetting, TextSetting } from './fields';
+import { IconPicker } from './IconPicker';
 import { ArgsEditor, EnvEditor } from './ListEditors';
 import { useProfileChanges } from './useProfileChanges';
 
@@ -55,7 +56,7 @@ export function ProfileForm({ entry, isDefault, distros, onSetDefault, onDuplica
   return (
     <div className="flex min-w-0 flex-col">
       <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
-        <TerminalIcon size="md" className="shrink-0 text-muted-foreground" />
+        <IconPicker entry={entry} onChoose={(icon) => void change((current) => ({ tab: { ...current.tab, icon } }))} />
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">
           <h2 className="truncate text-[15px] font-semibold">{entry.name}</h2>
           <code className="truncate font-mono text-[12px] text-muted-foreground">{commandLine(entry)}</code>
@@ -81,6 +82,9 @@ export function ProfileForm({ entry, isDefault, distros, onSetDefault, onDuplica
             <DeleteIcon size="sm" />
           </Button>
         ) : null}
+      </div>
+      <div className="mt-1.5 px-1 empty:hidden">
+        <FieldError code={errors['tab.icon']} />
       </div>
 
       {custom ? (

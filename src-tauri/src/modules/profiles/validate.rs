@@ -3,14 +3,15 @@ use std::fmt::{Display, Formatter};
 
 use serde::Serialize;
 
-use super::model::{ProfileEnvironment, TerminalProfile};
+use super::icons::is_valid_icon;
+use super::model::{ProfileEnvironment, ProfileTab, TerminalProfile};
 
 /// One problem with one field of a profile, for the UI to mark next to that field.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProfileError {
     pub profile_id: String,
-    /// camelCase path of the field: `name`, `executable`, `id`, or `env.<NAME>`.
+    /// camelCase path of the field: `name`, `executable`, `id`, `tab.icon`, or `env.<NAME>`.
     pub field: String,
     pub code: ProfileErrorCode,
 }
@@ -31,6 +32,8 @@ pub enum ProfileErrorCode {
     DuplicateId,
     /// Starts with `detected:`, which only detected profiles use.
     ReservedId,
+    /// Neither a built-in icon id nor the name of a copy lut keeps (`image:<name>`).
+    InvalidIcon,
 }
 
 impl ProfileError {
@@ -54,6 +57,7 @@ impl Display for ProfileError {
             ProfileErrorCode::InvalidEnvValue => "environment variable value is invalid",
             ProfileErrorCode::DuplicateId => "id is used by another profile",
             ProfileErrorCode::ReservedId => "id uses the prefix of detected profiles",
+            ProfileErrorCode::InvalidIcon => "icon is not a built-in icon or a stored image",
         };
         write!(
             f,
@@ -116,6 +120,9 @@ pub fn validate_profile(profile: &TerminalProfile) -> Vec<ProfileError> {
             ProfileErrorCode::EmptyExecutable,
         ));
     }
+    if let Some(error) = validate_tab(&profile.id, &profile.tab) {
+        errors.push(error);
+    }
     for (name, value) in &profile.env {
         let code = if !is_valid_env_name(name) {
             Some(ProfileErrorCode::InvalidEnvName)
@@ -131,6 +138,17 @@ pub fn validate_profile(profile: &TerminalProfile) -> Vec<ProfileError> {
         }
     }
     errors
+}
+
+/// The problem with a profile's tab settings, for the user's profiles and the changes to detected
+/// ones alike.
+pub fn validate_tab(profile_id: &str, tab: &ProfileTab) -> Option<ProfileError> {
+    let icon = tab.icon.as_deref()?;
+    (!is_valid_icon(icon)).then(|| ProfileError {
+        profile_id: profile_id.to_string(),
+        field: "tab.icon".into(),
+        code: ProfileErrorCode::InvalidIcon,
+    })
 }
 
 /// Every problem in a set of profiles: each profile's own, plus each repeat of an id already used.
@@ -259,6 +277,18 @@ mod tests {
                 ("env.LUT_CLI", ProfileErrorCode::ReservedEnvName),
                 ("env.lut_pane_id", ProfileErrorCode::ReservedEnvName),
             ]
+        );
+    }
+
+    #[test]
+    fn rejects_an_icon_that_is_neither_built_in_nor_stored() {
+        let mut p = profile("pwsh");
+        p.tab.icon = Some("shell-pwsh".into());
+        assert!(validate_profile(&p).is_empty());
+        p.tab.icon = Some(r"C:\icons\pwsh.png".into());
+        assert_eq!(
+            codes(&validate_profile(&p)),
+            [("tab.icon", ProfileErrorCode::InvalidIcon)]
         );
     }
 

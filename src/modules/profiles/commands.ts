@@ -10,9 +10,10 @@ export type ProfileErrorCode =
   | 'invalidEnvName'
   | 'reservedEnvName'
   | 'invalidEnvValue'
-  | 'duplicateId';
+  | 'duplicateId'
+  | 'invalidIcon';
 
-/** One refused field: `name`, `executable`, `id` or `env.<NAME>`. */
+/** One refused field: `name`, `executable`, `id`, `tab.icon` or `env.<NAME>`. */
 export type ProfileError = { profileId: string; field: string; code: ProfileErrorCode };
 
 /** The user's changes to a detected profile; each call replaces all of them. */
@@ -35,6 +36,7 @@ const ERROR_MESSAGES: Record<ProfileErrorCode, string> = {
   reservedEnvName: 'Variables starting with LUT_ are reserved.',
   invalidEnvValue: 'The value contains a character a variable cannot hold.',
   duplicateId: 'Another profile has the same id.',
+  invalidIcon: 'Choose one of the icons, or an image again.',
 };
 
 export function errorMessage(code: ProfileErrorCode): string {
@@ -84,6 +86,23 @@ export function deleteProfile(id: string): Promise<void> {
 
 export function setDetectedOverride(id: string, changes: DetectedOverride): Promise<void> {
   return invoke('profiles_set_detected_override', { id, changes });
+}
+
+/** Largest image a profile icon may be, as native checks it (`profiles/icons.rs`). */
+export const MAX_ICON_BYTES = 1024 * 1024;
+
+/** Copies an image into lut's profile icons and returns the copy's name, for `image:<name>`. */
+export async function importProfileIcon(file: File): Promise<string> {
+  const extension = file.name.slice(file.name.lastIndexOf('.') + 1).toLowerCase();
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  return invoke<string>('profile_icon_import', bytes, {
+    headers: { 'x-icon-extension': extension },
+  });
+}
+
+/** The bytes of a copy `importProfileIcon` made. */
+export function readProfileIcon(name: string): Promise<ArrayBuffer> {
+  return invoke<ArrayBuffer>('profile_icon_read', { name });
 }
 
 /** A fresh id for a profile the user creates; native reserves `detected:`. */

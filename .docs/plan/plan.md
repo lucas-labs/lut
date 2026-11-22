@@ -4601,10 +4601,10 @@ size: M
 **Acceptance criteria:**
 
 - [ ] Built-in icon set from the app's UI icon library; detected profiles get sensible defaults (pwsh, cmd, WSL distro, bash...).
-- [ ] User image files are loaded safely through the asset protocol with a scoped path; a missing file falls back to the default icon.
-- [ ] Icon shown in the picker, editor and tab.
+- [ ] A user image file is copied into lut's app config dir, so moving or deleting the original keeps the icon; the copy is read back by name only, from that folder; a missing copy falls back to the default icon without errors; copies no profile names are deleted at startup.
+- [ ] Icon shown in the picker, editor and tab; a terminal tab shows its active pane's profile icon, a private one the incognito icon.
 
-**Verification:** `pnpm test`; manual: set an image icon, delete the file, restart: default icon, no error dialog storm.
+**Verification:** `pnpm test`; manual: set an image icon, delete the original, restart: the icon stays; delete lut's copy, restart: default icon, no error dialog storm.
 
 ### E15-04 — Tab title and color per profile, shell title permission
 

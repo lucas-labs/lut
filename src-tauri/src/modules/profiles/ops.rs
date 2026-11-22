@@ -4,7 +4,7 @@ use super::detect::{self, is_detected_id};
 use super::launch::first_visible;
 use super::model::{DetectedOverride, TerminalProfile};
 use super::store::ProfilesFile;
-use super::validate::{validate_profiles, ProfileError};
+use super::validate::{validate_profiles, validate_tab, ProfileError};
 
 /// Why a profile command did nothing; the UI shows `Invalid` errors next to their fields.
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -86,6 +86,11 @@ pub fn set_detected_override(
 ) -> Result<(), ProfilesCommandError> {
     if !detected.iter().any(|p| p.id == id) {
         return Err(not_found(id));
+    }
+    if let Some(error) = validate_tab(id, &changes.tab) {
+        return Err(ProfilesCommandError::Invalid {
+            errors: vec![error],
+        });
     }
     if changes == DetectedOverride::default() {
         file.detected.remove(id);
@@ -259,6 +264,27 @@ mod tests {
             DetectedOverride::default(),
         )
         .unwrap();
+        assert!(f.detected.is_empty());
+    }
+
+    #[test]
+    fn a_detected_override_with_an_invalid_icon_is_rejected() {
+        let mut f = file(&[], None);
+        let mut changes = DetectedOverride::default();
+        changes.tab.icon = Some("C:\\icons\\cmd.png".into());
+        let error =
+            set_detected_override(&mut f, &detected(), "detected:cmd", changes).unwrap_err();
+        let ProfilesCommandError::Invalid { errors } = error else {
+            panic!("expected Invalid, got {error:?}");
+        };
+        assert_eq!(
+            (
+                errors[0].profile_id.as_str(),
+                errors[0].field.as_str(),
+                errors[0].code
+            ),
+            ("detected:cmd", "tab.icon", ProfileErrorCode::InvalidIcon)
+        );
         assert!(f.detected.is_empty());
     }
 

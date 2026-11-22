@@ -9,8 +9,9 @@ import { ALL_LANGUAGES, EXPOSED_LANGUAGES } from '@/modules/editor/lib/languageD
 import { resolveDisplayName } from '@/modules/editor/lib/languageResolver';
 import { FileIcon } from '@/modules/explorer/FileIcon';
 import { registerTabPresenter, type Tab, type TerminalTab, useNavigationStore } from '@/modules/navigation';
+import { ProfileIcon, useProfiles } from '@/modules/profiles';
 import { selectTabAgentStatus } from '@/modules/tabs';
-import { leafIds, ptyIdForLeaf, useAgentActivityStore } from '@/modules/terminal';
+import { findLeaf, leafIds, ptyIdForLeaf, useAgentActivityStore } from '@/modules/terminal';
 import {
   AlertFilledIcon,
   CheckmarkCircleIcon,
@@ -20,6 +21,7 @@ import {
   GlobeIcon,
   IncognitoIcon,
   SpinnerIcon,
+  TerminalIcon,
 } from '@lut/lut-icons';
 import { useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
@@ -34,10 +36,18 @@ function terminalPtyIds(tab: TerminalTab): number[] {
   return ptyIds;
 }
 
-/** A private terminal is marked by its icon; other terminals have none until profiles give them one. */
+/**
+ * A private terminal is marked by its icon; another shows the icon of its active pane's profile, the default one for
+ * a pane opened without a profile.
+ */
 function TerminalTabIcon({ tab }: { tab: Tab }) {
-  if (tab.kind !== 'terminal' || !tab.private) return null;
-  return <IncognitoIcon size="sm" className="shrink-0 text-muted-foreground" />;
+  const profiles = useProfiles();
+  if (tab.kind !== 'terminal') return null;
+  if (tab.private) return <IncognitoIcon size="sm" className="shrink-0 text-muted-foreground" />;
+  const id = findLeaf(tab.paneTree, tab.activeLeafId)?.profileId ?? profiles?.defaultProfileId;
+  const profile = profiles?.profiles.find((p) => p.id === id);
+  if (!profile) return <TerminalIcon size="sm" className="shrink-0 text-muted-foreground" />;
+  return <ProfileIcon profile={profile} className="shrink-0 text-muted-foreground" />;
 }
 
 /**

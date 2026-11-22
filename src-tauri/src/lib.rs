@@ -312,6 +312,8 @@ pub fn run() {
             modules::profiles::commands::profiles_set_default,
             modules::profiles::commands::profiles_set_detected_override,
             modules::profiles::commands::profiles_detect,
+            modules::profiles::icons::profile_icon_import,
+            modules::profiles::icons::profile_icon_read,
             pty::pty_open,
             pty::pty_write,
             pty::pty_stream_open,

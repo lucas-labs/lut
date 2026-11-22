@@ -40,9 +40,16 @@ const native = vi.hoisted(() => ({
   save: vi.fn(async (_profile: unknown) => {}),
   remove: vi.fn(async (_id: string) => {}),
   override: vi.fn(async (_id: string, _changes: unknown) => {}),
+  importIcon: vi.fn(async (_bytes: unknown, _extension: string) => '0123456789abcdef0123456789abcdef.png'),
 }));
 vi.mock('@tauri-apps/api/core', () => ({
-  invoke: (command: string, args: { profile?: unknown; id?: string; changes?: unknown }) => {
+  invoke: (
+    command: string,
+    args: { profile?: unknown; id?: string; changes?: unknown },
+    options?: { headers: Record<string, string> },
+  ) => {
+    if (command === 'profile_icon_import') return native.importIcon(args, options?.headers['x-icon-extension'] ?? '');
+    if (command === 'profile_icon_read') return Promise.reject(new Error('no copies in tests'));
     if (command === 'profiles_save') return native.save(args.profile);
     if (command === 'profiles_delete') return native.remove(args.id ?? '');
     if (command === 'profiles_set_detected_override') return native.override(args.id ?? '', args.changes);
@@ -127,6 +134,7 @@ beforeEach(() => {
   native.save.mockReset().mockImplementation(async (saved) => listSaved(saved));
   native.remove.mockReset().mockResolvedValue(undefined);
   native.override.mockReset().mockResolvedValue(undefined);
+  native.importIcon.mockClear();
   toasts.error.mockClear();
   host = document.createElement('div');
   document.body.append(host);
@@ -704,5 +712,140 @@ describe('profile actions', () => {
     await act(async () => answer());
     await settle();
     expect(document.querySelector('[role="dialog"]')).toBeNull();
+  });
+});
+
+describe('a profile icon', () => {
+  const openIcons = async () => {
+    await act(async () => buttonNamed(host, 'Change icon').click());
+    return document.querySelector('[data-slot="popover-content"]') as HTMLElement;
+  };
+  /** Picks a file in "Choose image…", as the file dialog would. */
+  async function pickImage(popover: HTMLElement, file: File) {
+    const input = popover.querySelector('input[type="file"]') as HTMLInputElement;
+    Object.defineProperty(input, 'files', { configurable: true, value: [file] });
+    await act(async () => input.dispatchEvent(new Event('change', { bubbles: true })));
+    await settle();
+  }
+
+  it('saves a built-in icon chosen for a custom profile', async () => {
+    await render();
+    await choose('Python');
+    const popover = await openIcons();
+    await act(async () => buttonNamed(popover, 'Server').click());
+    await settle();
+    expect(native.save).toHaveBeenCalledWith({ ...PYTHON_SAVED, tab: { allowShellTitle: true, icon: 'server' } });
+    expect(document.querySelector('[data-slot="popover-content"]')).toBeNull();
+  });
+
+  it('saves the icon of a detected profile in its whole override', async () => {
+    await render();
+    const popover = await openIcons();
+    await act(async () => buttonNamed(popover, 'Rocket').click());
+    await settle();
+    expect(native.override).toHaveBeenCalledWith('detected:pwsh', {
+      hidden: false,
+      appearance: {},
+      tab: { allowShellTitle: true, icon: 'rocket' },
+    });
+  });
+
+  it('marks the chosen icon and goes back to the default one', async () => {
+    profiles.list = {
+      ...LIST,
+      profiles: LIST.profiles.map((e) => (e.id === 'custom:py' ? { ...e, tab: { ...e.tab, icon: 'star' } } : e)),
+    };
+    await render();
+    await choose('Python');
+    const popover = await openIcons();
+    expect(buttonNamed(popover, 'Star').getAttribute('aria-pressed')).toBe('true');
+    await act(async () => buttonNamed(popover, 'Reset to default').click());
+    await settle();
+    const [saved] = native.save.mock.calls[0] as [{ tab: { icon?: string } }];
+    expect(saved.tab.icon).toBeUndefined();
+  });
+
+  it('offers no reset without a chosen icon', async () => {
+    await render();
+    const popover = await openIcons();
+    expect(buttonNamed(popover, 'Reset to default').disabled).toBe(true);
+  });
+
+  it('finds icons by name', async () => {
+    await render();
+    const popover = await openIcons();
+    await type(popover.querySelector('input[aria-label="Search icons"]') as HTMLInputElement, 'git');
+    const labels = [...popover.querySelectorAll('button[aria-pressed]')].map((b) => b.getAttribute('aria-label'));
+    expect(labels).toEqual(['Git Bash']);
+    await type(popover.querySelector('input[aria-label="Search icons"]') as HTMLInputElement, 'zzz');
+    expect(popover.textContent).toContain('No icons match.');
+  });
+
+  it('copies a chosen image and saves its copy as the icon', async () => {
+    await render();
+    await choose('Python');
+    await pickImage(await openIcons(), new File(['<svg/>'], 'logo.PNG', { type: 'image/png' }));
+    expect(native.importIcon).toHaveBeenCalledWith(expect.any(Uint8Array), 'png');
+    expect(native.save).toHaveBeenCalledWith({
+      ...PYTHON_SAVED,
+      tab: { allowShellTitle: true, icon: 'image:0123456789abcdef0123456789abcdef.png' },
+    });
+  });
+
+  it('keeps an icon chosen while an image is copied, not the image', async () => {
+    let copied: (name: string) => void = () => {};
+    native.importIcon.mockImplementationOnce(() => new Promise<string>((resolve) => (copied = resolve)));
+    await render();
+    await choose('Python');
+    const popover = await openIcons();
+    await pickImage(popover, new File(['x'], 'logo.png', { type: 'image/png' }));
+    await act(async () => buttonNamed(popover, 'Star').click());
+    await settle();
+    await act(async () => copied('0123456789abcdef0123456789abcdef.png'));
+    await settle();
+    expect(native.save).toHaveBeenCalledTimes(1);
+    expect(native.save).toHaveBeenCalledWith({ ...PYTHON_SAVED, tab: { allowShellTitle: true, icon: 'star' } });
+  });
+
+  it('keeps an icon chosen after leaving the profile while an image is copied', async () => {
+    let copied: (name: string) => void = () => {};
+    native.importIcon.mockImplementationOnce(() => new Promise<string>((resolve) => (copied = resolve)));
+    await render();
+    await choose('Python');
+    await pickImage(await openIcons(), new File(['x'], 'logo.png', { type: 'image/png' }));
+    await choose('PowerShell');
+    await choose('Python');
+    await act(async () => buttonNamed(await openIcons(), 'Star').click());
+    await settle();
+    await act(async () => copied('0123456789abcdef0123456789abcdef.png'));
+    await settle();
+    expect(native.save).toHaveBeenCalledTimes(1);
+    expect(native.save).toHaveBeenCalledWith({ ...PYTHON_SAVED, tab: { allowShellTitle: true, icon: 'star' } });
+  });
+
+  it('tells why an image cannot be the icon, copying nothing', async () => {
+    await render();
+    const popover = await openIcons();
+    await pickImage(popover, new File([new Uint8Array(1024 * 1024 + 1)], 'huge.png', { type: 'image/png' }));
+    expect(popover.textContent).toContain('huge.png: images are limited to 1 MB.');
+    await pickImage(popover, new File(['MZ'], 'tool.exe'));
+    expect(popover.textContent).toContain('tool.exe: choose a PNG, JPEG, GIF, WebP, SVG or ICO image.');
+    native.importIcon.mockRejectedValueOnce(new Error('disk full'));
+    await pickImage(popover, new File(['x'], 'ok.png', { type: 'image/png' }));
+    expect(popover.textContent).toContain('ok.png: disk full');
+    expect(native.save).not.toHaveBeenCalled();
+    expect(native.override).not.toHaveBeenCalled();
+  });
+
+  it('tells an icon native refused under the header', async () => {
+    native.save.mockRejectedValueOnce({
+      kind: 'invalid',
+      errors: [{ profileId: 'custom:py', field: 'tab.icon', code: 'invalidIcon' }],
+    });
+    await render();
+    await choose('Python');
+    await act(async () => buttonNamed(await openIcons(), 'Server').click());
+    await settle();
+    expect(host.textContent).toContain('Choose one of the icons, or an image again.');
   });
 });

@@ -11,11 +11,11 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { FileIcon } from '@/modules/explorer/FileIcon';
-import { readProfilesAgain, useProfiles, useProfilesRead, visibleProfiles } from '@/modules/profiles';
+import { ProfileIcon, readProfilesAgain, useProfiles, useProfilesRead, visibleProfiles } from '@/modules/profiles';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { getBindingTokens, type KeyBinding, type ShortcutId, ShortcutKeys, SHORTCUTS } from '@/modules/shortcuts';
 import { listBuiltinThemes, useTheme } from '@/modules/theme';
-import { AlertIcon, ArrowTurnBackIcon, CheckmarkIcon, CommandIcon, RefreshIcon, TerminalIcon } from '@lut/lut-icons';
+import { AlertIcon, ArrowTurnBackIcon, CheckmarkIcon, CommandIcon, RefreshIcon } from '@lut/lut-icons';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { COMMAND_GROUPS } from './commands';
 import { CONTENT_SEARCH_MIN_QUERY, useContentSearch } from './hooks/useContentSearch';
@@ -332,7 +332,7 @@ export function CommandPalette({
                     onSelect={() => openProfile(p.id)}
                     className="text-[12.5px]"
                   >
-                    <TerminalIcon size="sm" />
+                    <ProfileIcon profile={p} />
                     <span className="truncate">{p.name}</span>
                     {p.id === profilesList?.defaultProfileId ? (
                       <Badge variant="soft" className="ml-auto">

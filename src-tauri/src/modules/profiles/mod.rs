@@ -6,6 +6,7 @@
 
 pub mod commands;
 mod detect;
+pub mod icons;
 mod launch;
 mod model;
 pub mod ops;
