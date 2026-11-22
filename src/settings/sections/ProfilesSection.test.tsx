@@ -53,6 +53,7 @@ const toasts = vi.hoisted(() => ({ error: vi.fn() }));
 vi.mock('sonner', () => ({ toast: toasts }));
 
 const { ProfilesSection } = await import('./ProfilesSection');
+const { forgetProfileWriters } = await import('./profiles/useProfileChanges');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -113,6 +114,7 @@ function listSaved(saved: unknown) {
 }
 
 beforeEach(() => {
+  forgetProfileWriters();
   profiles.list = structuredClone(LIST);
   profiles.setDefault.mockClear();
   native.save.mockReset().mockImplementation(async (saved) => listSaved(saved));
@@ -279,6 +281,24 @@ describe('a custom profile', () => {
     expect(native.save).toHaveBeenLastCalledWith({ ...PYTHON_SAVED, args: ['-c', '', 'next'] });
   });
 
+  it('saves a cleared argument as an empty one, however it was added', async () => {
+    await render();
+    await choose('Python');
+    const args = rowOf('Arguments') as HTMLElement;
+    await act(async () => buttonNamed(args, 'Add argument').click());
+    const added = args.querySelector('[aria-label="Argument 2"]') as HTMLInputElement;
+    await type(added, 'x');
+    await leave(added);
+    expect(native.save).toHaveBeenLastCalledWith({ ...PYTHON_SAVED, args: ['-q', 'x'] });
+    await type(added, '');
+    await leave(added);
+    expect(native.save).toHaveBeenLastCalledWith({ ...PYTHON_SAVED, args: ['-q', ''] });
+    const loaded = args.querySelector('[aria-label="Argument 1"]') as HTMLInputElement;
+    await type(loaded, '');
+    await leave(loaded);
+    expect(native.save).toHaveBeenLastCalledWith({ ...PYTHON_SAVED, args: ['', ''] });
+  });
+
   it('unsets a variable', async () => {
     await render();
     await choose('Python');
@@ -362,6 +382,34 @@ describe('a custom profile', () => {
     await settle();
     expect(native.save).toHaveBeenCalledTimes(2);
     expect(native.save).toHaveBeenLastCalledWith({ ...PYTHON_SAVED, name: 'Py', closeBehavior: 'ask' });
+  });
+
+  it('does not take a list older than its last save as the base of the next one', async () => {
+    let answerName: () => void = () => {};
+    let answerClose: () => void = () => {};
+    native.save
+      .mockImplementationOnce(() => new Promise<void>((resolve) => (answerName = resolve)))
+      .mockImplementationOnce(() => new Promise<void>((resolve) => (answerClose = resolve)));
+    await render();
+    await choose('Python');
+    await type(inputOf('Name'), 'Py');
+    await act(async () => {
+      inputOf('Name').dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+    });
+    await pick('When the program exits', 'Ask');
+    await act(async () => answerName());
+    // The list read after the name save arrives while the close behavior save is on its way.
+    listSaved({ ...PYTHON_SAVED, name: 'Py' });
+    await settle();
+    await act(async () => answerClose());
+    // An edit before the list shows the close behavior.
+    await pick('Cursor style', 'Block');
+    expect(native.save).toHaveBeenLastCalledWith({
+      ...PYTHON_SAVED,
+      name: 'Py',
+      closeBehavior: 'ask',
+      appearance: { cursorStyle: 'block' },
+    });
   });
 
   it('sets the close behavior', async () => {

@@ -40,21 +40,23 @@ const blurOnEnter = (event: React.KeyboardEvent<HTMLInputElement>) => {
   if (event.key === 'Enter') event.currentTarget.blur();
 };
 
-type Arg = { value: string };
+/** One argument; `listed` once it is part of the profile, so an empty one is an argument, not an unused field. */
+type Arg = { value: string; listed: boolean };
 
 const sameArgs = (a: Arg[], b: Arg[]) => a.length === b.length && a.every((arg, i) => arg.value === b[i].value);
 
 /**
- * The program's arguments, one field each. A field added here and left empty is not saved; an empty argument
- * already saved is one, kept until it is removed.
+ * The program's arguments, one field each. A field added here and left empty is not saved; once an argument is
+ * part of the profile, clearing it saves an empty argument in its place, until it is removed.
  */
 export function ArgsEditor({ args, onCommit }: { args: string[]; onCommit: (args: string[]) => void }) {
-  const saved = args.map((value) => ({ value }));
+  const saved = args.map((value) => ({ value, listed: true }));
   const { rows, setRows, add, markSent } = useRows(saved, sameArgs);
 
   const commit = (next: Keyed<Arg>[]) => {
-    const kept = next.filter((arg) => arg.value !== '' || !arg.key.startsWith('added-'));
+    const kept = next.filter((arg) => arg.value !== '' || arg.listed);
     if (sameArgs(kept, saved)) return;
+    setRows(next.map((arg) => (kept.includes(arg) ? { ...arg, listed: true } : arg)));
     markSent(kept);
     onCommit(kept.map((arg) => arg.value));
   };
@@ -96,7 +98,7 @@ export function ArgsEditor({ args, onCommit }: { args: string[]; onCommit: (args
         ) : undefined
       }
     >
-      <Button variant="outline" onClick={() => add({ value: '' })}>
+      <Button variant="outline" onClick={() => add({ value: '', listed: false })}>
         <PlusIcon size="sm" />
         Add argument
       </Button>

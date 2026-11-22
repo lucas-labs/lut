@@ -29,11 +29,29 @@ const touches = (field: string, keys: string[]) =>
 type Writer = {
   /** The profile as last saved, or as last listed. */
   latest: Edited;
-  /** The listed entry `latest` last took. */
+  /** The last listed entry seen. */
   listed: ProfileEntry;
+  /** A save succeeded that the list has not shown yet: a listed entry until then is older than `latest`. */
+  awaiting: boolean;
   pending: number;
   queue: Promise<void>;
 };
+
+/** A value with its object keys sorted and undefined fields left out, to compare two profiles. */
+function canonical(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (typeof value !== 'object' || value === null) return value;
+  const fields = value as Record<string, unknown>;
+  return Object.fromEntries(
+    Object.keys(fields)
+      .sort()
+      .filter((key) => fields[key] !== undefined)
+      .map((key) => [key, canonical(fields[key])]),
+  );
+}
+
+const sameProfile = (a: Edited, b: Edited) =>
+  JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
 
 /**
  * One queue per profile, shared by every form that shows it: choosing another profile and coming back remounts the
@@ -41,17 +59,34 @@ type Writer = {
  */
 const writers = new Map<string, Writer>();
 
-/** The profile's writer, which takes a newly listed entry (a save read back, or a change made elsewhere) once idle. */
+/** Forgets every writer, for tests that list the same profiles again from scratch. */
+export function forgetProfileWriters(): void {
+  writers.clear();
+}
+
+/**
+ * The profile's writer, told of each listed entry. An entry that shows the last save confirms it; while a save is
+ * unconfirmed, an entry listed before it is ignored. With every save confirmed and none on its way, an entry that
+ * differs is a change made elsewhere, which becomes the base of the next save.
+ */
 function writerFor(entry: ProfileEntry): Writer {
   const writer = writers.get(entry.id);
   if (!writer) {
-    const created = { latest: edited(entry), listed: entry, pending: 0, queue: Promise.resolve() };
+    const created = {
+      latest: edited(entry),
+      listed: entry,
+      awaiting: false,
+      pending: 0,
+      queue: Promise.resolve(),
+    };
     writers.set(entry.id, created);
     return created;
   }
-  if (writer.pending === 0 && writer.listed !== entry) {
-    writer.latest = edited(entry);
+  if (writer.listed !== entry) {
     writer.listed = entry;
+    const shown = edited(entry);
+    if (sameProfile(shown, writer.latest)) writer.awaiting = false;
+    else if (writer.pending === 0 && !writer.awaiting) writer.latest = shown;
   }
   return writer;
 }
@@ -92,6 +127,7 @@ export function useProfileChanges(entry: ProfileEntry) {
             await saveProfile(profile);
           }
           writer.latest = next;
+          writer.awaiting = true;
           setErrors((current) =>
             Object.fromEntries(Object.entries(current).filter(([field]) => !touches(field, keys))),
           );
