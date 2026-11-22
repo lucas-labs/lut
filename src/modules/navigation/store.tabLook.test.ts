@@ -31,6 +31,12 @@ describe('the title a pane’s shell set', () => {
     expect(store().tabs).toBe(tabs);
   });
 
+  it('changes nothing when a pane without a title is told it has none', () => {
+    const tabs = store().tabs;
+    store().setLeafShellTitle(tab(1).activeLeafId, undefined);
+    expect(store().tabs).toBe(tabs);
+  });
+
   it('is not carried to a new split', () => {
     store().setLeafShellTitle(tab(1).activeLeafId, 'htop');
     const second = store().splitActivePane(1, 'row');

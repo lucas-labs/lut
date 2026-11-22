@@ -253,7 +253,8 @@ export function useGhosttyTerminalSession({
       session.callbacks.onSearchReady?.(session.surface.searchController());
     }
     if (session.lastCwd !== null) session.callbacks.onCwd?.(session.lastCwd);
-    if (session.lastTitle !== null) session.callbacks.onTitle?.(session.lastTitle);
+    // Also a cleared title: it may have been cleared while the pane was detached. The store ignores an unchanged one.
+    session.callbacks.onTitle?.(session.lastTitle);
     return () => {
       if (session.container === node) {
         session.cancelFocusRetry?.();
