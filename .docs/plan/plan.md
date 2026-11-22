@@ -4689,8 +4689,8 @@ refs: [ADR-006, F4, 6.4, 6.5, .docs/plan/analysis/state-settings.md, .docs/plan/
 
 Spaces already save their live state (decision 26: no presets) in `lut-spaces.json`: tabs, pane tree, cwd and profile
 per pane, and the active tab and pane, with fresh runtime ids at load. This epic validates that file on load, adds the
-split ratios, and finishes how Spaces behave: the active tab per Space, tools that follow the focused pane, and empty
-Spaces. lut has no releases: a shape change drops the old data, nothing is migrated.
+split ratios, and finishes how Spaces behave: the active tab per Space, tools that follow the focused pane, empty
+Spaces and the ephemeral Space, which is never saved. lut has no releases: a shape change drops the old data, nothing is migrated.
 
 ### E16-03 — Validate the spaces store on load
 
@@ -4840,11 +4840,49 @@ and `closeTab` refuses, so the code everywhere assumes every space has a tab and
 
 **Verification:** `pnpm test`; manual: close every tab of a space, switch away and back, restart.
 
+### E16-15 — Ephemeral Space: a Space that is never saved
+
+```yaml
+id: E16-15
+depends-on: [E16-03]
+refs: [PRJ-018, PRJ-016, .docs/plan/analysis/decisions.md]
+covers: [PRJ-018]
+type: task
+scope: ui
+size: M
+```
+
+**Goal:** Decision 31: a Space like any other that is never saved, so lut can start the way Windows Terminal does, with
+one terminal in a chosen folder. Nothing about it goes to `lut-spaces.json`: not its tabs, not that it exists, not that
+it was renamed, recoloured, moved or deleted. It is not a private tab: a private tab is one unsaved tab in any Space,
+with its own icon; the ephemeral Space's tabs have no icon.
+
+**Acceptance criteria:**
+
+- [ ] While its setting is on (the default), every start creates the ephemeral Space first in the Space list, from its
+      settings, with one terminal of the default profile, and makes it the active Space (E17-07 adds the other startup
+      modes). "Default" is never created while it is on, even with no saved Space.
+- [ ] The terminal opens in the folder lut was opened with, else the ephemeral Space's folder setting, else the
+      default profile's starting directory.
+- [ ] During the session it behaves like any other Space: it can be renamed, recoloured, moved in the list, emptied or
+      deleted. None of it is saved: the next start creates it again from its settings.
+- [ ] A tab moved into it stops being saved; a tab moved out of it is saved with its new Space.
+- [ ] Settings has the on/off switch and what a Space can set for the ephemeral one (today name, colour and folder),
+      with the existing settings controls. Changes apply at the next start; nothing changes in the running app.
+- [ ] The Space list marks it as ephemeral, per the user's design.
+- [ ] Tests: start with it on and no saved Space, on with saved Spaces (it is first and active), off with no saved Space
+      ("Default" is created), the folder order, nothing of it in the saved data, a tab moved in and out.
+
+**Verification:** `pnpm test`; manual: work in the ephemeral Space, rename it and open tabs, restart: it comes back
+fresh from its settings; open lut with a folder: its terminal opens there; turn it off, restart: it is gone.
+
+**Notes:** the mark in the Space list waits for the user's design.
+
 ### E16-11 — Close-out: spaces model and persistence
 
 ```yaml
 id: E16-11
-depends-on: [E16-03, E16-05, E16-12, E16-13, E16-14]
+depends-on: [E16-03, E16-05, E16-12, E16-13, E16-14, E16-15]
 refs: [F4]
 covers: []
 type: closeout
@@ -4997,31 +5035,39 @@ size: M
 - [ ] Boot reads the session record and restores each open space through the orchestrator; the active space and its active tab are focused.
 - [ ] No command is relaunched during the P0 restore; panes open a shell in the saved cwd.
 - [ ] A space that fails to restore is reported and skipped; the others still open.
-- [ ] An empty or missing session starts with the default space.
+- [ ] An empty or missing session starts with the "Default" space, or only the ephemeral Space while it is on (E16-15).
 
 **Verification:** `pnpm test` (boot restore integration test); manual: open two spaces with different layouts, quit, relaunch → both restored with the same active space (13.2:20).
 
-### E17-07 — Startup mode setting: restore last session, default space or empty terminal
+### E17-07 — Startup mode setting: restore last session, a chosen space or the ephemeral Space
 
 ```yaml
 id: E17-07
-depends-on: [E17-06]
-refs: [PRJ-016, F4:7, .docs/plan/analysis/proposal.md]
+depends-on: [E17-06, E16-15]
+refs: [PRJ-016, PRJ-018, F4:7, .docs/plan/analysis/proposal.md, .docs/plan/analysis/decisions.md]
 covers: [PRJ-016, F4:7]
 type: task
 scope: ui
 size: S
 ```
 
-**Goal:** PRJ-016 defines three startup behaviours (IR-28): restore the last session (default), open a default space, or start with an empty terminal. E17-06 implements only the first; this issue adds the setting and the other two paths. The settings control is added by E18-07.
+**Goal:** PRJ-016 defines three startup behaviours: restore the last session, open a chosen space, or open the ephemeral
+Space (E16-15), which replaces IR-28's empty terminal (decision 31). E17-06 implements the first and E16-15 opens the
+ephemeral Space at every start; this issue adds the setting and the choice between them. The settings control is added
+by E18-07.
 
 **Acceptance criteria:**
 
-- [ ] Preferences `startupMode: "restoreLast" | "defaultSpace" | "emptyTerminal"` (default `restoreLast`) and `defaultSpaceId`, schema-validated; unknown values fall back to the default.
-- [ ] Boot honours the mode: `defaultSpace` opens only that space (missing or archived → falls back to an empty terminal with a reported warning); `emptyTerminal` opens one tab with the default profile and restores nothing.
-- [ ] Tests for each mode and for the missing-default-space fallback.
+- [ ] Preferences `startupMode: "restoreLast" | "defaultSpace" | "ephemeralSpace"` (default `ephemeralSpace`) and
+      `defaultSpaceId`, validated; unknown values fall back to the default.
+- [ ] Boot honours the mode: `restoreLast` reopens the last session, `defaultSpace` opens only that space and
+      `ephemeralSpace` makes the ephemeral Space active. The ephemeral Space is created whatever the mode while it is on.
+- [ ] `ephemeralSpace` with the ephemeral Space off starts as `restoreLast`. A missing or archived `defaultSpaceId`
+      opens the ephemeral Space while it is on, else starts as `restoreLast`, with a reported warning.
+- [ ] Opening lut with a folder makes the ephemeral Space active, in that folder, whatever the mode, while it is on.
+- [ ] Tests for each mode, the two fallbacks and the launch folder.
 
-**Verification:** `pnpm test`; manual: set each mode in the settings file, relaunch.
+**Verification:** `pnpm test`; manual: set each mode in the settings file, relaunch; open lut with a folder.
 
 ### E17-08 — Open other saved spaces and handle live instances
 
@@ -5401,7 +5447,7 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] A startup section offers the three `startupMode` values of E17-07; choosing "default space" shows a space picker (archived spaces excluded).
+- [ ] A startup section offers the `startupMode` values of E17-07, the ephemeral Space only while it is on; choosing "default space" shows a space picker (archived spaces excluded).
 - [ ] The global relaunch switch of E17-14 is shown in the same section, with a warning that running command lines are saved locally to relaunch them and may contain secrets (decision 28).
 - [ ] Changes are saved through the settings store and apply at the next launch; matches the E11-03 design.
 - [ ] Component tests for each mode and for the space picker.

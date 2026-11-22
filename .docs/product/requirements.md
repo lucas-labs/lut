@@ -69,6 +69,7 @@ columns are out of date.
 | PRJ-015 | P1       | Exportar/importar spaces                  | E23-03                                                                                                                                                   |                |       |
 | PRJ-016 | P0       | Restaurar la última sesión al iniciar lut | E17-01, E17-07, E18-07                                                                                                                                   |                |       |
 | PRJ-017 | P0       | Abrir otros spaces desde la app           | E17-08                                                                                                                                                   |                |       |
+| PRJ-018 | P0       | Space efímero                             | E16-15                                                                                                                                                   |                |       |
 
 ## Interface and customisation (UX, §3.4)
 

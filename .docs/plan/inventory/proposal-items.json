@@ -272,6 +272,12 @@
       "text": "P0 Abrir otros spaces desde la app"
     },
     {
+      "id": "PRJ-018",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P0 Space efímero"
+    },
+    {
       "id": "UX-001",
       "section": "3",
       "kind": "requirement",
