@@ -64,6 +64,16 @@ describe('GhosttySemanticEventRouter', () => {
     expect(onCwd.mock.calls).toEqual([['/home/me']]);
   });
 
+  it('routes the titles the shell and the programs it runs set (OSC 0/2)', () => {
+    const onTitle = vi.fn();
+    const router = new GhosttySemanticEventRouter({ onTitle });
+    const cmd = 'C:\\WINDOWS\\system32\\cmd.exe';
+    router.handle({ type: 'title', title: cmd });
+    router.handle({ type: 'end-of-input' });
+    router.handle({ type: 'title', title: 'vim notes.md' });
+    expect(onTitle.mock.calls).toEqual([[cmd], ['vim notes.md']]);
+  });
+
   it("says whether a prompt's shell can report that a command started", () => {
     const onPromptEnd = vi.fn();
     const router = new GhosttySemanticEventRouter({ onPromptEnd });

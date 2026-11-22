@@ -453,6 +453,24 @@ html *::-webkit-scrollbar {
   animation: lut-tab-in var(--dur-base) var(--ease-premium);
 }
 
+/* A tab the user coloured (E15-04, E11-04 design): `--tab-color` tints it, more on hover and while active. The
+ * active tab of the strip fades into the workspace below it. Outside a layer, these win over the cell's utilities. */
+[data-tab-color] {
+  background: color-mix(in srgb, var(--tab-color) 8%, transparent);
+}
+[data-tab-color]:hover {
+  background: color-mix(in srgb, var(--tab-color) 10%, var(--accent));
+}
+[data-tab-color][data-orientation='horizontal'][aria-selected='true'] {
+  background: linear-gradient(
+    color-mix(in srgb, var(--tab-color) 12%, var(--background)),
+    var(--background)
+  );
+}
+[data-tab-color][data-orientation='vertical'][aria-selected='true'] {
+  background: color-mix(in srgb, var(--tab-color) 12%, var(--accent));
+}
+
 /* File icon colours (E10-18). The icon engine draws each Catppuccin colour as
  * `var(--file-icon-<name>, <its own colour>)`; the "File icon colors" setting
  * picks what these point at through `data-file-icons` on the root. Theme is the

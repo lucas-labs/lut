@@ -100,12 +100,6 @@ pub enum CursorStyle {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProfileTab {
-    /// Initial title.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub title: Option<String>,
-    /// Accent colour.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub color: Option<String>,
     /// A built-in icon id or an image path.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub icon: Option<String>,
@@ -121,8 +115,6 @@ fn allow_shell_title_default() -> bool {
 impl Default for ProfileTab {
     fn default() -> Self {
         Self {
-            title: None,
-            color: None,
             icon: None,
             allow_shell_title: allow_shell_title_default(),
         }
@@ -190,8 +182,6 @@ mod tests {
                 }),
             },
             tab: ProfileTab {
-                title: Some("ubuntu".into()),
-                color: Some("#e95420".into()),
                 icon: Some("linux".into()),
                 allow_shell_title: false,
             },
@@ -225,8 +215,6 @@ mod tests {
                     "padding": { "top": 4, "right": 8, "bottom": 4, "left": 8 }
                 },
                 "tab": {
-                    "title": "ubuntu",
-                    "color": "#e95420",
                     "icon": "linux",
                     "allowShellTitle": false
                 },

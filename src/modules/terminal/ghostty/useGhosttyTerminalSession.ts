@@ -75,6 +75,7 @@ type Callbacks = {
   onSearchReady?: (search: TerminalSearchController) => void;
   onExit?: (code: number) => void;
   onCwd?: (cwd: string) => void;
+  onTitle?: (title: string | null) => void;
   onProfile?: (profileId: string | undefined) => void;
 };
 
@@ -96,6 +97,8 @@ type GhosttySession = {
   /** The profile the terminal opens with; none is the default one. Kept across restarts. */
   profileId: string | undefined;
   lastCwd: string | null;
+  /** The last title the shell set (OSC 0/2), trimmed; null when it set none or an empty one. */
+  lastTitle: string | null;
   model: GhosttyTerminalModelApi | null;
   surface: GhosttySurface | null;
   surfaceOptions: GhosttySurfaceBaseOptions | null;
@@ -163,6 +166,8 @@ type Options = {
   /** The pane's resolved appearance; the terminal starts once it is known. */
   appearance: PaneAppearance | null;
   onCwd?: (cwd: string) => void;
+  /** The title the shell set (OSC 0/2); null when it cleared it or the terminal started again. */
+  onTitle?: (title: string | null) => void;
   /** The profile that opened, so the pane keeps it. */
   onProfile?: (profileId: string | undefined) => void;
   onSearchReady?: (search: TerminalSearchController) => void;
@@ -182,6 +187,7 @@ export function useGhosttyTerminalSession({
   appearance,
   onSearchReady,
   onCwd,
+  onTitle,
   onProfile,
 }: Options) {
   const [model, setModel] = useState<GhosttyTerminalModelApi | null>(null);
@@ -217,6 +223,7 @@ export function useGhosttyTerminalSession({
     onSearchReady?.(search),
   );
   const reportCwd = useEffectEvent((cwd: string) => onCwd?.(cwd));
+  const reportTitle = useEffectEvent((title: string | null) => onTitle?.(title));
   const reportProfile = useEffectEvent((id: string | undefined) => onProfile?.(id));
   const initialCwdRef = useRef(initialCwd);
   const initialProfileRef = useRef(profileId);
@@ -237,6 +244,7 @@ export function useGhosttyTerminalSession({
       onSearchReady: (search) => reportSearchReady(search),
       onExit: setExitCode,
       onCwd: (cwd) => reportCwd(cwd),
+      onTitle: (title) => reportTitle(title),
       onProfile: (id) => reportProfile(id),
     };
     setError(sessionFailure(session));
@@ -245,6 +253,8 @@ export function useGhosttyTerminalSession({
       session.callbacks.onSearchReady?.(session.surface.searchController());
     }
     if (session.lastCwd !== null) session.callbacks.onCwd?.(session.lastCwd);
+    // Also a cleared title: it may have been cleared while the pane was detached. The store ignores an unchanged one.
+    session.callbacks.onTitle?.(session.lastTitle);
     return () => {
       if (session.container === node) {
         session.cancelFocusRetry?.();
@@ -558,6 +568,10 @@ async function respawnGhosttySession(
   session.commandRunning = false;
   session.commandTracked = false;
   session.lastCwd = null;
+  if (session.lastTitle !== null) {
+    session.lastTitle = null;
+    session.callbacks.onTitle?.(null);
+  }
   session.alternateScreen = false;
   session.barInset = 0;
   session.initialCwd = launch.cwd ?? session.initialCwd;
@@ -600,6 +614,7 @@ function ensureSession(
     initialCwd,
     profileId,
     lastCwd: null,
+    lastTitle: null,
     model: null,
     surface: null,
     surfaceOptions: null,
@@ -725,6 +740,12 @@ async function initializeSessionGeneration(
       if (session.lastCwd === cwd) return;
       session.lastCwd = cwd;
       session.callbacks.onCwd?.(cwd);
+    },
+    onTitle: (raw) => {
+      const title = raw.trim() || null;
+      if (session.lastTitle === title) return;
+      session.lastTitle = title;
+      session.callbacks.onTitle?.(title);
     },
     onClipboard: (text) => {
       oscClipboard.enqueue(text);

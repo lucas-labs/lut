@@ -190,3 +190,33 @@ describe('hydrateTabs', () => {
     expect(out.map((t) => t.title)).toEqual(['foo.ts', 'localhost:5173', 'README.md']);
   });
 });
+
+describe('tab colours', () => {
+  it('keeps a terminal tab colour and an editor tab colour across a restore', () => {
+    const editor: Tab = {
+      id: 2,
+      kind: 'editor',
+      spaceId: 's1',
+      title: 'notes.md',
+      path: '/a/notes.md',
+      dirty: false,
+      preview: false,
+      color: '#ff8800',
+    };
+    const serialized = serializeTabs([term({ color: 'cyan' }), editor]);
+    expect(serialized.map((t) => t.color)).toEqual(['cyan', '#ff8800']);
+    const restored = hydrateTabs(serialized, 's1', counter());
+    expect(restored.map((t) => [t.kind, t.color])).toEqual([
+      ['terminal', 'cyan'],
+      ['editor', '#ff8800'],
+    ]);
+  });
+
+  it('saves no colour for a tab without one, and does not keep the shell title', () => {
+    const [serialized] = serializeTabs([
+      term({ paneTree: { kind: 'leaf', id: 2, shellTitle: 'vim' }, activeLeafId: 2 }),
+    ]);
+    expect(serialized).not.toHaveProperty('color');
+    expect(JSON.stringify(serialized)).not.toContain('vim');
+  });
+});

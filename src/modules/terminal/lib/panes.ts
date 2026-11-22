@@ -18,6 +18,8 @@ export type PaneNode =
       cwd?: string;
       /** The terminal profile the pane opens with; none is the default profile. */
       profileId?: string;
+      /** The last title its shell set (OSC 0/2); not kept in the Space. */
+      shellTitle?: string;
     }
   | {
       kind: 'split';
@@ -132,6 +134,15 @@ export function setLeafProfile(n: PaneNode, id: PaneId, profileId: string | unde
   return updateLeaf(n, id, (leaf) =>
     leaf.profileId === profileId ? leaf : { ...leaf, profileId },
   );
+}
+
+/** Sets the title leaf `id`'s shell set; `undefined` when it set none or an empty one. */
+export function setLeafShellTitle(n: PaneNode, id: PaneId, title: string | undefined): PaneNode {
+  return updateLeaf(n, id, (leaf) => {
+    if (leaf.shellTitle === title) return leaf;
+    const { shellTitle: _dropped, ...rest } = leaf;
+    return title === undefined ? rest : { ...rest, shellTitle: title };
+  });
 }
 
 export type LeafNode = Extract<PaneNode, { kind: 'leaf' }>;

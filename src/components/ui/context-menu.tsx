@@ -191,6 +191,26 @@ function ContextMenuRadioItem({
   )
 }
 
+/**
+ * A radio item drawn as a round colour swatch (`ColorSwatch`), for a row of them such as a tab's colour (E11-04).
+ * The swatch grows while the item is highlighted and is ringed while it is checked.
+ */
+function ContextMenuSwatchItem({
+  className,
+  ...props
+}: React.ComponentProps<typeof ContextMenuPrimitive.RadioItem>) {
+  return (
+    <ContextMenuPrimitive.RadioItem
+      data-slot="context-menu-swatch-item"
+      className={cn(
+        "group/swatch flex size-6 cursor-default items-center justify-center rounded-full outline-hidden select-none",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
 function ContextMenuLabel({
   className,
   inset,
@@ -247,6 +267,7 @@ export {
   ContextMenuItem,
   ContextMenuCheckboxItem,
   ContextMenuRadioItem,
+  ContextMenuSwatchItem,
   ContextMenuLabel,
   ContextMenuSeparator,
   ContextMenuShortcut,

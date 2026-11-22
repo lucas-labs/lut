@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { offersProfiles, visibleProfiles } from './catalogue';
+import { allowsShellTitle, offersProfiles, visibleProfiles } from './catalogue';
 import type { ProfileEntry } from './model';
 
 function profile(id: string, hidden = false): ProfileEntry {
@@ -53,5 +53,25 @@ describe('offersProfiles', () => {
     expect(
       offersProfiles({ profiles: [profile('a', true), profile('b')], defaultProfileId: null }),
     ).toBe(true);
+  });
+});
+
+describe('allowsShellTitle', () => {
+  const quiet = { ...profile('quiet'), tab: { allowShellTitle: false } };
+  const list = { profiles: [profile('loud'), quiet], defaultProfileId: 'quiet' };
+
+  it("follows the pane's profile", () => {
+    expect(allowsShellTitle(list, 'loud')).toBe(true);
+    expect(allowsShellTitle(list, 'quiet')).toBe(false);
+  });
+
+  it('uses the default profile for a pane opened without one', () => {
+    expect(allowsShellTitle(list, undefined)).toBe(false);
+    expect(allowsShellTitle({ ...list, defaultProfileId: 'loud' }, undefined)).toBe(true);
+  });
+
+  it('allows none before the list is read or for a profile that is not listed', () => {
+    expect(allowsShellTitle(null, 'loud')).toBe(false);
+    expect(allowsShellTitle(list, 'gone')).toBe(false);
   });
 });

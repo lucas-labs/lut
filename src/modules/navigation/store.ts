@@ -16,6 +16,7 @@ import {
   resizeLeafInDirection,
   setLeafCwd as setLeafCwdInTree,
   setLeafProfile as setLeafProfileInTree,
+  setLeafShellTitle as setLeafShellTitleInTree,
   setSplitRatios as setSplitRatiosInTree,
   siblingLeafOf,
   type SplitDir,
@@ -98,6 +99,8 @@ type NavigationActions = {
   setLeafCwd: (leafId: number, cwd: string) => void;
   /** Remember the terminal profile a leaf opened with, so splits and restarts reuse it. */
   setLeafProfile: (leafId: number, profileId: string | undefined) => void;
+  /** Remember the title a leaf's shell set; `undefined` clears it. */
+  setLeafShellTitle: (leafId: number, title: string | undefined) => void;
   focusPane: (tabId: number, leafId: number) => void;
   focusNextPaneInTab: (tabId: number, delta: 1 | -1) => void;
   /** Focus the pane beside the active one in `direction`; nothing at an edge. */
@@ -166,8 +169,16 @@ function warmActive(tabs: Tab[], activeId: number, booted: boolean): Tab[] {
   return tabs.map((t) => (t.id === activeId ? { ...t, cold: false } : t));
 }
 
-/** Applies a patch to one tab by kind; an editor leaves the preview slot the moment it turns dirty. */
+/** Applies a patch to one tab: its colour on any kind, the rest by kind. */
 function patchTab(tab: Tab, patch: TabPatch): Tab {
+  const patched = patchByKind(tab, patch);
+  if (patch.color === undefined) return patched;
+  const { color: _old, ...rest } = patched;
+  return (patch.color === '' ? rest : { ...rest, color: patch.color }) as Tab;
+}
+
+/** Applies a patch to one tab by kind; an editor leaves the preview slot the moment it turns dirty. */
+function patchByKind(tab: Tab, patch: TabPatch): Tab {
   if (tab.kind === 'terminal') {
     return {
       ...tab,
@@ -227,6 +238,7 @@ function switchMarkdownView(tab: Tab, mode: 'rendered' | 'raw'): Tab {
       kind: 'markdown' as const,
       spaceId: tab.spaceId,
       cold: tab.cold,
+      ...(tab.color !== undefined && { color: tab.color }),
       title: tab.title,
       path: tab.path,
       overrideLanguage: tab.overrideLanguage ?? null,
@@ -651,6 +663,19 @@ export const useNavigationStore = create<NavigationState>()((set, get) => {
         const next = curr.map((t) => {
           if (t.kind !== 'terminal' || !hasLeaf(t.paneTree, leafId)) return t;
           const paneTree = setLeafProfileInTree(t.paneTree, leafId, profileId);
+          if (paneTree === t.paneTree) return t;
+          changed = true;
+          return { ...t, paneTree };
+        });
+        return changed ? next : curr;
+      }),
+
+    setLeafShellTitle: (leafId, title) =>
+      setTabs((curr) => {
+        let changed = false;
+        const next = curr.map((t) => {
+          if (t.kind !== 'terminal' || !hasLeaf(t.paneTree, leafId)) return t;
+          const paneTree = setLeafShellTitleInTree(t.paneTree, leafId, title);
           if (paneTree === t.paneTree) return t;
           changed = true;
           return { ...t, paneTree };

@@ -38,6 +38,7 @@ function render(node: PaneNode, activeLeafId: number) {
         onSearchReady: () => {},
         onCwd: () => {},
         onProfile: () => {},
+        onTitle: () => {},
         onExit: () => {},
       }),
     ),

@@ -14,3 +14,16 @@ export function visibleProfiles(list: ProfilesList): ProfileEntry[] {
 export function offersProfiles(list: ProfilesList | null): list is ProfilesList {
   return list !== null && visibleProfiles(list).length > 0;
 }
+
+/**
+ * Whether the shell of a pane opened with `profileId` (none: the default profile) may name its tab. Only a listed
+ * profile that allows it does: before the list is read, a title the user turned off never shows.
+ */
+export function allowsShellTitle(
+  list: ProfilesList | null,
+  profileId: string | undefined,
+): boolean {
+  if (list === null) return false;
+  const id = profileId ?? list.defaultProfileId;
+  return list.profiles.find((profile) => profile.id === id)?.tab.allowShellTitle ?? false;
+}

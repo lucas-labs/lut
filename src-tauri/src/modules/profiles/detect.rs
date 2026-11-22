@@ -122,8 +122,6 @@ fn with_changes(mut profile: TerminalProfile, changes: &DetectedOverride) -> Ter
     a.padding = set.padding.or(a.padding);
     let set = &changes.tab;
     let t = &mut profile.tab;
-    t.title = set.title.clone().or(t.title.take());
-    t.color = set.color.clone().or(t.color.take());
     t.icon = set.icon.clone().or(t.icon.take());
     t.allow_shell_title = set.allow_shell_title;
     profile
@@ -203,7 +201,7 @@ mod tests {
             bottom: 2,
             left: 4,
         });
-        changes.tab.color = Some("#e95420".into());
+        changes.tab.icon = Some("shell-ubuntu".into());
         file.detected.insert("detected:wsl:Ubuntu".into(), changes);
 
         let list = entries(&file, &detected());
@@ -231,7 +229,7 @@ mod tests {
                 left: 4
             })
         );
-        assert_eq!(ubuntu.tab.color.as_deref(), Some("#e95420"));
+        assert_eq!(ubuntu.tab.icon.as_deref(), Some("shell-ubuntu"));
         assert_eq!(ubuntu.appearance.theme_id, None);
     }
 
