@@ -80,8 +80,8 @@ pane (E14-14). **Gate:** E14-17 (two panes with different profiles persist and r
 
 ### 6. Spaces and restore (F4): E16, E17
 
-- **E16** gives Spaces a saved state: schema spike (E16-01), versioned store with migrations
-  (E16-03, PR-007), model and snapshots (E16-04, E16-05), runtime ids regenerated at hydration (E16-09).
+- **E16** validates the Spaces' saved state on load (E16-03, PR-007) and adds the split ratios to it (E16-05); the
+  saved state itself, with runtime ids regenerated at load, was already there.
 - **E17** the restore orchestrator of §8.4 (E17-02 to E17-06, PR-008), the shell-ready event (E17-11) and startup
   commands with consent (E17-12 to E17-16). **Tests:** E17-17 (serialization, startup integration, restore time).
 
@@ -113,6 +113,6 @@ updater on lut's own infrastructure (decision 5; E25-07).
 | PR-004 empty spaces sidebar, navigation state      | E07-06, E08-02         |
 | PR-005 isolate the BYOK chat                       | E05-01 to E05-06       |
 | PR-006 profile → pane → PTY contracts              | E14-03, E14-12, E14-14 |
-| PR-007 versioned presets, Spaces migration         | E16-01 to E16-03       |
+| PR-007 versioned presets, Spaces migration         | E16-03                 |
 | PR-008 space start orchestrator                    | E17-02, E17-03         |
 | PR-009 agent reducer to UI                         | E19-07                 |

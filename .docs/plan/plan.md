@@ -4687,187 +4687,70 @@ depends-on: [E14, E02, E08]
 refs: [ADR-006, F4, 6.4, 6.5, .docs/plan/analysis/state-settings.md, .docs/plan/analysis/decisions.md]
 ```
 
-Spaces gain a saved state that is their live state (decision 26: no presets), with stable ids
-reconciled at hydration. lut has no releases: a shape change drops the old data, nothing is migrated.
+Spaces already save their live state (decision 26: no presets) in `lut-spaces.json`: tabs, pane tree, cwd and profile
+per pane, and the active tab and pane, with fresh runtime ids at load. This epic validates that file on load, adds the
+split ratios, and finishes how Spaces behave: the active tab per Space, tools that follow the focused pane, and empty
+Spaces. lut has no releases: a shape change drops the old data, nothing is migrated.
 
-### E16-01 — Spike: Space and saved-state schema
-
-```yaml
-id: E16-01
-depends-on: []
-refs: [6.4, 6.5, F4:1, PRJ-013, PRJ-014, .docs/plan/analysis/state-settings.md]
-covers: [6.4]
-type: spike
-scope: none
-size: S
-```
-
-**Goal:** Fix the schema and its storage before code changes.
-
-**Acceptance criteria:**
-
-- [ ] Written schema in `.docs/` with `spaceId`, `windowId`, `tabId`, `paneId`/runtime ids, pane tree with ratios, `profileId`, cwd, the still-running command, the per-space relaunch approvals, and `windows[]` from v1 (IR-71).
-- [ ] Storage decision: JSON via Tauri Store (IR-73; no `schemaVersion` before the first release), file layout, owner (TS with Zod; Serde only where it crosses IPC).
-- [ ] Ratio validation rule (sum 1, one per child; IR-70) documented.
-- [ ] Pane/leaf id semantics of the current code are investigated and written down (IR-60: which ids are stable across restarts, splits and moves) before persisted pane ids are fixed.
-- [ ] The running command is stored as the line the user typed, only while it runs (decision 26), and the 4-pane-per-tab limit is a schema rule (IR-48).
-- [ ] plan.md updated if the schema changes issue scope.
-
-**Verification:** Document reviewed by the user; `node .docs/plan/tools/validate.mjs` passes.
-
-### E16-03 — Spaces store validated on load
+### E16-03 — Validate the spaces store on load
 
 ```yaml
 id: E16-03
-depends-on: [E16-01, E02-14]
-refs: [13.5:9, .docs/plan/analysis/state-settings.md]
-covers: [13.5:9, 5.10:5, ADR-006, state-settings/spaces-persistence]
+depends-on: [E02-14]
+refs: [13.5:9, 6.4, 6.5, .docs/plan/analysis/state-settings.md]
+covers: [13.5:9, 5.10:5, ADR-006, state-settings/spaces-persistence, F4:1, 6.2:6, 6.4]
 type: task
 scope: ui
 size: M
 ```
 
-**Goal:** The spaces store validates on load with Zod and never drops data silently. lut has no releases, so there
-are no migrations: data saved in an older shape is dropped.
+**Goal:** The spaces store is read back validated and never drops data silently. Today `loadAll`
+(`src/modules/spaces/lib/store.ts`) casts what it reads with `as`, and `hydrateTabs` (`serialize.ts`) drops a broken
+tab in an empty `catch`. The validation is hand-written, like `parseProfilesList` (`src/modules/profiles/model.ts`): no
+new dependency. lut has no releases, so there are no migrations: data saved in an older shape is dropped.
 
 **Acceptance criteria:**
 
-- [ ] A file that fails validation is backed up next to the store and replaced by defaults, and the error is reported; no Terax data is read.
-- [ ] Corrupt or partial entries are skipped per entry and reported (not silently swallowed, `serialize.ts:220-236`).
-- [ ] Unit tests: valid file round trip, corrupt file, partial entry.
+- [ ] The stored data (the Space list, the active Space and each Space's saved state: tabs, pane tree and active tab)
+      is read through a validator that returns the typed data or an error naming the field (e.g. `spaces[2].name`).
+- [ ] A file that fails validation is backed up next to the store and replaced by defaults, and the error is reported;
+      no Terax data is read.
+- [ ] A broken tab entry is skipped and reported, and the rest of its Space is restored.
+- [ ] A tab with more than `MAX_PANES_PER_TAB` (4) panes is a broken entry, with an error naming the tab and its pane
+      count; the limit is the constant the live split action uses (`src/modules/terminal/lib/panes.ts`).
+- [ ] Whatever the file holds, startup ends with the Spaces loaded, saved or default, so autosave runs. Today a Space
+      list that is not a list stops the boot, and autosave stays off for the session without a word.
+- [ ] Tests: valid file round trip, a file that fails validation, a broken tab entry, a tab with 4 panes kept and one
+      with 5 skipped.
 
-**Verification:** `pnpm test`; manual: corrupt the store file, start, defaults loaded and backup present.
+**Verification:** `pnpm test`; manual: corrupt `lut-spaces.json`, start: defaults loaded, the error reported and the
+backup present.
 
-### E16-04 — Space and saved-state model
-
-```yaml
-id: E16-04
-depends-on: [E16-03]
-refs: [F4:1, 6.4, 6.2:6, PRJ-001, ADR-006]
-covers: [F4:1, 6.2:6, PRJ-001, 6.4]
-type: task
-scope: ui
-size: M
-```
-
-**Goal:** Implement the E16-01 schema: a space list with metadata and each space's saved state, with separate stable ids.
-
-**Acceptance criteria:**
-
-- [ ] Zod schemas and types for `Space`, its saved state and `RunningWorkspace` with `spaceId`, `windowId`, `tabId`, `paneId`.
-- [ ] Space list API (create, rename, archive flag per decision 19, delete) backed by the spaces store.
-
-**Verification:** `pnpm test`; `pnpm typecheck`.
-
-### E16-05 — Snapshot tabs, splits, ratios, cwd and active tab
+### E16-05 — Save the split ratios with the space
 
 ```yaml
 id: E16-05
-depends-on: [E16-04, E08-09]
+depends-on: [E16-03, E08-09]
 refs: [F4:4, PRJ-002, PRJ-003, PRJ-006, 6.5:3]
 covers: [F4:4, PRJ-002, PRJ-003, PRJ-006, PRJ-013, 6.5:2, 6.5:3, 6.5:4]
 type: task
 scope: ui
-size: M
+size: S
 ```
 
-**Goal:** A snapshot captures tab order, pane tree, split ratios, cwd per pane, active tab and pane: the space's saved state is its live state (decision 26). The still-running command is added by E17-12.
+**Goal:** A Space's saved state is its live state (decision 26), and the split ratios are the part still missing. Tab
+order, the pane tree, cwd and profile per pane, and the active tab and pane are already saved, and autosave is the only
+writer (`useSpacePersistence`). The live tree keeps each split's `ratios`, but `serializeNode` leaves them out and a
+restored split gets equal shares. The still-running command is added by E17-12.
 
 **Acceptance criteria:**
 
-- [ ] Split nodes serialize ratios, validated and normalized (sum 1, one per child; IR-70).
-- [ ] Leaves serialize `cwd`; tab order and active tab/pane persisted; autosave is the only writer (no templates, no "save as").
-- [ ] Round-trip tests: serialize → hydrate yields the same topology, ratios and cwds.
+- [ ] Split nodes save their ratios, and a restored split gets them back, validated and normalized (sum 1, one per
+      child; IR-70) by the existing `normaliseRatios`.
+- [ ] Round-trip tests: serialize → hydrate yields the same topology, ratios and cwds; ratios of the wrong length or with
+      a non-positive share come back as equal shares.
 
 **Verification:** `pnpm test`; manual: resize splits, restart, ratios kept.
-
-### E16-06 — Validate the 4-pane-per-tab limit in saved state
-
-```yaml
-id: E16-06
-depends-on: [E16-05]
-refs: [5.4, PRJ-002, .docs/plan/analysis/proposal.md]
-covers: [PRJ-002]
-type: task
-scope: ui
-size: S
-```
-
-**Goal:** Persisted layouts can never promise more panes than the renderer supports: `MAX_PANES_PER_TAB = 4` (§5.4, decision 12, IR-48) is a validation rule of the space schema, not only of the live `useTabs` action.
-
-**Acceptance criteria:**
-
-- [ ] The saved-state Zod schema rejects a tab with more than 4 leaves with a typed, field-level error (tab id, pane count).
-- [ ] The limit is one shared constant used by `useTabs` (`src/modules/tabs/lib/useTabs.ts:31`) and the schema.
-- [ ] Hydrating a stored layout with more than 4 panes in a tab does not crash: the space is reported as invalid and not partially restored.
-- [ ] Tests: 4 panes accepted, 5 rejected, invalid stored file handled.
-
-**Verification:** `pnpm test`; `pnpm typecheck`.
-
-### E16-07 — Different profiles per pane in a space
-
-```yaml
-id: E16-07
-depends-on: [E16-05]
-refs: [PRJ-005, 13.2:12, 16:11]
-covers: [PRJ-005]
-type: task
-scope: ui
-size: S
-```
-
-**Goal:** Saved leaves reference a `profileId`; panes of one space can use different profiles.
-
-**Acceptance criteria:**
-
-- [ ] Leaves store `profileId` (replacing the E14-17 interim field).
-- [ ] Hydrating a leaf whose profile no longer exists opens with the default profile and reports a repairable error (13.2:12).
-- [ ] Tests for mixed profiles and a missing profile.
-
-**Verification:** `pnpm test`; manual: space with pwsh and WSL panes restores both.
-
-### E16-09 — Regenerate runtime ids at hydration; never persist live PTYs
-
-```yaml
-id: E16-09
-depends-on: [E16-05]
-refs: [6.5:1, 6.5:6, 6.5:8]
-covers: [6.5:1, 6.5:6, 6.5:8]
-type: task
-scope: ui
-size: S
-```
-
-**Goal:** Hydration creates fresh tab/pane/pty ids and reconciles them with persisted structure; restart recreates shells but no process memory.
-
-**Acceptance criteria:**
-
-- [ ] No PTY ids or process handles in persisted JSON (schema test).
-- [ ] Hydration maps persisted ids to new runtime ids; agent/session references keyed by runtime id are rebuilt, not reused.
-- [ ] Restored panes start fresh shells in their cwd (documented: interactive state is not preserved).
-
-**Verification:** `pnpm test`; manual: restart and confirm new shells in the saved cwds.
-
-### E16-10 — Keep workspace authorization for space roots
-
-```yaml
-id: E16-10
-depends-on: [E16-04]
-refs: [14.1:5, .docs/plan/analysis/state-settings.md]
-covers: [14.1:5]
-type: task
-scope: ui
-size: XS
-```
-
-**Goal:** Space roots and pane cwds keep going through the existing `workspace_authorize` checks before spawn.
-
-**Acceptance criteria:**
-
-- [ ] Space creation/hydration calls the existing authorization (`useSpacesBoot.ts:105-107`, `workspace.rs:95-147`) unchanged.
-- [ ] Test that an unauthorized cwd is not spawned without authorization.
-
-**Verification:** `pnpm test`; `cargo test --manifest-path src-tauri/Cargo.toml workspace`.
 
 ### E16-12 — Restore each space's active tab when switching to it
 
@@ -4898,7 +4781,7 @@ others are kept for persistence only, and the space-switch effect in `App.tsx` f
 
 ```yaml
 id: E16-13
-depends-on: [E14-10, E16-04, E16-07]
+depends-on: [E14-10, E16-03]
 refs: [PRO-006, .docs/plan/analysis/app-shell.md, .docs/plan/analysis/backend-core.md]
 covers: [PRO-006]
 type: task
@@ -4906,11 +4789,11 @@ scope: ui
 size: M
 ```
 
-**Goal:** A Space mixes Windows and WSL panes (decision 29). The window-wide workspace env (local or a WSL distro), its
-status-bar selector and the switch that tears down every session (`useWorkspaceSwitcher`) go away: the terminal's
-environment comes from its profile (E14-10), and the tools (Files, Git, editor, LSP) use the location of the focused
-pane (its cwd in its own filesystem, e.g. `\\wsl$\Ubuntu\...` for a WSL pane), or the Space's pinned folder when it
-has one, so they stay put while panes move between folders.
+**Goal:** A Space mixes Windows and WSL panes (decision 29). The window-wide workspace env (local or a WSL distro) and
+the switch that tears down every session (`useWorkspaceSwitcher`) go away; its status-bar selector was already
+removed in #398. The terminal's environment comes from its profile (E14-10), and the tools (Files, Git, editor, LSP) use the
+location of the focused pane (its cwd in its own filesystem, e.g. `\\wsl$\Ubuntu\...` for a WSL pane), or the Space's
+pinned folder when it has one, so they stay put while panes move between folders.
 
 **Acceptance criteria:**
 
@@ -4923,7 +4806,7 @@ has one, so they stay put while panes move between folders.
 - [ ] The Spaces' stored `env` and the `defaultWorkspaceEnv` preference (and its Settings control) are removed, with
       nothing migrated: lut has no releases. A pane without a profile opens with the default profile.
 - [ ] ADR-009 records the change to the Space model and to where the tools take their location from.
-- [ ] `WorkspaceEnvSelector`, the window-wide env store and the interactive local⇄WSL switch are removed.
+- [ ] The window-wide env store (`useWorkspaceEnvStore`) and the interactive local⇄WSL switch are removed.
 - [ ] Tests: tool location for a focused pwsh pane, a focused WSL pane, an active editor tab and a pinned folder.
 
 **Verification:** `pnpm test`; manual on Windows with WSL: a Space with a pwsh pane and an Ubuntu pane, focus each and
@@ -4961,7 +4844,7 @@ and `closeTab` refuses, so the code everywhere assumes every space has a tab and
 
 ```yaml
 id: E16-11
-depends-on: [E16-01, E16-03, E16-04, E16-05, E16-06, E16-07, E16-09, E16-10, E16-12, E16-13, E16-14]
+depends-on: [E16-03, E16-05, E16-12, E16-13, E16-14]
 refs: [F4]
 covers: []
 type: closeout
@@ -5010,7 +4893,7 @@ size: S
 
 ```yaml
 id: E17-02
-depends-on: [E16-07, E16-06, E14-12]
+depends-on: [E16-03, E14-12]
 refs: [8.4, .docs/plan/analysis/state-settings.md]
 covers: [8.4:1, 8.4:2, 16:13]
 type: task
@@ -5189,7 +5072,7 @@ size: S
 
 ```yaml
 id: E17-10
-depends-on: [E17-09, E16-04]
+depends-on: [E17-09, E16-03]
 refs: [.docs/plan/analysis/decisions.md]
 covers: [PRJ-001]
 type: task
@@ -5197,11 +5080,11 @@ scope: ui
 size: S
 ```
 
-**Goal:** Implement the behaviour of decision 19: archiving hides a space from the list and keeps all its data. The `archived` flag itself is added to the schema by E16-04.
+**Goal:** Implement the behaviour of decision 19: archiving hides a space from the list and keeps all its data. It adds the `archived` flag to the spaces store and to its validation (E16-03).
 
 **Acceptance criteria:**
 
-- [ ] Archiving (setting the E16-04 `archived` flag) closes the space if open and removes it from the session.
+- [ ] Archiving (setting the Space's `archived` flag) closes the space if open and removes it from the session.
 - [ ] Archived spaces are excluded from the default list and from startup restore; unarchiving restores visibility with its data intact.
 
 **Verification:** `pnpm test` (archive/unarchive keeps space data; archived space skipped at boot).
@@ -5418,7 +5301,7 @@ store. Look only: the spaces model and its actions come with E18-02.
 
 ```yaml
 id: E18-02
-depends-on: [E18-09, E11-05, E16-04, E17-09, E16-13]
+depends-on: [E18-09, E11-05, E16-03, E17-09, E16-13]
 refs: [10.2:6, PRJ-017, .docs/plan/analysis/state-settings.md]
 covers: [app-shell/sidebar-logic, state-settings/spaces-ui, 10.2:6, UX-003]
 type: task
@@ -5718,7 +5601,7 @@ size: M
 
 ```yaml
 id: E19-08
-depends-on: [E19-07, E16-04]
+depends-on: [E19-07, E16-03]
 refs: [AGT-004, 6.4]
 covers: [AGT-004]
 type: task
@@ -6647,7 +6530,7 @@ Portable export/import schema for profiles and spaces that never contains secret
 
 ```yaml
 id: E23-01
-depends-on: [E14-09, E16-04]
+depends-on: [E14-09, E16-03]
 refs: [F4:8, PRO-007, PRJ-015]
 covers: [F4:8]
 type: task
@@ -7444,6 +7327,11 @@ add any discovered work to plan.md (or state 'nothing new').
 - `F4:2` — No Spaces data to keep: lut has no releases.
 - `F0:1` — Done before planning (commit 611f9e3: Terax snapshot imported).
 - `F0:3` — Done before planning (commit 5409728: Terax docs moved to .docs/origin-terax).
+- `PRJ-005` — Done: each pane saves its `profileId` (E14-17), and a pane whose profile is gone offers Retry, the default profile or another one (E15-01).
+- `6.5:1` — Done: the saved Spaces hold no PTY or process; restored tabs open new shells (`spaces/lib/serialize.ts`).
+- `6.5:6` — Done: every tab, split and pane gets a new runtime id when the saved Spaces load (`spaces/lib/serialize.ts`).
+- `6.5:8` — Done: restored tabs start new shells in their saved cwd; no process state is kept.
+- `14.1:5` — Done: workspace authorization is unchanged; restored folders and each new pane folder are authorized (`useSpacesBoot.ts`, `useTerminalPanes.ts`).
 - `F7:1` — Multiwindow (post-v1).
 - `F7:2` — Multiwindow (post-v1).
 - `F7:3` — Multiwindow (post-v1).
