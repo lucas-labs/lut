@@ -44,7 +44,7 @@ function node(value: unknown, path: string): SerializedNode {
         kind: 'split',
         dir: splitDir(raw.dir, `${path}.dir`),
         children: list(node)(raw.children, `${path}.children`),
-        ratios: optional(raw.ratios, `${path}.ratios`, list(count)),
+        ratios: shares(raw.ratios),
       };
     default:
       return fail(`${path}.kind`);
@@ -52,6 +52,11 @@ function node(value: unknown, path: string): SerializedNode {
 }
 
 /** The panes the tree restores to: a split without children comes back as one pane. */
+/** A split's shares only size its panes: unusable ones are dropped, and the split restores with equal shares. */
+function shares(value: unknown): number[] | undefined {
+  return Array.isArray(value) && value.every((r) => typeof r === 'number') ? value : undefined;
+}
+
 function paneCount(tree: SerializedNode): number {
   if (tree.kind === 'leaf' || tree.children.length === 0) return 1;
   return tree.children.reduce((sum, c) => sum + paneCount(c), 0);

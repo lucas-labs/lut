@@ -13,7 +13,7 @@ export function reportSpacesLoad({
     toast.error('Could not load your Spaces', {
       description: recovered.backupPath
         ? `lut started with the defaults. The old file was kept at ${recovered.backupPath}.`
-        : `lut started with the defaults and won't save your Spaces until the file can be read. ${recovered.reason}`,
+        : `lut started with the defaults and won't save your Spaces this session: ${recovered.reason}`,
       duration: Infinity,
     });
   }

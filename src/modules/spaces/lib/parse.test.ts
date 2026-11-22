@@ -142,8 +142,6 @@ describe('parseSpacesStore', () => {
         terminal({ kind: 'split', dir: 'diagonal', children: [] }),
         'not a tab',
         { kind: 'editor', path: '/a/x.ts' },
-        terminal({ ...leaves(2), ratios: '0.5,0.5' }),
-        terminal({ ...leaves(2), ratios: [0.5, 'half'] }),
       ]),
     );
 
@@ -153,8 +151,6 @@ describe('parseSpacesStore', () => {
       { spaceId: 'a', index: 1, reason: expect.stringMatching(/state:a\.tabs\[1\]\.kind$/) },
       { spaceId: 'a', index: 2, reason: expect.stringMatching(/state:a\.tabs\[2\]\.tree\.dir$/) },
       { spaceId: 'a', index: 3, reason: expect.stringMatching(/state:a\.tabs\[3\]$/) },
-      { spaceId: 'a', index: 5, reason: expect.stringMatching(/tabs\[5\]\.tree\.ratios$/) },
-      { spaceId: 'a', index: 6, reason: expect.stringMatching(/tabs\[6\]\.tree\.ratios\[1\]$/) },
     ]);
   });
 
@@ -163,6 +159,25 @@ describe('parseSpacesStore', () => {
 
     expect(parsed.states.get('a')?.tabs).toEqual([terminal(leaves(4))]);
     expect(parsed.brokenTabs).toEqual([{ spaceId: 'a', index: 1, reason: '5 panes, more than 4' }]);
+  });
+
+  it('keeps a tab whose split ratios are unusable, without them', () => {
+    const parsed = parseSpacesStore(
+      store([
+        terminal({ ...leaves(2), ratios: '0.5,0.5' }),
+        terminal({ ...leaves(2), ratios: null }),
+        terminal({ ...leaves(2), ratios: [0.5, 'half'] }),
+        terminal({ ...leaves(2), ratios: [0.25, 0.75] }),
+      ]),
+    );
+
+    expect(parsed.brokenTabs).toEqual([]);
+    expect(parsed.states.get('a')?.tabs).toEqual([
+      terminal(leaves(2)),
+      terminal(leaves(2)),
+      terminal(leaves(2)),
+      terminal({ ...leaves(2), ratios: [0.25, 0.75] }),
+    ]);
   });
 
   it('counts a split without children as the one pane it restores to', () => {
