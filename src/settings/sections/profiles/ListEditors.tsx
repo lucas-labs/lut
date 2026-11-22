@@ -33,9 +33,16 @@ function useRows<T extends object>(saved: T[], same: (a: T[], b: T[]) => boolean
     added.current += 1;
     setRows([...rows, { ...item, key: `added-${added.current}` }]);
   };
+  // Marks `list` sent while its save is on its way; one that failed is forgotten, so it can be sent again.
+  const send = (list: T[], result: Promise<boolean> | void) => {
+    setSent(list);
+    void result?.then((done) => {
+      if (!done) setSent((current) => (current === list ? null : current));
+    });
+  };
   // What the next edit is compared with: the list sent while it is on its way, so going back to the listed one
   // is saved too.
-  return { rows, setRows, add, markSent: setSent, last: sent ?? saved };
+  return { rows, setRows, add, send, last: sent ?? saved };
 }
 
 const blurOnEnter = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -51,16 +58,21 @@ const sameArgs = (a: Arg[], b: Arg[]) => a.length === b.length && a.every((arg, 
  * The program's arguments, one field each. A field added here and left empty is not saved; once an argument is
  * part of the profile, clearing it saves an empty argument in its place, until it is removed.
  */
-export function ArgsEditor({ args, onCommit }: { args: string[]; onCommit: (args: string[]) => void }) {
+type ArgsEditorProps = {
+  args: string[];
+  /** Saves the arguments; whether they were saved, when known. */
+  onCommit: (args: string[]) => Promise<boolean> | void;
+};
+
+export function ArgsEditor({ args, onCommit }: ArgsEditorProps) {
   const saved = args.map((value) => ({ value, listed: true }));
-  const { rows, setRows, add, markSent, last } = useRows(saved, sameArgs);
+  const { rows, setRows, add, send, last } = useRows(saved, sameArgs);
 
   const commit = (next: Keyed<Arg>[]) => {
     const kept = next.filter((arg) => arg.value !== '' || arg.listed);
     if (sameArgs(kept, last)) return;
     setRows(next.map((arg) => (kept.includes(arg) ? { ...arg, listed: true } : arg)));
-    markSent(kept);
-    onCommit(kept.map((arg) => arg.value));
+    send(kept, onCommit(kept.map((arg) => arg.value)));
   };
 
   return (
@@ -130,7 +142,8 @@ const sameEnv = (a: EnvRow[], b: EnvRow[]) => {
 
 type EnvEditorProps = {
   env: Record<string, string | null>;
-  onCommit: (env: Record<string, string | null>) => void;
+  /** Saves the variables; whether they were saved, when known. */
+  onCommit: (env: Record<string, string | null>) => Promise<boolean> | void;
   /** Refused variables, by field path (`env.<NAME>`). */
   errors: Record<string, ProfileErrorCode>;
 };
@@ -141,13 +154,12 @@ type EnvEditorProps = {
  */
 export function EnvEditor({ env, onCommit, errors }: EnvEditorProps) {
   const saved = toRows(env);
-  const { rows, setRows, add, markSent, last } = useRows(saved, sameEnv);
+  const { rows, setRows, add, send, last } = useRows(saved, sameEnv);
 
   const commit = (next: EnvRow[]) => {
     const env = toEnv(next);
     if (sameEnv(toRows(env), last)) return;
-    markSent(toRows(env));
-    onCommit(env);
+    send(toRows(env), onCommit(env));
   };
   const update = (key: string, patch: Partial<EnvRow>) => rows.map((r) => (r.key === key ? { ...r, ...patch } : r));
 

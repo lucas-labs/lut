@@ -268,6 +268,28 @@ describe('a custom profile', () => {
     expect(toasts.error).toHaveBeenCalledWith("Couldn't save the profile", { description: 'disk full' });
   });
 
+  it('sends a name and an argument that failed to save again when the field is left again', async () => {
+    native.save
+      .mockRejectedValueOnce({ kind: 'io', message: 'disk full' })
+      .mockImplementationOnce(async (saved) => listSaved(saved))
+      .mockRejectedValueOnce({ kind: 'io', message: 'disk full' });
+    await render();
+    await choose('Python');
+    await type(inputOf('Name'), 'Py');
+    await leave(inputOf('Name'));
+    await leave(inputOf('Name'));
+    const arg = () => host.querySelector('input[aria-label="Argument 1"]') as HTMLInputElement;
+    await type(arg(), '-i');
+    await leave(arg());
+    await leave(arg());
+    expect(native.save.mock.calls.map(([saved]) => saved)).toEqual([
+      { ...PYTHON_SAVED, name: 'Py' },
+      { ...PYTHON_SAVED, name: 'Py' },
+      { ...PYTHON_SAVED, name: 'Py', args: ['-i'] },
+      { ...PYTHON_SAVED, name: 'Py', args: ['-i'] },
+    ]);
+  });
+
   it('removes an argument', async () => {
     await render();
     await choose('Python');
@@ -464,6 +486,62 @@ describe('a custom profile', () => {
     expect(native.save).toHaveBeenLastCalledWith({
       ...PYTHON_SAVED,
       appearance: { padding: { top: 7, right: 5, bottom: 7, left: 5 } },
+    });
+  });
+
+  it('joins the padding sides as last saved, not as shown', async () => {
+    listSaved({ ...PYTHON_SAVED, appearance: { padding: { top: 2, right: 14, bottom: 6, left: 10 } } });
+    const answer = holdNextSave();
+    await render();
+    await choose('Python');
+    await type(host.querySelector('input[aria-label="Left padding"]') as HTMLInputElement, '5');
+    await act(async () => buttonNamed(host, 'Set each side').click());
+    await act(async () => answer());
+    await settle();
+    expect(native.save).toHaveBeenLastCalledWith({
+      ...PYTHON_SAVED,
+      appearance: { padding: { top: 2, right: 5, bottom: 2, left: 5 } },
+    });
+  });
+
+  it('takes a change made elsewhere during a save that failed', async () => {
+    let fail: () => void = () => {};
+    native.save.mockImplementationOnce(
+      () => new Promise<void>((_, reject) => (fail = () => reject({ kind: 'io', message: 'disk full' }))),
+    );
+    await render();
+    await choose('Python');
+    await type(inputOf('Name'), 'Py');
+    await leave(inputOf('Name'));
+    listSaved({ ...PYTHON_SAVED, closeBehavior: 'ask' });
+    await settle();
+    await act(async () => fail());
+    await pick('Cursor style', 'Block');
+    expect(native.save).toHaveBeenLastCalledWith({
+      ...PYTHON_SAVED,
+      closeBehavior: 'ask',
+      appearance: { cursorStyle: 'block' },
+    });
+  });
+
+  it('takes a change made elsewhere during a save that failed, for a change already queued after it', async () => {
+    let fail: () => void = () => {};
+    native.save.mockImplementationOnce(
+      () => new Promise<void>((_, reject) => (fail = () => reject({ kind: 'io', message: 'disk full' }))),
+    );
+    await render();
+    await choose('Python');
+    await type(inputOf('Name'), 'Py');
+    await leave(inputOf('Name'));
+    listSaved({ ...PYTHON_SAVED, closeBehavior: 'ask' });
+    await settle();
+    await pick('Cursor style', 'Block');
+    await act(async () => fail());
+    await settle();
+    expect(native.save).toHaveBeenLastCalledWith({
+      ...PYTHON_SAVED,
+      closeBehavior: 'ask',
+      appearance: { cursorStyle: 'block' },
     });
   });
 

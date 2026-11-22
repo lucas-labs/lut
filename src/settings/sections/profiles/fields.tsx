@@ -18,9 +18,10 @@ export function FieldError({ code }: { code: ProfileErrorCode | undefined }) {
  * A text field kept as a draft while typed, saved on blur or Enter. A value saved elsewhere replaces the draft; a
  * refused one stays in the field, with its error, until it is corrected. Text typed after a save, while that save
  * is still on its way back, stays: the saved value it brings does not replace it. Until then a draft is compared
- * with the one sent, not the listed value, so going back to that value is saved too.
+ * with the one sent, not the listed value, so going back to that value is saved too. A draft that failed to save
+ * is sent again when the field is left again.
  */
-function useDraft(value: string, onCommit: (value: string) => void) {
+function useDraft(value: string, onCommit: (value: string) => Promise<boolean> | void) {
   const [draft, setDraft] = useState(value);
   const [draftOf, setDraftOf] = useState(value);
   // The draft last sent, until a new value arrives.
@@ -32,8 +33,11 @@ function useDraft(value: string, onCommit: (value: string) => void) {
   }
   const commit = () => {
     if (draft === (sent ?? value)) return;
-    setSent(draft);
-    onCommit(draft);
+    const sending = draft;
+    setSent(sending);
+    void onCommit(sending)?.then((saved) => {
+      if (!saved) setSent((current) => (current === sending ? null : current));
+    });
   };
   return {
     value: draft,
@@ -49,7 +53,8 @@ type TextSettingProps = {
   title: string;
   description?: ReactNode;
   value: string;
-  onCommit: (value: string) => void;
+  /** Saves the value; whether it was saved, when known. */
+  onCommit: (value: string) => Promise<boolean> | void;
   error?: ProfileErrorCode;
   placeholder?: string;
   mono?: boolean;

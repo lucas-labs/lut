@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import type { Padding } from '@/lib/padding';
+import type { Padding, PaddingEdit } from '@/lib/padding';
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -11,7 +11,7 @@ let host: HTMLDivElement;
 let root: Root;
 let value: Padding;
 const changes: Padding[] = [];
-const changed: (readonly string[])[] = [];
+const edits: PaddingEdit[] = [];
 
 function render() {
   act(() =>
@@ -20,9 +20,9 @@ function render() {
         value,
         max: 64,
         'aria-label': 'Padding',
-        onChange: (next: Padding, sides: readonly string[]) => {
+        onChange: (next: Padding, edit: PaddingEdit) => {
           changes.push(next);
-          changed.push(sides);
+          edits.push(edit);
           value = next;
           render();
         },
@@ -49,7 +49,7 @@ beforeEach(() => {
   document.body.append(host);
   root = createRoot(host);
   changes.length = 0;
-  changed.length = 0;
+  edits.length = 0;
 });
 afterEach(() => {
   act(() => root.unmount());
@@ -75,7 +75,7 @@ describe('PaddingInput', () => {
     render();
     type('Vertical padding', '6');
     expect(changes).toEqual([{ top: 6, right: 0, bottom: 6, left: 0 }]);
-    expect(changed).toEqual([['top', 'bottom']]);
+    expect(edits).toEqual([{ kind: 'set', sides: ['top', 'bottom'], value: 6 }]);
   });
 
   it('opens with one field per side when opposite sides differ, and joins them from left and top', () => {
@@ -87,7 +87,7 @@ describe('PaddingInput', () => {
 
     act(() => toggle().click());
     expect(value).toEqual({ top: 2, right: 12, bottom: 2, left: 12 });
-    expect(changed).toEqual([['right'], ['right', 'bottom']]);
+    expect(edits).toEqual([{ kind: 'set', sides: ['right'], value: 20 }, { kind: 'join' }]);
     expect(fields()).toEqual(['Horizontal padding', 'Vertical padding']);
   });
 

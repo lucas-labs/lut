@@ -96,7 +96,8 @@ function writerFor(entry: ProfileEntry): Writer {
  * inside an object, like one appearance setting): a custom profile whole through `profiles_save`, a detected one's
  * visibility, appearance and tab through its override. Changes queue per profile, each on top of the last one
  * saved, so quick edits never undo each other while the list catches up. Fields native refused keep their error
- * until a change to them is saved. One profile per use: the form remounts for another.
+ * until a change to them is saved. Each change tells whether it was saved. One profile per use: the form remounts
+ * for another.
  */
 export function useProfileChanges(entry: ProfileEntry) {
   const [errors, setErrors] = useState<Record<string, ProfileErrorCode>>({});
@@ -109,6 +110,7 @@ export function useProfileChanges(entry: ProfileEntry) {
   const change = useCallback((update: ProfileChange | ((current: Edited) => ProfileChange)) => {
     const shown = listed.current;
     const writer = writerFor(shown);
+    let saved = false;
     writer.pending += 1;
     writer.queue = writer.queue
       .then(async () => {
@@ -127,6 +129,7 @@ export function useProfileChanges(entry: ProfileEntry) {
             await saveProfile(profile);
           }
           writer.latest = next;
+          saved = true;
           // Native tells of the change before it answers, so the list may already show it; a save that changed
           // nothing is never listed again.
           writer.awaiting = !sameProfile(edited(writer.listed), next);
@@ -144,7 +147,15 @@ export function useProfileChanges(entry: ProfileEntry) {
       })
       .finally(() => {
         writer.pending -= 1;
+        // A change made elsewhere, listed while this save was on its way, with no save of ours waiting to be listed
+        // (this one failed): it is the base of the next save, even one already queued. A save that succeeded never
+        // gets here, as it waits for the list when the list does not show it.
+        const shownNow = edited(writer.listed);
+        if (!writer.awaiting && !sameProfile(shownNow, writer.latest)) {
+          writer.latest = shownNow;
+        }
       });
+    return writer.queue.then(() => saved);
   }, []);
 
   return { errors, change };

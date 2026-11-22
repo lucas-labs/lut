@@ -11,7 +11,7 @@ import {
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import type { Padding } from "@/lib/padding"
+import { applyPaddingEdit, type Padding, type PaddingEdit } from "@/lib/padding"
 import { cn } from "@/lib/utils"
 
 type Side = keyof Padding
@@ -37,8 +37,8 @@ const SIDES: readonly Field[] = [
 
 type PaddingInputProps = Omit<React.ComponentProps<"div">, "onChange"> & {
   value: Padding
-  /** The new padding, and the sides the edit set (the rest are `value`'s, as shown). */
-  onChange: (value: Padding, changed: readonly Side[]) => void
+  /** The new padding, and the edit that made it from `value`, to make it on a newer padding than the one shown. */
+  onChange: (value: Padding, edit: PaddingEdit) => void
   /** The largest value of a side, in px; the smallest is 0. */
   max?: number
 }
@@ -61,18 +61,14 @@ function PaddingInput({ value, onChange, max = Number.POSITIVE_INFINITY, classNa
   }
   const fields = split ? SIDES : AXES
 
+  const edit = (made: PaddingEdit) => onChange(applyPaddingEdit(value, made), made)
+
   const toggle = () => {
-    if (split && differs) {
-      onChange({ top: value.top, right: value.left, bottom: value.top, left: value.left }, ["right", "bottom"])
-    }
+    if (split && differs) edit({ kind: "join" })
     setSplit(!split)
   }
 
-  const set = (field: Field, n: number) => {
-    const next = { ...value }
-    for (const side of field.sides) next[side] = n
-    onChange(next, field.sides)
-  }
+  const set = (field: Field, n: number) => edit({ kind: "set", sides: field.sides, value: n })
 
   return (
     <div

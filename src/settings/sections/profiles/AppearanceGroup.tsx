@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { PaddingInput } from '@/components/ui/padding-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { applyPaddingEdit } from '@/lib/padding';
 import type { ProfileAppearance } from '@/modules/profiles';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { TERMINAL_FONT_SIZES, TERMINAL_PADDING_MAX, TERMINAL_SCROLLBACK_PRESETS } from '@/modules/settings/store';
@@ -69,7 +70,8 @@ type AppearanceChange = Partial<ProfileAppearance> | ((current: ProfileAppearanc
 
 type Props = {
   appearance: ProfileAppearance;
-  onChange: (change: AppearanceChange) => void;
+  /** Saves the change; whether it was saved. */
+  onChange: (change: AppearanceChange) => Promise<boolean>;
 };
 
 /** The appearance the profile sets over the app and Terminal settings; each unset field follows them. */
@@ -160,13 +162,9 @@ export function AppearanceGroup({ appearance, onChange }: Props) {
               {...a11y}
               value={appearance.padding ?? padding}
               max={TERMINAL_PADDING_MAX}
-              onChange={(next, sides) =>
-                // Only the sides edited, over the padding as last saved: another side edited a moment ago may
-                // not be shown yet.
-                onChange((current) => {
-                  const base = current.padding ?? padding;
-                  return { padding: { ...base, ...Object.fromEntries(sides.map((side) => [side, next[side]])) } };
-                })
+              onChange={(_shown, edit) =>
+                // The edit, made on the padding as last saved: a side edited a moment ago may not be shown yet.
+                void onChange((current) => ({ padding: applyPaddingEdit(current.padding ?? padding, edit) }))
               }
             />
           </div>
