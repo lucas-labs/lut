@@ -42,14 +42,17 @@ export type SpacesLoad = {
   data: LoadedSpaces;
   recovered: RecoveredFile | null;
   brokenTabs: BrokenTab[];
+  /** The copy of the file kept before saving over the broken tabs; its path is empty when lut saves nothing. */
+  brokenTabsCopy: RecoveredFile | null;
 };
 
-/** Set when the store file was left in place, unusable: saving would write over it. */
+/** Set when saving would write over data lut could not use: a file left in place, or broken tabs without a copy. */
 let writesBlocked = false;
 
 /**
  * Reads the saved Spaces, validated (E16-03). An unusable file is moved aside and the defaults are loaded; one that
- * cannot be read is left in place, and nothing is saved this session.
+ * cannot be read is left in place, and nothing is saved this session. A file with broken tabs is copied aside first,
+ * since the next save drops them.
  */
 export async function loadAll(): Promise<SpacesLoad> {
   // Native checks the file before the store plugin opens it: the plugin ignores a file it cannot parse.
@@ -57,7 +60,12 @@ export async function loadAll(): Promise<SpacesLoad> {
   if (opened && !opened.backupPath) writesBlocked = true;
   try {
     const { brokenTabs, ...data } = parseSpacesStore(await store.entries());
-    return { data, recovered: opened, brokenTabs };
+    return {
+      data,
+      recovered: opened,
+      brokenTabs,
+      brokenTabsCopy: await copyBrokenTabs(brokenTabs),
+    };
   } catch (error) {
     if (!(error instanceof ShapeError)) throw error;
     const recovered = await invoke<RecoveredFile>('spaces_store_move_aside', {
@@ -73,8 +81,19 @@ export async function loadAll(): Promise<SpacesLoad> {
       data: { spaces: [], activeId: null, states: new Map() },
       recovered,
       brokenTabs: [],
+      brokenTabsCopy: null,
     };
   }
+}
+
+/** Keeps a copy of the file before a save drops its broken tabs; without one, nothing is saved. */
+async function copyBrokenTabs(brokenTabs: BrokenTab[]): Promise<RecoveredFile | null> {
+  if (brokenTabs.length === 0) return null;
+  const copy = await invoke<RecoveredFile>('spaces_store_copy_aside', {
+    reason: `${brokenTabs.length} saved ${brokenTabs.length === 1 ? 'tab' : 'tabs'} could not be restored`,
+  });
+  if (!copy.backupPath) writesBlocked = true;
+  return copy;
 }
 
 export async function saveSpacesList(spaces: SpaceMeta[]): Promise<void> {

@@ -51,8 +51,10 @@ function node(value: unknown, path: string): SerializedNode {
   }
 }
 
+/** The panes the tree restores to: a split without children comes back as one pane. */
 function paneCount(tree: SerializedNode): number {
-  return tree.kind === 'leaf' ? 1 : tree.children.reduce((sum, c) => sum + paneCount(c), 0);
+  if (tree.kind === 'leaf' || tree.children.length === 0) return 1;
+  return tree.children.reduce((sum, c) => sum + paneCount(c), 0);
 }
 
 function tabOfKind(raw: Record<string, unknown>, path: string): SerializedTab {
@@ -93,13 +95,20 @@ function tab(value: unknown, path: string): SerializedTab | string {
 function state(value: unknown, path: string, spaceId: string, broken: BrokenTab[]): SpaceState {
   const raw = dict(value, path);
   if (!Array.isArray(raw.tabs)) return fail(`${path}.tabs`);
+  const savedActive = count(raw.activeTabIndex, `${path}.activeTabIndex`);
   const tabs: SerializedTab[] = [];
+  let activeTabIndex = 0;
   raw.tabs.forEach((entry, index) => {
     const read = tab(entry, `${path}.tabs[${index}]`);
-    if (typeof read === 'string') broken.push({ spaceId, index, reason: read });
-    else tabs.push(read);
+    if (typeof read === 'string') {
+      broken.push({ spaceId, index, reason: read });
+      return;
+    }
+    if (index < savedActive) activeTabIndex += 1;
+    tabs.push(read);
   });
-  return { tabs, activeTabIndex: count(raw.activeTabIndex, `${path}.activeTabIndex`) };
+  // The saved index counts skipped tabs too: it moves to the active tab's new place, or to the tab that took it.
+  return { tabs, activeTabIndex: Math.min(activeTabIndex, Math.max(tabs.length - 1, 0)) };
 }
 
 function workspaceEnv(value: unknown, path: string): WorkspaceEnv {

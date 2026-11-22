@@ -37,6 +37,19 @@ pub fn move_aside(path: &Path, prefix: &str, reason: String) -> RecoveredFile {
     }
 }
 
+/// Copies `path` to `<prefix><ms>.json` in the same folder and leaves it where it is, for a file lut
+/// uses but will write over without some of its data.
+pub fn copy_aside(path: &Path, prefix: &str, reason: String) -> RecoveredFile {
+    let backup = backup_path(path.parent().unwrap_or(Path::new("")), prefix);
+    match std::fs::copy(path, &backup) {
+        Ok(_) => RecoveredFile {
+            backup_path: backup.display().to_string(),
+            reason,
+        },
+        Err(error) => RecoveredFile::left_in_place(format!("{reason}; backup failed: {error}")),
+    }
+}
+
 /// A backup name no earlier backup uses.
 fn backup_path(dir: &Path, prefix: &str) -> PathBuf {
     let millis = SystemTime::now()
@@ -80,6 +93,28 @@ mod tests {
             let name = backup.file_name().unwrap().to_string_lossy();
             assert!(name.starts_with("store.corrupt-") && name.ends_with(".json"));
         }
+    }
+
+    #[test]
+    fn copies_the_file_aside_and_keeps_it() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("store.json");
+        std::fs::write(&path, "kept").unwrap();
+        let recovered = copy_aside(&path, "store.corrupt-", "skipped".into());
+        assert_eq!(recovered.reason, "skipped");
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "kept");
+        assert_eq!(
+            std::fs::read_to_string(&recovered.backup_path).unwrap(),
+            "kept"
+        );
+    }
+
+    #[test]
+    fn a_file_that_cannot_be_copied_is_reported_as_left_in_place() {
+        let dir = tempfile::tempdir().unwrap();
+        let recovered = copy_aside(&dir.path().join("missing.json"), "x-", "skipped".into());
+        assert!(recovered.backup_path.is_empty());
+        assert!(recovered.reason.starts_with("skipped; backup failed: "));
     }
 
     #[test]

@@ -165,6 +165,35 @@ describe('parseSpacesStore', () => {
     expect(parsed.brokenTabs).toEqual([{ spaceId: 'a', index: 1, reason: '5 panes, more than 4' }]);
   });
 
+  it('counts a split without children as the one pane it restores to', () => {
+    const empty = { kind: 'split', dir: 'col', children: [] };
+    const splits = (n: number) =>
+      terminal({ kind: 'split', dir: 'row', children: Array(n).fill(empty) });
+    const parsed = parseSpacesStore(store([splits(4), splits(5)]));
+
+    expect(parsed.states.get('a')?.tabs).toHaveLength(1);
+    expect(parsed.brokenTabs).toEqual([{ spaceId: 'a', index: 1, reason: '5 panes, more than 4' }]);
+  });
+
+  it('moves the active tab index past the skipped tabs', () => {
+    const broken = { kind: 'browser' };
+    const [a, b] = [terminal({ kind: 'leaf', cwd: '/a' }), terminal({ kind: 'leaf', cwd: '/b' })];
+    const activeAfterSkips = (tabs: unknown[], activeTabIndex: number) =>
+      parseSpacesStore([
+        ['spaces', [space('a')]],
+        ['state:a', { tabs, activeTabIndex }],
+      ]).states.get('a')?.activeTabIndex;
+
+    // The active tab stays active.
+    expect(activeAfterSkips([broken, a, b], 1)).toBe(0);
+    expect(activeAfterSkips([a, broken, b], 2)).toBe(1);
+    expect(activeAfterSkips([a, b, broken], 1)).toBe(1);
+    // A skipped active tab gives way to the tab that took its place, or to the last one.
+    expect(activeAfterSkips([a, broken, b], 1)).toBe(1);
+    expect(activeAfterSkips([a, b, broken], 2)).toBe(1);
+    expect(activeAfterSkips([broken], 0)).toBe(0);
+  });
+
   it('ignores fields and keys it does not know, and the state of a Space no longer listed', () => {
     const tab = { ...terminal({ kind: 'leaf', cwd: '/a', zoom: 2 }), blocks: true };
     const parsed = parseSpacesStore(

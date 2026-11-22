@@ -316,7 +316,7 @@ Public API: what `index.ts` exports. Owned state: zustand stores, plugin-store f
 
 - **Public API** (`modules/spaces/index.ts`): `SpacesView`, `useSpacePersistence`, `useSpaces`, `useSpacesBoot`
 - **Owned state:** `lut-spaces.json` (store file), `useSpaces`
-- **Commands:** `spaces_store_move_aside`, `spaces_store_open`; through wrappers: `workspace_authorize`
+- **Commands:** `spaces_store_copy_aside`, `spaces_store_move_aside`, `spaces_store_open`; through wrappers: `workspace_authorize`
 - **Events:** —
 - **Deep imports:** `lib/useSpaces.ts` (terminal)
 

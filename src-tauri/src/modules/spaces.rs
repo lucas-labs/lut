@@ -1,13 +1,14 @@
 //! The Spaces store file, `lut-spaces.json`, which the frontend reads and writes through the store
 //! plugin. The plugin ignores a file it cannot parse and starts empty, so the next save would write
 //! over it: the frontend opens the file here first, and an unusable one is moved aside and reported.
+//! A file with tabs the frontend could not restore is copied aside before it is saved again.
 
 use std::collections::HashMap;
 use std::io;
 use std::path::{Path, PathBuf};
 
 use crate::modules::fs;
-use crate::modules::fs::recover::{move_aside, RecoveredFile};
+use crate::modules::fs::recover::{copy_aside, move_aside, RecoveredFile};
 
 /// The store's file name; the plugin resolves it inside the app data dir.
 const SPACES_FILE: &str = "lut-spaces.json";
@@ -53,6 +54,17 @@ pub async fn spaces_store_move_aside(
 ) -> Result<RecoveredFile, String> {
     let path = store_path(&app)?;
     fs::blocking(move || Ok(move_aside(&path, BACKUP_PREFIX, reason))).await
+}
+
+/// Keeps a copy of the store file when some of its tabs could not be restored (`reason`), before the
+/// next save writes over them.
+#[tauri::command]
+pub async fn spaces_store_copy_aside(
+    app: tauri::AppHandle,
+    reason: String,
+) -> Result<RecoveredFile, String> {
+    let path = store_path(&app)?;
+    fs::blocking(move || Ok(copy_aside(&path, BACKUP_PREFIX, reason))).await
 }
 
 #[cfg(test)]

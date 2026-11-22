@@ -307,6 +307,7 @@ pub fn run() {
             modules::profiles::store::profiles_take_load_error,
             modules::spaces::spaces_store_open,
             modules::spaces::spaces_store_move_aside,
+            modules::spaces::spaces_store_copy_aside,
             modules::profiles::commands::profiles_list,
             modules::profiles::commands::profiles_get,
             modules::profiles::commands::profiles_save,

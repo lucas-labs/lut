@@ -8,6 +8,7 @@ const disk = vi.hoisted(() => ({
 const native = vi.hoisted(() => ({
   open: null as { backupPath: string; reason: string } | null,
   moveAside: { backupPath: '/data/lut-spaces.corrupt-1.json', reason: '' },
+  copyAside: { backupPath: '/data/lut-spaces.corrupt-3.json', reason: '' },
 }));
 
 vi.mock('@tauri-apps/plugin-store', () => ({
@@ -26,7 +27,8 @@ vi.mock('@tauri-apps/api/core', () => ({
   invoke: async (command: string, args?: { reason: string }) => {
     disk.calls.push(command);
     if (command === 'spaces_store_open') return native.open;
-    return { ...native.moveAside, reason: args?.reason };
+    const result = command === 'spaces_store_copy_aside' ? native.copyAside : native.moveAside;
+    return { ...result, reason: args?.reason };
   },
 }));
 
@@ -56,6 +58,7 @@ beforeEach(() => {
   disk.calls = [];
   native.open = null;
   native.moveAside = { backupPath: '/data/lut-spaces.corrupt-1.json', reason: '' };
+  native.copyAside = { backupPath: '/data/lut-spaces.corrupt-3.json', reason: '' };
 });
 
 describe('loadAll', () => {
@@ -71,7 +74,38 @@ describe('loadAll', () => {
     expect(load.data.spaces).toEqual([space]);
     expect(load.data.activeId).toBe('a');
     expect(load.recovered).toBeNull();
+    expect(load.brokenTabsCopy).toBeNull();
     expect(await writeEverything(store)).toHaveLength(4);
+  });
+
+  it('keeps a copy of a file with broken tabs before saving over them', async () => {
+    disk.entries = [
+      ['spaces', [space]],
+      ['state:a', { tabs: [{ kind: 'browser' }], activeTabIndex: 0 }],
+    ];
+    const store = await loadStore();
+    const load = await store.loadAll();
+
+    expect(disk.calls).toEqual(['spaces_store_open', 'entries', 'spaces_store_copy_aside']);
+    expect(load.brokenTabs).toHaveLength(1);
+    expect(load.brokenTabsCopy).toEqual({
+      backupPath: '/data/lut-spaces.corrupt-3.json',
+      reason: '1 saved tab could not be restored',
+    });
+    expect(await writeEverything(store)).toHaveLength(4);
+  });
+
+  it('saves nothing when a file with broken tabs could not be copied', async () => {
+    disk.entries = [
+      ['spaces', [space]],
+      ['state:a', { tabs: [{ kind: 'browser' }], activeTabIndex: 0 }],
+    ];
+    native.copyAside = { backupPath: '', reason: '' };
+    const store = await loadStore();
+    const load = await store.loadAll();
+
+    expect(load.brokenTabsCopy?.backupPath).toBe('');
+    expect(await writeEverything(store)).toEqual([]);
   });
 
   it('moves a store of the wrong shape aside, empties it and loads the defaults', async () => {
