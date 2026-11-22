@@ -36,7 +36,7 @@ columns are out of date.
 | ------- | -------- | ------------------------------------ | ---------------------- | -------------- | ----- |
 | PRO-001 | P0       | Perfiles nombrados                   | E14-03                 |                |       |
 | PRO-011 | P0       | Abrir pestaña con un perfil          | E15-01                 |                |       |
-| PRO-012 | P0       | Ícono por perfil                     | E11-04, E15-03         |                |       |
+| PRO-012 | P0       | Ícono por perfil                     | E11-04, E15-03, E26-09 |                |       |
 | PRO-013 | P1       | Título y color de pestaña por perfil | E15-04                 |                |       |
 | PRO-002 | P0       | Shell/comando ejecutable por perfil  | E14-07                 |                |       |
 | PRO-003 | P0       | Directorio de inicio                 | E14-10                 |                |       |
