@@ -1,9 +1,21 @@
 import type { EditorTab, MarkdownTab, PreviewTab, Tab, TerminalTab } from '@/modules/navigation';
-import { isLeaf, type PaneNode, type SplitDir, splitNode } from '@/modules/terminal/lib/panes';
+import {
+  isLeaf,
+  type PaneNode,
+  setSplitRatios,
+  type SplitDir,
+  splitNode,
+} from '@/modules/terminal/lib/panes';
 
 export type SerializedNode =
   | { kind: 'leaf'; cwd?: string; profileId?: string; active?: boolean }
-  | { kind: 'split'; dir: SplitDir; children: SerializedNode[] };
+  | {
+      kind: 'split';
+      dir: SplitDir;
+      children: SerializedNode[];
+      /** Each child's share; restored normalised, or as equal shares when they do not fit (E16-05). */
+      ratios?: number[];
+    };
 
 export type SerializedTab = (
   | {
@@ -45,6 +57,7 @@ function serializeNode(node: PaneNode, activeLeafId: number): SerializedNode {
     kind: 'split',
     dir: node.dir,
     children: node.children.map((c) => serializeNode(c, activeLeafId)),
+    ratios: node.ratios,
   };
 }
 
@@ -119,7 +132,9 @@ function hydrateNode(
   const children = node.children.map((c) => hydrateNode(c, allocId, acc));
   if (children.length === 0) return { kind: 'leaf', id: allocId() };
   if (children.length === 1) return children[0];
-  return splitNode(allocId(), node.dir, children);
+  const id = allocId();
+  const split = splitNode(id, node.dir, children);
+  return node.ratios ? setSplitRatios(split, id, node.ratios) : split;
 }
 
 function hydrateTree(tree: SerializedNode, allocId: () => number): HydratedTree {

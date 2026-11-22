@@ -1,7 +1,7 @@
 import type { Tab } from '@/modules/navigation';
 import type { PaneNode } from '@/modules/terminal/lib/panes';
 import { describe, expect, it } from 'vitest';
-import { hydrateTabs, type SerializedTab, serializeTabs } from './serialize';
+import { hydrateTabs, type SerializedNode, type SerializedTab, serializeTabs } from './serialize';
 
 function counter(start = 100): () => number {
   let n = start;
@@ -213,5 +213,84 @@ describe('tab colours', () => {
     ]);
     expect(serialized).not.toHaveProperty('color');
     expect(JSON.stringify(serialized)).not.toContain('vim');
+  });
+});
+
+describe('split ratios (E16-05)', () => {
+  function restoredTree(saved: SerializedNode): PaneNode {
+    const tab = { kind: 'terminal', tree: saved } as const;
+    const [restored] = hydrateTabs([tab], 's1', counter());
+    if (restored.kind !== 'terminal') throw new Error('not a terminal');
+    return restored.paneTree;
+  }
+
+  const ratiosOf = (node: PaneNode) => (node.kind === 'split' ? node.ratios : null);
+
+  it('round-trips the ratios of nested splits with their topology and cwds', () => {
+    const tree: PaneNode = {
+      kind: 'split',
+      id: 10,
+      dir: 'row',
+      ratios: [0.3, 0.7],
+      children: [
+        { kind: 'leaf', id: 11, cwd: '/a' },
+        {
+          kind: 'split',
+          id: 12,
+          dir: 'col',
+          ratios: [0.25, 0.75],
+          children: [
+            { kind: 'leaf', id: 13, cwd: '/b' },
+            { kind: 'leaf', id: 14, cwd: '/c' },
+          ],
+        },
+      ],
+    };
+    const [saved] = serializeTabs([term({ paneTree: tree, activeLeafId: 11 })]);
+    if (saved.kind !== 'terminal') throw new Error('not a terminal');
+    const restored = restoredTree(saved.tree);
+
+    expect(restored).toMatchObject({
+      kind: 'split',
+      dir: 'row',
+      children: [
+        { kind: 'leaf', cwd: '/a' },
+        {
+          kind: 'split',
+          dir: 'col',
+          children: [
+            { kind: 'leaf', cwd: '/b' },
+            { kind: 'leaf', cwd: '/c' },
+          ],
+        },
+      ],
+    });
+    expect(ratiosOf(restored)).toEqual([0.3, 0.7]);
+    if (restored.kind === 'split') expect(ratiosOf(restored.children[1])).toEqual([0.25, 0.75]);
+  });
+
+  it('normalises saved ratios that do not sum 1', () => {
+    const leaves = [
+      { kind: 'leaf', cwd: '/a' },
+      { kind: 'leaf', cwd: '/b' },
+    ] as const;
+    const restored = restoredTree({
+      kind: 'split',
+      dir: 'row',
+      children: [...leaves],
+      ratios: [1, 3],
+    });
+    expect(ratiosOf(restored)).toEqual([0.25, 0.75]);
+  });
+
+  it('gives equal shares for missing ratios, the wrong length or a non-positive share', () => {
+    const leaves = [
+      { kind: 'leaf', cwd: '/a' },
+      { kind: 'leaf', cwd: '/b' },
+    ] as const;
+    for (const ratios of [undefined, [1], [0.5, 0.25, 0.25], [1, 0], [-1, 2]]) {
+      const restored = restoredTree({ kind: 'split', dir: 'row', children: [...leaves], ratios });
+      expect(ratiosOf(restored)).toEqual([0.5, 0.5]);
+    }
   });
 });

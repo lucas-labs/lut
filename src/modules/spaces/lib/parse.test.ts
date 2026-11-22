@@ -142,6 +142,8 @@ describe('parseSpacesStore', () => {
         terminal({ kind: 'split', dir: 'diagonal', children: [] }),
         'not a tab',
         { kind: 'editor', path: '/a/x.ts' },
+        terminal({ ...leaves(2), ratios: '0.5,0.5' }),
+        terminal({ ...leaves(2), ratios: [0.5, 'half'] }),
       ]),
     );
 
@@ -151,6 +153,8 @@ describe('parseSpacesStore', () => {
       { spaceId: 'a', index: 1, reason: expect.stringMatching(/state:a\.tabs\[1\]\.kind$/) },
       { spaceId: 'a', index: 2, reason: expect.stringMatching(/state:a\.tabs\[2\]\.tree\.dir$/) },
       { spaceId: 'a', index: 3, reason: expect.stringMatching(/state:a\.tabs\[3\]$/) },
+      { spaceId: 'a', index: 5, reason: expect.stringMatching(/tabs\[5\]\.tree\.ratios$/) },
+      { spaceId: 'a', index: 6, reason: expect.stringMatching(/tabs\[6\]\.tree\.ratios\[1\]$/) },
     ]);
   });
 

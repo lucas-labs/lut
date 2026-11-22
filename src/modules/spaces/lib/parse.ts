@@ -44,6 +44,7 @@ function node(value: unknown, path: string): SerializedNode {
         kind: 'split',
         dir: splitDir(raw.dir, `${path}.dir`),
         children: list(node)(raw.children, `${path}.children`),
+        ratios: optional(raw.ratios, `${path}.ratios`, list(count)),
       };
     default:
       return fail(`${path}.kind`);
