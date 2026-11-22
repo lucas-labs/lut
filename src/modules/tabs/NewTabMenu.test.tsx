@@ -13,6 +13,9 @@ vi.mock('@/modules/profiles/store', () => ({
   setDefaultProfile: () => Promise.resolve(),
 }));
 
+const settings = vi.hoisted(() => ({ open: vi.fn(async (_tab?: string) => {}) }));
+vi.mock('@/modules/settings/openSettingsWindow', () => ({ openSettingsWindow: settings.open }));
+
 const { NewTabMenu } = await import('./NewTabMenu');
 
 function profile(id: string, name: string, hidden = false): ProfileEntry {
@@ -106,6 +109,12 @@ describe('NewTabMenu', () => {
     await openMenu();
     await act(async () => itemNamed(menus()[0], 'Ubuntu').click());
     expect(actions.onNewWithProfile).toHaveBeenCalledWith('detected:wsl:Ubuntu');
+  });
+
+  it('opens the profiles in Settings from Manage profiles', async () => {
+    await openMenu();
+    await act(async () => itemNamed(menus()[0], 'Manage profiles…').click());
+    expect(settings.open).toHaveBeenCalledWith('profiles');
   });
 
   it('offers one terminal with the default profile until the profiles are listed', async () => {

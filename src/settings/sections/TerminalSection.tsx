@@ -34,18 +34,8 @@ import { toast } from 'sonner';
 import { SectionHeader } from '../components/SectionHeader';
 import { SettingRow } from '../components/SettingRow';
 import { SettingsGroup } from '../components/SettingsGroup';
+import { TERMINAL_CURSOR_STYLES, TERMINAL_FONT_WEIGHTS } from './terminalChoices';
 
-const TERMINAL_FONT_WEIGHTS = [
-  { value: 'normal', label: 'Normal' },
-  { value: '500', label: 'Medium' },
-  { value: '600', label: 'Semi-Bold' },
-  { value: 'bold', label: 'Bold' },
-] as const;
-const TERMINAL_CURSOR_STYLES = [
-  { value: 'bar', label: 'Bar' },
-  { value: 'block', label: 'Block' },
-  { value: 'underline', label: 'Underline' },
-] as const;
 const LETTER_SPACINGS = [-4, -3, -2, -1, 0, 1, 2, 3, 4] as const;
 const OPTION_AS_ALT_CHOICES = [
   ['off', 'Off'],

@@ -9,6 +9,7 @@ import {
   FileEditIcon,
   InfoIcon,
   KeyboardIcon,
+  LayersIcon,
   type LutIconComponent,
   OptionsIcon,
   TerminalIcon,
@@ -21,6 +22,7 @@ import type { SectionProps } from './sectionProps';
 import { AboutSection } from './sections/AboutSection';
 import { EditorSection } from './sections/EditorSection';
 import { GeneralSection } from './sections/GeneralSection';
+import { ProfilesSection } from './sections/ProfilesSection';
 import { ShortcutsSection } from './sections/ShortcutsSection';
 import { TerminalSection } from './sections/TerminalSection';
 import { ThemesSection } from './sections/ThemesSection';
@@ -30,9 +32,12 @@ const TABS: {
   label: string;
   icon: LutIconComponent;
   component: (props: SectionProps) => JSX.Element;
+  /** Two panes side by side: the section takes a wider column than the others. */
+  wide?: boolean;
 }[] = [
   { id: 'general', label: 'General', icon: OptionsIcon, component: GeneralSection },
   { id: 'terminal', label: 'Terminal', icon: TerminalIcon, component: TerminalSection },
+  { id: 'profiles', label: 'Profiles', icon: LayersIcon, component: ProfilesSection, wide: true },
   { id: 'editor', label: 'Editor', icon: FileEditIcon, component: EditorSection },
   { id: 'themes', label: 'Themes', icon: ThemesIcon, component: ThemesSection },
   { id: 'shortcuts', label: 'Shortcuts', icon: KeyboardIcon, component: ShortcutsSection },
@@ -110,13 +115,15 @@ export function SettingsApp() {
           {USE_CUSTOM_WINDOW_CONTROLS && <WindowControls closeOnly />}
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-12 pt-3 pb-12 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div className="mx-auto w-full max-w-170">
-            {TABS.map(({ id, component: Section }) => (
-              <TabsPrimitive.Content key={id} value={id} className="focus-visible:outline-none">
-                <Section openTab={setActive} />
-              </TabsPrimitive.Content>
-            ))}
-          </div>
+          {TABS.map(({ id, component: Section, wide }) => (
+            <TabsPrimitive.Content
+              key={id}
+              value={id}
+              className={cn('mx-auto w-full focus-visible:outline-none', wide ? 'max-w-205' : 'max-w-170')}
+            >
+              <Section openTab={setActive} />
+            </TabsPrimitive.Content>
+          ))}
         </div>
       </main>
     </TabsPrimitive.Root>

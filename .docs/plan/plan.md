@@ -4573,11 +4573,14 @@ size-exception: one form over the whole TerminalProfile model; splitting it leav
 
 **Acceptance criteria:**
 
-- [ ] List of detected (non-deletable, hideable) and custom profiles; set default.
+- [ ] List of detected (non-deletable, hideable) and custom profiles; set default, duplicate, and delete custom ones; a "Profiles" section of Settings.
 - [ ] "Manage profiles…" in the new-tab menu and the in-pane "choose profile" menu opens it.
-- [ ] Editor fields: name, executable, args (list), env (key/value, unset), starting directory, environment/distro, PowerShell user-profile option, appearance overrides, closeBehavior, allowShellTitle.
+- [ ] Editor fields: name, executable, args (list), env (key/value, unset), starting directory, environment/distro, PowerShell user-profile option, appearance overrides, closeBehavior, allowShellTitle. A detected profile edits only its visibility, appearance and allowShellTitle.
+- [ ] Each change is saved as it is made, like the other settings; a new profile is created from its name and executable.
 - [ ] Backend validation errors (E14-03) are shown per field; invalid profiles cannot be saved.
+- [ ] A detected profile's padding override is applied (native merged every appearance field but padding).
 - [ ] Component tests for validation display and save.
+- [ ] Choosing a profile's icon comes with E15-03.
 
 **Verification:** `pnpm test`; `pnpm typecheck`; manual: create a custom `python -q` profile and open it.
 

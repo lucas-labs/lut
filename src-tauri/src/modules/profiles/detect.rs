@@ -119,6 +119,7 @@ fn with_changes(mut profile: TerminalProfile, changes: &DetectedOverride) -> Ter
     a.cursor_style = set.cursor_style.or(a.cursor_style);
     a.cursor_blink = set.cursor_blink.or(a.cursor_blink);
     a.scrollback = set.scrollback.or(a.scrollback);
+    a.padding = set.padding.or(a.padding);
     let set = &changes.tab;
     let t = &mut profile.tab;
     t.title = set.title.clone().or(t.title.take());
@@ -130,6 +131,7 @@ fn with_changes(mut profile: TerminalProfile, changes: &DetectedOverride) -> Ter
 
 #[cfg(test)]
 mod tests {
+    use super::super::model::Padding;
     use super::*;
 
     fn shell(id: &str, name: &str, path: &str) -> ShellInfo {
@@ -195,6 +197,12 @@ mod tests {
             ..Default::default()
         };
         changes.appearance.font_size = Some(15.0);
+        changes.appearance.padding = Some(Padding {
+            top: 2,
+            right: 4,
+            bottom: 2,
+            left: 4,
+        });
         changes.tab.color = Some("#e95420".into());
         file.detected.insert("detected:wsl:Ubuntu".into(), changes);
 
@@ -214,6 +222,15 @@ mod tests {
         );
         let ubuntu = &list[2].profile;
         assert_eq!(ubuntu.appearance.font_size, Some(15.0));
+        assert_eq!(
+            ubuntu.appearance.padding,
+            Some(Padding {
+                top: 2,
+                right: 4,
+                bottom: 2,
+                left: 4
+            })
+        );
         assert_eq!(ubuntu.tab.color.as_deref(), Some("#e95420"));
         assert_eq!(ubuntu.appearance.theme_id, None);
     }

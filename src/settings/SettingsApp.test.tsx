@@ -31,6 +31,9 @@ vi.mock('./sections/GeneralSection', () => ({
 vi.mock('./sections/TerminalSection', () => ({
   TerminalSection: () => createElement('p', null, 'terminal section'),
 }));
+vi.mock('./sections/ProfilesSection', () => ({
+  ProfilesSection: () => createElement('p', null, 'profiles section'),
+}));
 vi.mock('./sections/EditorSection', () => ({ EditorSection: () => createElement('p', null, 'editor section') }));
 vi.mock('./sections/ThemesSection', () => ({ ThemesSection: () => createElement('p', null, 'themes section') }));
 vi.mock('./sections/ShortcutsSection', () => ({
@@ -76,7 +79,15 @@ describe('SettingsApp', () => {
     const list = host.querySelector('[role="tablist"]');
     expect(list?.getAttribute('aria-label')).toBe('Settings sections');
     expect(list?.getAttribute('aria-orientation')).toBe('vertical');
-    expect(tabs().map((t) => t.textContent)).toEqual(['General', 'Terminal', 'Editor', 'Themes', 'Shortcuts', 'About']);
+    expect(tabs().map((t) => t.textContent)).toEqual([
+      'General',
+      'Terminal',
+      'Profiles',
+      'Editor',
+      'Themes',
+      'Shortcuts',
+      'About',
+    ]);
   });
 
   it('shows the selected section in a panel labelled by its tab', () => {
@@ -91,6 +102,13 @@ describe('SettingsApp', () => {
     open('?tab=shortcuts');
     expect(shown()).toBe('shortcuts section');
     expect(selected()).toBe('Shortcuts');
+  });
+
+  it('opens the profiles from their deep link, in a wider column', () => {
+    open('?tab=profiles');
+    expect(shown()).toBe('profiles section');
+    expect(selected()).toBe('Profiles');
+    expect(panel()?.className).toContain('max-w-205');
   });
 
   it('falls back to general for an unknown section', () => {

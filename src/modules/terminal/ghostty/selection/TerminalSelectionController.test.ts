@@ -98,6 +98,20 @@ describe('terminal selection pointer ownership', () => {
     }
   });
 
+  it('lets a press that starts a selection reach the page, where open menus close', () => {
+    const stop = vi.spyOn(Event.prototype, 'stopPropagation');
+    const fixture = dragFixture();
+    try {
+      // Handled: the default is prevented, so the browser starts no native selection.
+      expect(fixture.pointer('pointerdown', 5)).toBe(false);
+      expect(fixture.tracked()).not.toBeNull();
+      expect(stop).not.toHaveBeenCalled();
+    } finally {
+      fixture.controller.dispose();
+      stop.mockRestore();
+    }
+  });
+
   it('drags in both directions across real Ghostty render synchronization', async () => {
     const bytes = await readFile(
       new URL('../../../../../packages/ghostty-core/adapted/ghostty-vt.wasm', import.meta.url),

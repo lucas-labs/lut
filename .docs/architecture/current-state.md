@@ -209,11 +209,11 @@ removed `wsl_default_distro`, and E14-05 added the eight `profiles_*` commands.
 The tables below list each one with the frontend files that call it; for the wrapper objects the caller is written as
 `` `git.method` → users ``; `workspaceNative` is in `modules/workspace/native.ts`.
 
-**Commands without a real caller (5):**
+**Commands without a real caller (2):**
 
-| Commands                                                                                                | Why                                                      | Resolved by |
-| ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ----------- |
-| `profiles_get`, `profiles_save`, `profiles_delete`, `profiles_detect`, `profiles_set_detected_override` | The profile manager that edits profiles is not built yet | (E15-02)    |
+| Commands                          | Why                                                                      | Resolved by |
+| --------------------------------- | ------------------------------------------------------------------------ | ----------- |
+| `profiles_get`, `profiles_detect` | The profile manager reads the listed entries and has no re-detect action | (none)      |
 
 **Callers the running app never loads:** `agent_decisions_ready` and `agent_decision_respond`
 (`modules/control/lib/agentDecisions.ts`) and `agent_disable_hooks`, `agent_hooks_plan`, `agent_hooks_apply` (only
@@ -322,11 +322,11 @@ reducer; E20-08 and E20-10 the hooks manager. `agent_hooks_status` and `agent_en
 | -------------------------------- | -------------------- | ------------------------------- |
 | `profiles_list`                  | `profiles::commands` | `modules/profiles/store.ts`     |
 | `profiles_get`                   | `profiles::commands` | **no caller**                   |
-| `profiles_save`                  | `profiles::commands` | **no caller**                   |
-| `profiles_delete`                | `profiles::commands` | **no caller**                   |
+| `profiles_save`                  | `profiles::commands` | `modules/profiles/commands.ts`  |
+| `profiles_delete`                | `profiles::commands` | `modules/profiles/commands.ts`  |
 | `profiles_set_default`           | `profiles::commands` | `modules/profiles/store.ts`     |
 | `profiles_detect`                | `profiles::commands` | **no caller**                   |
-| `profiles_set_detected_override` | `profiles::commands` | **no caller**                   |
+| `profiles_set_detected_override` | `profiles::commands` | `modules/profiles/commands.ts`  |
 | `profiles_take_load_error`       | `profiles::store`    | `modules/profiles/loadError.ts` |
 
 #### control

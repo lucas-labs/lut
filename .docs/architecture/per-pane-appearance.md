@@ -92,5 +92,5 @@ The four fonts were:
 - zoom: it multiplies every pane's size;
 - background opacity, background image and blur: they are window-level, and the WebGPU canvas is opaque;
 - subpixel text and renderer choice: one pipeline and one renderer per window;
-- padding: it does not exist yet. A per-pane padding needs the window canvas to paint the padding area in the pane's
-  background, so it is left out of v1.
+- padding: it did not exist when this was checked. E14-21 later added it, globally and per profile, as the padding of
+  each pane; detected profiles take it from their override since E15-02.
