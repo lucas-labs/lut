@@ -7124,7 +7124,7 @@ size: XS
 
 ```yaml
 id: E26
-depends-on: [E10, E12, E14]
+depends-on: [E10, E12, E14, E15]
 refs: [.docs/plan/README.md]
 ```
 
@@ -7329,11 +7329,46 @@ lut detects Nushell as a profile on every platform, but has no integration scrip
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml --lib shell_init`; manual: a Nushell pane follows
 `cd` in the header breadcrumb.
 
+### E26-09 — Colour for a profile's built-in icon
+
+```yaml
+id: E26-09
+depends-on: [E15-03]
+refs: [PRO-012, .docs/plan/analysis/proposal.md]
+covers: [PRO-012]
+type: task
+scope: ui
+size: M
+```
+
+**Goal:** The profile icon picker sets a colour for a built-in icon, from the theme's colours or any colour, and the
+icon shows in that colour wherever it appears. Today a built-in icon takes the text colour of the place it is drawn
+in (E15-03). The colour belongs to the icon, apart from the tab colour of E15-04.
+
+**Acceptance criteria:**
+
+- [ ] The profile keeps its icon's colour in its own field (`tab.iconColor`), apart from `tab.color`; a detected
+      profile keeps it in its override, and native refuses a value that is neither a theme colour nor a hex colour,
+      shown on that field.
+- [ ] The icon picker has a colour row like the tab menu's colour in the E11-04 design: swatches for no colour (the
+      text colour), the theme's colours, and a custom colour; the custom swatch opens a saturation and brightness
+      area, a hue bar, and a hex field with its preview and an Apply button. The design shows six of the theme's ANSI
+      colours (red, yellow, green, cyan, blue, magenta) as an example; more of the theme's colours can be offered.
+- [ ] A theme colour is kept by name and follows a theme change; a custom colour is kept as hex and stays as set. The
+      tab colour of E15-04 uses the same control, shared by whichever of the two issues comes first.
+- [ ] The coloured icon shows wherever the profile's icon does: the new-tab and split menus, the palette, the Settings
+      list and editor, and the tab.
+- [ ] Image icons keep their own colours: the colour applies to built-in icons only.
+- [ ] Component tests for choosing, resetting and showing the colour; native tests for its validation.
+
+**Verification:** `pnpm test`; `cargo test --manifest-path src-tauri/Cargo.toml --lib profiles`; manual: a green
+PowerShell icon in the "+" menu and its tab; changing the theme recolours a theme colour, not a hex one.
+
 ### E26-03 — Close-out: accessory improvements
 
 ```yaml
 id: E26-03
-depends-on: [E26-01, E26-02, E26-04, E26-05, E26-06, E26-07, E26-08]
+depends-on: [E26-01, E26-02, E26-04, E26-05, E26-06, E26-07, E26-08, E26-09]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
