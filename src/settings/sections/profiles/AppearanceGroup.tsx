@@ -64,10 +64,12 @@ const BLINK: Choice[] = [
   { value: 'off', label: 'Off' },
 ];
 
+/** Fields to set, or ones made from the appearance as last saved; an undefined field follows the setting again. */
+type AppearanceChange = Partial<ProfileAppearance> | ((current: ProfileAppearance) => Partial<ProfileAppearance>);
+
 type Props = {
   appearance: ProfileAppearance;
-  /** Sets the given fields; an undefined one follows the setting again. */
-  onChange: (fields: Partial<ProfileAppearance>) => void;
+  onChange: (change: AppearanceChange) => void;
 };
 
 /** The appearance the profile sets over the app and Terminal settings; each unset field follows them. */
@@ -158,7 +160,14 @@ export function AppearanceGroup({ appearance, onChange }: Props) {
               {...a11y}
               value={appearance.padding ?? padding}
               max={TERMINAL_PADDING_MAX}
-              onChange={(v) => set('padding', v)}
+              onChange={(next, sides) =>
+                // Only the sides edited, over the padding as last saved: another side edited a moment ago may
+                // not be shown yet.
+                onChange((current) => {
+                  const base = current.padding ?? padding;
+                  return { padding: { ...base, ...Object.fromEntries(sides.map((side) => [side, next[side]])) } };
+                })
+              }
             />
           </div>
         )}

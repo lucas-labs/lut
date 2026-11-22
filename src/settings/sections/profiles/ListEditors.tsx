@@ -33,7 +33,9 @@ function useRows<T extends object>(saved: T[], same: (a: T[], b: T[]) => boolean
     added.current += 1;
     setRows([...rows, { ...item, key: `added-${added.current}` }]);
   };
-  return { rows, setRows, add, markSent: setSent };
+  // What the next edit is compared with: the list sent while it is on its way, so going back to the listed one
+  // is saved too.
+  return { rows, setRows, add, markSent: setSent, last: sent ?? saved };
 }
 
 const blurOnEnter = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -51,11 +53,11 @@ const sameArgs = (a: Arg[], b: Arg[]) => a.length === b.length && a.every((arg, 
  */
 export function ArgsEditor({ args, onCommit }: { args: string[]; onCommit: (args: string[]) => void }) {
   const saved = args.map((value) => ({ value, listed: true }));
-  const { rows, setRows, add, markSent } = useRows(saved, sameArgs);
+  const { rows, setRows, add, markSent, last } = useRows(saved, sameArgs);
 
   const commit = (next: Keyed<Arg>[]) => {
     const kept = next.filter((arg) => arg.value !== '' || arg.listed);
-    if (sameArgs(kept, saved)) return;
+    if (sameArgs(kept, last)) return;
     setRows(next.map((arg) => (kept.includes(arg) ? { ...arg, listed: true } : arg)));
     markSent(kept);
     onCommit(kept.map((arg) => arg.value));
@@ -139,11 +141,11 @@ type EnvEditorProps = {
  */
 export function EnvEditor({ env, onCommit, errors }: EnvEditorProps) {
   const saved = toRows(env);
-  const { rows, setRows, add, markSent } = useRows(saved, sameEnv);
+  const { rows, setRows, add, markSent, last } = useRows(saved, sameEnv);
 
   const commit = (next: EnvRow[]) => {
     const env = toEnv(next);
-    if (sameEnv(toRows(env), saved)) return;
+    if (sameEnv(toRows(env), last)) return;
     markSent(toRows(env));
     onCommit(env);
   };

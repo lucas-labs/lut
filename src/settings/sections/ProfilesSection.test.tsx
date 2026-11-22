@@ -113,6 +113,13 @@ function listSaved(saved: unknown) {
   };
 }
 
+/** Keeps the next save on its way, unlisted, until the returned function answers it. */
+function holdNextSave(): () => void {
+  let answer: () => void = () => {};
+  native.save.mockImplementationOnce(() => new Promise<void>((resolve) => (answer = resolve)));
+  return () => answer();
+}
+
 beforeEach(() => {
   forgetProfileWriters();
   profiles.list = structuredClone(LIST);
@@ -409,6 +416,54 @@ describe('a custom profile', () => {
       name: 'Py',
       closeBehavior: 'ask',
       appearance: { cursorStyle: 'block' },
+    });
+  });
+
+  it('saves going back to the listed name while the change is on its way', async () => {
+    const answer = holdNextSave();
+    await render();
+    await choose('Python');
+    await type(inputOf('Name'), 'Py');
+    await leave(inputOf('Name'));
+    await type(inputOf('Name'), 'Python');
+    await leave(inputOf('Name'));
+    await act(async () => answer());
+    await settle();
+    expect(native.save).toHaveBeenLastCalledWith(PYTHON_SAVED);
+    expect(inputOf('Name').value).toBe('Python');
+  });
+
+  it('saves going back to the listed argument and variable while the change is on its way', async () => {
+    const answer = holdNextSave();
+    await render();
+    await choose('Python');
+    const arg = () => host.querySelector('input[aria-label="Argument 1"]') as HTMLInputElement;
+    const variable = () => host.querySelector('input[aria-label="Variable 1 value"]') as HTMLInputElement;
+    await type(arg(), '-i');
+    await leave(arg());
+    await type(arg(), '-q');
+    await leave(arg());
+    await type(variable(), 'baz');
+    await leave(variable());
+    await type(variable(), 'bar');
+    await leave(variable());
+    await act(async () => answer());
+    await settle();
+    expect(native.save).toHaveBeenLastCalledWith(PYTHON_SAVED);
+  });
+
+  it('keeps one padding side set a moment ago when another is set', async () => {
+    const answer = holdNextSave();
+    await render();
+    await choose('Python');
+    const padding = (label: string) => host.querySelector(`input[aria-label="${label}"]`) as HTMLInputElement;
+    await type(padding('Horizontal padding'), '5');
+    await type(padding('Vertical padding'), '7');
+    await act(async () => answer());
+    await settle();
+    expect(native.save).toHaveBeenLastCalledWith({
+      ...PYTHON_SAVED,
+      appearance: { padding: { top: 7, right: 5, bottom: 7, left: 5 } },
     });
   });
 

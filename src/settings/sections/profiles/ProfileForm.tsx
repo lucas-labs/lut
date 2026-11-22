@@ -147,7 +147,14 @@ export function ProfileForm({ entry, isDefault, distros, onSetDefault, onDuplica
 
       <AppearanceGroup
         appearance={entry.appearance}
-        onChange={(fields) => change((current) => ({ appearance: { ...current.appearance, ...fields } }))}
+        onChange={(fields) =>
+          change((current) => ({
+            appearance: {
+              ...current.appearance,
+              ...(typeof fields === 'function' ? fields(current.appearance) : fields),
+            },
+          }))
+        }
       />
 
       <SettingsGroup title="Behavior">

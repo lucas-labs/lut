@@ -37,7 +37,8 @@ const SIDES: readonly Field[] = [
 
 type PaddingInputProps = Omit<React.ComponentProps<"div">, "onChange"> & {
   value: Padding
-  onChange: (value: Padding) => void
+  /** The new padding, and the sides the edit set (the rest are `value`'s, as shown). */
+  onChange: (value: Padding, changed: readonly Side[]) => void
   /** The largest value of a side, in px; the smallest is 0. */
   max?: number
 }
@@ -62,7 +63,7 @@ function PaddingInput({ value, onChange, max = Number.POSITIVE_INFINITY, classNa
 
   const toggle = () => {
     if (split && differs) {
-      onChange({ top: value.top, right: value.left, bottom: value.top, left: value.left })
+      onChange({ top: value.top, right: value.left, bottom: value.top, left: value.left }, ["right", "bottom"])
     }
     setSplit(!split)
   }
@@ -70,7 +71,7 @@ function PaddingInput({ value, onChange, max = Number.POSITIVE_INFINITY, classNa
   const set = (field: Field, n: number) => {
     const next = { ...value }
     for (const side of field.sides) next[side] = n
-    onChange(next)
+    onChange(next, field.sides)
   }
 
   return (
