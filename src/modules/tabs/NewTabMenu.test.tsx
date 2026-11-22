@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
 import type { ProfileEntry, ProfilesList } from '@/modules/profiles';
+import { type LutIconComponent, ShellCmdIcon, ShellUbuntuIcon, StarIcon } from '@lut/lut-icons';
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NewTabMenuActions } from './NewTabMenu';
 
@@ -103,6 +105,26 @@ describe('NewTabMenu', () => {
     ]);
     expect(names[0]).toContain('Default');
     expect(names.some((n) => n.includes('Hidden'))).toBe(false);
+  });
+
+  it('shows each profile with its icon', async () => {
+    profiles.list = {
+      ...LIST,
+      profiles: LIST.profiles.map((p) =>
+        p.id === 'detected:pwsh'
+          ? { ...p, tab: { ...p.tab, icon: 'star' } }
+          : p.id === 'detected:wsl:Ubuntu'
+            ? { ...p, environment: { kind: 'wsl', distro: 'Ubuntu' } }
+            : p,
+      ),
+    };
+    await openMenu();
+    const drawing = (html: string) => [...html.matchAll(/\sd="([^"]+)"/g)].map((m) => m[1]).join(' ');
+    const icon = (Icon: LutIconComponent) => drawing(renderToStaticMarkup(createElement(Icon, { size: 'sm' })));
+    const shown = (name: string) => drawing(itemNamed(menus()[0], name).querySelector('svg')?.outerHTML ?? '');
+    expect(shown('PowerShell 7')).toBe(icon(StarIcon));
+    expect(shown('Command Prompt')).toBe(icon(ShellCmdIcon));
+    expect(shown('Ubuntu')).toBe(icon(ShellUbuntuIcon));
   });
 
   it('opens a tab with the chosen profile', async () => {

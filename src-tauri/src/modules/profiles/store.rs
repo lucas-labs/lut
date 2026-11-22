@@ -13,6 +13,9 @@ use crate::modules::fs::atomic::{write_atomic, AtomicWriteError};
 /// Store file name inside lut's app config dir.
 pub const PROFILES_FILE: &str = "profiles.json";
 
+/// Start of the name an unusable store file is moved aside under.
+pub const BACKUP_PREFIX: &str = "profiles.corrupt-";
+
 /// What the store file holds: the user's own profiles, and the user's changes to detected ones.
 /// Detected profiles themselves are found at runtime and never written here.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -113,9 +116,9 @@ fn backup_path(dir: &Path) -> PathBuf {
     let mut n = 0;
     loop {
         let name = if n == 0 {
-            format!("profiles.corrupt-{millis}.json")
+            format!("{BACKUP_PREFIX}{millis}.json")
         } else {
-            format!("profiles.corrupt-{millis}-{n}.json")
+            format!("{BACKUP_PREFIX}{millis}-{n}.json")
         };
         let candidate = dir.join(name);
         if !candidate.exists() {
@@ -150,6 +153,11 @@ impl ProfilesState {
                 recovered.reason,
                 recovered.backup_path
             );
+        }
+        // A file that could not be read names no icon: its copies stay until it is fixed. One moved aside keeps
+        // naming its copies from the backup.
+        if outcome.recovered.is_none() {
+            super::icons::remove_unused(&dir, &outcome.file);
         }
         let writes_blocked = outcome
             .recovered

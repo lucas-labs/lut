@@ -16,6 +16,7 @@ import {
   deleteProfile,
   newProfileId,
   type ProfileEntry,
+  ProfileIcon,
   readFailure,
   readProfilesAgain,
   saveProfile,
@@ -24,7 +25,6 @@ import {
   useProfiles,
   useProfilesRead,
 } from '@/modules/profiles';
-import { TerminalIcon } from '@lut/lut-icons';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { SectionHeader } from '../components/SectionHeader';
@@ -93,7 +93,7 @@ export function ProfilesSection() {
             onClick={() => setChosenId(entry.id)}
             className="w-full justify-start aria-[current=true]:bg-accent aria-[current=true]:text-foreground"
           >
-            <TerminalIcon size="sm" />
+            <ProfileIcon profile={entry} />
             <span className="min-w-0 flex-1 truncate text-left">{entry.name}</span>
             {entry.hidden ? <span className="text-[11px] text-muted-foreground">Hidden</span> : null}
             {entry.id === defaultProfileId ? <Badge variant="soft">Default</Badge> : null}

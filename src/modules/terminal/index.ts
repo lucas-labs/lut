@@ -1,6 +1,7 @@
 export { subscribeAgentSignals, useAgentActivityStore } from './lib/agentActivity';
 export {
   canAddPane,
+  findLeaf,
   findLeafCwd,
   hasLeaf,
   leafIds,
