@@ -1,44 +1,22 @@
-import type { Tab } from '@/modules/navigation';
+import { labelFor, type Tab } from '@/modules/navigation';
 import { setWindowTitle } from '@/modules/platform';
-import { findLeafCwd } from '@/modules/terminal/lib/panes';
 import { useEffect } from 'react';
 
 const APP_NAME = 'lut';
 
-function basename(path: string): string {
-  const parts = path.split(/[\\/]/).filter(Boolean);
-  return parts.length ? parts[parts.length - 1] : '/';
-}
-
-/** Label of the focused tab — for terminals, the active pane's folder. */
-function tabLabel(tab: Tab | undefined): string {
-  if (!tab) return '';
-  if (tab.kind === 'terminal') {
-    const cwd = findLeafCwd(tab.paneTree, tab.activeLeafId) ?? tab.cwd;
-    return cwd ? basename(cwd) : tab.title;
-  }
-  return tab.title;
-}
-
 /**
- * Drives the OS window title from the focused tab + project folder, the way
- * Spotify shows the current track instead of just the app name. Without this
- * the window keeps the build-time default ("Tauri App" on Linux).
- *
- * Format: `<project> — <tab>` (e.g. `lut-ai — src`), collapsing to just the
- * project when the focused terminal sits at the project root. Falls back to the
- * app name when there's nothing to show.
+ * Drives the OS window title (taskbar, Alt+Tab) from the focused tab: `<tab> - lut`, with the tab named as the tab
+ * strip names it (`labelFor`). Just the app name without a tab. Without this the window keeps the build-time default.
  */
-export function useWindowTitle(activeTab: Tab | undefined, explorerRoot: string | null): void {
-  const project = explorerRoot ? basename(explorerRoot) : '';
-  const label = tabLabel(activeTab);
+export function useWindowTitle(
+  activeTab: Tab | undefined,
+  allowsShellTitle: (profileId: string | undefined) => boolean,
+): void {
+  const label = activeTab ? labelFor(activeTab, allowsShellTitle) : '';
 
   useEffect(() => {
-    let title: string;
-    if (project && label && label !== project) title = `${project} — ${label}`;
-    else title = project || label || APP_NAME;
-
+    const title = label ? `${label} - ${APP_NAME}` : APP_NAME;
     document.title = title;
     void setWindowTitle(title).catch(() => {});
-  }, [project, label]);
+  }, [label]);
 }

@@ -74,7 +74,8 @@ export default function App() {
   useThemeFileEditing({ openFileTab });
   useApplyFileIconColors();
   const { explorerRoot, inheritedCwdForNewTab } = useWorkspaceCwd(activeTab, tabs, launchCwd ?? home);
-  useWindowTitle(activeTab, explorerRoot);
+  const allowsShellTitle = useShellTitlePolicy();
+  useWindowTitle(activeTab, allowsShellTitle);
   const zoom = useZoom();
   const searchInlineRef = useRef<SearchInlineHandle | null>(null);
   const focusSearchInline = useCallback(() => searchInlineRef.current?.focus(), []);
@@ -134,7 +135,6 @@ export default function App() {
     setNewEditorOpen,
   });
 
-  const allowsShellTitle = useShellTitlePolicy();
   const navigatorItems = useNavigatorItems(activeSpaceId ?? DEFAULT_SPACE_ID, allowsShellTitle);
   // The new-tab menu, in the header and in the vertical tab column.
   const newTabMenu: NewTabMenuActions = {
