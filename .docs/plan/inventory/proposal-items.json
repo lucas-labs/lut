@@ -92,6 +92,12 @@
       "text": "P1 Tabs compactos, expandibles o con grupos"
     },
     {
+      "id": "TER-014",
+      "section": "3",
+      "kind": "requirement",
+      "text": "P1 Color de pestaña"
+    },
+    {
       "id": "PRO-001",
       "section": "3",
       "kind": "requirement",
@@ -113,7 +119,7 @@
       "id": "PRO-013",
       "section": "3",
       "kind": "requirement",
-      "text": "P1 Título y color de pestaña por perfil"
+      "text": "P1 Título de pestaña desde el shell"
     },
     {
       "id": "PRO-002",
@@ -167,7 +173,7 @@
       "id": "PRJ-001",
       "section": "3",
       "kind": "requirement",
-      "text": "P0 Lista de proyectos"
+      "text": "P0 Lista de spaces"
     },
     {
       "id": "PRJ-002",
@@ -191,7 +197,7 @@
       "id": "PRJ-005",
       "section": "3",
       "kind": "requirement",
-      "text": "P0 Distintos perfiles en un proyecto"
+      "text": "P0 Distintos perfiles en un space"
     },
     {
       "id": "PRJ-006",
@@ -215,7 +221,7 @@
       "id": "PRJ-009",
       "section": "3",
       "kind": "requirement",
-      "text": "P1 Reabrir proyecto existente"
+      "text": "P1 Reabrir space existente"
     },
     {
       "id": "PRJ-010",
@@ -227,13 +233,13 @@
       "id": "PRJ-011",
       "section": "3",
       "kind": "requirement",
-      "text": "P1 Varios proyectos activos"
+      "text": "P1 Varios spaces activos"
     },
     {
       "id": "PRJ-012",
       "section": "3",
       "kind": "requirement",
-      "text": "P2 Ventanas múltiples por proyecto"
+      "text": "P2 Ventanas múltiples por space"
     },
     {
       "id": "PRJ-013",
@@ -251,7 +257,7 @@
       "id": "PRJ-015",
       "section": "3",
       "kind": "requirement",
-      "text": "P1 Exportar/importar proyectos"
+      "text": "P1 Exportar/importar spaces"
     },
     {
       "id": "PRJ-016",
@@ -263,7 +269,7 @@
       "id": "PRJ-017",
       "section": "3",
       "kind": "requirement",
-      "text": "P0 Abrir otros proyectos desde la app"
+      "text": "P0 Abrir otros spaces desde la app"
     },
     {
       "id": "UX-001",
@@ -281,7 +287,7 @@
       "id": "UX-003",
       "section": "3",
       "kind": "requirement",
-      "text": "P0 Sidebar de proyectos opcional, colapsable y con ancho persistido"
+      "text": "P0 Sidebar de spaces opcional, colapsable y con ancho persistido"
     },
     {
       "id": "UX-004",
@@ -305,13 +311,13 @@
       "id": "UX-007",
       "section": "3",
       "kind": "requirement",
-      "text": "P1 Menús contextuales para tabs/panes/proyectos"
+      "text": "P1 Menús contextuales para tabs/panes/spaces"
     },
     {
       "id": "UX-008",
       "section": "3",
       "kind": "requirement",
-      "text": "P1 Command palette orientado a acciones de terminal/proyectos"
+      "text": "P1 Command palette orientado a acciones de terminal/spaces"
     },
     {
       "id": "UX-009",
@@ -365,7 +371,7 @@
       "id": "AGT-004",
       "section": "3",
       "kind": "requirement",
-      "text": "P0 Asociar agente con pane, PTY, tab, proyecto y sesión de agente"
+      "text": "P0 Asociar agente con pane, PTY, tab, space y sesión de agente"
     },
     {
       "id": "AGT-005",
@@ -461,7 +467,7 @@
       "id": "ADR-006",
       "section": "4",
       "kind": "adr",
-      "text": "ADR-006: proyectos"
+      "text": "ADR-006: spaces"
     },
     {
       "id": "ADR-007",
@@ -479,7 +485,7 @@
       "id": "5.4:1",
       "section": "5.4",
       "kind": "list-item",
-      "text": "No volver a montar un pane por cambiar la posición de la barra de tabs, expandir sidebar o cambiar de proyecto."
+      "text": "No volver a montar un pane por cambiar la posición de la barra de tabs, expandir sidebar o cambiar de space."
     },
     {
       "id": "5.4:2",
@@ -545,7 +551,7 @@
       "id": "5.10:5",
       "section": "5.10",
       "kind": "table-row",
-      "text": "`Spaces` + serialización | Medio | Extender con migraciones | Base útil para proyectos"
+      "text": "`Spaces` + serialización | Medio | Extender con migraciones | Base para el estado guardado de cada space"
     },
     {
       "id": "5.10:6",
@@ -629,7 +635,7 @@
       "id": "6.2:6",
       "section": "6.2",
       "kind": "list-item",
-      "text": "`projects`: metadatos, estado guardado, lifecycle de restauración y relanzamiento de comandos."
+      "text": "`spaces`: metadatos, estado guardado, lifecycle de restauración y relanzamiento de comandos."
     },
     {
       "id": "6.2:7",
@@ -647,7 +653,7 @@
       "id": "6.2:9",
       "section": "6.2",
       "kind": "list-item",
-      "text": "`settings`: preferencias globales y overrides por perfil/proyecto."
+      "text": "`settings`: preferencias globales y overrides por perfil/space."
     },
     {
       "id": "6.2:10",
@@ -659,7 +665,7 @@
       "id": "6.4",
       "section": "6.4",
       "kind": "section",
-      "text": "Cada entidad debe tener identificadores estables, separados: - `projectId`: proyecto lógico persistido. - `windowId`: ventana desktop. - `tabId`: agrupación visual de panes. - `paneId`/`leafId`: posición/identidad funci…"
+      "text": "Cada entidad debe tener identificadores estables, separados: - `spaceId`: space lógico persistido. - `windowId`: ventana desktop. - `tabId`: agrupación visual de panes. - `paneId`/`leafId`: posición/identidad funcional …"
     },
     {
       "id": "6.5:1",
@@ -671,7 +677,7 @@
       "id": "6.5:2",
       "section": "6.5",
       "kind": "list-item",
-      "text": "El proyecto se guarda como su estado vivo; no hay plantillas declarativas (presets)."
+      "text": "El space se guarda como su estado vivo; no hay plantillas declarativas (presets)."
     },
     {
       "id": "6.5:3",
@@ -701,7 +707,7 @@
       "id": "6.5:7",
       "section": "6.5",
       "kind": "list-item",
-      "text": "El cierre de proyecto activo debe definir política: cerrar PTY, suspender presentación o mantener recursos en memoria."
+      "text": "El cierre de space activo debe definir política: cerrar PTY, suspender presentación o mantener recursos en memoria."
     },
     {
       "id": "6.5:8",
@@ -713,7 +719,7 @@
       "id": "7.1",
       "section": "7.1",
       "kind": "section",
-      "text": "Esquema ilustrativo (la sintaxis final debe ser validada por Zod en TS y Serde en Rust cuando cruce IPC): Los overrides deben resolverse mediante capas: `globalDefaults` → `terminalProfile` → `projectPaneOverrides` → `r…"
+      "text": "Esquema ilustrativo (la sintaxis final debe ser validada por Zod en TS y Serde en Rust cuando cruce IPC): Los overrides deben resolverse mediante capas: `globalDefaults` → `terminalProfile` → `spacePaneOverrides` → `run…"
     },
     {
       "id": "7.3",
@@ -725,7 +731,7 @@
       "id": "8.4:1",
       "section": "8.4",
       "kind": "list-item",
-      "text": "Cargar metadatos y estado guardado del proyecto, validar `schemaVersion` y existencia de perfiles."
+      "text": "Cargar metadatos y estado guardado del space, validar `schemaVersion` y existencia de perfiles."
     },
     {
       "id": "8.4:2",
@@ -767,7 +773,7 @@
       "id": "8.4:8",
       "section": "8.4",
       "kind": "list-item",
-      "text": "Para cada pane con comando a relanzar: si no está aprobado en el proyecto, preguntar “Ejecutar”, “Ejecutar siempre en este proyecto” o “No ejecutar”; evitar doble ejecución."
+      "text": "Para cada pane con comando a relanzar: si no está aprobado en el space, preguntar “Ejecutar”, “Ejecutar siempre en este space” o “No ejecutar”; evitar doble ejecución."
     },
     {
       "id": "8.4:9",
@@ -785,7 +791,7 @@
       "id": "8.5:1",
       "section": "8.5",
       "kind": "list-item",
-      "text": "Permiso por proyecto y comando (“Ejecutar siempre en este proyecto”)."
+      "text": "Permiso por space y comando (“Ejecutar siempre en este space”)."
     },
     {
       "id": "8.5:2",
@@ -815,7 +821,7 @@
       "id": "8.5:6",
       "section": "8.5",
       "kind": "list-item",
-      "text": "Prohibición de ejecutar comandos automáticamente al simplemente previsualizar un proyecto."
+      "text": "Prohibición de ejecutar comandos automáticamente al simplemente previsualizar un space."
     },
     {
       "id": "8.6",
@@ -935,7 +941,7 @@
       "id": "9.6:5",
       "section": "9.6",
       "kind": "list-item",
-      "text": "Panel de proyecto opcional con todas las sesiones activas, estado y conteo de subagentes."
+      "text": "Panel de space opcional con todas las sesiones activas, estado y conteo de subagentes."
     },
     {
       "id": "9.6:6",
@@ -1109,7 +1115,7 @@
       "id": "10.2:6",
       "section": "10.2",
       "kind": "list-item",
-      "text": "Sidebar actual: nueva navegación de proyectos, sin explorer/source control permanente."
+      "text": "Sidebar actual: nueva navegación de spaces, sin explorer/source control permanente."
     },
     {
       "id": "10.3:1",
@@ -1187,7 +1193,7 @@
       "id": "F0:6",
       "section": "F0",
       "kind": "phase-task",
-      "text": "Instalar `pnpm` exacto y dependencias Rust/Zig/WASM requeridas por el proyecto (seguir las instrucciones del código importado)."
+      "text": "Instalar `pnpm` exacto y dependencias Rust/Zig/WASM requeridas por el space (seguir las instrucciones del código importado)."
     },
     {
       "id": "F0:7",
@@ -1259,7 +1265,7 @@
       "id": "F1:4",
       "section": "F1",
       "kind": "phase-task",
-      "text": "Sidebar de proyectos placeholder ocultable, sin implementar persistencia nueva."
+      "text": "Sidebar de spaces placeholder ocultable, sin implementar persistencia nueva."
     },
     {
       "id": "F1:5",
@@ -1391,7 +1397,7 @@
       "id": "F4:1",
       "section": "F4",
       "kind": "phase-task",
-      "text": "Modelo versionado de `Project`, su estado guardado y `RunningWorkspace`."
+      "text": "Modelo versionado de `Space`, su estado guardado y `RunningWorkspace`."
     },
     {
       "id": "F4:2",
@@ -1403,7 +1409,7 @@
       "id": "F4:3",
       "section": "F4",
       "kind": "phase-task",
-      "text": "Confirmación para relanzar comandos (ejecutar / siempre en este proyecto / no ejecutar)."
+      "text": "Confirmación para relanzar comandos (ejecutar / siempre en este space / no ejecutar)."
     },
     {
       "id": "F4:4",
@@ -1421,13 +1427,13 @@
       "id": "F4:6",
       "section": "F4",
       "kind": "phase-task",
-      "text": "Soporte multi-proyecto activo y reglas de foco/instancia; abrir otros proyectos desde la app (PRJ-017)."
+      "text": "Soporte multi-space activo y reglas de foco/instancia; abrir otros spaces desde la app (PRJ-017)."
     },
     {
       "id": "F4:7",
       "section": "F4",
       "kind": "phase-task",
-      "text": "Restauración de la última sesión al iniciar lut (PRJ-016): persistir qué proyectos estaban abiertos y cuál era el activo; al arrancar, reabrirlos con el algoritmo de §8.4."
+      "text": "Restauración de la última sesión al iniciar lut (PRJ-016): persistir qué spaces estaban abiertos y cuál era el activo; al arrancar, reabrirlos con el algoritmo de §8.4."
     },
     {
       "id": "F4:8",
@@ -1445,7 +1451,7 @@
       "id": "F4:gate",
       "section": "F4",
       "kind": "phase-gate",
-      "text": "reiniciar app, abrir proyecto de tres panes y recuperar su estructura; iniciar sólo comandos autorizados, informar errores y no duplicar procesos."
+      "text": "reiniciar app, abrir space de tres panes y recuperar su estructura; iniciar sólo comandos autorizados, informar errores y no duplicar procesos."
     },
     {
       "id": "F5:1",
@@ -1637,7 +1643,7 @@
       "id": "13.2:6",
       "section": "13.2",
       "kind": "table-row",
-      "text": "Colapsar proyectos sidebar | Ningún proceso se detiene"
+      "text": "Colapsar spaces sidebar | Ningún proceso se detiene"
     },
     {
       "id": "13.2:7",
@@ -1661,13 +1667,13 @@
       "id": "13.2:10",
       "section": "13.2",
       "kind": "table-row",
-      "text": "Guardar y restaurar proyecto | Topología, perfiles, cwd, ratios y comandos correctos"
+      "text": "Guardar y restaurar space | Topología, perfiles, cwd, ratios y comandos correctos"
     },
     {
       "id": "13.2:11",
       "section": "13.2",
       "kind": "table-row",
-      "text": "Abrir proyecto dos veces | No duplica accidentalmente procesos"
+      "text": "Abrir space dos veces | No duplica accidentalmente procesos"
     },
     {
       "id": "13.2:12",
@@ -1721,7 +1727,7 @@
       "id": "13.2:20",
       "section": "13.2",
       "kind": "table-row",
-      "text": "Cerrar y reabrir lut con dos proyectos abiertos | Se restauran ambos proyectos, el activo y sus layouts; comandos según política"
+      "text": "Cerrar y reabrir lut con dos spaces abiertos | Se restauran ambos spaces, el activo y sus layouts; comandos según política"
     },
     {
       "id": "13.2:21",
@@ -1805,7 +1811,7 @@
       "id": "13.4:8",
       "section": "13.4",
       "kind": "list-item",
-      "text": "Tiempo de restaurar proyecto con múltiples herramientas."
+      "text": "Tiempo de restaurar space con múltiples herramientas."
     },
     {
       "id": "13.5:1",
@@ -1835,7 +1841,7 @@
       "id": "13.5:5",
       "section": "13.5",
       "kind": "list-item",
-      "text": "Cerrar proyecto mientras se restauran panes."
+      "text": "Cerrar space mientras se restauran panes."
     },
     {
       "id": "13.5:6",
@@ -1883,7 +1889,7 @@
       "id": "14.1:2",
       "section": "14.1",
       "kind": "list-item",
-      "text": "Si los comandos de proyecto se ejecutan dentro de shell, usar un mecanismo de entrada/quoting de la shell activa, no construir una línea no escapada."
+      "text": "Si los comandos de space se ejecutan dentro de shell, usar un mecanismo de entrada/quoting de la shell activa, no construir una línea no escapada."
     },
     {
       "id": "14.1:3",
@@ -1931,7 +1937,7 @@
       "id": "14.2:1",
       "section": "14.2",
       "kind": "list-item",
-      "text": "Permitido por defecto: IDs, agente, estado, tiempo, PTY, tab, proyecto, metadatos mínimos."
+      "text": "Permitido por defecto: IDs, agente, estado, tiempo, PTY, tab, space, metadatos mínimos."
     },
     {
       "id": "14.2:2",
@@ -2063,7 +2069,7 @@
       "id": "16:4",
       "section": "16",
       "kind": "list-item",
-      "text": "Cambiar tabs/proyectos mantiene procesos y output vivos."
+      "text": "Cambiar tabs/spaces mantiene procesos y output vivos."
     },
     {
       "id": "16:5",
@@ -2093,13 +2099,13 @@
       "id": "16:9",
       "section": "16",
       "kind": "list-item",
-      "text": "Al abrir lut se restaura la última sesión (proyectos abiertos, proyecto activo y layouts)."
+      "text": "Al abrir lut se restaura la última sesión (spaces abiertos, space activo y layouts)."
     },
     {
       "id": "16:10",
       "section": "16",
       "kind": "list-item",
-      "text": "Puedo abrir otros proyectos guardados sin cerrar los que ya están abiertos."
+      "text": "Puedo abrir otros spaces guardados sin cerrar los que ya están abiertos."
     },
     {
       "id": "16:11",
@@ -2123,7 +2129,7 @@
       "id": "16:14",
       "section": "16",
       "kind": "list-item",
-      "text": "Un proyecto importado no relanza comandos sin consentimiento."
+      "text": "Un space importado no relanza comandos sin consentimiento."
     },
     {
       "id": "16:15",

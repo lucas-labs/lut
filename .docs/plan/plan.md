@@ -3421,7 +3421,7 @@ size: M
       and live state from the tab presenters (`TabIcon`, `TabStatus`), never importing editor/explorer modules.
 - [ ] Tab indicators per design (TER-012): active, dirty, preview and the agent state after the title (working, needs
       attention, finished, fed by `tabAgentStatus`). Terminal tabs carry no icon until profiles give them one
-      (E11-04); the private terminal keeps its mark. Tab colours come with the profiles UI.
+      (E11-04); the private terminal keeps its mark. Tab colours are chosen in the tab menu (E15-04).
 - [ ] A detected agent starts idle (no spinner) until its first prompt, in the Rust detector, the tab state and the
       notification bell; a finished agent is idle, not waiting.
 - [ ] No close button on the tab: middle click, the tab menu and `tab.close` close it.
@@ -4528,8 +4528,8 @@ depends-on: [E11, E14, E04, E12, E13]
 refs: [PRO-011, PRO-012, PRO-013, F3:4, 10.2:4, .docs/plan/analysis/app-shell.md]
 ```
 
-Implement the user's profile designs: picker for new tab and split, profile manager/editor, profile icons, and tab
-title/color per profile.
+Implement the user's profile designs: picker for new tab and split, profile manager/editor, profile icons, and the
+profile's permission for shell titles to rename tabs, with the tab colour the user chooses in the tab menu.
 
 ### E15-01 — Profile picker for new tab and split
 
@@ -4606,27 +4606,42 @@ size: M
 
 **Verification:** `pnpm test`; manual: set an image icon, delete the original, restart: the icon stays; delete lut's copy, restart: default icon, no error dialog storm.
 
-### E15-04 — Tab title and color per profile, shell title permission
+### E15-04 — Shell title permission and tab colour
 
 ```yaml
 id: E15-04
-depends-on: [E11-04, E11-02, E15-02, E12-04]
-refs: [PRO-013, 7.1, .docs/plan/analysis/decisions.md]
-covers: [PRO-013]
+depends-on: [E11-04, E11-02, E15-02, E12-04, E12-05]
+refs: [PRO-013, TER-014, 7.1, .docs/plan/analysis/decisions.md]
+covers: [PRO-013, TER-014]
 type: task
 scope: ui
 size: S
 ```
 
-**Goal:** Tabs take their initial title and color from the profile; shell OSC 0/2 titles rename the tab only when the profile allows it (decision 17).
+**Goal:** A title the shell sets (OSC 0/2) renames its tab when the pane's profile allows it (decision 17); today lut
+drops these titles. The user gives a tab a colour from its menu, as in the E11-04 design; tabs have no colour by
+default. Profiles give tabs no title or colour of their own.
 
 **Acceptance criteria:**
 
-- [ ] Profile `tab.title`/`tab.color` applied on open; user renames still win.
-- [ ] `allowShellTitle: false` ignores OSC 0/2 for that tab.
-- [ ] Unit tests for title precedence (user > shell if allowed > profile > default).
+- [ ] A terminal tab's title is, in order: the user's rename; the title the active pane's shell set, when that pane's
+      profile allows shell titles; the active pane's folder.
+- [ ] With "Shell sets the tab title" off in a profile, OSC 0/2 titles of its panes are ignored.
+- [ ] The profile model drops `tab.title` and `tab.color`, in native and in the frontend.
+- [ ] The tab menu has a colour row like the E11-04 design: swatches for no colour, the theme's colours, and a custom
+      colour; the custom swatch opens a saturation and brightness area, a hue bar, and a hex field with its preview
+      and an Apply button. The design shows six of the theme's ANSI colours (red, yellow, green, cyan, blue, magenta)
+      as an example; more of the theme's colours can be offered.
+- [ ] A theme colour is kept by name and follows a theme change; a custom colour is kept as hex and stays as set.
+      The icon colour of E26-09 uses the same control, shared by whichever of the two issues comes first.
+- [ ] A coloured tab is tinted as in the design, in the horizontal strip and in the vertical rail; "No color" removes
+      it.
+- [ ] The colour is saved with the tab in its Space and comes back when the Space is restored.
+- [ ] Unit tests for the title order; component tests for choosing, resetting, showing and restoring the colour.
 
-**Verification:** `pnpm test`; manual: profile with color and fixed title; `echo -e "\e]0;x\a"` ignored when disallowed.
+**Verification:** `pnpm test`; `cargo test --manifest-path src-tauri/Cargo.toml --lib profiles`; manual:
+`echo -e "\e]0;x\a"` renames the tab, is ignored when the profile disallows it, and a rename still wins; colour a tab
+with a theme colour and another with a custom one, change the theme, restart lut.
 
 ### E15-05 — Window title from lut name and active tab
 
@@ -7343,12 +7358,12 @@ size: M
 
 **Goal:** The profile icon picker sets a colour for a built-in icon, from the theme's colours or any colour, and the
 icon shows in that colour wherever it appears. Today a built-in icon takes the text colour of the place it is drawn
-in (E15-03). The colour belongs to the icon, apart from the tab colour of E15-04.
+in (E15-03). The colour belongs to the icon, apart from a tab's own colour (E15-04).
 
 **Acceptance criteria:**
 
-- [ ] The profile keeps its icon's colour in its own field (`tab.iconColor`), apart from `tab.color`; a detected
-      profile keeps it in its override, and native refuses a value that is neither a theme colour nor a hex colour,
+- [ ] The profile keeps its icon's colour in its own field (`tab.iconColor`); a detected profile keeps it in its
+      override, and native refuses a value that is neither a theme colour nor a hex colour,
       shown on that field.
 - [ ] The icon picker has a colour row like the tab menu's colour in the E11-04 design: swatches for no colour (the
       text colour), the theme's colours, and a custom colour; the custom swatch opens a saturation and brightness

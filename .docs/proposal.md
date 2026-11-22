@@ -105,40 +105,41 @@ Usar identificadores estables para tareas, pruebas y trazabilidad. Las prioridad
 
 ## 3.1. Terminal, sesiones y navegación
 
-| ID      | Prioridad | Requisito                                | Criterio verificable                                                               |
-| ------- | --------- | ---------------------------------------- | ---------------------------------------------------------------------------------- |
-| TER-001 | P0        | Crear sesión interactiva PTY             | Ejecuta `pwsh`, CMD y una shell WSL en Windows; entrada/salida interactiva         |
-| TER-002 | P0        | Tabs múltiples                           | Crear, cerrar, renombrar, reordenar y cambiar tabs sin terminar las otras sesiones |
-| TER-003 | P0        | Orientación horizontal/vertical de tabs  | Cambio en Settings en tiempo de ejecución, sin reiniciar procesos                  |
-| TER-004 | P0        | Splits horizontales/verticales           | Dividir, enfocar, redimensionar y cerrar panes sin afectar otros                   |
-| TER-005 | P0        | Sesiones ocultas activas                 | Un comando de larga duración continúa al cambiar de pestaña/space                  |
-| TER-006 | P0        | Copiar, pegar, selección, búsqueda       | Funcionan en una terminal real y con Unicode                                       |
-| TER-007 | P0        | Teclado y TUI fiables                    | Neovim, lazygit, Ctrl+C, flechas, teclado internacional, resize y mouse en TUI     |
-| TER-008 | P1        | Atajos configurables                     | Acciones globales, navegación y split; evitar colisiones con shells                |
-| TER-009 | P1        | Mover sesiones entre tabs                | Mover sin cerrar el PTY ni resetear su emulación                                   |
-| TER-010 | P2        | Mover sesiones entre ventanas            | Sólo tras investigar propiedad de PTY, renderer y webviews                         |
-| TER-011 | P1        | Cierre seguro                            | Avisar si hay procesos en ejecución cuando corresponda                             |
-| TER-012 | P1        | Tabs con indicadores                     | Muestran opcionalmente estado agente, actividad, cwd y perfil                      |
-| TER-013 | P1        | Tabs compactos, expandibles o con grupos | Preferencias visuales; ninguna afecta ciclo de vida del PTY                        |
+| ID      | Prioridad | Requisito                                | Criterio verificable                                                                                              |
+| ------- | --------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| TER-001 | P0        | Crear sesión interactiva PTY             | Ejecuta `pwsh`, CMD y una shell WSL en Windows; entrada/salida interactiva                                        |
+| TER-002 | P0        | Tabs múltiples                           | Crear, cerrar, renombrar, reordenar y cambiar tabs sin terminar las otras sesiones                                |
+| TER-003 | P0        | Orientación horizontal/vertical de tabs  | Cambio en Settings en tiempo de ejecución, sin reiniciar procesos                                                 |
+| TER-004 | P0        | Splits horizontales/verticales           | Dividir, enfocar, redimensionar y cerrar panes sin afectar otros                                                  |
+| TER-005 | P0        | Sesiones ocultas activas                 | Un comando de larga duración continúa al cambiar de pestaña/space                                                 |
+| TER-006 | P0        | Copiar, pegar, selección, búsqueda       | Funcionan en una terminal real y con Unicode                                                                      |
+| TER-007 | P0        | Teclado y TUI fiables                    | Neovim, lazygit, Ctrl+C, flechas, teclado internacional, resize y mouse en TUI                                    |
+| TER-008 | P1        | Atajos configurables                     | Acciones globales, navegación y split; evitar colisiones con shells                                               |
+| TER-009 | P1        | Mover sesiones entre tabs                | Mover sin cerrar el PTY ni resetear su emulación                                                                  |
+| TER-010 | P2        | Mover sesiones entre ventanas            | Sólo tras investigar propiedad de PTY, renderer y webviews                                                        |
+| TER-011 | P1        | Cierre seguro                            | Avisar si hay procesos en ejecución cuando corresponda                                                            |
+| TER-012 | P1        | Tabs con indicadores                     | Muestran opcionalmente estado agente, actividad, cwd y perfil                                                     |
+| TER-013 | P1        | Tabs compactos, expandibles o con grupos | Preferencias visuales; ninguna afecta ciclo de vida del PTY                                                       |
+| TER-014 | P1        | Color de pestaña                         | El usuario le da un color a una pestaña desde su menú; por defecto ninguna tiene color y los perfiles no lo fijan |
 
 ## 3.2. Perfiles estilo Windows Terminal
 
 **Qué se toma de Windows Terminal:** el concepto de perfil, es decir, poder abrir cada pestaña (o pane) con un shell distinto y que cada uno tenga su propio tema, carpeta de inicio, ícono, etc. **No** se busca compatibilidad con el formato de `settings.json` de Windows Terminal ni importar su configuración.
 
-| ID      | Prioridad | Requisito                            | Criterio verificable                                                                                                                                      |
-| ------- | --------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| PRO-001 | P0        | Perfiles nombrados                   | Crear, editar, duplicar, borrar, elegir por defecto                                                                                                       |
-| PRO-011 | P0        | Abrir pestaña con un perfil          | El menú de nueva pestaña lista los perfiles; atajo para abrir el perfil por defecto y para elegir otro; pestañas distintas pueden usar perfiles distintos |
-| PRO-012 | P0        | Ícono por perfil                     | Se muestra en la pestaña, en el menú de nueva pestaña y en el picker; admite íconos integrados y archivo de imagen                                        |
-| PRO-013 | P1        | Título y color de pestaña por perfil | Título inicial (o el que fije el shell) y color de acento opcional en la pestaña                                                                          |
-| PRO-002 | P0        | Shell/comando ejecutable por perfil  | Configurar ejecutable y argumentos sin depender de un `terminalShell` global                                                                              |
-| PRO-003 | P0        | Directorio de inicio                 | Respetar cwd explícito o fallback configurable                                                                                                            |
-| PRO-004 | P1        | Variables de entorno                 | Configurar mapa de variables con reglas de herencia claras                                                                                                |
-| PRO-005 | P0        | Apariencia por perfil                | Fuente, tamaño, peso, colores, tema, cursor, scrollback y padding dentro del pane; override sobre defaults                                                |
-| PRO-006 | P1        | Entorno Windows/WSL/macOS/Linux      | El perfil puede definir destino y compatibilidad                                                                                                          |
-| PRO-007 | P1        | Exportar/importar perfiles           | Esquema versionado, validación, merge sin duplicados                                                                                                      |
-| PRO-009 | P1        | Perfil en cada pane                  | Diferentes panes del mismo space pueden usar perfiles distintos                                                                                           |
-| PRO-010 | P1        | Validación de perfiles               | Explicar ausencia de executable/entorno/workingDir, con opción de reparar                                                                                 |
+| ID      | Prioridad | Requisito                           | Criterio verificable                                                                                                                                      |
+| ------- | --------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| PRO-001 | P0        | Perfiles nombrados                  | Crear, editar, duplicar, borrar, elegir por defecto                                                                                                       |
+| PRO-011 | P0        | Abrir pestaña con un perfil         | El menú de nueva pestaña lista los perfiles; atajo para abrir el perfil por defecto y para elegir otro; pestañas distintas pueden usar perfiles distintos |
+| PRO-012 | P0        | Ícono por perfil                    | Se muestra en la pestaña, en el menú de nueva pestaña y en el picker; admite íconos integrados y archivo de imagen                                        |
+| PRO-013 | P1        | Título de pestaña desde el shell    | El título que fija el shell (OSC 0/2) renombra la pestaña sólo si el perfil lo permite                                                                    |
+| PRO-002 | P0        | Shell/comando ejecutable por perfil | Configurar ejecutable y argumentos sin depender de un `terminalShell` global                                                                              |
+| PRO-003 | P0        | Directorio de inicio                | Respetar cwd explícito o fallback configurable                                                                                                            |
+| PRO-004 | P1        | Variables de entorno                | Configurar mapa de variables con reglas de herencia claras                                                                                                |
+| PRO-005 | P0        | Apariencia por perfil               | Fuente, tamaño, peso, colores, tema, cursor, scrollback y padding dentro del pane; override sobre defaults                                                |
+| PRO-006 | P1        | Entorno Windows/WSL/macOS/Linux     | El perfil puede definir destino y compatibilidad                                                                                                          |
+| PRO-007 | P1        | Exportar/importar perfiles          | Esquema versionado, validación, merge sin duplicados                                                                                                      |
+| PRO-009 | P1        | Perfil en cada pane                 | Diferentes panes del mismo space pueden usar perfiles distintos                                                                                           |
+| PRO-010 | P1        | Validación de perfiles              | Explicar ausencia de executable/entorno/workingDir, con opción de reparar                                                                                 |
 
 Ejemplos de perfiles: PowerShell 7 normal; PowerShell sin perfil; Ubuntu WSL; CMD; Bash; shell para scripts; perfil de terminal de alto contraste; perfil con tema nocturno. **Perfiles no equivalen a agentes**: un perfil puede iniciar `pwsh`; un space puede pedir al shell que ejecute `claude` cuando esté listo.
 

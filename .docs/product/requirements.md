@@ -29,45 +29,46 @@ columns are out of date.
 | TER-011 | P1       | Cierre seguro                            | E08-08                                                                        |                |       |
 | TER-012 | P1       | Tabs con indicadores                     | E12-04                                                                        |                |       |
 | TER-013 | P1       | Tabs compactos, expandibles o con grupos | E22-08, E22-09                                                                |                |       |
+| TER-014 | P1       | Color de pestaña                         | E15-04                                                                        |                |       |
 
 ## Profiles (PRO, §3.2)
 
-| ID      | Priority | Requirement                          | Issues                 | Implementation | Tests |
-| ------- | -------- | ------------------------------------ | ---------------------- | -------------- | ----- |
-| PRO-001 | P0       | Perfiles nombrados                   | E14-03                 |                |       |
-| PRO-011 | P0       | Abrir pestaña con un perfil          | E15-01                 |                |       |
-| PRO-012 | P0       | Ícono por perfil                     | E11-04, E15-03, E26-09 |                |       |
-| PRO-013 | P1       | Título y color de pestaña por perfil | E15-04                 |                |       |
-| PRO-002 | P0       | Shell/comando ejecutable por perfil  | E14-07                 |                |       |
-| PRO-003 | P0       | Directorio de inicio                 | E14-10                 |                |       |
-| PRO-004 | P1       | Variables de entorno                 | E14-09                 |                |       |
-| PRO-005 | P0       | Apariencia por perfil                | E14-01, E14-16, E14-21 |                |       |
-| PRO-006 | P1       | Entorno Windows/WSL/macOS/Linux      | E14-06, E16-13         |                |       |
-| PRO-007 | P1       | Exportar/importar perfiles           | E23-02                 |                |       |
-| PRO-009 | P1       | Perfil en cada pane                  | E14-14                 |                |       |
-| PRO-010 | P1       | Validación de perfiles               | E14-03, E15-02         |                |       |
+| ID      | Priority | Requirement                         | Issues                 | Implementation | Tests |
+| ------- | -------- | ----------------------------------- | ---------------------- | -------------- | ----- |
+| PRO-001 | P0       | Perfiles nombrados                  | E14-03                 |                |       |
+| PRO-011 | P0       | Abrir pestaña con un perfil         | E15-01                 |                |       |
+| PRO-012 | P0       | Ícono por perfil                    | E11-04, E15-03, E26-09 |                |       |
+| PRO-013 | P1       | Título de pestaña desde el shell    | E15-04                 |                |       |
+| PRO-002 | P0       | Shell/comando ejecutable por perfil | E14-07                 |                |       |
+| PRO-003 | P0       | Directorio de inicio                | E14-10                 |                |       |
+| PRO-004 | P1       | Variables de entorno                | E14-09                 |                |       |
+| PRO-005 | P0       | Apariencia por perfil               | E14-01, E14-16, E14-21 |                |       |
+| PRO-006 | P1       | Entorno Windows/WSL/macOS/Linux     | E14-06, E16-13         |                |       |
+| PRO-007 | P1       | Exportar/importar perfiles          | E23-02                 |                |       |
+| PRO-009 | P1       | Perfil en cada pane                 | E14-14                 |                |       |
+| PRO-010 | P1       | Validación de perfiles              | E14-03, E15-02         |                |       |
 
 ## Projects and persistent workspaces (PRJ, §3.3)
 
 | ID      | Priority | Requirement                               | Issues                                                                                                 | Implementation | Tests |
 | ------- | -------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------ | -------------- | ----- |
-| PRJ-001 | P0       | Lista de proyectos                        | E16-04, E17-10, E18-03                                                                                 |                |       |
+| PRJ-001 | P0       | Lista de spaces                           | E16-04, E17-10, E18-03                                                                                 |                |       |
 | PRJ-002 | P0       | Guardar tabs y splits                     | E16-05, E16-06, E16-12, E17-05                                                                         |                |       |
 | PRJ-003 | P0       | Directorio por pane                       | E16-05                                                                                                 |                |       |
 | PRJ-004 | P0       | Relanzar comandos                         | E17-12, E17-19                                                                                         |                |       |
-| PRJ-005 | P0       | Distintos perfiles en un proyecto         | E16-07                                                                                                 |                |       |
+| PRJ-005 | P0       | Distintos perfiles en un space            | E16-07                                                                                                 |                |       |
 | PRJ-006 | P1       | Ratios de splits                          | E16-05                                                                                                 |                |       |
 | PRJ-007 | P1       | Confirmación de relanzamiento             | E17-13                                                                                                 |                |       |
 | PRJ-008 | P1       | Estados de inicio por pane                | E17-12                                                                                                 |                |       |
-| PRJ-009 | P1       | Reabrir proyecto existente                | E17-08                                                                                                 |                |       |
+| PRJ-009 | P1       | Reabrir space existente                   | E17-08                                                                                                 |                |       |
 | PRJ-010 | P1       | Reanudar agentes                          | E21-02, E21-03                                                                                         |                |       |
-| PRJ-011 | P1       | Varios proyectos activos                  | E17-08                                                                                                 |                |       |
-| PRJ-012 | P2       | Ventanas múltiples por proyecto           | Not planned: P2: multiple windows per space (post-v1).                                                 |                |       |
+| PRJ-011 | P1       | Varios spaces activos                     | E17-08                                                                                                 |                |       |
+| PRJ-012 | P2       | Ventanas múltiples por space              | Not planned: P2: multiple windows per space (post-v1).                                                 |                |       |
 | PRJ-013 | P1       | Estado vivo, sin presets                  | E16-05                                                                                                 |                |       |
 | PRJ-014 | P1       | Migraciones de esquema                    | Not planned: P1: schema migrations start with the first release; lut has no releases or user data yet. |                |       |
-| PRJ-015 | P1       | Exportar/importar proyectos               | E23-03                                                                                                 |                |       |
+| PRJ-015 | P1       | Exportar/importar spaces                  | E23-03                                                                                                 |                |       |
 | PRJ-016 | P0       | Restaurar la última sesión al iniciar lut | E17-01, E17-07, E18-07                                                                                 |                |       |
-| PRJ-017 | P0       | Abrir otros proyectos desde la app        | E17-08                                                                                                 |                |       |
+| PRJ-017 | P0       | Abrir otros spaces desde la app           | E17-08                                                                                                 |                |       |
 
 ## Interface and customisation (UX, §3.4)
 
@@ -75,12 +76,12 @@ columns are out of date.
 | ------ | -------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------- | -------------- | ----- |
 | UX-001 | P0       | Terminal ocupa el área central y predominante                                         | E12-08                                                  |                |       |
 | UX-002 | P0       | Navegación de tabs vertical, horizontal, o auto si se agrega más adelante             | E11-02, E12-05                                          |                |       |
-| UX-003 | P0       | Sidebar de proyectos opcional, colapsable y con ancho persistido                      | E11-05, E18-02                                          |                |       |
+| UX-003 | P0       | Sidebar de spaces opcional, colapsable y con ancho persistido                         | E11-05, E18-02                                          |                |       |
 | UX-004 | P0       | Temas claros/oscuros y temas personalizados mediante tokens                           | E11-03, E13-08                                          |                |       |
 | UX-005 | P0       | Fuentes configurables y soporte de Nerd Fonts/powerline cuando el renderer lo permita | E11-03, E13-04                                          |                |       |
 | UX-006 | P1       | UI minimalista, densidad compacta/normal, iconografía coherente                       | E22-07                                                  |                |       |
-| UX-007 | P1       | Menús contextuales para tabs/panes/proyectos                                          | E11-07, E22-04, E22-05                                  |                |       |
-| UX-008 | P1       | Command palette orientado a acciones de terminal/proyectos                            | E11-07, E22-02                                          |                |       |
+| UX-007 | P1       | Menús contextuales para tabs/panes/spaces                                             | E11-07, E22-04, E22-05                                  |                |       |
+| UX-008 | P1       | Command palette orientado a acciones de terminal/spaces                               | E11-07, E22-02                                          |                |       |
 | UX-009 | P1       | Paneles secundarios opcionales: explorer, Git, diff, logs de agentes                  | E11-08, E12-08                                          |                |       |
 | UX-010 | P1       | Estados de carga/error/falta de permisos accesibles y no intrusivos                   | E22-10                                                  |                |       |
 | UX-011 | P1       | Layout compatible con DPI, tamaño mínimo, pantallas de alta densidad y teclado        | E22-11, E22-12, E22-13, E22-14                          |                |       |
@@ -93,7 +94,7 @@ columns are out of date.
 | AGT-001 | P0       | Detectar Claude Code oficial que corre dentro de PTY propia                               | E19-11                                                                                                     |                |       |
 | AGT-002 | P0       | Detectar Codex CLI oficial y sus eventos cuando la versión soporta hooks correspondientes | E19-11                                                                                                     |                |       |
 | AGT-003 | P0       | No solicitar API key de Anthropic/OpenAI para monitorizar estos procesos                  | E05-19                                                                                                     |                |       |
-| AGT-004 | P0       | Asociar agente con pane, PTY, tab, proyecto y sesión de agente                            | E19-08                                                                                                     |                |       |
+| AGT-004 | P0       | Asociar agente con pane, PTY, tab, space y sesión de agente                               | E19-08                                                                                                     |                |       |
 | AGT-005 | P0       | Estado visible: iniciando, trabajando, atención, finalizado/error/salido                  | E11-06, E19-07                                                                                             |                |       |
 | AGT-006 | P0       | Notificar finalización y requerimientos de atención con acción de enfoque                 | E11-06, E20-06                                                                                             |                |       |
 | AGT-007 | P1       | Gestionar instalación de hooks con previsualización y desinstalación selectiva            | E11-06, E20-10, E20-11, E20-15                                                                             |                |       |
