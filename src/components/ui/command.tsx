@@ -19,7 +19,7 @@ function Command({
     <CommandPrimitive
       data-slot="command"
       className={cn(
-        "flex size-full flex-col overflow-hidden bg-popover text-popover-foreground",
+        "flex size-full min-h-0 flex-col overflow-hidden bg-popover text-popover-foreground",
         className
       )}
       {...props}
@@ -48,7 +48,7 @@ function CommandDialog({
       </DialogHeader>
       <DialogContent
         className={cn(
-          "top-16 translate-y-0 gap-0 overflow-hidden rounded-[8px] p-0 shadow-[0_20px_56px_rgba(0,0,0,0.45)]",
+          "top-16 flex max-h-[calc(100dvh-5rem)] translate-y-0 flex-col gap-0 overflow-hidden rounded-[8px] p-0 shadow-[0_20px_56px_rgba(0,0,0,0.45)]",
           className
         )}
         showCloseButton={showCloseButton}

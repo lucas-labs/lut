@@ -297,7 +297,7 @@ export function CommandPalette({
           placeholder={placeholder}
           autoFocus
         />
-        <ScrollArea className={showFiles ? 'h-[372px]' : 'max-h-[404px]'}>
+        <ScrollArea className={cn('min-h-0', showFiles ? 'h-[372px]' : 'max-h-[404px]')}>
           <CommandList
             className="max-h-none overflow-visible pr-3"
             onClickCapture={(e) => {

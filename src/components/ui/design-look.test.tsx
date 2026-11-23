@@ -95,6 +95,8 @@ describe('shared primitives on the design', () => {
     const dialog = document.querySelector<HTMLElement>('[role="dialog"]');
     expect(dialog?.className).not.toMatch(TERAX_LOOK);
     expect(dialog?.className).toContain('rounded-[8px]');
+    // Pinned 64 px from the top, it never runs past the bottom of a short window.
+    expect(dialog?.className).toContain('max-h-[calc(100dvh-5rem)]');
     expect(slot('command-item').className).not.toMatch(TERAX_LOOK);
     expect(slot('command-item').className).toContain('rounded-[6px]');
     expect(slot('command-input-wrapper').className).toContain('border-b');
