@@ -3,6 +3,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { PlusIcon } from '@lut/lut-icons';
 import type { ReactNode } from 'react';
 
+/** The rail's fixed width (E27-01): it hides and shows like the sidebar, but never resizes. */
+export const COMPACT_RAIL_WIDTH = 32;
+
 type CompactRailSpace = { id: string; name: string };
 
 type Props = {
@@ -36,10 +39,7 @@ function RailTip({ label, children }: { label: string; children: ReactNode }) {
  */
 export function CompactRail({ spaces, activeSpaceId, onSwitchSpace, onNewSpace }: Props) {
   return (
-    <nav
-      aria-label="Compact sidebar"
-      className="flex h-full w-8 shrink-0 flex-col items-center gap-1 border-r border-border bg-sidebar py-2"
-    >
+    <nav aria-label="Compact sidebar" className="flex h-full min-h-0 flex-col items-center gap-1 py-2">
       {spaces.map((space) => (
         <RailTip key={space.id} label={space.name}>
           <Button

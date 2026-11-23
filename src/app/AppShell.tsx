@@ -2,7 +2,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { cn } from '@/lib/utils';
 import type { TitleBarPlacement } from '@/modules/header';
 import { IS_MAC } from '@/modules/platform';
-import { SIDEBAR_MAX_WIDTH, SIDEBAR_MIN_WIDTH } from '@/modules/sidebar';
+import { COMPACT_RAIL_WIDTH, SIDEBAR_MAX_WIDTH, SIDEBAR_MIN_WIDTH } from '@/modules/sidebar';
 import { TABS_COLUMN_MAX_WIDTH, TABS_COLUMN_MIN_WIDTH } from '@/modules/tabs';
 import { type ComponentProps, type ReactNode, type RefObject, useRef, useState } from 'react';
 import type { GroupImperativeHandle, Layout, PanelImperativeHandle } from 'react-resizable-panels';
@@ -29,7 +29,7 @@ function SidePanel({ defaultSize, ...props }: ComponentProps<typeof ResizablePan
   return <ResizablePanel groupResizeBehavior="preserve-pixel-size" defaultSize={mountedSize} {...props} />;
 }
 
-const SIDE_PANELS = ['sidebar', 'tabs-column'] as const;
+const SIDE_PANELS = ['sidebar', 'rail', 'tabs-column'] as const;
 
 /**
  * Sets a layout the app makes itself, flagged so the group's report of it is not taken for one to correct. Outside the
@@ -51,8 +51,8 @@ type Props = {
    */
   focusMode: boolean;
   /**
-   * Compact sidebar (E27-01): `rail` stands in for the sidebar and the tab column, which keep their state for when the
-   * full sidebar comes back.
+   * Compact sidebar (E27-01): the sidebar's slot holds `rail`, a panel fixed at 32 px that hides and shows like the
+   * sidebar; the tab column is out. The full sidebar keeps its width for when it comes back.
    */
   compact: boolean;
   rail: ReactNode;
@@ -93,7 +93,7 @@ type Props = {
 export function AppShell({
   focusMode,
   compact,
-  rail: railProp,
+  rail,
   titleBar,
   titleBarPlacement,
   tabsColumn: tabsColumnProp,
@@ -110,16 +110,15 @@ export function AppShell({
   workspace,
   children,
 }: Props) {
-  // Focus mode and the compact rail both take the side panels out; their stored layout stays as it was.
-  const sidePanelsHidden = focusMode || compact;
-  const tabsColumn = sidePanelsHidden ? null : tabsColumnProp;
-  const rail = compact && !focusMode ? railProp : null;
+  // Focus mode takes the side panels out, compact mode the tab column; their stored layout stays as it was.
+  const tabsColumn = focusMode || compact ? null : tabsColumnProp;
 
   // The side panels' own widths as of the last layout the app accepted, and the group's last layout: when the group
   // lays itself out (a panel set change, a panel opening or closing), the side panels that should not have moved go
   // back to their width.
   const sizes = useRef<Record<string, number>>({
     sidebar: sidebarInitialWidth,
+    rail: sidebarInitialWidth > 0 ? COMPACT_RAIL_WIDTH : 0,
     'tabs-column': tabsColumnInitialWidth,
   });
   const lastLayout = useRef<Layout | null>(null);
@@ -134,11 +133,12 @@ export function AppShell({
     Math.round(((layout[id] ?? 0) / 100) * (group.current?.offsetWidth ?? 0));
 
   const accept = (layout: Layout, isUserInteraction: boolean) => {
-    // The side panels are gone in focus mode and in compact mode; their stored layout stays as it was.
-    if (sidePanelsHidden) return;
+    // The side panels are gone in focus mode; their stored layout stays as it was.
+    if (focusMode) return;
     const width = widthIn(layout);
     for (const id of SIDE_PANELS) if (id in layout) sizes.current[id] = width(id);
-    onSidebarLayout(width('sidebar'), isUserInteraction);
+    // The rail's fixed width is not the sidebar's: the full sidebar keeps its own.
+    if ('sidebar' in layout) onSidebarLayout(width('sidebar'), isUserInteraction);
     if (tabsColumn) onTabsColumnLayout(width('tabs-column'), isUserInteraction);
   };
 
@@ -155,12 +155,10 @@ export function AppShell({
   };
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-frame text-foreground">
-      {/* The rail's slot always exists (null when unused), so the panel group, and the workspace in it, never moves. */}
-      <main className="zoom-content flex min-h-0 flex-1 flex-row">
-        {rail}
+      <main className="zoom-content flex min-h-0 flex-1 flex-col">
         <ResizablePanelGroup
           orientation="horizontal"
-          className="min-h-0 min-w-0 flex-1"
+          className="min-h-0 flex-1"
           elementRef={group}
           groupRef={groupHandle}
           onLayoutChanged={(layout, { isUserInteraction }) => {
@@ -185,10 +183,25 @@ export function AppShell({
             accept(layout, isUserInteraction);
           }}
         >
-          {/* In focus and compact mode the sidebar leaves its slot empty, as the tab column does; it comes back at its
-              width. */}
-          {sidePanelsHidden ? null : (
+          {/* In focus mode the sidebar leaves its slot empty, as the tab column does; it comes back at its width. In
+              compact mode the slot holds the rail, a panel of its own (its key) whose width never changes. */}
+          {focusMode ? null : compact ? (
             <SidePanel
+              key="rail"
+              id="rail"
+              panelRef={sidebarRef}
+              defaultSize={`${sidebarInitialWidth > 0 ? COMPACT_RAIL_WIDTH : 0}px`}
+              minSize={`${COMPACT_RAIL_WIDTH}px`}
+              maxSize={`${COMPACT_RAIL_WIDTH}px`}
+              collapsible
+              collapsedSize={0}
+              onResize={(size) => onSidebarCollapsedChange(size.inPixels <= 0)}
+            >
+              {rail}
+            </SidePanel>
+          ) : (
+            <SidePanel
+              key="sidebar"
               id="sidebar"
               panelRef={sidebarRef}
               defaultSize={`${sidebarInitialWidth}px`}
@@ -205,7 +218,7 @@ export function AppShell({
               </div>
             </SidePanel>
           )}
-          {sidePanelsHidden ? null : <ResizableHandle className={handleClass(sidebarOpen)} />}
+          {focusMode ? null : <ResizableHandle className={handleClass(sidebarOpen)} />}
           {/* The column and its handle keep their slots when absent, so the workspace never moves in the tree. */}
           {tabsColumn ? (
             <SidePanel

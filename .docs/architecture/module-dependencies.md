@@ -298,7 +298,7 @@ Public API: what `index.ts` exports. Owned state: zustand stores, plugin-store f
 
 #### sidebar
 
-- **Public API** (`modules/sidebar/index.ts`): `CompactRail`, `SIDEBAR_MAX_WIDTH`, `SIDEBAR_MIN_WIDTH`, `SidebarHeaderAction`, `SidebarRail`, `SidebarViewHeader`, `SidebarViewId`, `useSidebarPanel`
+- **Public API** (`modules/sidebar/index.ts`): `COMPACT_RAIL_WIDTH`, `CompactRail`, `SIDEBAR_MAX_WIDTH`, `SIDEBAR_MIN_WIDTH`, `SidebarHeaderAction`, `SidebarRail`, `SidebarViewHeader`, `SidebarViewId`, `useSidebarPanel`
 - **Owned state:** `lut.sidebar.collapsed` (localStorage), `lut.sidebar.view` (localStorage), `lut.sidebar.width` (localStorage)
 - **Commands:** —
 - **Events:** —

@@ -163,7 +163,8 @@ it('swaps the side panels for the compact rail and back without remounting the w
     expect(host.querySelector('[data-chrome="rail"]')).not.toBeNull();
     expect(host.querySelector('[data-chrome="sidebar"]')).toBeNull();
     expect(host.querySelector('[data-chrome="tabs"]')).toBeNull();
-    expect(host.querySelectorAll('[role="separator"]')).toHaveLength(0);
+    // The rail is the sidebar's panel: it keeps the sidebar's handle, to hide and show it.
+    expect(host.querySelectorAll('[role="separator"]')).toHaveLength(1);
     // The title bar stays: the rail only replaces the side panels.
     expect(host.querySelector('[data-chrome="bar"]')).not.toBeNull();
     // Focus mode hides the rail too.
@@ -177,11 +178,15 @@ it('swaps the side panels for the compact rail and back without remounting the w
   expect(unmounts).toEqual([]);
 });
 
-it('brings the side panels back from compact mode at the sizes they had (E27-01)', () => {
+it('mounts the rail at its fixed width, or closed, and brings the side panels back at their sizes (E27-01)', () => {
   const column = createElement('nav');
   render(shell({ sidebar: createElement('aside'), sidebarWidth: 220, tabsColumn: column, tabsColumnWidth: 146 }));
   render(shell({ compact: true, sidebar: createElement('aside'), sidebarWidth: 220, tabsColumn: column }));
+  expect(panelSizes.get('rail')).toEqual(['32px']);
   render(shell({ sidebar: createElement('aside'), sidebarWidth: 220, tabsColumn: column, tabsColumnWidth: 146 }));
   expect(panelSizes.get('sidebar')).toEqual(['220px']);
   expect(panelSizes.get('tabs-column')).toEqual(['146px']);
+  // A closed sidebar is a closed rail.
+  render(shell({ compact: true, sidebar: createElement('aside'), sidebarWidth: 0, tabsColumn: column }));
+  expect(panelSizes.get('rail')).toEqual(['32px', '0px']);
 });

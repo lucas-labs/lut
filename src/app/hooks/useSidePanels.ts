@@ -20,20 +20,23 @@ export function useSidePanels() {
   const tabsColumn = useTabsColumn();
   const { isTabsColumnOpen, setTabsColumnOpen } = tabsColumn;
 
+  const sidebarMode = usePreferencesStore((s) => s.sidebarMode);
+  // The compact rail stands in for the sidebar and the tab column; the sidebar's commands drive it.
+  const withTabsColumn = verticalTabs && sidebarMode !== 'compact';
+
   // The header's sidebar button: hides the sidebar and the vertical tab column together while
   // either is open, and shows both otherwise. Each keeps its own command and shortcut.
   const toggleSidePanels = useCallback(() => {
-    const open = !(isSidebarOpen() || (verticalTabs && isTabsColumnOpen()));
+    const open = !(isSidebarOpen() || (withTabsColumn && isTabsColumnOpen()));
     setSidebarOpen(open);
-    if (verticalTabs) setTabsColumnOpen(open);
-  }, [verticalTabs, isSidebarOpen, setSidebarOpen, isTabsColumnOpen, setTabsColumnOpen]);
+    if (withTabsColumn) setTabsColumnOpen(open);
+  }, [withTabsColumn, isSidebarOpen, setSidebarOpen, isTabsColumnOpen, setTabsColumnOpen]);
 
   const toggleTabOrientation = useCallback(() => {
     const current = usePreferencesStore.getState().tabOrientation;
     void setTabOrientation(current === 'vertical' ? 'horizontal' : 'vertical');
   }, []);
 
-  const sidebarMode = usePreferencesStore((s) => s.sidebarMode);
   const toggleCompactSidebar = useCallback(() => {
     const current = usePreferencesStore.getState().sidebarMode;
     void setSidebarMode(current === 'compact' ? 'full' : 'compact');
@@ -60,7 +63,8 @@ export function useSidePanels() {
     toggleFullScreen,
     verticalTabs,
     /** Whether the sidebar, or the vertical tab column, is open. */
-    sidePanelsOpen: !sidebar.sidebarCollapsed || (verticalTabs && !tabsColumn.tabsColumnCollapsed),
+    sidePanelsOpen:
+      !sidebar.sidebarCollapsed || (withTabsColumn && !tabsColumn.tabsColumnCollapsed),
     toggleSidePanels,
     toggleTabOrientation,
     /** The sidebar and the vertical tab column are one rail (E27-01). */
