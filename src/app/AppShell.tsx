@@ -6,7 +6,7 @@ import { COMPACT_RAIL_WIDTH, SIDEBAR_MAX_WIDTH, SIDEBAR_MIN_WIDTH } from '@/modu
 import { TABS_COLUMN_MAX_WIDTH, TABS_COLUMN_MIN_WIDTH } from '@/modules/tabs';
 import { type ComponentProps, type ReactNode, type RefObject, useRef, useState } from 'react';
 import type { GroupImperativeHandle, Layout, PanelImperativeHandle } from 'react-resizable-panels';
-import { foldSideLayoutChange, settledLayout, sideLayoutChange } from './lib/sidePanelRestore';
+import { foldSideLayoutChange, restoreWidth, settledLayout, sideLayoutChange } from './lib/sidePanelRestore';
 
 /**
  * A side panel's resize handle is the 1px line between it and what follows. Its negative margin lets it overlap the
@@ -169,11 +169,12 @@ export function AppShell({
               const change = sideLayoutChange(prev, layout, isUserInteraction, SIDE_PANELS);
               if (pending.current || change.restore.length > 0) {
                 const first = pending.current === null;
-                pending.current = foldSideLayoutChange(
-                  pending.current ?? {},
-                  change,
-                  widthIn(layout),
-                  (id) => sizes.current[id] ?? 0,
+                pending.current = foldSideLayoutChange(pending.current ?? {}, change, widthIn(layout), (id) =>
+                  restoreWidth(id, sizes.current[id], {
+                    open: sidebarOpen,
+                    sidebarWidth: sidebarInitialWidth,
+                    railWidth: COMPACT_RAIL_WIDTH,
+                  }),
                 );
                 if (first) queueMicrotask(settle);
                 // This layout is about to be corrected: the app records the settled one, not this.
