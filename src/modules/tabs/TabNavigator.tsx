@@ -148,9 +148,10 @@ export function TabNavigator({ items, actions, orientation, heading, compact, dr
   const cellClass = (t: TabNavigatorItem) =>
     vertical
       ? cn(
-          'flex h-8 w-full min-w-0 shrink-0 items-center gap-2 rounded-md px-2.5 text-left text-sm text-foreground outline-none',
+          'group/vt flex h-8 w-full min-w-0 shrink-0 items-center gap-2 rounded-md px-2.5 text-left text-sm text-foreground outline-none',
           'hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring',
-          t.active && 'bg-accent',
+          // The active tab is ringed and the others' names are dimmed, so it stands out among coloured tabs.
+          t.active ? 'bg-accent' : 'opacity-70 hover:opacity-100',
         )
       : cn(
           'relative flex shrink-0 items-center gap-1.5 rounded-t-md px-3 text-xs whitespace-nowrap outline-none',
@@ -161,7 +162,12 @@ export function TabNavigator({ items, actions, orientation, heading, compact, dr
         );
 
   const titleClass = (t: TabNavigatorItem) =>
-    cn('truncate', vertical ? 'min-w-0 flex-1' : compact ? 'max-w-48' : 'max-w-80', t.preview && 'italic');
+    cn(
+      'truncate',
+      vertical ? 'min-w-0 flex-1' : compact ? 'max-w-48' : 'max-w-80',
+      vertical && !t.active && 'text-foreground/55 group-hover/vt:text-foreground',
+      t.preview && 'italic',
+    );
 
   const cells = items.map((t, i) => {
     const isNew = !restored.has(t.id);
