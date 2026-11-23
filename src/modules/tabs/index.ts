@@ -6,7 +6,7 @@ export { useTabSwitcher } from './lib/useTabSwitcher';
 export { useWindowTitle } from './lib/useWindowTitle';
 export { useWorkspaceCwd } from './lib/useWorkspaceCwd';
 export type { NewTabMenuActions } from './NewTabMenu';
-export { TabNavigator, tabTint } from './TabNavigator';
+export { TabNavigator } from './TabNavigator';
 export { TabSwitcher } from './TabSwitcher';
 export {
   type CloseTabsPlan,

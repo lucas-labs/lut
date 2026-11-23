@@ -9,7 +9,7 @@ import { useProfilesLoadNotice, useShellTitlePolicy } from '@/modules/profiles';
 import { openSettingsWindow } from '@/modules/settings/openSettingsWindow';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { CompactRail } from '@/modules/sidebar';
-import { useSpaces } from '@/modules/spaces';
+import { SpacesView, useSpaces } from '@/modules/spaces';
 import { type NewTabMenuActions, TabNavigator, useTabs, useWindowTitle, useWorkspaceCwd } from '@/modules/tabs';
 import { canAddPane, findLeafCwd } from '@/modules/terminal';
 import { ThemeProvider, useThemeFileEditing } from '@/modules/theme';
@@ -152,7 +152,6 @@ export default function App() {
   };
   const { verticalTabs, sidebarCollapsed, tabsColumnCollapsed, focusMode, compactSidebar } = panels;
   const spaces = useSpaces((s) => s.spaces);
-  const renameSpace = useSpaces((s) => s.rename);
   // Vertical tabs and focus mode float the bar over the window, shown from the top edge (E11-02, E12-10).
   const titleBarPlacement = verticalTabs || focusMode ? 'overlay' : 'inline';
 
@@ -164,18 +163,31 @@ export default function App() {
           focusMode={focusMode}
           compact={compactSidebar}
           rail={
+            // The rail draws the full sidebar's Spaces view and the tab column in their compact form.
             <CompactRail
-              spaces={spaces}
-              activeSpaceId={activeSpaceId}
-              onSwitchSpace={workspace.switchSpace}
-              onNewSpace={() => void workspace.newSpace()}
-              onRenameSpace={renameSpace}
-              onNewTabInSpace={workspace.newTabInSpace}
-              onDeleteSpace={workspace.deleteSpace}
+              spaces={
+                <SpacesView
+                  compact
+                  tabs={tabs}
+                  onNewSpace={() => void workspace.newSpace()}
+                  onDeleteSpace={workspace.deleteSpace}
+                  onNewTabInSpace={workspace.newTabInSpace}
+                  onJumpTab={workspace.jumpToTab}
+                  onCloseTab={closeGuards.handleClose}
+                  onMoveTabToSpace={workspace.moveTabToSpace}
+                  onReorderTab={workspace.reorderTab}
+                  onReorderSpaces={workspace.reorderSpaces}
+                />
+              }
               tabs={
-                verticalTabs
-                  ? { items: navigatorItems, onSelect: commands.tabActions.select, onNewTab: commands.openNewTab }
-                  : null
+                verticalTabs ? (
+                  <TabNavigator
+                    orientation="compact"
+                    items={navigatorItems}
+                    actions={commands.tabActions}
+                    newTabMenu={newTabMenu}
+                  />
+                ) : null
               }
             />
           }

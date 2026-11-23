@@ -73,8 +73,8 @@ afterEach(() => {
   host.remove();
 });
 
-async function openMenu(patch: Partial<NewTabMenuActions> = {}) {
-  await act(async () => root.render(createElement(NewTabMenu, { size: 'strip', ...actions, ...patch })));
+async function openMenu(patch: Partial<NewTabMenuActions> = {}, size: 'strip' | 'compact' = 'strip') {
+  await act(async () => root.render(createElement(NewTabMenu, { size, ...actions, ...patch })));
   const trigger = host.querySelector('[aria-label="New tab"]');
   if (!trigger) throw new Error('no trigger');
   await act(async () => {
@@ -161,6 +161,14 @@ describe('NewTabMenu', () => {
     if (!sub || sub === menus()[0]) throw new Error('no submenu');
     await act(async () => itemNamed(sub, 'Command Prompt').click());
     expect(actions.onSplit).toHaveBeenCalledWith('col', 'detected:cmd');
+  });
+
+  it("opens the same menu from the compact sidebar's +, to the rail's right (E27-08)", async () => {
+    await openMenu({}, 'compact');
+    expect(host.querySelector('[aria-label="New tab"]')?.getAttribute('data-variant')).toBe('rail');
+    expect(menus()[0].getAttribute('data-side')).toBe('right');
+    await act(async () => itemNamed(menus()[0], 'Ubuntu').click());
+    expect(actions.onNewWithProfile).toHaveBeenCalledWith('detected:wsl:Ubuntu');
   });
 
   it('disables the splits when the active tab cannot take another pane', async () => {

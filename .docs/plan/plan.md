@@ -7453,8 +7453,8 @@ button per tab with its position number and a + for a new tab (CompactV board).
       the rail's states.
 - [ ] Inactive tabs show at 70 % opacity (number, tint and state dot) with the number at 55 % of the text colour, and
       at 100 % on hover; the active tab at 100 %, with no border. Same rule as the vertical tabs column.
-- [ ] Tooltips give the tab's name, its agent state and its "Jump to tab" shortcut; the + gives "New terminal" and its
-      shortcut, and opens a tab with the default profile.
+- [ ] Tooltips give the tab's name, its agent state and its "Jump to tab" shortcut; the + opens the new-tab menu
+      (E27-08).
 - [ ] With horizontal tabs the rail shows no tabs or separator (the tabs stay in the strip).
 - [ ] The spaces and the tabs are two groups that scroll on their own; with both, each takes at most half the rail's
       height; with spaces only, the spaces take all of it.
@@ -7618,31 +7618,11 @@ editor and split), anchored to the rail, instead of opening a tab with the defau
 
 **Verification:** `pnpm test`; manual on Windows: a tab from a profile and from the agent launcher.
 
-### E27-09 — Design the rail's context menus and drag state
-
-```yaml
-id: E27-09
-depends-on: []
-refs: [UX-007, .docs/plan/analysis/app-shell.md]
-covers: [UX-007]
-type: design
-scope: ui
-size: S
-```
-
-**Goal:** Boards for what the compact sidebar spec leaves open: where the spaces' and tabs' context menus open next
-to the rail, and how a space or tab looks while dragged and where it drops.
-
-**Acceptance criteria:**
-
-- [ ] Boards on the "Compact sidebar" page of the canvas: a tab's and a space's context menu open from the rail, and
-      the drag state (the dragged button and the drop mark) for spaces and tabs.
-
 ### E27-10 — Context menus on the rail
 
 ```yaml
 id: E27-10
-depends-on: [E27-02, E27-09]
+depends-on: [E27-02]
 refs: [UX-007, .docs/plan/analysis/app-shell.md]
 covers: [UX-007, app-shell/tabs-ui, state-settings/spaces-ui]
 type: task
@@ -7650,14 +7630,15 @@ scope: ui
 size: S
 ```
 
-**Goal:** A right click on a rail button opens the same menu as in the full sidebar, placed per E27-09: Rename, Color
-and the close actions for a tab; the space menu for a space. Renaming a tab with no room on the rail goes through the
-menu or the palette.
+**Goal:** A right click on a rail button opens the same menu as in the full sidebar, at the pointer: Rename, Color and
+the close actions for a tab; the space menu, less Expand, for a space. Renaming a tab with no room on the rail goes
+through the menu or the palette.
 
 **Acceptance criteria:**
 
-- [ ] Tab and space menus are the full sidebar's, shared, not copies; positions per E27-09.
-- [ ] Rename from the rail edits the name in a field the design places (E27-09), with the tabs column's keys (Enter,
+- [ ] Tab and space menus are the full sidebar's, shared, not copies: the rail draws the tab navigator and the Spaces
+      view in a compact form.
+- [ ] Rename from the rail edits the name in a field to the right of the button, with the tabs column's keys (Enter,
       Escape, blur).
 - [ ] Component tests: each menu opens with its items, and rename commits.
 
@@ -7667,7 +7648,7 @@ menu or the palette.
 
 ```yaml
 id: E27-11
-depends-on: [E27-02, E27-09]
+depends-on: [E27-02]
 refs: [.docs/plan/analysis/app-shell.md]
 covers: [app-shell/tabs-ui, state-settings/spaces-ui]
 type: task
@@ -7675,13 +7656,13 @@ scope: ui
 size: S
 ```
 
-**Goal:** Spaces and tabs reorder on the rail by dragging, with the same order and the same store actions as the full
-sidebar, and the drag state of E27-09.
+**Goal:** Spaces and tabs reorder on the rail by dragging, with the same order, store actions and drag state as the
+full sidebar.
 
 **Acceptance criteria:**
 
-- [ ] Dragging a space or a tab past the threshold of the full sidebar shows the E27-09 drag state; dropping reorders
-      through the existing reorder actions; a short drag is still a click.
+- [ ] Dragging a space or a tab past the threshold of the full sidebar dims its button and a primary line marks where
+      it drops; dropping reorders through the existing reorder actions; a short drag is still a click.
 - [ ] Component tests for both reorders and the click.
 
 **Verification:** `pnpm test`; manual on Windows: reorder spaces and tabs, then check the full sidebar's order.
@@ -7737,7 +7718,7 @@ within a group.
 
 ```yaml
 id: E27-14
-depends-on: [E27-01, E27-02, E27-03, E27-04, E27-05, E27-06, E27-07, E27-08, E27-09, E27-10, E27-11, E27-12, E27-13]
+depends-on: [E27-01, E27-02, E27-03, E27-04, E27-05, E27-06, E27-07, E27-08, E27-10, E27-11, E27-12, E27-13]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout

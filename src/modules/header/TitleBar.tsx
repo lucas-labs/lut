@@ -176,7 +176,7 @@ function TitleBarRow({
           orientation="horizontal"
           items={tabs}
           actions={tabActions}
-          compact={compact}
+          narrow={compact}
           dragRegion={drag}
           newTabMenu={newTabMenu}
         />
