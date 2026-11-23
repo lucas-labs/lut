@@ -98,6 +98,7 @@ export const MAC_DEFAULTS: Readonly<Record<ShortcutId, readonly KeyBinding[]>> =
   'view.fullScreen': [{ ctrl: true, meta: true, key: 'f' }],
   'view.tabOrientation': [{ shift: true, meta: true, key: 'y' }],
   'view.tabsColumn': [{ shift: true, meta: true, key: 'j' }],
+  'view.compactSidebar': [],
   'editor.undo': [{ meta: true, key: 'z' }],
   'editor.redo': [
     { meta: true, key: 'y' },
@@ -168,6 +169,7 @@ export const WIN_LINUX_DEFAULTS: Readonly<Record<ShortcutId, readonly KeyBinding
   'view.fullScreen': [{ key: 'F11' }],
   'view.tabOrientation': [{ ...CS, key: 'y' }],
   'view.tabsColumn': [{ ...CS, key: 'j' }],
+  'view.compactSidebar': [],
   'editor.undo': [{ ctrl: true, key: 'z' }],
   'editor.redo': [
     { ctrl: true, key: 'y' },

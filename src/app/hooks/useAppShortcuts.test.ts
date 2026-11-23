@@ -66,6 +66,7 @@ function args(over: Partial<AppShortcutArgs> = {}): AppShortcutArgs {
     toggleFullScreen: vi.fn(),
     toggleTabOrientation: vi.fn(),
     toggleTabsColumn: vi.fn(),
+    toggleCompactSidebar: vi.fn(),
     ...over,
   };
 }

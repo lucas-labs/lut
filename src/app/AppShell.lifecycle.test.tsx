@@ -39,6 +39,7 @@ const sidebarRef = createRef<PanelImperativeHandle>();
 
 function shell(props: {
   focusMode?: boolean;
+  compact?: boolean;
   titleBar?: ReactNode;
   placement?: 'inline' | 'overlay';
   sidebar?: ReactNode;
@@ -48,6 +49,8 @@ function shell(props: {
 }) {
   return createElement(AppShell, {
     focusMode: props.focusMode ?? false,
+    compact: props.compact ?? false,
+    rail: createElement('nav', { 'data-chrome': 'rail' }),
     titleBar: props.titleBar ?? null,
     titleBarPlacement: props.placement ?? 'inline',
     tabsColumn: props.tabsColumn ?? null,
@@ -143,4 +146,41 @@ it('keeps each side panel on the size it mounted with, and takes the new one whe
   render(shell({ sidebar: createElement('aside'), sidebarWidth: 0, tabsColumn: column, tabsColumnWidth: 300 }));
   expect(panelSizes.get('sidebar')).toEqual(['220px', '0px']);
   expect(panelSizes.get('tabs-column')).toEqual(['146px', '300px']);
+});
+
+it('swaps the side panels for the compact rail and back without remounting the workspace (E27-01)', () => {
+  for (const placement of ['inline', 'overlay'] as const) {
+    const chrome = {
+      placement,
+      titleBar: createElement('header', { 'data-chrome': 'bar' }),
+      sidebar: createElement('aside', { 'data-chrome': 'sidebar' }),
+      tabsColumn: placement === 'overlay' ? createElement('nav', { 'data-chrome': 'tabs' }) : null,
+    };
+    render(shell(chrome));
+    expect(host.querySelector('[data-chrome="rail"]')).toBeNull();
+    render(shell({ ...chrome, compact: true }));
+    expect(host.querySelector('[data-chrome="rail"]')).not.toBeNull();
+    expect(host.querySelector('[data-chrome="sidebar"]')).toBeNull();
+    expect(host.querySelector('[data-chrome="tabs"]')).toBeNull();
+    expect(host.querySelectorAll('[role="separator"]')).toHaveLength(0);
+    // The title bar stays: the rail only replaces the side panels.
+    expect(host.querySelector('[data-chrome="bar"]')).not.toBeNull();
+    // Focus mode hides the rail too.
+    render(shell({ ...chrome, compact: true, focusMode: true }));
+    expect(host.querySelector('[data-chrome="rail"]')).toBeNull();
+    render(shell(chrome));
+    expect(host.querySelector('[data-chrome="rail"]')).toBeNull();
+    expect(host.querySelector('[data-chrome="sidebar"]')).not.toBeNull();
+  }
+  expect(mounts).toEqual(['workspace']);
+  expect(unmounts).toEqual([]);
+});
+
+it('brings the side panels back from compact mode at the sizes they had (E27-01)', () => {
+  const column = createElement('nav');
+  render(shell({ sidebar: createElement('aside'), sidebarWidth: 220, tabsColumn: column, tabsColumnWidth: 146 }));
+  render(shell({ compact: true, sidebar: createElement('aside'), sidebarWidth: 220, tabsColumn: column }));
+  render(shell({ sidebar: createElement('aside'), sidebarWidth: 220, tabsColumn: column, tabsColumnWidth: 146 }));
+  expect(panelSizes.get('sidebar')).toEqual(['220px']);
+  expect(panelSizes.get('tabs-column')).toEqual(['146px']);
 });

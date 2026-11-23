@@ -23,6 +23,9 @@ export const DEFAULT_THEME_ID = 'lut';
 
 export type TabOrientation = 'horizontal' | 'vertical';
 
+/** The sidebar and the vertical tab column, or one 32 px rail in their place (E27-01). */
+export type SidebarMode = 'full' | 'compact';
+
 export type BackgroundKind = 'none' | 'image';
 
 export type TerminalCursorStyle = 'bar' | 'block' | 'underline';
@@ -135,6 +138,8 @@ export type Preferences = {
   vimMode: boolean;
   /** Tab strip in the title bar or as a column on the left (E07-05). */
   tabOrientation: TabOrientation;
+  /** Full sidebar, or the compact rail (E27-01). */
+  sidebarMode: SidebarMode;
   editorWordWrap: boolean;
   editorWordWrapColumn: number;
   showHidden: boolean;
@@ -225,6 +230,7 @@ const KEY_RESTORE_WINDOW = 'restoreWindowState';
 
 const KEY_VIM_MODE = 'vimMode';
 const KEY_TAB_ORIENTATION = 'tabOrientation';
+const KEY_SIDEBAR_MODE = 'sidebarMode';
 const KEY_EDITOR_WORD_WRAP = 'editorWordWrap';
 const KEY_EDITOR_WORD_WRAP_COLUMN = 'editorWordWrapColumn';
 const KEY_SHOW_HIDDEN = 'showHidden';
@@ -307,6 +313,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   restoreWindowState: true,
   vimMode: false,
   tabOrientation: 'horizontal',
+  sidebarMode: 'full',
   editorWordWrap: false,
   editorWordWrapColumn: EDITOR_WORD_WRAP_COLUMN_DEFAULT,
   showHidden: false,
@@ -385,6 +392,7 @@ export async function loadPreferences(): Promise<Preferences> {
     windowVibrancy: get<boolean>(KEY_WINDOW_VIBRANCY) ?? DEFAULT_PREFERENCES.windowVibrancy,
     vimMode: get<boolean>(KEY_VIM_MODE) ?? DEFAULT_PREFERENCES.vimMode,
     tabOrientation: get<string>(KEY_TAB_ORIENTATION) === 'vertical' ? 'vertical' : 'horizontal',
+    sidebarMode: coerceSidebarMode(get<unknown>(KEY_SIDEBAR_MODE)),
     editorWordWrap: get<boolean>(KEY_EDITOR_WORD_WRAP) ?? DEFAULT_PREFERENCES.editorWordWrap,
     editorWordWrapColumn: clampEditorWordWrapColumn(
       get<number>(KEY_EDITOR_WORD_WRAP_COLUMN) ?? DEFAULT_PREFERENCES.editorWordWrapColumn,
@@ -530,6 +538,14 @@ export async function setVimMode(value: boolean): Promise<void> {
 
 export async function setTabOrientation(value: TabOrientation): Promise<void> {
   await writePref(KEY_TAB_ORIENTATION, value);
+}
+
+export function coerceSidebarMode(value: unknown): SidebarMode {
+  return value === 'full' || value === 'compact' ? value : DEFAULT_PREFERENCES.sidebarMode;
+}
+
+export async function setSidebarMode(value: unknown): Promise<void> {
+  await writePref(KEY_SIDEBAR_MODE, coerceSidebarMode(value));
 }
 
 export async function setEditorWordWrap(value: boolean): Promise<void> {
@@ -785,6 +801,7 @@ export async function onPreferencesChange(
     [KEY_RESTORE_WINDOW]: 'restoreWindowState',
     [KEY_VIM_MODE]: 'vimMode',
     [KEY_TAB_ORIENTATION]: 'tabOrientation',
+    [KEY_SIDEBAR_MODE]: 'sidebarMode',
     [KEY_EDITOR_WORD_WRAP]: 'editorWordWrap',
     [KEY_EDITOR_WORD_WRAP_COLUMN]: 'editorWordWrapColumn',
     [KEY_SHOW_HIDDEN]: 'showHidden',

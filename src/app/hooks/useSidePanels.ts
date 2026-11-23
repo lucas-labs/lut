@@ -1,6 +1,6 @@
 import type { FileExplorerHandle } from '@/modules/explorer';
 import { usePreferencesStore } from '@/modules/settings/preferences';
-import { setShowHidden, setTabOrientation } from '@/modules/settings/store';
+import { setShowHidden, setSidebarMode, setTabOrientation } from '@/modules/settings/store';
 import { useSidebarPanel } from '@/modules/sidebar';
 import { useTabsColumn } from '@/modules/tabs';
 import { useCallback, useRef } from 'react';
@@ -33,6 +33,12 @@ export function useSidePanels() {
     void setTabOrientation(current === 'vertical' ? 'horizontal' : 'vertical');
   }, []);
 
+  const sidebarMode = usePreferencesStore((s) => s.sidebarMode);
+  const toggleCompactSidebar = useCallback(() => {
+    const current = usePreferencesStore.getState().sidebarMode;
+    void setSidebarMode(current === 'compact' ? 'full' : 'compact');
+  }, []);
+
   const toggleHiddenFiles = useCallback(() => {
     openSidebarView('explorer');
     void setShowHidden(!usePreferencesStore.getState().showHidden);
@@ -57,6 +63,9 @@ export function useSidePanels() {
     sidePanelsOpen: !sidebar.sidebarCollapsed || (verticalTabs && !tabsColumn.tabsColumnCollapsed),
     toggleSidePanels,
     toggleTabOrientation,
+    /** The sidebar and the vertical tab column are one rail (E27-01). */
+    compactSidebar: sidebarMode === 'compact',
+    toggleCompactSidebar,
     toggleHiddenFiles,
     openSourceControl,
   };

@@ -7407,14 +7407,14 @@ scope: ui
 size: M
 ```
 
-**Goal:** A "Sidebar style" preference, Full (default) or Compact. In Compact, `AppShell` renders a fixed 32 px rail in
+**Goal:** A "Sidebar mode" preference, Full (default) or Compact. In Compact, `AppShell` renders a fixed 32 px rail in
 place of the sidebar panel and the tabs column, with one button per space and a button that opens a new space.
 
 **Acceptance criteria:**
 
-- [ ] `sidebarStyle: 'full' | 'compact'` in the settings store (key, default `full`, coercion, setter, change map),
+- [ ] `sidebarMode: 'full' | 'compact'` in the settings store (key, default `full`, coercion, setter, change map),
       persisted and applied without restart; unit tests for the coercion.
-- [ ] Settings › General gets a Layout group with the "Sidebar style" select (CompactSettings board).
+- [ ] Settings › General gets a Layout group with the "Sidebar mode" select (CompactSettings board).
 - [ ] A "Toggle compact sidebar" palette command in the View group and a bindable shortcut whose defaults follow the
       rules of `shortcutDefaults.ts`; the rail has no button of its own to go back to Full.
 - [ ] The rail: full window height, the sidebar's background and a 1 px right border; 24 × 24 px buttons with a 6 px

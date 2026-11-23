@@ -16,6 +16,7 @@ import {
   setFileIconColors,
   setRestoreWindowState,
   setShowHidden,
+  setSidebarMode,
   setZoomLevel,
 } from '@/modules/settings/store';
 import { SPACE_COLOR_NAMES, SPACE_COLORS } from '@/modules/spaces/lib/spaceColor';
@@ -40,6 +41,11 @@ const FILE_ICON_COLORS = [
   { value: 'original', label: 'Original' },
   { value: 'monochrome', label: 'Monochrome' },
 ] as const;
+
+const SIDEBAR_MODES = [
+  { value: 'full', label: 'Full' },
+  { value: 'compact', label: 'Compact' },
+] as const;
 const ZOOM_MIN = 0.5;
 const ZOOM_MAX = 2.0;
 const ZOOM_STEP = 0.05;
@@ -54,6 +60,7 @@ export function GeneralSection({ openTab }: SectionProps) {
   const ephemeralSpace = usePreferencesStore((s) => s.ephemeralSpace);
   const updateEphemeralSpace = (patch: Partial<EphemeralSpacePrefs>) =>
     void setEphemeralSpace({ ...ephemeralSpace, ...patch });
+  const sidebarMode = usePreferencesStore((s) => s.sidebarMode);
   const showHidden = usePreferencesStore((s) => s.showHidden);
   const explorerGitDecorations = usePreferencesStore((s) => s.explorerGitDecorations);
   const fileIconColors = usePreferencesStore((s) => coerceFileIconColors(s.fileIconColors));
@@ -94,6 +101,28 @@ export function GeneralSection({ openTab }: SectionProps) {
           </Button>{' '}
           tab.
         </p>
+      </SettingsGroup>
+
+      <SettingsGroup title="Layout">
+        <SettingRow
+          title="Sidebar mode"
+          description="Compact turns the sidebar and the vertical tabs into a narrow rail."
+        >
+          {(a11y) => (
+            <Select value={sidebarMode} onValueChange={(v) => void setSidebarMode(v)}>
+              <SelectTrigger {...a11y} value={sidebarMode}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SIDEBAR_MODES.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </SettingRow>
       </SettingsGroup>
 
       <SettingsGroup title="Zoom">

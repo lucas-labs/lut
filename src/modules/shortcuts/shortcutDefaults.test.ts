@@ -69,6 +69,7 @@ view.focusMode: Shift+Cmd+'
 view.fullScreen: Ctrl+Cmd+f
 view.tabOrientation: Shift+Cmd+y
 view.tabsColumn: Shift+Cmd+j
+view.compactSidebar: 
 editor.undo: Cmd+z
 editor.redo: Cmd+y, Shift+Cmd+z
 editor.save: Cmd+s
@@ -208,12 +209,16 @@ describe('Windows and Linux defaults', () => {
     'view.zoomOut': 2,
     'editor.redo': 2,
   };
-  /** Deliberately unbound: Ctrl+K is readline's kill-line; moving a pane has no default. */
+  /**
+   * Deliberately unbound: Ctrl+K is readline's kill-line; moving a pane has no default; the compact sidebar is bound
+   * in Settings (E27-01).
+   */
   const UNBOUND: ReadonlySet<ShortcutId> = new Set([
     'terminal.clear',
     'pane.moveToNewTab',
     'pane.moveToNextTab',
     'pane.moveToPrevTab',
+    'view.compactSidebar',
   ]);
 
   it('covers every shortcut', () => {

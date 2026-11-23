@@ -8,6 +8,8 @@ import { getLaunchDir } from '@/modules/platform';
 import { useProfilesLoadNotice, useShellTitlePolicy } from '@/modules/profiles';
 import { openSettingsWindow } from '@/modules/settings/openSettingsWindow';
 import { usePreferencesStore } from '@/modules/settings/preferences';
+import { CompactRail } from '@/modules/sidebar';
+import { useSpaces } from '@/modules/spaces';
 import { type NewTabMenuActions, TabNavigator, useTabs, useWindowTitle, useWorkspaceCwd } from '@/modules/tabs';
 import { canAddPane, findLeafCwd } from '@/modules/terminal';
 import { ThemeProvider, useThemeFileEditing } from '@/modules/theme';
@@ -148,7 +150,8 @@ export default function App() {
     onNewGitGraph: git.openGitGraphFromContext,
     onLaunchAgents: commands.launchAgentGroup,
   };
-  const { verticalTabs, sidebarCollapsed, tabsColumnCollapsed, focusMode } = panels;
+  const { verticalTabs, sidebarCollapsed, tabsColumnCollapsed, focusMode, compactSidebar } = panels;
+  const spaces = useSpaces((s) => s.spaces);
 
   return (
     <ThemeProvider>
@@ -156,6 +159,15 @@ export default function App() {
         <AppShell
           titleBarPlacement={verticalTabs ? 'overlay' : 'inline'}
           focusMode={focusMode}
+          compact={compactSidebar}
+          rail={
+            <CompactRail
+              spaces={spaces}
+              activeSpaceId={activeSpaceId}
+              onSwitchSpace={workspace.switchSpace}
+              onNewSpace={() => void workspace.newSpace()}
+            />
+          }
           titleBar={
             <TitleBar
               placement={verticalTabs ? 'overlay' : 'inline'}

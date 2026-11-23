@@ -53,6 +53,7 @@ export type ShortcutId =
   | 'view.fullScreen'
   | 'view.tabOrientation'
   | 'view.tabsColumn'
+  | 'view.compactSidebar'
   | 'agent.focusAttention'
   | 'settings.open'
   | 'sidebar.toggle'
@@ -358,6 +359,11 @@ const SHORTCUT_META: Omit<Shortcut, 'defaultBindings'>[] = [
   {
     id: 'view.tabsColumn',
     label: 'Show or hide the vertical tab column',
+    group: 'View',
+  },
+  {
+    id: 'view.compactSidebar',
+    label: 'Toggle compact sidebar',
     group: 'View',
   },
   {

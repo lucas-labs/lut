@@ -31,6 +31,7 @@ type CommandPaletteArgs = {
   toggleSidebar: () => void;
   toggleTabOrientation: () => void;
   toggleTabsColumn: () => void;
+  toggleCompactSidebar: () => void;
   toggleFocusMode: () => void;
   toggleFullScreen: () => void;
   toggleHiddenFiles: () => void;
@@ -65,6 +66,7 @@ export function useCommandPalette({
   toggleSidebar,
   toggleTabOrientation,
   toggleTabsColumn,
+  toggleCompactSidebar,
   toggleFocusMode,
   toggleFullScreen,
   toggleHiddenFiles,
@@ -108,6 +110,7 @@ export function useCommandPalette({
             toggleSidebar,
             toggleTabOrientation,
             toggleTabsColumn,
+            toggleCompactSidebar,
             toggleFocusMode,
             toggleFullScreen,
             toggleHiddenFiles,
@@ -143,6 +146,7 @@ export function useCommandPalette({
       toggleSidebar,
       toggleTabOrientation,
       toggleTabsColumn,
+      toggleCompactSidebar,
       toggleFocusMode,
       toggleFullScreen,
       toggleHiddenFiles,

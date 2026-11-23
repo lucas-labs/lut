@@ -47,6 +47,12 @@ function applyOwnLayout(group: GroupImperativeHandle | null, layout: Layout, res
 type Props = {
   /** Focus mode (E12-10): only the workspace shows; the chrome keeps its own state for when it comes back. */
   focusMode: boolean;
+  /**
+   * Compact sidebar (E27-01): `rail` stands in for the sidebar and the tab column, which keep their state for when the
+   * full sidebar comes back.
+   */
+  compact: boolean;
+  rail: ReactNode;
   titleBar: ReactNode;
   /**
    * `inline`: above the workspace, beside the sidebar (horizontal tabs). `overlay`: over the whole window, laid
@@ -83,6 +89,8 @@ type Props = {
  */
 export function AppShell({
   focusMode,
+  compact,
+  rail: railProp,
   titleBar: titleBarProp,
   titleBarPlacement,
   tabsColumn: tabsColumnProp,
@@ -100,7 +108,10 @@ export function AppShell({
   children,
 }: Props) {
   const titleBar = focusMode ? null : titleBarProp;
-  const tabsColumn = focusMode ? null : tabsColumnProp;
+  // Focus mode and the compact rail both take the side panels out; their stored layout stays as it was.
+  const sidePanelsHidden = focusMode || compact;
+  const tabsColumn = sidePanelsHidden ? null : tabsColumnProp;
+  const rail = compact && !focusMode ? railProp : null;
 
   // The side panels' own widths as of the last layout the app accepted, and the group's last layout: when the group
   // lays itself out (a panel set change, a panel opening or closing), the side panels that should not have moved go
@@ -121,8 +132,8 @@ export function AppShell({
     Math.round(((layout[id] ?? 0) / 100) * (group.current?.offsetWidth ?? 0));
 
   const accept = (layout: Layout, isUserInteraction: boolean) => {
-    // The side panels are gone in focus mode; their stored layout stays as it was.
-    if (focusMode) return;
+    // The side panels are gone in focus mode and in compact mode; their stored layout stays as it was.
+    if (sidePanelsHidden) return;
     const width = widthIn(layout);
     for (const id of SIDE_PANELS) if (id in layout) sizes.current[id] = width(id);
     onSidebarLayout(width('sidebar'), isUserInteraction);
@@ -142,10 +153,12 @@ export function AppShell({
   };
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-frame text-foreground">
-      <main className="zoom-content flex min-h-0 flex-1 flex-col">
+      {/* The rail's slot always exists (null when unused), so the panel group, and the workspace in it, never moves. */}
+      <main className="zoom-content flex min-h-0 flex-1 flex-row">
+        {rail}
         <ResizablePanelGroup
           orientation="horizontal"
-          className="min-h-0 flex-1"
+          className="min-h-0 min-w-0 flex-1"
           elementRef={group}
           groupRef={groupHandle}
           onLayoutChanged={(layout, { isUserInteraction }) => {
@@ -170,8 +183,9 @@ export function AppShell({
             accept(layout, isUserInteraction);
           }}
         >
-          {/* In focus mode the sidebar leaves its slot empty, as the tab column does; it comes back at its width. */}
-          {focusMode ? null : (
+          {/* In focus and compact mode the sidebar leaves its slot empty, as the tab column does; it comes back at its
+              width. */}
+          {sidePanelsHidden ? null : (
             <SidePanel
               id="sidebar"
               panelRef={sidebarRef}
@@ -189,7 +203,7 @@ export function AppShell({
               </div>
             </SidePanel>
           )}
-          {focusMode ? null : <ResizableHandle className={handleClass(sidebarOpen)} />}
+          {sidePanelsHidden ? null : <ResizableHandle className={handleClass(sidebarOpen)} />}
           {/* The column and its handle keep their slots when absent, so the workspace never moves in the tree. */}
           {tabsColumn ? (
             <SidePanel
