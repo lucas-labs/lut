@@ -452,6 +452,50 @@ describe('Windows and Linux: Jump to tab', () => {
     expect(matchBinding(event, binding, 'tab.selectByIndex')).toBe(false);
   });
 
+  it.each([
+    ['End', 'Numpad1', 1],
+    ['ArrowDown', 'Numpad2', 2],
+    ['PageUp', 'Numpad9', 9],
+  ])(
+    'takes Ctrl+Shift+numpad (%s, %s, NumLock on) as tab %s, though Windows reports Shift up',
+    (key, code, digit) => {
+      const event = press(key, code, {
+        shiftKey: false,
+        getModifierState: (k: string) => k === 'NumLock',
+      });
+      expect(matchBinding(event, binding, 'tab.selectByIndex')).toBe(true);
+      expect(tabDigit(event, false)).toBe(digit);
+    },
+  );
+
+  it('leaves the numpad to the terminal and the editor without Shift or with NumLock off', () => {
+    const numLock = (on: boolean) => (k: string) => k === 'NumLock' && on;
+    // Ctrl+numpad 1, NumLock on: the digit itself, no Shift.
+    expect(
+      matchBinding(
+        press('1', 'Numpad1', { shiftKey: false, getModifierState: numLock(true) }),
+        binding,
+        'tab.selectByIndex',
+      ),
+    ).toBe(false);
+    // NumLock off: the numpad's End is Ctrl+End.
+    expect(
+      matchBinding(
+        press('End', 'Numpad1', { shiftKey: false, getModifierState: numLock(false) }),
+        binding,
+        'tab.selectByIndex',
+      ),
+    ).toBe(false);
+    // The End key of the navigation block.
+    expect(
+      matchBinding(
+        press('End', 'End', { shiftKey: false, getModifierState: numLock(true) }),
+        binding,
+        'tab.selectByIndex',
+      ),
+    ).toBe(false);
+  });
+
   it('ignores Ctrl+Shift+0 and keys that are not digits', () => {
     expect(matchBinding(press(')', 'Digit0', {}), binding, 'tab.selectByIndex')).toBe(false);
     expect(matchBinding(press('A', 'KeyA', {}), binding, 'tab.selectByIndex')).toBe(false);
