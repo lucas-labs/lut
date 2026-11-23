@@ -297,7 +297,16 @@ export function CommandPalette({
           placeholder={placeholder}
           autoFocus
         />
-        <ScrollArea className={cn('min-h-0', showFiles ? 'h-[372px]' : 'max-h-[404px]')}>
+        <ScrollArea
+          className={cn(
+            'min-h-0',
+            // A max-height alone leaves the viewport (height: 100%) unbounded, so it would not scroll: it takes the
+            // same cap, which also fits below the input in a short window.
+            showFiles
+              ? 'h-[372px]'
+              : 'max-h-[min(404px,calc(100dvh-5rem-48px))] [&>[data-slot=scroll-area-viewport]]:max-h-[inherit]',
+          )}
+        >
           <CommandList
             className="max-h-none overflow-visible pr-3"
             onClickCapture={(e) => {
