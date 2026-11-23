@@ -1,4 +1,4 @@
-import { AppLogo } from '@/components/AppLogo';
+import { AppIcon } from '@/components/AppIcon';
 import { Button } from '@/components/ui/button';
 import { AlertIcon, LinkIcon } from '@lut/lut-icons';
 import { getIdentifier, getName, getVersion } from '@tauri-apps/api/app';
@@ -57,7 +57,7 @@ export function AboutSection() {
   return (
     <div className="flex flex-col">
       <div className="mt-2 flex items-center gap-5 rounded-[10px] border border-border bg-card p-6">
-        <AppLogo size={72} />
+        <AppIcon size={72} />
         <div className="flex min-w-0 flex-col gap-1">
           <h1 className="text-[20px] leading-7 font-semibold">{name}</h1>
           <span className="text-muted-foreground">A terminal built around spaces, profiles and CLI agents</span>

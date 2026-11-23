@@ -115,9 +115,8 @@ function TitleBarRow({
   // reaches that corner (always as an overlay, inline only while the sidebar is closed).
   const clearTrafficLights = IS_MAC && (!inline || !sidePanelsOpen);
   const appMark = (
-    <span className="flex shrink-0 items-center gap-1.5 px-2 text-xs text-muted-foreground">
-      <AppLogo size={16} />
-      lut
+    <span className="flex shrink-0 items-center px-2 text-muted-foreground">
+      <AppLogo />
     </span>
   );
 

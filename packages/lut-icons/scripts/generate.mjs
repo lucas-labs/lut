@@ -47,6 +47,13 @@ for (const { name, id } of icons) {
   seen.set(id, name);
 }
 
+// An icon's names must not shadow the package's own exports: an icon "lut" would make `LutIconData`, the type.
+const RESERVED = new Set(['LutIconCanvas', 'LutIconComponent', 'LutIconData', 'LutIconMaster', 'LutIconPath', 'LutIconProps', 'LutIconRotation', 'LutIconSize']);
+for (const { name, id } of icons) {
+  const clash = [id, `${id}Data`].find(n => RESERVED.has(n));
+  if (clash) throw new Error(`icon "${name}" makes ${clash}, a name the package already exports; rename its artboards`);
+}
+
 rmSync(iconsDir, { recursive: true, force: true });
 mkdirSync(iconsDir, { recursive: true });
 for (const { name, id, masters } of icons) {

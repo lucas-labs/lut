@@ -59,6 +59,8 @@ export { KeyIconData } from './icons/key';
 export { KeyboardIconData } from './icons/keyboard';
 export { LayersIconData } from './icons/layers';
 export { LinkIconData } from './icons/link';
+export { LutLogoIconData } from './icons/lut-logo';
+export { LutLogoCompactIconData } from './icons/lut-logo-compact';
 export { MathIconData } from './icons/math';
 export { MinusIconData } from './icons/minus';
 export { MoreIconData } from './icons/more';

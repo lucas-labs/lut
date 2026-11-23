@@ -4,7 +4,8 @@ import type { LutIconData, LutIconRotation, LutIconSize } from './types';
 /**
  * An icon as an SVG document, for places outside React (CSS masks, data URLs, canvas). It draws
  * like the component: same master, box, rotation and line styles for the size. `color` is the
- * paint, black by default (masks only read the alpha).
+ * paint of every shape, black by default (masks only read the alpha): a theme colour a shape names
+ * is a CSS variable, which a mask or a data URL cannot resolve.
  */
 export function toSvgString(
   data: LutIconData,

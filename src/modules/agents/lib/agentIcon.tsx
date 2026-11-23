@@ -1,4 +1,4 @@
-import { AppLogo } from '@/components/AppLogo';
+import { AppIcon } from '@/components/AppIcon';
 import {
   AgentClaudeIcon,
   AgentCodexIcon,
@@ -34,7 +34,7 @@ export function AgentIcon({
   className?: string;
 }) {
   if (agent.toLowerCase().includes('lut')) {
-    return <AppLogo size={LUT_ICON_SIZES[size].px} className={className} />;
+    return <AppIcon size={LUT_ICON_SIZES[size].px} className={className} />;
   }
   return agentMark(agent, { size, className });
 }

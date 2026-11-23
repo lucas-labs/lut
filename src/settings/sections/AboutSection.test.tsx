@@ -18,7 +18,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 const opener = vi.hoisted(() => ({ openUrl: vi.fn(async () => {}) }));
 vi.mock('@tauri-apps/plugin-opener', () => opener);
 vi.mock('@tauri-apps/plugin-os', () => ({ platform: () => 'windows', arch: () => 'x86_64' }));
-vi.mock('@/components/AppLogo', () => ({ AppLogo: () => null }));
+vi.mock('@/components/AppIcon', () => ({ AppIcon: () => null }));
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
