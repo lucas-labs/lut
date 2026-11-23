@@ -467,7 +467,7 @@ html *::-webkit-scrollbar {
     var(--background)
   );
 }
-[data-tab-color][data-orientation='vertical'][aria-selected='true'] {
+[data-tab-color][data-orientation='vertical']:is([aria-selected='true'], [aria-current='true']) {
   background: color-mix(in srgb, var(--tab-color) 12%, var(--accent));
 }
 

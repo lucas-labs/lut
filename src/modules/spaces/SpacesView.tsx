@@ -1,17 +1,23 @@
 import { Button } from '@/components/ui/button';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
 import { cn } from '@/lib/utils';
 import { labelFor, type Tab, TabIcon } from '@/modules/navigation';
 import { useShellTitlePolicy } from '@/modules/profiles';
 import { useShortcutLabel } from '@/modules/shortcuts';
-import { ChevronIcon, DeleteIcon, GhostIcon, type LutIconComponent, PencilIcon, PlusIcon, XIcon } from '@lut/lut-icons';
-import { useMemo, useRef, useState } from 'react';
+import { ChevronIcon, DeleteIcon, GhostIcon, PencilIcon, PlusIcon, XIcon } from '@lut/lut-icons';
+import { type CSSProperties, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { InlineRename } from './components/InlineRename';
 import { isEphemeralSpace } from './lib/ephemeral';
-import { accentFor } from './lib/spaceColor';
+import { accentFor, spaceTint } from './lib/spaceColor';
 import type { SpaceMeta } from './lib/store';
 import { useSpaces } from './lib/useSpaces';
-import { SpaceAvatar } from './SpaceAvatar';
 
 type Props = {
   tabs: Tab[];
@@ -76,7 +82,8 @@ export function SpacesView({
   const rename = useSpaces((s) => s.rename);
   const shortcut = useShortcutLabel('space.overview');
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState<Set<string>>(() => (activeId ? new Set([activeId]) : new Set()));
+  // Every Space starts collapsed; its menu expands it (E18-09).
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
 
   const drag = useRef<DragState | null>(null);
   const dropRef = useRef<DropTarget | null>(null);
@@ -99,13 +106,6 @@ export function SpacesView({
 
   const draggedTab = dragging?.kind === 'tab' ? (tabs.find((t) => t.id === dragging.id) ?? null) : null;
   const draggedSpace = dragging?.kind === 'space' ? (spaces.find((s) => s.id === dragging.id) ?? null) : null;
-
-  // The space that becomes active opens; collapsing it afterwards is the user's call.
-  const [revealedId, setRevealedId] = useState<string | null>(null);
-  if (activeId && activeId !== revealedId) {
-    setRevealedId(activeId);
-    if (!expanded.has(activeId)) setExpanded(new Set(expanded).add(activeId));
-  }
 
   const toggleExpand = (id: string) =>
     setExpanded((prev) => {
@@ -204,7 +204,7 @@ export function SpacesView({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex h-7 shrink-0 items-center gap-2 pr-1.5 pl-[18px]">
+      <div className="flex h-[30px] shrink-0 items-center gap-2 pr-1.5 pl-[18px]">
         <span
           className="min-w-0 flex-1 truncate text-xs text-muted-foreground"
           title={shortcut ? `Spaces (${shortcut})` : undefined}
@@ -313,76 +313,93 @@ function SpaceRow({
   const isDragging = dragging?.kind === 'space' && dragging.id === space.id;
   const moveTarget = drop?.kind === 'into-space' && drop.spaceId === space.id;
   const reorderEdge = drop?.kind === 'space' && drop.spaceId === space.id ? drop.edge : null;
+  // A coloured Space is tinted like a coloured vertical tab; the drop highlight wins while a tab is over it.
+  const tint = moveTarget ? null : spaceTint(space);
 
   return (
     <div className={cn('relative', isDragging && 'opacity-50')}>
       {reorderEdge && <DropLine edge={reorderEdge} />}
-      {/* eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- drag row hosts nested buttons, cannot be a <button> */}
-      <div
-        data-drop="space"
-        data-space-id={space.id}
-        role="button"
-        tabIndex={editing ? -1 : 0}
-        onPointerDown={editing ? undefined : (e) => onPointerDown(e, 'space', space.id)}
-        onPointerMove={onPointerMove}
-        onPointerUp={editing ? undefined : (e) => onPointerUp(e, onSwitch)}
-        onPointerCancel={(e) => onPointerUp(e)}
-        onKeyDown={(e) => {
-          if (editing) return;
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            onSwitch();
-          }
-        }}
-        className={cn(
-          'group relative flex h-8 cursor-pointer select-none items-center gap-2 rounded-md px-2 outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring',
-          moveTarget
-            ? 'bg-primary/10 ring-1 ring-inset ring-primary/40'
-            : isActive
-              ? 'bg-accent'
-              : 'hover:bg-accent/50',
-        )}
-      >
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          data-no-drag
-          aria-label={expanded ? 'Collapse' : 'Expand'}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggle();
-          }}
-        >
-          <ChevronIcon rotate={expanded ? 90 : 0} size="sm" />
-        </Button>
-        <SpaceAvatar space={space} size="sm" active={isActive} />
-        {editing ? (
-          <InlineRename initial={space.name} onCommit={onCommitRename} onCancel={onCancelRename} className="ml-0.5" />
-        ) : (
-          <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{space.name}</span>
-        )}
-        {!editing && isEphemeralSpace(space.id) && (
-          <span title={EPHEMERAL_SPACE_HINT} className="flex shrink-0">
-            <GhostIcon size="sm" className="text-muted-foreground opacity-40" aria-hidden />
-            <span className="sr-only">{EPHEMERAL_SPACE_HINT}</span>
-          </span>
-        )}
-        {!editing && (
-          <>
-            <span className="shrink-0 px-1 text-[10px] tabular-nums text-muted-foreground/50 group-hover:hidden">
-              {tabs.length}
-            </span>
-            <div data-no-drag className="hidden shrink-0 items-center gap-0.5 group-hover:flex">
-              <RowAction icon={PencilIcon} label="Rename space" onClick={onStartRename} />
-              <RowAction icon={PlusIcon} label="New tab" onClick={onNewTab} />
-              {canDelete && <RowAction icon={DeleteIcon} label="Delete space" destructive onClick={onDelete} />}
-            </div>
-          </>
-        )}
-      </div>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          {/* eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- drag row hosts nested buttons, cannot be a <button> */}
+          <div
+            data-drop="space"
+            data-space-id={space.id}
+            role="button"
+            aria-current={isActive ? 'true' : undefined}
+            {...(tint !== null && {
+              'data-tab-color': '',
+              'data-orientation': 'vertical',
+              style: { '--tab-color': tint } as CSSProperties,
+            })}
+            tabIndex={editing ? -1 : 0}
+            onPointerDown={editing ? undefined : (e) => onPointerDown(e, 'space', space.id)}
+            onPointerMove={onPointerMove}
+            onPointerUp={editing ? undefined : (e) => onPointerUp(e, onSwitch)}
+            onPointerCancel={(e) => onPointerUp(e)}
+            onKeyDown={(e) => {
+              if (editing) return;
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                onSwitch();
+              }
+            }}
+            className={cn(
+              'relative flex h-8 cursor-pointer select-none items-center gap-2 rounded-md px-2.5 outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring',
+              moveTarget
+                ? 'bg-primary/10 ring-1 ring-inset ring-primary/40'
+                : isActive
+                  ? 'bg-accent'
+                  : 'hover:bg-accent/50',
+            )}
+          >
+            {editing ? (
+              <InlineRename
+                initial={space.name}
+                onCommit={onCommitRename}
+                onCancel={onCancelRename}
+                className="ml-0.5"
+              />
+            ) : (
+              <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{space.name}</span>
+            )}
+            {!editing && isEphemeralSpace(space.id) && (
+              <span title={EPHEMERAL_SPACE_HINT} className="flex shrink-0">
+                <GhostIcon size="sm" className="text-muted-foreground opacity-40" aria-hidden />
+                <span className="sr-only">{EPHEMERAL_SPACE_HINT}</span>
+              </span>
+            )}
+          </div>
+        </ContextMenuTrigger>
+        {/* The row stays clean; its actions live here (E18-09). Focus stays on the rename input when it opens. */}
+        <ContextMenuContent onCloseAutoFocus={(e) => e.preventDefault()}>
+          <ContextMenuItem onSelect={onToggle}>
+            <ChevronIcon rotate={expanded ? 270 : 90} size="sm" />
+            <span className="flex-1">{expanded ? 'Collapse' : 'Expand'}</span>
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem onSelect={onStartRename}>
+            <PencilIcon size="sm" />
+            <span className="flex-1">Rename space</span>
+          </ContextMenuItem>
+          <ContextMenuItem onSelect={onNewTab}>
+            <PlusIcon size="sm" />
+            <span className="flex-1">New tab</span>
+          </ContextMenuItem>
+          {canDelete && (
+            <>
+              <ContextMenuSeparator />
+              <ContextMenuItem variant="destructive" onSelect={onDelete}>
+                <DeleteIcon size="sm" />
+                <span className="flex-1">Delete space</span>
+              </ContextMenuItem>
+            </>
+          )}
+        </ContextMenuContent>
+      </ContextMenu>
 
       {expanded && (
-        <div className="flex flex-col gap-px py-0.5 pl-10 pr-0.5">
+        <div className="flex flex-col gap-px py-0.5 pl-4 pr-0.5">
           {tabs.map((t) => (
             <TabRow
               key={t.id}
@@ -500,33 +517,5 @@ function OverlayChip({ tab, color, label }: { tab?: Tab; color?: string; label: 
       )}
       <span className="max-w-44 truncate font-medium">{label}</span>
     </div>
-  );
-}
-
-function RowAction({
-  icon: Icon,
-  label,
-  onClick,
-  destructive,
-}: {
-  icon: LutIconComponent;
-  label: string;
-  onClick: () => void;
-  destructive?: boolean;
-}) {
-  return (
-    <Button
-      variant="ghost"
-      size="icon-xs"
-      aria-label={label}
-      title={label}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-      }}
-      className={cn(destructive && 'hover:bg-destructive/10 hover:text-destructive')}
-    >
-      <Icon size="sm" />
-    </Button>
   );
 }

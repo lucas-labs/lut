@@ -31,7 +31,8 @@ export function accentFor(space: Pick<SpaceMeta, 'color'>): string {
   return 'var(--primary)';
 }
 
-export function spaceInitial(name: string): string {
-  const ch = name.trim()[0];
-  return ch ? ch.toUpperCase() : '?';
+/** The tint of a coloured Space's row, as a coloured tab's; null for a Space with no colour (E18-09). */
+export function spaceTint(space: Pick<SpaceMeta, 'color'>): string | null {
+  const c = space.color;
+  return c != null && c >= 0 && c < SPACE_COLORS.length ? SPACE_COLORS[c] : null;
 }
