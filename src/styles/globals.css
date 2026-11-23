@@ -456,7 +456,7 @@ html *::-webkit-scrollbar {
 /* A tab the user coloured (E15-04, E11-04 design): `--tab-color` tints it, more on hover and while active. The
  * active tab of the strip fades into the workspace below it. Outside a layer, these win over the cell's utilities. */
 [data-tab-color] {
-  background: color-mix(in srgb, var(--tab-color) 8%, transparent);
+  background: color-mix(in srgb, var(--tab-color) 5%, transparent);
 }
 [data-tab-color]:hover {
   background: color-mix(in srgb, var(--tab-color) 10%, var(--accent));
