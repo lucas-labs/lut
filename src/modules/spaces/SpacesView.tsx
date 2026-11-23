@@ -386,12 +386,17 @@ function SpaceRow({
       onPointerMove={onPointerMove}
       onPointerUp={editing ? undefined : (e) => onPointerUp(e, onSwitch)}
       onPointerCancel={(e) => onPointerUp(e)}
+      // A pointer switches on release, above (a drag must not). Enter and Space activate it as a button; a click with no
+      // pointer behind it (detail 0) is a screen reader activating it.
       onKeyDown={(e) => {
         if (editing) return;
-        if (e.key === 'Enter') {
+        if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           onSwitch();
         }
+      }}
+      onClick={(e) => {
+        if (!editing && e.detail === 0) onSwitch();
       }}
       className={
         compact

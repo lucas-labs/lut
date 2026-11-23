@@ -121,6 +121,30 @@ describe('SpacesView', () => {
     expect(tabRows()).toHaveLength(0);
   });
 
+  it.each([false, true])(
+    'switches Space with Enter, Space or a click with no pointer, not a pointer click (compact: %s)',
+    async (compact) => {
+      await render(tabsInB(), compact);
+      const switchesTo = async (id: string, fire: (el: HTMLElement) => void) => {
+        useSpaces.getState().setActive('a');
+        await act(async () => fire(row(id) as HTMLElement));
+        return useSpaces.getState().activeId === id;
+      };
+      expect(
+        await switchesTo('b', (el) => el.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }))),
+      ).toBe(true);
+      expect(
+        await switchesTo('b', (el) => el.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: ' ' }))),
+      ).toBe(true);
+      expect(
+        await switchesTo('b', (el) => el.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 0 }))),
+      ).toBe(true);
+      expect(
+        await switchesTo('b', (el) => el.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }))),
+      ).toBe(false);
+    },
+  );
+
   it('expands and collapses a Space from its menu', async () => {
     await render();
     await openMenu('b');
