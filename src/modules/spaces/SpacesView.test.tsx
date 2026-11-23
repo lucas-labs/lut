@@ -137,6 +137,18 @@ describe('SpacesView', () => {
     expect(row('b')?.querySelector('input')).not.toBeNull();
   });
 
+  it('returns focus to the row when the menu closes, but not after Rename', async () => {
+    await render();
+    // Opened from the keyboard: the focused row is where the menu returns focus.
+    act(() => row('b')?.focus());
+    await openMenu('b');
+    await chooseItem('Expand');
+    expect(document.activeElement).toBe(row('b'));
+    await openMenu('b');
+    await chooseItem('Rename space');
+    expect(document.activeElement).toBe(row('b')?.querySelector('input'));
+  });
+
   it('keeps the row clean: no action buttons', async () => {
     await render();
     expect(row('b')?.querySelectorAll('button')).toHaveLength(0);

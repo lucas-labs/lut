@@ -310,6 +310,8 @@ function SpaceRow({
   onJumpTab,
   onCloseTab,
 }: SpaceRowProps) {
+  // Set when the menu's Rename is chosen, so the menu leaves focus on the rename input instead of the row.
+  const renaming = useRef(false);
   const isDragging = dragging?.kind === 'space' && dragging.id === space.id;
   const moveTarget = drop?.kind === 'into-space' && drop.spaceId === space.id;
   const reorderEdge = drop?.kind === 'space' && drop.spaceId === space.id ? drop.edge : null;
@@ -371,14 +373,25 @@ function SpaceRow({
             )}
           </div>
         </ContextMenuTrigger>
-        {/* The row stays clean; its actions live here (E18-09). Focus stays on the rename input when it opens. */}
-        <ContextMenuContent onCloseAutoFocus={(e) => e.preventDefault()}>
+        {/* The row stays clean; its actions live here (E18-09). */}
+        <ContextMenuContent
+          onCloseAutoFocus={(e) => {
+            if (!renaming.current) return;
+            renaming.current = false;
+            e.preventDefault();
+          }}
+        >
           <ContextMenuItem onSelect={onToggle}>
             <ChevronIcon rotate={expanded ? 270 : 90} size="sm" />
             <span className="flex-1">{expanded ? 'Collapse' : 'Expand'}</span>
           </ContextMenuItem>
           <ContextMenuSeparator />
-          <ContextMenuItem onSelect={onStartRename}>
+          <ContextMenuItem
+            onSelect={() => {
+              renaming.current = true;
+              onStartRename();
+            }}
+          >
             <PencilIcon size="sm" />
             <span className="flex-1">Rename space</span>
           </ContextMenuItem>
