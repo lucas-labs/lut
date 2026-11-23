@@ -6230,7 +6230,7 @@ depends-on: [E11, E12, E05, E06, E13, E14, E15, E17, E18]
 refs: [F6, UX-006, UX-007, UX-008, UX-010, UX-011, TER-013, .docs/plan/analysis/app-shell.md]
 ```
 
-Turns the palette into a terminal/space action launcher, adds context menus, and finishes density, compact tabs,
+Turns the palette into a terminal/space action launcher, adds context menus, and finishes density,
 accessibility and loading/error states on top of the user's design.
 
 ### E22-01 — Refactor the command palette into an extensible command registry
@@ -6398,32 +6398,11 @@ size: S
 
 **Verification:** `pnpm test`; manual toggle in both themes.
 
-### E22-08 — Add compact and expandable tab modes
-
-```yaml
-id: E22-08
-depends-on: [E11-02, E12-05]
-refs: [TER-013]
-covers: [TER-013]
-type: task
-scope: ui
-size: S
-```
-
-**Goal:** Tabs can be shown compact or expanded, in horizontal and vertical layouts, per the E11-02 design.
-
-**Acceptance criteria:**
-
-- [ ] Mode persisted; toggle available from the palette and settings.
-- [ ] Agent attention badges remain visible in compact mode.
-
-**Verification:** `pnpm test`; manual with 20+ tabs.
-
 ### E22-09 — Add tab groups
 
 ```yaml
 id: E22-09
-depends-on: [E22-08, E11-02]
+depends-on: [E11-02]
 refs: [TER-013]
 covers: [TER-013]
 type: task
@@ -6552,7 +6531,7 @@ size: S
 
 ```yaml
 id: E22-15
-depends-on: [E22-01, E22-02, E22-03, E22-04, E22-05, E22-06, E22-07, E22-08, E22-09, E22-10, E22-11, E22-12, E22-13, E22-14]
+depends-on: [E22-01, E22-02, E22-03, E22-04, E22-05, E22-06, E22-07, E22-09, E22-10, E22-11, E22-12, E22-13, E22-14]
 refs: []
 covers: []
 type: closeout
@@ -7391,6 +7370,372 @@ ones.
 ```yaml
 id: E26-03
 depends-on: [E26-01, E26-02, E26-04, E26-05, E26-06, E26-07, E26-08, E26-09, E26-10, E26-11, E26-12]
+refs: [.docs/plan/README.md]
+covers: []
+type: closeout
+scope: none
+size: XS
+```
+
+**Goal:** Verify every item of this epic is delivered (validator coverage), run the epic's verification commands, and
+add any discovered work to plan.md (or state 'nothing new').
+
+## E27 — Compact sidebar
+
+```yaml
+id: E27
+depends-on: [E12, E13, E16, E18, E20]
+refs: [TER-013, UX-006, UX-007, UX-011, .docs/plan/analysis/app-shell.md]
+```
+
+An optional layout that gives the terminals more width: the sidebar (Spaces, Files, Git) and the vertical tabs column
+become one 32 px rail. Spaces show their initial, tabs their position, both with the agents' state; Files and Git open
+as a floating panel over the terminals. It is lut's compact tabs mode (it replaces E22-08) and a layout preference,
+independent of focus mode and of the tab orientation. Spec: the "lut — Sidebar compacto" doc; look: the "Compact
+sidebar" page of the design canvas (CompactV, CompactH, CompactFiles, CompactGit and CompactSettings boards, each on
+Windows, macOS and Linux).
+
+### E27-01 — Compact sidebar preference and the spaces rail
+
+```yaml
+id: E27-01
+depends-on: []
+refs: [TER-013, .docs/plan/analysis/app-shell.md, .docs/plan/analysis/state-settings.md]
+covers: [TER-013, state-settings/settings-store, app-shell/sidebar-logic, app-shell/shortcuts, app-shell/command-palette-logic]
+type: task
+scope: ui
+size: M
+```
+
+**Goal:** A "Sidebar style" preference, Full (default) or Compact. In Compact, `AppShell` renders a fixed 32 px rail in
+place of the sidebar panel and the tabs column, with one button per space and a button that opens a new space.
+
+**Acceptance criteria:**
+
+- [ ] `sidebarStyle: 'full' | 'compact'` in the settings store (key, default `full`, coercion, setter, change map),
+      persisted and applied without restart; unit tests for the coercion.
+- [ ] Settings › General gets a Layout group with the "Sidebar style" select (CompactSettings board).
+- [ ] A "Toggle compact sidebar" palette command in the View group and a bindable shortcut whose defaults follow the
+      rules of `shortcutDefaults.ts`; the rail has no button of its own to go back to Full.
+- [ ] The rail: full window height, the sidebar's background and a 1 px right border; 24 × 24 px buttons with a 6 px
+      radius, transparent at rest and `bg-accent` on hover and when active, with no border; 4 px between buttons and
+      8 px between groups, in the order of the full sidebar.
+- [ ] A space button shows the space name's initial in upper case (12 px, semibold) and switches to the space on
+      click; the active space is marked. The + runs the Spaces view's new-space action.
+- [ ] Tooltips (to the right of the rail, over the terminals, on hover and on keyboard focus) give the space name and
+      "Open space".
+- [ ] Switching back to Full restores the sidebar and the tabs column with their widths and collapsed state.
+- [ ] Component tests: the preference swaps the panels for the rail and back; a click switches spaces.
+
+**Verification:** `pnpm test`; `pnpm check-types`; manual on Windows: toggle from Settings, the palette and the
+shortcut, with both tab orientations, then restart lut and find the same style.
+
+### E27-02 — Tabs of the active space in the rail
+
+```yaml
+id: E27-02
+depends-on: [E27-01]
+refs: [TER-013, .docs/plan/analysis/app-shell.md]
+covers: [app-shell/tabs-ui]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** With vertical tabs, the rail lists the active space's tabs under the spaces, after a 16 px separator: one
+button per tab with its position number and a + for a new tab (CompactV board).
+
+**Acceptance criteria:**
+
+- [ ] A tab button shows its position in a monospace face, 1 to 9; from the 10th on it shows "…". A click selects the
+      tab. The numbers match the "Jump to tab" shortcuts, so they double as a hint.
+- [ ] A coloured tab shows its colour as the button's background at 10 %, 30 % when selected; with no colour it uses
+      the rail's states.
+- [ ] Inactive tabs show at 70 % opacity (number, tint and state dot) with the number at 55 % of the text colour, and
+      at 100 % on hover; the active tab at 100 %, with no border. Same rule as the vertical tabs column.
+- [ ] Tooltips give the tab's name, its agent state and its "Jump to tab" shortcut; the + gives "New terminal" and its
+      shortcut, and opens a tab with the default profile.
+- [ ] With horizontal tabs the rail shows no tabs or separator (the tabs stay in the strip).
+- [ ] Component tests: numbering with 12 tabs, the active tab, the tint classes, and no tabs with horizontal tabs.
+
+**Verification:** `pnpm test`; manual on Windows: coloured and plain tabs, switching tabs and spaces.
+
+### E27-03 — Agent state dots on the rail
+
+```yaml
+id: E27-03
+depends-on: [E27-02]
+refs: [.docs/plan/analysis/terminal.md, .docs/plan/analysis/app-shell.md]
+covers: [terminal/agent-activity, app-shell/tabs-helpers]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** The rail keeps the agents visible: a 7 px dot at the top right corner of a space or tab button, with a 2 px
+ring in the rail's colour to set it apart. The tab colour is the background, the state is the dot: both show at once.
+
+**Acceptance criteria:**
+
+- [ ] Working: the tabs' dot in the theme's working colour, blinking. Needs attention or approval: a steady warning dot
+      on spaces and tabs. Response finished: a steady dot on spaces. Idle: no dot.
+- [ ] A space's state sums up its tabs' (the most urgent wins: a tab that needs attention makes its space show it),
+      from a selector over the agent activity store next to `tabAgentStatus`, with unit tests.
+- [ ] The tooltips add the state ("Reforge · Needs attention").
+- [ ] The blink stops under reduced motion.
+
+**Verification:** `pnpm test`; manual on Windows: an agent working, asking for approval and finishing, in the active
+space and in another one.
+
+### E27-04 — Files and Git as a floating panel from the rail
+
+```yaml
+id: E27-04
+depends-on: [E27-01]
+refs: [UX-009, .docs/plan/analysis/ide-tools.md, .docs/plan/analysis/app-shell.md]
+covers: [app-shell/sidebar-ui, ide-tools/explorer-ui, ide-tools/source-control-ui]
+type: task
+scope: ui
+size: M
+```
+
+**Goal:** Files and Git buttons sit at the bottom of the rail, pushed down by the free space. Each opens the full
+sidebar's view as a floating panel over the terminals, without resizing the panes (CompactFiles and CompactGit boards).
+
+**Acceptance criteria:**
+
+- [ ] The Git button carries a dot while there are pending changes; the tooltips give "Files" and "Git".
+- [ ] The panel sits at the rail's right edge with the sidebar's width and a shadow, and holds the same content as in
+      the full sidebar: the file tree, or Git with commit, staging and the commit graph; opening a file opens its
+      editor tab as there.
+- [ ] While it is open its button shows as active; the other button switches the panel's view without closing it.
+- [ ] It closes on its button, on a click outside it and when the rail hides; the explorer and Git watchers follow
+      its visibility as they follow the sidebar's today, and the explorer focus and search actions reach it.
+- [ ] Component tests: open, switch, close on outside click; no change to the terminals' layout.
+
+**Verification:** `pnpm test`; manual on Windows: open a file and stage a change from the panel; the terminals keep
+their size.
+
+### E27-05 — Hide and show the rail by dragging its edge
+
+```yaml
+id: E27-05
+depends-on: [E27-01]
+refs: [.docs/plan/analysis/app-shell.md]
+covers: [app-shell/sidebar-logic]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** The rail never changes width: it only hides or shows, from its edge or the title bar button.
+
+**Acceptance criteria:**
+
+- [ ] Hovering the rail's right edge shows the 3 px line of the other sidebars' handles. Dragged left past 24 px the
+      line turns to the warning colour and the rail dims to 45 %; released there the rail hides, released before it
+      settles back.
+- [ ] With the rail hidden, an invisible 8 px strip at the window's left edge shows the line on hover; dragging it
+      right past 24 px brings the rail back.
+- [ ] The title bar's sidebar button (the one that shows the closed full sidebar) shows and hides the rail too.
+- [ ] Hiding keeps the Compact preference; whether the rail is hidden is saved and restored on start.
+- [ ] Component tests for the thresholds and the persisted state.
+
+**Verification:** `pnpm test`; manual on Windows: hide and show by dragging and from the button, then restart lut.
+
+### E27-06 — The rail in each layout and OS
+
+```yaml
+id: E27-06
+depends-on: [E27-02, E27-05]
+refs: [UX-011, .docs/plan/analysis/app-shell.md]
+covers: [app-shell/window-controls, app-shell/header]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** The rail looks the same on the three OSes; what changes is what it shows per layout and where the window
+controls go (CompactV and CompactH boards on Windows, macOS and Linux).
+
+**Acceptance criteria:**
+
+- [ ] Vertical tabs: the hover title bar and its trigger strip sit above the rail, with the window controls in it.
+- [ ] Horizontal tabs: the window controls stay where they are on Windows and Linux; on macOS the traffic lights sit
+      over the rail, the rail leaves room above its first space and the tabs strip keeps clear of them, with the rail
+      shown and hidden.
+- [ ] Focus mode hides the rail as it hides the sidebar, and leaves it as it was.
+- [ ] Dialogs, the palette, menus and toasts sit above the rail and the floating panel.
+- [ ] Shortcuts in tooltips read Ctrl on Windows and Linux, ⌘ on macOS.
+
+**Verification:** `pnpm test`; manual on Windows; on macOS and Linux with E24 or E26-02, whichever comes first.
+
+### E27-07 — A space's own letter or emoji
+
+```yaml
+id: E27-07
+depends-on: [E27-01]
+refs: [.docs/plan/analysis/state-settings.md]
+covers: [state-settings/spaces-persistence, state-settings/spaces-ui]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** Two spaces that start with the same letter look the same on the rail. Each space can have its own letter or
+emoji, editable, with the name's initial as the default.
+
+**Acceptance criteria:**
+
+- [ ] The space model gets an optional mark (one letter or one emoji, one grapheme), validated on load with the rest of
+      the spaces store; unit tests.
+- [ ] It is edited from the space's menu in the Spaces view and on the rail; an empty value goes back to the initial.
+- [ ] The rail shows the mark instead of the initial.
+
+**Verification:** `pnpm test`; manual: two spaces with the same initial, one given an emoji, survive a restart.
+
+### E27-08 — The rail's new-tab button opens the profiles menu
+
+```yaml
+id: E27-08
+depends-on: [E27-02]
+refs: [.docs/plan/analysis/app-shell.md]
+covers: [app-shell/tabs-ui]
+type: task
+scope: ui
+size: XS
+```
+
+**Goal:** The rail's + opens the same new-tab menu as the + of the tabs column (profiles, agent launcher, private,
+editor and split), anchored to the rail, instead of opening a tab with the default profile straight away.
+
+**Acceptance criteria:**
+
+- [ ] The rail's + renders `NewTabMenu` with a size for the rail; the menu opens to the right of the rail.
+- [ ] Component test: the menu opens and a profile opens its tab.
+
+**Verification:** `pnpm test`; manual on Windows: a tab from a profile and from the agent launcher.
+
+### E27-09 — Design the rail's context menus and drag state
+
+```yaml
+id: E27-09
+depends-on: []
+refs: [UX-007, .docs/plan/analysis/app-shell.md]
+covers: [UX-007]
+type: design
+scope: ui
+size: S
+```
+
+**Goal:** Boards for what the compact sidebar spec leaves open: where the spaces' and tabs' context menus open next
+to the rail, and how a space or tab looks while dragged and where it drops.
+
+**Acceptance criteria:**
+
+- [ ] Boards on the "Compact sidebar" page of the canvas: a tab's and a space's context menu open from the rail, and
+      the drag state (the dragged button and the drop mark) for spaces and tabs.
+
+### E27-10 — Context menus on the rail
+
+```yaml
+id: E27-10
+depends-on: [E27-02, E27-09]
+refs: [UX-007, .docs/plan/analysis/app-shell.md]
+covers: [UX-007, app-shell/tabs-ui, state-settings/spaces-ui]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** A right click on a rail button opens the same menu as in the full sidebar, placed per E27-09: Rename, Color
+and the close actions for a tab; the space menu for a space. Renaming a tab with no room on the rail goes through the
+menu or the palette.
+
+**Acceptance criteria:**
+
+- [ ] Tab and space menus are the full sidebar's, shared, not copies; positions per E27-09.
+- [ ] Rename from the rail edits the name in a field the design places (E27-09), with the tabs column's keys (Enter,
+      Escape, blur).
+- [ ] Component tests: each menu opens with its items, and rename commits.
+
+**Verification:** `pnpm test`; manual on Windows: rename, colour and close a tab, rename a space, from the rail.
+
+### E27-11 — Reorder spaces and tabs by dragging on the rail
+
+```yaml
+id: E27-11
+depends-on: [E27-02, E27-09]
+refs: [.docs/plan/analysis/app-shell.md]
+covers: [app-shell/tabs-ui, state-settings/spaces-ui]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** Spaces and tabs reorder on the rail by dragging, with the same order and the same store actions as the full
+sidebar, and the drag state of E27-09.
+
+**Acceptance criteria:**
+
+- [ ] Dragging a space or a tab past the threshold of the full sidebar shows the E27-09 drag state; dropping reorders
+      through the existing reorder actions; a short drag is still a click.
+- [ ] Component tests for both reorders and the click.
+
+**Verification:** `pnpm test`; manual on Windows: reorder spaces and tabs, then check the full sidebar's order.
+
+### E27-12 — Rail overflow with many spaces or tabs
+
+```yaml
+id: E27-12
+depends-on: [E27-02]
+refs: [UX-011, .docs/plan/analysis/app-shell.md]
+covers: [app-shell/sidebar-ui]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** With more spaces or tabs than fit, each zone scrolls on its own while Files and Git stay at the bottom.
+
+**Acceptance criteria:**
+
+- [ ] The spaces and the tabs zones each scroll, with no visible scrollbar as in the tabs column; the active space and
+      the active tab are kept in view.
+- [ ] Tabs from the 10th on show "…" and have no direct shortcut; their tooltip still names them.
+- [ ] Component test with 30 tabs and 15 spaces in a short window.
+
+**Verification:** `pnpm test`; manual on Windows: 20+ tabs in a short window.
+
+### E27-13 — Keyboard navigation on the rail
+
+```yaml
+id: E27-13
+depends-on: [E27-02]
+refs: [UX-011, .docs/plan/analysis/app-shell.md]
+covers: [UX-011]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** The rail works from the keyboard: Tab moves between its groups (spaces, tabs, Files and Git), the arrow keys
+within a group.
+
+**Acceptance criteria:**
+
+- [ ] Each group is one Tab stop; ↑ and ↓ move within it (roving focus); Enter and Space activate.
+- [ ] Tooltips show on keyboard focus; focus shows the button's focus outline.
+- [ ] Screen readers get the group names and each button's name and state.
+- [ ] Component tests for the Tab stops, the arrows and activation.
+
+**Verification:** `pnpm test`; manual on Windows: go through the rail with the keyboard only.
+
+### E27-14 — Close-out: compact sidebar
+
+```yaml
+id: E27-14
+depends-on: [E27-01, E27-02, E27-03, E27-04, E27-05, E27-06, E27-07, E27-08, E27-09, E27-10, E27-11, E27-12, E27-13]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
