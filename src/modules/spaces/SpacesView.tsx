@@ -211,6 +211,9 @@ export function SpacesView({
     }
   };
 
+  // A cancelled pointer (the system took it) drops the drag: no reorder, no switch.
+  const onPointerCancel = (e: React.PointerEvent) => endDrag(e.currentTarget);
+
   const onPointerUp = (e: React.PointerEvent, onActivate?: () => void) => {
     const st = drag.current;
     if (st?.active) commit();
@@ -234,6 +237,7 @@ export function SpacesView({
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
       onToggle={() => toggleExpand(sp.id)}
       onSwitch={() => setActive(sp.id)}
       onStartRename={() => setEditingId(sp.id)}
@@ -324,6 +328,7 @@ type SpaceRowProps = {
   onPointerDown: (e: React.PointerEvent, kind: 'space' | 'tab', id: string | number) => void;
   onPointerMove: (e: React.PointerEvent) => void;
   onPointerUp: (e: React.PointerEvent, onActivate?: () => void) => void;
+  onPointerCancel: (e: React.PointerEvent) => void;
   onToggle: () => void;
   onSwitch: () => void;
   onStartRename: () => void;
@@ -349,6 +354,7 @@ function SpaceRow({
   onPointerDown,
   onPointerMove,
   onPointerUp,
+  onPointerCancel,
   onToggle,
   onSwitch,
   onStartRename,
@@ -385,7 +391,7 @@ function SpaceRow({
       onPointerDown={editing ? undefined : (e) => onPointerDown(e, 'space', space.id)}
       onPointerMove={onPointerMove}
       onPointerUp={editing ? undefined : (e) => onPointerUp(e, onSwitch)}
-      onPointerCancel={(e) => onPointerUp(e)}
+      onPointerCancel={onPointerCancel}
       // A pointer switches on release, above (a drag must not). Enter and Space activate it as a button; a click with no
       // pointer behind it (detail 0) is a screen reader activating it.
       onKeyDown={(e) => {
@@ -534,6 +540,7 @@ function SpaceRow({
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
+              onPointerCancel={onPointerCancel}
               onJump={() => onJumpTab(t.id)}
               onClose={() => onCloseTab(t.id)}
             />
@@ -556,6 +563,7 @@ function TabRow({
   onPointerDown,
   onPointerMove,
   onPointerUp,
+  onPointerCancel,
   onJump,
   onClose,
 }: {
@@ -565,6 +573,7 @@ function TabRow({
   onPointerDown: (e: React.PointerEvent, kind: 'space' | 'tab', id: string | number) => void;
   onPointerMove: (e: React.PointerEvent) => void;
   onPointerUp: (e: React.PointerEvent, onActivate?: () => void) => void;
+  onPointerCancel: (e: React.PointerEvent) => void;
   onJump: () => void;
   onClose: () => void;
 }) {
@@ -585,7 +594,7 @@ function TabRow({
         onPointerDown={(e) => onPointerDown(e, 'tab', tab.id)}
         onPointerMove={onPointerMove}
         onPointerUp={(e) => onPointerUp(e, onJump)}
-        onPointerCancel={(e) => onPointerUp(e)}
+        onPointerCancel={onPointerCancel}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault();

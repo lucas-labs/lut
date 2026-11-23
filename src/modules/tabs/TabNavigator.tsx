@@ -228,7 +228,7 @@ export function TabNavigator({ items, actions, orientation, heading, narrow, dra
         aria-selected={t.active}
         // The compact button's current state (the `rail` button variant) and its name, which shows as a number.
         aria-current={rail && t.active ? 'true' : undefined}
-        aria-label={rail ? t.title : undefined}
+        aria-label={rail ? (t.dirty ? `${t.title}, unsaved changes` : t.title) : undefined}
         tabIndex={t.active ? 0 : -1}
         data-tab-id={t.id}
         {...tabTint(t, orientation)}
@@ -364,6 +364,7 @@ export function TabNavigator({ items, actions, orientation, heading, narrow, dra
               {/* The compact button's name, with its state and its "Jump to tab" keys. */}
               <TooltipContent side="right" sideOffset={6}>
                 <span className="max-w-56 truncate">{t.title}</span>
+                {t.dirty ? <span className="text-muted-foreground">Unsaved changes</span> : null}
                 <TabStatus id={t.id} />
                 {i < 9 && jumpHint ? (
                   <Kbd>

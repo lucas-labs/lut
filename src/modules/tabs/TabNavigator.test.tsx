@@ -60,7 +60,7 @@ function items(): TabNavigatorItem[] {
   return selectNavigatorItems(s, s.activeSpaceId);
 }
 
-async function render(orientation: TabNavigatorLayout = 'horizontal') {
+async function render(orientation: TabNavigatorLayout = 'horizontal', list: TabNavigatorItem[] = items()) {
   const noop = () => {};
   await act(async () =>
     root.render(
@@ -68,7 +68,7 @@ async function render(orientation: TabNavigatorLayout = 'horizontal') {
         TooltipProvider,
         null,
         createElement(TabNavigator, {
-          items: items(),
+          items: list,
           actions,
           orientation,
           heading: 'Space',
@@ -337,6 +337,14 @@ describe('TabNavigator on the compact sidebar (E27-02)', () => {
     });
     expect(actions.rename).toHaveBeenCalledWith(items()[1].id, 'build');
     expect(document.querySelector('input[aria-label="Tab name"]')).toBeNull();
+  });
+
+  it('names a tab with unsaved changes as such, keeping its number', async () => {
+    const list = items().map((t, i) => ({ ...t, dirty: i === 1 }));
+    await render('compact', list);
+    expect(tabs()[1].textContent).toBe('2');
+    expect(tabs()[1].getAttribute('aria-label')).toBe(`${list[1].title}, unsaved changes`);
+    expect(tabs()[0].getAttribute('aria-label')).toBe(list[0].title);
   });
 
   it("opens the new-tab menu from the rail's + (E27-08)", async () => {

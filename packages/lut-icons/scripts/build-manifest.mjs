@@ -151,6 +151,9 @@ function mergeStrokes(elements) {
   const out = [];
   const byStyle = new Map();
   for (const e of elements) {
+    // A stroke joins an earlier one only while nothing of another colour is drawn between them: merging past it
+    // would move the stroke under that colour.
+    for (const [key, s] of byStyle) if ((s.color ?? null) !== (e.color ?? null)) byStyle.delete(key);
     if (e.paint !== 'stroke' || e.opacity != null) { out.push(e); continue; }
     const key = JSON.stringify([e.strokeWidth, e.linecap, e.linejoin, e.miterLimit, e.color]);
     const same = byStyle.get(key);

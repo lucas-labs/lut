@@ -257,6 +257,24 @@ describe('SpacesView on the compact sidebar (E27-01)', () => {
     expect(props.onReorderSpaces).toHaveBeenCalledWith(['b', 'a', EPHEMERAL_SPACE_ID]);
     expect(useSpaces.getState().activeId).toBe('a');
   });
+
+  it.each([false, true])('drops a cancelled drag: no reorder, no switch (compact: %s)', async (compact) => {
+    await render(tabsInB(), compact);
+    const from = row('a');
+    const to = row('b');
+    if (!from || !to) throw new Error('no rows');
+    const elementFromPoint = vi.spyOn(document, 'elementFromPoint').mockReturnValue(to);
+    await act(async () => {
+      from.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerId: 1, clientY: 0 }));
+      from.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, button: 0, pointerId: 1, clientY: 20 }));
+    });
+    await act(async () => {
+      from.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true, button: 0, pointerId: 1, clientY: 20 }));
+    });
+    elementFromPoint.mockRestore();
+    expect(props.onReorderSpaces).not.toHaveBeenCalled();
+    expect(useSpaces.getState().activeId).toBe('a');
+  });
 });
 
 describe('spaceInitial', () => {
