@@ -3,15 +3,7 @@ import { cn } from '@/lib/utils';
 import { labelFor, type Tab, TabIcon } from '@/modules/navigation';
 import { useShellTitlePolicy } from '@/modules/profiles';
 import { useShortcutLabel } from '@/modules/shortcuts';
-import {
-  ChevronIcon,
-  DeleteIcon,
-  GhostIcon,
-  type LutIconComponent,
-  PencilIcon,
-  PlusIcon,
-  XIcon,
-} from '@lut/lut-icons';
+import { ChevronIcon, DeleteIcon, GhostIcon, type LutIconComponent, PencilIcon, PlusIcon, XIcon } from '@lut/lut-icons';
 import { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { InlineRename } from './components/InlineRename';
