@@ -236,17 +236,11 @@ export function GitDiffPane({ source, chipLabel, active }: Props) {
     <div className="flex h-full min-h-0 flex-col bg-background">
       <div className="flex h-10 shrink-0 items-center justify-between gap-3 border-b border-border/60 px-3">
         <div className="flex min-w-0 items-center gap-2">
-          <Badge variant="outline" className="text-[10px] uppercase tracking-wide">
-            {chipLabel ?? mode}
-          </Badge>
+          <Badge variant="outline">{chipLabel ?? mode}</Badge>
           {isBinary ? (
-            <Badge variant="secondary" className="text-[10px]">
-              Binary / patch fallback
-            </Badge>
+            <Badge variant="secondary">Binary / patch fallback</Badge>
           ) : isTooLarge ? (
-            <Badge variant="secondary" className="text-[10px]">
-              Large file / patch view
-            </Badge>
+            <Badge variant="secondary">Large file / patch view</Badge>
           ) : null}
           <span className="truncate font-mono text-[11px] text-muted-foreground" title={path}>
             {path}

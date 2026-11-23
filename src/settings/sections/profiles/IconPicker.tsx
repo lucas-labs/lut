@@ -98,7 +98,7 @@ export function IconPicker({ entry, onChoose }: Props) {
           <ProfileIcon profile={entry} size="md" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-73 gap-2 rounded-lg p-2">
+      <PopoverContent align="start" className="w-73 gap-2 p-2">
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}

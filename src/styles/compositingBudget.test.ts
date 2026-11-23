@@ -25,10 +25,6 @@ const ALLOWED: Record<string, { allows: string[]; why: string }> = {
     allows: ['3D transform', 'filter blur'],
     why: 'user background image; layer only when blurred or animated (surfaceOwnsLayer)',
   },
-  'modules/editor/lib/chromeTheme.ts': {
-    allows: ['backdrop filter'],
-    why: 'CodeMirror tooltip, exists only while shown',
-  },
 };
 
 // The terminal renderer owns its canvases (see its own budget); tests and the

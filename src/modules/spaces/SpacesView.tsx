@@ -522,13 +522,13 @@ function DropLine({ edge }: { edge: Edge }) {
 
 function OverlayChip({ tab, color, label }: { tab?: Tab; color?: string; label: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-md border border-border bg-popover px-2 py-1.5 text-xs shadow-lg">
+    <div className="flex items-center gap-2 rounded-[8px] border border-border bg-popover px-2 py-1 text-xs text-popover-foreground shadow-[0_12px_32px_rgba(0,0,0,0.4)]">
       {tab ? (
         <TabIcon id={tab.id} />
       ) : (
         <span aria-hidden className="size-2 shrink-0 rounded-full" style={{ backgroundColor: color }} />
       )}
-      <span className="max-w-44 truncate font-medium">{label}</span>
+      <span className="max-w-44 truncate">{label}</span>
     </div>
   );
 }

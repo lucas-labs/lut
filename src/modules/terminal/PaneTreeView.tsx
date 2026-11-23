@@ -208,7 +208,7 @@ function DropOverlay({ leafId }: { leafId: number }) {
   const active = useTerminalDropStore((s) => s.targetLeafId === leafId);
   if (!active) return null;
   return (
-    <div className="pointer-events-none absolute inset-2 grid place-items-center rounded-lg border border-primary/45 bg-background/70 text-xs font-medium text-foreground shadow-lg backdrop-blur-sm">
+    <div className="pointer-events-none absolute inset-2 grid place-items-center rounded-[8px] border border-primary bg-background/85 text-xs text-foreground">
       Drop file path here
     </div>
   );

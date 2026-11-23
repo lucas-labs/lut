@@ -215,7 +215,7 @@ export function NewTabMenu({
           openMenuAfterLauncherClose.current = false;
           requestAnimationFrame(() => setMenuOpen(true));
         }}
-        className="w-[340px] gap-0 overflow-hidden rounded-2xl p-1.5"
+        className="w-[340px] gap-0 overflow-hidden p-1.5"
       >
         <AgentLauncherPanel
           onBack={backToMenu}

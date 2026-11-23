@@ -30,10 +30,10 @@ function StatusRow({ agent, status, onClick }: { agent: string; status: AgentSta
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-accent"
+      className="flex h-7 w-full items-center gap-2 rounded-[5px] px-2 text-left transition-colors hover:bg-accent"
     >
       <AgentIcon agent={agent} size="md" className="shrink-0 text-muted-foreground" />
-      <span className="flex-1 truncate text-sm text-foreground">{displayAgent(agent)}</span>
+      <span className="flex-1 truncate text-[13px] text-foreground">{displayAgent(agent)}</span>
       <span
         className={cn(
           'flex items-center gap-1.5 text-xs',
@@ -73,7 +73,7 @@ function HookAgentRow({
       <AgentIcon agent={id} size="sm" className="shrink-0 text-muted-foreground" />
       <span className="flex-1 truncate text-[12px] text-muted-foreground">{label}</span>
       {ready ? (
-        <span className="flex items-center gap-1 text-[11px] font-medium text-primary">
+        <span className="flex items-center gap-1 text-[11px] text-primary">
           <CheckmarkCircleIcon size="sm" />
           enabled
         </span>
@@ -92,7 +92,7 @@ function NotificationRow({ n, onClick }: { n: AgentNotification; onClick: () => 
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-accent"
+      className="flex h-7 w-full items-center gap-2 rounded-[5px] px-2 text-left transition-colors hover:bg-accent"
     >
       <span className="flex w-4 shrink-0 items-center justify-center">
         {n.kind === 'finished' ? (
@@ -101,10 +101,10 @@ function NotificationRow({ n, onClick }: { n: AgentNotification; onClick: () => 
           <span className={cn('size-1.5 rounded-full', n.kind === 'error' ? 'bg-destructive' : 'bg-primary')} />
         )}
       </span>
-      <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+      <span className="min-w-0 flex-1 truncate text-[13px] text-foreground">
         {displayAgent(n.agent)} <span className="text-muted-foreground">{NOTIF_LABEL[n.kind]}</span>
       </span>
-      <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">{relativeTime(n.at)}</span>
+      <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">{relativeTime(n.at)}</span>
     </button>
   );
 }
@@ -191,7 +191,7 @@ export function NotificationBell({ onActivate }: Props) {
           <span className="flex gap-1 text-[13px] text-foreground">Notifications</span>
           <div className="ml-auto flex items-center gap-2">
             {activeCount > 0 ? (
-              <span className="rounded-full bg-accent px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground">
+              <span className="rounded-full bg-accent px-[5px] text-[10px] leading-[15px] tabular-nums text-muted-foreground">
                 {activeCount} active
               </span>
             ) : null}
@@ -204,35 +204,35 @@ export function NotificationBell({ onActivate }: Props) {
         </div>
 
         {empty ? (
-          <div className="border-t border-border/60 px-3 py-5 text-center text-xs leading-relaxed text-muted-foreground">
+          <div className="border-t border-border px-3 py-5 text-center text-xs leading-relaxed text-muted-foreground">
             No agent activity yet.
             <br />
             Run a coding agent to track it here.
           </div>
         ) : (
-          <div className="max-h-80 overflow-y-auto border-t border-border/60 p-1">
+          <div className="max-h-80 overflow-y-auto border-t border-border p-1">
             {active.map((s) => (
               <StatusRow key={s.leafId} agent={s.agent} status={s.status} onClick={() => activate(s.tabId, s.leafId)} />
             ))}
-            {activeCount > 0 && notifications.length > 0 ? <div className="mx-2 my-1 h-px bg-border/50" /> : null}
+            {activeCount > 0 && notifications.length > 0 ? <div className="mx-2 my-1 h-px bg-border" /> : null}
             {notifications.map((n) => (
               <NotificationRow key={n.id} n={n} onClick={() => activateNotification(n)} />
             ))}
           </div>
         )}
 
-        <div className="border-t border-border/60 p-1">
+        <div className="border-t border-border p-1">
           <button
             type="button"
             onClick={() => setAlertsOpen((v) => !v)}
             aria-expanded={alertsOpen}
-            className="flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground/70 transition-colors hover:text-foreground"
+            className="flex w-full items-center gap-1.5 rounded-[5px] px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
           >
             <BellIcon size="xs" />
             Agent alerts
-            <span className="ml-auto flex items-center gap-1.5 normal-case tracking-normal">
+            <span className="ml-auto flex items-center gap-1.5">
               {enabledCount > 0 ? (
-                <span className="text-[10px] text-muted-foreground/60">{enabledCount} on</span>
+                <span className="text-[11px] text-muted-foreground/60">{enabledCount} on</span>
               ) : null}
               <ChevronIcon rotate={alertsOpen ? 270 : 90} size="sm" />
             </span>

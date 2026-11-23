@@ -116,7 +116,7 @@ function EditorTabLanguageMenu({ tab }: { tab: Tab }) {
             e.preventDefault();
             e.stopPropagation();
           }}
-          className="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-sm p-1 -m-1 transition-all hover:bg-accent hover:text-accent-foreground hover:ring-1 hover:ring-primary/30 hover:shadow-[0_0_4px_var(--color-popover-foreground)]"
+          className="inline-flex shrink-0 cursor-pointer items-center justify-center rounded-sm p-1 -m-1 transition-colors hover:bg-accent hover:text-accent-foreground"
         >
           <FileTabIcon tab={tab} />
         </span>
@@ -126,20 +126,15 @@ function EditorTabLanguageMenu({ tab }: { tab: Tab }) {
         side="bottom"
         sideOffset={6}
         alignOffset={-4}
-        className="max-h-75 w-48 overflow-y-auto rounded-xl border border-border/40 bg-popover p-1 shadow-lg"
+        className="max-h-75 w-48 overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
         onPointerUp={(e) => e.stopPropagation()}
       >
-        <DropdownMenuItem
-          onSelect={() => setLanguage(null)}
-          className="flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg cursor-default focus:bg-accent focus:text-accent-foreground"
-        >
+        <DropdownMenuItem onSelect={() => setLanguage(null)}>
           <FileIcon name={tab.title} className="size-3.5 shrink-0 object-contain" />
-          <div className="flex flex-1 flex-col">
-            <span>Auto Detect</span>
-            <span className="text-[10px] text-muted-foreground italic">Mode: {resolveDisplayName(tab.title)}</span>
-          </div>
+          <span className="flex-1">Auto Detect</span>
+          <span className="truncate text-[11px] text-muted-foreground">Mode: {resolveDisplayName(tab.title)}</span>
           {!tab.overrideLanguage && <CheckmarkIcon size="sm" className="text-primary" />}
         </DropdownMenuItem>
         <DropdownMenuItem
@@ -147,17 +142,13 @@ function EditorTabLanguageMenu({ tab }: { tab: Tab }) {
             e.preventDefault();
             setShowAllLanguages((v) => !v);
           }}
-          className="w-full px-2.5 py-1.5 text-left text-xs text-primary/60 hover:text-primary rounded-lg transition-colors hover:bg-accent"
+          className="text-muted-foreground"
         >
           {showAllLanguages ? '↑ Fewer languages' : '↓ All languages'}
         </DropdownMenuItem>
-        <DropdownMenuSeparator className="my-1 border-t border-border/30" />
+        <DropdownMenuSeparator />
         {(showAllLanguages ? ALL_LANGUAGES : EXPOSED_LANGUAGES).map((lang) => (
-          <DropdownMenuItem
-            key={lang.ext}
-            onSelect={() => setLanguage(lang.ext)}
-            className="flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg cursor-default focus:bg-accent focus:text-accent-foreground"
-          >
+          <DropdownMenuItem key={lang.ext} onSelect={() => setLanguage(lang.ext)}>
             <FileIcon name={`dummy.${lang.ext}`} className="size-3.5 shrink-0 object-contain" />
             <span className="flex-1">{lang.name}</span>
             {tab.overrideLanguage === lang.ext && <CheckmarkIcon size="sm" className="text-primary" />}
