@@ -7335,11 +7335,62 @@ animation still shrinks it.
 **Verification:** `pnpm test`; manual: open tabs until the strip scrolls, open one more, then
 `echo -e "\e]0;a much longer title\a"` in the active tab.
 
+### E26-11 — Remove the unused ui primitives
+
+```yaml
+id: E26-11
+depends-on: []
+refs: [.docs/plan/analysis/app-shell.md]
+covers: [app-shell/ui-primitives]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** `src/components/ui` only holds primitives lut renders. knip ignores `src/components/ui/**`, so the shadcn
+files Terax brought that nothing imports, still in Terax's look, never showed up as unused.
+
+**Acceptance criteria:**
+
+- [ ] `alert`, `button-group`, `card`, `collapsible`, `empty`, `hover-card`, `item`, `menubar`, `progress`, `sheet`,
+      `skeleton`, `tabs`, `toggle-group`, `toggle` and `input-group` are removed, each checked to have no importer.
+- [ ] The plain `RadioGroupItem` of `radio-group`, unused next to `RadioGroupSwatchItem`, is removed.
+- [ ] knip no longer ignores the whole folder, so a primitive nothing imports is reported; an ignore that stays is
+      narrowed and says why.
+
+**Verification:** `pnpm knip`; `pnpm check-types`; `pnpm test`.
+
+### E26-12 — The title bar breadcrumb uses the shared Breadcrumb
+
+```yaml
+id: E26-12
+depends-on: []
+refs: [.docs/plan/analysis/app-shell.md]
+covers: [app-shell/ui-primitives]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** `CwdBreadcrumb` (`src/modules/header/CwdBreadcrumb.tsx`) builds its own list, while
+`src/components/ui/breadcrumb` sits unused in Terax's look. The title bar breadcrumb is built on the shared
+`Breadcrumb`, and that primitive takes the title bar's current look, which is already on the design.
+
+**Acceptance criteria:**
+
+- [ ] `CwdBreadcrumb` renders through `@/components/ui/breadcrumb`; its look and behaviour stay the same (segments,
+      home, the collapsed segments menu, cd on click).
+- [ ] The `Breadcrumb` primitive carries the design's look, so another breadcrumb gets it without overrides.
+- [ ] `CwdBreadcrumb.test.tsx` green.
+
+**Verification:** `pnpm test`; manual: a deep cwd in the title bar, then a click on a segment and on the collapsed
+ones.
+
 ### E26-03 — Close-out: accessory improvements
 
 ```yaml
 id: E26-03
-depends-on: [E26-01, E26-02, E26-04, E26-05, E26-06, E26-07, E26-08, E26-09, E26-10]
+depends-on: [E26-01, E26-02, E26-04, E26-05, E26-06, E26-07, E26-08, E26-09, E26-10, E26-11, E26-12]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
