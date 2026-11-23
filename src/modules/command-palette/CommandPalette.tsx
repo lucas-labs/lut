@@ -8,6 +8,7 @@ import {
   CommandList,
   CommandShortcut,
 } from '@/components/ui/command';
+import { Kbd } from '@/components/ui/kbd';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { FileIcon } from '@/modules/explorer/FileIcon';
@@ -286,7 +287,7 @@ export function CommandPalette({
       onOpenChange={handleOpenChange}
       title="Command Palette"
       description="Run a command, switch theme, or search your workspace."
-      className="top-1/2 w-[min(680px,calc(100vw-32px))] -translate-y-1/2"
+      className="w-[min(600px,calc(100vw-32px))]"
     >
       <Command shouldFilter={false} loop value={value} onValueChange={setValue} onKeyDown={onKeyDown}>
         <CommandInput
@@ -296,7 +297,16 @@ export function CommandPalette({
           placeholder={placeholder}
           autoFocus
         />
-        <ScrollArea className={showFiles ? 'h-[372px]' : 'max-h-[420px]'}>
+        <ScrollArea
+          className={cn(
+            'min-h-0',
+            // A max-height alone leaves the viewport (height: 100%) unbounded, so it would not scroll: it takes the
+            // same cap, which also fits below the input in a short window.
+            showFiles
+              ? 'h-[372px]'
+              : 'max-h-[min(404px,calc(100dvh-5rem-48px))] [&>[data-slot=scroll-area-viewport]]:max-h-[inherit]',
+          )}
+        >
           <CommandList
             className="max-h-none overflow-visible pr-3"
             onClickCapture={(e) => {
@@ -305,17 +315,12 @@ export function CommandPalette({
           >
             {inThemes ? (
               <CommandGroup heading="Themes">
-                <CommandItem value="theme:back" onSelect={exitPage} className="text-[12.5px]">
+                <CommandItem value="theme:back" onSelect={exitPage}>
                   <ArrowTurnBackIcon size="sm" />
                   <span>Back</span>
                 </CommandItem>
                 {themes.map((t) => (
-                  <CommandItem
-                    key={t.id}
-                    value={`theme:${t.id}`}
-                    onSelect={() => commitTheme(t.id)}
-                    className="text-[12.5px]"
-                  >
+                  <CommandItem key={t.id} value={`theme:${t.id}`} onSelect={() => commitTheme(t.id)}>
                     <span className="truncate">{t.name}</span>
                     {t.id === themeId ? <CheckmarkIcon size="sm" className="ml-auto text-muted-foreground" /> : null}
                   </CommandItem>
@@ -326,12 +331,7 @@ export function CommandPalette({
               // Back comes last: cmdk selects the first row, which must be a profile so Enter opens it.
               <CommandGroup heading="Profiles">
                 {profiles.map((p) => (
-                  <CommandItem
-                    key={p.id}
-                    value={`profile:${p.id}`}
-                    onSelect={() => openProfile(p.id)}
-                    className="text-[12.5px]"
-                  >
+                  <CommandItem key={p.id} value={`profile:${p.id}`} onSelect={() => openProfile(p.id)}>
                     <ProfileIcon profile={p} />
                     <span className="truncate">{p.name}</span>
                     {p.id === profilesList?.defaultProfileId ? (
@@ -345,14 +345,14 @@ export function CommandPalette({
                 {profilesRead === 'failed' ? (
                   <>
                     <StatusItem label="Could not read profiles" tone="error" />
-                    <CommandItem value="profile:retry" onSelect={readProfilesAgain} className="text-[12.5px]">
+                    <CommandItem value="profile:retry" onSelect={readProfilesAgain}>
                       <RefreshIcon size="sm" />
                       <span>Try again</span>
                     </CommandItem>
                   </>
                 ) : null}
                 {profilesRead === 'listed' && profiles.length === 0 ? <StatusItem label="No profiles" /> : null}
-                <CommandItem value="profile:back" onSelect={exitPage} className="text-[12.5px]">
+                <CommandItem value="profile:back" onSelect={exitPage}>
                   <ArrowTurnBackIcon size="sm" />
                   <span>Back</span>
                 </CommandItem>
@@ -406,7 +406,6 @@ export function CommandPalette({
                         key={`${hit.path}:${hit.line}`}
                         value={`content:${hit.path}:${hit.line}`}
                         onSelect={() => openContent(hit.path, hit.line)}
-                        className="text-[12.5px]"
                       >
                         <FileIcon name={basename(hit.rel)} className="size-4 shrink-0" />
                         <span className="min-w-0 flex-1 truncate font-mono text-[11.5px]">{hit.text.trim()}</span>
@@ -421,13 +420,8 @@ export function CommandPalette({
             ) : (
               <CommandGroup heading="Search modes">
                 {MODE_HINTS.filter((hint) => hint.bases.includes(base)).map((hint) => (
-                  <CommandItem
-                    key={hint.sigil}
-                    value={`hint:${hint.sigil}`}
-                    onSelect={() => setQuery(hint.sigil)}
-                    className="text-[12.5px]"
-                  >
-                    <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[11px]">{hint.sigil}</kbd>
+                  <CommandItem key={hint.sigil} value={`hint:${hint.sigil}`} onSelect={() => setQuery(hint.sigil)}>
+                    <Kbd>{hint.sigil}</Kbd>
                     <span>{hint.label}</span>
                   </CommandItem>
                 ))}
@@ -502,21 +496,17 @@ const FileRow = memo(function FileRow({
 }) {
   const parts = useMemo(() => pathParts(hit.rel, hit.indices), [hit.rel, hit.indices]);
   return (
-    <CommandItem
-      value={`file:${hit.path}`}
-      onSelect={() => onOpen(hit.path)}
-      className="h-9 gap-2.5 py-0 text-[12.5px]"
-    >
+    <CommandItem value={`file:${hit.path}`} onSelect={() => onOpen(hit.path)}>
       <FileIcon name={hit.name} className="size-4 shrink-0" />
       <span className="max-w-[65%] shrink-0 truncate">
         <Marked segments={parts.name} plain="text-foreground/85" marked="font-semibold text-foreground" />
       </span>
       {parts.dir.length > 0 ? (
-        <span className="min-w-0 flex-1 truncate text-[11px] font-normal text-muted-foreground">
+        <span className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">
           <Marked segments={parts.dir} plain="" marked="font-medium text-foreground/90" />
         </span>
       ) : null}
-      {line !== undefined ? <CommandShortcut className="font-mono tracking-normal">:{line}</CommandShortcut> : null}
+      {line !== undefined ? <CommandShortcut className="font-mono">:{line}</CommandShortcut> : null}
     </CommandItem>
   );
 });
@@ -536,7 +526,7 @@ function Marked({ segments, plain, marked }: { segments: Segment[]; plain: strin
 
 function FilesFooter() {
   return (
-    <div className="flex h-8 shrink-0 items-center gap-4 border-t border-border/50 px-4 text-[11px] text-muted-foreground">
+    <div className="flex shrink-0 items-center gap-4 border-t border-border px-3.5 py-2 text-[11px] leading-[14px] text-muted-foreground">
       <FooterHint keys="↑↓" label="navigate" />
       <FooterHint keys="↵" label="open" />
       <FooterHint keys=":42" label="go to line" />
@@ -547,7 +537,7 @@ function FilesFooter() {
 function FooterHint({ keys, label }: { keys: string; label: string }) {
   return (
     <span className="inline-flex items-center gap-1.5">
-      <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10.5px]">{keys}</kbd>
+      <Kbd>{keys}</Kbd>
       {label}
     </span>
   );
@@ -578,14 +568,10 @@ function ActionItem({
   const rightLabel =
     item.disabledReason ?? item.trailing ?? (shortcutLabel ? <ShortcutKeys label={shortcutLabel} /> : null);
   return (
-    <CommandItem value={`cmd:${item.id}`} disabled={!!item.disabledReason} onSelect={onRun} className="text-[12.5px]">
+    <CommandItem value={`cmd:${item.id}`} disabled={!!item.disabledReason} onSelect={onRun}>
       {item.icon ? <item.icon size="sm" className="text-muted-foreground" /> : null}
       <span className="truncate">{item.title}</span>
-      {rightLabel ? (
-        <CommandShortcut className={item.disabledReason ? 'normal-case tracking-normal' : ''}>
-          {rightLabel}
-        </CommandShortcut>
-      ) : null}
+      {rightLabel ? <CommandShortcut>{rightLabel}</CommandShortcut> : null}
     </CommandItem>
   );
 }
@@ -609,7 +595,7 @@ function AsyncBody({
     return (
       <>
         <StatusItem label="Search failed" tone="error" />
-        <CommandItem value="retry" onSelect={onRetry} className="text-[12.5px]">
+        <CommandItem value="retry" onSelect={onRetry}>
           <span>Retry</span>
         </CommandItem>
       </>
@@ -622,7 +608,7 @@ function AsyncBody({
 
 function StatusItem({ label, tone = 'muted' }: { label: string; tone?: 'muted' | 'error' }) {
   return (
-    <CommandItem value={`status:${label}`} disabled className="text-[12.5px] font-normal">
+    <CommandItem value={`status:${label}`} disabled>
       {tone === 'error' ? <AlertIcon size="sm" className="text-destructive" /> : null}
       <span className={tone === 'error' ? 'text-destructive' : 'text-muted-foreground'}>{label}</span>
     </CommandItem>
@@ -631,7 +617,7 @@ function StatusItem({ label, tone = 'muted' }: { label: string; tone?: 'muted' |
 
 function EmptyHint() {
   return (
-    <div className="flex flex-col items-center gap-2 px-4 py-10 text-center text-sm text-muted-foreground">
+    <div className="flex flex-col items-center gap-1.5 px-4 pt-10 pb-11 text-center text-xs text-muted-foreground">
       <CommandIcon size="md" />
       <span>No commands found. Type ? to see search modes.</span>
     </div>

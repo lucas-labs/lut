@@ -119,13 +119,11 @@ const chrome = EditorView.theme({
   },
 
   '.cm-tooltip': {
-    backgroundColor: 'color-mix(in srgb, var(--popover) 94%, transparent)',
+    backgroundColor: 'var(--popover)',
     color: 'var(--popover-foreground)',
     border: '1px solid var(--border)',
     borderRadius: '8px',
-    boxShadow:
-      '0 8px 24px color-mix(in srgb, black 18%, transparent), 0 2px 6px color-mix(in srgb, black 10%, transparent)',
-    backdropFilter: 'blur(12px)',
+    boxShadow: '0 12px 32px rgba(0, 0, 0, 0.4)',
     overflow: 'hidden',
     ...TOOLTIP_ENTER,
   },
@@ -354,10 +352,7 @@ const chrome = EditorView.theme({
     color: 'var(--popover-foreground)',
     '& .cm-lsp-locations-header': {
       padding: '5px 10px',
-      fontSize: '10.5px',
-      fontWeight: '600',
-      textTransform: 'uppercase',
-      letterSpacing: '0.04em',
+      fontSize: '11px',
       color: 'var(--muted-foreground)',
       borderBottom: '1px solid var(--border)',
     },

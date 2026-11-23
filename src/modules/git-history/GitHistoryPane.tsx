@@ -418,7 +418,7 @@ export function GitHistoryPane({ repoRoot, onOpenCommitFile, onSearchHandle }: P
           sideOffset={4}
           collisionPadding={16}
           onOpenAutoFocus={(e) => e.preventDefault()}
-          className="w-[420px] max-w-[calc(100vw-2rem)] gap-0 overflow-hidden rounded-[8px] border border-border p-0 shadow-[0_12px_32px_rgba(0,0,0,0.4)] ring-0 dark:ring-0"
+          className="w-[420px] max-w-[calc(100vw-2rem)] gap-0 overflow-hidden p-0"
         >
           {openCommit ? (
             <CommitDetail

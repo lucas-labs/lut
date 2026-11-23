@@ -42,7 +42,7 @@ export function Enlargeable({ label, title, description, children, enlarged, cla
       </button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
-          className="w-auto max-w-[calc(100vw-4rem)] gap-0 rounded-xl bg-card p-3 sm:max-w-[calc(100vw-4rem)]"
+          className="w-auto max-w-[calc(100vw-4rem)] gap-0 bg-card p-3 sm:max-w-[calc(100vw-4rem)]"
           showCloseButton
         >
           <DialogTitle className="sr-only">{title}</DialogTitle>

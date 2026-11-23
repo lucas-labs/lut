@@ -160,7 +160,7 @@ function CommitFeedback({ feedback }: { feedback: { tone: 'error' | 'success'; m
   return (
     <div
       className={cn(
-        'pointer-events-none absolute inset-x-2.5 top-[calc(100%-0.25rem)] z-20 flex min-w-0 items-center gap-1.5 rounded-md border bg-popover px-2.5 py-1.5 text-[11px] leading-snug shadow-lg shadow-black/15 transition-all duration-200',
+        'pointer-events-none absolute inset-x-2.5 top-[calc(100%-0.25rem)] z-20 flex min-w-0 items-center gap-1.5 rounded-[8px] border bg-popover px-2.5 py-1.5 text-[11px] leading-snug shadow-[0_8px_28px_rgba(0,0,0,0.35)] transition-all duration-200',
         isVisible ? 'translate-y-0 opacity-100' : '-translate-y-1 opacity-0',
         isError ? 'border-destructive/40 text-destructive' : 'border-border text-muted-foreground',
       )}

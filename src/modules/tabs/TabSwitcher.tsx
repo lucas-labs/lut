@@ -11,7 +11,7 @@ export function TabSwitcher({ items, state }: { items: TabNavigatorItem[]; state
 
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center">
-      <div className="flex max-h-[60vh] w-72 flex-col overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-lg">
+      <div className="flex max-h-[60vh] w-72 flex-col overflow-y-auto rounded-[8px] border border-border bg-popover p-1 shadow-[0_12px_32px_rgba(0,0,0,0.4)]">
         {rows.map((t) => (
           <div
             key={t.id}
