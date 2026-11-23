@@ -239,6 +239,24 @@ describe('SpacesView on the compact sidebar (E27-01)', () => {
     expect(document.querySelector('input[aria-label="Rename space"]')).toBeNull();
   });
 
+  it('keeps renaming while Enter confirms an IME candidate', async () => {
+    await render(tabsInB(), true);
+    await openMenu('b');
+    await chooseItem('Rename space');
+    const input = document.querySelector<HTMLInputElement>('input[aria-label="Rename space"]');
+    if (!input) throw new Error('no field');
+    input.value = 'ベータ';
+    await act(async () => {
+      input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter', isComposing: true }));
+    });
+    expect(useSpaces.getState().spaces.find((s) => s.id === 'b')?.name).toBe('Beta');
+    expect(document.querySelector('input[aria-label="Rename space"]')).not.toBeNull();
+    await act(async () => {
+      input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }));
+    });
+    expect(useSpaces.getState().spaces.find((s) => s.id === 'b')?.name).toBe('ベータ');
+  });
+
   it('reorders a Space dragged onto another', async () => {
     await render(tabsInB(), true);
     const from = row('a');

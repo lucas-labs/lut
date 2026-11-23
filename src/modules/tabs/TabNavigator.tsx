@@ -281,6 +281,11 @@ export function TabNavigator({ items, actions, orientation, heading, narrow, dra
         {rail ? (
           <span className={cn('font-mono', !t.active && 'text-foreground/55 group-hover/vt:text-foreground')}>
             {tabMark(i)}
+            {/* The state shows in the tooltip; kept mounted, hidden, so a screen reader hears it change, as in the
+                column. */}
+            <span aria-live="polite" className="sr-only">
+              <TabStatus id={t.id} />
+            </span>
           </span>
         ) : (
           <>
@@ -521,7 +526,8 @@ function TabRenameInput({
       className={className}
       onKeyDown={(e) => {
         e.stopPropagation();
-        if (e.key === 'Enter') commit(e.currentTarget.value, true);
+        // Enter that confirms an IME candidate is part of the typing, not the end of the edit.
+        if (e.key === 'Enter' && !e.nativeEvent.isComposing) commit(e.currentTarget.value, true);
         else if (e.key === 'Escape') finish(() => onCancel(true));
       }}
       onBlur={(e) => {

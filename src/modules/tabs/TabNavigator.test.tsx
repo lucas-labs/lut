@@ -339,6 +339,37 @@ describe('TabNavigator on the compact sidebar (E27-02)', () => {
     expect(document.querySelector('input[aria-label="Tab name"]')).toBeNull();
   });
 
+  it('keeps each tab state in a hidden live region, so it is heard while the tooltip is closed', async () => {
+    await render('compact');
+    const live = tabs().map((t) => t.querySelector('[aria-live="polite"]'));
+    expect(live.map((l) => l?.querySelector('[data-status]')?.getAttribute('data-status'))).toEqual(
+      items().map((t) => String(t.id)),
+    );
+  });
+
+  it('keeps renaming while Enter confirms an IME candidate', async () => {
+    await render('compact');
+    await act(async () => {
+      tabs()[1].dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, button: 2, clientX: 5, clientY: 5 }));
+    });
+    const rename = Array.from(document.querySelectorAll<HTMLElement>('[role="menuitem"]')).find(
+      (el) => el.textContent === 'Rename',
+    );
+    await act(async () => rename?.click());
+    const input = document.querySelector<HTMLInputElement>('input[aria-label="Tab name"]');
+    if (!input) throw new Error('no field');
+    input.value = 'ビルド';
+    await act(async () => {
+      input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter', isComposing: true }));
+    });
+    expect(actions.rename).not.toHaveBeenCalled();
+    expect(document.querySelector('input[aria-label="Tab name"]')).not.toBeNull();
+    await act(async () => {
+      input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }));
+    });
+    expect(actions.rename).toHaveBeenCalledWith(items()[1].id, 'ビルド');
+  });
+
   it('names a tab with unsaved changes as such, keeping its number', async () => {
     const list = items().map((t, i) => ({ ...t, dirty: i === 1 }));
     await render('compact', list);
