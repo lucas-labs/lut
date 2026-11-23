@@ -14,7 +14,8 @@ export const LutLogoCompactIconData: LutIconData = {
       },
       {
         paint: 'fill',
-        d: 'M17 14L19 14C19.552 14 20 14.448 20 15L20 23C20 23.552 19.552 24 19 24L17 24C16.448 24 16 23.552 16 23L16 15C16 14.448 16.448 14 17 14Z',
+        opacity: 0.75,
+        d: 'M16 14L20 14L20 24L16 24Z',
       },
     ],
   },
@@ -29,7 +30,8 @@ export const LutLogoCompactIconData: LutIconData = {
       },
       {
         paint: 'fill',
-        d: 'M19 14L23 14C23.552 14 24 14.448 24 15L24 27C24 27.552 23.552 28 23 28L19 28C18.448 28 18 27.552 18 27L18 15C18 14.448 18.448 14 19 14Z',
+        opacity: 0.75,
+        d: 'M18 16L24 16L24 28L18 28Z',
       },
     ],
   },
@@ -44,7 +46,8 @@ export const LutLogoCompactIconData: LutIconData = {
       },
       {
         paint: 'fill',
-        d: 'M23 18L27 18C27.552 18 28 18.448 28 19L28 31C28 31.552 27.552 32 27 32L23 32C22.448 32 22 31.552 22 31L22 19C22 18.448 22.448 18 23 18Z',
+        opacity: 0.75,
+        d: 'M22 18L28 18L28 32L22 32Z',
       },
     ],
   },
