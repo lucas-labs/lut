@@ -13,6 +13,18 @@ export const SPACE_COLORS = [
   'oklch(0.66 0.19 350)', // pink
 ] as const;
 
+/** What each of `SPACE_COLORS` is called, for screen readers. */
+export const SPACE_COLOR_NAMES = [
+  'Blue',
+  'Violet',
+  'Emerald',
+  'Amber',
+  'Rose',
+  'Cyan',
+  'Orange',
+  'Pink',
+] as const;
+
 export function accentFor(space: Pick<SpaceMeta, 'color'>): string {
   const c = space.color;
   if (c != null && c >= 0 && c < SPACE_COLORS.length) return SPACE_COLORS[c];

@@ -115,7 +115,9 @@ state. The terminal sessions live in a module-level map keyed by leaf id
   `lut-spaces.json` (`modules/spaces/lib/store.ts`), `lut-custom-themes.json` (`modules/theme/customThemes.ts`).
   `lut-spaces.json` is validated at load (`modules/spaces/lib/parse.ts`); an unusable one is moved aside as
   `lut-spaces.corrupt-<ms>.json` by native `modules/spaces.rs`, before the plugin opens it, and a file with tabs lut
-  could not restore is copied there before it is saved again.
+  could not restore is copied there before it is saved again. The ephemeral Space (`modules/spaces/lib/ephemeral.ts`)
+  is never written: `store.ts` leaves it out of every save, and each start creates it again from the `ephemeralSpace`
+  preference in `lut-settings.json`.
 - **localStorage:** `lut-ui-theme-shadow` (read by `index.html` and `settings.html` before first paint, written by
   `modules/theme/ThemeProvider.tsx`), `lut-ui-theme-id-shadow` (`ThemeProvider.tsx`), `lut-ui-bg-kind-shadow`,
   `lut-ui-bg-image-shadow`

@@ -44,6 +44,8 @@ export { FolderIcon } from './icons/folder';
 export { FolderAddIcon } from './icons/folder-add';
 export { FullScreenIcon } from './icons/full-screen';
 export { FunctionIcon } from './icons/function';
+export { GhostIcon } from './icons/ghost';
+export { GhostDualToneIcon } from './icons/ghost-dual-tone';
 export { GitBranchIcon } from './icons/git-branch';
 export { GitCommitIcon } from './icons/git-commit';
 export { GitCompareIcon } from './icons/git-compare';

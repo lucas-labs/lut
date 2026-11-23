@@ -21,7 +21,13 @@ vi.mock('@/modules/settings/preferences', () => ({
     pick({
       zoomLevel: 1.25,
       fileIconColors: 'theme',
+      ephemeralSpace: { enabled: true, name: 'Scratch', color: null, folder: '' },
     }),
+}));
+const setEphemeralSpace = vi.hoisted(() => vi.fn(async () => undefined));
+vi.mock('@/modules/settings/store', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/modules/settings/store')>()),
+  setEphemeralSpace,
 }));
 vi.mock('@/modules/agents/lib/notify', () => ({ testAgentOsNotification: vi.fn() }));
 
@@ -33,6 +39,7 @@ const openTab = vi.fn();
 
 beforeEach(() => {
   theme.setMode.mockReset();
+  setEphemeralSpace.mockClear();
   openTab.mockReset();
   host = document.createElement('div');
   document.body.append(host);
@@ -97,5 +104,13 @@ describe('GeneralSection', () => {
     );
     expect(sound?.getAttribute('data-variant')).toBe('nested');
     expect(sound?.closest('[data-slot="setting-expander-body"]')?.hasAttribute('inert')).toBe(true);
+  });
+
+  it('saves the ephemeral Space colour picked from its swatches (E16-15)', () => {
+    const swatches = [...host.querySelectorAll('[data-slot="radio-group-swatch-item"]')];
+    expect(swatches.map((s) => s.getAttribute('aria-label'))).toContain('Theme accent');
+    const violet = swatches.find((s) => s.getAttribute('aria-label') === 'Violet') as HTMLElement;
+    act(() => violet.click());
+    expect(setEphemeralSpace).toHaveBeenCalledWith({ enabled: true, name: 'Scratch', color: 1, folder: '' });
   });
 });

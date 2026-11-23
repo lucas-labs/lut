@@ -162,6 +162,8 @@ export type Preferences = {
   agentNotificationSound: boolean;
   agentLaunchCommands: AgentLaunchCommands;
   defaultWorkspaceEnv: string;
+  /** The Space every start opens first and never saves (E16-15). */
+  ephemeralSpace: EphemeralSpacePrefs;
   shortcuts: Record<ShortcutId, KeyBinding[]>;
   editorAutoSave: boolean;
   editorAutoSaveDelay: number;
@@ -186,6 +188,16 @@ export type EditorFormatter =
   | 'shfmt'
   | 'zigfmt'
   | 'custom';
+
+/** What the ephemeral Space starts with; changes apply at the next start. */
+export type EphemeralSpacePrefs = {
+  enabled: boolean;
+  name: string;
+  /** Index into the Space colours; null is the theme primary. */
+  color: number | null;
+  /** Where its terminal opens when lut was not opened with a folder; empty is the profile's. */
+  folder: string;
+};
 
 export type LspActivation = 'enabled' | 'dismissed';
 
@@ -239,6 +251,7 @@ const KEY_AGENT_NOTIFICATIONS = 'agentNotifications';
 const KEY_AGENT_NOTIFICATION_SOUND = 'agentNotificationSound';
 const KEY_AGENT_LAUNCH_COMMANDS = 'agentLaunchCommands';
 const KEY_DEFAULT_WORKSPACE_ENV = 'defaultWorkspaceEnv';
+const KEY_EPHEMERAL_SPACE = 'ephemeralSpace';
 const KEY_SHORTCUTS = 'shortcuts';
 const KEY_EDITOR_AUTO_SAVE = 'editorAutoSave';
 const KEY_EDITOR_AUTO_SAVE_DELAY = 'editorAutoSaveDelay';
@@ -270,6 +283,13 @@ const TERMINAL_SCROLLBACK_MAX = 50_000;
 export const TERMINAL_PADDING_MAX = 64;
 const TERMINAL_PADDING_DEFAULT: Padding = { top: 10, right: 14, bottom: 10, left: 14 };
 export const TERMINAL_SCROLLBACK_PRESETS = [500, 1000, 2000, 5000, 10_000, 25_000] as const;
+
+const EPHEMERAL_SPACE_DEFAULT: EphemeralSpacePrefs = {
+  enabled: true,
+  name: 'Ephemeral',
+  color: null,
+  folder: '',
+};
 
 export const DEFAULT_PREFERENCES: Preferences = {
   theme: 'system',
@@ -312,6 +332,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   agentNotificationSound: true,
   agentLaunchCommands: DEFAULT_AGENT_LAUNCH_COMMANDS,
   defaultWorkspaceEnv: 'local',
+  ephemeralSpace: EPHEMERAL_SPACE_DEFAULT,
   shortcuts: {} as Record<ShortcutId, KeyBinding[]>,
   editorAutoSave: false,
   editorAutoSaveDelay: 1000,
@@ -407,6 +428,7 @@ export async function loadPreferences(): Promise<Preferences> {
     agentLaunchCommands: normalizeAgentLaunchCommands(get<unknown>(KEY_AGENT_LAUNCH_COMMANDS)),
     defaultWorkspaceEnv:
       get<string>(KEY_DEFAULT_WORKSPACE_ENV) ?? DEFAULT_PREFERENCES.defaultWorkspaceEnv,
+    ephemeralSpace: coerceEphemeralSpace(get<unknown>(KEY_EPHEMERAL_SPACE)),
     shortcuts:
       migrateShortcutIds(get<Record<string, KeyBinding[]>>(KEY_SHORTCUTS)) ??
       DEFAULT_PREFERENCES.shortcuts,
@@ -641,6 +663,24 @@ export async function setTerminalPadding(value: Padding): Promise<void> {
   await writePref(KEY_TERMINAL_PADDING, coerceTerminalPadding(value));
 }
 
+/** Each field of the right type, else its default; a blank name is the default one. */
+export function coerceEphemeralSpace(value: unknown): EphemeralSpacePrefs {
+  if (typeof value !== 'object' || value === null) return EPHEMERAL_SPACE_DEFAULT;
+  const raw = value as Record<string, unknown>;
+  const name = typeof raw.name === 'string' ? raw.name.trim() : '';
+  const color = raw.color;
+  return {
+    enabled: typeof raw.enabled === 'boolean' ? raw.enabled : EPHEMERAL_SPACE_DEFAULT.enabled,
+    name: name || EPHEMERAL_SPACE_DEFAULT.name,
+    color: typeof color === 'number' && Number.isInteger(color) && color >= 0 ? color : null,
+    folder: typeof raw.folder === 'string' ? raw.folder.trim() : '',
+  };
+}
+
+export async function setEphemeralSpace(value: EphemeralSpacePrefs): Promise<void> {
+  await writePref(KEY_EPHEMERAL_SPACE, coerceEphemeralSpace(value));
+}
+
 export async function setConfirmCloseRunningTerminal(value: boolean): Promise<void> {
   await writePref(KEY_CONFIRM_CLOSE_RUNNING_TERMINAL, value);
 }
@@ -770,6 +810,7 @@ export async function onPreferencesChange(
     [KEY_AGENT_NOTIFICATION_SOUND]: 'agentNotificationSound',
     [KEY_AGENT_LAUNCH_COMMANDS]: 'agentLaunchCommands',
     [KEY_DEFAULT_WORKSPACE_ENV]: 'defaultWorkspaceEnv',
+    [KEY_EPHEMERAL_SPACE]: 'ephemeralSpace',
     [KEY_SHORTCUTS]: 'shortcuts',
     [KEY_EDITOR_AUTO_SAVE]: 'editorAutoSave',
     [KEY_EDITOR_AUTO_SAVE_DELAY]: 'editorAutoSaveDelay',

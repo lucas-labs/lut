@@ -2,13 +2,14 @@ import { useNavigationStore } from '@/modules/navigation';
 import type { Tab } from '@/modules/tabs';
 import { useCallback, useEffect, useEffectEvent, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
+import { EPHEMERAL_SPACE_ID } from './ephemeral';
 import { isSerializableTab, serializeTabs } from './serialize';
-import { saveState } from './store';
+import { saveState, type SpaceState } from './store';
 import { useSpaces } from './useSpaces';
 
 const DEBOUNCE_MS = 3000;
 
-type Snapshot = { tabs: Tab[]; activeId: number; activeSpaceId: string };
+export type Snapshot = { tabs: Tab[]; activeId: number; activeSpaceId: string };
 
 type Params = {
   activeSpaceId: string;
@@ -16,7 +17,45 @@ type Params = {
   enabled: boolean;
 };
 
-type LastWrite = { json: string; activeTabIndex: number };
+export type LastWrite = { json: string; activeTabIndex: number };
+
+/**
+ * What changed since the last writes (`last`, updated here): each Space's tabs and active tab. The ephemeral Space is
+ * left out (E16-15); a saved Space whose tabs all moved to another Space is written empty, else its old tabs would
+ * come back at the next start.
+ */
+export function spaceWrites(
+  snap: Snapshot,
+  spaceIds: string[],
+  last: Map<string, LastWrite>,
+): { spaceId: string; state: SpaceState }[] {
+  const groups = new Map<string, Tab[]>();
+  for (const t of snap.tabs) {
+    const arr = groups.get(t.spaceId);
+    if (arr) arr.push(t);
+    else groups.set(t.spaceId, [t]);
+  }
+  for (const id of spaceIds) {
+    if (!groups.has(id) && last.has(id)) groups.set(id, []);
+  }
+  groups.delete(EPHEMERAL_SPACE_ID);
+
+  const writes: { spaceId: string; state: SpaceState }[] = [];
+  for (const [spaceId, group] of groups) {
+    const serialized = serializeTabs(group);
+    const prev = last.get(spaceId);
+    let activeTabIndex = serialized.length === 0 ? 0 : (prev?.activeTabIndex ?? 0);
+    if (spaceId === snap.activeSpaceId) {
+      const idx = group.filter(isSerializableTab).findIndex((t) => t.id === snap.activeId);
+      if (idx >= 0) activeTabIndex = idx;
+    }
+    const json = JSON.stringify(serialized);
+    if (prev && prev.json === json && prev.activeTabIndex === activeTabIndex) continue;
+    last.set(spaceId, { json, activeTabIndex });
+    writes.push({ spaceId, state: { tabs: serialized, activeTabIndex } });
+  }
+  return writes;
+}
 
 /** Saves each space's tabs (from the navigation store) a while after they change. */
 export function useSpacePersistence({ activeSpaceId, enabled }: Params) {
@@ -40,27 +79,9 @@ export function useSpacePersistence({ activeSpaceId, enabled }: Params) {
   }, [enabled]);
 
   const flush = useCallback((snap: Snapshot) => {
-    const groups = new Map<string, Tab[]>();
-    for (const t of snap.tabs) {
-      const arr = groups.get(t.spaceId);
-      if (arr) arr.push(t);
-      else groups.set(t.spaceId, [t]);
-    }
-
-    for (const [spaceId, group] of groups) {
-      const serialized = serializeTabs(group);
-      const prev = last.current.get(spaceId);
-      let activeTabIndex = prev?.activeTabIndex ?? 0;
-      if (spaceId === snap.activeSpaceId) {
-        const idx = group.filter(isSerializableTab).findIndex((t) => t.id === snap.activeId);
-        if (idx >= 0) activeTabIndex = idx;
-      }
-      const json = JSON.stringify(serialized);
-      if (prev && prev.json === json && prev.activeTabIndex === activeTabIndex) {
-        continue;
-      }
-      last.current.set(spaceId, { json, activeTabIndex });
-      void saveState(spaceId, { tabs: serialized, activeTabIndex });
+    const spaceIds = useSpaces.getState().spaces.map((s) => s.id);
+    for (const { spaceId, state } of spaceWrites(snap, spaceIds, last.current)) {
+      void saveState(spaceId, state);
     }
   }, []);
 
