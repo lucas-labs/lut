@@ -152,12 +152,14 @@ export default function App() {
   };
   const { verticalTabs, sidebarCollapsed, tabsColumnCollapsed, focusMode, compactSidebar } = panels;
   const spaces = useSpaces((s) => s.spaces);
+  // Vertical tabs and focus mode float the bar over the window, shown from the top edge (E11-02, E12-10).
+  const titleBarPlacement = verticalTabs || focusMode ? 'overlay' : 'inline';
 
   return (
     <ThemeProvider>
       <TooltipProvider>
         <AppShell
-          titleBarPlacement={verticalTabs ? 'overlay' : 'inline'}
+          titleBarPlacement={titleBarPlacement}
           focusMode={focusMode}
           compact={compactSidebar}
           rail={
@@ -170,12 +172,17 @@ export default function App() {
           }
           titleBar={
             <TitleBar
-              placement={verticalTabs ? 'overlay' : 'inline'}
+              placement={titleBarPlacement}
               tabs={navigatorItems}
               tabActions={commands.tabActions}
               newTabMenu={newTabMenu}
               sidePanelsOpen={panels.sidePanelsOpen}
               onToggleSidebar={panels.toggleSidePanels}
+              focusMode={focusMode}
+              onExitFocus={panels.toggleFocusMode}
+              spaces={spaces}
+              activeSpaceId={activeSpaceId}
+              onSwitchSpace={workspace.switchSpace}
               onActivateAgent={commands.activateAgentTarget}
               onOpenSettings={() => void openSettingsWindow()}
               searchTarget={searchTarget}

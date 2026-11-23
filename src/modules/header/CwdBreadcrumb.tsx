@@ -25,7 +25,7 @@ type Props = {
  * closing it with the pointer (a click outside or on an item) does not, so the segment is not left
  * wearing a focus ring the user never asked for.
  */
-function useMenuCloseFocus() {
+export function useMenuCloseFocus() {
   const byPointer = useRef(false);
   return {
     onPointerDown: () => {
@@ -44,7 +44,7 @@ function useMenuCloseFocus() {
 /** A long folder name is cut short rather than pushing the rest of the header aside. */
 const LABEL_CLASS = 'max-w-40 truncate';
 
-const SEGMENT_CLASS =
+export const SEGMENT_CLASS =
   'flex h-5.5 shrink-0 items-center gap-1 rounded-sm px-1.25 text-xs whitespace-nowrap text-muted-foreground hover:bg-accent hover:text-foreground';
 
 function dirname(path: string): string {
@@ -183,7 +183,7 @@ function CurrentSegmentDropdown({ segment, onCd }: { segment: Segment; onCd: (p:
   const error = listed?.error ?? null;
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button type="button" aria-current="location" className={cn(SEGMENT_CLASS, 'text-foreground')}>
           <SegmentLabel segment={segment} />
@@ -218,7 +218,7 @@ function CollapsedSegments({ segments, onCd }: { segments: Segment[]; onCd: (p: 
   return (
     <span className="contents">
       <Item first>
-        <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
           <DropdownMenuTrigger asChild>
             <button type="button" title="Show hidden folders" className={SEGMENT_CLASS}>
               <MoreIcon size="xs" />

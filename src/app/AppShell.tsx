@@ -45,7 +45,10 @@ function applyOwnLayout(group: GroupImperativeHandle | null, layout: Layout, res
 }
 
 type Props = {
-  /** Focus mode (E12-10): only the workspace shows; the chrome keeps its own state for when it comes back. */
+  /**
+   * Focus mode (E12-10): only the workspace shows, and the title bar as an overlay; the side panels keep their own
+   * state for when they come back.
+   */
   focusMode: boolean;
   /**
    * Compact sidebar (E27-01): `rail` stands in for the sidebar and the tab column, which keep their state for when the
@@ -91,7 +94,7 @@ export function AppShell({
   focusMode,
   compact,
   rail: railProp,
-  titleBar: titleBarProp,
+  titleBar,
   titleBarPlacement,
   tabsColumn: tabsColumnProp,
   tabsColumnRef,
@@ -107,7 +110,6 @@ export function AppShell({
   workspace,
   children,
 }: Props) {
-  const titleBar = focusMode ? null : titleBarProp;
   // Focus mode and the compact rail both take the side panels out; their stored layout stays as it was.
   const sidePanelsHidden = focusMode || compact;
   const tabsColumn = sidePanelsHidden ? null : tabsColumnProp;

@@ -111,7 +111,7 @@ it('moves the title bar and the tabs between the layouts without remounting the 
   expect(unmounts).toEqual([]);
 });
 
-it('hides every piece of chrome in focus mode and brings it back without remounting the workspace', () => {
+it('keeps only the overlay title bar in focus mode and brings the chrome back without remounting the workspace', () => {
   for (const placement of ['inline', 'overlay'] as const) {
     const chrome = {
       placement,
@@ -121,8 +121,9 @@ it('hides every piece of chrome in focus mode and brings it back without remount
     };
     render(shell(chrome));
     expect(host.querySelectorAll('[data-chrome]').length).toBeGreaterThan(1);
-    render(shell({ ...chrome, focusMode: true }));
-    expect(host.querySelectorAll('[data-chrome]')).toHaveLength(0);
+    // The app floats the bar over the window in focus mode, whatever the tab orientation.
+    render(shell({ ...chrome, placement: 'overlay', focusMode: true }));
+    expect([...host.querySelectorAll('[data-chrome]')].map((el) => el.getAttribute('data-chrome'))).toEqual(['bar']);
     expect(host.querySelectorAll('[role="separator"]')).toHaveLength(0);
     render(shell(chrome));
     expect(host.querySelector('[data-chrome="sidebar"]')).not.toBeNull();

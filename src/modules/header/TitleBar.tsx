@@ -6,10 +6,12 @@ import { cn } from '@/lib/utils';
 import { NotificationBell } from '@/modules/agents';
 import type { TabNavigatorActions, TabNavigatorItem } from '@/modules/navigation';
 import { dragRegion, IS_MAC, USE_CUSTOM_WINDOW_CONTROLS, useWindowFullScreen } from '@/modules/platform';
+import { ShortcutKeys, useShortcutLabel } from '@/modules/shortcuts';
 import { type NewTabMenuActions, TabNavigator } from '@/modules/tabs';
-import { OptionsIcon, PanelArrowRightIcon } from '@lut/lut-icons';
+import { CenterFocusIcon, OptionsIcon, PanelArrowRightIcon } from '@lut/lut-icons';
 import { type RefObject, useEffect, useRef, useState } from 'react';
 import { CwdBreadcrumb } from './CwdBreadcrumb';
+import { FocusCrumbs } from './FocusCrumbs';
 import { SearchInline, type SearchInlineHandle, type SearchTarget } from './SearchInline';
 import { useTitleBarReveal } from './useTitleBarReveal';
 
@@ -29,6 +31,13 @@ type Props = {
   sidePanelsOpen: boolean;
   /** Hides the sidebar (and the vertical tab rail) while either is open, shows them otherwise. */
   onToggleSidebar: () => void;
+  /** Focus mode (E12-10): the bar, then an overlay, leads with the way out instead of the sidebar button. */
+  focusMode: boolean;
+  onExitFocus: () => void;
+  /** The spaces, for focus mode's space menu; the active space's tabs are `tabs`. */
+  spaces: readonly { id: string; name: string }[];
+  activeSpaceId: string | null;
+  onSwitchSpace: (id: string) => void;
   onActivateAgent: (tabId: number, leafId: number) => void;
   onOpenSettings: () => void;
   searchTarget: SearchTarget;
@@ -74,6 +83,11 @@ function TitleBarRow({
   newTabMenu,
   sidePanelsOpen,
   onToggleSidebar,
+  focusMode,
+  onExitFocus,
+  spaces,
+  activeSpaceId,
+  onSwitchSpace,
   onActivateAgent,
   onOpenSettings,
   searchTarget,
@@ -87,6 +101,7 @@ function TitleBarRow({
   const rootRef = useRef<HTMLDivElement>(null);
   const [compact, setCompact] = useState(false);
   const drag = dragRegion(useWindowFullScreen());
+  const focusShortcut = useShortcutLabel('view.focusMode');
 
   useEffect(() => {
     const el = rootRef.current;
@@ -124,16 +139,39 @@ function TitleBarRow({
       )}
     >
       {!inline && !IS_MAC && appMark}
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        onClick={onToggleSidebar}
-        aria-label="Toggle sidebar"
-        aria-pressed={sidePanelsOpen}
-        title="Toggle sidebar"
-      >
-        <PanelArrowRightIcon size="sm" />
-      </Button>
+      {focusMode ? (
+        <>
+          <Button variant="outline-subtle" size="xs" onClick={onExitFocus} className="ml-1 gap-1.5 pr-0.5">
+            <CenterFocusIcon size="sm" />
+            Exit focus mode
+            {focusShortcut ? (
+              // The bar's key chip, scaled to the 20 px button.
+              <span className="rounded-[3px] bg-accent px-1 font-mono text-[10px] leading-3.5 text-muted-foreground">
+                <ShortcutKeys label={focusShortcut} />
+              </span>
+            ) : null}
+          </Button>
+          {/* The sidebar and the tabs are hidden: where you are, and menus to go elsewhere. */}
+          <FocusCrumbs
+            spaces={spaces}
+            activeSpaceId={activeSpaceId}
+            onSwitchSpace={onSwitchSpace}
+            tabs={tabs}
+            onSelectTab={tabActions.select}
+          />
+        </>
+      ) : (
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          onClick={onToggleSidebar}
+          aria-label="Toggle sidebar"
+          aria-pressed={sidePanelsOpen}
+          title="Toggle sidebar"
+        >
+          <PanelArrowRightIcon size="sm" />
+        </Button>
+      )}
       {inline && (
         <TabNavigator
           orientation="horizontal"
