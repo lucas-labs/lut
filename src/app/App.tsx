@@ -152,6 +152,7 @@ export default function App() {
   };
   const { verticalTabs, sidebarCollapsed, tabsColumnCollapsed, focusMode, compactSidebar } = panels;
   const spaces = useSpaces((s) => s.spaces);
+  const renameSpace = useSpaces((s) => s.rename);
   // Vertical tabs and focus mode float the bar over the window, shown from the top edge (E11-02, E12-10).
   const titleBarPlacement = verticalTabs || focusMode ? 'overlay' : 'inline';
 
@@ -168,6 +169,9 @@ export default function App() {
               activeSpaceId={activeSpaceId}
               onSwitchSpace={workspace.switchSpace}
               onNewSpace={() => void workspace.newSpace()}
+              onRenameSpace={renameSpace}
+              onNewTabInSpace={workspace.newTabInSpace}
+              onDeleteSpace={workspace.deleteSpace}
             />
           }
           titleBar={

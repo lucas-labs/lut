@@ -11,6 +11,9 @@ let host: HTMLDivElement;
 let root: Root;
 const onSwitchSpace = vi.fn();
 const onNewSpace = vi.fn();
+const onRenameSpace = vi.fn();
+const onNewTabInSpace = vi.fn();
+const onDeleteSpace = vi.fn();
 
 const spaces = [
   { id: 'a', name: 'api' },
@@ -21,6 +24,9 @@ const spaces = [
 beforeEach(() => {
   onSwitchSpace.mockReset();
   onNewSpace.mockReset();
+  onRenameSpace.mockReset();
+  onNewTabInSpace.mockReset();
+  onDeleteSpace.mockReset();
   host = document.createElement('div');
   document.body.append(host);
   root = createRoot(host);
@@ -29,7 +35,15 @@ beforeEach(() => {
       createElement(
         TooltipProvider,
         null,
-        createElement(CompactRail, { spaces, activeSpaceId: 'b', onSwitchSpace, onNewSpace }),
+        createElement(CompactRail, {
+          spaces,
+          activeSpaceId: 'b',
+          onSwitchSpace,
+          onNewSpace,
+          onRenameSpace,
+          onNewTabInSpace,
+          onDeleteSpace,
+        }),
       ),
     ),
   );
@@ -61,6 +75,41 @@ describe('CompactRail', () => {
     act(() => plus?.click());
     expect(onNewSpace).toHaveBeenCalledOnce();
     expect(onSwitchSpace).not.toHaveBeenCalled();
+  });
+});
+
+describe("CompactRail's space menu", () => {
+  const openMenu = async (index: number) => {
+    await act(async () => {
+      buttons()[index].dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, clientX: 4, clientY: 4 }));
+    });
+    return [...document.querySelectorAll('[role="menuitem"]')] as HTMLElement[];
+  };
+
+  it("offers the Spaces view's actions", async () => {
+    const items = await openMenu(1);
+    expect(items.map((i) => i.textContent)).toEqual(['Rename space', 'New tab', 'Delete space']);
+    await act(async () => items[1].click());
+    expect(onNewTabInSpace).toHaveBeenCalledWith('b');
+  });
+
+  it('deletes the space', async () => {
+    const items = await openMenu(0);
+    await act(async () => items[2].click());
+    expect(onDeleteSpace).toHaveBeenCalledWith('a');
+  });
+
+  it('renames the space from a field beside its button', async () => {
+    const items = await openMenu(0);
+    await act(async () => items[0].click());
+    const field = document.querySelector('input[aria-label="Rename space"]') as HTMLInputElement;
+    expect(field.value).toBe('api');
+    field.value = '  gateway ';
+    await act(async () => {
+      field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    });
+    expect(onRenameSpace).toHaveBeenCalledWith('a', 'gateway');
+    expect(document.querySelector('input[aria-label="Rename space"]')).toBeNull();
   });
 });
 
