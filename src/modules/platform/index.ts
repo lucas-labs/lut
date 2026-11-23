@@ -1,4 +1,4 @@
-export { consumeLaunchFiles, getLaunchDir, initLaunchDir } from './launchDir';
+export { consumeLaunchFiles, getLaunchArgDir, getLaunchDir, initLaunchDir } from './launchDir';
 export {
   fmtShortcut,
   IS_MAC,

@@ -43,6 +43,8 @@ export { FolderIconData } from './icons/folder';
 export { FolderAddIconData } from './icons/folder-add';
 export { FullScreenIconData } from './icons/full-screen';
 export { FunctionIconData } from './icons/function';
+export { GhostIconData } from './icons/ghost';
+export { GhostDualToneIconData } from './icons/ghost-dual-tone';
 export { GitBranchIconData } from './icons/git-branch';
 export { GitCommitIconData } from './icons/git-commit';
 export { GitCompareIconData } from './icons/git-compare';

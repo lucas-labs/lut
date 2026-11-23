@@ -1,20 +1,24 @@
 import { Button } from '@/components/ui/button';
+import { ColorSwatch } from '@/components/ui/color-picker';
+import { RadioGroup, RadioGroupSwatchItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { type OsNotificationResult, testAgentOsNotification } from '@/modules/agents/lib/notify';
 import { usePreferencesStore } from '@/modules/settings/preferences';
-import type { ThemePref } from '@/modules/settings/store';
+import type { EphemeralSpacePrefs, ThemePref } from '@/modules/settings/store';
 import {
   coerceFileIconColors,
   setAgentNotifications,
   setAgentNotificationSound,
+  setEphemeralSpace,
   setExplorerGitDecorations,
   setFileIconColors,
   setRestoreWindowState,
   setShowHidden,
   setZoomLevel,
 } from '@/modules/settings/store';
+import { SPACE_COLOR_NAMES, SPACE_COLORS } from '@/modules/spaces/lib/spaceColor';
 import { useTheme } from '@/modules/theme';
 import type { Theme, ThemeMode } from '@/modules/theme/types';
 import { useState } from 'react';
@@ -23,6 +27,7 @@ import { SectionHeader } from '../components/SectionHeader';
 import { SettingExpander, SettingRow } from '../components/SettingRow';
 import { SettingsGroup } from '../components/SettingsGroup';
 import type { SectionProps } from '../sectionProps';
+import { TextSetting } from './profiles/fields';
 
 const APPEARANCE: { id: ThemePref; label: string }[] = [
   { id: 'system', label: 'System' },
@@ -46,6 +51,9 @@ export function GeneralSection({ openTab }: SectionProps) {
   const { mode, setMode, activeTheme } = useTheme();
 
   const restoreWindowState = usePreferencesStore((s) => s.restoreWindowState);
+  const ephemeralSpace = usePreferencesStore((s) => s.ephemeralSpace);
+  const updateEphemeralSpace = (patch: Partial<EphemeralSpacePrefs>) =>
+    void setEphemeralSpace({ ...ephemeralSpace, ...patch });
   const showHidden = usePreferencesStore((s) => s.showHidden);
   const explorerGitDecorations = usePreferencesStore((s) => s.explorerGitDecorations);
   const fileIconColors = usePreferencesStore((s) => coerceFileIconColors(s.fileIconColors));
@@ -199,6 +207,57 @@ export function GeneralSection({ openTab }: SectionProps) {
             <Switch {...a11y} checked={restoreWindowState} onCheckedChange={(v) => void setRestoreWindowState(v)} />
           )}
         </SettingRow>
+        <SettingExpander
+          open={ephemeralSpace.enabled}
+          setting={
+            <SettingRow
+              title="Start in an ephemeral Space"
+              description="Open first a Space that is never saved, with one terminal. Applies on next launch."
+            >
+              {(a11y) => (
+                <Switch
+                  {...a11y}
+                  checked={ephemeralSpace.enabled}
+                  onCheckedChange={(enabled) => updateEphemeralSpace({ enabled })}
+                />
+              )}
+            </SettingRow>
+          }
+        >
+          <TextSetting
+            title="Name"
+            description="The ephemeral Space's name."
+            value={ephemeralSpace.name}
+            onCommit={(name) => updateEphemeralSpace({ name })}
+          />
+          <SettingRow title="Color" description="The ephemeral Space's accent.">
+            {(a11y) => (
+              <RadioGroup
+                {...a11y}
+                orientation="horizontal"
+                className="flex w-auto gap-1"
+                value={ephemeralSpace.color === null ? 'none' : String(ephemeralSpace.color)}
+                onValueChange={(v) => updateEphemeralSpace({ color: v === 'none' ? null : Number(v) })}
+              >
+                <RadioGroupSwatchItem value="none" aria-label="Theme accent">
+                  <ColorSwatch kind="none" />
+                </RadioGroupSwatchItem>
+                {SPACE_COLORS.map((color, i) => (
+                  <RadioGroupSwatchItem key={color} value={String(i)} aria-label={SPACE_COLOR_NAMES[i]}>
+                    <ColorSwatch kind="color" color={color} />
+                  </RadioGroupSwatchItem>
+                ))}
+              </RadioGroup>
+            )}
+          </SettingRow>
+          <TextSetting
+            title="Folder"
+            description="Where its terminal opens, unless lut was opened with a folder. Empty: the default profile's starting directory."
+            value={ephemeralSpace.folder}
+            onCommit={(folder) => updateEphemeralSpace({ folder })}
+            mono
+          />
+        </SettingExpander>
       </SettingsGroup>
     </div>
   );

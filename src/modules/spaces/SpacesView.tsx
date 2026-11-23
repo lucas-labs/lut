@@ -3,10 +3,19 @@ import { cn } from '@/lib/utils';
 import { labelFor, type Tab, TabIcon } from '@/modules/navigation';
 import { useShellTitlePolicy } from '@/modules/profiles';
 import { useShortcutLabel } from '@/modules/shortcuts';
-import { ChevronIcon, DeleteIcon, type LutIconComponent, PencilIcon, PlusIcon, XIcon } from '@lut/lut-icons';
+import {
+  ChevronIcon,
+  DeleteIcon,
+  GhostIcon,
+  type LutIconComponent,
+  PencilIcon,
+  PlusIcon,
+  XIcon,
+} from '@lut/lut-icons';
 import { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { InlineRename } from './components/InlineRename';
+import { isEphemeralSpace } from './lib/ephemeral';
 import { accentFor } from './lib/spaceColor';
 import type { SpaceMeta } from './lib/store';
 import { useSpaces } from './lib/useSpaces';
@@ -25,6 +34,9 @@ type Props = {
 };
 
 type Edge = 'top' | 'bottom';
+
+/** Why the ephemeral Space carries its mark (E16-15). */
+const EPHEMERAL_SPACE_HINT = "This Space isn't saved: it starts fresh each time lut opens.";
 
 type DragState = {
   pointerId: number;
@@ -356,6 +368,12 @@ function SpaceRow({
           <InlineRename initial={space.name} onCommit={onCommitRename} onCancel={onCancelRename} className="ml-0.5" />
         ) : (
           <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{space.name}</span>
+        )}
+        {!editing && isEphemeralSpace(space.id) && (
+          <span title={EPHEMERAL_SPACE_HINT} className="flex shrink-0">
+            <GhostIcon size="sm" className="text-muted-foreground opacity-40" aria-hidden />
+            <span className="sr-only">{EPHEMERAL_SPACE_HINT}</span>
+          </span>
         )}
         {!editing && (
           <>

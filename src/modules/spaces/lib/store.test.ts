@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const disk = vi.hoisted(() => ({
   entries: [] as [string, unknown][],
   calls: [] as string[],
+  values: new Map<string, unknown>(),
 }));
 const native = vi.hoisted(() => ({
   open: null as { backupPath: string; reason: string } | null,
@@ -17,7 +18,10 @@ vi.mock('@tauri-apps/plugin-store', () => ({
       disk.calls.push('entries');
       return disk.entries;
     };
-    set = async (key: string) => void disk.calls.push(`set ${key}`);
+    set = async (key: string, value: unknown) => {
+      disk.calls.push(`set ${key}`);
+      disk.values.set(key, value);
+    };
     delete = async (key: string) => void disk.calls.push(`delete ${key}`);
     clear = async () => void disk.calls.push('clear');
     save = async () => void disk.calls.push('save');
@@ -38,7 +42,7 @@ const space = {
   id: 'a',
   name: 'A',
   root: null,
-  env: { kind: 'local' },
+  env: { kind: 'local' as const },
   createdAt: 1,
   updatedAt: 1,
 };
@@ -56,6 +60,7 @@ beforeEach(() => {
   vi.resetModules();
   disk.entries = [];
   disk.calls = [];
+  disk.values.clear();
   native.open = null;
   native.moveAside = { backupPath: '/data/lut-spaces.corrupt-1.json', reason: '' };
   native.copyAside = { backupPath: '/data/lut-spaces.corrupt-3.json', reason: '' };
@@ -157,5 +162,24 @@ describe('loadAll', () => {
     expect(load.recovered?.backupPath).toBe('');
     expect(load.data.spaces).toEqual([]);
     expect(await writeEverything(store)).toEqual([]);
+  });
+});
+
+describe('the ephemeral Space (E16-15)', () => {
+  const ephemeral = { ...space, id: 'ephemeral', name: 'Ephemeral' };
+
+  it('is left out of the saved Space list', async () => {
+    const store = await loadStore();
+    await store.saveSpacesList([ephemeral, space]);
+    expect(disk.values.get('spaces')).toEqual([space]);
+  });
+
+  it('is never saved as the active Space, its tabs nor its deletion', async () => {
+    const store = await loadStore();
+    disk.calls = [];
+    await store.saveActiveId('ephemeral');
+    await store.saveState('ephemeral', { tabs: [], activeTabIndex: 0 });
+    await store.deleteSpaceData('ephemeral');
+    expect(disk.calls).toEqual([]);
   });
 });

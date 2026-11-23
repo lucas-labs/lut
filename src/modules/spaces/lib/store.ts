@@ -2,6 +2,7 @@ import { ShapeError } from '@/lib/shape';
 import type { WorkspaceEnv } from '@/modules/workspace';
 import { invoke } from '@tauri-apps/api/core';
 import { LazyStore } from '@tauri-apps/plugin-store';
+import { isEphemeralSpace } from './ephemeral';
 import { ACTIVE_KEY, type BrokenTab, parseSpacesStore, SPACES_KEY, stateKey } from './parse';
 import type { SerializedTab } from './serialize';
 
@@ -96,20 +97,27 @@ async function copyBrokenTabs(brokenTabs: BrokenTab[]): Promise<RecoveredFile | 
   return copy;
 }
 
+// The ephemeral Space is never written (E16-15): every save below leaves it out, so no caller needs to.
+
 export async function saveSpacesList(spaces: SpaceMeta[]): Promise<void> {
-  if (!writesBlocked) await store.set(SPACES_KEY, spaces);
+  if (!writesBlocked)
+    await store.set(
+      SPACES_KEY,
+      spaces.filter((s) => !isEphemeralSpace(s.id)),
+    );
 }
 
+/** The ephemeral Space is not saved as active: the last saved Space that was stays. */
 export async function saveActiveId(id: string | null): Promise<void> {
-  if (!writesBlocked) await store.set(ACTIVE_KEY, id);
+  if (!writesBlocked && !isEphemeralSpace(id)) await store.set(ACTIVE_KEY, id);
 }
 
 export async function saveState(id: string, state: SpaceState): Promise<void> {
-  if (!writesBlocked) await store.set(stateKey(id), state);
+  if (!writesBlocked && !isEphemeralSpace(id)) await store.set(stateKey(id), state);
 }
 
 export async function deleteSpaceData(id: string): Promise<void> {
-  if (!writesBlocked) await store.delete(stateKey(id));
+  if (!writesBlocked && !isEphemeralSpace(id)) await store.delete(stateKey(id));
 }
 
 export function newSpaceId(): string {

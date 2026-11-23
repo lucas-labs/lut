@@ -39,4 +39,24 @@ function RadioGroupItem({
   )
 }
 
-export { RadioGroup, RadioGroupItem }
+/**
+ * A radio item drawn as a round colour swatch (`ColorSwatch` as its child), for a row of them outside a menu, such as
+ * the ephemeral Space's colour in settings. It is ringed while checked, like `ContextMenuSwatchItem`.
+ */
+function RadioGroupSwatchItem({
+  className,
+  ...props
+}: React.ComponentProps<typeof RadioGroupPrimitive.Item>) {
+  return (
+    <RadioGroupPrimitive.Item
+      data-slot="radio-group-swatch-item"
+      className={cn(
+        "group/swatch flex size-6 cursor-default items-center justify-center rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50",
+        className
+      )}
+      {...props}
+    />
+  )
+}
+
+export { RadioGroup, RadioGroupItem, RadioGroupSwatchItem }
