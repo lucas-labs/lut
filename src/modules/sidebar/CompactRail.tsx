@@ -1,3 +1,4 @@
+import { AppLogo } from '@/components/AppLogo';
 import { Button } from '@/components/ui/button';
 import {
   ContextMenu,
@@ -131,6 +132,10 @@ export function CompactRail({
 
   return (
     <nav aria-label="Compact sidebar" className="flex h-full min-h-0 flex-col items-center gap-1 py-2">
+      {/* lut's compact mark leads the rail, as the wordmark leads the title bar. */}
+      <span data-slot="rail-logo" className="mb-1 flex h-6 shrink-0 items-center text-muted-foreground">
+        <AppLogo compact size="sm" />
+      </span>
       <div data-slot="rail-spaces" className={cn('flex min-h-0 flex-col items-center gap-1', tabs && 'max-h-1/2')}>
         <div className="flex min-h-0 flex-col items-center gap-1 overflow-y-auto">
           {spaces.map((space) => (
