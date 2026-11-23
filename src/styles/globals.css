@@ -470,6 +470,13 @@ html *::-webkit-scrollbar {
 [data-tab-color][data-orientation='vertical']:is([aria-selected='true'], [aria-current='true']) {
   background: color-mix(in srgb, var(--tab-color) 12%, var(--accent));
 }
+/* The compact sidebar's tab buttons (E27-02): the colour at 10 %, 30 % on the selected tab. */
+[data-tab-color][data-orientation='rail'] {
+  background: color-mix(in srgb, var(--tab-color) 10%, transparent);
+}
+[data-tab-color][data-orientation='rail'][aria-current='true'] {
+  background: color-mix(in srgb, var(--tab-color) 30%, transparent);
+}
 
 /* File icon colours (E10-18). The icon engine draws each Catppuccin colour as
  * `var(--file-icon-<name>, <its own colour>)`; the "File icon colors" setting

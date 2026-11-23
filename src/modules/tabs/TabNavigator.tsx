@@ -42,8 +42,11 @@ const PRIVATE_TAB_HINT = "This terminal isn't saved in the Space, so it won't co
 
 const HIDDEN_SCROLLBAR = '[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
 
-/** A coloured tab's tint (the `data-tab-color` rules of globals.css); nothing for a tab with no colour. */
-function tint(t: TabNavigatorItem, orientation: TabNavigatorOrientation) {
+/**
+ * A coloured tab's tint (the `data-tab-color` rules of globals.css); nothing for a tab with no colour. The compact
+ * sidebar's rail (E27-02) tints its tab buttons with it too.
+ */
+export function tabTint(t: Pick<TabNavigatorItem, 'color'>, orientation: TabNavigatorOrientation | 'rail') {
   const css = t.color === null ? null : colorCss(t.color);
   if (css === null) return {};
   return {
@@ -178,7 +181,7 @@ export function TabNavigator({ items, actions, orientation, heading, compact, dr
       return (
         <Fragment key={t.id}>
           {showGap(i) && <DropIndicator vertical={vertical} />}
-          <div data-tab-id={t.id} className={cellClass(t)} {...tint(t, orientation)}>
+          <div data-tab-id={t.id} className={cellClass(t)} {...tabTint(t, orientation)}>
             <TabIcon id={t.id} />
             <TabRenameInput
               initial={t.title}
@@ -201,7 +204,7 @@ export function TabNavigator({ items, actions, orientation, heading, compact, dr
         aria-selected={t.active}
         tabIndex={t.active ? 0 : -1}
         data-tab-id={t.id}
-        {...tint(t, orientation)}
+        {...tabTint(t, orientation)}
         title={t.private ? PRIVATE_TAB_HINT : undefined}
         onKeyDown={(e) => onTabKeyDown(e, i)}
         onPointerDown={(e) => {

@@ -7456,6 +7456,8 @@ button per tab with its position number and a + for a new tab (CompactV board).
 - [ ] Tooltips give the tab's name, its agent state and its "Jump to tab" shortcut; the + gives "New terminal" and its
       shortcut, and opens a tab with the default profile.
 - [ ] With horizontal tabs the rail shows no tabs or separator (the tabs stay in the strip).
+- [ ] The spaces and the tabs are two groups that scroll on their own; with both, each takes at most half the rail's
+      height; with spaces only, the spaces take all of it.
 - [ ] Component tests: numbering with 12 tabs, the active tab, the tint classes, and no tabs with horizontal tabs.
 
 **Verification:** `pnpm test`; manual on Windows: coloured and plain tabs, switching tabs and spaces.

@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 import { TooltipProvider } from '@/components/ui/tooltip';
+import type { TabNavigatorItem } from '@/modules/navigation';
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CompactRail, spaceInitial } from './CompactRail';
+import { CompactRail, spaceInitial, tabMark } from './CompactRail';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -14,22 +15,23 @@ const onNewSpace = vi.fn();
 const onRenameSpace = vi.fn();
 const onNewTabInSpace = vi.fn();
 const onDeleteSpace = vi.fn();
+const onSelectTab = vi.fn();
+const onNewTab = vi.fn();
 
-const spaces = [
-  { id: 'a', name: 'api' },
-  { id: 'b', name: 'web' },
-  { id: 'c', name: '  docs' },
-];
+const tab = (id: number, active = false, color: string | null = null): TabNavigatorItem => ({
+  id,
+  kind: 'terminal',
+  title: `tab ${id}`,
+  detail: null,
+  active,
+  preview: false,
+  dirty: false,
+  private: false,
+  renamable: true,
+  color,
+});
 
-beforeEach(() => {
-  onSwitchSpace.mockReset();
-  onNewSpace.mockReset();
-  onRenameSpace.mockReset();
-  onNewTabInSpace.mockReset();
-  onDeleteSpace.mockReset();
-  host = document.createElement('div');
-  document.body.append(host);
-  root = createRoot(host);
+function renderRail(tabs: TabNavigatorItem[] | null) {
   act(() =>
     root.render(
       createElement(
@@ -43,10 +45,31 @@ beforeEach(() => {
           onRenameSpace,
           onNewTabInSpace,
           onDeleteSpace,
+          tabs: tabs && { items: tabs, onSelect: onSelectTab, onNewTab },
         }),
       ),
     ),
   );
+}
+
+const spaces = [
+  { id: 'a', name: 'api' },
+  { id: 'b', name: 'web' },
+  { id: 'c', name: '  docs' },
+];
+
+beforeEach(() => {
+  onSwitchSpace.mockReset();
+  onNewSpace.mockReset();
+  onRenameSpace.mockReset();
+  onNewTabInSpace.mockReset();
+  onDeleteSpace.mockReset();
+  onSelectTab.mockReset();
+  onNewTab.mockReset();
+  host = document.createElement('div');
+  document.body.append(host);
+  root = createRoot(host);
+  renderRail(null);
 });
 
 afterEach(() => {
@@ -110,6 +133,77 @@ describe("CompactRail's space menu", () => {
     });
     expect(onRenameSpace).toHaveBeenCalledWith('a', 'gateway');
     expect(document.querySelector('input[aria-label="Rename space"]')).toBeNull();
+  });
+});
+
+describe("CompactRail's tabs (E27-02)", () => {
+  const tabButtons = () => [...host.querySelectorAll('[role="tab"]')] as HTMLElement[];
+  const group = (slot: string) => host.querySelector(`[data-slot="${slot}"]`);
+
+  it('numbers the tabs 1 to 9, then "…", and selects one on click', () => {
+    renderRail(Array.from({ length: 12 }, (_, i) => tab(i + 1, i === 2)));
+    expect(tabButtons().map((b) => b.textContent)).toEqual([
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+      '8',
+      '9',
+      '…',
+      '…',
+      '…',
+    ]);
+    expect(tabButtons().map((b) => b.getAttribute('aria-current'))).toEqual([
+      null,
+      null,
+      'true',
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    ]);
+    act(() => tabButtons()[4].click());
+    expect(onSelectTab).toHaveBeenCalledWith(5);
+  });
+
+  it('tints a coloured tab for the rail and leaves a plain one alone', () => {
+    renderRail([tab(1, true, 'red'), tab(2)]);
+    const [coloured, plain] = tabButtons();
+    expect(coloured.hasAttribute('data-tab-color')).toBe(true);
+    expect(coloured.getAttribute('data-orientation')).toBe('rail');
+    expect(plain.hasAttribute('data-tab-color')).toBe(false);
+  });
+
+  it('opens a tab from its +', () => {
+    renderRail([tab(1, true)]);
+    act(() => (host.querySelector('button[aria-label="New terminal"]') as HTMLElement).click());
+    expect(onNewTab).toHaveBeenCalledOnce();
+  });
+
+  it('gives each group at most half the rail with tabs, and the spaces all of it without', () => {
+    renderRail([tab(1, true)]);
+    expect(group('rail-spaces')?.classList.contains('max-h-1/2')).toBe(true);
+    expect(group('rail-tabs')?.classList.contains('max-h-1/2')).toBe(true);
+    expect(group('rail-separator')).not.toBeNull();
+    renderRail(null);
+    expect(group('rail-spaces')?.classList.contains('max-h-1/2')).toBe(false);
+    expect(group('rail-tabs')).toBeNull();
+    expect(group('rail-separator')).toBeNull();
+    expect(tabButtons()).toHaveLength(0);
+  });
+});
+
+describe('tabMark', () => {
+  it('reads the Jump to tab digit, then "…"', () => {
+    expect([0, 8, 9, 20].map(tabMark)).toEqual(['1', '9', '…', '…']);
   });
 });
 

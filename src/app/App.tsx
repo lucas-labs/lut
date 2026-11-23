@@ -172,6 +172,11 @@ export default function App() {
               onRenameSpace={renameSpace}
               onNewTabInSpace={workspace.newTabInSpace}
               onDeleteSpace={workspace.deleteSpace}
+              tabs={
+                verticalTabs
+                  ? { items: navigatorItems, onSelect: commands.tabActions.select, onNewTab: commands.openNewTab }
+                  : null
+              }
             />
           }
           titleBar={
