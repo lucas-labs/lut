@@ -7736,6 +7736,335 @@ size: XS
 **Goal:** Verify every item of this epic is delivered (validator coverage), run the epic's verification commands, and
 add any discovered work to plan.md (or state 'nothing new').
 
+## E28 — Tab groups: tabs side by side
+
+```yaml
+id: E28
+depends-on: [E27]
+refs: [TER-004, PRJ-002, PRJ-006, UX-009, .docs/plan/analysis/decisions.md, .docs/plan/analysis/app-shell.md]
+```
+
+Any tabs can show side by side: a terminal next to the file it works on, a markdown preview next to its editor, two
+terminals as today's splits. Each pane is a tab of its own, with its title, icon, colour, agent state and menu; a
+**group** is the split layout that joins some tabs, which stay together in the tab list and show joined there.
+Today's in-tab terminal splits become groups of terminal tabs, so a split is no longer a pane tree inside a terminal
+tab (decision 32). A group holds up to 4 tabs of any kind. The window's one terminal canvas stays as it is: a group is
+a set of rectangles, terminal tabs draw into theirs and the other tabs are opaque DOM in theirs.
+
+### E28-01 — Group model in the navigation store
+
+```yaml
+id: E28-01
+depends-on: []
+refs: [TER-004, PRJ-006, .docs/plan/analysis/app-shell.md]
+covers: [app-shell/tabs-model, TER-004, PRJ-006]
+type: task
+scope: ui
+size: M
+```
+
+**Goal:** The navigation store holds groups: a split layout (row or column splits with ratios) whose leaves are tab
+ids. A tab is in at most one group; a group's tabs stay next to each other in the tab list.
+
+**Acceptance criteria:**
+
+- [ ] Pure operations with unit tests: join a tab to a group on a side of one of its tabs, leave a group, close a
+      tab of a group (its space goes to its neighbours; a group of one tab ends), reorder a whole group, resize a
+      divider (ratios kept within the minimum share).
+- [ ] A group holds at most 4 tabs; joining past it is refused.
+- [ ] Moving a tab of a group to another space takes it out of the group.
+- [ ] Activating any tab of a group shows the group with that tab focused.
+- [ ] No visible change yet: nothing creates a group until splits do (E28-03).
+
+**Verification:** `pnpm test` (the group operations); `pnpm check-types`.
+
+### E28-02 — The workspace draws the active group
+
+```yaml
+id: E28-02
+depends-on: [E28-01]
+refs: [.docs/plan/analysis/app-shell.md, .docs/plan/analysis/terminal.md]
+covers: [terminal/pane-tree-view, terminal/pane-host, terminal/webgpu-renderer]
+type: task
+scope: ui
+size: L
+size-exception: the layout moves from the terminal tab to the workspace in one step; terminal tabs placed by a group and by their own pane tree cannot coexist
+```
+
+**Goal:** The workspace lays out the visible group once and places each of its tabs in its rectangle: terminal tabs
+draw there in the window's one canvas, the other tabs are opaque DOM there.
+
+**Acceptance criteria:**
+
+- [ ] The layout lives at the workspace level; `TerminalStack` keeps every terminal mounted (F1: grouping, ungrouping
+      and switching groups never remount a terminal) and places each visible one in its group rectangle.
+- [ ] Editor, markdown, preview and Git tabs render in their rectangles of the group.
+- [ ] The canvas is hidden only when the visible group (or loose tab) has no terminal; dividers and group switches
+      move viewports without reallocating it.
+- [ ] Dividers between the group's tabs resize them by dragging and from the keyboard, as today's pane dividers.
+- [ ] A terminal's search bar and status line follow its tab's rectangle.
+- [ ] Component tests: a group of a terminal and an editor shows both; switching to a loose editor hides the canvas;
+      no terminal remounts.
+
+**Verification:** `pnpm test`; manual on Windows: a terminal beside an editor, resize the divider, switch tabs and
+come back; the terminal keeps its scrollback and process.
+
+### E28-03 — Terminal splits become groups of terminal tabs
+
+```yaml
+id: E28-03
+depends-on: [E28-02]
+refs: [TER-004, PRJ-002, PRJ-003, .docs/plan/analysis/terminal.md]
+covers: [terminal/pane-tree-model, state-settings/spaces-persistence, PRJ-002, PRJ-003]
+type: task
+scope: ui
+size: L
+size-exception: the terminal tab's pane tree is removed together with every caller (split commands, focus moves, persistence); keeping both models in between would double the layout code
+```
+
+**Goal:** Splitting a terminal opens a new terminal tab in the active tab's group, on the side asked; a terminal tab
+is one shell. The pane tree inside the terminal tab is removed.
+
+**Acceptance criteria:**
+
+- [ ] The split commands, shortcuts and menu items create a terminal tab in the group (a new group when the tab is
+      loose), with the profile and cwd they use today; at 4 tabs they are disabled with the reason.
+- [ ] Moving focus between panes (shortcuts and mouse) moves between the tabs of the visible group, terminals and
+      other tabs alike.
+- [ ] Each tab of a group keeps its own title, icon, colour, agent state and private mark.
+- [ ] Spaces save and restore groups with their layout and ratios, and each tab's cwd and profile. Stored in-tab
+      splits are dropped, not migrated (lut has no releases).
+- [ ] Agent detection, the agent target and notifications point at the tab of the pty.
+- [ ] Tests: split commands, focus moves across a group, save and restore of a group.
+
+**Verification:** `pnpm test`; manual on Windows: split right and down, move focus, close one side, restart lut and
+find the group.
+
+### E28-04 — Groups in the vertical tab bar
+
+```yaml
+id: E28-04
+depends-on: [E28-01]
+refs: [.docs/plan/analysis/app-shell.md]
+covers: [app-shell/tabs-ui]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** The vertical tab bar shows a group's tabs together, joined by a line along their left side, as in the
+user's sketch (a vertical line with a short tick to each tab of the group).
+
+**Acceptance criteria:**
+
+- [ ] The group's tabs are drawn joined by the line, in the theme's border colour; loose tabs are unchanged.
+- [ ] Each tab of a group keeps its own click, menu, close and agent state.
+- [ ] Reordering by dragging moves a whole group, or a tab within its group.
+- [ ] Component tests for the joined look and the reorder.
+
+**Verification:** `pnpm test`; manual on Windows with a group of three tabs among loose ones.
+
+### E28-05 — Groups in the horizontal strip and on the compact rail
+
+```yaml
+id: E28-05
+depends-on: [E28-01, E27-02]
+refs: [.docs/plan/analysis/app-shell.md]
+covers: [app-shell/tabs-ui]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** The horizontal tab strip shows a group as one tab split into up to 4 parts, one per tab of the group; the
+compact rail shows it in a way agreed with the user before it is implemented.
+
+**Acceptance criteria:**
+
+- [ ] In the strip a group is one tab cell divided into its tabs' parts, each with its tab's icon, title (shortened)
+      and agent state; a click on a part shows the group and focuses that pane.
+- [ ] Each part keeps its tab's menu and close; the group cell reorders as one.
+- [ ] The rail's look for a group is agreed with the user first, then drawn with the same click behaviour.
+- [ ] Component tests for the strip's parts (click focuses its pane) and the rail.
+
+**Verification:** `pnpm test`; manual on Windows in both tab orientations and in compact mode.
+
+### E28-06 — Close-out: tab groups
+
+```yaml
+id: E28-06
+depends-on: [E28-01, E28-02, E28-03, E28-04, E28-05]
+refs: [.docs/plan/README.md]
+covers: []
+type: closeout
+scope: none
+size: XS
+```
+
+**Goal:** Verify every item of this epic is delivered (validator coverage), run the epic's verification commands, and
+add any discovered work to plan.md (or state 'nothing new').
+
+## E29 — Drag and drop of files and tabs
+
+```yaml
+id: E29
+depends-on: [E28]
+refs: [UX-009, .docs/plan/analysis/ide-tools.md, .docs/plan/analysis/app-shell.md]
+```
+
+Files and tabs move by dragging, the same on Windows, macOS and Linux. Over the visible group, a drop on a pane's edge
+puts what was dragged beside it (in the group, on that side) and a drop on its middle does what the pane does with a
+file: a terminal pastes its path, an editor opens it in place. Files dropped from other apps, files dragged from the
+explorer and tabs dragged from the tab bar use the same drop zones. Files also drag out of lut to other apps. A folder
+dropped on an edge or an editor is ignored (a terminal still pastes its path); of several files dropped on an edge
+only the first joins the group.
+
+### E29-01 — Drop zones over the visible group
+
+```yaml
+id: E29-01
+depends-on: [E28-02]
+refs: [.docs/plan/analysis/app-shell.md]
+covers: [app-shell/tabs-ui, terminal/pane-host]
+type: task
+scope: ui
+size: M
+```
+
+**Goal:** One hit test over the visible group gives, for a point, the pane and its zone (an edge or the middle), and
+draws the zone with the terminal's existing drop overlay: over half the pane for an edge, over the whole pane for the
+middle. The drops of the next issues use it.
+
+**Acceptance criteria:**
+
+- [ ] A pure function from a point and the group's rectangles to `{ tab, zone }`, with unit tests for each edge, the
+      middle, the dividers and a loose tab.
+- [ ] The zone shows while dragging and clears on leave, drop and cancel; a drop the target cannot take shows refused.
+- [ ] A full group (4 tabs) refuses edge drops.
+
+**Verification:** `pnpm test`.
+
+### E29-02 — Files dropped from other apps open beside or in place
+
+```yaml
+id: E29-02
+depends-on: [E29-01]
+refs: [.docs/plan/analysis/ide-tools.md]
+covers: [ide-tools/editor-core, ide-tools/explorer-logic]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** A file dropped from another app on the visible group opens as the drop zone says, by its kind (text in the
+editor, markdown in its view, an image in the preview), through the existing open-file path.
+
+**Acceptance criteria:**
+
+- [ ] Edge: the file opens as a new tab in the group on that side; of several files only the first, the rest are not
+      opened.
+- [ ] Middle of an editor: the file replaces the editor's file in that tab, asking first when it has unsaved changes.
+- [ ] Middle of a terminal: its path is pasted, as today.
+- [ ] Folders are ignored on edges and editors; dropped on the explorer they are still copied, as today.
+- [ ] Paths from WSL workspaces and Windows paths both open.
+- [ ] Tests for each zone through the native drop event.
+
+**Verification:** `pnpm test`; manual on Windows: drop a file from the file manager on each zone.
+
+### E29-03 — Files dragged from the explorer use the drop zones
+
+```yaml
+id: E29-03
+depends-on: [E29-01]
+refs: [.docs/plan/analysis/ide-tools.md]
+covers: [ide-tools/explorer-ui]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** A file dragged from the explorer onto the visible group behaves as a file dropped from another app (E29-02);
+moving files between folders is unchanged.
+
+**Acceptance criteria:**
+
+- [ ] The explorer's own drag shows the drop zones over the workspace and opens or pastes per E29-02.
+- [ ] Dropping on a folder of the explorer still moves the files.
+- [ ] Tests for an edge, an editor's middle and a terminal's middle.
+
+**Verification:** `pnpm test`; manual on Windows.
+
+### E29-04 — Drag a tab to join or leave a group
+
+```yaml
+id: E29-04
+depends-on: [E29-01, E28-04]
+refs: [.docs/plan/analysis/app-shell.md]
+covers: [app-shell/tabs-ui]
+type: task
+scope: ui
+size: M
+```
+
+**Goal:** A tab joins a group by dragging: onto an edge of the visible group (on that side), or in the tab bar onto
+another tab or onto a group. A tab of a group dragged out of the group's line in the tab bar leaves it and shows alone.
+
+**Acceptance criteria:**
+
+- [ ] In the tab bar, a loose tab dropped on another loose tab makes a group of both, the dropped one to the right of
+      the target; dropped on a tab of a group, it joins that group to the right of that tab. The target tab shows with
+      the tab bar's hover fill; a drop between tabs keeps the existing reorder line.
+- [ ] Reordering is still possible: a drop between tabs reorders, a drop on a tab joins.
+- [ ] Joining and leaving keep the tab mounted (a terminal keeps its process and scrollback).
+- [ ] A full group refuses the join; a tab dropped on its own pane does nothing.
+- [ ] Works from the vertical bar, the horizontal strip and the compact rail.
+- [ ] Component tests for join, leave and refuse.
+
+**Verification:** `pnpm test`; manual on Windows in both tab orientations.
+
+### E29-05 — Drag files out of lut to other apps
+
+```yaml
+id: E29-05
+depends-on: [E29-03]
+refs: [.docs/plan/analysis/ide-tools.md]
+covers: [ide-tools/explorer-ui]
+type: task
+scope: ui
+size: M
+```
+
+**Goal:** Files dragged from the explorer past the window's edge become a native drag the OS hands to other apps (a
+browser, a file manager, a mail client), on Windows, macOS and Linux alike.
+
+**Acceptance criteria:**
+
+- [ ] `tauri-plugin-drag` (with its npm binding) is added, after the user approves the dependency; its capability is
+      the narrowest that works.
+- [ ] The explorer's own drag starts the native drag when the pointer leaves the window, with the selected files;
+      inside the window it keeps moving and opening as today.
+- [ ] WSL paths are handed out as their Windows UNC path (`\\wsl.localhost\<distro>\…`).
+- [ ] A native drag that fails to start ends cleanly: no stuck drag state, a log entry, nothing moved.
+- [ ] Tests for the path conversion and the hand-off from the explorer's drag.
+
+**Verification:** `pnpm test`; manual on Windows: drag a file to a browser and to the file manager, from a Windows and
+a WSL workspace. macOS and Linux are covered by CI builds; the PR names that risk.
+
+### E29-06 — Close-out: drag and drop of files and tabs
+
+```yaml
+id: E29-06
+depends-on: [E29-01, E29-02, E29-03, E29-04, E29-05]
+refs: [.docs/plan/README.md]
+covers: []
+type: closeout
+scope: none
+size: XS
+```
+
+**Goal:** Verify every item of this epic is delivered (validator coverage), run the epic's verification commands, and
+add any discovered work to plan.md (or state 'nothing new').
+
 ## Not planned
 
 - `TER-010` — P2: moving sessions between windows needs multiwindow (post-v1).

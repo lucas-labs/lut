@@ -45,7 +45,7 @@ Construir una aplicación **desktop multiplataforma y terminal-first** comparabl
 El producto debe permitir:
 
 1. Ejecutar shells y herramientas habituales: PowerShell 7, Windows PowerShell, CMD, WSL, Bash, Zsh y otros compatibles con PTY.
-2. Administrar **pestañas horizontales o verticales**, según preferencia del usuario, y paneles divididos (_splits_) dentro de cada pestaña.
+2. Administrar **pestañas horizontales o verticales**, según preferencia del usuario, y mostrar varias pestañas lado a lado (_splits_) como un **grupo** de pestañas de cualquier tipo (decisión 32 de `.docs/plan/analysis/decisions.md`).
 3. Definir **perfiles de terminal**, al estilo Windows Terminal: shell, argumentos, directorio inicial, entorno, apariencia y comportamiento.
 4. Definir **spaces/workspaces persistentes**, capaces de restaurar disposición de ventanas, pestañas y splits, así como iniciar herramientas y comandos habituales. Al abrir lut se restaura la última sesión de spaces, y en cualquier momento se pueden abrir otros spaces guardados.
 5. Ofrecer una **UI/UX radicalmente propia**, con temas, fuentes, colores, disposición, densidad, atajos y personalización.
