@@ -157,23 +157,18 @@ describe('settledLayout', () => {
   });
 });
 
-describe('restoreWidth (E27-01)', () => {
-  const open = { open: true, sidebarWidth: 260, railWidth: 32 };
-  const hidden = { ...open, open: false };
-
-  it('brings the rail back at its fixed width or closed, as the shared state says, whatever was cached', () => {
-    expect(restoreWidth('rail', 0, open)).toBe(32);
-    expect(restoreWidth('rail', 32, hidden)).toBe(0);
-  });
+describe('restoreWidth (E27-04)', () => {
+  const open = { viewsOpen: true, sidebarWidth: 260 };
+  const closed = { ...open, viewsOpen: false };
 
   it('brings the sidebar back at its cached width, its stored one when the cache is closed, or closed', () => {
     expect(restoreWidth('sidebar', 300, open)).toBe(300);
     expect(restoreWidth('sidebar', 0, open)).toBe(260);
-    expect(restoreWidth('sidebar', 300, hidden)).toBe(0);
+    expect(restoreWidth('sidebar', 300, closed)).toBe(0);
   });
 
   it('keeps any other panel at its cached width', () => {
-    expect(restoreWidth('tabs-column', 180, hidden)).toBe(180);
+    expect(restoreWidth('tabs-column', 180, closed)).toBe(180);
     expect(restoreWidth('tabs-column', undefined, open)).toBe(0);
   });
 });

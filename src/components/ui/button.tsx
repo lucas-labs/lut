@@ -13,7 +13,8 @@ import { cn } from "@/lib/utils"
  * The design's bordered "ghost" button is `outline` here (forms, Settings) and its toolbar button `outline-subtle`,
  * with the faint border; its borderless icon button is `ghost`. `outline-hover` shows its border only on hover, and the
  * accent border while pressed: the shortcut buttons of Settings, at size `keys` (28 px, tight around their keys).
- * `rail` is `ghost` that stays filled while it is the current item (`aria-current`): the compact sidebar's rail.
+ * `rail` is `ghost` that stays filled while it is the current item (`aria-current`) or its view is open
+ * (`aria-pressed`): the compact sidebar's rail.
  */
 const buttonVariants = cva(
   "group/button inline-flex shrink-0 items-center justify-center rounded-md border border-transparent bg-clip-padding text-xs whitespace-nowrap transition-colors outline-none select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-40 aria-disabled:cursor-default aria-disabled:opacity-40 aria-invalid:border-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
@@ -30,7 +31,7 @@ const buttonVariants = cva(
         ghost:
           "text-muted-foreground hover:bg-accent hover:text-foreground aria-expanded:bg-accent aria-expanded:text-foreground",
         rail:
-          "text-muted-foreground hover:bg-accent hover:text-foreground aria-[current]:bg-accent aria-[current]:text-foreground",
+          "text-muted-foreground hover:bg-accent hover:text-foreground aria-[current]:bg-accent aria-[current]:text-foreground aria-pressed:bg-accent aria-pressed:text-foreground",
         destructive: "bg-destructive font-medium text-white hover:brightness-108",
         "outline-hover":
           "text-muted-foreground hover:border-muted-foreground/75 aria-pressed:border-primary aria-pressed:text-foreground",

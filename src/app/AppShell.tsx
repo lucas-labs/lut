@@ -29,7 +29,7 @@ function SidePanel({ defaultSize, ...props }: ComponentProps<typeof ResizablePan
   return <ResizablePanel groupResizeBehavior="preserve-pixel-size" defaultSize={mountedSize} {...props} />;
 }
 
-const SIDE_PANELS = ['sidebar', 'rail', 'tabs-column'] as const;
+const SIDE_PANELS = ['sidebar', 'tabs-column'] as const;
 
 /**
  * Sets a layout the app makes itself, flagged so the group's report of it is not taken for one to correct. Outside the
@@ -44,6 +44,20 @@ function applyOwnLayout(group: GroupImperativeHandle | null, layout: Layout, res
   }
 }
 
+/**
+ * Closes the compact views once the drag that collapsed them ends, if they are still collapsed then: taking a panel
+ * out of its group in the middle of a drag would leave the drag on a layout that no longer exists, and the drag may
+ * still open them again.
+ */
+function closeAfterDrag(panel: RefObject<PanelImperativeHandle | null>, close: () => void) {
+  const closeIfCollapsed = () => {
+    if ((panel.current?.getSize().inPixels ?? 0) <= 0) close();
+  };
+  if (document.querySelector('[data-separator="active"]')) {
+    window.addEventListener('pointerup', closeIfCollapsed, { once: true });
+  } else closeIfCollapsed();
+}
+
 type Props = {
   /**
    * Focus mode (E12-10): only the workspace shows, and the title bar as an overlay; the side panels keep their own
@@ -51,11 +65,15 @@ type Props = {
    */
   focusMode: boolean;
   /**
-   * Compact sidebar (E27-01): the sidebar's slot holds `rail`, a panel fixed at 32 px that hides and shows like the
-   * sidebar; the tab column is out. The full sidebar keeps its width for when it comes back.
+   * Compact sidebar (E27-01): `rail`, fixed at 32 px, leads the window and hides and shows like the sidebar; the tab
+   * column is out. The sidebar's panel exists only while its views are open beside the rail (E27-04).
    */
   compact: boolean;
   rail: ReactNode;
+  /** In compact mode, whether the sidebar's views are open beside the rail. */
+  compactPanelOpen: boolean;
+  /** In compact mode, the views closing from their edge; in full mode that is `onSidebarHiddenChange`. */
+  onCompactPanelChange: (open: boolean) => void;
   titleBar: ReactNode;
   /**
    * `inline`: above the workspace, beside the sidebar (horizontal tabs). `overlay`: over the whole window, laid
@@ -68,17 +86,20 @@ type Props = {
   /** The tab column's width in px as the app keeps it; 0 is collapsed. */
   tabsColumnInitialWidth: number;
   onTabsColumnLayout: (width: number, isUserInteraction: boolean) => void;
-  /** Whether the sidebar is open (its handle then draws the line beside it). */
+  /** Whether the sidebar, or in compact mode the rail, is open (its handle then draws the line beside it). */
   sidebarOpen: boolean;
   /** Whether the vertical tab column is open. */
   tabsColumnOpen: boolean;
   /** Explorer / Source Control panel content. */
   sidebar: ReactNode;
   sidebarRef: RefObject<PanelImperativeHandle | null>;
-  /** The sidebar's width in px as the app keeps it; 0 is collapsed. */
+  /** The sidebar's width in px as the app keeps it; 0 is hidden. */
   sidebarInitialWidth: number;
+  /** The sidebar's stored width in px, hidden or not: the views open at it beside the rail. */
+  sidebarWidth: number;
   onSidebarLayout: (width: number, isUserInteraction: boolean) => void;
-  onSidebarCollapsedChange: (collapsed: boolean) => void;
+  /** The sidebar, or in compact mode the rail, hiding or showing. */
+  onSidebarHiddenChange: (hidden: boolean) => void;
   /** The tab surfaces, with the single TerminalStack. */
   workspace: ReactNode;
   /** Bridges, dialogs and other overlays. */
@@ -94,6 +115,8 @@ export function AppShell({
   focusMode,
   compact,
   rail,
+  compactPanelOpen,
+  onCompactPanelChange,
   titleBar,
   titleBarPlacement,
   tabsColumn: tabsColumnProp,
@@ -105,8 +128,9 @@ export function AppShell({
   tabsColumnOpen,
   sidebarRef,
   sidebarInitialWidth,
+  sidebarWidth,
   onSidebarLayout,
-  onSidebarCollapsedChange,
+  onSidebarHiddenChange,
   workspace,
   children,
 }: Props) {
@@ -116,9 +140,13 @@ export function AppShell({
   // The side panels' own widths as of the last layout the app accepted, and the group's last layout: when the group
   // lays itself out (a panel set change, a panel opening or closing), the side panels that should not have moved go
   // back to their width.
+  const showRail = compact && !focusMode;
+  // In compact mode the sidebar's panel is there only while its views are open, and it opens at the stored width.
+  const showSidebar = !focusMode && (!compact || compactPanelOpen);
+  const sidebarMountWidth = compact ? sidebarWidth : sidebarInitialWidth;
+  const viewsOpen = compact ? compactPanelOpen : sidebarOpen;
   const sizes = useRef<Record<string, number>>({
-    sidebar: sidebarInitialWidth,
-    rail: sidebarInitialWidth > 0 ? COMPACT_RAIL_WIDTH : 0,
+    sidebar: sidebarMountWidth,
     'tabs-column': tabsColumnInitialWidth,
   });
   const lastLayout = useRef<Layout | null>(null);
@@ -137,7 +165,6 @@ export function AppShell({
     if (focusMode) return;
     const width = widthIn(layout);
     for (const id of SIDE_PANELS) if (id in layout) sizes.current[id] = width(id);
-    // The rail's fixed width is not the sidebar's: the full sidebar keeps its own.
     if ('sidebar' in layout) onSidebarLayout(width('sidebar'), isUserInteraction);
     if (tabsColumn) onTabsColumnLayout(width('tabs-column'), isUserInteraction);
   };
@@ -155,7 +182,18 @@ export function AppShell({
   };
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-frame text-foreground">
-      <main className="zoom-content flex min-h-0 flex-1 flex-col">
+      <main className="zoom-content relative flex min-h-0 flex-1">
+        {/* The rail is no resizable panel: its width never changes, it only hides and shows. It keeps its slot when
+            absent, so the panel group never moves in the tree. */}
+        {showRail ? (
+          <div
+            data-chrome-rail
+            className={cn('h-full min-h-0 shrink-0', !sidebarOpen && 'hidden')}
+            style={{ width: COMPACT_RAIL_WIDTH }}
+          >
+            {rail}
+          </div>
+        ) : null}
         <ResizablePanelGroup
           orientation="horizontal"
           className="min-h-0 flex-1"
@@ -170,11 +208,7 @@ export function AppShell({
               if (pending.current || change.restore.length > 0) {
                 const first = pending.current === null;
                 pending.current = foldSideLayoutChange(pending.current ?? {}, change, widthIn(layout), (id) =>
-                  restoreWidth(id, sizes.current[id], {
-                    open: sidebarOpen,
-                    sidebarWidth: sidebarInitialWidth,
-                    railWidth: COMPACT_RAIL_WIDTH,
-                  }),
+                  restoreWidth(id, sizes.current[id], { viewsOpen, sidebarWidth }),
                 );
                 if (first) queueMicrotask(settle);
                 // This layout is about to be corrected: the app records the settled one, not this.
@@ -184,42 +218,32 @@ export function AppShell({
             accept(layout, isUserInteraction);
           }}
         >
-          {/* In focus mode the sidebar leaves its slot empty, as the tab column does; it comes back at its width. In
-              compact mode the slot holds the rail, a panel of its own (its key) whose width never changes. */}
-          {focusMode ? null : compact ? (
+          {/* In focus mode the side panels leave their slots empty; they come back at their widths. In compact mode the
+              sidebar's panel is there only while its views are open beside the rail, and its edge only resizes or
+              closes them: closed, they open again from the rail's buttons. */}
+          {showSidebar ? (
             <SidePanel
-              key="rail"
-              id="rail"
-              panelRef={sidebarRef}
-              defaultSize={`${sidebarInitialWidth > 0 ? COMPACT_RAIL_WIDTH : 0}px`}
-              minSize={`${COMPACT_RAIL_WIDTH}px`}
-              maxSize={`${COMPACT_RAIL_WIDTH}px`}
-              collapsible
-              collapsedSize={0}
-              onResize={(size) => onSidebarCollapsedChange(size.inPixels <= 0)}
-            >
-              {rail}
-            </SidePanel>
-          ) : (
-            <SidePanel
-              key="sidebar"
               id="sidebar"
               panelRef={sidebarRef}
-              defaultSize={`${sidebarInitialWidth}px`}
+              defaultSize={`${sidebarMountWidth}px`}
               minSize={`${SIDEBAR_MIN_WIDTH}px`}
               maxSize={`${SIDEBAR_MAX_WIDTH}px`}
               collapsible
               collapsedSize={0}
-              onResize={(size) => onSidebarCollapsedChange(size.inPixels <= 0)}
+              onResize={(size) => {
+                if (!compact) onSidebarHiddenChange(size.inPixels <= 0);
+                else if (size.inPixels <= 0) closeAfterDrag(sidebarRef, () => onCompactPanelChange(false));
+              }}
             >
               <div className="flex h-full min-h-0 flex-col">
-                {/* macOS draws its traffic lights over the window's top-left corner, which is the sidebar's. */}
-                {IS_MAC ? <div data-tauri-drag-region className="h-7 shrink-0" /> : null}
+                {/* macOS draws its traffic lights over the window's top-left corner: the sidebar's, unless the rail
+                    leads. */}
+                {IS_MAC && !compact ? <div data-tauri-drag-region className="h-7 shrink-0" /> : null}
                 <div className="min-h-0 flex-1">{sidebar}</div>
               </div>
             </SidePanel>
-          )}
-          {focusMode ? null : <ResizableHandle className={handleClass(sidebarOpen)} />}
+          ) : null}
+          {showSidebar ? <ResizableHandle className={handleClass(viewsOpen)} /> : null}
           {/* The column and its handle keep their slots when absent, so the workspace never moves in the tree. */}
           {tabsColumn ? (
             <SidePanel

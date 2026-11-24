@@ -12,7 +12,8 @@ import { useFocusMode } from './useFocusMode';
  */
 export function useSidePanels() {
   const explorerRef = useRef<FileExplorerHandle>(null);
-  const sidebar = useSidebarPanel(explorerRef);
+  const sidebarMode = usePreferencesStore((s) => s.sidebarMode);
+  const sidebar = useSidebarPanel(explorerRef, sidebarMode === 'compact');
   const { isSidebarOpen, setSidebarOpen, openSidebarView } = sidebar;
   const { focusMode, toggleFocusMode, toggleFullScreen } = useFocusMode();
   const tabOrientation = usePreferencesStore((s) => s.tabOrientation);
@@ -20,7 +21,6 @@ export function useSidePanels() {
   const tabsColumn = useTabsColumn();
   const { isTabsColumnOpen, setTabsColumnOpen } = tabsColumn;
 
-  const sidebarMode = usePreferencesStore((s) => s.sidebarMode);
   // The compact rail stands in for the sidebar and the tab column; the sidebar's commands drive it.
   const withTabsColumn = verticalTabs && sidebarMode !== 'compact';
 
@@ -62,9 +62,8 @@ export function useSidePanels() {
     toggleFocusMode,
     toggleFullScreen,
     verticalTabs,
-    /** Whether the sidebar, or the vertical tab column, is open. */
-    sidePanelsOpen:
-      !sidebar.sidebarCollapsed || (withTabsColumn && !tabsColumn.tabsColumnCollapsed),
+    /** Whether the sidebar (or the compact rail), or the vertical tab column, is open. */
+    sidePanelsOpen: !sidebar.sidebarHidden || (withTabsColumn && !tabsColumn.tabsColumnCollapsed),
     toggleSidePanels,
     toggleTabOrientation,
     /** The sidebar and the vertical tab column are one rail (E27-01). */

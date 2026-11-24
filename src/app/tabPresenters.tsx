@@ -17,6 +17,7 @@ import {
   useNavigationStore,
 } from '@/modules/navigation';
 import { ProfileIcon, useProfiles } from '@/modules/profiles';
+import { RailDot } from '@/modules/sidebar';
 import type { SpaceStatusLook } from '@/modules/spaces';
 import { selectSpaceAgentState, selectTabAgentStatus } from '@/modules/tabs';
 import { findLeaf, leafIds, ptyIdForLeaf, useAgentActivityStore } from '@/modules/terminal';
@@ -70,21 +71,11 @@ const DOT_COLOR: Record<ShownState, string> = {
 };
 
 /**
- * An agent state on a compact sidebar button (E27-03): a 7 px dot at its top right corner, ringed in the rail's colour
- * to stand apart from a tinted button. A working agent's dot blinks, and holds still under reduced motion.
+ * An agent state on a compact sidebar button (E27-03), as its dot. A working agent's dot blinks, and holds still under
+ * reduced motion.
  */
 function StateDot({ state }: { state: ShownState }) {
-  return (
-    <span
-      aria-hidden
-      data-agent-state={state}
-      className={cn(
-        'pointer-events-none absolute top-0.5 right-0.5 size-[7px] rounded-full ring-2 ring-frame',
-        DOT_COLOR[state],
-        state === 'working' && 'lut-blink',
-      )}
-    />
-  );
+  return <RailDot data-agent-state={state} className={cn(DOT_COLOR[state], state === 'working' && 'lut-blink')} />;
 }
 
 /** An agent state in a compact sidebar button's tooltip, after the name: "Reforge · Needs attention". */

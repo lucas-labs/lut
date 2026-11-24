@@ -8,7 +8,7 @@ import { getLaunchDir } from '@/modules/platform';
 import { useProfilesLoadNotice, useShellTitlePolicy } from '@/modules/profiles';
 import { openSettingsWindow } from '@/modules/settings/openSettingsWindow';
 import { usePreferencesStore } from '@/modules/settings/preferences';
-import { CompactRail } from '@/modules/sidebar';
+import { CompactRail, CompactViewButtons } from '@/modules/sidebar';
 import { SpacesView, useSpaces } from '@/modules/spaces';
 import { type NewTabMenuActions, TabNavigator, useTabs, useWindowTitle, useWorkspaceCwd } from '@/modules/tabs';
 import { canAddPane, findLeafCwd } from '@/modules/terminal';
@@ -150,7 +150,7 @@ export default function App() {
     onNewGitGraph: git.openGitGraphFromContext,
     onLaunchAgents: commands.launchAgentGroup,
   };
-  const { verticalTabs, sidebarCollapsed, tabsColumnCollapsed, focusMode, compactSidebar } = panels;
+  const { verticalTabs, sidebarHidden, sidebarCollapsed, tabsColumnCollapsed, focusMode, compactSidebar } = panels;
   const spaces = useSpaces((s) => s.spaces);
   // Vertical tabs and focus mode float the bar over the window, shown from the top edge (E11-02, E12-10).
   const titleBarPlacement = verticalTabs || focusMode ? 'overlay' : 'inline';
@@ -162,6 +162,8 @@ export default function App() {
           titleBarPlacement={titleBarPlacement}
           focusMode={focusMode}
           compact={compactSidebar}
+          compactPanelOpen={panels.compactPanelOpen}
+          onCompactPanelChange={panels.setCompactPanelOpen}
           rail={
             // The rail draws the full sidebar's Spaces view and the tab column in their compact form.
             <CompactRail
@@ -189,6 +191,14 @@ export default function App() {
                     newTabMenu={newTabMenu}
                   />
                 ) : null
+              }
+              views={
+                // Files and Git open the sidebar's own views, beside the rail (E27-04).
+                <CompactViewButtons
+                  activeView={sidebarCollapsed ? null : panels.sidebarView}
+                  onSelectView={panels.cycleSidebarView}
+                  changedCount={git.sourceControl.changedCount}
+                />
               }
             />
           }
@@ -231,14 +241,16 @@ export default function App() {
           tabsColumnRef={panels.tabsColumnRef}
           tabsColumnInitialWidth={panels.tabsColumnInitialWidth}
           onTabsColumnLayout={panels.persistTabsColumnLayout}
-          sidebarOpen={!sidebarCollapsed}
+          sidebarOpen={!sidebarHidden}
           tabsColumnOpen={!tabsColumnCollapsed}
           sidebarRef={panels.sidebarRef}
-          sidebarInitialWidth={sidebarCollapsed ? 0 : panels.sidebarWidthRef.current}
+          sidebarInitialWidth={sidebarHidden ? 0 : panels.sidebarWidthRef.current}
+          sidebarWidth={panels.sidebarWidthRef.current}
           onSidebarLayout={panels.persistSidebarWidth}
-          onSidebarCollapsedChange={panels.persistSidebarCollapsed}
+          onSidebarHiddenChange={panels.persistSidebarHidden}
           sidebar={
             <AppSidebar
+              compact={compactSidebar}
               tabs={tabs}
               activeTab={activeTab}
               explorerRoot={explorerRoot}

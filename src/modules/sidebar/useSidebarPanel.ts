@@ -51,7 +51,7 @@ function storeSidebarItem(key: string, value: string): void {
   }
 }
 
-function readSidebarCollapsed(): boolean {
+function readSidebarHidden(): boolean {
   try {
     return sidebarStartsCollapsed(window.localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY));
   } catch {
@@ -64,75 +64,138 @@ type FocusableExplorer = {
   isFocused: () => boolean;
 };
 
-export function useSidebarPanel(explorerRef: RefObject<FocusableExplorer | null>) {
+const isOpen = (panel: PanelImperativeHandle | null) =>
+  panel ? panel.getSize().asPercentage > 0 : false;
+
+/**
+ * The sidebar's panel and its views, and in compact mode (E27-01) the rail that stands in for it.
+ *
+ * Two states: whether the sidebar is hidden, or in compact mode the rail (stored, shared by both modes), and whether
+ * the views are closed. They are one in full mode. In compact mode the rail comes first and the views open on demand
+ * beside it (E27-04), from its buttons or the sidebar's commands: their panel exists only while they are open, it
+ * starts closed, and it never stays open without the rail.
+ */
+export function useSidebarPanel(explorerRef: RefObject<FocusableExplorer | null>, compact = false) {
   const sidebarRef = useRef<PanelImperativeHandle | null>(null);
   const sidebarWidthRef = useRef(readSidebarWidth());
   const sidebarWidthWriteTimerRef = useRef(0);
   const explorerReturnFocusRef = useRef<HTMLElement | null>(null);
   const [sidebarView, setSidebarViewState] = useState<SidebarViewId>(readSidebarView);
-  const [initialSidebarCollapsed] = useState(readSidebarCollapsed);
-  const collapsedRef = useRef(initialSidebarCollapsed);
-  // Mirrors the panel's collapsed state for rendering: what is hidden at 0 px
-  // can stop doing background work (fs watchers, git status refreshes).
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(initialSidebarCollapsed);
+  const [initialSidebarHidden] = useState(readSidebarHidden);
+  const hiddenRef = useRef(initialSidebarHidden);
+  const [sidebarHidden, setSidebarHidden] = useState(initialSidebarHidden);
+  // The views beside the rail in compact mode; each time compact mode starts, they start closed.
+  const [compactPanelOpen, setCompactPanelOpen] = useState(false);
+  const [panelMode, setPanelMode] = useState(compact);
+  if (panelMode !== compact) {
+    setPanelMode(compact);
+    setCompactPanelOpen(false);
+  }
+  // The views beside the rail show only with it: a drag on the rail's edge can hide it and bring it back before its
+  // release, and only a rail that stays hidden closes them.
+  const compactViewsShown = compactPanelOpen && !sidebarHidden;
+  // Whether the views are off screen: what is hidden can stop doing background work (fs watchers, git status
+  // refreshes).
+  const sidebarCollapsed = compact ? !compactViewsShown : sidebarHidden;
 
   const persistSidebarView = useCallback((view: SidebarViewId) => {
     setSidebarViewState(view);
     storeSidebarItem(SIDEBAR_VIEW_STORAGE_KEY, view);
   }, []);
 
-  const persistSidebarCollapsed = useCallback((collapsed: boolean) => {
-    if (collapsedRef.current === collapsed) return;
-    collapsedRef.current = collapsed;
-    setSidebarCollapsed(collapsed);
-    storeSidebarItem(SIDEBAR_COLLAPSED_STORAGE_KEY, collapsed ? '1' : '0');
+  /** The sidebar, or the rail, hiding or showing; the views beside the rail hide with it. */
+  const persistSidebarHidden = useCallback((hidden: boolean) => {
+    if (hiddenRef.current === hidden) return;
+    hiddenRef.current = hidden;
+    setSidebarHidden(hidden);
+    storeSidebarItem(SIDEBAR_COLLAPSED_STORAGE_KEY, hidden ? '1' : '0');
   }, []);
 
-  const isSidebarOpen = useCallback(() => {
-    const p = sidebarRef.current;
-    return p ? p.getSize().asPercentage > 0 : false;
-  }, []);
+  /** Whether the sidebar, or in compact mode the rail, is shown. */
+  const isSidebarOpen = useCallback(
+    () => (compact ? !hiddenRef.current : isOpen(sidebarRef.current)),
+    [compact],
+  );
 
-  /** Opens the sidebar at its last width, or collapses it. */
-  const setSidebarOpen = useCallback((open: boolean) => {
-    const p = sidebarRef.current;
-    if (!p || open === p.getSize().asPercentage > 0) return;
-    if (open) p.resize(`${sidebarWidthRef.current}px`);
-    else p.collapse();
-  }, []);
+  /** Shows the sidebar at its last width, or the rail; or hides it. */
+  const setSidebarOpen = useCallback(
+    (open: boolean) => {
+      if (compact) {
+        persistSidebarHidden(!open);
+        // Hiding the rail closes the views beside it.
+        if (!open) setCompactPanelOpen(false);
+        return;
+      }
+      const p = sidebarRef.current;
+      if (!p || open === isOpen(p)) return;
+      if (open) p.resize(`${sidebarWidthRef.current}px`);
+      else p.collapse();
+    },
+    [compact, persistSidebarHidden],
+  );
 
   const toggleSidebar = useCallback(
     () => setSidebarOpen(!isSidebarOpen()),
     [isSidebarOpen, setSidebarOpen],
   );
 
+  const viewsOpen = useCallback(
+    () => (compact ? compactViewsShown : isOpen(sidebarRef.current)),
+    [compact, compactViewsShown],
+  );
+
+  /** Opens the views at their last width; in compact mode beside the rail, which shows with them. */
+  const openViews = useCallback(() => {
+    if (compact) {
+      persistSidebarHidden(false);
+      setCompactPanelOpen(true);
+      return;
+    }
+    const panel = sidebarRef.current;
+    if (panel && !isOpen(panel)) panel.resize(`${sidebarWidthRef.current}px`);
+  }, [compact, persistSidebarHidden]);
+
+  const closeViews = useCallback(() => {
+    if (compact) setCompactPanelOpen(false);
+    else sidebarRef.current?.collapse();
+  }, [compact]);
+
+  /** In compact mode the spaces live on the rail: asking for them shows the rail, and the views close. */
+  const showSpacesOnRail = useCallback(() => {
+    persistSidebarHidden(false);
+    setCompactPanelOpen(false);
+  }, [persistSidebarHidden]);
+
   const cycleSidebarView = useCallback(
     (view: SidebarViewId) => {
-      const panel = sidebarRef.current;
-      const collapsed = panel ? panel.getSize().asPercentage <= 0 : false;
-      if (collapsed) {
-        if (panel) panel.resize(`${sidebarWidthRef.current}px`);
+      if (compact && view === 'spaces') {
+        showSpacesOnRail();
+        return;
+      }
+      if (!viewsOpen()) {
+        openViews();
         if (view !== sidebarView) persistSidebarView(view);
         return;
       }
       if (view === sidebarView) {
-        panel?.collapse();
+        closeViews();
         return;
       }
       persistSidebarView(view);
     },
-    [persistSidebarView, sidebarView],
+    [compact, closeViews, openViews, persistSidebarView, showSpacesOnRail, sidebarView, viewsOpen],
   );
 
   const openSidebarView = useCallback(
     (view: SidebarViewId) => {
-      const panel = sidebarRef.current;
-      if (panel && panel.getSize().asPercentage <= 0) {
-        panel.resize(`${sidebarWidthRef.current}px`);
+      if (compact && view === 'spaces') {
+        showSpacesOnRail();
+        return;
       }
+      openViews();
       if (view !== sidebarView) persistSidebarView(view);
     },
-    [persistSidebarView, sidebarView],
+    [compact, openViews, persistSidebarView, showSpacesOnRail, sidebarView],
   );
 
   const persistSidebarWidth = useCallback((next: number, isUserInteraction: boolean) => {
@@ -157,10 +220,9 @@ export function useSidebarPanel(explorerRef: RefObject<FocusableExplorer | null>
 
   const toggleExplorerFocus = useCallback(() => {
     const explorer = explorerRef.current;
-    const panel = sidebarRef.current;
-    const collapsed = panel ? panel.getSize().asPercentage <= 0 : false;
+    const collapsed = !viewsOpen();
     if (sidebarView !== 'explorer' || collapsed) {
-      if (panel && collapsed) panel.resize(`${sidebarWidthRef.current}px`);
+      if (collapsed) openViews();
       if (sidebarView !== 'explorer') persistSidebarView('explorer');
       const active = document.activeElement;
       explorerReturnFocusRef.current =
@@ -183,16 +245,20 @@ export function useSidebarPanel(explorerRef: RefObject<FocusableExplorer | null>
     explorerReturnFocusRef.current =
       active instanceof HTMLElement && active !== document.body ? active : null;
     explorer.focus();
-  }, [explorerRef, persistSidebarView, sidebarView]);
+  }, [explorerRef, openViews, persistSidebarView, sidebarView, viewsOpen]);
 
   return {
     sidebarRef,
     sidebarWidthRef,
     sidebarView,
+    sidebarHidden,
     sidebarCollapsed,
-    initialSidebarCollapsed,
+    /** In compact mode, whether the views are open beside the rail (and the rail shown). */
+    compactPanelOpen: compactViewsShown,
+    initialSidebarHidden,
     persistSidebarView,
-    persistSidebarCollapsed,
+    persistSidebarHidden,
+    setCompactPanelOpen,
     toggleSidebar,
     isSidebarOpen,
     setSidebarOpen,
