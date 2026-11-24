@@ -24,7 +24,7 @@ export type PaneAppearance = {
   readonly cursorBlink: boolean;
   /** Lines of history; it applies when the terminal starts. */
   readonly scrollback: number;
-  /** Space around the text; full-screen programs (the alternate screen) fill the pane anyway. */
+  /** Space around the text; full-screen programs (the alternate screen) may fill the pane instead. */
   readonly padding: Padding;
 };
 
