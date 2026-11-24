@@ -11,6 +11,11 @@ import type { TerminalBackendKind } from '@/modules/terminal/backend/contracts';
 import { loadSessionRenderer } from '@/modules/terminal/ghostty/loadSessionRenderer';
 import { replaceSessionSurface } from '@/modules/terminal/ghostty/replaceSessionSurface';
 import { initializeSessionGeneration as startSessionInitialization } from '@/modules/terminal/ghostty/sessionInitialization';
+import {
+  fillsFullScreen,
+  type FullScreenPadding,
+  needsRunningPrograms,
+} from '@/modules/terminal/lib/fullScreenPadding';
 import { LatestClipboardWrite } from '@/modules/terminal/lib/LatestClipboardWrite';
 import { setLeafPresentation } from '@/modules/terminal/lib/ptyPresentation';
 import { PtyResizeDelivery } from '@/modules/terminal/lib/ptyResizeDelivery';
@@ -88,6 +93,7 @@ type SessionLook = {
   /** Drawn instead of the pane's font when the renderer has no room for that one. */
   readonly globalFont: TerminalFontSpec;
   readonly padding: Padding;
+  readonly fullScreen: FullScreenPadding;
 };
 
 type GhosttySession = {
@@ -131,8 +137,12 @@ type GhosttySession = {
   fontRevision: number;
   /** `null` until the pane resolves it; the terminal starts after that. */
   look: SessionLook | null;
-  /** A full-screen program is running: the pane has no padding meanwhile. */
+  /** A full-screen program is running: the pane may drop its padding meanwhile (`fullScreen`). */
   alternateScreen: boolean;
+  /** What runs in the pane since it went full screen, by `programName`; null until it is known. */
+  fullScreenPrograms: readonly string[] | null;
+  /** Counts the lookups of `fullScreenPrograms`: an answer to an earlier one is dropped. */
+  fullScreenLookup: number;
   /** Room kept under the text for a bar the pane shows over its bottom edge, in CSS pixels. */
   barInset: number;
 };
@@ -195,6 +205,12 @@ export function useGhosttyTerminalSession({
   const [exitCode, setExitCode] = useState<number | null>(null);
   const letterSpacing = usePreferencesStore((state) => state.terminalLetterSpacing);
   const zoomLevel = usePreferencesStore((state) => state.zoomLevel);
+  const fullScreenFill = usePreferencesStore((state) => state.terminalFullScreenFill);
+  const keepPadding = usePreferencesStore((state) => state.terminalFullScreenKeepPadding);
+  const fullScreen = useMemo<FullScreenPadding>(
+    () => ({ fill: fullScreenFill, keepPadding }),
+    [fullScreenFill, keepPadding],
+  );
   const symbols = useSyncExternalStore(subscribeSymbolFonts, symbolFontEpoch);
   const look = useMemo(() => {
     if (!appearance) return null;
@@ -215,9 +231,10 @@ export function useGhosttyTerminalSession({
         scrollback: appearance.scrollback,
         globalFont: spec(appearance.globalFont),
         padding: appearance.padding,
+        fullScreen,
       } satisfies SessionLook,
     };
-  }, [appearance, letterSpacing, zoomLevel, symbols]);
+  }, [appearance, letterSpacing, zoomLevel, symbols, fullScreen]);
   // The session outlives renders: it reports to the pane's latest callbacks.
   const reportSearchReady = useEffectEvent((search: TerminalSearchController) =>
     onSearchReady?.(search),
@@ -431,7 +448,9 @@ function applySessionLook(
       };
     }
   }
-  if (previous.padding !== look.padding) applyPadding(session);
+  if (previous.padding !== look.padding || previous.fullScreen !== look.fullScreen) {
+    updateFullScreenPadding(session);
+  }
   // A pane drawn with the global font because its own did not fit is measured again.
   const globalChanged = fontSpecKey(previous.globalFont) !== fontSpecKey(look.globalFont);
   void updateSessionFont(session, font, globalChanged);
@@ -573,6 +592,8 @@ async function respawnGhosttySession(
     session.callbacks.onTitle?.(null);
   }
   session.alternateScreen = false;
+  session.fullScreenPrograms = null;
+  session.fullScreenLookup += 1;
   session.barInset = 0;
   session.initialCwd = launch.cwd ?? session.initialCwd;
   if ('profileId' in launch) session.profileId = launch.profileId;
@@ -651,6 +672,8 @@ function ensureSession(
     fontRevision: 0,
     look: null,
     alternateScreen: false,
+    fullScreenPrograms: null,
+    fullScreenLookup: 0,
   };
   sessions.set(leafId, session);
   return session;
@@ -786,11 +809,13 @@ async function initializeSessionGeneration(
   }
   mark('modelReadyMs');
   session.model = model;
-  // Full-screen programs fill the pane: its padding goes while they run, with one refit each way.
+  // Full-screen programs may fill the pane: its padding goes while they run, with one refit each way.
   model.subscribeAlternateScreen((active) => {
     if (session.model !== model) return;
     session.alternateScreen = active;
-    applyPadding(session);
+    session.fullScreenPrograms = null;
+    session.fullScreenLookup += 1;
+    updateFullScreenPadding(session);
   });
   session.callbacks.onModel?.(model);
   const surfaceBaseOptions: GhosttySurfaceBaseOptions = {
@@ -1039,9 +1064,57 @@ function focusSessionSurface(session: GhosttySession, surface: GhosttySurface | 
   });
 }
 
-/** The pane's padding, or none while a full-screen program runs, plus the room a bar keeps. */
+/**
+ * Applies the padding for the pane's state. In full screen, when which program runs decides it,
+ * the programs are looked up first and the padding stays until they are known.
+ */
+function updateFullScreenPadding(session: GhosttySession): void {
+  const rule = session.look?.fullScreen;
+  if (
+    session.alternateScreen &&
+    session.fullScreenPrograms === null &&
+    rule &&
+    needsRunningPrograms(rule)
+  ) {
+    void lookUpFullScreenPrograms(session);
+  }
+  applyPadding(session);
+}
+
+/** Asks the backend what runs in the pane; a failed lookup knows of no program. */
+async function lookUpFullScreenPrograms(session: GhosttySession): Promise<void> {
+  const lookup = ++session.fullScreenLookup;
+  let programs: readonly string[] = [];
+  if (session.pty) {
+    try {
+      programs = await invoke<string[]>('pty_running_programs', { id: session.pty.id });
+    } catch (error) {
+      console.error('[lut] Ghostty pty_running_programs failed for leaf', session.leafId, error);
+    }
+  }
+  if (session.fullScreenLookup !== lookup || session.disposed) return;
+  session.fullScreenPrograms = programs;
+  applyPadding(session);
+}
+
+/**
+ * The pane's padding, or none while a full-screen program fills it, plus the room a bar keeps. A
+ * full-screen program has no scrollback, so no scrollbar either: the grid takes its room too. While
+ * the programs that decide the padding are looked up, both stay as they were, so the pane refits once.
+ */
 function applyPadding(session: GhosttySession, surface = session.surface): void {
-  const padding = session.alternateScreen ? NO_PADDING : (session.look?.padding ?? NO_PADDING);
+  const look = session.look;
+  const deciding =
+    session.alternateScreen &&
+    !!look &&
+    needsRunningPrograms(look.fullScreen) &&
+    session.fullScreenPrograms === null;
+  surface?.setScrollbarGutter(!session.alternateScreen || deciding);
+  const fills =
+    session.alternateScreen &&
+    !!session.look &&
+    fillsFullScreen(session.look.fullScreen, session.fullScreenPrograms);
+  const padding = fills ? NO_PADDING : (session.look?.padding ?? NO_PADDING);
   surface?.setPadding(
     session.barInset === 0 ? padding : { ...padding, bottom: padding.bottom + session.barInset },
   );

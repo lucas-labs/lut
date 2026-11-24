@@ -214,6 +214,7 @@ vi.mock('@/modules/terminal/ghostty/loadSessionRenderer', () => {
         setPadding: (padding: { top: number; right: number; bottom: number; left: number }) => {
           terminal.paddings.push(padding);
         },
+        setScrollbarGutter: () => {},
         setTheme: () => {
           terminal.themes += 1;
         },

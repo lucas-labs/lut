@@ -99,6 +99,8 @@ export class WebGlTerminalSurface implements TerminalSurface, WebGlRuntimeSurfac
   private scrollbarViewportHeight = 0;
   /** The padding asked for, in CSS pixels; `setPadding`. */
   private padding: Padding = NO_PADDING;
+  /** The scrollbar's room at the right of the grid is kept; `setScrollbarGutter`. */
+  private scrollbarGutter = true;
   private focused = false;
   private documentSuspended = !terminalWindowPresentation().visible;
   private resizeInteractionActive = terminalResizeInteractionActive();
@@ -365,6 +367,16 @@ export class WebGlTerminalSurface implements TerminalSurface, WebGlRuntimeSurfac
       return;
     }
     this.padding = padding;
+    this.queueFit();
+  }
+
+  /**
+   * Whether the grid keeps the scrollbar's room at its right (`TERMINAL_RIGHT_GUTTER_CSS_PX`); a
+   * screen without scrollback (the alternate one) has no scrollbar to keep it for. Refits once.
+   */
+  setScrollbarGutter(reserved: boolean): void {
+    if (this.scrollbarGutter === reserved) return;
+    this.scrollbarGutter = reserved;
     this.queueFit();
   }
 
@@ -675,7 +687,7 @@ export class WebGlTerminalSurface implements TerminalSurface, WebGlRuntimeSurfac
       this.metrics,
       undefined,
       this.padding,
-      TERMINAL_RIGHT_GUTTER_CSS_PX,
+      this.scrollbarGutter ? TERMINAL_RIGHT_GUTTER_CSS_PX : 0,
     );
     // The canvas and everything measured against the root (selection, links, IME, scrollbar)
     // follow the grid; the host paints the padding.

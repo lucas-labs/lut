@@ -1,4 +1,5 @@
 import { type CloseRequestedEvent, getCurrentWindow } from '@tauri-apps/api/window';
+import { IS_WINDOWS } from './os';
 
 /** Stops a window subscription. */
 export type Unsubscribe = () => void;
@@ -58,8 +59,22 @@ export function isWindowFullScreen(): Promise<boolean> {
   return getCurrentWindow().isFullscreen();
 }
 
-export function setWindowFullScreen(on: boolean): Promise<void> {
-  return getCurrentWindow().setFullscreen(on);
+/**
+ * Puts the window in OS full screen or takes it out. On Windows a full-screen window is also not resizable:
+ * Tauri keeps a strip along the top of an undecorated window for resizing it and drops it only while the
+ * window is maximized, so in full screen the strip would take the pointer off the top pixels (where the
+ * hidden title bar shows). A window that cannot be resized has no strip.
+ */
+export async function setWindowFullScreen(on: boolean): Promise<void> {
+  const current = getCurrentWindow();
+  if (!IS_WINDOWS) return current.setFullscreen(on);
+  if (on) {
+    await current.setResizable(false);
+    await current.setFullscreen(true);
+  } else {
+    await current.setFullscreen(false);
+    await current.setResizable(true);
+  }
 }
 
 export function setWindowTitle(title: string): Promise<void> {

@@ -1,4 +1,5 @@
 import type { Padding } from '@/lib/padding';
+import { programNames } from '@/lib/programName';
 import {
   type AgentLaunchCommands,
   DEFAULT_AGENT_LAUNCH_COMMANDS,
@@ -159,6 +160,10 @@ export type Preferences = {
   terminalScrollSpeed: number;
   /** Space around the terminal text in each pane; a profile can set its own. */
   terminalPadding: Padding;
+  /** Full-screen programs (the alternate screen) drop the pane's padding while they run. */
+  terminalFullScreenFill: boolean;
+  /** Programs, by name, that keep the padding in full screen anyway. */
+  terminalFullScreenKeepPadding: string[];
   terminalMacOptionAsAlt: MacOptionAsAlt;
   confirmCloseRunningTerminal: boolean;
   lastWslDistro: string | null;
@@ -249,6 +254,8 @@ const KEY_TERMINAL_FONT_SIZE = 'terminalFontSize';
 const KEY_TERMINAL_SCROLLBACK = 'terminalScrollback';
 const KEY_TERMINAL_SCROLL_SPEED = 'terminalScrollSpeed';
 const KEY_TERMINAL_PADDING = 'terminalPadding';
+const KEY_TERMINAL_FULL_SCREEN_FILL = 'terminalFullScreenFill';
+const KEY_TERMINAL_FULL_SCREEN_KEEP_PADDING = 'terminalFullScreenKeepPadding';
 const KEY_TERMINAL_MAC_OPTION_AS_ALT = 'terminalMacOptionAsAlt';
 const KEY_CONFIRM_CLOSE_RUNNING_TERMINAL = 'confirmCloseRunningTerminal';
 const KEY_LAST_WSL_DISTRO = 'lastWslDistro';
@@ -331,6 +338,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
   terminalScrollback: TERMINAL_SCROLLBACK_DEFAULT,
   terminalScrollSpeed: DEFAULT_SCROLL_SPEED,
   terminalPadding: TERMINAL_PADDING_DEFAULT,
+  terminalFullScreenFill: true,
+  terminalFullScreenKeepPadding: ['claude'],
   terminalMacOptionAsAlt: DEFAULT_MAC_OPTION_AS_ALT,
   confirmCloseRunningTerminal: true,
   lastWslDistro: null,
@@ -423,6 +432,12 @@ export async function loadPreferences(): Promise<Preferences> {
     ),
     terminalScrollSpeed: clampScrollSpeed(get<number>(KEY_TERMINAL_SCROLL_SPEED)),
     terminalPadding: coerceTerminalPadding(get<unknown>(KEY_TERMINAL_PADDING)),
+    terminalFullScreenFill:
+      get<boolean>(KEY_TERMINAL_FULL_SCREEN_FILL) ?? DEFAULT_PREFERENCES.terminalFullScreenFill,
+    terminalFullScreenKeepPadding: coerceProgramNames(
+      get<unknown>(KEY_TERMINAL_FULL_SCREEN_KEEP_PADDING),
+      DEFAULT_PREFERENCES.terminalFullScreenKeepPadding,
+    ),
     terminalMacOptionAsAlt: coerceMacOptionAsAlt(get<unknown>(KEY_TERMINAL_MAC_OPTION_AS_ALT)),
     confirmCloseRunningTerminal:
       get<boolean>(KEY_CONFIRM_CLOSE_RUNNING_TERMINAL) ??
@@ -679,6 +694,20 @@ export async function setTerminalPadding(value: Padding): Promise<void> {
   await writePref(KEY_TERMINAL_PADDING, coerceTerminalPadding(value));
 }
 
+export async function setTerminalFullScreenFill(value: boolean): Promise<void> {
+  await writePref(KEY_TERMINAL_FULL_SCREEN_FILL, value === true);
+}
+
+/** A saved list of program names, each as `programName` gives it and once; not a list, `fallback`. */
+export function coerceProgramNames(value: unknown, fallback: string[]): string[] {
+  if (!Array.isArray(value)) return fallback;
+  return programNames(value.filter((name): name is string => typeof name === 'string'));
+}
+
+export async function setTerminalFullScreenKeepPadding(value: string[]): Promise<void> {
+  await writePref(KEY_TERMINAL_FULL_SCREEN_KEEP_PADDING, coerceProgramNames(value, []));
+}
+
 /** Each field of the right type, else its default; a blank name is the default one. */
 export function coerceEphemeralSpace(value: unknown): EphemeralSpacePrefs {
   if (typeof value !== 'object' || value === null) return EPHEMERAL_SPACE_DEFAULT;
@@ -819,6 +848,8 @@ export async function onPreferencesChange(
     [KEY_TERMINAL_SCROLLBACK]: 'terminalScrollback',
     [KEY_TERMINAL_SCROLL_SPEED]: 'terminalScrollSpeed',
     [KEY_TERMINAL_PADDING]: 'terminalPadding',
+    [KEY_TERMINAL_FULL_SCREEN_FILL]: 'terminalFullScreenFill',
+    [KEY_TERMINAL_FULL_SCREEN_KEEP_PADDING]: 'terminalFullScreenKeepPadding',
     [KEY_TERMINAL_MAC_OPTION_AS_ALT]: 'terminalMacOptionAsAlt',
     [KEY_CONFIRM_CLOSE_RUNNING_TERMINAL]: 'confirmCloseRunningTerminal',
     [KEY_LAST_WSL_DISTRO]: 'lastWslDistro',

@@ -327,6 +327,7 @@ pub fn run() {
             pty::pty_close,
             pty::pty_close_all,
             pty::pty_has_foreground_process,
+            pty::pty_running_programs,
             pty::pty_session_shell,
             pty::pty_list_shells,
             fs::tree::list_subdirs,

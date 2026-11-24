@@ -14,6 +14,8 @@ import {
   setTerminalFontFamily,
   setTerminalFontSize,
   setTerminalFontWeight,
+  setTerminalFullScreenFill,
+  setTerminalFullScreenKeepPadding,
   setTerminalLetterSpacing,
   setTerminalMacOptionAsAlt,
   setTerminalPadding,
@@ -31,8 +33,9 @@ import { coerceMacOptionAsAlt } from '@/modules/terminal/ghostty/input/macOption
 import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { ProgramListEditor } from '../components/ProgramListEditor';
 import { SectionHeader } from '../components/SectionHeader';
-import { SettingRow } from '../components/SettingRow';
+import { SettingExpander, SettingRow } from '../components/SettingRow';
 import { SettingsGroup } from '../components/SettingsGroup';
 import { TERMINAL_CURSOR_STYLES, TERMINAL_FONT_WEIGHTS } from './terminalChoices';
 
@@ -78,6 +81,8 @@ export function TerminalSection() {
   const terminalFontSize = usePreferencesStore((s) => s.terminalFontSize);
   const terminalScrollback = usePreferencesStore((s) => s.terminalScrollback);
   const terminalPadding = usePreferencesStore((s) => s.terminalPadding);
+  const terminalFullScreenFill = usePreferencesStore((s) => s.terminalFullScreenFill);
+  const terminalFullScreenKeepPadding = usePreferencesStore((s) => s.terminalFullScreenKeepPadding);
   const terminalScrollSpeed = usePreferencesStore((s) => s.terminalScrollSpeed);
   const terminalMacOptionAsAlt = usePreferencesStore((s) => s.terminalMacOptionAsAlt);
   const confirmCloseRunningTerminal = usePreferencesStore((s) => s.confirmCloseRunningTerminal);
@@ -220,10 +225,7 @@ export function TerminalSection() {
             </Select>
           )}
         </SettingRow>
-        <SettingRow
-          title="Padding"
-          description="Space around the text in each pane (px). Full-screen programs fill the pane."
-        >
+        <SettingRow title="Padding" description="Space around the text in each pane (px).">
           {(a11y) => (
             <PaddingInput
               {...a11y}
@@ -233,6 +235,35 @@ export function TerminalSection() {
             />
           )}
         </SettingRow>
+        <SettingExpander
+          open={terminalFullScreenFill}
+          setting={
+            <SettingRow
+              title="Full-screen programs fill the pane"
+              description="Drop the padding while a full-screen program, like an editor or a pager, runs."
+            >
+              {(a11y) => (
+                <Switch
+                  {...a11y}
+                  checked={terminalFullScreenFill}
+                  onCheckedChange={(v) => void setTerminalFullScreenFill(v)}
+                />
+              )}
+            </SettingRow>
+          }
+        >
+          <ProgramListEditor
+            title="Keep padding for"
+            description="Programs that keep the padding in full screen, by executable name. A program with no executable of its own shows as the one running it (node); inside WSL, everything shows as wsl."
+            programs={terminalFullScreenKeepPadding}
+            onCommit={(programs) =>
+              setTerminalFullScreenKeepPadding(programs).then(
+                () => true,
+                () => false,
+              )
+            }
+          />
+        </SettingExpander>
       </SettingsGroup>
 
       <SettingsGroup title="Cursor">

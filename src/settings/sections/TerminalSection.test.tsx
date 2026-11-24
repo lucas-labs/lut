@@ -20,6 +20,8 @@ const defaults = {
   terminalMacOptionAsAlt: 'off',
   confirmCloseRunningTerminal: true,
   terminalPadding: { top: 0, right: 0, bottom: 0, left: 0 },
+  terminalFullScreenFill: true,
+  terminalFullScreenKeepPadding: ['claude'],
 };
 const prefs = vi.hoisted(() => ({ state: {} as Record<string, unknown> }));
 vi.mock('@/modules/settings/preferences', () => ({
@@ -28,6 +30,8 @@ vi.mock('@/modules/settings/preferences', () => ({
 const store = vi.hoisted(() => ({
   setTerminalSubpixelText: vi.fn(async (_enabled: boolean) => {}),
   setTerminalPadding: vi.fn(async (_padding: object) => {}),
+  setTerminalFullScreenFill: vi.fn(async (_fill: boolean) => {}),
+  setTerminalFullScreenKeepPadding: vi.fn(async (_programs: string[]) => {}),
 }));
 vi.mock('@/modules/settings/store', async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -150,9 +154,12 @@ describe('TerminalSection', () => {
     const controls = host.querySelectorAll('[role="switch"], [role="combobox"], input');
     expect(controls.length).toBeGreaterThan(10);
     for (const control of controls) {
-      // A field of a group of fields (the padding) is named by its own label inside the named group.
+      // A field of a group of fields (the padding) is named by its own label inside the named group; one of a
+      // list (the programs) by its own label.
       const named = control.closest('[role="group"][aria-labelledby]') ?? control;
-      const name = document.getElementById(named.getAttribute('aria-labelledby') ?? '')?.textContent;
+      const name =
+        document.getElementById(named.getAttribute('aria-labelledby') ?? '')?.textContent ??
+        control.getAttribute('aria-label');
       expect(name, control.outerHTML).toBeTruthy();
     }
   });
@@ -161,7 +168,7 @@ describe('TerminalSection', () => {
     render({ terminalPadding: { top: 4, right: 8, bottom: 4, left: 8 } });
     const row = rowOf('Padding');
     expect(groupOf('Padding')).toBe('Text');
-    expect(row?.textContent).toContain('Full-screen programs fill the pane.');
+    expect(row?.textContent).toContain('Space around the text in each pane (px).');
     const horizontal = row?.querySelector('input[aria-label="Horizontal padding"]') as HTMLInputElement;
     expect(horizontal.value).toBe('8');
     const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
@@ -170,6 +177,30 @@ describe('TerminalSection', () => {
       horizontal.dispatchEvent(new Event('input', { bubbles: true }));
     });
     expect(store.setTerminalPadding).toHaveBeenLastCalledWith({ top: 4, right: 12, bottom: 4, left: 12 });
+  });
+
+  it('lets full-screen programs fill the pane, except the programs listed', () => {
+    render();
+    const fill = rowOf('Full-screen programs fill the pane');
+    expect(groupOf('Full-screen programs fill the pane')).toBe('Text');
+    const body = host.querySelector('[data-slot="setting-expander-body"]');
+    expect(body?.getAttribute('data-state')).toBe('open');
+    const field = () => rowOf('Keep padding for')?.querySelector('input') as HTMLInputElement;
+    expect(field().value).toBe('claude');
+
+    const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+    act(() => {
+      setValue?.call(field(), 'C:\\Tools\\NVim.exe');
+      field().dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    act(() => field().dispatchEvent(new FocusEvent('focusout', { bubbles: true })));
+    expect(store.setTerminalFullScreenKeepPadding).toHaveBeenLastCalledWith(['nvim']);
+    expect(field().value).toBe('nvim');
+
+    act(() => (fill?.querySelector('button[role="switch"]') as HTMLButtonElement).click());
+    expect(store.setTerminalFullScreenFill).toHaveBeenCalledWith(false);
+    render({ terminalFullScreenFill: false });
+    expect(host.querySelector('[data-slot="setting-expander-body"]')?.getAttribute('data-state')).toBe('closed');
   });
 
   it('sets the default profile from the visible profiles', async () => {
