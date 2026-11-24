@@ -2,7 +2,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { cn } from '@/lib/utils';
 import type { TitleBarPlacement } from '@/modules/header';
 import { IS_MAC } from '@/modules/platform';
-import { COMPACT_RAIL_WIDTH, SIDEBAR_MAX_WIDTH, SIDEBAR_MIN_WIDTH } from '@/modules/sidebar';
+import { COMPACT_RAIL_WIDTH, SIDEBAR_MAX_WIDTH, SIDEBAR_MIN_WIDTH, useEdgeDrag } from '@/modules/sidebar';
 import { TABS_COLUMN_MAX_WIDTH, TABS_COLUMN_MIN_WIDTH } from '@/modules/tabs';
 import { type ComponentProps, type ReactNode, type RefObject, useRef, useState } from 'react';
 import type { GroupImperativeHandle, Layout, PanelImperativeHandle } from 'react-resizable-panels';
@@ -145,6 +145,15 @@ export function AppShell({
   const showSidebar = !focusMode && (!compact || compactPanelOpen);
   const sidebarMountWidth = compact ? sidebarWidth : sidebarInitialWidth;
   const viewsOpen = compact ? compactPanelOpen : sidebarOpen;
+  // The rail's edge hides it, or with the rail hidden shows it, in one jump once a drag passes the threshold; back over
+  // it before the release, the drag undoes that. A rail that ends hidden closes the views beside it (E27-05).
+  const railEdge = useEdgeDrag({
+    direction: sidebarOpen ? 'left' : 'right',
+    onChange: (passed, direction) => onSidebarHiddenChange((direction === 'left') === passed),
+    onEnd: (passed, direction) => {
+      if ((direction === 'left') === passed) onCompactPanelChange(false);
+    },
+  });
   const sizes = useRef<Record<string, number>>({
     sidebar: sidebarMountWidth,
     'tabs-column': tabsColumnInitialWidth,
@@ -269,6 +278,21 @@ export function AppShell({
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
+        {/* The rail's edge, a line like a side panel's handle; with the rail hidden, an 8 px strip at the window's
+            left edge (E27-05). */}
+        {showRail ? (
+          <div
+            aria-hidden
+            data-rail-edge
+            {...railEdge}
+            className={cn(
+              'absolute inset-y-0 z-20 w-px cursor-col-resize select-none after:absolute after:inset-y-0 hover:bg-ring/40',
+              handleClass(sidebarOpen),
+              sidebarOpen ? 'after:left-1/2 after:w-3 after:-translate-x-1/2' : 'after:left-0 after:w-2',
+            )}
+            style={{ left: sidebarOpen ? COMPACT_RAIL_WIDTH : 0 }}
+          />
+        ) : null}
       </main>
 
       {titleBarPlacement === 'overlay' ? titleBar : null}

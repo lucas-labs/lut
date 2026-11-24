@@ -176,6 +176,7 @@ it('swaps the side panels for the compact rail and back without remounting the w
     // Focus mode hides the rail too.
     render(shell({ ...chrome, compact: true, focusMode: true }));
     expect(host.querySelector('[data-chrome="rail"]')).toBeNull();
+    expect(host.querySelector('[data-rail-edge]')).toBeNull();
     render(shell(chrome));
     expect(host.querySelector('[data-chrome="rail"]')).toBeNull();
     expect(host.querySelector('[data-chrome="sidebar"]')).not.toBeNull();
@@ -184,15 +185,52 @@ it('swaps the side panels for the compact rail and back without remounting the w
   expect(unmounts).toEqual([]);
 });
 
-it('keeps the rail out of the panel group, at its fixed width, and hides it without unmounting it (E27-04)', () => {
+it('keeps the rail out of the panel group, at its fixed width, and hides it without unmounting it (E27-05)', () => {
   render(shell({ compact: true, sidebar: createElement('aside') }));
   const railBox = () => host.querySelector<HTMLElement>('[data-chrome-rail]');
   expect(railBox()?.style.width).toBe('32px');
   expect(railBox()?.closest('[data-panel]')).toBeNull();
+  expect(host.querySelector('[data-rail-edge]')?.getAttribute('role')).toBeNull();
   render(shell({ compact: true, sidebar: createElement('aside'), sidebarOpen: false }));
   expect(railBox()?.classList.contains('hidden')).toBe(true);
   expect(host.querySelector('[data-chrome="rail"]')).not.toBeNull();
   expect(mounts).toEqual(['workspace']);
+});
+
+it('hides the rail from its edge, and shows it from the window edge, in one jump past 24 px (E27-05)', () => {
+  const hidden = vi.fn();
+  const viewsOpen = vi.fn();
+  const edge = () => host.querySelector('[data-rail-edge]') as HTMLElement;
+  const pointer = (type: string, clientX: number) =>
+    act(() => {
+      edge().dispatchEvent(new PointerEvent(type, { bubbles: true, button: 0, clientX, pointerId: 1 }));
+    });
+  const shown = (sidebarOpen: boolean) =>
+    render(shell({ compact: true, sidebarOpen, onSidebarHiddenChange: hidden, onCompactPanelChange: viewsOpen }));
+
+  shown(true);
+  pointer('pointerdown', 32);
+  pointer('pointermove', 9);
+  expect(hidden).not.toHaveBeenCalled();
+  pointer('pointermove', 7);
+  expect(hidden).toHaveBeenLastCalledWith(true);
+  // Back over the threshold before the release: the rail comes back, and the views beside it stay.
+  pointer('pointermove', 20);
+  expect(hidden).toHaveBeenLastCalledWith(false);
+  pointer('pointerup', 20);
+  expect(viewsOpen).not.toHaveBeenCalled();
+  // Released hidden, the rail closes the views.
+  pointer('pointerdown', 32);
+  pointer('pointermove', 0);
+  pointer('pointerup', 0);
+  expect(hidden).toHaveBeenLastCalledWith(true);
+  expect(viewsOpen).toHaveBeenCalledWith(false);
+
+  shown(false);
+  pointer('pointerdown', 0);
+  pointer('pointermove', 25);
+  pointer('pointerup', 25);
+  expect(hidden).toHaveBeenLastCalledWith(false);
 });
 
 it('has the sidebar panel only while the views are open beside the rail (E27-04)', () => {
