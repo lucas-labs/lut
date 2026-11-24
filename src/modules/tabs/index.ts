@@ -1,9 +1,5 @@
 export { selectLiveTerminals } from './lib/liveTerminals';
-export {
-  selectSpaceAgentState,
-  selectTabAgentStatus,
-  type SpaceAgentState,
-} from './lib/tabAgentStatus';
+export { selectSpaceAgentState, selectTabAgentStatus } from './lib/tabAgentStatus';
 export { useTabs } from './lib/useTabs';
 export { TABS_COLUMN_MAX_WIDTH, TABS_COLUMN_MIN_WIDTH, useTabsColumn } from './lib/useTabsColumn';
 export { useTabSwitcher } from './lib/useTabSwitcher';
