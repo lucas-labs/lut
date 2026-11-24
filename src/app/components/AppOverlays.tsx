@@ -3,7 +3,7 @@ import { AgentNotificationsBridge } from '@/modules/agents';
 import { CommandPalette, type OpenFileTarget } from '@/modules/command-palette';
 import { NewEditorDialog } from '@/modules/editor';
 import { type TabNavigatorItem, useNavigationStore } from '@/modules/navigation';
-import { IS_MAC } from '@/modules/platform';
+import { DevTrafficLights, FAKE_TRAFFIC_LIGHTS, IS_MAC } from '@/modules/platform';
 import { type Tab, TabSwitcher } from '@/modules/tabs';
 import { bindTerminalWindowFocus } from '@/modules/terminal/ghostty/renderScheduling';
 import { subscribeWindowPresentation } from '@/modules/terminal/ghostty/windowPresentation';
@@ -96,6 +96,7 @@ export function AppOverlays({
       )}
       <WindowVibrancyBridge />
       {IS_MAC ? <LivePageResizeBridge /> : null}
+      {FAKE_TRAFFIC_LIGHTS ? <DevTrafficLights /> : null}
       <WindowActivityBridge bindFocus={bindTerminalWindowFocus} subscribePresentation={subscribeWindowPresentation} />
 
       <AgentNotificationsBridge tabs={tabs} activeId={activeId} onActivate={onActivateAgent} />

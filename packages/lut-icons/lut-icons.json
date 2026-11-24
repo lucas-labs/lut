@@ -8956,6 +8956,612 @@
     }
   },
   {
+    "linux-window-close": {
+      "sizes": [
+        {
+          "xs": {
+            "px": 12,
+            "artboard": "linux-window-close-24",
+            "canvas": 24,
+            "grid": 12,
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" width=\"24\" height=\"24\"><path d=\"M5.5 5.5L18.5 18.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\"/><path d=\"M5.5 18.5L18.5 5.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "round",
+                "linejoin": "miter",
+                "d": "M5.5 5.5L18.5 18.5M5.5 18.5L18.5 5.5"
+              }
+            ]
+          }
+        },
+        {
+          "sm": {
+            "px": 14,
+            "artboard": "linux-window-close-28",
+            "canvas": 28,
+            "grid": 14,
+            "width": 28,
+            "height": 28,
+            "viewBox": "0 0 28 28",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 28 28\" width=\"28\" height=\"28\"><path d=\"M5.5 5.5L22.5 22.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\"/><path d=\"M5.5 22.5L22.5 5.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "round",
+                "linejoin": "miter",
+                "d": "M5.5 5.5L22.5 22.5M5.5 22.5L22.5 5.5"
+              }
+            ]
+          }
+        },
+        {
+          "md": {
+            "px": 16,
+            "artboard": "linux-window-close-32",
+            "canvas": 32,
+            "grid": 16,
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 32 32",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" width=\"32\" height=\"32\"><path d=\"M5.5 5.5L26.5 26.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\"/><path d=\"M5.5 26.5L26.5 5.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "round",
+                "linejoin": "miter",
+                "d": "M5.5 5.5L26.5 26.5M5.5 26.5L26.5 5.5"
+              }
+            ]
+          }
+        },
+        {
+          "lg": {
+            "px": 24,
+            "artboard": "linux-window-close-24",
+            "canvas": 24,
+            "grid": 12,
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" width=\"24\" height=\"24\"><path d=\"M5.5 5.5L18.5 18.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\"/><path d=\"M5.5 18.5L18.5 5.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "round",
+                "linejoin": "miter",
+                "d": "M5.5 5.5L18.5 18.5M5.5 18.5L18.5 5.5"
+              }
+            ]
+          }
+        },
+        {
+          "xl": {
+            "px": 28,
+            "artboard": "linux-window-close-28",
+            "canvas": 28,
+            "grid": 14,
+            "width": 28,
+            "height": 28,
+            "viewBox": "0 0 28 28",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 28 28\" width=\"28\" height=\"28\"><path d=\"M5.5 5.5L22.5 22.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\"/><path d=\"M5.5 22.5L22.5 5.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "round",
+                "linejoin": "miter",
+                "d": "M5.5 5.5L22.5 22.5M5.5 22.5L22.5 5.5"
+              }
+            ]
+          }
+        },
+        {
+          "2xl": {
+            "px": 32,
+            "artboard": "linux-window-close-32",
+            "canvas": 32,
+            "grid": 16,
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 32 32",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" width=\"32\" height=\"32\"><path d=\"M5.5 5.5L26.5 26.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\"/><path d=\"M5.5 26.5L26.5 5.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "round",
+                "linejoin": "miter",
+                "d": "M5.5 5.5L26.5 26.5M5.5 26.5L26.5 5.5"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "linux-window-maximize": {
+      "sizes": [
+        {
+          "xs": {
+            "px": 12,
+            "artboard": "linux-window-maximize-24",
+            "canvas": 24,
+            "grid": 12,
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" width=\"24\" height=\"24\"><path d=\"M6.5 5.5L17.5 5.5C18.052 5.5 18.5 5.948 18.5 6.5L18.5 17.5C18.5 18.052 18.052 18.5 17.5 18.5L6.5 18.5C5.948 18.5 5.5 18.052 5.5 17.5L5.5 6.5C5.5 5.948 5.948 5.5 6.5 5.5Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-miterlimit=\"4\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "butt",
+                "linejoin": "miter",
+                "miterLimit": 4,
+                "d": "M6.5 5.5L17.5 5.5C18.052 5.5 18.5 5.948 18.5 6.5L18.5 17.5C18.5 18.052 18.052 18.5 17.5 18.5L6.5 18.5C5.948 18.5 5.5 18.052 5.5 17.5L5.5 6.5C5.5 5.948 5.948 5.5 6.5 5.5Z"
+              }
+            ]
+          }
+        },
+        {
+          "sm": {
+            "px": 14,
+            "artboard": "linux-window-maximize-28",
+            "canvas": 28,
+            "grid": 14,
+            "width": 28,
+            "height": 28,
+            "viewBox": "0 0 28 28",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 28 28\" width=\"28\" height=\"28\"><path d=\"M7.5 6.5L20.5 6.5C21.052 6.5 21.5 6.948 21.5 7.5L21.5 20.5C21.5 21.052 21.052 21.5 20.5 21.5L7.5 21.5C6.948 21.5 6.5 21.052 6.5 20.5L6.5 7.5C6.5 6.948 6.948 6.5 7.5 6.5Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-miterlimit=\"4\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "butt",
+                "linejoin": "miter",
+                "miterLimit": 4,
+                "d": "M7.5 6.5L20.5 6.5C21.052 6.5 21.5 6.948 21.5 7.5L21.5 20.5C21.5 21.052 21.052 21.5 20.5 21.5L7.5 21.5C6.948 21.5 6.5 21.052 6.5 20.5L6.5 7.5C6.5 6.948 6.948 6.5 7.5 6.5Z"
+              }
+            ]
+          }
+        },
+        {
+          "md": {
+            "px": 16,
+            "artboard": "linux-window-maximize-32",
+            "canvas": 32,
+            "grid": 16,
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 32 32",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" width=\"32\" height=\"32\"><path d=\"M7.5 6.5L24.5 6.5C25.052 6.5 25.5 6.948 25.5 7.5L25.5 24.5C25.5 25.052 25.052 25.5 24.5 25.5L7.5 25.5C6.948 25.5 6.5 25.052 6.5 24.5L6.5 7.5C6.5 6.948 6.948 6.5 7.5 6.5Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-miterlimit=\"4\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "butt",
+                "linejoin": "miter",
+                "miterLimit": 4,
+                "d": "M7.5 6.5L24.5 6.5C25.052 6.5 25.5 6.948 25.5 7.5L25.5 24.5C25.5 25.052 25.052 25.5 24.5 25.5L7.5 25.5C6.948 25.5 6.5 25.052 6.5 24.5L6.5 7.5C6.5 6.948 6.948 6.5 7.5 6.5Z"
+              }
+            ]
+          }
+        },
+        {
+          "lg": {
+            "px": 24,
+            "artboard": "linux-window-maximize-24",
+            "canvas": 24,
+            "grid": 12,
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" width=\"24\" height=\"24\"><path d=\"M6.5 5.5L17.5 5.5C18.052 5.5 18.5 5.948 18.5 6.5L18.5 17.5C18.5 18.052 18.052 18.5 17.5 18.5L6.5 18.5C5.948 18.5 5.5 18.052 5.5 17.5L5.5 6.5C5.5 5.948 5.948 5.5 6.5 5.5Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-miterlimit=\"4\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "butt",
+                "linejoin": "miter",
+                "miterLimit": 4,
+                "d": "M6.5 5.5L17.5 5.5C18.052 5.5 18.5 5.948 18.5 6.5L18.5 17.5C18.5 18.052 18.052 18.5 17.5 18.5L6.5 18.5C5.948 18.5 5.5 18.052 5.5 17.5L5.5 6.5C5.5 5.948 5.948 5.5 6.5 5.5Z"
+              }
+            ]
+          }
+        },
+        {
+          "xl": {
+            "px": 28,
+            "artboard": "linux-window-maximize-28",
+            "canvas": 28,
+            "grid": 14,
+            "width": 28,
+            "height": 28,
+            "viewBox": "0 0 28 28",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 28 28\" width=\"28\" height=\"28\"><path d=\"M7.5 6.5L20.5 6.5C21.052 6.5 21.5 6.948 21.5 7.5L21.5 20.5C21.5 21.052 21.052 21.5 20.5 21.5L7.5 21.5C6.948 21.5 6.5 21.052 6.5 20.5L6.5 7.5C6.5 6.948 6.948 6.5 7.5 6.5Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-miterlimit=\"4\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "butt",
+                "linejoin": "miter",
+                "miterLimit": 4,
+                "d": "M7.5 6.5L20.5 6.5C21.052 6.5 21.5 6.948 21.5 7.5L21.5 20.5C21.5 21.052 21.052 21.5 20.5 21.5L7.5 21.5C6.948 21.5 6.5 21.052 6.5 20.5L6.5 7.5C6.5 6.948 6.948 6.5 7.5 6.5Z"
+              }
+            ]
+          }
+        },
+        {
+          "2xl": {
+            "px": 32,
+            "artboard": "linux-window-maximize-32",
+            "canvas": 32,
+            "grid": 16,
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 32 32",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" width=\"32\" height=\"32\"><path d=\"M7.5 6.5L24.5 6.5C25.052 6.5 25.5 6.948 25.5 7.5L25.5 24.5C25.5 25.052 25.052 25.5 24.5 25.5L7.5 25.5C6.948 25.5 6.5 25.052 6.5 24.5L6.5 7.5C6.5 6.948 6.948 6.5 7.5 6.5Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-miterlimit=\"4\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "butt",
+                "linejoin": "miter",
+                "miterLimit": 4,
+                "d": "M7.5 6.5L24.5 6.5C25.052 6.5 25.5 6.948 25.5 7.5L25.5 24.5C25.5 25.052 25.052 25.5 24.5 25.5L7.5 25.5C6.948 25.5 6.5 25.052 6.5 24.5L6.5 7.5C6.5 6.948 6.948 6.5 7.5 6.5Z"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "linux-window-minimize": {
+      "sizes": [
+        {
+          "xs": {
+            "px": 12,
+            "artboard": "linux-window-minimize-24",
+            "canvas": 24,
+            "grid": 12,
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" width=\"24\" height=\"24\"><path d=\"M6 16.5L18 16.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "round",
+                "linejoin": "round",
+                "d": "M6 16.5L18 16.5"
+              }
+            ]
+          }
+        },
+        {
+          "sm": {
+            "px": 14,
+            "artboard": "linux-window-minimize-28",
+            "canvas": 28,
+            "grid": 14,
+            "width": 28,
+            "height": 28,
+            "viewBox": "0 0 28 28",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 28 28\" width=\"28\" height=\"28\"><path d=\"M6 20.5L22 20.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "round",
+                "linejoin": "round",
+                "d": "M6 20.5L22 20.5"
+              }
+            ]
+          }
+        },
+        {
+          "md": {
+            "px": 16,
+            "artboard": "linux-window-minimize-32",
+            "canvas": 32,
+            "grid": 16,
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 32 32",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" width=\"32\" height=\"32\"><path d=\"M6 22.5L26 22.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "round",
+                "linejoin": "round",
+                "d": "M6 22.5L26 22.5"
+              }
+            ]
+          }
+        },
+        {
+          "lg": {
+            "px": 24,
+            "artboard": "linux-window-minimize-24",
+            "canvas": 24,
+            "grid": 12,
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" width=\"24\" height=\"24\"><path d=\"M6 16.5L18 16.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "round",
+                "linejoin": "round",
+                "d": "M6 16.5L18 16.5"
+              }
+            ]
+          }
+        },
+        {
+          "xl": {
+            "px": 28,
+            "artboard": "linux-window-minimize-28",
+            "canvas": 28,
+            "grid": 14,
+            "width": 28,
+            "height": 28,
+            "viewBox": "0 0 28 28",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 28 28\" width=\"28\" height=\"28\"><path d=\"M6 20.5L22 20.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "round",
+                "linejoin": "round",
+                "d": "M6 20.5L22 20.5"
+              }
+            ]
+          }
+        },
+        {
+          "2xl": {
+            "px": 32,
+            "artboard": "linux-window-minimize-32",
+            "canvas": 32,
+            "grid": 16,
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 32 32",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" width=\"32\" height=\"32\"><path d=\"M6 22.5L26 22.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "round",
+                "linejoin": "round",
+                "d": "M6 22.5L26 22.5"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
+    "linux-window-restore": {
+      "sizes": [
+        {
+          "xs": {
+            "px": 12,
+            "artboard": "linux-window-restore-24",
+            "canvas": 24,
+            "grid": 12,
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" width=\"24\" height=\"24\"><path d=\"M9.5 3.5L17.5 3.5C19.157 3.5 20.5 4.843 20.5 6.5L20.5 14.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M4.5 9.5L13.5 9.5C14.052 9.5 14.5 9.948 14.5 10.5L14.5 19.5C14.5 20.052 14.052 20.5 13.5 20.5L4.5 20.5C3.948 20.5 3.5 20.052 3.5 19.5L3.5 10.5C3.5 9.948 3.948 9.5 4.5 9.5Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "round",
+                "linejoin": "round",
+                "d": "M9.5 3.5L17.5 3.5C19.157 3.5 20.5 4.843 20.5 6.5L20.5 14.5"
+              },
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "butt",
+                "linejoin": "miter",
+                "d": "M4.5 9.5L13.5 9.5C14.052 9.5 14.5 9.948 14.5 10.5L14.5 19.5C14.5 20.052 14.052 20.5 13.5 20.5L4.5 20.5C3.948 20.5 3.5 20.052 3.5 19.5L3.5 10.5C3.5 9.948 3.948 9.5 4.5 9.5Z"
+              }
+            ]
+          }
+        },
+        {
+          "sm": {
+            "px": 14,
+            "artboard": "linux-window-restore-28",
+            "canvas": 28,
+            "grid": 14,
+            "width": 28,
+            "height": 28,
+            "viewBox": "0 0 28 28",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 28 28\" width=\"28\" height=\"28\"><path d=\"M11.5 3.5L21.5 3.5C23.157 3.5 24.5 4.843 24.5 6.5L24.5 16.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M4.5 11.5L15.5 11.5C16.052 11.5 16.5 11.948 16.5 12.5L16.5 23.5C16.5 24.052 16.052 24.5 15.5 24.5L4.5 24.5C3.948 24.5 3.5 24.052 3.5 23.5L3.5 12.5C3.5 11.948 3.948 11.5 4.5 11.5Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "round",
+                "linejoin": "round",
+                "d": "M11.5 3.5L21.5 3.5C23.157 3.5 24.5 4.843 24.5 6.5L24.5 16.5"
+              },
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "butt",
+                "linejoin": "miter",
+                "d": "M4.5 11.5L15.5 11.5C16.052 11.5 16.5 11.948 16.5 12.5L16.5 23.5C16.5 24.052 16.052 24.5 15.5 24.5L4.5 24.5C3.948 24.5 3.5 24.052 3.5 23.5L3.5 12.5C3.5 11.948 3.948 11.5 4.5 11.5Z"
+              }
+            ]
+          }
+        },
+        {
+          "md": {
+            "px": 16,
+            "artboard": "linux-window-restore-32",
+            "canvas": 32,
+            "grid": 16,
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 32 32",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" width=\"32\" height=\"32\"><path d=\"M11.5 3.5L23.5 3.5C26.262 3.5 28.5 5.739 28.5 8.5L28.5 20.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M4.5 9.5L21.5 9.5C22.052 9.5 22.5 9.948 22.5 10.5L22.5 27.5C22.5 28.052 22.052 28.5 21.5 28.5L4.5 28.5C3.948 28.5 3.5 28.052 3.5 27.5L3.5 10.5C3.5 9.948 3.948 9.5 4.5 9.5Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "round",
+                "linejoin": "round",
+                "d": "M11.5 3.5L23.5 3.5C26.262 3.5 28.5 5.739 28.5 8.5L28.5 20.5"
+              },
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "butt",
+                "linejoin": "miter",
+                "d": "M4.5 9.5L21.5 9.5C22.052 9.5 22.5 9.948 22.5 10.5L22.5 27.5C22.5 28.052 22.052 28.5 21.5 28.5L4.5 28.5C3.948 28.5 3.5 28.052 3.5 27.5L3.5 10.5C3.5 9.948 3.948 9.5 4.5 9.5Z"
+              }
+            ]
+          }
+        },
+        {
+          "lg": {
+            "px": 24,
+            "artboard": "linux-window-restore-24",
+            "canvas": 24,
+            "grid": 12,
+            "width": 24,
+            "height": 24,
+            "viewBox": "0 0 24 24",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" width=\"24\" height=\"24\"><path d=\"M9.5 3.5L17.5 3.5C19.157 3.5 20.5 4.843 20.5 6.5L20.5 14.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M4.5 9.5L13.5 9.5C14.052 9.5 14.5 9.948 14.5 10.5L14.5 19.5C14.5 20.052 14.052 20.5 13.5 20.5L4.5 20.5C3.948 20.5 3.5 20.052 3.5 19.5L3.5 10.5C3.5 9.948 3.948 9.5 4.5 9.5Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "round",
+                "linejoin": "round",
+                "d": "M9.5 3.5L17.5 3.5C19.157 3.5 20.5 4.843 20.5 6.5L20.5 14.5"
+              },
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "butt",
+                "linejoin": "miter",
+                "d": "M4.5 9.5L13.5 9.5C14.052 9.5 14.5 9.948 14.5 10.5L14.5 19.5C14.5 20.052 14.052 20.5 13.5 20.5L4.5 20.5C3.948 20.5 3.5 20.052 3.5 19.5L3.5 10.5C3.5 9.948 3.948 9.5 4.5 9.5Z"
+              }
+            ]
+          }
+        },
+        {
+          "xl": {
+            "px": 28,
+            "artboard": "linux-window-restore-28",
+            "canvas": 28,
+            "grid": 14,
+            "width": 28,
+            "height": 28,
+            "viewBox": "0 0 28 28",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 28 28\" width=\"28\" height=\"28\"><path d=\"M11.5 3.5L21.5 3.5C23.157 3.5 24.5 4.843 24.5 6.5L24.5 16.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M4.5 11.5L15.5 11.5C16.052 11.5 16.5 11.948 16.5 12.5L16.5 23.5C16.5 24.052 16.052 24.5 15.5 24.5L4.5 24.5C3.948 24.5 3.5 24.052 3.5 23.5L3.5 12.5C3.5 11.948 3.948 11.5 4.5 11.5Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "round",
+                "linejoin": "round",
+                "d": "M11.5 3.5L21.5 3.5C23.157 3.5 24.5 4.843 24.5 6.5L24.5 16.5"
+              },
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "butt",
+                "linejoin": "miter",
+                "d": "M4.5 11.5L15.5 11.5C16.052 11.5 16.5 11.948 16.5 12.5L16.5 23.5C16.5 24.052 16.052 24.5 15.5 24.5L4.5 24.5C3.948 24.5 3.5 24.052 3.5 23.5L3.5 12.5C3.5 11.948 3.948 11.5 4.5 11.5Z"
+              }
+            ]
+          }
+        },
+        {
+          "2xl": {
+            "px": 32,
+            "artboard": "linux-window-restore-32",
+            "canvas": 32,
+            "grid": 16,
+            "width": 32,
+            "height": 32,
+            "viewBox": "0 0 32 32",
+            "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 32 32\" width=\"32\" height=\"32\"><path d=\"M11.5 3.5L23.5 3.5C26.262 3.5 28.5 5.739 28.5 8.5L28.5 20.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M4.5 9.5L21.5 9.5C22.052 9.5 22.5 9.948 22.5 10.5L22.5 27.5C22.5 28.052 22.052 28.5 21.5 28.5L4.5 28.5C3.948 28.5 3.5 28.052 3.5 27.5L3.5 10.5C3.5 9.948 3.948 9.5 4.5 9.5Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"/></svg>",
+            "innerSvgElements": [
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "round",
+                "linejoin": "round",
+                "d": "M11.5 3.5L23.5 3.5C26.262 3.5 28.5 5.739 28.5 8.5L28.5 20.5"
+              },
+              {
+                "type": "path",
+                "paint": "stroke",
+                "strokeWidth": 3,
+                "linecap": "butt",
+                "linejoin": "miter",
+                "d": "M4.5 9.5L21.5 9.5C22.052 9.5 22.5 9.948 22.5 10.5L22.5 27.5C22.5 28.052 22.052 28.5 21.5 28.5L4.5 28.5C3.948 28.5 3.5 28.052 3.5 27.5L3.5 10.5C3.5 9.948 3.948 9.5 4.5 9.5Z"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  {
     "lut-logo": {
       "sizes": [
         {

@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { labelFor, type Tab, TabIcon } from '@/modules/navigation';
 import { useShellTitlePolicy } from '@/modules/profiles';
 import { useShortcutLabel } from '@/modules/shortcuts';
+import { SidebarViewHeader } from '@/modules/sidebar';
 import { ChevronIcon, DeleteIcon, GhostIcon, PencilIcon, PlusIcon, XIcon } from '@lut/lut-icons';
 import { type ComponentType, type CSSProperties, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -303,17 +304,11 @@ export function SpacesView({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex h-[30px] shrink-0 items-center gap-2 pr-1.5 pl-[18px]">
-        <span
-          className="min-w-0 flex-1 truncate text-xs text-muted-foreground"
-          title={shortcut ? `Spaces (${shortcut})` : undefined}
-        >
-          Spaces
-        </span>
+      <SidebarViewHeader title="Spaces" titleHint={shortcut ? `Spaces (${shortcut})` : undefined}>
         <Button variant="ghost" size="icon-sm" onClick={onNewSpace} aria-label="New space" title="New space">
           <PlusIcon size="md" />
         </Button>
-      </div>
+      </SidebarViewHeader>
       <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 pt-1 pb-2">{rows}</div>
       {dragOverlay}
     </div>

@@ -115,7 +115,8 @@ function TitleBarRow({
   // reaches that corner (always as an overlay, inline only while the sidebar is closed).
   const clearTrafficLights = IS_MAC && (!inline || !sidePanelsOpen);
   const appMark = (
-    <span className="flex shrink-0 items-center px-2 text-muted-foreground">
+    // On macOS the mark ends the bar, by the window's rounded corner: as much room after it as before it.
+    <span className={cn('flex shrink-0 items-center text-muted-foreground', IS_MAC ? 'pr-3.5 pl-2' : 'px-2')}>
       <AppLogo />
     </span>
   );

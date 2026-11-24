@@ -2,7 +2,13 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { cn } from '@/lib/utils';
 import type { TitleBarPlacement } from '@/modules/header';
 import { IS_MAC } from '@/modules/platform';
-import { COMPACT_RAIL_WIDTH, SIDEBAR_MAX_WIDTH, SIDEBAR_MIN_WIDTH, useEdgeDrag } from '@/modules/sidebar';
+import {
+  COMPACT_RAIL_WIDTH,
+  SIDEBAR_MAX_WIDTH,
+  SIDEBAR_MIN_WIDTH,
+  SidebarTrafficLightsRow,
+  useEdgeDrag,
+} from '@/modules/sidebar';
 import { TABS_COLUMN_MAX_WIDTH, TABS_COLUMN_MIN_WIDTH } from '@/modules/tabs';
 import { type ComponentProps, type ReactNode, type RefObject, useRef, useState } from 'react';
 import type { GroupImperativeHandle, Layout, PanelImperativeHandle } from 'react-resizable-panels';
@@ -246,9 +252,16 @@ export function AppShell({
             >
               <div className="flex h-full min-h-0 flex-col">
                 {/* macOS draws its traffic lights over the window's top-left corner: the sidebar's, unless the rail
-                    leads. */}
-                {IS_MAC && !compact ? <div data-tauri-drag-region className="h-7 shrink-0" /> : null}
-                <div className="min-h-0 flex-1">{sidebar}</div>
+                    leads. With horizontal tabs they share the views' header row; with vertical tabs they get a row
+                    of their own. */}
+                {IS_MAC && !compact && titleBarPlacement === 'overlay' ? (
+                  <div data-tauri-drag-region className="h-7 shrink-0" />
+                ) : null}
+                <div className="min-h-0 flex-1">
+                  <SidebarTrafficLightsRow clear={IS_MAC && !compact && titleBarPlacement === 'inline'}>
+                    {sidebar}
+                  </SidebarTrafficLightsRow>
+                </div>
               </div>
             </SidePanel>
           ) : null}

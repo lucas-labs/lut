@@ -1,7 +1,7 @@
 import { Toaster } from '@/components/ui/sonner';
 import { WindowControls } from '@/components/WindowControls';
 import { cn } from '@/lib/utils';
-import { IS_MAC, USE_CUSTOM_WINDOW_CONTROLS } from '@/modules/platform';
+import { DevTrafficLights, FAKE_TRAFFIC_LIGHTS, IS_MAC, USE_CUSTOM_WINDOW_CONTROLS } from '@/modules/platform';
 import type { SettingsTab } from '@/modules/settings/openSettingsWindow';
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import { WindowActivityBridge, WindowVibrancyBridge } from '@/modules/theme';
@@ -108,6 +108,7 @@ export function SettingsApp() {
       </nav>
       <WindowActivityBridge />
       <WindowVibrancyBridge />
+      {FAKE_TRAFFIC_LIGHTS ? <DevTrafficLights /> : null}
       <Toaster position="bottom-right" />
 
       <main className="flex h-full min-w-0 flex-1 flex-col bg-background">

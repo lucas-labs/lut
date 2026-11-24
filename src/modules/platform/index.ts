@@ -1,6 +1,9 @@
+export { DevTrafficLights } from './DevTrafficLights';
 export { consumeLaunchFiles, getLaunchArgDir, getLaunchDir, initLaunchDir } from './launchDir';
 export {
+  FAKE_TRAFFIC_LIGHTS,
   fmtShortcut,
+  IS_LINUX,
   IS_MAC,
   IS_WINDOWS,
   isPrimaryModifierPressed,
