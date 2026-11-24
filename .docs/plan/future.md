@@ -23,6 +23,26 @@ tell apart: a letter, an emoji or an icon as profiles have. Planned as E27-07 an
 for the decision whether a space's settings live in its menu or in a settings window of their own, as more of them come
 (the menu would get crowded).
 
+## Data folder chosen in Settings
+
+Let the user move lut's data (settings, profiles, spaces and the webview's storage) to a folder of their choice from
+Settings, instead of an environment variable or a launch flag. A small pointer file stays in the default config folder
+and says where the data lives; lut reads it before creating the window, because the webview's data folder can only be
+set then. Changing the folder saves everything, copies the data there, updates the pointer and restarts lut; the old
+copy can be removed in the same step. To settle when it is designed:
+
+- the chosen folder already holds lut data (a synced folder from another machine): use it or overwrite it;
+- the folder is missing at startup (a USB or network drive): warn and offer the default folder, never create an empty
+  one silently;
+- two machines open the same synced folder at once: a lock or a warning.
+
+It is also the base of a real portable mode (data next to the executable). Raised while designing E25-01.
+
+## macOS code signing
+
+Sign and notarize the macOS bundles with an Apple Developer account (paid, yearly), so Gatekeeper opens lut without
+the right-click > Open step. Postponed in E25-01; Windows is signed through SignPath from the first release.
+
 ## Multiwindow
 
 Several windows: PTY/renderer ownership per window, moving tabs/panes between windows, per-window space layouts, geometry restore per monitor. Needs a design of PTY and canvas ownership first (proposal 5.10, Phase 7).
