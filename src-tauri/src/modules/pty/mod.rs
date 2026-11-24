@@ -5,6 +5,7 @@ mod gate;
 mod hub;
 mod output;
 mod presentation;
+mod program_name;
 mod protocol;
 mod queue;
 mod session;
@@ -467,6 +468,46 @@ pub fn pty_has_foreground_process(state: tauri::State<PtyState>, id: u32) -> Res
             session.git_bash_launcher,
         ))
     }
+}
+
+/// The programs running in a terminal, by `program_name`: the program it runs when that is not a
+/// shell, and everything the shell started. Walks the process tree, so it runs off the main thread.
+#[tauri::command]
+pub async fn pty_running_programs(
+    state: tauri::State<'_, PtyState>,
+    id: u32,
+) -> Result<Vec<String>, String> {
+    let session = state
+        .sessions
+        .read()
+        .unwrap()
+        .get(&id)
+        .cloned()
+        .ok_or_else(|| {
+            log::warn!("pty_running_programs: unknown session id={id}");
+            "no session".to_string()
+        })?;
+    tauri::async_runtime::spawn_blocking(move || running_programs(&session))
+        .await
+        .map_err(|e| e.to_string())
+}
+
+fn running_programs(session: &Session) -> Vec<String> {
+    #[cfg(windows)]
+    let git_bash_launcher = session.git_bash_launcher;
+    #[cfg(unix)]
+    let git_bash_launcher = false;
+    let mut programs = if session.shell_pid == 0 {
+        Vec::new()
+    } else {
+        foreground::running_programs(session.shell_pid, git_bash_launcher)
+    };
+    if !session.program_is_shell {
+        programs.push(program_name::program_name(&session.shell_program));
+        programs.sort();
+        programs.dedup();
+    }
+    programs
 }
 
 // A fresh webview load orphans the previous frontend's sessions in this still

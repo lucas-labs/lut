@@ -5,6 +5,8 @@ use std::time::{Duration, Instant};
 use lut_control_protocol::hook::clean_text;
 use memchr::memchr2;
 
+use super::program_name::program_name;
+
 const ESC: u8 = 0x1b;
 const BEL: u8 = 0x07;
 const OSC_INTRO: u8 = b']';
@@ -26,9 +28,6 @@ const MAX_NOTIFY_TITLE: usize = 256;
 const MAX_NOTIFY_BODY: usize = 1024;
 
 const DEFAULT_AGENTS: &[&str] = &["claude", "codex", "gemini", "pi", "opencode", "grok"];
-
-/// Extensions a launcher shim or native binary carries on Windows.
-const LAUNCHER_EXTENSIONS: &[&str] = &[".exe", ".cmd", ".bat", ".ps1", ".com"];
 
 // OSC 777 marker lut's agent notifications emit: 3-field `notify;lut;<event>` (Claude) or
 // 4-field `notify;lut;<agent>;<event>` (Codex/Gemini/Pi). Terax's `notify;Terax;` is not ours
@@ -643,8 +642,7 @@ impl AgentDetector {
             if token.is_empty() || token.starts_with('-') {
                 continue;
             }
-            let base = token.rsplit(['/', '\\']).next().unwrap_or(token);
-            let base = strip_launcher_extension(base).to_ascii_lowercase();
+            let base = program_name(token);
             if let Some(agent) = self.agents.iter().find(|a| {
                 base.strip_prefix(a.as_str())
                     .is_some_and(|rest| rest.is_empty() || rest.starts_with('-'))
@@ -654,16 +652,6 @@ impl AgentDetector {
         }
         None
     }
-}
-
-fn strip_launcher_extension(name: &str) -> &str {
-    let lower = name.to_ascii_lowercase();
-    for extension in LAUNCHER_EXTENSIONS {
-        if lower.ends_with(extension) {
-            return &name[..name.len() - extension.len()];
-        }
-    }
-    name
 }
 
 fn is_conemu_command(pt: &[u8]) -> bool {

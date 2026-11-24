@@ -1,9 +1,16 @@
-//! "Does the shell have child processes?" without forking `pgrep`.
+//! What runs under a terminal's shell.
 //!
-//! The close-tab guard asks this on the main thread, so it must be a cheap
-//! kernel query: `proc_listchildpids` on macOS, `/proc/<pid>/task/*/children`
-//! on Linux (with a `/proc/*/stat` parent scan for kernels built without
-//! `CONFIG_PROC_CHILDREN`), and the existing ToolHelp snapshot on Windows.
+//! "Does the shell have child processes?" without forking `pgrep`: the close-tab guard asks this on
+//! the main thread, so it must be a cheap kernel query: `proc_listchildpids` on macOS,
+//! `/proc/<pid>/task/*/children` on Linux (with a `/proc/*/stat` parent scan for kernels built
+//! without `CONFIG_PROC_CHILDREN`), and the existing ToolHelp snapshot on Windows.
+//!
+//! "Which programs run under the shell?" names every process below it, off the main thread: the
+//! same snapshot on Windows, `/proc` on Linux, `proc_listchildpids` and `proc_name` on macOS.
+
+use std::collections::{BTreeSet, HashSet};
+
+use super::program_name::program_name;
 
 #[cfg(target_os = "macos")]
 pub(super) fn shell_has_children(shell_pid: u32) -> bool {
@@ -81,6 +88,12 @@ pub(super) fn shell_has_children(shell_pid: u32) -> bool {
 
 #[cfg(windows)]
 pub(super) fn shell_has_children(shell_pid: u32, git_bash_launcher: bool) -> bool {
+    has_children(&snapshot(), shell_pid, git_bash_launcher)
+}
+
+/// Every process on the machine, from one ToolHelp snapshot.
+#[cfg(windows)]
+fn snapshot() -> Vec<Process> {
     use std::mem::{size_of, zeroed};
     use windows_sys::Win32::Foundation::{CloseHandle, INVALID_HANDLE_VALUE};
     use windows_sys::Win32::System::Diagnostics::ToolHelp::{
@@ -90,7 +103,7 @@ pub(super) fn shell_has_children(shell_pid: u32, git_bash_launcher: bool) -> boo
     unsafe {
         let snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
         if snapshot == INVALID_HANDLE_VALUE {
-            return false;
+            return processes;
         }
         let mut entry: PROCESSENTRY32 = zeroed();
         entry.dwSize = size_of::<PROCESSENTRY32>() as u32;
@@ -114,10 +127,127 @@ pub(super) fn shell_has_children(shell_pid: u32, git_bash_launcher: bool) -> boo
         }
         CloseHandle(snapshot);
     }
-    has_children(&processes, shell_pid, git_bash_launcher)
+    processes
 }
 
-#[cfg(any(windows, test))]
+/// Every process on the machine, from `/proc`.
+#[cfg(target_os = "linux")]
+fn snapshot() -> Vec<Process> {
+    use std::fs;
+    let Ok(entries) = fs::read_dir("/proc") else {
+        return Vec::new();
+    };
+    entries
+        .flatten()
+        .filter_map(|entry| {
+            let pid = entry.file_name().to_str()?.parse().ok()?;
+            let stat = fs::read_to_string(entry.path().join("stat")).ok()?;
+            // The executable's file; `comm` is cut at 15 bytes, so it stands in only when the
+            // link cannot be read (another user's process).
+            let name = fs::read_link(entry.path().join("exe"))
+                .ok()
+                .and_then(|path| Some(exe_name(path.file_name()?.to_str()?).to_owned()))
+                .or_else(|| stat_comm(&stat).map(str::to_owned))?;
+            Some(Process {
+                pid,
+                parent: stat_parent(&stat)?,
+                name,
+            })
+        })
+        .collect()
+}
+
+/// An `exe` link's file name, without the mark of an executable replaced while it runs.
+#[cfg(any(target_os = "linux", test))]
+fn exe_name(file_name: &str) -> &str {
+    file_name.strip_suffix(" (deleted)").unwrap_or(file_name)
+}
+
+/// The command name in `/proc/<pid>/stat`: between the first `(` and the last `)`.
+#[cfg(any(target_os = "linux", test))]
+fn stat_comm(stat: &str) -> Option<&str> {
+    stat.get(stat.find('(')? + 1..stat.rfind(')')?)
+}
+
+/// Every process on the machine, from `ps`: other Unixes have no cheaper portable listing.
+#[cfg(all(unix, not(any(target_os = "macos", target_os = "linux"))))]
+fn snapshot() -> Vec<Process> {
+    std::process::Command::new("ps")
+        .args(["-A", "-o", "pid=", "-o", "ppid=", "-o", "comm="])
+        .output()
+        .map(|out| {
+            String::from_utf8_lossy(&out.stdout)
+                .lines()
+                .filter_map(ps_line)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// One `ps -o pid= -o ppid= -o comm=` line; the command name may hold spaces.
+#[cfg(any(all(unix, not(any(target_os = "macos", target_os = "linux"))), test))]
+fn ps_line(line: &str) -> Option<Process> {
+    let (pid, rest) = line.trim_start().split_once(char::is_whitespace)?;
+    let (parent, name) = rest.trim_start().split_once(char::is_whitespace)?;
+    let name = name.trim();
+    if name.is_empty() {
+        return None;
+    }
+    Some(Process {
+        pid: pid.parse().ok()?,
+        parent: parent.parse().ok()?,
+        name: name.to_owned(),
+    })
+}
+
+/// The programs running under the shell `shell_pid`, by `program_name`, each once.
+#[cfg(target_os = "macos")]
+pub(super) fn running_programs(shell_pid: u32, git_bash_launcher: bool) -> Vec<String> {
+    programs_below(children_of, shell_pid, git_bash_launcher)
+}
+
+/// The programs running under the shell `shell_pid`, by `program_name`, each once.
+#[cfg(not(target_os = "macos"))]
+pub(super) fn running_programs(shell_pid: u32, git_bash_launcher: bool) -> Vec<String> {
+    let processes = snapshot();
+    programs_below(
+        |pid| children_in(&processes, pid),
+        shell_pid,
+        git_bash_launcher,
+    )
+}
+
+/// `pid`'s children, asked of the kernel.
+#[cfg(target_os = "macos")]
+fn children_of(pid: u32) -> Vec<Process> {
+    // The kernel fills what fits and reports the count it wrote.
+    let mut pids = vec![0 as libc::pid_t; 256];
+    let listed = unsafe {
+        libc::proc_listchildpids(
+            pid as libc::pid_t,
+            pids.as_mut_ptr().cast(),
+            (pids.len() * std::mem::size_of::<libc::pid_t>()) as libc::c_int,
+        )
+    };
+    pids.truncate(listed.max(0) as usize);
+    pids.into_iter()
+        .filter(|&child| child > 0)
+        .map(|child| Process {
+            pid: child as u32,
+            parent: pid,
+            name: proc_name(child),
+        })
+        .collect()
+}
+
+#[cfg(target_os = "macos")]
+fn proc_name(pid: libc::pid_t) -> String {
+    let mut buffer = [0u8; 256];
+    let len = unsafe { libc::proc_name(pid, buffer.as_mut_ptr().cast(), buffer.len() as u32) };
+    String::from_utf8_lossy(&buffer[..len.max(0) as usize]).into_owned()
+}
+
+#[derive(Clone)]
 struct Process {
     pid: u32,
     parent: u32,
@@ -125,7 +255,24 @@ struct Process {
     name: String,
 }
 
-/// Whether `shell` has a child in a process snapshot.
+/// `pid`'s children in a process snapshot.
+#[cfg(any(not(target_os = "macos"), test))]
+fn children_in(processes: &[Process], pid: u32) -> Vec<Process> {
+    processes
+        .iter()
+        .filter(|p| p.parent == pid)
+        .cloned()
+        .collect()
+}
+
+/// Git for Windows' shells: under its launcher, one of these alone in the chain is the shell itself.
+const MSYS_SHELLS: [&str; 4] = ["bash", "zsh", "fish", "sh"];
+/// Bounds the walk down the launcher's chain: a reused pid can make parent links loop.
+const MAX_CHAIN: usize = 8;
+/// Bounds the walk below the shell, loops included.
+const MAX_PROGRAMS: usize = 256;
+
+/// What the shell itself started.
 ///
 /// Git for Windows' `bin\bash.exe` is a launcher whose child is the real bash
 /// (`usr\bin\bash.exe`), and MSYS emulates `exec` by running the new program as a child the old
@@ -135,31 +282,52 @@ struct Process {
 /// Limits, as the snapshot has no command lines: a shell busy only with builtins (a `while` loop)
 /// starts no child and reads as idle, at the top as in any shell this checks; and under the
 /// launcher, an idle shell started by hand (typing `zsh`) reads as idle too.
-#[cfg(any(windows, test))]
-fn has_children(processes: &[Process], shell: u32, git_bash_launcher: bool) -> bool {
-    const MSYS_SHELLS: [&str; 4] = ["bash.exe", "zsh.exe", "fish.exe", "sh.exe"];
-    // Bounds the walk: a reused pid can make parent links loop.
-    const MAX_CHAIN: usize = 8;
-    let children = |pid: u32| processes.iter().filter(move |p| p.parent == pid);
+fn started_by_shell(
+    children: impl Fn(u32) -> Vec<Process>,
+    shell: u32,
+    git_bash_launcher: bool,
+) -> Vec<Process> {
+    let mut below = children(shell);
     if !git_bash_launcher {
-        return children(shell).next().is_some();
+        return below;
     }
-    let mut current = shell;
     for _ in 0..MAX_CHAIN {
-        let mut below = children(current);
-        match (below.next(), below.next()) {
-            (None, _) => return false,
-            (Some(only), None)
-                if MSYS_SHELLS
-                    .iter()
-                    .any(|name| only.name.eq_ignore_ascii_case(name)) =>
-            {
-                current = only.pid;
+        match below.as_slice() {
+            [only] if MSYS_SHELLS.contains(&program_name(&only.name).as_str()) => {
+                below = children(only.pid);
             }
-            _ => return true,
+            _ => break,
         }
     }
-    true
+    below
+}
+
+/// Whether `shell` has a child in a process snapshot.
+#[cfg(any(windows, test))]
+fn has_children(processes: &[Process], shell: u32, git_bash_launcher: bool) -> bool {
+    !started_by_shell(|pid| children_in(processes, pid), shell, git_bash_launcher).is_empty()
+}
+
+/// What the shell started and everything below it, by `program_name`, each once and in order.
+fn programs_below(
+    children: impl Fn(u32) -> Vec<Process>,
+    shell: u32,
+    git_bash_launcher: bool,
+) -> Vec<String> {
+    let mut pending = started_by_shell(&children, shell, git_bash_launcher);
+    let mut seen = HashSet::from([shell]);
+    let mut names = BTreeSet::new();
+    while let Some(process) = pending.pop() {
+        if seen.len() > MAX_PROGRAMS {
+            break;
+        }
+        if !seen.insert(process.pid) {
+            continue;
+        }
+        names.insert(program_name(&process.name));
+        pending.extend(children(process.pid));
+    }
+    names.into_iter().collect()
 }
 
 #[cfg(test)]
@@ -231,6 +399,69 @@ mod tests {
             process(23, 21, "sleep.exe"),
         ];
         assert!(has_children(&two, 20, true));
+    }
+
+    #[test]
+    fn names_every_program_below_the_shell_once() {
+        let processes = [
+            process(10, 1, "pwsh.exe"),
+            process(11, 10, "git.exe"),
+            process(12, 11, "nvim.exe"),
+            process(13, 12, "Node.EXE"),
+            process(14, 10, "node.exe"),
+            process(15, 1, "htop.exe"),
+        ];
+        let programs = programs_below(|pid| children_in(&processes, pid), 10, false);
+        assert_eq!(programs, ["git", "node", "nvim"]);
+        assert!(programs_below(|pid| children_in(&processes, pid), 15, false).is_empty());
+    }
+
+    #[test]
+    fn git_bash_names_what_runs_below_its_shells() {
+        let processes = [
+            process(20, 1, "bash.exe"),
+            process(21, 20, "bash.exe"),
+            process(22, 21, "zsh.exe"),
+            process(23, 22, "claude.exe"),
+        ];
+        let programs = programs_below(|pid| children_in(&processes, pid), 20, true);
+        assert_eq!(programs, ["claude"]);
+        let idle = &processes[..3];
+        assert!(programs_below(|pid| children_in(idle, pid), 20, true).is_empty());
+    }
+
+    #[test]
+    fn a_looping_snapshot_still_ends() {
+        // Reused pids: the shell's child names the shell as its own child.
+        let looped = [process(40, 41, "vim.exe"), process(41, 40, "less.exe")];
+        assert_eq!(
+            programs_below(|pid| children_in(&looped, pid), 40, false),
+            ["less"]
+        );
+    }
+
+    #[test]
+    fn stat_comm_is_the_name_between_the_outer_parentheses() {
+        assert_eq!(stat_comm("42 (zsh) S 7 42"), Some("zsh"));
+        assert_eq!(stat_comm("42 (a b) c) S 9 42"), Some("a b) c"));
+        assert_eq!(stat_comm("garbage"), None);
+    }
+
+    #[test]
+    fn exe_names_drop_the_replaced_mark() {
+        assert_eq!(exe_name("nvim"), "nvim");
+        assert_eq!(exe_name("nvim (deleted)"), "nvim");
+    }
+
+    #[test]
+    fn ps_lines_keep_names_with_spaces() {
+        let line = ps_line("  123   45 My Tool").expect("a process");
+        assert_eq!(
+            (line.pid, line.parent, line.name.as_str()),
+            (123, 45, "My Tool")
+        );
+        assert!(ps_line("123 45").is_none());
+        assert!(ps_line("x 45 vim").is_none());
     }
 
     #[test]
