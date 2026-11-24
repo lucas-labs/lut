@@ -7569,12 +7569,14 @@ controls go (CompactV and CompactH boards on Windows, macOS and Linux).
 
 **Acceptance criteria:**
 
-- [ ] Vertical tabs: the hover title bar and its trigger strip sit above the rail, with the window controls in it.
-- [ ] Horizontal tabs: the window controls stay where they are on Windows and Linux; on macOS the traffic lights sit
-      over the rail, the rail leaves room above its first space and the tabs strip keeps clear of them, with the rail
-      shown and hidden.
+- [ ] Vertical tabs: on Windows and Linux the hover title bar and its trigger strip sit above the rail, with the
+      window controls in it; on macOS the traffic lights stay shown, so the title bar stays in place above the
+      workspace, without the tab strip.
+- [ ] Horizontal tabs: the window controls stay where they are on Windows and Linux.
+- [ ] On macOS, in both layouts, the traffic lights sit over the rail: the rail leaves them a row above its logo, and
+      the title bar and the views' headers beside the rail keep clear of them, with the rail shown and hidden.
 - [ ] Focus mode hides the rail as it hides the sidebar, and leaves it as it was.
-- [ ] Dialogs, the palette, menus and toasts sit above the rail and the floating panel.
+- [ ] Dialogs, the palette, menus and toasts sit above the rail and the views beside it.
 - [ ] Shortcuts in tooltips read Ctrl on Windows and Linux, ⌘ on macOS.
 
 **Verification:** `pnpm test`; manual on Windows; on macOS and Linux with E24 or E26-02, whichever comes first.
@@ -7697,7 +7699,7 @@ size: S
 
 **Verification:** `pnpm test`; manual on Windows: 20+ tabs in a short window.
 
-### E27-13 — Keyboard navigation on the rail
+### E27-13 — Keyboard navigation of the spaces, the tabs and the view switcher
 
 ```yaml
 id: E27-13
@@ -7709,17 +7711,21 @@ scope: ui
 size: S
 ```
 
-**Goal:** The rail works from the keyboard: Tab moves between its groups (spaces, tabs, Files and Git), the arrow keys
-within a group.
+**Goal:** The sidebar works from the keyboard the same way in full and compact mode, as one component serves both
+modes. The tabs' arrow keys selected the next tab, which gave the focus to the terminal after one step; the spaces
+and the view switcher had no arrow keys.
 
 **Acceptance criteria:**
 
-- [ ] Each group is one Tab stop; ↑ and ↓ move within it (roving focus); Enter and Space activate.
+- [ ] The spaces, the tabs (strip, column and rail) and the view switcher (Spaces, Files and Git at the sidebar's
+      bottom; Files and Git on the rail) are each one Tab stop, on the active item.
+- [ ] The arrow keys of their direction, Home and End move the focus within them without wrapping or activating
+      (roving focus); Enter and Space activate. Each + stays its own Tab stop.
 - [ ] Tooltips show on keyboard focus; focus shows the button's focus outline.
 - [ ] Screen readers get the group names and each button's name and state.
-- [ ] Component tests for the Tab stops, the arrows and activation.
+- [ ] Component tests for the Tab stops, the arrows and activation, in both modes.
 
-**Verification:** `pnpm test`; manual on Windows: go through the rail with the keyboard only.
+**Verification:** `pnpm test`; manual on Windows: go through the sidebar and the rail with the keyboard only.
 
 ### E27-14 — Close-out: compact sidebar
 

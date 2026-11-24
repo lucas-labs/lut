@@ -112,6 +112,31 @@ describe('SpacesView', () => {
     expect(row('b')?.hasAttribute('data-tab-color')).toBe(false);
   });
 
+  it.each([false, true])(
+    'is one named Tab stop on the active Space, and the arrows move the focus without switching (compact: %s)',
+    async (compact) => {
+      await render(tabsInB(), compact);
+      expect(host.querySelector('legend')?.textContent).toBe('Spaces');
+      expect(row('a')?.tabIndex).toBe(0);
+      expect(row('b')?.tabIndex).toBe(-1);
+      const press = (id: string, key: string) =>
+        act(async () => {
+          row(id)?.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key }));
+        });
+      await act(async () => row('a')?.focus());
+      await press('a', 'ArrowDown');
+      expect(document.activeElement).toBe(row('b'));
+      expect(useSpaces.getState().activeId).toBe('a');
+      await press('b', 'Home');
+      expect(document.activeElement).toBe(row('a'));
+      await press('a', 'End');
+      expect(document.activeElement).toBe(row(EPHEMERAL_SPACE_ID));
+      // Enter switches to the focused one.
+      await press(EPHEMERAL_SPACE_ID, 'Enter');
+      expect(useSpaces.getState().activeId).toBe(EPHEMERAL_SPACE_ID);
+    },
+  );
+
   it('starts collapsed, and a click switches Space without expanding it', async () => {
     await render();
     expect(tabRows()).toHaveLength(0);
@@ -311,6 +336,36 @@ describe('SpacesView on the compact sidebar (E27-01)', () => {
     elementFromPoint.mockRestore();
     expect(props.onReorderSpaces).not.toHaveBeenCalled();
     expect(useSpaces.getState().activeId).toBe('a');
+  });
+});
+
+describe('SpacesView on the compact sidebar with many spaces (E27-12)', () => {
+  it('scrolls the 15 spaces on its own, with no scrollbar, and keeps the active one in view', async () => {
+    useSpaces.getState().hydrate(
+      Array.from({ length: 15 }, (_, i) => ({
+        id: `s${i}`,
+        name: `Space ${i}`,
+        root: null,
+        env,
+        createdAt: 0,
+        updatedAt: 0,
+      })),
+      's0',
+    );
+    const scrolled: Element[] = [];
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(function (this: Element) {
+      scrolled.push(this);
+    });
+    await render(tabsInB(), true);
+    const list = row('s0')?.closest('.overflow-y-auto');
+    expect(list?.querySelectorAll('[data-space-id]')).toHaveLength(15);
+    expect(list?.className).toContain('overflow-y-auto');
+    expect(list?.className).toContain('[scrollbar-width:none]');
+    // The + stays out of the scrolled list.
+    expect(list?.contains(host.querySelector('[aria-label="Open space"]'))).toBe(false);
+    await act(async () => useSpaces.getState().setActive('s14'));
+    expect(scrolled[scrolled.length - 1]).toBe(row('s14'));
+    scrollIntoView.mockRestore();
   });
 });
 

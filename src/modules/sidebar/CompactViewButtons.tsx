@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useRovingFocus } from '@/lib/useRovingFocus';
 import { FolderIcon, GitBranchIcon } from '@lut/lut-icons';
 import { RailDot } from './RailDot';
 import type { SidebarViewId } from './types';
@@ -29,9 +30,16 @@ export function CompactViewButtons({ activeView, onSelectView, changedCount }: P
       dot: changedCount > 0,
     },
   ] as const;
+  // One Tab stop, the arrow keys move between the two (E27-13).
+  const roving = useRovingFocus(
+    items.map((item) => item.id),
+    activeView,
+    'vertical',
+  );
 
   return (
-    <div className="flex shrink-0 flex-col items-center gap-1">
+    <fieldset {...roving.group} className="m-0 flex min-w-0 shrink-0 flex-col items-center gap-1 border-0 p-0">
+      <legend className="sr-only">Sidebar views</legend>
       {items.map((item) => (
         <Tooltip key={item.id}>
           <TooltipTrigger asChild>
@@ -40,6 +48,7 @@ export function CompactViewButtons({ activeView, onSelectView, changedCount }: P
               size="icon-sm"
               aria-label={item.label}
               aria-pressed={activeView === item.id}
+              {...roving.item(item.id)}
               onClick={() => onSelectView(item.id)}
               className="relative"
             >
@@ -52,6 +61,6 @@ export function CompactViewButtons({ activeView, onSelectView, changedCount }: P
           </TooltipContent>
         </Tooltip>
       ))}
-    </div>
+    </fieldset>
   );
 }

@@ -65,4 +65,18 @@ describe('CompactViewButtons (E27-04)', () => {
     render(null, 1);
     expect(button('Git')?.getAttribute('aria-label')).toBe('Git, 1 change');
   });
+
+  it('is one named Tab stop, on the open view, and the arrows move between the two (E27-13)', () => {
+    render('source-control', 0);
+    expect(host.querySelector('legend')?.textContent).toBe('Sidebar views');
+    expect(button('Files')?.tabIndex).toBe(-1);
+    expect(button('Git')?.tabIndex).toBe(0);
+    act(() => button('Git')?.focus());
+    act(() => {
+      button('Git')?.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowUp' }));
+    });
+    expect(document.activeElement).toBe(button('Files'));
+    // Moving only moves the focus: Enter or Space opens the view, as a click.
+    expect(onSelectView).not.toHaveBeenCalled();
+  });
 });

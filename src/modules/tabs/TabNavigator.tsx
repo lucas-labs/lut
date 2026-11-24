@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Kbd } from '@/components/ui/kbd';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useRovingFocus } from '@/lib/useRovingFocus';
 import { cn } from '@/lib/utils';
 import {
   TabIcon,
@@ -22,7 +23,7 @@ import {
 import { ShortcutKeys, useShortcutLabel } from '@/modules/shortcuts';
 import { colorCss } from '@/modules/theme';
 import { CancelCircleIcon, ChevronIcon, PencilIcon, XIcon } from '@lut/lut-icons';
-import { type CSSProperties, Fragment, type KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { type CSSProperties, Fragment, useEffect, useRef, useState } from 'react';
 import { NewTabMenu, type NewTabMenuActions } from './NewTabMenu';
 import { TabColorMenu } from './TabColorMenu';
 
@@ -80,6 +81,13 @@ export function TabNavigator({ items, actions, orientation, heading, narrow, dra
   const closeHint = useShortcutLabel('tab.close');
   const jumpHint = useShortcutLabel('tab.selectByIndex');
   const scrollRef = useRef<HTMLDivElement>(null);
+  // One Tab stop on the active tab; the arrow keys move the focus, Enter or Space selects (E27-13). Selecting gives
+  // the focus to the tab's content, so the arrows must not select or the keys would land in the terminal.
+  const roving = useRovingFocus(
+    items.map((t) => t.id),
+    activeId ?? null,
+    vertical ? 'vertical' : 'horizontal',
+  );
   const [editingId, setEditingId] = useState<number | null>(null);
   // The tab whose menu is open, so applying a custom colour can close it.
   const [menuId, setMenuId] = useState<number | null>(null);
@@ -147,22 +155,6 @@ export function TabNavigator({ items, actions, orientation, heading, narrow, dra
     active?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }, [activeId]);
 
-  /** Arrow keys move to the neighbouring tab, Home/End to the ends, as in a tablist. */
-  const onTabKeyDown = (e: KeyboardEvent, index: number) => {
-    const prev = vertical ? 'ArrowUp' : 'ArrowLeft';
-    const next = vertical ? 'ArrowDown' : 'ArrowRight';
-    let target: number | null = null;
-    if (e.key === prev) target = Math.max(0, index - 1);
-    else if (e.key === next) target = Math.min(items.length - 1, index + 1);
-    else if (e.key === 'Home') target = 0;
-    else if (e.key === 'End') target = items.length - 1;
-    if (target === null) return;
-    e.preventDefault();
-    const id = items[target].id;
-    actions.select(id);
-    scrollRef.current?.querySelector<HTMLElement>(`[data-tab-id="${id}"]`)?.focus();
-  };
-
   const srcIndex = items.findIndex((x) => x.id === draggingId);
   const showGap = (gap: number) => draggingId !== null && dropGap === gap && gap !== srcIndex && gap !== srcIndex + 1;
 
@@ -229,11 +221,10 @@ export function TabNavigator({ items, actions, orientation, heading, narrow, dra
         // The compact button's current state (the `rail` button variant) and its name, which shows as a number.
         aria-current={rail && t.active ? 'true' : undefined}
         aria-label={rail ? (t.dirty ? `${t.title}, unsaved changes` : t.title) : undefined}
-        tabIndex={t.active ? 0 : -1}
+        {...roving.item(t.id)}
         data-tab-id={t.id}
         {...tabTint(t, orientation)}
         title={t.private && !rail ? PRIVATE_TAB_HINT : undefined}
-        onKeyDown={(e) => onTabKeyDown(e, i)}
         onPointerDown={(e) => {
           if (e.button !== 0) return;
           if ((e.target as HTMLElement).closest('[data-no-drag]')) return;
@@ -422,6 +413,7 @@ export function TabNavigator({ items, actions, orientation, heading, narrow, dra
           ref={scrollRef}
           role="tablist"
           aria-orientation="vertical"
+          {...roving.group}
           className={cn('flex min-h-0 flex-col items-center gap-1 overflow-y-auto', HIDDEN_SCROLLBAR)}
         >
           {cells}
@@ -442,6 +434,7 @@ export function TabNavigator({ items, actions, orientation, heading, narrow, dra
           ref={scrollRef}
           role="tablist"
           aria-orientation="vertical"
+          {...roving.group}
           className={cn('flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 pt-1 pb-2', HIDDEN_SCROLLBAR)}
         >
           {cells}
@@ -456,6 +449,7 @@ export function TabNavigator({ items, actions, orientation, heading, narrow, dra
         ref={scrollRef}
         role="tablist"
         aria-orientation="horizontal"
+        {...roving.group}
         data-tauri-drag-region={dragRegion}
         className={cn('flex h-full min-w-0 items-end gap-0.5 overflow-x-auto', HIDDEN_SCROLLBAR)}
       >

@@ -6,13 +6,21 @@ import {
   COMPACT_RAIL_WIDTH,
   SIDEBAR_MAX_WIDTH,
   SIDEBAR_MIN_WIDTH,
-  SidebarTrafficLightsRow,
+  SidebarHeaderRow,
+  type SidebarTrafficLights,
   useEdgeDrag,
 } from '@/modules/sidebar';
 import { TABS_COLUMN_MAX_WIDTH, TABS_COLUMN_MIN_WIDTH } from '@/modules/tabs';
 import { type ComponentProps, type ReactNode, type RefObject, useRef, useState } from 'react';
 import type { GroupImperativeHandle, Layout, PanelImperativeHandle } from 'react-resizable-panels';
 import { foldSideLayoutChange, restoreWidth, settledLayout, sideLayoutChange } from './lib/sidePanelRestore';
+
+/** Where macOS's traffic lights sit beside the sidebar's view headers (see `SidebarHeaderRow`). */
+function sidebarTrafficLights(compact: boolean, placement: TitleBarPlacement): SidebarTrafficLights {
+  if (!IS_MAC) return null;
+  if (compact) return 'rail';
+  return placement === 'inline' ? 'corner' : null;
+}
 
 /**
  * A side panel's resize handle is the 1px line between it and what follows. Its negative margin lets it overlap the
@@ -70,6 +78,8 @@ type Props = {
    * state for when they come back.
    */
   focusMode: boolean;
+  /** The window is in OS full screen: nothing drags it. */
+  fullScreen: boolean;
   /**
    * Compact sidebar (E27-01): `rail`, fixed at 32 px, leads the window and hides and shows like the sidebar; the tab
    * column is out. The sidebar's panel exists only while its views are open beside the rail (E27-04).
@@ -119,6 +129,7 @@ type Props = {
  */
 export function AppShell({
   focusMode,
+  fullScreen,
   compact,
   rail,
   compactPanelOpen,
@@ -251,16 +262,20 @@ export function AppShell({
               }}
             >
               <div className="flex h-full min-h-0 flex-col">
-                {/* macOS draws its traffic lights over the window's top-left corner: the sidebar's, unless the rail
-                    leads. With horizontal tabs they share the views' header row; with vertical tabs they get a row
-                    of their own. */}
+                {/* macOS draws its traffic lights over the window's top-left corner, the sidebar's: with horizontal
+                    tabs they share the views' header row, with vertical tabs they get a row of their own. In
+                    compact mode they reach past the rail into the views' header row (E27-06). */}
                 {IS_MAC && !compact && titleBarPlacement === 'overlay' ? (
                   <div data-tauri-drag-region className="h-7 shrink-0" />
                 ) : null}
                 <div className="min-h-0 flex-1">
-                  <SidebarTrafficLightsRow clear={IS_MAC && !compact && titleBarPlacement === 'inline'}>
+                  {/* Beside the inline title bar, the views' headers drag the window as the bar does. */}
+                  <SidebarHeaderRow
+                    lights={sidebarTrafficLights(compact, titleBarPlacement)}
+                    drag={titleBarPlacement === 'inline' && !fullScreen}
+                  >
                     {sidebar}
-                  </SidebarTrafficLightsRow>
+                  </SidebarHeaderRow>
                 </div>
               </div>
             </SidePanel>

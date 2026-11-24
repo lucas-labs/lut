@@ -328,6 +328,7 @@ function shell(
     { value: { resolvedMode: mode, activeTheme: theme, customThemes: [] } },
     createElement(AppShell, {
       focusMode: false,
+      fullScreen: false,
       compact: false,
       rail: null,
       sidebarWidth: 260,

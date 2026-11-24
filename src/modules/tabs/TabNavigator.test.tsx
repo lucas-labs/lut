@@ -283,7 +283,28 @@ describe('TabNavigator on the compact sidebar (E27-02)', () => {
     expect(host.querySelector('[role="tablist"]')?.getAttribute('aria-orientation')).toBe('vertical');
   });
 
-  it("selects on a click, closes on a middle click and moves with the column's arrow keys", async () => {
+  it('scrolls 30 tabs on its own, with no scrollbar, and keeps the active one in view (E27-12)', async () => {
+    for (let i = 0; i < 27; i++) store().newTab();
+    const scrolled: Element[] = [];
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(function (this: Element) {
+      scrolled.push(this);
+    });
+    await render('compact');
+    const list = host.querySelector('[role="tablist"]');
+    expect(tabs()).toHaveLength(30);
+    expect(list?.className).toContain('overflow-y-auto');
+    expect(list?.className).toContain('[scrollbar-width:none]');
+    // The newest tab is active: the 30th, past the 9 numbered ones, still named.
+    expect(tabs()[29].textContent).toBe('…');
+    expect(tabs()[29].getAttribute('aria-label')).toBe(items()[29].title);
+    expect(scrolled[scrolled.length - 1]).toBe(tabs()[29]);
+    await act(async () => store().selectByIndex(0));
+    await render('compact');
+    expect(scrolled[scrolled.length - 1]).toBe(tabs()[0]);
+    scrollIntoView.mockRestore();
+  });
+
+  it("selects on a click, closes on a middle click and moves the focus with the column's arrow keys", async () => {
     await render('compact');
     await act(async () => {
       pointerY(tabs()[0], 'pointerdown', 10);
@@ -295,8 +316,16 @@ describe('TabNavigator on the compact sidebar (E27-02)', () => {
     });
     expect(actions.close).toHaveBeenCalledWith(items()[1].id);
     await act(async () => {
+      tabs()[0].focus();
+    });
+    await act(async () => {
       tabs()[0].dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowDown' }));
     });
+    // The arrows only move the focus (E27-13): selecting would hand it to the terminal.
+    expect(document.activeElement).toBe(tabs()[1]);
+    expect(actions.select).toHaveBeenLastCalledWith(items()[0].id);
+    // Enter or Space click the focused tab, which selects it.
+    await act(async () => tabs()[1].click());
     expect(actions.select).toHaveBeenLastCalledWith(items()[1].id);
   });
 

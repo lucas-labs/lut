@@ -1,5 +1,6 @@
 import { AppLogo } from '@/components/AppLogo';
 import { cn } from '@/lib/utils';
+import { IS_MAC } from '@/modules/platform';
 import type { ReactNode } from 'react';
 
 /** The rail's fixed width (E27-01): it hides and shows like the sidebar, but never resizes. */
@@ -23,6 +24,9 @@ type Props = {
 export function CompactRail({ spaces, tabs, views }: Props) {
   return (
     <nav aria-label="Compact sidebar" className="flex h-full min-h-0 flex-col items-center gap-1 py-2">
+      {/* macOS's traffic lights sit over the rail's top (E27-06): the rail starts below them, 40px down, and their
+          row drags the window. */}
+      {IS_MAC ? <span data-tauri-drag-region data-slot="rail-traffic-lights" className="h-7 w-full shrink-0" /> : null}
       {/* lut's compact mark leads the rail, as the wordmark leads the title bar. */}
       <span data-slot="rail-logo" className="mb-1 flex h-6 shrink-0 items-center text-muted-foreground">
         <AppLogo compact size="sm" />

@@ -157,6 +157,7 @@ function shell(tabs: Tab[], { vertical = false, sidebar = null }: { vertical?: b
   const strip = createElement('div', { 'data-tabs': '' });
   return createElement(AppShell, {
     focusMode: false,
+    fullScreen: false,
     compact: false,
     rail: null,
     sidebarWidth: 260,
@@ -187,6 +188,7 @@ function SidebarShell({ tabs, onControls }: { tabs: Tab[]; onControls: (controls
   useEffect(() => onControls(sidebar));
   return createElement(AppShell, {
     focusMode: false,
+    fullScreen: false,
     compact: false,
     rail: null,
     sidebarWidth: 260,
