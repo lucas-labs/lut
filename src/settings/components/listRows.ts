@@ -8,34 +8,37 @@ const keyedSaved = <T extends object>(items: T[]): Keyed<T>[] =>
 
 /**
  * Rows edited as a draft, each with a key of its own so a removed row takes its field with it. A list saved
- * elsewhere replaces them; the list this editor sent, coming back saved, leaves them (their keys, focus and any
- * edit made since) as they are.
+ * elsewhere replaces them; a list this editor sent, coming back saved, leaves them (their keys, focus and any
+ * edit made since) as they are, whichever of the lists on their way it is.
  */
 export function useRows<T extends object>(saved: T[], same: (a: T[], b: T[]) => boolean) {
   const added = useRef(0);
   const [rows, setRows] = useState(() => keyedSaved(saved));
   const [rowsOf, setRowsOf] = useState(saved);
-  // The list last sent, as native lists it, until a new list arrives.
-  const [sent, setSent] = useState<T[] | null>(null);
+  // The lists sent and not back yet, oldest first. Saves come back in order: one coming back means the ones
+  // sent before it are back too.
+  const [inFlight, setInFlight] = useState<T[][]>([]);
   if (!same(saved, rowsOf)) {
     setRowsOf(saved);
-    setSent(null);
-    if (sent === null || !same(saved, sent)) setRows(keyedSaved(saved));
+    const back = inFlight.findIndex((list) => same(saved, list));
+    if (back === -1) setRows(keyedSaved(saved));
+    else setInFlight(inFlight.slice(back + 1));
   }
   const add = (item: T) => {
     added.current += 1;
     setRows([...rows, { ...item, key: `added-${added.current}` }]);
   };
-  // Marks `list` sent while its save is on its way; one that failed is forgotten, so it can be sent again.
+  // Marks `list` sent while its save is on its way; one that failed is forgotten, so it can be sent again, and
+  // it takes only itself away, never a list sent after it.
   const send = (list: T[], result: Promise<boolean> | void) => {
-    setSent(list);
+    setInFlight((lists) => [...lists, list]);
     void result?.then((done) => {
-      if (!done) setSent((current) => (current === list ? null : current));
+      if (!done) setInFlight((lists) => lists.filter((l) => l !== list));
     });
   };
-  // What the next edit is compared with: the list sent while it is on its way, so going back to the listed one
-  // is saved too.
-  return { rows, setRows, add, send, last: sent ?? saved };
+  // What the next edit is compared with: the last list sent while it is on its way, so going back to the listed
+  // one is saved too.
+  return { rows, setRows, add, send, last: inFlight[inFlight.length - 1] ?? saved };
 }
 
 export const blurOnEnter = (event: React.KeyboardEvent<HTMLInputElement>) => {
