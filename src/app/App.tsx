@@ -32,7 +32,7 @@ import { useTabCommands } from './hooks/useTabCommands';
 import { useTerminalPanes } from './hooks/useTerminalPanes';
 import { useWorkspaceCoordinator } from './hooks/useWorkspaceCoordinator';
 import { breadcrumbFilePath } from './lib/activeFilePath';
-import { registerTabPresenters } from './tabPresenters';
+import { registerTabPresenters, SpaceAgentStatus } from './tabPresenters';
 
 registerTabPresenters();
 
@@ -168,6 +168,7 @@ export default function App() {
               spaces={
                 <SpacesView
                   compact
+                  Status={SpaceAgentStatus}
                   tabs={tabs}
                   onNewSpace={() => void workspace.newSpace()}
                   onDeleteSpace={workspace.deleteSpace}

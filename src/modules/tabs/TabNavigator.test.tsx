@@ -42,7 +42,7 @@ beforeEach(() => {
   };
   undoPresenter = registerTabPresenter('terminal', {
     Icon: () => null,
-    Status: ({ tab }) => createElement('span', { 'data-status': tab.id }),
+    Status: ({ tab, as }) => createElement('span', { 'data-status': tab.id, 'data-look': as }),
   });
   host = document.createElement('div');
   document.body.append(host);
@@ -345,6 +345,19 @@ describe('TabNavigator on the compact sidebar (E27-02)', () => {
     expect(live.map((l) => l?.querySelector('[data-status]')?.getAttribute('data-status'))).toEqual(
       items().map((t) => String(t.id)),
     );
+  });
+
+  it("puts each tab's state on its button as a dot and in its tooltip as words (E27-03)", async () => {
+    await render('compact');
+    const dots = tabs().map((t) => t.querySelector(':scope > [data-status]'));
+    expect(dots.map((d) => d?.getAttribute('data-look'))).toEqual(items().map(() => 'dot'));
+    expect(dots.map((d) => d?.getAttribute('data-status'))).toEqual(items().map((t) => String(t.id)));
+    expect(tabs()[0].querySelector('[aria-live="polite"] [data-status]')?.getAttribute('data-look')).toBe('icon');
+
+    await act(async () => tabs()[1].focus());
+    const label = document.querySelector('[data-slot="tooltip-content"] [data-status]');
+    expect(label?.getAttribute('data-look')).toBe('label');
+    expect(label?.getAttribute('data-status')).toBe(String(items()[1].id));
   });
 
   it('keeps renaming while Enter confirms an IME candidate', async () => {

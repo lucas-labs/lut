@@ -170,7 +170,7 @@ export function TabNavigator({ items, actions, orientation, heading, narrow, dra
     rail
       ? cn(
           buttonVariants({ variant: 'rail', size: 'icon-sm' }),
-          'group/vt shrink-0',
+          'group/vt relative shrink-0',
           !t.active && 'opacity-70 hover:opacity-100',
         )
       : vertical
@@ -279,14 +279,17 @@ export function TabNavigator({ items, actions, orientation, heading, narrow, dra
         className={cn(cellClass(t), isNew && 'lut-tab-in', draggingId === t.id && 'opacity-50')}
       >
         {rail ? (
-          <span className={cn('font-mono', !t.active && 'text-foreground/55 group-hover/vt:text-foreground')}>
-            {tabMark(i)}
-            {/* The state shows in the tooltip; kept mounted, hidden, so a screen reader hears it change, as in the
-                column. */}
-            <span aria-live="polite" className="sr-only">
-              <TabStatus id={t.id} />
+          <>
+            <span className={cn('font-mono', !t.active && 'text-foreground/55 group-hover/vt:text-foreground')}>
+              {tabMark(i)}
+              {/* Kept mounted, hidden, so a screen reader hears the state change, as in the column. */}
+              <span aria-live="polite" className="sr-only">
+                <TabStatus id={t.id} />
+              </span>
             </span>
-          </span>
+            {/* The agent's state, on the button's corner (E27-03). */}
+            <TabStatus id={t.id} as="dot" />
+          </>
         ) : (
           <>
             <TabIcon id={t.id} menu />
@@ -370,7 +373,7 @@ export function TabNavigator({ items, actions, orientation, heading, narrow, dra
               <TooltipContent side="right" sideOffset={6}>
                 <span className="max-w-56 truncate">{t.title}</span>
                 {t.dirty ? <span className="text-muted-foreground">Unsaved changes</span> : null}
-                <TabStatus id={t.id} />
+                <TabStatus id={t.id} as="label" />
                 {i < 9 && jumpHint ? (
                   <Kbd>
                     <ShortcutKeys label={jumpHint.replace(/1$/, String(i + 1))} />

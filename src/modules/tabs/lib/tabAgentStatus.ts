@@ -28,3 +28,25 @@ export function selectTabAgentStatus(
   if (ptyIds.length === 0) return NO_AGENT_STATUS;
   return tabAgentStatus(state.phases, state.agents, ptyIds);
 }
+
+/** What a space's button shows of its agents: one needing attention, or one whose response finished. */
+export type SpaceAgentState = 'attention' | 'finished' | null;
+
+/**
+ * A space's agent state, over the ptys of every terminal in it: the most urgent wins, so a tab that needs attention
+ * makes its space show it. A space shows no working agent, only what waits for the user.
+ *
+ * A string, so a store selector needs no `useShallow`: the space re-renders only when its own state changes.
+ */
+export function selectSpaceAgentState(
+  state: ActivityState,
+  ptyIds: readonly number[],
+): SpaceAgentState {
+  let finished = false;
+  for (const id of ptyIds) {
+    const phase = state.phases[id];
+    if (phase === 'attention') return 'attention';
+    if (phase === 'finished') finished = true;
+  }
+  return finished ? 'finished' : null;
+}
