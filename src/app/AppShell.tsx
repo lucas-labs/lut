@@ -2,11 +2,11 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { cn } from '@/lib/utils';
 import type { TitleBarPlacement } from '@/modules/header';
 import { IS_MAC } from '@/modules/platform';
-import { SIDEBAR_MAX_WIDTH, SIDEBAR_MIN_WIDTH } from '@/modules/sidebar';
+import { COMPACT_RAIL_WIDTH, SIDEBAR_MAX_WIDTH, SIDEBAR_MIN_WIDTH } from '@/modules/sidebar';
 import { TABS_COLUMN_MAX_WIDTH, TABS_COLUMN_MIN_WIDTH } from '@/modules/tabs';
 import { type ComponentProps, type ReactNode, type RefObject, useRef, useState } from 'react';
 import type { GroupImperativeHandle, Layout, PanelImperativeHandle } from 'react-resizable-panels';
-import { foldSideLayoutChange, settledLayout, sideLayoutChange } from './lib/sidePanelRestore';
+import { foldSideLayoutChange, restoreWidth, settledLayout, sideLayoutChange } from './lib/sidePanelRestore';
 
 /**
  * A side panel's resize handle is the 1px line between it and what follows. Its negative margin lets it overlap the
@@ -29,7 +29,7 @@ function SidePanel({ defaultSize, ...props }: ComponentProps<typeof ResizablePan
   return <ResizablePanel groupResizeBehavior="preserve-pixel-size" defaultSize={mountedSize} {...props} />;
 }
 
-const SIDE_PANELS = ['sidebar', 'tabs-column'] as const;
+const SIDE_PANELS = ['sidebar', 'rail', 'tabs-column'] as const;
 
 /**
  * Sets a layout the app makes itself, flagged so the group's report of it is not taken for one to correct. Outside the
@@ -45,8 +45,17 @@ function applyOwnLayout(group: GroupImperativeHandle | null, layout: Layout, res
 }
 
 type Props = {
-  /** Focus mode (E12-10): only the workspace shows; the chrome keeps its own state for when it comes back. */
+  /**
+   * Focus mode (E12-10): only the workspace shows, and the title bar as an overlay; the side panels keep their own
+   * state for when they come back.
+   */
   focusMode: boolean;
+  /**
+   * Compact sidebar (E27-01): the sidebar's slot holds `rail`, a panel fixed at 32 px that hides and shows like the
+   * sidebar; the tab column is out. The full sidebar keeps its width for when it comes back.
+   */
+  compact: boolean;
+  rail: ReactNode;
   titleBar: ReactNode;
   /**
    * `inline`: above the workspace, beside the sidebar (horizontal tabs). `overlay`: over the whole window, laid
@@ -83,7 +92,9 @@ type Props = {
  */
 export function AppShell({
   focusMode,
-  titleBar: titleBarProp,
+  compact,
+  rail,
+  titleBar,
   titleBarPlacement,
   tabsColumn: tabsColumnProp,
   tabsColumnRef,
@@ -99,14 +110,15 @@ export function AppShell({
   workspace,
   children,
 }: Props) {
-  const titleBar = focusMode ? null : titleBarProp;
-  const tabsColumn = focusMode ? null : tabsColumnProp;
+  // Focus mode takes the side panels out, compact mode the tab column; their stored layout stays as it was.
+  const tabsColumn = focusMode || compact ? null : tabsColumnProp;
 
   // The side panels' own widths as of the last layout the app accepted, and the group's last layout: when the group
   // lays itself out (a panel set change, a panel opening or closing), the side panels that should not have moved go
   // back to their width.
   const sizes = useRef<Record<string, number>>({
     sidebar: sidebarInitialWidth,
+    rail: sidebarInitialWidth > 0 ? COMPACT_RAIL_WIDTH : 0,
     'tabs-column': tabsColumnInitialWidth,
   });
   const lastLayout = useRef<Layout | null>(null);
@@ -125,7 +137,8 @@ export function AppShell({
     if (focusMode) return;
     const width = widthIn(layout);
     for (const id of SIDE_PANELS) if (id in layout) sizes.current[id] = width(id);
-    onSidebarLayout(width('sidebar'), isUserInteraction);
+    // The rail's fixed width is not the sidebar's: the full sidebar keeps its own.
+    if ('sidebar' in layout) onSidebarLayout(width('sidebar'), isUserInteraction);
     if (tabsColumn) onTabsColumnLayout(width('tabs-column'), isUserInteraction);
   };
 
@@ -156,11 +169,12 @@ export function AppShell({
               const change = sideLayoutChange(prev, layout, isUserInteraction, SIDE_PANELS);
               if (pending.current || change.restore.length > 0) {
                 const first = pending.current === null;
-                pending.current = foldSideLayoutChange(
-                  pending.current ?? {},
-                  change,
-                  widthIn(layout),
-                  (id) => sizes.current[id] ?? 0,
+                pending.current = foldSideLayoutChange(pending.current ?? {}, change, widthIn(layout), (id) =>
+                  restoreWidth(id, sizes.current[id], {
+                    open: sidebarOpen,
+                    sidebarWidth: sidebarInitialWidth,
+                    railWidth: COMPACT_RAIL_WIDTH,
+                  }),
                 );
                 if (first) queueMicrotask(settle);
                 // This layout is about to be corrected: the app records the settled one, not this.
@@ -170,9 +184,25 @@ export function AppShell({
             accept(layout, isUserInteraction);
           }}
         >
-          {/* In focus mode the sidebar leaves its slot empty, as the tab column does; it comes back at its width. */}
-          {focusMode ? null : (
+          {/* In focus mode the sidebar leaves its slot empty, as the tab column does; it comes back at its width. In
+              compact mode the slot holds the rail, a panel of its own (its key) whose width never changes. */}
+          {focusMode ? null : compact ? (
             <SidePanel
+              key="rail"
+              id="rail"
+              panelRef={sidebarRef}
+              defaultSize={`${sidebarInitialWidth > 0 ? COMPACT_RAIL_WIDTH : 0}px`}
+              minSize={`${COMPACT_RAIL_WIDTH}px`}
+              maxSize={`${COMPACT_RAIL_WIDTH}px`}
+              collapsible
+              collapsedSize={0}
+              onResize={(size) => onSidebarCollapsedChange(size.inPixels <= 0)}
+            >
+              {rail}
+            </SidePanel>
+          ) : (
+            <SidePanel
+              key="sidebar"
               id="sidebar"
               panelRef={sidebarRef}
               defaultSize={`${sidebarInitialWidth}px`}

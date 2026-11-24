@@ -40,22 +40,38 @@ function subpathD(sp, o) {
   return d;
 }
 
-const paintAttr = paint => (paint && paint.type === 'solid' ? 'currentColor' : 'none');
+// A shape's colour: a theme colour's name in the object's VectorCraft note (`{"color": "primary"}`), drawn as
+// `var(--primary)`, or inherited from its group; without one the shape takes the text colour (currentColor). A note
+// that is not JSON is left alone: notes can hold other things.
+function noteColor(node) {
+  const note = node.attrs?.note;
+  if (!note) return null;
+  try {
+    const color = JSON.parse(note)?.color;
+    return typeof color === 'string' && color ? color : null;
+  } catch {
+    return null;
+  }
+}
+const colorOf = (node, parentColor) => noteColor(node) ?? parentColor;
+const cssColor = color => (color ? `var(--${color})` : 'currentColor');
+
+const paintAttr = (paint, color) => (paint && paint.type === 'solid' ? cssColor(color) : 'none');
 
 // An object's opacity (`node.opacity`, its own and its groups') multiplies the opacity of its fill or stroke
 // (`item.opacity`): VectorCraft keeps them apart, the icon draws them as one.
 const opacity = (item, objectOpacity) => (item?.opacity ?? 1) * objectOpacity;
 
-function styleAttrs(appearance, rule, objectOpacity = 1) {
+function styleAttrs(appearance, rule, objectOpacity = 1, color = null) {
   const items = appearance?.items ?? [];
   const fill = items.find(i => i.kind === 'fill');
   const stroke = items.find(i => i.kind === 'stroke');
-  const at = [`fill="${paintAttr(fill?.paint)}"`];
+  const at = [`fill="${paintAttr(fill?.paint, color)}"`];
   if (fill?.paint?.type === 'solid' && rule === 'EvenOdd') at.push('fill-rule="evenodd"');
   const fillOpacity = opacity(fill, objectOpacity);
   if (fill?.paint?.type === 'solid' && fillOpacity !== 1) at.push(`fill-opacity="${r(fillOpacity)}"`);
   if (stroke && stroke.paint?.type === 'solid') {
-    at.push('stroke="currentColor"', `stroke-width="${r(stroke.width ?? 1)}"`);
+    at.push(`stroke="${cssColor(color)}"`, `stroke-width="${r(stroke.width ?? 1)}"`);
     const strokeOpacity = opacity(stroke, objectOpacity);
     if (strokeOpacity !== 1) at.push(`stroke-opacity="${r(strokeOpacity)}"`);
     if (stroke.cap && stroke.cap !== 'Butt') at.push(`stroke-linecap="${stroke.cap.toLowerCase()}"`);
@@ -65,23 +81,24 @@ function styleAttrs(appearance, rule, objectOpacity = 1) {
   return at.join(' ');
 }
 
-function nodeSvg(node, o, warn, parentOpacity = 1) {
+function nodeSvg(node, o, warn, parentOpacity = 1, parentColor = null) {
   const k = node.kind;
   const objectOpacity = parentOpacity * (node.opacity ?? 1);
+  const color = colorOf(node, parentColor);
   if (k.type === 'path') {
     const d = k.path.subpaths.map(sp => subpathD(sp, o)).join('');
-    return `<path d="${d}" ${styleAttrs(node.appearance, undefined, objectOpacity)}/>`;
+    return `<path d="${d}" ${styleAttrs(node.appearance, undefined, objectOpacity, color)}/>`;
   }
   if (k.type === 'compound') {
     const d = k.children.flatMap(c => c.kind.path?.subpaths ?? []).map(sp => subpathD(sp, o)).join('');
-    return `<path d="${d}" ${styleAttrs(node.appearance, k.rule, objectOpacity)}/>`;
+    return `<path d="${d}" ${styleAttrs(node.appearance, k.rule, objectOpacity, color)}/>`;
   }
   if (k.type === 'group') {
     if (k.clip) warn(`clipping group ${node.id} exported without its clip`);
     if (objectOpacity !== 1 && k.children.length > 1) {
       warn(`group ${node.id}: its opacity is applied to each child, so where they overlap it stacks`);
     }
-    return `<g>${k.children.map(c => nodeSvg(c, o, warn, objectOpacity)).join('')}</g>`;
+    return `<g>${k.children.map(c => nodeSvg(c, o, warn, objectOpacity, color)).join('')}</g>`;
   }
   warn(`node ${node.id} of type "${k.type}" skipped`);
   return '';
@@ -89,7 +106,7 @@ function nodeSvg(node, o, warn, parentOpacity = 1) {
 
 // How a shape is painted: a filled area, or a line with the caps, joins and width it was drawn
 // with (they are part of the design: square ends that match the native window controls, butt
-// lines that fill a dot). Colour is left to the component (currentColor); an opacity below 1 is
+// lines that fill a dot). Colour is the component's (currentColor) unless a note names one; an opacity below 1 is
 // kept, since it is part of the drawing too (the spinner's faint track).
 const opacityOf = (item, objectOpacity) => {
   const value = opacity(item, objectOpacity);
@@ -112,16 +129,17 @@ function paintOf(appearance, objectOpacity) {
 }
 
 // Geometry and paint. Groups have no transforms, so their children are flattened.
-function nodeElements(node, o, parentOpacity = 1) {
+function nodeElements(node, o, parentOpacity = 1, parentColor = null) {
   const k = node.kind;
   const objectOpacity = parentOpacity * (node.opacity ?? 1);
-  const paint = paintOf(node.appearance, objectOpacity);
+  const color = colorOf(node, parentColor);
+  const paint = { ...paintOf(node.appearance, objectOpacity), ...(color ? { color } : {}) };
   if (k.type === 'path') return [{ type: 'path', ...paint, d: k.path.subpaths.map(sp => subpathD(sp, o)).join('') }];
   if (k.type === 'compound') {
     const d = k.children.flatMap(c => c.kind.path?.subpaths ?? []).map(sp => subpathD(sp, o)).join('');
     return [{ type: 'path', ...paint, d, ...(k.rule === 'EvenOdd' ? { fillRule: 'evenodd' } : {}) }];
   }
-  if (k.type === 'group') return k.children.flatMap(c => nodeElements(c, o, objectOpacity));
+  if (k.type === 'group') return k.children.flatMap(c => nodeElements(c, o, objectOpacity, color));
   return [];
 }
 
@@ -133,8 +151,11 @@ function mergeStrokes(elements) {
   const out = [];
   const byStyle = new Map();
   for (const e of elements) {
+    // A stroke joins an earlier one only while nothing of another colour is drawn between them: merging past it
+    // would move the stroke under that colour.
+    for (const [key, s] of byStyle) if ((s.color ?? null) !== (e.color ?? null)) byStyle.delete(key);
     if (e.paint !== 'stroke' || e.opacity != null) { out.push(e); continue; }
-    const key = JSON.stringify([e.strokeWidth, e.linecap, e.linejoin, e.miterLimit]);
+    const key = JSON.stringify([e.strokeWidth, e.linecap, e.linejoin, e.miterLimit, e.color]);
     const same = byStyle.get(key);
     if (same) same.d += e.d;
     else { const copy = { ...e }; byStyle.set(key, copy); out.push(copy); }

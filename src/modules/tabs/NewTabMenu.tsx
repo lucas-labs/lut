@@ -54,8 +54,11 @@ export type NewTabMenuActions = {
 };
 
 type Props = NewTabMenuActions & {
-  /** The strip's 22px button or the rail's 24px one. */
-  size: 'strip' | 'rail';
+  /**
+   * The strip's 22px button, the tab column's 24px one, or the compact sidebar's rail button, whose menu opens to the
+   * rail's right.
+   */
+  size: 'strip' | 'rail' | 'compact';
 };
 
 const SPLITS = [
@@ -89,6 +92,7 @@ export function NewTabMenu({
   const openLauncherAfterMenuClose = useRef(false);
   const openMenuAfterLauncherClose = useRef(false);
   useHoldTitleBar(menuOpen || launcherOpen);
+  const side = size === 'compact' ? 'right' : undefined;
 
   const onMenuOpenChange = (next: boolean) => {
     if (next) {
@@ -113,11 +117,17 @@ export function NewTabMenu({
         <span className="inline-flex">
           <DropdownMenu open={menuOpen} onOpenChange={onMenuOpenChange}>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon-sm" aria-label="New tab" title="New tab">
+              <Button
+                variant={size === 'compact' ? 'rail' : 'ghost'}
+                size="icon-sm"
+                aria-label="New tab"
+                title="New tab"
+              >
                 <PlusIcon size={size === 'rail' ? 'md' : 'sm'} />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
+              side={side}
               align="start"
               className="min-w-56"
               onCloseAutoFocus={(event) => {
@@ -206,6 +216,7 @@ export function NewTabMenu({
         </span>
       </PopoverAnchor>
       <PopoverContent
+        side={side}
         align="start"
         sideOffset={6}
         onCloseAutoFocus={(event) => {

@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { TooltipProvider } from '@/components/ui/tooltip';
 import {
   initialNavigationData,
   registerTabPresenter,
@@ -10,7 +11,7 @@ import { selectNavigatorItems } from '@/modules/navigation/navigator';
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
-import { TabNavigator } from './TabNavigator';
+import { tabMark, TabNavigator, type TabNavigatorLayout } from './TabNavigator';
 
 const store = () => useNavigationStore.getState();
 let root: Root;
@@ -59,27 +60,31 @@ function items(): TabNavigatorItem[] {
   return selectNavigatorItems(s, s.activeSpaceId);
 }
 
-async function render(orientation: 'horizontal' | 'vertical' = 'horizontal') {
+async function render(orientation: TabNavigatorLayout = 'horizontal', list: TabNavigatorItem[] = items()) {
   const noop = () => {};
   await act(async () =>
     root.render(
-      createElement(TabNavigator, {
-        items: items(),
-        actions,
-        orientation,
-        heading: 'Space',
-        newTabMenu: {
-          onNew: noop,
-          onNewWithProfile: noop,
-          onSplit: noop,
-          canSplit: true,
-          onNewPrivate: noop,
-          onNewPreview: noop,
-          onNewEditor: noop,
-          onNewGitGraph: noop,
-          onLaunchAgents: noop,
-        },
-      }),
+      createElement(
+        TooltipProvider,
+        null,
+        createElement(TabNavigator, {
+          items: list,
+          actions,
+          orientation,
+          heading: 'Space',
+          newTabMenu: {
+            onNew: noop,
+            onNewWithProfile: noop,
+            onSplit: noop,
+            canSplit: true,
+            onNewPrivate: noop,
+            onNewPreview: noop,
+            onNewEditor: noop,
+            onNewGitGraph: noop,
+            onLaunchAgents: noop,
+          },
+        }),
+      ),
     ),
   );
 }
@@ -248,14 +253,140 @@ describe('TabNavigator', () => {
       expect(custom?.querySelector<HTMLElement>('[data-slot="color-swatch"]')?.style.background).toBe('#ff8800');
     });
 
-    it.each(['horizontal', 'vertical'] as const)('tints a coloured tab in the %s navigator', async (orientation) => {
-      store().updateTab(items()[1].id, { color: 'cyan' });
-      await render(orientation);
-      const [plain, coloured] = tabs();
-      expect(plain.hasAttribute('data-tab-color')).toBe(false);
-      expect(coloured.hasAttribute('data-tab-color')).toBe(true);
-      expect(coloured.dataset.orientation).toBe(orientation);
-      expect(coloured.style.getPropertyValue('--tab-color')).toBe('var(--terminal-ansi-cyan)');
+    it.each(['horizontal', 'vertical', 'compact'] as const)(
+      'tints a coloured tab in the %s navigator',
+      async (orientation) => {
+        store().updateTab(items()[1].id, { color: 'cyan' });
+        await render(orientation);
+        const [plain, coloured] = tabs();
+        expect(plain.hasAttribute('data-tab-color')).toBe(false);
+        expect(coloured.hasAttribute('data-tab-color')).toBe(true);
+        expect(coloured.dataset.orientation).toBe(orientation);
+        expect(coloured.style.getPropertyValue('--tab-color')).toBe('var(--terminal-ansi-cyan)');
+      },
+    );
+  });
+});
+
+describe('TabNavigator on the compact sidebar (E27-02)', () => {
+  const pointerY = (el: HTMLElement, type: string, clientY: number) =>
+    el.dispatchEvent(new PointerEvent(type, { bubbles: true, button: 0, pointerId: 1, clientX: 0, clientY }));
+
+  it('numbers the tabs 1 to 9, then "…", names them and marks the active one', async () => {
+    for (let i = 0; i < 9; i++) store().newTab();
+    await render('compact');
+    const list = items();
+    expect(list).toHaveLength(12);
+    expect(tabs().map((t) => t.textContent)).toEqual(['1', '2', '3', '4', '5', '6', '7', '8', '9', '…', '…', '…']);
+    expect(tabs().map((t) => t.getAttribute('aria-label'))).toEqual(list.map((t) => t.title));
+    expect(tabs().map((t) => t.getAttribute('aria-current'))).toEqual(list.map((t) => (t.active ? 'true' : null)));
+    expect(host.querySelector('[role="tablist"]')?.getAttribute('aria-orientation')).toBe('vertical');
+  });
+
+  it("selects on a click, closes on a middle click and moves with the column's arrow keys", async () => {
+    await render('compact');
+    await act(async () => {
+      pointerY(tabs()[0], 'pointerdown', 10);
+      pointerY(tabs()[0], 'pointerup', 10);
     });
+    expect(actions.select).toHaveBeenLastCalledWith(items()[0].id);
+    await act(async () => {
+      tabs()[1].dispatchEvent(new MouseEvent('auxclick', { bubbles: true, button: 1 }));
+    });
+    expect(actions.close).toHaveBeenCalledWith(items()[1].id);
+    await act(async () => {
+      tabs()[0].dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowDown' }));
+    });
+    expect(actions.select).toHaveBeenLastCalledWith(items()[1].id);
+  });
+
+  it('reorders a tab dragged along the rail', async () => {
+    await render('compact');
+    const [first] = tabs();
+    // happy-dom lays nothing out, so every tab's middle is 0 and the pointer is past them all: the last gap.
+    await act(async () => {
+      pointerY(first, 'pointerdown', 10);
+      pointerY(first, 'pointermove', 40);
+    });
+    await act(async () => pointerY(first, 'pointerup', 40));
+    expect(actions.reorder).toHaveBeenCalledWith(items()[0].id, items().length);
+  });
+
+  it("opens the tab column's menu and renames the tab in a field beside its button", async () => {
+    await render('compact');
+    await act(async () => {
+      tabs()[1].dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, button: 2, clientX: 5, clientY: 5 }));
+    });
+    const menuItems = Array.from(document.querySelectorAll<HTMLElement>('[role="menuitem"]'));
+    expect(menuItems.map((el) => el.textContent)).toEqual([
+      'Rename',
+      'Close tabs below',
+      'Close other tabs',
+      'Close tab',
+    ]);
+    await act(async () => menuItems[0].click());
+    // The button stays; the field opens outside the rail.
+    expect(tabs()).toHaveLength(items().length);
+    const input = document.querySelector<HTMLInputElement>('input[aria-label="Tab name"]');
+    expect(input).not.toBeNull();
+    expect(host.contains(input)).toBe(false);
+    if (!input) return;
+    input.value = 'build';
+    await act(async () => {
+      input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }));
+    });
+    expect(actions.rename).toHaveBeenCalledWith(items()[1].id, 'build');
+    expect(document.querySelector('input[aria-label="Tab name"]')).toBeNull();
+  });
+
+  it('keeps each tab state in a hidden live region, so it is heard while the tooltip is closed', async () => {
+    await render('compact');
+    const live = tabs().map((t) => t.querySelector('[aria-live="polite"]'));
+    expect(live.map((l) => l?.querySelector('[data-status]')?.getAttribute('data-status'))).toEqual(
+      items().map((t) => String(t.id)),
+    );
+  });
+
+  it('keeps renaming while Enter confirms an IME candidate', async () => {
+    await render('compact');
+    await act(async () => {
+      tabs()[1].dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, button: 2, clientX: 5, clientY: 5 }));
+    });
+    const rename = Array.from(document.querySelectorAll<HTMLElement>('[role="menuitem"]')).find(
+      (el) => el.textContent === 'Rename',
+    );
+    await act(async () => rename?.click());
+    const input = document.querySelector<HTMLInputElement>('input[aria-label="Tab name"]');
+    if (!input) throw new Error('no field');
+    input.value = 'ビルド';
+    await act(async () => {
+      input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter', isComposing: true }));
+    });
+    expect(actions.rename).not.toHaveBeenCalled();
+    expect(document.querySelector('input[aria-label="Tab name"]')).not.toBeNull();
+    await act(async () => {
+      input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }));
+    });
+    expect(actions.rename).toHaveBeenCalledWith(items()[1].id, 'ビルド');
+  });
+
+  it('names a tab with unsaved changes as such, keeping its number', async () => {
+    const list = items().map((t, i) => ({ ...t, dirty: i === 1 }));
+    await render('compact', list);
+    expect(tabs()[1].textContent).toBe('2');
+    expect(tabs()[1].getAttribute('aria-label')).toBe(`${list[1].title}, unsaved changes`);
+    expect(tabs()[0].getAttribute('aria-label')).toBe(list[0].title);
+  });
+
+  it("opens the new-tab menu from the rail's + (E27-08)", async () => {
+    await render('compact');
+    const plus = host.querySelector<HTMLElement>('[aria-label="New tab"]');
+    expect(plus?.getAttribute('data-variant')).toBe('rail');
+  });
+});
+
+describe('tabMark', () => {
+  it('reads the Jump to tab digit, then "…"', () => {
+    expect([0, 8, 9, 20].map(tabMark)).toEqual(['1', '9', '…', '…']);
   });
 });

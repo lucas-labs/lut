@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -6,6 +6,8 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
+import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { labelFor, type Tab, TabIcon } from '@/modules/navigation';
 import { useShellTitlePolicy } from '@/modules/profiles';
@@ -29,9 +31,22 @@ type Props = {
   onMoveTabToSpace: (tabId: number, spaceId: string) => void;
   onReorderTab: (tabId: number, targetTabId: number, edge: 'top' | 'bottom') => void;
   onReorderSpaces: (orderedIds: string[]) => void;
+  /**
+   * The compact sidebar's spaces (E27-01): a button per space with its initial, the name in a tooltip, under no
+   * heading and over a +. The same menu (less Expand, as no space lists its tabs), rename and drag.
+   */
+  compact?: boolean;
 };
 
 type Edge = 'top' | 'bottom';
+
+const HIDDEN_SCROLLBAR = '[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
+
+/** A space's mark on the compact sidebar: the first character of its name, upper-cased; an emoji stays whole. */
+export function spaceInitial(name: string): string {
+  const first = Array.from(name.trim())[0];
+  return first ? first.toUpperCase() : '?';
+}
 
 /** Why the ephemeral Space carries its mark (E16-15). */
 const EPHEMERAL_SPACE_HINT = "This Space isn't saved: it starts fresh each time lut opens.";
@@ -74,6 +89,7 @@ export function SpacesView({
   onMoveTabToSpace,
   onReorderTab,
   onReorderSpaces,
+  compact = false,
 }: Props) {
   const allowsShellTitle = useShellTitlePolicy();
   const spaces = useSpaces((s) => s.spaces);
@@ -195,12 +211,88 @@ export function SpacesView({
     }
   };
 
+  // A cancelled pointer (the system took it) drops the drag: no reorder, no switch.
+  const onPointerCancel = (e: React.PointerEvent) => endDrag(e.currentTarget);
+
   const onPointerUp = (e: React.PointerEvent, onActivate?: () => void) => {
     const st = drag.current;
     if (st?.active) commit();
     else if (st) onActivate?.();
     endDrag(e.currentTarget);
   };
+
+  const rows = spaces.map((sp) => (
+    <SpaceRow
+      key={sp.id}
+      space={sp}
+      compact={compact}
+      tabs={tabsBySpace.get(sp.id) ?? []}
+      isActive={sp.id === activeId}
+      canDelete={spaces.length > 1}
+      expanded={expanded.has(sp.id)}
+      editing={editingId === sp.id}
+      dragging={dragging}
+      drop={drop}
+      draggingTabFromOther={draggedTab !== null && draggedTab.spaceId !== sp.id}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
+      onToggle={() => toggleExpand(sp.id)}
+      onSwitch={() => setActive(sp.id)}
+      onStartRename={() => setEditingId(sp.id)}
+      onCommitRename={(name) => {
+        const v = name.trim();
+        if (v) rename(sp.id, v);
+        setEditingId(null);
+      }}
+      onCancelRename={() => setEditingId(null)}
+      onDelete={() => onDeleteSpace(sp.id)}
+      onNewTab={() => onNewTabInSpace(sp.id)}
+      onJumpTab={onJumpTab}
+      onCloseTab={onCloseTab}
+    />
+  ));
+
+  const dragOverlay =
+    overlay &&
+    (draggedSpace || draggedTab) &&
+    createPortal(
+      <div className="pointer-events-none fixed z-[60]" style={{ left: overlay.x + 12, top: overlay.y + 8 }}>
+        {draggedSpace ? (
+          <OverlayChip color={accentFor(draggedSpace)} label={draggedSpace.name} />
+        ) : draggedTab ? (
+          <OverlayChip tab={draggedTab} label={labelFor(draggedTab, allowsShellTitle)} />
+        ) : null}
+      </div>,
+      document.body,
+    );
+
+  // The compact sidebar's spaces: the buttons scroll on their own above the +.
+  if (compact) {
+    return (
+      <div className="flex min-h-0 flex-col items-center gap-1">
+        <div className={cn('flex min-h-0 flex-col items-center gap-1 overflow-y-auto', HIDDEN_SCROLLBAR)}>{rows}</div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="rail"
+              size="icon-sm"
+              aria-label="Open space"
+              onClick={onNewSpace}
+              className="mt-1 shrink-0"
+            >
+              <PlusIcon size="sm" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={6}>
+            Open space
+          </TooltipContent>
+        </Tooltip>
+        {dragOverlay}
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -215,56 +307,16 @@ export function SpacesView({
           <PlusIcon size="md" />
         </Button>
       </div>
-      <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 pt-1 pb-2">
-        {spaces.map((sp) => (
-          <SpaceRow
-            key={sp.id}
-            space={sp}
-            tabs={tabsBySpace.get(sp.id) ?? []}
-            isActive={sp.id === activeId}
-            canDelete={spaces.length > 1}
-            expanded={expanded.has(sp.id)}
-            editing={editingId === sp.id}
-            dragging={dragging}
-            drop={drop}
-            draggingTabFromOther={draggedTab !== null && draggedTab.spaceId !== sp.id}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            onToggle={() => toggleExpand(sp.id)}
-            onSwitch={() => setActive(sp.id)}
-            onStartRename={() => setEditingId(sp.id)}
-            onCommitRename={(name) => {
-              const v = name.trim();
-              if (v) rename(sp.id, v);
-              setEditingId(null);
-            }}
-            onCancelRename={() => setEditingId(null)}
-            onDelete={() => onDeleteSpace(sp.id)}
-            onNewTab={() => onNewTabInSpace(sp.id)}
-            onJumpTab={onJumpTab}
-            onCloseTab={onCloseTab}
-          />
-        ))}
-      </div>
-      {overlay &&
-        (draggedSpace || draggedTab) &&
-        createPortal(
-          <div className="pointer-events-none fixed z-[60]" style={{ left: overlay.x + 12, top: overlay.y + 8 }}>
-            {draggedSpace ? (
-              <OverlayChip color={accentFor(draggedSpace)} label={draggedSpace.name} />
-            ) : draggedTab ? (
-              <OverlayChip tab={draggedTab} label={labelFor(draggedTab, allowsShellTitle)} />
-            ) : null}
-          </div>,
-          document.body,
-        )}
+      <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 pt-1 pb-2">{rows}</div>
+      {dragOverlay}
     </div>
   );
 }
 
 type SpaceRowProps = {
   space: SpaceMeta;
+  /** The compact sidebar's button (SpacesView's `compact`). */
+  compact: boolean;
   tabs: Tab[];
   isActive: boolean;
   canDelete: boolean;
@@ -276,6 +328,7 @@ type SpaceRowProps = {
   onPointerDown: (e: React.PointerEvent, kind: 'space' | 'tab', id: string | number) => void;
   onPointerMove: (e: React.PointerEvent) => void;
   onPointerUp: (e: React.PointerEvent, onActivate?: () => void) => void;
+  onPointerCancel: (e: React.PointerEvent) => void;
   onToggle: () => void;
   onSwitch: () => void;
   onStartRename: () => void;
@@ -289,6 +342,7 @@ type SpaceRowProps = {
 
 function SpaceRow({
   space,
+  compact,
   tabs,
   isActive,
   canDelete,
@@ -300,6 +354,7 @@ function SpaceRow({
   onPointerDown,
   onPointerMove,
   onPointerUp,
+  onPointerCancel,
   onToggle,
   onSwitch,
   onStartRename,
@@ -317,99 +372,162 @@ function SpaceRow({
   const reorderEdge = drop?.kind === 'space' && drop.spaceId === space.id ? drop.edge : null;
   // A coloured Space is tinted like a coloured vertical tab; the drop highlight wins while a tab is over it.
   const tint = moveTarget ? null : spaceTint(space);
+  const ephemeral = isEphemeralSpace(space.id);
 
-  return (
-    <div className={cn('relative', isDragging && 'opacity-50')}>
-      {reorderEdge && <DropLine edge={reorderEdge} />}
-      <ContextMenu>
-        <ContextMenuTrigger asChild>
-          {/* eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- drag row hosts nested buttons, cannot be a <button> */}
-          <div
-            data-drop="space"
-            data-space-id={space.id}
-            role="button"
-            aria-current={isActive ? 'true' : undefined}
-            {...(tint !== null && {
-              'data-tab-color': '',
-              'data-orientation': 'vertical',
-              style: { '--tab-color': tint } as CSSProperties,
-            })}
-            tabIndex={editing ? -1 : 0}
-            onPointerDown={editing ? undefined : (e) => onPointerDown(e, 'space', space.id)}
-            onPointerMove={onPointerMove}
-            onPointerUp={editing ? undefined : (e) => onPointerUp(e, onSwitch)}
-            onPointerCancel={(e) => onPointerUp(e)}
-            onKeyDown={(e) => {
-              if (editing) return;
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                onSwitch();
-              }
-            }}
-            className={cn(
+  const row = (
+    // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- drag row hosts nested buttons, cannot be a <button>
+    <div
+      data-drop="space"
+      data-space-id={space.id}
+      role="button"
+      aria-current={isActive ? 'true' : undefined}
+      aria-label={compact ? space.name : undefined}
+      {...(tint !== null && {
+        'data-tab-color': '',
+        'data-orientation': compact ? 'compact' : 'vertical',
+        style: { '--tab-color': tint } as CSSProperties,
+      })}
+      tabIndex={editing ? -1 : 0}
+      onPointerDown={editing ? undefined : (e) => onPointerDown(e, 'space', space.id)}
+      onPointerMove={onPointerMove}
+      onPointerUp={editing ? undefined : (e) => onPointerUp(e, onSwitch)}
+      onPointerCancel={onPointerCancel}
+      // A pointer switches on release, above (a drag must not). Enter and Space activate it as a button; a click with no
+      // pointer behind it (detail 0) is a screen reader activating it.
+      onKeyDown={(e) => {
+        if (editing) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSwitch();
+        }
+      }}
+      onClick={(e) => {
+        if (!editing && e.detail === 0) onSwitch();
+      }}
+      className={
+        compact
+          ? cn(buttonVariants({ variant: 'rail', size: 'icon-sm' }), 'shrink-0 select-none')
+          : cn(
               'relative flex h-8 cursor-pointer select-none items-center gap-2 rounded-md px-2.5 outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring',
               moveTarget
                 ? 'bg-primary/10 ring-1 ring-inset ring-primary/40'
                 : isActive
                   ? 'bg-accent'
                   : 'hover:bg-accent/50',
-            )}
-          >
-            {editing ? (
-              <InlineRename
-                initial={space.name}
-                onCommit={onCommitRename}
-                onCancel={onCancelRename}
-                className="ml-0.5"
-              />
-            ) : (
-              <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{space.name}</span>
-            )}
-            {!editing && isEphemeralSpace(space.id) && (
-              <span title={EPHEMERAL_SPACE_HINT} className="flex shrink-0">
-                <GhostIcon size="sm" className="text-muted-foreground opacity-40" aria-hidden />
-                <span className="sr-only">{EPHEMERAL_SPACE_HINT}</span>
-              </span>
-            )}
-          </div>
-        </ContextMenuTrigger>
-        {/* The row stays clean; its actions live here (E18-09). */}
-        <ContextMenuContent
-          onCloseAutoFocus={(e) => {
-            if (!renaming.current) return;
-            renaming.current = false;
-            e.preventDefault();
+            )
+      }
+    >
+      {compact ? (
+        <span className="font-semibold">{spaceInitial(space.name)}</span>
+      ) : editing ? (
+        <InlineRename initial={space.name} onCommit={onCommitRename} onCancel={onCancelRename} className="ml-0.5" />
+      ) : (
+        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{space.name}</span>
+      )}
+      {!compact && !editing && ephemeral && (
+        <span title={EPHEMERAL_SPACE_HINT} className="flex shrink-0">
+          <GhostIcon size="sm" className="text-muted-foreground opacity-40" aria-hidden />
+          <span className="sr-only">{EPHEMERAL_SPACE_HINT}</span>
+        </span>
+      )}
+    </div>
+  );
+
+  const menu = (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        {compact ? (
+          // The rename field (below) opens beside the button, and its tooltip names it.
+          <PopoverAnchor asChild>
+            <TooltipTrigger asChild>{row}</TooltipTrigger>
+          </PopoverAnchor>
+        ) : (
+          row
+        )}
+      </ContextMenuTrigger>
+      {/* The row stays clean; its actions live here (E18-09). */}
+      <ContextMenuContent
+        onCloseAutoFocus={(e) => {
+          if (!renaming.current) return;
+          renaming.current = false;
+          e.preventDefault();
+        }}
+      >
+        {/* The compact sidebar lists no space's tabs. */}
+        {!compact && (
+          <>
+            <ContextMenuItem onSelect={onToggle}>
+              <ChevronIcon rotate={expanded ? 270 : 90} size="sm" />
+              <span className="flex-1">{expanded ? 'Collapse' : 'Expand'}</span>
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+          </>
+        )}
+        <ContextMenuItem
+          onSelect={() => {
+            renaming.current = true;
+            onStartRename();
           }}
         >
-          <ContextMenuItem onSelect={onToggle}>
-            <ChevronIcon rotate={expanded ? 270 : 90} size="sm" />
-            <span className="flex-1">{expanded ? 'Collapse' : 'Expand'}</span>
-          </ContextMenuItem>
-          <ContextMenuSeparator />
-          <ContextMenuItem
-            onSelect={() => {
-              renaming.current = true;
-              onStartRename();
-            }}
+          <PencilIcon size="sm" />
+          <span className="flex-1">Rename space</span>
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={onNewTab}>
+          <PlusIcon size="sm" />
+          <span className="flex-1">New tab</span>
+        </ContextMenuItem>
+        {canDelete && (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuItem variant="destructive" onSelect={onDelete}>
+              <DeleteIcon size="sm" />
+              <span className="flex-1">Delete space</span>
+            </ContextMenuItem>
+          </>
+        )}
+      </ContextMenuContent>
+    </ContextMenu>
+  );
+
+  if (compact) {
+    return (
+      <div className={cn('relative flex shrink-0', isDragging && 'opacity-50')}>
+        {reorderEdge && <DropLine edge={reorderEdge} />}
+        <Popover
+          open={editing}
+          onOpenChange={(open) => {
+            if (!open) onCancelRename();
+          }}
+        >
+          <Tooltip>
+            {menu}
+            <TooltipContent side="right" sideOffset={6}>
+              <span className="max-w-56 truncate">{space.name}</span>
+              {ephemeral ? <span className="max-w-56 text-muted-foreground">{EPHEMERAL_SPACE_HINT}</span> : null}
+            </TooltipContent>
+          </Tooltip>
+          <PopoverContent
+            side="right"
+            align="start"
+            sideOffset={6}
+            className="w-56 p-2"
+            // It opens while focus is still in the closing menu. Leaving the field ends the rename, as in the row: a
+            // click outside blurs it before the popover would drop it.
+            onOpenAutoFocus={(e) => e.preventDefault()}
+            onFocusOutside={(e) => e.preventDefault()}
+            onPointerDownOutside={(e) => e.preventDefault()}
           >
-            <PencilIcon size="sm" />
-            <span className="flex-1">Rename space</span>
-          </ContextMenuItem>
-          <ContextMenuItem onSelect={onNewTab}>
-            <PlusIcon size="sm" />
-            <span className="flex-1">New tab</span>
-          </ContextMenuItem>
-          {canDelete && (
-            <>
-              <ContextMenuSeparator />
-              <ContextMenuItem variant="destructive" onSelect={onDelete}>
-                <DeleteIcon size="sm" />
-                <span className="flex-1">Delete space</span>
-              </ContextMenuItem>
-            </>
-          )}
-        </ContextMenuContent>
-      </ContextMenu>
+            <InlineRename initial={space.name} onCommit={onCommitRename} onCancel={onCancelRename} className="w-full" />
+          </PopoverContent>
+        </Popover>
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn('relative', isDragging && 'opacity-50')}>
+      {reorderEdge && <DropLine edge={reorderEdge} />}
+      {menu}
 
       {expanded && (
         <div className="flex flex-col gap-px py-0.5 pl-4 pr-0.5">
@@ -422,6 +540,7 @@ function SpaceRow({
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
+              onPointerCancel={onPointerCancel}
               onJump={() => onJumpTab(t.id)}
               onClose={() => onCloseTab(t.id)}
             />
@@ -444,6 +563,7 @@ function TabRow({
   onPointerDown,
   onPointerMove,
   onPointerUp,
+  onPointerCancel,
   onJump,
   onClose,
 }: {
@@ -453,6 +573,7 @@ function TabRow({
   onPointerDown: (e: React.PointerEvent, kind: 'space' | 'tab', id: string | number) => void;
   onPointerMove: (e: React.PointerEvent) => void;
   onPointerUp: (e: React.PointerEvent, onActivate?: () => void) => void;
+  onPointerCancel: (e: React.PointerEvent) => void;
   onJump: () => void;
   onClose: () => void;
 }) {
@@ -473,7 +594,7 @@ function TabRow({
         onPointerDown={(e) => onPointerDown(e, 'tab', tab.id)}
         onPointerMove={onPointerMove}
         onPointerUp={(e) => onPointerUp(e, onJump)}
-        onPointerCancel={(e) => onPointerUp(e)}
+        onPointerCancel={onPointerCancel}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault();

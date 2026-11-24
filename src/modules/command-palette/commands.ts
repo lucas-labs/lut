@@ -79,6 +79,7 @@ export type CommandPaletteActionContext = {
   toggleSidebar: () => void;
   toggleTabOrientation: () => void;
   toggleTabsColumn: () => void;
+  toggleCompactSidebar: () => void;
   toggleFocusMode: () => void;
   toggleFullScreen: () => void;
   toggleHiddenFiles: () => void;
@@ -382,6 +383,15 @@ export function createCommandItems(ctx: CommandPaletteActionContext): PaletteIte
       icon: PanelArrowRightIcon,
       shortcutId: 'view.tabsColumn',
       run: ctx.toggleTabsColumn,
+    },
+    {
+      id: 'view.compactSidebar',
+      title: 'Toggle compact sidebar',
+      group: 'View',
+      keywords: ['sidebar', 'compact', 'rail', 'narrow', 'layout'],
+      icon: PanelArrowRightIcon,
+      shortcutId: 'view.compactSidebar',
+      run: ctx.toggleCompactSidebar,
     },
     {
       id: 'view.focusMode',

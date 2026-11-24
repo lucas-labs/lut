@@ -8,6 +8,8 @@ import { getLaunchDir } from '@/modules/platform';
 import { useProfilesLoadNotice, useShellTitlePolicy } from '@/modules/profiles';
 import { openSettingsWindow } from '@/modules/settings/openSettingsWindow';
 import { usePreferencesStore } from '@/modules/settings/preferences';
+import { CompactRail } from '@/modules/sidebar';
+import { SpacesView, useSpaces } from '@/modules/spaces';
 import { type NewTabMenuActions, TabNavigator, useTabs, useWindowTitle, useWorkspaceCwd } from '@/modules/tabs';
 import { canAddPane, findLeafCwd } from '@/modules/terminal';
 import { ThemeProvider, useThemeFileEditing } from '@/modules/theme';
@@ -148,22 +150,60 @@ export default function App() {
     onNewGitGraph: git.openGitGraphFromContext,
     onLaunchAgents: commands.launchAgentGroup,
   };
-  const { verticalTabs, sidebarCollapsed, tabsColumnCollapsed, focusMode } = panels;
+  const { verticalTabs, sidebarCollapsed, tabsColumnCollapsed, focusMode, compactSidebar } = panels;
+  const spaces = useSpaces((s) => s.spaces);
+  // Vertical tabs and focus mode float the bar over the window, shown from the top edge (E11-02, E12-10).
+  const titleBarPlacement = verticalTabs || focusMode ? 'overlay' : 'inline';
 
   return (
     <ThemeProvider>
       <TooltipProvider>
         <AppShell
-          titleBarPlacement={verticalTabs ? 'overlay' : 'inline'}
+          titleBarPlacement={titleBarPlacement}
           focusMode={focusMode}
+          compact={compactSidebar}
+          rail={
+            // The rail draws the full sidebar's Spaces view and the tab column in their compact form.
+            <CompactRail
+              spaces={
+                <SpacesView
+                  compact
+                  tabs={tabs}
+                  onNewSpace={() => void workspace.newSpace()}
+                  onDeleteSpace={workspace.deleteSpace}
+                  onNewTabInSpace={workspace.newTabInSpace}
+                  onJumpTab={workspace.jumpToTab}
+                  onCloseTab={closeGuards.handleClose}
+                  onMoveTabToSpace={workspace.moveTabToSpace}
+                  onReorderTab={workspace.reorderTab}
+                  onReorderSpaces={workspace.reorderSpaces}
+                />
+              }
+              tabs={
+                verticalTabs ? (
+                  <TabNavigator
+                    orientation="compact"
+                    items={navigatorItems}
+                    actions={commands.tabActions}
+                    newTabMenu={newTabMenu}
+                  />
+                ) : null
+              }
+            />
+          }
           titleBar={
             <TitleBar
-              placement={verticalTabs ? 'overlay' : 'inline'}
+              placement={titleBarPlacement}
               tabs={navigatorItems}
               tabActions={commands.tabActions}
               newTabMenu={newTabMenu}
               sidePanelsOpen={panels.sidePanelsOpen}
               onToggleSidebar={panels.toggleSidePanels}
+              focusMode={focusMode}
+              onExitFocus={panels.toggleFocusMode}
+              spaces={spaces}
+              activeSpaceId={activeSpaceId}
+              onSwitchSpace={workspace.switchSpace}
               onActivateAgent={commands.activateAgentTarget}
               onOpenSettings={() => void openSettingsWindow()}
               searchTarget={searchTarget}

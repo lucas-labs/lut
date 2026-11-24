@@ -1,3 +1,4 @@
+export { COMPACT_RAIL_WIDTH, CompactRail } from './CompactRail';
 export { SidebarRail } from './SidebarRail';
 export { SidebarHeaderAction, SidebarViewHeader } from './SidebarViewHeader';
 export type { SidebarViewId } from './types';

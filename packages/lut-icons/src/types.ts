@@ -14,6 +14,8 @@ type LutIconFill = {
   fillRule?: 'evenodd';
   /** Below 1 when the drawing fades this shape; absent means opaque. */
   opacity?: number;
+  /** A theme colour's name (drawn as `var(--<name>)`) from the shape's VectorCraft note; absent means currentColor. */
+  color?: string;
 };
 
 /** A line, with the width (in canvas units), caps and joins it was drawn with. */
@@ -26,6 +28,8 @@ type LutIconStroke = {
   miterLimit?: number;
   /** Below 1 when the drawing fades this line (the spinner's track); absent means opaque. */
   opacity?: number;
+  /** A theme colour's name (drawn as `var(--<name>)`) from the line's VectorCraft note; absent means currentColor. */
+  color?: string;
 };
 
 /** One shape of a drawing. */

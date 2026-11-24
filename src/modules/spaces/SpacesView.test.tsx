@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { initialNavigationData, registerTabPresenter, type Tab, useNavigationStore } from '@/modules/navigation';
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
@@ -6,7 +7,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { EPHEMERAL_SPACE_ID } from './lib/ephemeral';
 import { SPACE_COLORS } from './lib/spaceColor';
 import { useSpaces } from './lib/useSpaces';
-import { SpacesView } from './SpacesView';
+import { spaceInitial, SpacesView } from './SpacesView';
 
 vi.mock('./lib/store', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./lib/store')>()),
@@ -66,8 +67,14 @@ function tabsInB(): Tab[] {
   return useNavigationStore.getState().tabs.map((t) => ({ ...t, spaceId: 'b' }));
 }
 
-async function render(tabs: Tab[] = tabsInB()) {
-  await act(async () => root.render(<SpacesView tabs={tabs} {...props} />));
+async function render(tabs: Tab[] = tabsInB(), compact = false) {
+  await act(async () =>
+    root.render(
+      <TooltipProvider>
+        <SpacesView tabs={tabs} compact={compact} {...props} />
+      </TooltipProvider>,
+    ),
+  );
 }
 
 const row = (id: string) => host.querySelector<HTMLElement>(`[data-space-id="${id}"]`);
@@ -114,6 +121,30 @@ describe('SpacesView', () => {
     expect(tabRows()).toHaveLength(0);
   });
 
+  it.each([false, true])(
+    'switches Space with Enter, Space or a click with no pointer, not a pointer click (compact: %s)',
+    async (compact) => {
+      await render(tabsInB(), compact);
+      const switchesTo = async (id: string, fire: (el: HTMLElement) => void) => {
+        useSpaces.getState().setActive('a');
+        await act(async () => fire(row(id) as HTMLElement));
+        return useSpaces.getState().activeId === id;
+      };
+      expect(
+        await switchesTo('b', (el) => el.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }))),
+      ).toBe(true);
+      expect(
+        await switchesTo('b', (el) => el.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: ' ' }))),
+      ).toBe(true);
+      expect(
+        await switchesTo('b', (el) => el.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 0 }))),
+      ).toBe(true);
+      expect(
+        await switchesTo('b', (el) => el.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }))),
+      ).toBe(false);
+    },
+  );
+
   it('expands and collapses a Space from its menu', async () => {
     await render();
     await openMenu('b');
@@ -158,5 +189,121 @@ describe('SpacesView', () => {
     await render();
     expect(row(EPHEMERAL_SPACE_ID)?.textContent).toContain("This Space isn't saved");
     expect(row('b')?.textContent).toBe('Beta');
+  });
+});
+
+describe('SpacesView on the compact sidebar (E27-01)', () => {
+  const menuItems = () => Array.from(document.querySelectorAll<HTMLElement>('[role="menuitem"]'));
+
+  it('shows each Space by its initial and name, marks the active one, and switches on a click', async () => {
+    await render(tabsInB(), true);
+    const ids = ['a', 'b', EPHEMERAL_SPACE_ID];
+    expect(ids.map((id) => row(id)?.textContent)).toEqual(['A', 'B', 'E']);
+    expect(ids.map((id) => row(id)?.getAttribute('aria-label'))).toEqual(['Alpha', 'Beta', 'Ephemeral']);
+    expect(ids.map((id) => row(id)?.getAttribute('aria-current'))).toEqual(['true', null, null]);
+    expect(row('a')?.getAttribute('data-orientation')).toBe('compact');
+    await act(async () => {
+      row('b')?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerId: 1 }));
+      row('b')?.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0, pointerId: 1 }));
+    });
+    expect(useSpaces.getState().activeId).toBe('b');
+  });
+
+  it('opens a Space from its +', async () => {
+    await render(tabsInB(), true);
+    await act(async () => host.querySelector<HTMLElement>('button[aria-label="Open space"]')?.click());
+    expect(props.onNewSpace).toHaveBeenCalledOnce();
+  });
+
+  it("offers the Spaces view's menu, less Expand", async () => {
+    await render(tabsInB(), true);
+    await openMenu('b');
+    expect(menuItems().map((el) => el.textContent)).toEqual(['Rename space', 'New tab', 'Delete space']);
+    await chooseItem('New tab');
+    expect(props.onNewTabInSpace).toHaveBeenCalledWith('b');
+  });
+
+  it('renames a Space in a field beside its button', async () => {
+    await render(tabsInB(), true);
+    await openMenu('b');
+    await chooseItem('Rename space');
+    const input = document.querySelector<HTMLInputElement>('input[aria-label="Rename space"]');
+    expect(input).not.toBeNull();
+    expect(host.contains(input)).toBe(false);
+    if (!input) return;
+    input.value = '  Gamma ';
+    await act(async () => {
+      input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }));
+    });
+    expect(useSpaces.getState().spaces.find((s) => s.id === 'b')?.name).toBe('Gamma');
+    expect(document.querySelector('input[aria-label="Rename space"]')).toBeNull();
+  });
+
+  it('keeps renaming while Enter confirms an IME candidate', async () => {
+    await render(tabsInB(), true);
+    await openMenu('b');
+    await chooseItem('Rename space');
+    const input = document.querySelector<HTMLInputElement>('input[aria-label="Rename space"]');
+    if (!input) throw new Error('no field');
+    input.value = 'ベータ';
+    await act(async () => {
+      input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter', isComposing: true }));
+    });
+    expect(useSpaces.getState().spaces.find((s) => s.id === 'b')?.name).toBe('Beta');
+    expect(document.querySelector('input[aria-label="Rename space"]')).not.toBeNull();
+    await act(async () => {
+      input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }));
+    });
+    expect(useSpaces.getState().spaces.find((s) => s.id === 'b')?.name).toBe('ベータ');
+  });
+
+  it('reorders a Space dragged onto another', async () => {
+    await render(tabsInB(), true);
+    const from = row('a');
+    const to = row('b');
+    if (!from || !to) throw new Error('no rows');
+    // happy-dom has no hit testing: the pointer is over Beta, past its middle (0, nothing is laid out).
+    const elementFromPoint = vi.spyOn(document, 'elementFromPoint').mockReturnValue(to);
+    await act(async () => {
+      from.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerId: 1, clientY: 0 }));
+      from.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, button: 0, pointerId: 1, clientY: 20 }));
+    });
+    await act(async () => {
+      from.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0, pointerId: 1, clientY: 20 }));
+    });
+    elementFromPoint.mockRestore();
+    expect(props.onReorderSpaces).toHaveBeenCalledWith(['b', 'a', EPHEMERAL_SPACE_ID]);
+    expect(useSpaces.getState().activeId).toBe('a');
+  });
+
+  it.each([false, true])('drops a cancelled drag: no reorder, no switch (compact: %s)', async (compact) => {
+    await render(tabsInB(), compact);
+    const from = row('a');
+    const to = row('b');
+    if (!from || !to) throw new Error('no rows');
+    const elementFromPoint = vi.spyOn(document, 'elementFromPoint').mockReturnValue(to);
+    await act(async () => {
+      from.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerId: 1, clientY: 0 }));
+      from.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, button: 0, pointerId: 1, clientY: 20 }));
+    });
+    await act(async () => {
+      from.dispatchEvent(new PointerEvent('pointercancel', { bubbles: true, button: 0, pointerId: 1, clientY: 20 }));
+    });
+    elementFromPoint.mockRestore();
+    expect(props.onReorderSpaces).not.toHaveBeenCalled();
+    expect(useSpaces.getState().activeId).toBe('a');
+  });
+});
+
+describe('spaceInitial', () => {
+  it('upper-cases the first character and keeps an emoji whole', () => {
+    expect(spaceInitial('lut')).toBe('L');
+    expect(spaceInitial(' 🚀 launch')).toBe('🚀');
+    expect(spaceInitial('ñandú')).toBe('Ñ');
+  });
+
+  it('falls back to a question mark for a blank name', () => {
+    expect(spaceInitial('')).toBe('?');
+    expect(spaceInitial('   ')).toBe('?');
   });
 });

@@ -1,3 +1,4 @@
+import { buttonVariants } from '@/components/ui/button';
 import {
   ContextMenu,
   ContextMenuContent,
@@ -7,6 +8,9 @@ import {
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
 import { Input } from '@/components/ui/input';
+import { Kbd } from '@/components/ui/kbd';
+import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import {
   TabIcon,
@@ -22,16 +26,22 @@ import { type CSSProperties, Fragment, type KeyboardEvent, useEffect, useRef, us
 import { NewTabMenu, type NewTabMenuActions } from './NewTabMenu';
 import { TabColorMenu } from './TabColorMenu';
 
+/**
+ * How the tabs are drawn: the tab orientation's strip or column, or the compact sidebar's rail (E27-02), a column of
+ * numbered buttons that behaves as the column does.
+ */
+export type TabNavigatorLayout = TabNavigatorOrientation | 'compact';
+
 type Props = {
   /** The active space's tabs, in strip order. */
   items: TabNavigatorItem[];
   actions: TabNavigatorActions;
-  /** A strip in the title bar, or a rail beside the workspace. */
-  orientation: TabNavigatorOrientation;
-  /** The rail's heading: the active space's name. */
+  /** A strip in the title bar, a column beside the workspace, or the compact sidebar's buttons. */
+  orientation: TabNavigatorLayout;
+  /** The column's heading: the active space's name. */
   heading?: string;
   /** Narrow window: shorter titles in the strip. */
-  compact?: boolean;
+  narrow?: boolean;
   /** The strip's `data-tauri-drag-region` value: "false" while the window is full screen. */
   dragRegion?: '' | 'false';
   newTabMenu: NewTabMenuActions;
@@ -43,7 +53,7 @@ const PRIVATE_TAB_HINT = "This terminal isn't saved in the Space, so it won't co
 const HIDDEN_SCROLLBAR = '[-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden';
 
 /** A coloured tab's tint (the `data-tab-color` rules of globals.css); nothing for a tab with no colour. */
-function tint(t: TabNavigatorItem, orientation: TabNavigatorOrientation) {
+function tabTint(t: Pick<TabNavigatorItem, 'color'>, orientation: TabNavigatorLayout) {
   const css = t.color === null ? null : colorCss(t.color);
   if (css === null) return {};
   return {
@@ -53,11 +63,22 @@ function tint(t: TabNavigatorItem, orientation: TabNavigatorOrientation) {
   };
 }
 
-/** The tabs of the active space, per the E11-02 design: a strip (horizontal) or a rail (vertical). */
-export function TabNavigator({ items, actions, orientation, heading, compact, dragRegion = '', newTabMenu }: Props) {
-  const vertical = orientation === 'vertical';
+/** A tab's mark on the compact sidebar: its position 1 to 9, the "Jump to tab" digits; "…" from the 10th on. */
+export function tabMark(index: number): string {
+  return index < 9 ? String(index + 1) : '…';
+}
+
+/**
+ * The tabs of the active space, per the E11-02 design: a strip (horizontal) or a column (vertical); or, on the compact
+ * sidebar (E27-02), a column of buttons with the tabs' numbers.
+ */
+export function TabNavigator({ items, actions, orientation, heading, narrow, dragRegion = '', newTabMenu }: Props) {
+  // The compact buttons are a column: they take the column's keys, drag and drop mark.
+  const vertical = orientation !== 'horizontal';
+  const rail = orientation === 'compact';
   const activeId = items.find((t) => t.active)?.id;
   const closeHint = useShortcutLabel('tab.close');
+  const jumpHint = useShortcutLabel('tab.selectByIndex');
   const scrollRef = useRef<HTMLDivElement>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   // The tab whose menu is open, so applying a custom colour can close it.
@@ -146,25 +167,31 @@ export function TabNavigator({ items, actions, orientation, heading, compact, dr
   const showGap = (gap: number) => draggingId !== null && dropGap === gap && gap !== srcIndex && gap !== srcIndex + 1;
 
   const cellClass = (t: TabNavigatorItem) =>
-    vertical
+    rail
       ? cn(
-          'group/vt flex h-8 w-full min-w-0 shrink-0 items-center gap-2 rounded-md px-2.5 text-left text-sm text-foreground outline-none',
-          'hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring',
-          // The active tab is ringed and the others' names are dimmed, so it stands out among coloured tabs.
-          t.active ? 'bg-accent' : 'opacity-70 hover:opacity-100',
+          buttonVariants({ variant: 'rail', size: 'icon-sm' }),
+          'group/vt shrink-0',
+          !t.active && 'opacity-70 hover:opacity-100',
         )
-      : cn(
-          'relative flex shrink-0 items-center gap-1.5 rounded-t-md px-3 text-xs whitespace-nowrap outline-none',
-          'focus-visible:ring-1 focus-visible:ring-ring',
-          t.active
-            ? 'z-[1] h-[25px] bg-background text-foreground shadow-[inset_1px_0_0_var(--border),inset_-1px_0_0_var(--border),inset_0_1px_0_var(--border)]'
-            : 'mb-px h-6 text-muted-foreground hover:bg-accent hover:text-foreground',
-        );
+      : vertical
+        ? cn(
+            'group/vt flex h-8 w-full min-w-0 shrink-0 items-center gap-2 rounded-md px-2.5 text-left text-sm text-foreground outline-none',
+            'hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring',
+            // The active tab is ringed and the others' names are dimmed, so it stands out among coloured tabs.
+            t.active ? 'bg-accent' : 'opacity-70 hover:opacity-100',
+          )
+        : cn(
+            'relative flex shrink-0 items-center gap-1.5 rounded-t-md px-3 text-xs whitespace-nowrap outline-none',
+            'focus-visible:ring-1 focus-visible:ring-ring',
+            t.active
+              ? 'z-[1] h-[25px] bg-background text-foreground shadow-[inset_1px_0_0_var(--border),inset_-1px_0_0_var(--border),inset_0_1px_0_var(--border)]'
+              : 'mb-px h-6 text-muted-foreground hover:bg-accent hover:text-foreground',
+          );
 
   const titleClass = (t: TabNavigatorItem) =>
     cn(
       'truncate',
-      vertical ? 'min-w-0 flex-1' : compact ? 'max-w-48' : 'max-w-80',
+      vertical ? 'min-w-0 flex-1' : narrow ? 'max-w-48' : 'max-w-80',
       vertical && !t.active && 'text-foreground/55 group-hover/vt:text-foreground',
       t.preview && 'italic',
     );
@@ -173,12 +200,12 @@ export function TabNavigator({ items, actions, orientation, heading, compact, dr
     const isNew = !restored.has(t.id);
 
     // While renaming, the cell is not the tab button: an <input> inside a <button> is invalid HTML, and WebKit
-    // blocks focus and selection in it.
-    if (editingId === t.id && t.renamable) {
+    // blocks focus and selection in it. A compact button has no room for it: its field opens beside it (below).
+    if (editingId === t.id && t.renamable && !rail) {
       return (
         <Fragment key={t.id}>
           {showGap(i) && <DropIndicator vertical={vertical} />}
-          <div data-tab-id={t.id} className={cellClass(t)} {...tint(t, orientation)}>
+          <div data-tab-id={t.id} className={cellClass(t)} {...tabTint(t, orientation)}>
             <TabIcon id={t.id} />
             <TabRenameInput
               initial={t.title}
@@ -199,10 +226,13 @@ export function TabNavigator({ items, actions, orientation, heading, compact, dr
         type="button"
         role="tab"
         aria-selected={t.active}
+        // The compact button's current state (the `rail` button variant) and its name, which shows as a number.
+        aria-current={rail && t.active ? 'true' : undefined}
+        aria-label={rail ? (t.dirty ? `${t.title}, unsaved changes` : t.title) : undefined}
         tabIndex={t.active ? 0 : -1}
         data-tab-id={t.id}
-        {...tint(t, orientation)}
-        title={t.private ? PRIVATE_TAB_HINT : undefined}
+        {...tabTint(t, orientation)}
+        title={t.private && !rail ? PRIVATE_TAB_HINT : undefined}
         onKeyDown={(e) => onTabKeyDown(e, i)}
         onPointerDown={(e) => {
           if (e.button !== 0) return;
@@ -248,66 +278,155 @@ export function TabNavigator({ items, actions, orientation, heading, compact, dr
         }}
         className={cn(cellClass(t), isNew && 'lut-tab-in', draggingId === t.id && 'opacity-50')}
       >
-        <TabIcon id={t.id} menu />
-        <span className={titleClass(t)}>{t.title}</span>
-        {t.dirty ? (
-          <span aria-label="Unsaved changes" className="size-1.5 shrink-0 rounded-full bg-foreground/70" />
-        ) : null}
-        {/* Kept mounted so a screen reader hears the agent state change while the tab stays. */}
-        <span aria-live="polite" className="contents">
-          <TabStatus id={t.id} />
-        </span>
+        {rail ? (
+          <span className={cn('font-mono', !t.active && 'text-foreground/55 group-hover/vt:text-foreground')}>
+            {tabMark(i)}
+            {/* The state shows in the tooltip; kept mounted, hidden, so a screen reader hears it change, as in the
+                column. */}
+            <span aria-live="polite" className="sr-only">
+              <TabStatus id={t.id} />
+            </span>
+          </span>
+        ) : (
+          <>
+            <TabIcon id={t.id} menu />
+            <span className={titleClass(t)}>{t.title}</span>
+            {t.dirty ? (
+              <span aria-label="Unsaved changes" className="size-1.5 shrink-0 rounded-full bg-foreground/70" />
+            ) : null}
+            {/* Kept mounted so a screen reader hears the agent state change while the tab stays. */}
+            <span aria-live="polite" className="contents">
+              <TabStatus id={t.id} />
+            </span>
+          </>
+        )}
       </button>
     );
 
     const hasTabsAfter = i < items.length - 1;
 
+    const menu = (
+      <ContextMenu open={menuId === t.id} onOpenChange={(open) => setMenuId(open ? t.id : null)}>
+        <ContextMenuTrigger asChild>
+          {rail ? (
+            // The rename field (below) opens beside the button, and its tooltip names it.
+            <PopoverAnchor asChild>
+              <TooltipTrigger asChild>{tab}</TooltipTrigger>
+            </PopoverAnchor>
+          ) : (
+            tab
+          )}
+        </ContextMenuTrigger>
+        <ContextMenuContent className="min-w-64" onCloseAutoFocus={(e) => e.preventDefault()}>
+          {t.renamable && (
+            <ContextMenuItem onSelect={() => setEditingId(t.id)}>
+              <PencilIcon size="sm" />
+              <span className="flex-1">Rename</span>
+            </ContextMenuItem>
+          )}
+          <TabColorMenu
+            color={t.color}
+            onChoose={(color) => {
+              actions.setColor(t.id, color);
+              setMenuId(null);
+            }}
+          />
+          <ContextMenuSeparator />
+          <ContextMenuItem disabled={!hasTabsAfter} onSelect={() => actions.closeToEnd(t.id)}>
+            <ChevronIcon size="sm" />
+            <span className="flex-1">{vertical ? 'Close tabs below' : 'Close tabs to the right'}</span>
+          </ContextMenuItem>
+          <ContextMenuItem disabled={items.length <= 1} onSelect={() => actions.closeOthers(t.id)}>
+            <CancelCircleIcon size="sm" />
+            <span className="flex-1">Close other tabs</span>
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem disabled={items.length <= 1} onSelect={() => actions.close(t.id)}>
+            <XIcon size="sm" />
+            <span className="flex-1">Close tab</span>
+            {t.active && closeHint ? (
+              <ContextMenuShortcut>
+                <ShortcutKeys label={closeHint} />
+              </ContextMenuShortcut>
+            ) : null}
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+    );
+
     return (
       <Fragment key={t.id}>
         {showGap(i) && <DropIndicator vertical={vertical} />}
-        <ContextMenu open={menuId === t.id} onOpenChange={(open) => setMenuId(open ? t.id : null)}>
-          <ContextMenuTrigger asChild>{tab}</ContextMenuTrigger>
-          <ContextMenuContent className="min-w-64" onCloseAutoFocus={(e) => e.preventDefault()}>
-            {t.renamable && (
-              <ContextMenuItem onSelect={() => setEditingId(t.id)}>
-                <PencilIcon size="sm" />
-                <span className="flex-1">Rename</span>
-              </ContextMenuItem>
-            )}
-            <TabColorMenu
-              color={t.color}
-              onChoose={(color) => {
-                actions.setColor(t.id, color);
-                setMenuId(null);
-              }}
-            />
-            <ContextMenuSeparator />
-            <ContextMenuItem disabled={!hasTabsAfter} onSelect={() => actions.closeToEnd(t.id)}>
-              <ChevronIcon size="sm" />
-              <span className="flex-1">{vertical ? 'Close tabs below' : 'Close tabs to the right'}</span>
-            </ContextMenuItem>
-            <ContextMenuItem disabled={items.length <= 1} onSelect={() => actions.closeOthers(t.id)}>
-              <CancelCircleIcon size="sm" />
-              <span className="flex-1">Close other tabs</span>
-            </ContextMenuItem>
-            <ContextMenuSeparator />
-            <ContextMenuItem disabled={items.length <= 1} onSelect={() => actions.close(t.id)}>
-              <XIcon size="sm" />
-              <span className="flex-1">Close tab</span>
-              {t.active && closeHint ? (
-                <ContextMenuShortcut>
-                  <ShortcutKeys label={closeHint} />
-                </ContextMenuShortcut>
-              ) : null}
-            </ContextMenuItem>
-          </ContextMenuContent>
-        </ContextMenu>
+        {rail ? (
+          <Popover
+            open={editingId === t.id}
+            onOpenChange={(open) => {
+              if (!open) setEditingId(null);
+            }}
+          >
+            <Tooltip>
+              {menu}
+              {/* The compact button's name, with its state and its "Jump to tab" keys. */}
+              <TooltipContent side="right" sideOffset={6}>
+                <span className="max-w-56 truncate">{t.title}</span>
+                {t.dirty ? <span className="text-muted-foreground">Unsaved changes</span> : null}
+                <TabStatus id={t.id} />
+                {i < 9 && jumpHint ? (
+                  <Kbd>
+                    <ShortcutKeys label={jumpHint.replace(/1$/, String(i + 1))} />
+                  </Kbd>
+                ) : null}
+                {t.private ? <span className="max-w-56 text-muted-foreground">{PRIVATE_TAB_HINT}</span> : null}
+              </TooltipContent>
+            </Tooltip>
+            <PopoverContent
+              side="right"
+              align="start"
+              sideOffset={6}
+              className="w-56 p-2"
+              // It opens while focus is still in the closing menu. Leaving the field ends the rename, as in the column:
+              // a click outside blurs it before the popover would drop it.
+              onOpenAutoFocus={(e) => e.preventDefault()}
+              onFocusOutside={(e) => e.preventDefault()}
+              onPointerDownOutside={(e) => e.preventDefault()}
+            >
+              <TabRenameInput
+                initial={t.title}
+                className="w-full"
+                onCommit={(value, byKey) => {
+                  actions.rename(t.id, value);
+                  endEdit(t.id, byKey);
+                }}
+                onCancel={(byKey) => endEdit(t.id, byKey)}
+              />
+            </PopoverContent>
+          </Popover>
+        ) : (
+          menu
+        )}
         {i === items.length - 1 && showGap(items.length) && <DropIndicator vertical={vertical} />}
       </Fragment>
     );
   });
 
-  const newTabButton = <NewTabMenu size={vertical ? 'rail' : 'strip'} {...newTabMenu} />;
+  const newTabButton = <NewTabMenu size={rail ? 'compact' : vertical ? 'rail' : 'strip'} {...newTabMenu} />;
+
+  // The compact sidebar's tabs: the buttons scroll on their own above the +.
+  if (rail) {
+    return (
+      <nav aria-label="Tabs" className="flex min-h-0 flex-col items-center gap-1">
+        <div
+          ref={scrollRef}
+          role="tablist"
+          aria-orientation="vertical"
+          className={cn('flex min-h-0 flex-col items-center gap-1 overflow-y-auto', HIDDEN_SCROLLBAR)}
+        >
+          {cells}
+        </div>
+        <span className="mt-1 flex shrink-0">{newTabButton}</span>
+      </nav>
+    );
+  }
 
   if (vertical) {
     return (
@@ -360,10 +479,12 @@ function DropIndicator({ vertical }: { vertical: boolean }) {
 
 function TabRenameInput({
   initial,
+  className = 'w-32',
   onCommit,
   onCancel,
 }: {
   initial: string;
+  className?: string;
   /** `byKey`: Enter or Escape ended the edit (focus goes back to the tab), not a click elsewhere. */
   onCommit: (value: string, byKey: boolean) => void;
   onCancel: (byKey: boolean) => void;
@@ -402,10 +523,11 @@ function TabRenameInput({
       size="xs"
       defaultValue={initial}
       aria-label="Tab name"
-      className="w-32"
+      className={className}
       onKeyDown={(e) => {
         e.stopPropagation();
-        if (e.key === 'Enter') commit(e.currentTarget.value, true);
+        // Enter that confirms an IME candidate is part of the typing, not the end of the edit.
+        if (e.key === 'Enter' && !e.nativeEvent.isComposing) commit(e.currentTarget.value, true);
         else if (e.key === 'Escape') finish(() => onCancel(true));
       }}
       onBlur={(e) => {

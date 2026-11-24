@@ -58,6 +58,7 @@ export type AppShortcutArgs = {
   toggleFullScreen: () => void;
   toggleTabOrientation: () => void;
   toggleTabsColumn: () => void;
+  toggleCompactSidebar: () => void;
 };
 
 /** The app's handler for each global shortcut. */
@@ -94,6 +95,7 @@ export function createAppShortcutHandlers({
   toggleFullScreen,
   toggleTabOrientation,
   toggleTabsColumn,
+  toggleCompactSidebar,
 }: AppShortcutArgs): ShortcutHandlers {
   return {
     'commandPalette.open': () => openCommandPalette('commands'),
@@ -155,6 +157,7 @@ export function createAppShortcutHandlers({
     'view.fullScreen': toggleFullScreen,
     'view.tabOrientation': toggleTabOrientation,
     'view.tabsColumn': toggleTabsColumn,
+    'view.compactSidebar': toggleCompactSidebar,
     'editor.undo': () => editorRefs.current.get(activeId)?.undo(),
     'editor.redo': () => editorRefs.current.get(activeId)?.redo(),
     'editor.save': () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { logoFor } from './AppLogo';
+import { logoFor } from './AppIcon';
 
 describe('logoFor', () => {
   it('takes the export drawn for the closest size', () => {

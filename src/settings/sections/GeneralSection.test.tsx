@@ -21,13 +21,16 @@ vi.mock('@/modules/settings/preferences', () => ({
     pick({
       zoomLevel: 1.25,
       fileIconColors: 'theme',
+      sidebarMode: 'full',
       ephemeralSpace: { enabled: true, name: 'Scratch', color: null, folder: '' },
     }),
 }));
 const setEphemeralSpace = vi.hoisted(() => vi.fn(async () => undefined));
+const setSidebarMode = vi.hoisted(() => vi.fn(async () => undefined));
 vi.mock('@/modules/settings/store', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/modules/settings/store')>()),
   setEphemeralSpace,
+  setSidebarMode,
 }));
 vi.mock('@/modules/agents/lib/notify', () => ({ testAgentOsNotification: vi.fn() }));
 
@@ -40,6 +43,7 @@ const openTab = vi.fn();
 beforeEach(() => {
   theme.setMode.mockReset();
   setEphemeralSpace.mockClear();
+  setSidebarMode.mockClear();
   openTab.mockReset();
   host = document.createElement('div');
   document.body.append(host);
@@ -68,7 +72,7 @@ describe('GeneralSection', () => {
 
   it('groups the settings under their headings; the terminal ones have their own section', () => {
     const groups = [...host.querySelectorAll('section h2')].map((h) => h.textContent);
-    expect(groups).toEqual(['Appearance', 'Zoom', 'Explorer', 'Agents', 'Startup']);
+    expect(groups).toEqual(['Appearance', 'Layout', 'Zoom', 'Explorer', 'Agents', 'Startup']);
   });
 
   it('names every switch and select by its row title', () => {
@@ -112,5 +116,22 @@ describe('GeneralSection', () => {
     const violet = swatches.find((s) => s.getAttribute('aria-label') === 'Violet') as HTMLElement;
     act(() => violet.click());
     expect(setEphemeralSpace).toHaveBeenCalledWith({ enabled: true, name: 'Scratch', color: 1, folder: '' });
+  });
+
+  it('switches the sidebar to the compact rail from the Layout group (E27-01)', async () => {
+    const row = [...host.querySelectorAll('[data-slot="setting-row"]')].find(
+      (r) => r.querySelector('.font-medium')?.textContent === 'Sidebar mode',
+    );
+    const select = row?.querySelector('[role="combobox"]') as HTMLElement;
+    expect(select.textContent).toBe('Full');
+    await act(async () => {
+      select.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    });
+    const options = [...document.querySelectorAll('[role="option"]')] as HTMLElement[];
+    expect(options.map((o) => o.textContent)).toEqual(['Full', 'Compact']);
+    await act(async () => {
+      options[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    });
+    expect(setSidebarMode).toHaveBeenCalledWith('compact');
   });
 });

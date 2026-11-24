@@ -53,6 +53,7 @@ export type ShortcutId =
   | 'view.fullScreen'
   | 'view.tabOrientation'
   | 'view.tabsColumn'
+  | 'view.compactSidebar'
   | 'agent.focusAttention'
   | 'settings.open'
   | 'sidebar.toggle'
@@ -361,6 +362,11 @@ const SHORTCUT_META: Omit<Shortcut, 'defaultBindings'>[] = [
     group: 'View',
   },
   {
+    id: 'view.compactSidebar',
+    label: 'Toggle compact sidebar',
+    group: 'View',
+  },
+  {
     id: 'editor.undo',
     label: 'Undo',
     group: 'Editor',
@@ -444,11 +450,27 @@ function keyFromCode(code: string): string | null {
   return CODE_TO_KEY[code] ?? null;
 }
 
+type DigitPress = Pick<KeyboardEvent, 'key' | 'code'> &
+  Partial<Pick<KeyboardEvent, 'getModifierState'>>;
+
+/**
+ * A numpad digit pressed with Shift while NumLock is on. The numpad then gives its navigation key (`End` for 1,
+ * `ArrowDown` for 2), and Windows reports Shift as up; only the physical key and NumLock tell it apart. With NumLock off
+ * those keys are navigation keys of their own, and a navigation key outside the numpad has its own code.
+ */
+function shiftedNumpadDigit(e: DigitPress): number | null {
+  const digit = /^Numpad([1-9])$/.exec(e.code)?.[1];
+  if (digit === undefined || /^[0-9]$/.test(e.key) || !e.getModifierState?.('NumLock')) return null;
+  return Number(digit);
+}
+
 /**
  * The digit 1 to 9 a Jump to tab press names. Under Shift the key is a symbol
- * (`!`, `@`), so the physical digit key is read instead.
+ * (`!`, `@`), so the physical digit key is read instead; a numpad digit under Shift is read from its key code.
  */
-export function tabDigit(e: Pick<KeyboardEvent, 'key' | 'code'>, byCode: boolean): number | null {
+export function tabDigit(e: DigitPress, byCode: boolean): number | null {
+  const numpad = shiftedNumpadDigit(e);
+  if (numpad !== null) return numpad;
   const digit = byCode ? /^Digit([1-9])$/.exec(e.code)?.[1] : /^[1-9]$/.exec(e.key)?.[0];
   return digit === undefined ? null : Number(digit);
 }
@@ -462,9 +484,13 @@ export function matchBinding(
   const eventKey = e.key.toLowerCase();
   const bindingKey = binding.key.toLowerCase();
 
+  // Windows reports Shift as up for a numpad digit pressed with it (shiftedNumpadDigit).
+  let shiftKey = e.shiftKey;
+
   // Special case for Jump to Tab 1-9
   if (id === 'tab.selectByIndex') {
     if (tabDigit(e, !!binding.shift) === null) return false;
+    if (shiftedNumpadDigit(e) !== null) shiftKey = true;
   } else if (recorded) {
     // The recorder stores KeyboardEvent.key verbatim, including layout symbols.
     if (eventKey !== bindingKey) return false;
@@ -492,7 +518,7 @@ export function matchBinding(
 
   return (
     !!e.ctrlKey === !!binding.ctrl &&
-    !!e.shiftKey === !!binding.shift &&
+    !!shiftKey === !!binding.shift &&
     !!e.altKey === !!binding.alt &&
     !!e.metaKey === !!binding.meta
   );

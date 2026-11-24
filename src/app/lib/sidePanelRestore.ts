@@ -79,3 +79,18 @@ export function settledLayout(
   }
   return moved ? next : null;
 }
+
+/**
+ * The width in px a side panel goes back to when the layout moved it as a side effect. The sidebar and the compact
+ * rail share one open state, which the other mode may have changed since their width was cached (hiding the rail
+ * hides the sidebar): they follow that state, the rail at its fixed width and the sidebar at its own.
+ */
+export function restoreWidth(
+  id: string,
+  cached: number | undefined,
+  shared: { open: boolean; sidebarWidth: number; railWidth: number },
+): number {
+  if (id === 'rail') return shared.open ? shared.railWidth : 0;
+  if (id === 'sidebar') return shared.open ? cached || shared.sidebarWidth : 0;
+  return cached ?? 0;
+}

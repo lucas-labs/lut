@@ -81,7 +81,7 @@ columns are out of date.
 | UX-004 | P0       | Temas claros/oscuros y temas personalizados mediante tokens                           | E11-03, E13-08                                          |                |       |
 | UX-005 | P0       | Fuentes configurables y soporte de Nerd Fonts/powerline cuando el renderer lo permita | E11-03, E13-04                                          |                |       |
 | UX-006 | P1       | UI minimalista, densidad compacta/normal, iconografía coherente                       | E22-07                                                  |                |       |
-| UX-007 | P1       | Menús contextuales para tabs/panes/spaces                                             | E11-07, E22-04, E22-05, E27-09, E27-10                  |                |       |
+| UX-007 | P1       | Menús contextuales para tabs/panes/spaces                                             | E11-07, E22-04, E22-05, E27-10                          |                |       |
 | UX-008 | P1       | Command palette orientado a acciones de terminal/spaces                               | E11-07, E22-02                                          |                |       |
 | UX-009 | P1       | Paneles secundarios opcionales: explorer, Git, diff, logs de agentes                  | E11-08, E12-08                                          |                |       |
 | UX-010 | P1       | Estados de carga/error/falta de permisos accesibles y no intrusivos                   | E22-10                                                  |                |       |

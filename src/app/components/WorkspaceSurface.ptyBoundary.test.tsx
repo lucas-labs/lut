@@ -327,6 +327,8 @@ function shell(
     { value: { resolvedMode: mode, activeTheme: theme, customThemes: [] } },
     createElement(AppShell, {
       focusMode: false,
+      compact: false,
+      rail: null,
       titleBar: createElement('header', null, vertical ? null : strip),
       titleBarPlacement: vertical ? 'overlay' : 'inline',
       tabsColumn: vertical ? createElement('aside', null, strip) : null,

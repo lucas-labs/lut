@@ -42,6 +42,7 @@ function baseContext(over: Partial<CommandPaletteActionContext> = {}): CommandPa
     toggleSidebar: noop,
     toggleTabOrientation: noop,
     toggleTabsColumn: noop,
+    toggleCompactSidebar: noop,
     toggleFocusMode: noop,
     toggleFullScreen: noop,
     toggleHiddenFiles: noop,

@@ -23,15 +23,17 @@ export function createLutIcon(
 ): LutIconComponent {
   function LutIcon({ size = 'md', rotate = defaults.rotate ?? 0, ref, style, ...props }: LutIconProps) {
     const { master, width, height, viewBox, transform, odd } = resolveSize(data, size, rotate);
+    // A shape with a theme colour follows the theme; the rest take the text colour.
+    const paint = (color?: string) => (color ? `var(--${color})` : 'currentColor');
     const paths = master.paths.map((p) =>
       p.paint === 'fill' ? (
-        <path key={p.d} d={p.d} fill="currentColor" fillRule={p.fillRule} fillOpacity={p.opacity} />
+        <path key={p.d} d={p.d} fill={paint(p.color)} fillRule={p.fillRule} fillOpacity={p.opacity} />
       ) : (
         <path
           key={p.d}
           d={p.d}
           fill="none"
-          stroke="currentColor"
+          stroke={paint(p.color)}
           strokeWidth={p.strokeWidth}
           strokeLinecap={p.linecap}
           strokeLinejoin={p.linejoin}

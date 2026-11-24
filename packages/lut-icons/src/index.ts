@@ -60,6 +60,8 @@ export { KeyIcon } from './icons/key';
 export { KeyboardIcon } from './icons/keyboard';
 export { LayersIcon } from './icons/layers';
 export { LinkIcon } from './icons/link';
+export { LutLogoIcon } from './icons/lut-logo';
+export { LutLogoCompactIcon } from './icons/lut-logo-compact';
 export { MathIcon } from './icons/math';
 export { MinusIcon } from './icons/minus';
 export { MoreIcon } from './icons/more';

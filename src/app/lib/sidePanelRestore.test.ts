@@ -2,6 +2,7 @@ import type { Layout } from 'react-resizable-panels';
 import { describe, expect, it } from 'vitest';
 import {
   foldSideLayoutChange,
+  restoreWidth,
   settledLayout,
   type SideLayoutChange,
   sideLayoutChange,
@@ -153,5 +154,26 @@ describe('settledLayout', () => {
     expect(
       settledLayout({ sidebar: 200 }, { sidebar: 0, workspace: 100 }, 0, 'workspace'),
     ).toBeNull();
+  });
+});
+
+describe('restoreWidth (E27-01)', () => {
+  const open = { open: true, sidebarWidth: 260, railWidth: 32 };
+  const hidden = { ...open, open: false };
+
+  it('brings the rail back at its fixed width or closed, as the shared state says, whatever was cached', () => {
+    expect(restoreWidth('rail', 0, open)).toBe(32);
+    expect(restoreWidth('rail', 32, hidden)).toBe(0);
+  });
+
+  it('brings the sidebar back at its cached width, its stored one when the cache is closed, or closed', () => {
+    expect(restoreWidth('sidebar', 300, open)).toBe(300);
+    expect(restoreWidth('sidebar', 0, open)).toBe(260);
+    expect(restoreWidth('sidebar', 300, hidden)).toBe(0);
+  });
+
+  it('keeps any other panel at its cached width', () => {
+    expect(restoreWidth('tabs-column', 180, hidden)).toBe(180);
+    expect(restoreWidth('tabs-column', undefined, open)).toBe(0);
   });
 });

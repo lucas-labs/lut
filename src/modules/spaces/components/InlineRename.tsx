@@ -35,7 +35,8 @@ export function InlineRename({ initial, onCommit, onCancel, className }: Props) 
       className={className}
       onKeyDown={(e) => {
         e.stopPropagation();
-        if (e.key === 'Enter') finish(() => onCommit(e.currentTarget.value));
+        // Enter that confirms an IME candidate is part of the typing, not the end of the edit.
+        if (e.key === 'Enter' && !e.nativeEvent.isComposing) finish(() => onCommit(e.currentTarget.value));
         else if (e.key === 'Escape') finish(onCancel);
       }}
       onBlur={(e) => {
