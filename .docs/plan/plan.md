@@ -7569,12 +7569,14 @@ controls go (CompactV and CompactH boards on Windows, macOS and Linux).
 
 **Acceptance criteria:**
 
-- [ ] Vertical tabs: the hover title bar and its trigger strip sit above the rail, with the window controls in it.
-- [ ] Horizontal tabs: the window controls stay where they are on Windows and Linux; on macOS the traffic lights sit
-      over the rail, the rail leaves room above its first space and the tabs strip keeps clear of them, with the rail
-      shown and hidden.
+- [ ] Vertical tabs: on Windows and Linux the hover title bar and its trigger strip sit above the rail, with the
+      window controls in it; on macOS the traffic lights stay shown, so the title bar stays in place above the
+      workspace, without the tab strip.
+- [ ] Horizontal tabs: the window controls stay where they are on Windows and Linux.
+- [ ] On macOS, in both layouts, the traffic lights sit over the rail: the rail leaves them a row above its logo, and
+      the title bar and the views' headers beside the rail keep clear of them, with the rail shown and hidden.
 - [ ] Focus mode hides the rail as it hides the sidebar, and leaves it as it was.
-- [ ] Dialogs, the palette, menus and toasts sit above the rail and the floating panel.
+- [ ] Dialogs, the palette, menus and toasts sit above the rail and the views beside it.
 - [ ] Shortcuts in tooltips read Ctrl on Windows and Linux, ⌘ on macOS.
 
 **Verification:** `pnpm test`; manual on Windows; on macOS and Linux with E24 or E26-02, whichever comes first.

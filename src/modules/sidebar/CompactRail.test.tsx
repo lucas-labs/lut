@@ -1,10 +1,17 @@
 // @vitest-environment happy-dom
 import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CompactRail } from './CompactRail';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+
+const os = vi.hoisted(() => ({ mac: false }));
+vi.mock('@/modules/platform', () => ({
+  get IS_MAC() {
+    return os.mac;
+  },
+}));
 
 let host: HTMLDivElement;
 let root: Root;
@@ -22,6 +29,7 @@ function renderRail(withTabs: boolean) {
 }
 
 beforeEach(() => {
+  os.mac = false;
   host = document.createElement('div');
   document.body.append(host);
   root = createRoot(host);
@@ -63,5 +71,18 @@ describe('CompactRail', () => {
     expect(slot('rail-spaces')?.classList.contains('max-h-1/2')).toBe(false);
     expect(slot('rail-tabs')).toBeNull();
     expect(slot('rail-separator')).toBeNull();
+  });
+
+  it('gives the traffic lights no row elsewhere', () => {
+    renderRail(false);
+    expect(slot('rail-traffic-lights')).toBeNull();
+  });
+
+  it("leaves macOS's traffic lights a row above the logo that drags the window (E27-06)", () => {
+    os.mac = true;
+    renderRail(false);
+    const lights = slot('rail-traffic-lights');
+    expect(lights?.hasAttribute('data-tauri-drag-region')).toBe(true);
+    expect(lights?.nextElementSibling).toBe(slot('rail-logo'));
   });
 });

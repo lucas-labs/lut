@@ -3,16 +3,26 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils';
 import { createContext, type ReactNode, useContext } from 'react';
 
-/** Whether the sidebar's headers share their row with macOS's traffic lights. */
-const TrafficLightsRowContext = createContext(false);
+/**
+ * Where macOS's traffic lights sit beside the sidebar's headers: at the views' own corner (the sidebar leads the
+ * window), past the compact rail (the views open beside it), or not in their row (null).
+ */
+export type SidebarTrafficLights = 'corner' | 'rail' | null;
+
+type HeaderRow = { lights: SidebarTrafficLights; drag: boolean };
+
+const HeaderRowContext = createContext<HeaderRow>({ lights: null, drag: false });
 
 /**
- * On macOS, with the title bar beside the sidebar (horizontal tabs), the traffic lights sit in the sidebar's header
- * row: inside `clear`, a view's header is that row, 28px high, its title after the lights, and drags the window.
+ * The row the sidebar's view headers sit in. With `drag`, beside the title bar at the window's top, a header drags the
+ * window as the bar does. On macOS the traffic lights can share that row: with `lights`, a header is 28px high, its
+ * title past the lights (80px from the window's edge, as the title bar's).
  */
-export function SidebarTrafficLightsRow({ clear, children }: { clear: boolean; children: ReactNode }) {
-  return <TrafficLightsRowContext value={clear}>{children}</TrafficLightsRowContext>;
+export function SidebarHeaderRow({ lights, drag, children }: HeaderRow & { children: ReactNode }) {
+  return <HeaderRowContext value={{ lights, drag }}>{children}</HeaderRowContext>;
 }
+
+const HEADER_INSET = { corner: 'h-7 pl-20', rail: 'h-7 pl-12' } as const;
 
 /**
  * The header of a sidebar view (E11-02 design): the view's title, then its actions. `titleHint` is shown on hovering
@@ -27,15 +37,15 @@ export function SidebarViewHeader({
   titleHint?: string;
   children?: ReactNode;
 }) {
-  const lightsRow = useContext(TrafficLightsRowContext);
+  const { lights, drag } = useContext(HeaderRowContext);
   return (
     <TooltipProvider delayDuration={800} skipDelayDuration={300}>
       <div
         // `deep`: the title drags the window too, the actions stay buttons.
-        data-tauri-drag-region={lightsRow ? 'deep' : undefined}
+        data-tauri-drag-region={drag ? 'deep' : undefined}
         className={cn(
           'flex shrink-0 items-center gap-2 overflow-hidden pr-1.5',
-          lightsRow ? 'h-7 pl-20' : 'h-[30px] pl-[18px]',
+          lights ? HEADER_INSET[lights] : 'h-[30px] pl-[18px]',
         )}
       >
         <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground" title={titleHint}>

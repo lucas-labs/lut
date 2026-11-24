@@ -4,7 +4,8 @@ export { RailDot } from './RailDot';
 export { SidebarRail } from './SidebarRail';
 export {
   SidebarHeaderAction,
-  SidebarTrafficLightsRow,
+  SidebarHeaderRow,
+  type SidebarTrafficLights,
   SidebarViewHeader,
 } from './SidebarViewHeader';
 export type { SidebarViewId } from './types';

@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+import { SidebarViewHeader } from '@/modules/sidebar';
 import { act, createElement, createRef, type ReactNode, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import type { PanelImperativeHandle } from 'react-resizable-panels';
@@ -39,6 +40,7 @@ const sidebarRef = createRef<PanelImperativeHandle>();
 
 function shell(props: {
   focusMode?: boolean;
+  fullScreen?: boolean;
   compact?: boolean;
   titleBar?: ReactNode;
   placement?: 'inline' | 'overlay';
@@ -55,6 +57,7 @@ function shell(props: {
 }) {
   return createElement(AppShell, {
     focusMode: props.focusMode ?? false,
+    fullScreen: props.fullScreen ?? false,
     compact: props.compact ?? false,
     rail: createElement('nav', { 'data-chrome': 'rail' }),
     sidebarWidth: 260,
@@ -250,4 +253,18 @@ it('has the sidebar panel only while the views are open beside the rail (E27-04)
   expect(host.querySelector('[data-chrome="sidebar"]')).toBeNull();
   expect(mounts).toEqual(['workspace']);
   expect(unmounts).toEqual([]);
+});
+
+it('lets the views headers drag the window beside the inline title bar, out of full screen', () => {
+  const sidebar = createElement(SidebarViewHeader, { title: 'Spaces' });
+  const drag = () => host.querySelector('[data-tauri-drag-region]')?.getAttribute('data-tauri-drag-region') ?? null;
+  render(shell({ sidebar, placement: 'inline' }));
+  expect(drag()).toBe('deep');
+  render(shell({ sidebar, placement: 'inline', fullScreen: true }));
+  expect(drag()).toBeNull();
+  render(shell({ sidebar, placement: 'overlay' }));
+  expect(drag()).toBeNull();
+  // The views beside the rail, too.
+  render(shell({ sidebar, placement: 'inline', compact: true, views: true }));
+  expect(drag()).toBe('deep');
 });

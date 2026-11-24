@@ -21,8 +21,21 @@ import { useTitleBarReveal } from './useTitleBarReveal';
  */
 export type TitleBarPlacement = 'inline' | 'overlay';
 
+/**
+ * What lies between an inline bar and the window's left edge: the sidebar or the views beside the rail (`panel`), the
+ * compact rail alone (`rail`), or nothing (`window`). On macOS the bar keeps clear of the traffic lights over it.
+ */
+export type TitleBarCorner = 'panel' | 'rail' | 'window';
+
+/** The bar's start, past macOS's traffic lights: 80px from the window's edge. */
+const TRAFFIC_LIGHTS_INSET = { panel: 'pl-1.5', rail: 'pl-12', window: 'pl-20' } as const;
+
 type Props = {
   placement: TitleBarPlacement;
+  /** Whether an inline bar carries the tab strip: false with vertical tabs (macOS's compact sidebar, E27-06). */
+  tabStrip: boolean;
+  /** What lies left of an inline bar. */
+  corner: TitleBarCorner;
   /** The active space's tabs, for the strip (inline only). */
   tabs: TabNavigatorItem[];
   tabActions: TabNavigatorActions;
@@ -78,6 +91,8 @@ export function TitleBar(props: Props) {
 
 function TitleBarRow({
   placement,
+  tabStrip,
+  corner,
   tabs,
   tabActions,
   newTabMenu,
@@ -111,9 +126,9 @@ function TitleBarRow({
     return () => ro.disconnect();
   }, []);
 
-  // macOS draws its traffic lights over the window's top-left corner: the bar keeps clear of them whenever it
-  // reaches that corner (always as an overlay, inline only while the sidebar is closed).
-  const clearTrafficLights = IS_MAC && (!inline || !sidePanelsOpen);
+  // macOS draws its traffic lights over the window's top-left corner: the bar keeps clear of them where it comes
+  // near it (always as an overlay, inline unless the sidebar or the views lead).
+  const inset = IS_MAC ? TRAFFIC_LIGHTS_INSET[inline ? corner : 'window'] : 'pl-1.5';
   const appMark = (
     // On macOS the mark ends the bar, by the window's rounded corner: as much room after it as before it.
     <span className={cn('flex shrink-0 items-center text-muted-foreground', IS_MAC ? 'pr-3.5 pl-2' : 'px-2')}>
@@ -135,7 +150,7 @@ function TitleBarRow({
         // Inline, the bar is chrome: `frame`, which window vibrancy (Mica) turns transparent. As an overlay it floats
         // over the terminals, so it paints the theme's rail colour, opaque, or the terminal would show through it.
         inline ? 'bg-frame' : 'bg-sidebar',
-        clearTrafficLights ? 'pl-20' : 'pl-1.5',
+        inset,
       )}
     >
       {!inline && !IS_MAC && appMark}
@@ -172,7 +187,7 @@ function TitleBarRow({
           <PanelArrowRightIcon size="sm" />
         </Button>
       )}
-      {inline && (
+      {inline && tabStrip && (
         <TabNavigator
           orientation="horizontal"
           items={tabs}

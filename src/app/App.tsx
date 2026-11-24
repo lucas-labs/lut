@@ -4,7 +4,7 @@ import { useControlBridge } from '@/modules/control';
 import { useApplyFileIconColors } from '@/modules/explorer';
 import { type SearchInlineHandle, TitleBar } from '@/modules/header';
 import { DEFAULT_SPACE_ID, useNavigatorItems } from '@/modules/navigation';
-import { getLaunchDir } from '@/modules/platform';
+import { getLaunchDir, IS_MAC, useWindowFullScreen } from '@/modules/platform';
 import { useProfilesLoadNotice, useShellTitlePolicy } from '@/modules/profiles';
 import { openSettingsWindow } from '@/modules/settings/openSettingsWindow';
 import { usePreferencesStore } from '@/modules/settings/preferences';
@@ -32,6 +32,7 @@ import { useTabCommands } from './hooks/useTabCommands';
 import { useTerminalPanes } from './hooks/useTerminalPanes';
 import { useWorkspaceCoordinator } from './hooks/useWorkspaceCoordinator';
 import { breadcrumbFilePath } from './lib/activeFilePath';
+import { titleBarLayout } from './lib/titleBarLayout';
 import { registerTabPresenters, SpaceAgentStatus } from './tabPresenters';
 
 registerTabPresenters();
@@ -152,8 +153,17 @@ export default function App() {
   };
   const { verticalTabs, sidebarHidden, sidebarCollapsed, tabsColumnCollapsed, focusMode, compactSidebar } = panels;
   const spaces = useSpaces((s) => s.spaces);
-  // Vertical tabs and focus mode float the bar over the window, shown from the top edge (E11-02, E12-10).
-  const titleBarPlacement = verticalTabs || focusMode ? 'overlay' : 'inline';
+  const fullScreen = useWindowFullScreen();
+  const titleBar = titleBarLayout({
+    mac: IS_MAC,
+    verticalTabs,
+    focusMode,
+    compact: compactSidebar,
+    sidebarHidden,
+    viewsClosed: sidebarCollapsed,
+    sidePanelsOpen: panels.sidePanelsOpen,
+  });
+  const titleBarPlacement = titleBar.placement;
 
   return (
     <ThemeProvider>
@@ -161,6 +171,7 @@ export default function App() {
         <AppShell
           titleBarPlacement={titleBarPlacement}
           focusMode={focusMode}
+          fullScreen={fullScreen}
           compact={compactSidebar}
           compactPanelOpen={panels.compactPanelOpen}
           onCompactPanelChange={panels.setCompactPanelOpen}
@@ -205,6 +216,8 @@ export default function App() {
           titleBar={
             <TitleBar
               placement={titleBarPlacement}
+              tabStrip={titleBar.tabStrip}
+              corner={titleBar.corner}
               tabs={navigatorItems}
               tabActions={commands.tabActions}
               newTabMenu={newTabMenu}
