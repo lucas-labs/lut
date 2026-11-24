@@ -192,6 +192,8 @@ export class WebGpuTerminalSurface implements TerminalSurface, WebGpuRuntimeSurf
   private lastScreenState: ScreenUniformState | null = null;
   /** The padding asked for, in CSS pixels; `setPadding`. */
   private padding: Padding = NO_PADDING;
+  /** The scrollbar's room at the right of the grid is kept; `setScrollbarGutter`. */
+  private scrollbarGutter = true;
   /** The padding the last fit had room for, in device pixels: where the grid starts. */
   private devicePadding: Padding = NO_PADDING;
 
@@ -442,6 +444,16 @@ export class WebGpuTerminalSurface implements TerminalSurface, WebGpuRuntimeSurf
   setPadding(padding: Padding): void {
     if (paddingEqual(padding, this.padding)) return;
     this.padding = padding;
+    this.queueFit();
+  }
+
+  /**
+   * Whether the grid keeps the scrollbar's room at its right (`TERMINAL_RIGHT_GUTTER_CSS_PX`); a
+   * screen without scrollback (the alternate one) has no scrollbar to keep it for. Refits once.
+   */
+  setScrollbarGutter(reserved: boolean): void {
+    if (this.scrollbarGutter === reserved) return;
+    this.scrollbarGutter = reserved;
     this.queueFit();
   }
 
@@ -948,7 +960,7 @@ export class WebGpuTerminalSurface implements TerminalSurface, WebGpuRuntimeSurf
       this.metrics,
       bounds.device,
       this.padding,
-      TERMINAL_RIGHT_GUTTER_CSS_PX,
+      this.scrollbarGutter ? TERMINAL_RIGHT_GUTTER_CSS_PX : 0,
     );
     if (fit) smoothHooks()?.want(this.benchId, performance.now(), fit.cols, fit.rows);
   }
@@ -1035,7 +1047,7 @@ export class WebGpuTerminalSurface implements TerminalSurface, WebGpuRuntimeSurf
       this.metrics,
       bounds.device,
       this.padding,
-      TERMINAL_RIGHT_GUTTER_CSS_PX,
+      this.scrollbarGutter ? TERMINAL_RIGHT_GUTTER_CSS_PX : 0,
     );
     // Everything measured against the root (selection, links, IME, scrollbar) follows the grid.
     this.root.style.inset = `${padding.top}px ${padding.right}px ${padding.bottom}px ${padding.left}px`;

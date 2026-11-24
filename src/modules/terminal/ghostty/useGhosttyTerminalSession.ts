@@ -1097,8 +1097,12 @@ async function lookUpFullScreenPrograms(session: GhosttySession): Promise<void> 
   applyPadding(session);
 }
 
-/** The pane's padding, or none while a full-screen program fills it, plus the room a bar keeps. */
+/**
+ * The pane's padding, or none while a full-screen program fills it, plus the room a bar keeps. A
+ * full-screen program has no scrollback, so no scrollbar either: the grid takes its room too.
+ */
 function applyPadding(session: GhosttySession, surface = session.surface): void {
+  surface?.setScrollbarGutter(!session.alternateScreen);
   const fills =
     session.alternateScreen &&
     !!session.look &&
