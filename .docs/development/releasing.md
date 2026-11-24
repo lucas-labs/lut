@@ -40,14 +40,16 @@ lut follows semver. The version lives in:
 
 A release starts with `pnpm release <version>` (E25-02), on an up-to-date, clean `master`:
 
-1. checks the version is valid semver and newer than the current one;
+1. checks the version is `X.Y.Z` or `X.Y.Z-beta.N` and newer than the current one; any other form (`-rc.1`,
+   `-alpha`) is refused;
 2. writes it into the files above and refreshes `Cargo.lock` (`cargo update --workspace`);
 3. commits `release: 🔖 vX.Y.Z` and creates the signed tag `vX.Y.Z`.
 
 Pushing the commit and the tag is left to the person releasing (`git push origin master vX.Y.Z`): nothing leaves the
-machine until they decide. A tag with a `-beta.N` suffix is a beta; any other is stable.
+machine until they decide. A `vX.Y.Z-beta.N` tag is a beta and a `vX.Y.Z` tag is stable.
 
-The release workflow's first job fails the run when the tag and the versions in the files disagree.
+The release workflow's first job applies the same rule: it fails the run for a tag of any other form, or when the tag
+and the versions in the files disagree.
 
 ## How a release runs
 
@@ -66,7 +68,7 @@ sequenceDiagram
     W->>W: check tag = versions
     par one job per target
         W->>W: Windows x64: build NSIS
-        W->>W: macOS arm64 and x64: build app + dmg
+        W->>W: macOS arm64 and x64: build dmg + app.tar.gz
         W->>W: Linux x64 and arm64: build AppImage, deb, rpm
     end
     W->>S: Windows installer
@@ -78,7 +80,7 @@ sequenceDiagram
     W->>G: upload installers, signatures, latest.json
     M->>G: review and publish
     G->>W: release published starts the manifest job
-    W->>U: replace stable.json (stable only) and beta.json
+    W->>U: replace stable.json (stable only) and beta.json, when newer
 ```
 
 - **Targets.** Windows x64; macOS arm64 and x64 (two builds); Linux x64 and arm64, on the oldest supported Ubuntu
@@ -98,13 +100,14 @@ The workflow, its matrix and the manifest job are E25-02; the third-party notice
 
 ## Artifacts
 
-| OS      | Download                 | Updates itself | Notes                                                                                                   |
-| ------- | ------------------------ | -------------- | ------------------------------------------------------------------------------------------------------- |
-| Windows | NSIS installer (`.exe`)  | yes            | per-user install; Authenticode-signed through SignPath. No MSI: it needs an administrator and no betas. |
-| macOS   | `.dmg` (arm64, x64)      | yes            | not signed with an Apple certificate yet: the first launch needs right-click > Open (see `future.md`).  |
-| Linux   | AppImage, `.deb`, `.rpm` | yes            | the updater replaces an AppImage in place; a `.deb` or `.rpm` update asks for the password to install.  |
+| OS      | Download                 | Used by the updater       | Notes                                                                                                                                            |
+| ------- | ------------------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Windows | NSIS installer (`.exe`)  | the same `.exe`           | per-user install; Authenticode-signed through SignPath. No MSI: it needs an administrator and no betas.                                          |
+| macOS   | `.dmg` (arm64, x64)      | `lut.app.tar.gz`          | the `.dmg` is only for the first install. Not signed with an Apple certificate yet: the first launch needs right-click > Open (see `future.md`). |
+| Linux   | AppImage, `.deb`, `.rpm` | the same file, per format | the updater replaces an AppImage in place; a `.deb` or `.rpm` update asks for the password to install.                                           |
 
-Every bundle has a `.sig` next to it: the updater signature that an installed lut checks before installing.
+Every file the updater uses has a `.sig` next to it: the updater signature that an installed lut checks before
+installing. `latest.json` points at those files, never at the `.dmg`.
 
 ## The update manifests
 
@@ -113,14 +116,15 @@ An installed lut reads one fixed URL per channel, both assets of a permanent rel
 - `https://github.com/lucas-labs/lut/releases/download/updater/stable.json`
 - `https://github.com/lucas-labs/lut/releases/download/updater/beta.json`
 
-Each is a copy of a release's `latest.json`. Publishing a release replaces them:
+Each is a copy of a release's `latest.json`. Publishing a release replaces a manifest only when the release is newer
+than the version that manifest holds, so publishing an older draft late never moves a channel back:
 
-| Published release     | `stable.json` | `beta.json`                                                  |
-| --------------------- | ------------- | ------------------------------------------------------------ |
-| stable `v0.10.0`      | replaced      | replaced, unless the current beta is newer (`0.11.0-beta.1`) |
-| beta `v0.11.0-beta.1` | unchanged     | replaced                                                     |
+| Published release     | `stable.json`     | `beta.json`       |
+| --------------------- | ----------------- | ----------------- |
+| stable `v0.10.0`      | replaced if newer | replaced if newer |
+| beta `v0.11.0-beta.1` | unchanged         | replaced if newer |
 
-So the beta channel also gets every stable release, and never goes back to an older version. Terax had one channel
+So the beta channel also gets every stable release, and neither channel ever goes back to an older version. Terax had one channel
 and used `releases/latest/download/latest.json`, which GitHub resolves to the newest non-pre-release; a second channel
 needs a URL of its own, and one mechanism for both keeps them alike.
 

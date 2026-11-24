@@ -6904,14 +6904,16 @@ the release updates the channel manifests, as `.docs/development/releasing.md` d
 
 **Acceptance criteria:**
 
-- [ ] `pnpm release <version>` writes the version into every file that holds it, commits and creates the signed tag;
-      the workflow fails when the tag and those versions disagree.
+- [ ] `pnpm release <version>` accepts only `X.Y.Z` and `X.Y.Z-beta.N`, writes the version into every file that holds
+      it, commits and creates the signed tag; the workflow fails for a tag of any other form or when the tag and those
+      versions disagree.
 - [ ] Builds NSIS (Windows x64; no MSI), app/dmg (macOS arm64 and x64) and AppImage/deb/rpm (Linux x64 and arm64)
       with `createUpdaterArtifacts: true` and `TAURI_SIGNING_PRIVATE_KEY` from secrets; binary `lut`, sidecar
-      `lut-cli` built per target.
+      `lut-cli` built per target; on macOS the updater uses `lut.app.tar.gz`, the `.dmg` is for the first install.
 - [ ] The Windows installer is Authenticode-signed through SignPath before its updater signature is made.
 - [ ] One job writes `latest.json` after every target; the release stays a draft.
-- [ ] Publishing a release updates `stable.json` and `beta.json` on the `updater` release as the design's table says.
+- [ ] Publishing a release updates `stable.json` and `beta.json` on the `updater` release as the design's table says,
+      each only when the release is newer than the version it holds.
 
 **Verification:** a pre-release tag produces all artifacts and a valid manifest; publishing it updates `beta.json`
 only.
