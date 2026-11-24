@@ -1,7 +1,7 @@
 import { useAgentActivityStore } from '@/modules/terminal/lib/agentActivity';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { shallow } from 'zustand/shallow';
-import { NO_AGENT_STATUS, selectTabAgentStatus } from './tabAgentStatus';
+import { NO_AGENT_STATUS, selectSpaceAgentState, selectTabAgentStatus } from './tabAgentStatus';
 
 const select = (ptyIds: readonly number[]) =>
   selectTabAgentStatus(useAgentActivityStore.getState(), ptyIds);
@@ -43,5 +43,33 @@ describe('selectTabAgentStatus', () => {
     const before = select([1]);
     store.setPhase(1, 'attention');
     expect(shallow(before, select([1]))).toBe(false);
+  });
+});
+
+describe('selectSpaceAgentState', () => {
+  const space = (ptyIds: readonly number[]) =>
+    selectSpaceAgentState(useAgentActivityStore.getState(), ptyIds);
+
+  it('shows nothing for a space with no ptys, idle agents or only working ones', () => {
+    const store = useAgentActivityStore.getState();
+    expect(space([])).toBeNull();
+    store.setPhase(1, 'idle');
+    store.setPhase(2, 'working');
+    expect(space([1, 2])).toBeNull();
+  });
+
+  it('shows a finished response, and a request for attention over it', () => {
+    const store = useAgentActivityStore.getState();
+    store.setPhase(1, 'finished');
+    store.setPhase(2, 'working');
+    expect(space([1, 2])).toBe('finished');
+    store.setPhase(3, 'attention');
+    expect(space([1, 2, 3])).toBe('attention');
+    expect(space([3, 1])).toBe('attention');
+  });
+
+  it("reflects only the space's own ptys", () => {
+    useAgentActivityStore.getState().setPhase(4, 'attention');
+    expect(space([1, 2])).toBeNull();
   });
 });

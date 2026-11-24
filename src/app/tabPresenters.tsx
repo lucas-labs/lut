@@ -5,12 +5,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 import { ALL_LANGUAGES, EXPOSED_LANGUAGES } from '@/modules/editor/lib/languageDefinitions';
 import { resolveDisplayName } from '@/modules/editor/lib/languageResolver';
 import { FileIcon } from '@/modules/explorer/FileIcon';
-import { registerTabPresenter, type Tab, type TerminalTab, useNavigationStore } from '@/modules/navigation';
+import {
+  registerTabPresenter,
+  type Tab,
+  type TabStatusLook,
+  type TerminalTab,
+  useNavigationStore,
+} from '@/modules/navigation';
 import { ProfileIcon, useProfiles } from '@/modules/profiles';
-import { selectTabAgentStatus } from '@/modules/tabs';
+import type { SpaceStatusLook } from '@/modules/spaces';
+import { selectSpaceAgentState, selectTabAgentStatus } from '@/modules/tabs';
 import { findLeaf, leafIds, ptyIdForLeaf, useAgentActivityStore } from '@/modules/terminal';
 import {
   AlertFilledIcon,
@@ -50,19 +58,56 @@ function TerminalTabIcon({ tab }: { tab: Tab }) {
   return <ProfileIcon profile={profile} className="shrink-0 text-muted-foreground" />;
 }
 
+/** Words for an agent state, as the compact sidebar's tooltips and a screen reader say it. */
+const STATE_LABEL = { working: 'Working', attention: 'Needs attention', finished: 'Finished' } as const;
+
+type ShownState = keyof typeof STATE_LABEL;
+
+const DOT_COLOR: Record<ShownState, string> = {
+  working: 'bg-primary',
+  attention: 'bg-warning',
+  finished: 'bg-success',
+};
+
 /**
- * A terminal's agent state after its title. The selector reduces the global activity maps to this tab's own
- * `{ state, agent }`, and `useShallow` keeps that result stable, so an agent signal on one tab re-renders only
- * that tab's indicator.
+ * An agent state on a compact sidebar button (E27-03): a 7 px dot at its top right corner, ringed in the rail's colour
+ * to stand apart from a tinted button. A working agent's dot blinks, and holds still under reduced motion.
  */
-function TerminalTabStatus({ tab }: { tab: Tab }) {
+function StateDot({ state }: { state: ShownState }) {
+  return (
+    <span
+      aria-hidden
+      data-agent-state={state}
+      className={cn(
+        'pointer-events-none absolute top-0.5 right-0.5 size-[7px] rounded-full ring-2 ring-frame',
+        DOT_COLOR[state],
+        state === 'working' && 'lut-blink',
+      )}
+    />
+  );
+}
+
+/** An agent state in a compact sidebar button's tooltip, after the name: "Reforge · Needs attention". */
+const StateLabel = ({ state }: { state: ShownState }) => (
+  <span className="text-muted-foreground">· {STATE_LABEL[state]}</span>
+);
+
+/**
+ * A terminal's agent state: an icon after its title, or on the compact sidebar a dot on its button (working or needing
+ * attention; a finished response shows on its space) and words in its tooltip. The selector reduces the global
+ * activity maps to this tab's own `{ state, agent }`, and `useShallow` keeps that result stable, so an agent signal on
+ * one tab re-renders only that tab's indicator.
+ */
+function TerminalTabStatus({ tab, as }: { tab: Tab; as: TabStatusLook }) {
   const terminal = tab as TerminalTab;
   const { state } = useAgentActivityStore(useShallow((s) => selectTabAgentStatus(s, terminalPtyIds(terminal))));
+  if (as === 'dot') return state === 'working' || state === 'attention' ? <StateDot state={state} /> : null;
+  if (as === 'label') return state === 'working' || state === 'attention' ? <StateLabel state={state} /> : null;
   if (state === 'working') {
     return (
       <>
         <SpinnerIcon size="xs" className="shrink-0 animate-spin text-primary" />
-        <span className="sr-only">Working</span>
+        <span className="sr-only">{STATE_LABEL.working}</span>
       </>
     );
   }
@@ -70,7 +115,7 @@ function TerminalTabStatus({ tab }: { tab: Tab }) {
     return (
       <>
         <AlertFilledIcon size="xs" className="shrink-0 text-warning" />
-        <span className="sr-only">Needs attention</span>
+        <span className="sr-only">{STATE_LABEL.attention}</span>
       </>
     );
   }
@@ -78,11 +123,27 @@ function TerminalTabStatus({ tab }: { tab: Tab }) {
     return (
       <>
         <CheckmarkCircleIcon size="xs" className="shrink-0 text-success" />
-        <span className="sr-only">Finished</span>
+        <span className="sr-only">{STATE_LABEL.finished}</span>
       </>
     );
   }
   return null;
+}
+
+/** The live pty ids behind a space's terminal tabs. */
+function spacePtyIds(tabs: readonly Tab[]): number[] {
+  return tabs.flatMap((tab) => (tab.kind === 'terminal' ? terminalPtyIds(tab) : []));
+}
+
+/**
+ * A space's agent state on the compact sidebar (E27-03): a dot on its button and words in its tooltip, when one of its
+ * agents needs attention or finished a response. A string from the store, so only this space re-renders when it
+ * changes.
+ */
+export function SpaceAgentStatus({ tabs, as }: { tabs: readonly Tab[]; as: SpaceStatusLook }) {
+  const state = useAgentActivityStore((s) => selectSpaceAgentState(s, spacePtyIds(tabs)));
+  if (!state) return null;
+  return as === 'dot' ? <StateDot state={state} /> : <StateLabel state={state} />;
 }
 
 function FileTabIcon({ tab }: { tab: Tab }) {

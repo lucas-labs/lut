@@ -9,6 +9,8 @@ import { SPACE_COLORS } from './lib/spaceColor';
 import { useSpaces } from './lib/useSpaces';
 import { spaceInitial, SpacesView } from './SpacesView';
 
+type SpacesViewProps = Parameters<typeof SpacesView>[0];
+
 vi.mock('./lib/store', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./lib/store')>()),
   saveSpacesList: vi.fn(async () => {}),
@@ -67,11 +69,11 @@ function tabsInB(): Tab[] {
   return useNavigationStore.getState().tabs.map((t) => ({ ...t, spaceId: 'b' }));
 }
 
-async function render(tabs: Tab[] = tabsInB(), compact = false) {
+async function render(tabs: Tab[] = tabsInB(), compact = false, Status?: SpacesViewProps['Status']) {
   await act(async () =>
     root.render(
       <TooltipProvider>
-        <SpacesView tabs={tabs} compact={compact} {...props} />
+        <SpacesView tabs={tabs} compact={compact} Status={Status} {...props} />
       </TooltipProvider>,
     ),
   );
@@ -207,6 +209,23 @@ describe('SpacesView on the compact sidebar (E27-01)', () => {
       row('b')?.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0, pointerId: 1 }));
     });
     expect(useSpaces.getState().activeId).toBe('b');
+  });
+
+  it("puts each Space's state, over its own tabs, on its button as a dot and in its tooltip as words (E27-03)", async () => {
+    const Status: SpacesViewProps['Status'] = ({ tabs, as }) => (
+      <span data-look={as} data-tabs={tabs.map((t) => t.id).join(',')} />
+    );
+    const tabs = tabsInB();
+    await render(tabs, true, Status);
+    const dot = (id: string) => row(id)?.querySelector('[data-look]');
+    expect(dot('a')?.getAttribute('data-look')).toBe('dot');
+    expect(dot('a')?.getAttribute('data-tabs')).toBe('');
+    expect(dot('b')?.getAttribute('data-tabs')).toBe(tabs.map((t) => t.id).join(','));
+
+    await act(async () => row('b')?.focus());
+    const label = document.querySelector('[data-slot="tooltip-content"] [data-look]');
+    expect(label?.getAttribute('data-look')).toBe('label');
+    expect(label?.getAttribute('data-tabs')).toBe(tabs.map((t) => t.id).join(','));
   });
 
   it('opens a Space from its +', async () => {

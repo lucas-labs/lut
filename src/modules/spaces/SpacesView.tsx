@@ -13,7 +13,7 @@ import { labelFor, type Tab, TabIcon } from '@/modules/navigation';
 import { useShellTitlePolicy } from '@/modules/profiles';
 import { useShortcutLabel } from '@/modules/shortcuts';
 import { ChevronIcon, DeleteIcon, GhostIcon, PencilIcon, PlusIcon, XIcon } from '@lut/lut-icons';
-import { type CSSProperties, useMemo, useRef, useState } from 'react';
+import { type ComponentType, type CSSProperties, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { InlineRename } from './components/InlineRename';
 import { isEphemeralSpace } from './lib/ephemeral';
@@ -36,7 +36,12 @@ type Props = {
    * heading and over a +. The same menu (less Expand, as no space lists its tabs), rename and drag.
    */
   compact?: boolean;
+  /** A compact button's live state (its agents', E27-03): a dot on the button and words in its tooltip. */
+  Status?: ComponentType<{ tabs: Tab[]; as: SpaceStatusLook }>;
 };
+
+/** How a space's live state shows on the compact sidebar: a dot on its button, or words in its tooltip. */
+export type SpaceStatusLook = 'dot' | 'label';
 
 type Edge = 'top' | 'bottom';
 
@@ -90,6 +95,7 @@ export function SpacesView({
   onReorderTab,
   onReorderSpaces,
   compact = false,
+  Status,
 }: Props) {
   const allowsShellTitle = useShellTitlePolicy();
   const spaces = useSpaces((s) => s.spaces);
@@ -226,6 +232,7 @@ export function SpacesView({
       key={sp.id}
       space={sp}
       compact={compact}
+      Status={Status}
       tabs={tabsBySpace.get(sp.id) ?? []}
       isActive={sp.id === activeId}
       canDelete={spaces.length > 1}
@@ -317,6 +324,7 @@ type SpaceRowProps = {
   space: SpaceMeta;
   /** The compact sidebar's button (SpacesView's `compact`). */
   compact: boolean;
+  Status: Props['Status'];
   tabs: Tab[];
   isActive: boolean;
   canDelete: boolean;
@@ -343,6 +351,7 @@ type SpaceRowProps = {
 function SpaceRow({
   space,
   compact,
+  Status,
   tabs,
   isActive,
   canDelete,
@@ -406,7 +415,7 @@ function SpaceRow({
       }}
       className={
         compact
-          ? cn(buttonVariants({ variant: 'rail', size: 'icon-sm' }), 'shrink-0 select-none')
+          ? cn(buttonVariants({ variant: 'rail', size: 'icon-sm' }), 'relative shrink-0 select-none')
           : cn(
               'relative flex h-8 cursor-pointer select-none items-center gap-2 rounded-md px-2.5 outline-none transition-colors focus-visible:ring-1 focus-visible:ring-ring',
               moveTarget
@@ -418,7 +427,10 @@ function SpaceRow({
       }
     >
       {compact ? (
-        <span className="font-semibold">{spaceInitial(space.name)}</span>
+        <>
+          <span className="font-semibold">{spaceInitial(space.name)}</span>
+          {Status && <Status tabs={tabs} as="dot" />}
+        </>
       ) : editing ? (
         <InlineRename initial={space.name} onCommit={onCommitRename} onCancel={onCancelRename} className="ml-0.5" />
       ) : (
@@ -503,6 +515,7 @@ function SpaceRow({
             {menu}
             <TooltipContent side="right" sideOffset={6}>
               <span className="max-w-56 truncate">{space.name}</span>
+              {Status && <Status tabs={tabs} as="label" />}
               {ephemeral ? <span className="max-w-56 text-muted-foreground">{EPHEMERAL_SPACE_HINT}</span> : null}
             </TooltipContent>
           </Tooltip>

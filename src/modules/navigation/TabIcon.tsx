@@ -2,14 +2,20 @@ import type { ComponentType } from 'react';
 import { useNavigationStore } from './store';
 import type { Tab } from './types';
 
+/**
+ * How a tab's live state shows: an icon after its title, a dot on the compact sidebar's button, or words in that
+ * button's tooltip.
+ */
+export type TabStatusLook = 'icon' | 'dot' | 'label';
+
 /** How one kind of tab shows itself in a navigator. */
 export type TabPresenter = {
   /** The tab's icon; renders nothing when the kind has none. */
   Icon: ComponentType<{ tab: Tab }>;
   /** The icon as a menu trigger, for the tab strip (an editor's language picker). */
   IconMenu?: ComponentType<{ tab: Tab }>;
-  /** A live state shown after the title (a terminal's agent working or asking). */
-  Status?: ComponentType<{ tab: Tab }>;
+  /** A live state (a terminal's agent working or asking), drawn as `as` says. */
+  Status?: ComponentType<{ tab: Tab; as: TabStatusLook }>;
 };
 
 const presenters = new Map<Tab['kind'], TabPresenter>();
@@ -37,9 +43,9 @@ export function TabIcon({ id, menu = false }: { id: number; menu?: boolean }) {
 }
 
 /** A tab's live state by id, from the presenter of its kind; nothing when the kind has none. */
-export function TabStatus({ id }: { id: number }) {
+export function TabStatus({ id, as = 'icon' }: { id: number; as?: TabStatusLook }) {
   const tab = useTab(id);
   if (!tab) return null;
   const Status = presenters.get(tab.kind)?.Status;
-  return Status ? <Status tab={tab} /> : null;
+  return Status ? <Status tab={tab} as={as} /> : null;
 }
