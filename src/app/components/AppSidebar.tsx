@@ -16,6 +16,8 @@ import { explorerFilePath } from '../lib/activeFilePath';
 const nav = () => useNavigationStore.getState();
 
 type Props = {
+  /** Compact mode (E27-04): the rail's buttons switch the views, so the view switcher is out. */
+  compact: boolean;
   tabs: Tab[];
   activeTab: Tab | undefined;
   explorerRoot: string | null;
@@ -36,6 +38,7 @@ type Props = {
 
 /** The sidebar (E09-08): the spaces, explorer or Git view, and the rail that switches them. */
 export function AppSidebar({
+  compact,
   tabs,
   activeTab,
   explorerRoot,
@@ -109,11 +112,13 @@ export function AppSidebar({
             />
           )}
         </div>
-        <SidebarRail
-          activeView={sidebarView}
-          onSelectView={persistSidebarView}
-          changedCount={git.sourceControl.changedCount}
-        />
+        {compact ? null : (
+          <SidebarRail
+            activeView={sidebarView}
+            onSelectView={persistSidebarView}
+            changedCount={git.sourceControl.changedCount}
+          />
+        )}
       </div>
     </div>
   );

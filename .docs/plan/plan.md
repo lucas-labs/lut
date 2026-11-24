@@ -7489,7 +7489,7 @@ ring in the rail's colour to set it apart. The tab colour is the background, the
 **Verification:** `pnpm test`; manual on Windows: an agent working, asking for approval and finishing, in the active
 space and in another one.
 
-### E27-04 — Files and Git as a floating panel from the rail
+### E27-04 — Files and Git as a panel beside the rail
 
 ```yaml
 id: E27-04
@@ -7502,21 +7502,26 @@ size: M
 ```
 
 **Goal:** Files and Git buttons sit at the bottom of the rail, pushed down by the free space. Each opens the full
-sidebar's view as a floating panel over the terminals, without resizing the panes (CompactFiles and CompactGit boards).
+sidebar's own view in the sidebar's panel, beside the rail: the terminals make room for it as they do for the full
+sidebar (CompactFiles and CompactGit boards). Only the layout changes: the same views, without the view switcher at the
+bottom. The rail comes first; the panel is there only while a view is open, mounted on demand.
 
 **Acceptance criteria:**
 
-- [ ] The Git button carries a dot while there are pending changes; the tooltips give "Files" and "Git".
-- [ ] The panel sits at the rail's right edge with the sidebar's width and a shadow, and holds the same content as in
-      the full sidebar: the file tree, or Git with commit, staging and the commit graph; opening a file opens its
-      editor tab as there.
-- [ ] While it is open its button shows as active; the other button switches the panel's view without closing it.
-- [ ] It closes on its button, on a click outside it and when the rail hides; the explorer and Git watchers follow
-      its visibility as they follow the sidebar's today, and the explorer focus and search actions reach it.
-- [ ] Component tests: open, switch, close on outside click; no change to the terminals' layout.
+- [ ] The Git button carries a dot while there are pending changes; the tooltips give "Files" and "Git · 3 changes".
+- [ ] The panel has the full sidebar's width, shared with it, and resizes from its edge; released under its minimum it
+      closes. It holds the same views: the file tree, or Git with commit, staging and the commit graph; opening a file
+      opens its editor tab as there. Once closed, it opens again from the buttons only, not by dragging.
+- [ ] While it is open its button shows as pressed; the other button switches the view without closing it, and
+      switching to the full sidebar keeps that view.
+- [ ] It closes on its button, when the rail hides and when compact mode ends, and starts closed in compact mode; the
+      explorer and Git watchers follow its visibility as they follow the sidebar's today, and the explorer focus and
+      search actions reach it.
+- [ ] Tests: the buttons (pressed, dot, tooltip); open, switch and close from the sidebar's commands; the panel exists
+      only while a view is open.
 
-**Verification:** `pnpm test`; manual on Windows: open a file and stage a change from the panel; the terminals keep
-their size.
+**Verification:** `pnpm test`; manual on Windows: open a file and stage a change from the panel; resize and close it
+from its edge.
 
 ### E27-05 — Hide and show the rail by dragging its edge
 
@@ -7530,18 +7535,20 @@ scope: ui
 size: S
 ```
 
-**Goal:** The rail never changes width: it only hides or shows, from its edge or the title bar button.
+**Goal:** The rail never changes width, not even while dragged: it only hides or shows, in one jump, from its edge or
+the title bar button.
 
 **Acceptance criteria:**
 
-- [ ] Hovering the rail's right edge shows the 3 px line of the other sidebars' handles. Dragged left past 24 px the
-      line turns to the warning colour and the rail dims to 45 %; released there the rail hides, released before it
-      settles back.
+- [ ] The rail's right edge is a handle like the other sidebars' (the same line and hover). Dragged left past 24 px the
+      rail hides at once; back over 24 px before the release it shows again, as a side panel's handle undoes a
+      collapse. A rail released hidden closes the views beside it. No other drag resizes it, nor one past the views' edge
+      beside it (E27-04).
 - [ ] With the rail hidden, an invisible 8 px strip at the window's left edge shows the line on hover; dragging it
-      right past 24 px brings the rail back.
+      right past 24 px brings the rail back at once.
 - [ ] The title bar's sidebar button (the one that shows the closed full sidebar) shows and hides the rail too.
 - [ ] Hiding keeps the Compact preference; whether the rail is hidden is saved and restored on start.
-- [ ] Component tests for the thresholds and the persisted state.
+- [ ] Component tests for the threshold and the persisted state.
 
 **Verification:** `pnpm test`; manual on Windows: hide and show by dragging and from the button, then restart lut.
 

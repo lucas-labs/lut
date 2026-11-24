@@ -330,6 +330,9 @@ function shell(
       focusMode: false,
       compact: false,
       rail: null,
+      sidebarWidth: 260,
+      compactPanelOpen: false,
+      onCompactPanelChange: () => {},
       titleBar: createElement('header', null, vertical ? null : strip),
       titleBarPlacement: vertical ? 'overlay' : 'inline',
       tabsColumn: vertical ? createElement('aside', null, strip) : null,
@@ -342,7 +345,7 @@ function shell(
       sidebarRef: createRef<PanelImperativeHandle>(),
       sidebarInitialWidth: 0,
       onSidebarLayout: noop,
-      onSidebarCollapsedChange: noop,
+      onSidebarHiddenChange: noop,
       workspace: surface(tabs, activeId),
     }),
   );

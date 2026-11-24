@@ -159,6 +159,9 @@ function shell(tabs: Tab[], { vertical = false, sidebar = null }: { vertical?: b
     focusMode: false,
     compact: false,
     rail: null,
+    sidebarWidth: 260,
+    compactPanelOpen: false,
+    onCompactPanelChange: () => {},
     titleBar: createElement('header', null, vertical ? null : strip),
     titleBarPlacement: vertical ? 'overlay' : 'inline',
     tabsColumn: vertical ? createElement('aside', null, strip) : null,
@@ -171,7 +174,7 @@ function shell(tabs: Tab[], { vertical = false, sidebar = null }: { vertical?: b
     sidebarRef: createRef<PanelImperativeHandle>(),
     sidebarInitialWidth: 0,
     onSidebarLayout: noop,
-    onSidebarCollapsedChange: noop,
+    onSidebarHiddenChange: noop,
     workspace: surface(tabs, 1),
   });
 }
@@ -186,6 +189,9 @@ function SidebarShell({ tabs, onControls }: { tabs: Tab[]; onControls: (controls
     focusMode: false,
     compact: false,
     rail: null,
+    sidebarWidth: 260,
+    compactPanelOpen: false,
+    onCompactPanelChange: () => {},
     titleBar: null,
     titleBarPlacement: 'inline',
     tabsColumn: null,
@@ -196,9 +202,9 @@ function SidebarShell({ tabs, onControls }: { tabs: Tab[]; onControls: (controls
     onTabsColumnLayout: noop,
     sidebar: createElement('nav', { key: sidebar.sidebarView, 'data-view': sidebar.sidebarView }),
     sidebarRef: sidebar.sidebarRef,
-    sidebarInitialWidth: sidebar.initialSidebarCollapsed ? 0 : 260,
+    sidebarInitialWidth: sidebar.initialSidebarHidden ? 0 : 260,
     onSidebarLayout: sidebar.persistSidebarWidth,
-    onSidebarCollapsedChange: sidebar.persistSidebarCollapsed,
+    onSidebarHiddenChange: sidebar.persistSidebarHidden,
     workspace: surface(tabs, 1),
   });
 }

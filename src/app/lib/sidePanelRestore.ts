@@ -81,16 +81,15 @@ export function settledLayout(
 }
 
 /**
- * The width in px a side panel goes back to when the layout moved it as a side effect. The sidebar and the compact
- * rail share one open state, which the other mode may have changed since their width was cached (hiding the rail
- * hides the sidebar): they follow that state, the rail at its fixed width and the sidebar at its own.
+ * The width in px a side panel goes back to when the layout moved it as a side effect. The sidebar's panel follows
+ * whether its views are open, which the other mode may have changed since its width was cached (in full mode the
+ * sidebar's shared open state; in compact mode the views beside the rail, E27-04), at its own width.
  */
 export function restoreWidth(
   id: string,
   cached: number | undefined,
-  shared: { open: boolean; sidebarWidth: number; railWidth: number },
+  shared: { viewsOpen: boolean; sidebarWidth: number },
 ): number {
-  if (id === 'rail') return shared.open ? shared.railWidth : 0;
-  if (id === 'sidebar') return shared.open ? cached || shared.sidebarWidth : 0;
+  if (id === 'sidebar') return shared.viewsOpen ? cached || shared.sidebarWidth : 0;
   return cached ?? 0;
 }
