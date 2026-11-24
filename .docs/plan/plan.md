@@ -6853,11 +6853,11 @@ size: XS
 ```yaml
 id: E25
 depends-on: [E24, E02, E04]
-refs: [F7:6, F7:auto-actualizacion-de-lut, 13.2:22, 16:27, .docs/plan/analysis/build-identity.md]
+refs: [F7:6, F7:auto-actualizacion-de-lut, 13.2:22, 16:27, .docs/plan/analysis/build-identity.md, .docs/development/releasing.md]
 ```
 
 lut's own release pipeline and signing, the updater re-added with lut's endpoint and key, packaging and generated
-third-party notices (decision 21g).
+third-party notices (decision 21g). The design is `.docs/development/releasing.md` (E25-01).
 
 ### E25-01 — Spike: choose release hosting, update endpoint and signing keys
 
@@ -6871,12 +6871,19 @@ scope: none
 size: S
 ```
 
-**Goal:** Decide where lut releases are hosted, the update manifest endpoint per channel, and how bundles are signed.
+**Goal:** Decide where lut releases are hosted, the update manifest endpoint per channel, and how bundles are signed,
+and write it down as the design of the rest of E25.
 
 **Acceptance criteria:**
 
-- [ ] Hosting and endpoints chosen (stable and beta); new minisign key generated and stored outside the repo (CI secret).
-- [ ] Per-OS code-signing options listed (Windows Authenticode, macOS notarization) with a decision or explicit postponement.
+- [ ] `.docs/development/releasing.md` explains how a release is made and picked up, with diagrams: identities and
+      channels, versions and tags, the release workflow, artifacts per OS, the update manifests, the update flow in
+      the app, the secrets by name, and which E25 issue builds each part. It holds no key material, account or
+      recovery detail.
+- [ ] Hosting and endpoints chosen (stable and beta): GitHub Releases, with both manifests on a permanent `updater`
+      release.
+- [ ] Per-OS code signing decided: Windows through SignPath, macOS postponed (`future.md`).
+- [ ] New minisign key generated and stored outside the repo (CI secret).
 
 **Verification:** a test manifest signed with the new key validates against the public key.
 
@@ -6884,7 +6891,7 @@ size: S
 
 ```yaml
 id: E25-02
-depends-on: [E25-01]
+depends-on: [E25-01, E25-10, E24-01]
 refs: [F7:6]
 covers: [F7:6]
 type: task
@@ -6892,14 +6899,22 @@ scope: none
 size: M
 ```
 
-**Goal:** A tag-triggered CI workflow builds and publishes lut bundles and updater artifacts.
+**Goal:** A tag-triggered CI workflow builds lut bundles and updater artifacts into a draft release, and publishing
+the release updates the channel manifests, as `.docs/development/releasing.md` describes.
 
 **Acceptance criteria:**
 
-- [ ] Builds NSIS (Windows), dmg/app (macOS) and deb/rpm/AppImage (Linux) with `createUpdaterArtifacts: true` and `TAURI_SIGNING_PRIVATE_KEY` from secrets.
-- [ ] Publishes `latest.json` per channel to the chosen endpoint; binary `lut`, sidecar `lut-cli`.
+- [ ] `pnpm release <version>` writes the version into every file that holds it, commits and creates the signed tag;
+      the workflow fails when the tag and those versions disagree.
+- [ ] Builds NSIS (Windows x64; no MSI), app/dmg (macOS arm64 and x64) and AppImage/deb/rpm (Linux x64 and arm64)
+      with `createUpdaterArtifacts: true` and `TAURI_SIGNING_PRIVATE_KEY` from secrets; binary `lut`, sidecar
+      `lut-cli` built per target.
+- [ ] The Windows installer is Authenticode-signed through SignPath before its updater signature is made.
+- [ ] One job writes `latest.json` after every target; the release stays a draft.
+- [ ] Publishing a release updates `stable.json` and `beta.json` on the `updater` release as the design's table says.
 
-**Verification:** a pre-release tag produces all artifacts and a valid manifest.
+**Verification:** a pre-release tag produces all artifacts and a valid manifest; publishing it updates `beta.json`
+only.
 
 ### E25-03 — Generate third-party notices for Rust and npm dependencies
 
@@ -7029,11 +7044,38 @@ size: XS
 
 **Verification:** proposal reviewed by the user.
 
+### E25-10 — Isolate dev builds from an installed lut
+
+```yaml
+id: E25-10
+depends-on: [E25-01]
+refs: [F7:6, .docs/development/releasing.md]
+covers: [F7:6]
+type: task
+scope: be
+size: S
+```
+
+**Goal:** A dev build (`pnpm tauri dev`) never reads or writes an installed lut's data, so both can run side by side
+on the same machine.
+
+**Acceptance criteria:**
+
+- [ ] Dev builds run under their own identifier (`dev.lucode.lut.dev`) and show it in the window title (for example
+      "lut (dev)"); `pnpm tauri dev` picks it up with no extra flag to remember.
+- [ ] lut's runtime folder under the user cache follows the identifier, so a dev `lut-cli` talks to the dev lut and an
+      installed `lut-cli` to the installed one.
+- [ ] Release builds keep `dev.lucode.lut` and their current folders.
+- [ ] Rust tests for the runtime folder per identifier.
+
+**Verification:** `cargo test --manifest-path src-tauri/Cargo.toml`; manual: run a dev build next to an installed
+build, change a setting in each and check the other keeps its own, and run `lut` in a pane of each.
+
 ### E25-09 — Close-out: release and updater
 
 ```yaml
 id: E25-09
-depends-on: [E25-01, E25-02, E25-03, E25-04, E25-05, E25-06, E25-07, E25-08]
+depends-on: [E25-01, E25-02, E25-03, E25-04, E25-05, E25-06, E25-07, E25-08, E25-10]
 refs: []
 covers: []
 type: closeout
