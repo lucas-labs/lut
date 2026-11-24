@@ -314,6 +314,36 @@ describe('SpacesView on the compact sidebar (E27-01)', () => {
   });
 });
 
+describe('SpacesView on the compact sidebar with many spaces (E27-12)', () => {
+  it('scrolls the 15 spaces on its own, with no scrollbar, and keeps the active one in view', async () => {
+    useSpaces.getState().hydrate(
+      Array.from({ length: 15 }, (_, i) => ({
+        id: `s${i}`,
+        name: `Space ${i}`,
+        root: null,
+        env,
+        createdAt: 0,
+        updatedAt: 0,
+      })),
+      's0',
+    );
+    const scrolled: Element[] = [];
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(function (this: Element) {
+      scrolled.push(this);
+    });
+    await render(tabsInB(), true);
+    const list = row('s0')?.closest('.overflow-y-auto');
+    expect(list?.querySelectorAll('[data-space-id]')).toHaveLength(15);
+    expect(list?.className).toContain('overflow-y-auto');
+    expect(list?.className).toContain('[scrollbar-width:none]');
+    // The + stays out of the scrolled list.
+    expect(list?.contains(host.querySelector('[aria-label="Open space"]'))).toBe(false);
+    await act(async () => useSpaces.getState().setActive('s14'));
+    expect(scrolled[scrolled.length - 1]).toBe(row('s14'));
+    scrollIntoView.mockRestore();
+  });
+});
+
 describe('spaceInitial', () => {
   it('upper-cases the first character and keeps an emoji whole', () => {
     expect(spaceInitial('lut')).toBe('L');

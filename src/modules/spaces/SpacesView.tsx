@@ -14,7 +14,7 @@ import { useShellTitlePolicy } from '@/modules/profiles';
 import { useShortcutLabel } from '@/modules/shortcuts';
 import { SidebarViewHeader } from '@/modules/sidebar';
 import { ChevronIcon, DeleteIcon, GhostIcon, PencilIcon, PlusIcon, XIcon } from '@lut/lut-icons';
-import { type ComponentType, type CSSProperties, useMemo, useRef, useState } from 'react';
+import { type ComponentType, type CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { InlineRename } from './components/InlineRename';
 import { isEphemeralSpace } from './lib/ephemeral';
@@ -110,6 +110,13 @@ export function SpacesView({
 
   const drag = useRef<DragState | null>(null);
   const dropRef = useRef<DropTarget | null>(null);
+  // The rail's spaces scroll on their own (E27-12): the active one is kept in view.
+  const railRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    railRef.current
+      ?.querySelector<HTMLElement>(`[data-space-id="${CSS.escape(activeId ?? '')}"]`)
+      ?.scrollIntoView({ block: 'nearest' });
+  }, [activeId]);
   const [dragging, setDragging] = useState<{
     kind: 'space' | 'tab';
     id: string | number;
@@ -280,7 +287,9 @@ export function SpacesView({
   if (compact) {
     return (
       <div className="flex min-h-0 flex-col items-center gap-1">
-        <div className={cn('flex min-h-0 flex-col items-center gap-1 overflow-y-auto', HIDDEN_SCROLLBAR)}>{rows}</div>
+        <div ref={railRef} className={cn('flex min-h-0 flex-col items-center gap-1 overflow-y-auto', HIDDEN_SCROLLBAR)}>
+          {rows}
+        </div>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

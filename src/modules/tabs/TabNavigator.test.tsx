@@ -283,6 +283,27 @@ describe('TabNavigator on the compact sidebar (E27-02)', () => {
     expect(host.querySelector('[role="tablist"]')?.getAttribute('aria-orientation')).toBe('vertical');
   });
 
+  it('scrolls 30 tabs on its own, with no scrollbar, and keeps the active one in view (E27-12)', async () => {
+    for (let i = 0; i < 27; i++) store().newTab();
+    const scrolled: Element[] = [];
+    const scrollIntoView = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(function (this: Element) {
+      scrolled.push(this);
+    });
+    await render('compact');
+    const list = host.querySelector('[role="tablist"]');
+    expect(tabs()).toHaveLength(30);
+    expect(list?.className).toContain('overflow-y-auto');
+    expect(list?.className).toContain('[scrollbar-width:none]');
+    // The newest tab is active: the 30th, past the 9 numbered ones, still named.
+    expect(tabs()[29].textContent).toBe('…');
+    expect(tabs()[29].getAttribute('aria-label')).toBe(items()[29].title);
+    expect(scrolled[scrolled.length - 1]).toBe(tabs()[29]);
+    await act(async () => store().selectByIndex(0));
+    await render('compact');
+    expect(scrolled[scrolled.length - 1]).toBe(tabs()[0]);
+    scrollIntoView.mockRestore();
+  });
+
   it("selects on a click, closes on a middle click and moves with the column's arrow keys", async () => {
     await render('compact');
     await act(async () => {
