@@ -7390,7 +7390,7 @@ refs: [TER-013, UX-006, UX-007, UX-011, .docs/plan/analysis/app-shell.md]
 
 An optional layout that gives the terminals more width: the sidebar (Spaces, Files, Git) and the vertical tabs column
 become one 32 px rail. Spaces show their initial, tabs their position, both with the agents' state; Files and Git open
-as a floating panel over the terminals. It is lut's compact tabs mode (it replaces E22-08) and a layout preference,
+the sidebar's own views beside the rail. It is lut's compact tabs mode (it replaces E22-08) and a layout preference,
 independent of focus mode and of the tab orientation. Spec: the "lut — Sidebar compacto" doc; look: the "Compact
 sidebar" page of the design canvas (CompactV, CompactH, CompactFiles, CompactGit and CompactSettings boards, each on
 Windows, macOS and Linux).
@@ -7581,30 +7581,6 @@ controls go (CompactV and CompactH boards on Windows, macOS and Linux).
 
 **Verification:** `pnpm test`; manual on Windows; on macOS and Linux with E24 or E26-02, whichever comes first.
 
-### E27-07 — A space's own letter or emoji
-
-```yaml
-id: E27-07
-depends-on: [E27-01]
-refs: [.docs/plan/analysis/state-settings.md]
-covers: [state-settings/spaces-persistence, state-settings/spaces-ui]
-type: task
-scope: ui
-size: S
-```
-
-**Goal:** Two spaces that start with the same letter look the same on the rail. Each space can have its own letter or
-emoji, editable, with the name's initial as the default.
-
-**Acceptance criteria:**
-
-- [ ] The space model gets an optional mark (one letter or one emoji, one grapheme), validated on load with the rest of
-      the spaces store; unit tests.
-- [ ] It is edited from the space's menu in the Spaces view and on the rail; an empty value goes back to the initial.
-- [ ] The rail shows the mark instead of the initial.
-
-**Verification:** `pnpm test`; manual: two spaces with the same initial, one given an emoji, survive a restart.
-
 ### E27-08 — The rail's new-tab button opens the profiles menu
 
 ```yaml
@@ -7731,7 +7707,7 @@ and the view switcher had no arrow keys.
 
 ```yaml
 id: E27-14
-depends-on: [E27-01, E27-02, E27-03, E27-04, E27-05, E27-06, E27-07, E27-08, E27-10, E27-11, E27-12, E27-13]
+depends-on: [E27-01, E27-02, E27-03, E27-04, E27-05, E27-06, E27-08, E27-10, E27-11, E27-12, E27-13]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout

@@ -16,6 +16,13 @@ Also to review in a future round (no proposal item yet):
   translating the pnpm workspace, `catalog:`, overrides, `minimumReleaseAge` and `allowBuilds`, and updating the Tauri
   `before*Command`s, scripts and `.docs/development/build.md`.
 
+## Space settings
+
+A space's own settings, starting with its own mark on the compact sidebar's rail, so two spaces with the same initial
+tell apart: a letter, an emoji or an icon as profiles have. Planned as E27-07 and closed as not planned (#483): it waits
+for the decision whether a space's settings live in its menu or in a settings window of their own, as more of them come
+(the menu would get crowded).
+
 ## Multiwindow
 
 Several windows: PTY/renderer ownership per window, moving tabs/panes between windows, per-window space layouts, geometry restore per monitor. Needs a design of PTY and canvas ownership first (proposal 5.10, Phase 7).
