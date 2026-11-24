@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/context-menu';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { type RovingItem, useRovingFocus } from '@/lib/useRovingFocus';
 import { cn } from '@/lib/utils';
 import { labelFor, type Tab, TabIcon } from '@/modules/navigation';
 import { useShellTitlePolicy } from '@/modules/profiles';
@@ -110,6 +111,12 @@ export function SpacesView({
 
   const drag = useRef<DragState | null>(null);
   const dropRef = useRef<DropTarget | null>(null);
+  // The spaces are one Tab stop, the arrow keys move between them (E27-13); the + is its own stop.
+  const roving = useRovingFocus(
+    spaces.map((sp) => sp.id),
+    activeId,
+    'vertical',
+  );
   // The rail's spaces scroll on their own (E27-12): the active one is kept in view.
   const railRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -243,6 +250,7 @@ export function SpacesView({
       Status={Status}
       tabs={tabsBySpace.get(sp.id) ?? []}
       isActive={sp.id === activeId}
+      roving={roving.item(sp.id)}
       canDelete={spaces.length > 1}
       expanded={expanded.has(sp.id)}
       editing={editingId === sp.id}
@@ -287,9 +295,15 @@ export function SpacesView({
   if (compact) {
     return (
       <div className="flex min-h-0 flex-col items-center gap-1">
-        <div ref={railRef} className={cn('flex min-h-0 flex-col items-center gap-1 overflow-y-auto', HIDDEN_SCROLLBAR)}>
-          {rows}
-        </div>
+        <fieldset {...roving.group} className="m-0 flex min-h-0 min-w-0 flex-col border-0 p-0">
+          <legend className="sr-only">Spaces</legend>
+          <div
+            ref={railRef}
+            className={cn('flex min-h-0 flex-col items-center gap-1 overflow-y-auto', HIDDEN_SCROLLBAR)}
+          >
+            {rows}
+          </div>
+        </fieldset>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -318,7 +332,10 @@ export function SpacesView({
           <PlusIcon size="md" />
         </Button>
       </SidebarViewHeader>
-      <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 pt-1 pb-2">{rows}</div>
+      <fieldset {...roving.group} className="m-0 flex min-h-0 min-w-0 flex-1 flex-col border-0 p-0">
+        <legend className="sr-only">Spaces</legend>
+        <div className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-2 pt-1 pb-2">{rows}</div>
+      </fieldset>
       {dragOverlay}
     </div>
   );
@@ -331,6 +348,8 @@ type SpaceRowProps = {
   Status: Props['Status'];
   tabs: Tab[];
   isActive: boolean;
+  /** The row's part in the spaces' roving focus. */
+  roving: RovingItem;
   canDelete: boolean;
   expanded: boolean;
   editing: boolean;
@@ -358,6 +377,7 @@ function SpaceRow({
   Status,
   tabs,
   isActive,
+  roving,
   canDelete,
   expanded,
   editing,
@@ -400,7 +420,10 @@ function SpaceRow({
         'data-orientation': compact ? 'compact' : 'vertical',
         style: { '--tab-color': tint } as CSSProperties,
       })}
-      tabIndex={editing ? -1 : 0}
+      data-roving-id={roving['data-roving-id']}
+      tabIndex={editing ? -1 : roving.tabIndex}
+      onFocus={roving.onFocus}
+      onBlur={roving.onBlur}
       onPointerDown={editing ? undefined : (e) => onPointerDown(e, 'space', space.id)}
       onPointerMove={onPointerMove}
       onPointerUp={editing ? undefined : (e) => onPointerUp(e, onSwitch)}
@@ -409,6 +432,8 @@ function SpaceRow({
       // pointer behind it (detail 0) is a screen reader activating it.
       onKeyDown={(e) => {
         if (editing) return;
+        // The arrow keys move between the spaces when the row itself has the focus, not one of its buttons.
+        if (e.target === e.currentTarget && roving.onKeyDown(e)) return;
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           onSwitch();

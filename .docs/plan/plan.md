@@ -7699,7 +7699,7 @@ size: S
 
 **Verification:** `pnpm test`; manual on Windows: 20+ tabs in a short window.
 
-### E27-13 — Keyboard navigation on the rail
+### E27-13 — Keyboard navigation of the spaces, the tabs and the view switcher
 
 ```yaml
 id: E27-13
@@ -7711,17 +7711,21 @@ scope: ui
 size: S
 ```
 
-**Goal:** The rail works from the keyboard: Tab moves between its groups (spaces, tabs, Files and Git), the arrow keys
-within a group.
+**Goal:** The sidebar works from the keyboard the same way in full and compact mode, as one component serves both
+modes. The tabs' arrow keys selected the next tab, which gave the focus to the terminal after one step; the spaces
+and the view switcher had no arrow keys.
 
 **Acceptance criteria:**
 
-- [ ] Each group is one Tab stop; ↑ and ↓ move within it (roving focus); Enter and Space activate.
+- [ ] The spaces, the tabs (strip, column and rail) and the view switcher (Spaces, Files and Git at the sidebar's
+      bottom; Files and Git on the rail) are each one Tab stop, on the active item.
+- [ ] The arrow keys of their direction, Home and End move the focus within them without wrapping or activating
+      (roving focus); Enter and Space activate. Each + stays its own Tab stop.
 - [ ] Tooltips show on keyboard focus; focus shows the button's focus outline.
 - [ ] Screen readers get the group names and each button's name and state.
-- [ ] Component tests for the Tab stops, the arrows and activation.
+- [ ] Component tests for the Tab stops, the arrows and activation, in both modes.
 
-**Verification:** `pnpm test`; manual on Windows: go through the rail with the keyboard only.
+**Verification:** `pnpm test`; manual on Windows: go through the sidebar and the rail with the keyboard only.
 
 ### E27-14 — Close-out: compact sidebar
 

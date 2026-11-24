@@ -1,3 +1,4 @@
+import { useRovingFocus } from '@/lib/useRovingFocus';
 import { cn } from '@/lib/utils';
 import { DashboardIcon, FolderIcon, GitBranchIcon, type LutIconComponent } from '@lut/lut-icons';
 import type { SidebarViewId } from './types';
@@ -22,9 +23,20 @@ export function SidebarRail({ activeView, onSelectView, changedCount }: Props) {
     { id: 'explorer', label: 'Files', icon: FolderIcon },
     { id: 'source-control', label: 'Git', icon: GitBranchIcon, badge: changedCount },
   ];
+  // One Tab stop, the arrow keys move between the views (E27-13).
+  const roving = useRovingFocus(
+    items.map((item) => item.id),
+    activeView,
+    'horizontal',
+  );
 
   return (
-    <div role="tablist" aria-label="Sidebar view" className="flex shrink-0 gap-0.5 border-t border-border p-1.5">
+    <div
+      role="tablist"
+      aria-label="Sidebar view"
+      {...roving.group}
+      className="flex shrink-0 gap-0.5 border-t border-border p-1.5"
+    >
       {items.map((item) => {
         const isActive = item.id === activeView;
         const badge = item.badge ?? 0;
@@ -34,6 +46,7 @@ export function SidebarRail({ activeView, onSelectView, changedCount }: Props) {
             type="button"
             role="tab"
             aria-selected={isActive}
+            {...roving.item(item.id)}
             onClick={() => onSelectView(item.id)}
             className={cn(
               'flex h-7 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-md px-1 text-xs whitespace-nowrap outline-none transition-colors',

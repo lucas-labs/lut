@@ -112,6 +112,31 @@ describe('SpacesView', () => {
     expect(row('b')?.hasAttribute('data-tab-color')).toBe(false);
   });
 
+  it.each([false, true])(
+    'is one named Tab stop on the active Space, and the arrows move the focus without switching (compact: %s)',
+    async (compact) => {
+      await render(tabsInB(), compact);
+      expect(host.querySelector('legend')?.textContent).toBe('Spaces');
+      expect(row('a')?.tabIndex).toBe(0);
+      expect(row('b')?.tabIndex).toBe(-1);
+      const press = (id: string, key: string) =>
+        act(async () => {
+          row(id)?.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key }));
+        });
+      await act(async () => row('a')?.focus());
+      await press('a', 'ArrowDown');
+      expect(document.activeElement).toBe(row('b'));
+      expect(useSpaces.getState().activeId).toBe('a');
+      await press('b', 'Home');
+      expect(document.activeElement).toBe(row('a'));
+      await press('a', 'End');
+      expect(document.activeElement).toBe(row(EPHEMERAL_SPACE_ID));
+      // Enter switches to the focused one.
+      await press(EPHEMERAL_SPACE_ID, 'Enter');
+      expect(useSpaces.getState().activeId).toBe(EPHEMERAL_SPACE_ID);
+    },
+  );
+
   it('starts collapsed, and a click switches Space without expanding it', async () => {
     await render();
     expect(tabRows()).toHaveLength(0);

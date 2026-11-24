@@ -304,7 +304,7 @@ describe('TabNavigator on the compact sidebar (E27-02)', () => {
     scrollIntoView.mockRestore();
   });
 
-  it("selects on a click, closes on a middle click and moves with the column's arrow keys", async () => {
+  it("selects on a click, closes on a middle click and moves the focus with the column's arrow keys", async () => {
     await render('compact');
     await act(async () => {
       pointerY(tabs()[0], 'pointerdown', 10);
@@ -316,8 +316,16 @@ describe('TabNavigator on the compact sidebar (E27-02)', () => {
     });
     expect(actions.close).toHaveBeenCalledWith(items()[1].id);
     await act(async () => {
+      tabs()[0].focus();
+    });
+    await act(async () => {
       tabs()[0].dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'ArrowDown' }));
     });
+    // The arrows only move the focus (E27-13): selecting would hand it to the terminal.
+    expect(document.activeElement).toBe(tabs()[1]);
+    expect(actions.select).toHaveBeenLastCalledWith(items()[0].id);
+    // Enter or Space click the focused tab, which selects it.
+    await act(async () => tabs()[1].click());
     expect(actions.select).toHaveBeenLastCalledWith(items()[1].id);
   });
 
