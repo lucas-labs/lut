@@ -1099,10 +1099,17 @@ async function lookUpFullScreenPrograms(session: GhosttySession): Promise<void> 
 
 /**
  * The pane's padding, or none while a full-screen program fills it, plus the room a bar keeps. A
- * full-screen program has no scrollback, so no scrollbar either: the grid takes its room too.
+ * full-screen program has no scrollback, so no scrollbar either: the grid takes its room too. While
+ * the programs that decide the padding are looked up, both stay as they were, so the pane refits once.
  */
 function applyPadding(session: GhosttySession, surface = session.surface): void {
-  surface?.setScrollbarGutter(!session.alternateScreen);
+  const look = session.look;
+  const deciding =
+    session.alternateScreen &&
+    !!look &&
+    needsRunningPrograms(look.fullScreen) &&
+    session.fullScreenPrograms === null;
+  surface?.setScrollbarGutter(!session.alternateScreen || deciding);
   const fills =
     session.alternateScreen &&
     !!session.look &&
