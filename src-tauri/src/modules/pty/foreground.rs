@@ -11,6 +11,7 @@
 use std::collections::{BTreeSet, HashSet};
 
 use super::program_name::program_name;
+use super::shell_init::is_shell;
 
 #[cfg(target_os = "macos")]
 pub(super) fn shell_has_children(shell_pid: u32) -> bool {
@@ -97,7 +98,8 @@ fn snapshot() -> Vec<Process> {
     use std::mem::{size_of, zeroed};
     use windows_sys::Win32::Foundation::{CloseHandle, INVALID_HANDLE_VALUE};
     use windows_sys::Win32::System::Diagnostics::ToolHelp::{
-        CreateToolhelp32Snapshot, Process32First, Process32Next, PROCESSENTRY32, TH32CS_SNAPPROCESS,
+        CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W,
+        TH32CS_SNAPPROCESS,
     };
     let mut processes = Vec::new();
     unsafe {
@@ -105,22 +107,22 @@ fn snapshot() -> Vec<Process> {
         if snapshot == INVALID_HANDLE_VALUE {
             return processes;
         }
-        let mut entry: PROCESSENTRY32 = zeroed();
-        entry.dwSize = size_of::<PROCESSENTRY32>() as u32;
-        if Process32First(snapshot, &mut entry) != 0 {
+        // The wide entry: the narrow one holds names in the ANSI code page, not UTF-8.
+        let mut entry: PROCESSENTRY32W = zeroed();
+        entry.dwSize = size_of::<PROCESSENTRY32W>() as u32;
+        if Process32FirstW(snapshot, &mut entry) != 0 {
             loop {
-                let name: Vec<u8> = entry
+                let len = entry
                     .szExeFile
                     .iter()
-                    .take_while(|&&c| c != 0)
-                    .map(|&c| c as u8)
-                    .collect();
+                    .position(|&c| c == 0)
+                    .unwrap_or(entry.szExeFile.len());
                 processes.push(Process {
                     pid: entry.th32ProcessID,
                     parent: entry.th32ParentProcessID,
-                    name: String::from_utf8_lossy(&name).into_owned(),
+                    name: String::from_utf16_lossy(&entry.szExeFile[..len]),
                 });
-                if Process32Next(snapshot, &mut entry) == 0 {
+                if Process32NextW(snapshot, &mut entry) == 0 {
                     break;
                 }
             }
@@ -200,19 +202,29 @@ fn ps_line(line: &str) -> Option<Process> {
     })
 }
 
-/// The programs running under the shell `shell_pid`, by `program_name`, each once.
+/// The programs running in a terminal whose first process is `root_pid`, by `program_name`,
+/// each once: see `programs_from`.
 #[cfg(target_os = "macos")]
-pub(super) fn running_programs(shell_pid: u32, git_bash_launcher: bool) -> Vec<String> {
-    programs_below(children_of, shell_pid, git_bash_launcher)
+pub(super) fn running_programs(root_pid: u32, git_bash_launcher: bool) -> Vec<String> {
+    let root = proc_name(root_pid as libc::pid_t);
+    programs_from(
+        (!root.is_empty()).then_some(root.as_str()),
+        children_of,
+        root_pid,
+        git_bash_launcher,
+    )
 }
 
-/// The programs running under the shell `shell_pid`, by `program_name`, each once.
+/// The programs running in a terminal whose first process is `root_pid`, by `program_name`,
+/// each once: see `programs_from`.
 #[cfg(not(target_os = "macos"))]
-pub(super) fn running_programs(shell_pid: u32, git_bash_launcher: bool) -> Vec<String> {
+pub(super) fn running_programs(root_pid: u32, git_bash_launcher: bool) -> Vec<String> {
     let processes = snapshot();
-    programs_below(
+    let root = processes.iter().find(|p| p.pid == root_pid);
+    programs_from(
+        root.map(|p| p.name.as_str()),
         |pid| children_in(&processes, pid),
-        shell_pid,
+        root_pid,
         git_bash_launcher,
     )
 }
@@ -306,6 +318,24 @@ fn started_by_shell(
 #[cfg(any(windows, test))]
 fn has_children(processes: &[Process], shell: u32, git_bash_launcher: bool) -> bool {
     !started_by_shell(|pid| children_in(processes, pid), shell, git_bash_launcher).is_empty()
+}
+
+/// The programs running in a terminal, by `program_name`, each once and in order: the first
+/// process (`root`, by the name it has now) unless it is a shell, then everything below it. A
+/// program run directly is listed, and so is one a shell became (`exec nvim` keeps the shell's pid).
+fn programs_from(
+    root_name: Option<&str>,
+    children: impl Fn(u32) -> Vec<Process>,
+    root: u32,
+    git_bash_launcher: bool,
+) -> Vec<String> {
+    let mut names = programs_below(children, root, git_bash_launcher);
+    if let Some(name) = root_name.filter(|name| !is_shell(name)) {
+        names.push(program_name(name));
+        names.sort();
+        names.dedup();
+    }
+    names
 }
 
 /// What the shell started and everything below it, by `program_name`, each once and in order.
@@ -428,6 +458,34 @@ mod tests {
         assert_eq!(programs, ["claude"]);
         let idle = &processes[..3];
         assert!(programs_below(|pid| children_in(idle, pid), 20, true).is_empty());
+    }
+
+    #[test]
+    fn names_the_first_process_unless_it_is_a_shell() {
+        // `exec nvim`: the shell's pid now runs nvim, which started nothing.
+        let exec = [process(50, 1, "nvim")];
+        assert_eq!(
+            programs_from(Some("nvim"), |pid| children_in(&exec, pid), 50, false),
+            ["nvim"]
+        );
+        // A shell at the top is not a program it runs; what it started is.
+        let shell = [process(60, 1, "pwsh.exe"), process(61, 60, "htop.exe")];
+        assert_eq!(
+            programs_from(Some("pwsh.exe"), |pid| children_in(&shell, pid), 60, false),
+            ["htop"]
+        );
+        // A program run directly, and what it started.
+        let direct = [process(70, 1, "lazygit.exe"), process(71, 70, "nvim.exe")];
+        assert_eq!(
+            programs_from(
+                Some("lazygit.exe"),
+                |pid| children_in(&direct, pid),
+                70,
+                false
+            ),
+            ["lazygit", "nvim"]
+        );
+        assert!(programs_from(None, |pid| children_in(&exec, pid), 50, false).is_empty());
     }
 
     #[test]
