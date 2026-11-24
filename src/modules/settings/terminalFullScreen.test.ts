@@ -28,4 +28,10 @@ describe('the full-screen padding preferences', () => {
     ]);
     expect(coerceProgramNames([], ['claude'])).toEqual([]);
   });
+
+  it('load a saved list as it was saved', () => {
+    const saved = coerceProgramNames(['tool.exe.cmd', 'NVim.EXE'], []);
+    expect(saved).toEqual(['tool', 'nvim']);
+    expect(coerceProgramNames(saved, [])).toEqual(saved);
+  });
 });

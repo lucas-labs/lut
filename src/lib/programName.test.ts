@@ -10,6 +10,11 @@ describe('programName', () => {
     expect(programName('  htop  ')).toBe('htop');
   });
 
+  it('drops every launcher extension, so naming a name again keeps it', () => {
+    expect(programName('tool.exe.cmd')).toBe('tool');
+    expect(programName(programName('Tool.EXE.cmd'))).toBe('tool');
+  });
+
   it('keeps any other extension', () => {
     expect(programName('python3.12')).toBe('python3.12');
   });

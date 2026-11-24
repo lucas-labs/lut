@@ -3,16 +3,19 @@
 /// Extensions a launcher shim or native binary carries on Windows.
 const LAUNCHER_EXTENSIONS: &[&str] = &[".exe", ".cmd", ".bat", ".ps1", ".com"];
 
-/// A program's name from its path or file name: no directory, no launcher extension, lowercase.
-/// `C:\tools\NVim.exe`, `/usr/bin/nvim` and `nvim` are all `nvim`.
+/// A program's name from its path or file name: no directory, no launcher extensions, lowercase.
+/// `C:\tools\NVim.exe`, `/usr/bin/nvim` and `nvim` are all `nvim`. Every launcher extension
+/// goes, so a name keeps its form when it is named again.
 pub(crate) fn program_name(path: &str) -> String {
     let base = path.rsplit(['/', '\\']).next().unwrap_or(path);
-    let lower = base.to_ascii_lowercase();
-    LAUNCHER_EXTENSIONS
+    let mut name = base.to_ascii_lowercase();
+    while let Some(len) = LAUNCHER_EXTENSIONS
         .iter()
-        .find_map(|extension| lower.strip_suffix(extension))
-        .map(str::to_owned)
-        .unwrap_or(lower)
+        .find_map(|extension| name.strip_suffix(extension).map(str::len))
+    {
+        name.truncate(len);
+    }
+    name
 }
 
 #[cfg(test)]
@@ -29,6 +32,12 @@ mod tests {
         );
         assert_eq!(program_name("claude.cmd"), "claude");
         assert_eq!(program_name("script.ps1"), "script");
+    }
+
+    #[test]
+    fn names_a_name_the_same_again() {
+        assert_eq!(program_name("tool.exe.cmd"), "tool");
+        assert_eq!(program_name(&program_name("Tool.EXE.cmd")), "tool");
     }
 
     #[test]
