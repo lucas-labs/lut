@@ -19,6 +19,13 @@ const win = vi.hoisted(() => ({
   },
   show: vi.fn<() => Promise<void>>(),
 }));
+const os = vi.hoisted(() => ({ windows: true }));
+
+vi.mock('./os', () => ({
+  get IS_WINDOWS() {
+    return os.windows;
+  },
+}));
 
 /** Records an `on…` listener and returns a start the test settles. */
 function listen(listener: (event: unknown) => void) {
@@ -38,11 +45,22 @@ vi.mock('@tauri-apps/api/window', () => ({
     },
     onResized: listen,
     onFocusChanged: listen,
+    setFullscreen: async (on: boolean) => {
+      win.calls.push(`setFullscreen(${on})`);
+    },
+    setResizable: async (on: boolean) => {
+      win.calls.push(`setResizable(${on})`);
+    },
   }),
 }));
 
-const { bringWindowToFront, onWindowFocusChanged, onWindowResized, showHiddenWindow } =
-  await import('./window');
+const {
+  bringWindowToFront,
+  onWindowFocusChanged,
+  onWindowResized,
+  setWindowFullScreen,
+  showHiddenWindow,
+} = await import('./window');
 
 /** Lets pending promises run. */
 const flush = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
@@ -51,6 +69,7 @@ beforeEach(() => {
   win.calls = [];
   win.listening = null;
   win.show.mockReset().mockResolvedValue(undefined);
+  os.windows = true;
 });
 
 afterEach(() => vi.useRealTimers());
@@ -122,5 +141,22 @@ describe('bringWindowToFront', () => {
   it('shows the window, then focuses it', async () => {
     await bringWindowToFront();
     expect(win.calls).toEqual(['show', 'setFocus']);
+  });
+});
+
+describe('full screen', () => {
+  it('makes the window not resizable while it is full screen on Windows, so no resize strip covers its top', async () => {
+    await setWindowFullScreen(true);
+    expect(win.calls).toEqual(['setResizable(false)', 'setFullscreen(true)']);
+    win.calls = [];
+    await setWindowFullScreen(false);
+    expect(win.calls).toEqual(['setFullscreen(false)', 'setResizable(true)']);
+  });
+
+  it('only toggles full screen elsewhere', async () => {
+    os.windows = false;
+    await setWindowFullScreen(true);
+    await setWindowFullScreen(false);
+    expect(win.calls).toEqual(['setFullscreen(true)', 'setFullscreen(false)']);
   });
 });
