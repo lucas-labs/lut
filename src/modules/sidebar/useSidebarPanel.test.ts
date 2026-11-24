@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
-import { act, createElement, createRef } from 'react';
+import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   shouldPersistSidebarWidth,
   sidebarStartsCollapsed,
@@ -31,8 +31,11 @@ describe('useSidebarPanel in compact mode (E27-04)', () => {
   let root: Root;
   let controls: Controls;
 
+  const explorer = { focus: vi.fn(), isFocused: () => false, focusSearch: vi.fn() };
+  const explorerRef = { current: null as typeof explorer | null };
+
   function Harness({ compact }: { compact: boolean }) {
-    controls = useSidebarPanel(createRef(), compact);
+    controls = useSidebarPanel(explorerRef, compact);
     return null;
   }
 
@@ -44,6 +47,8 @@ describe('useSidebarPanel in compact mode (E27-04)', () => {
     // The rail was left shown.
     window.localStorage.clear();
     window.localStorage.setItem('lut.sidebar.collapsed', '0');
+    explorer.focusSearch.mockReset();
+    explorerRef.current = null;
     host = document.createElement('div');
     document.body.append(host);
     root = createRoot(host);
@@ -102,6 +107,25 @@ describe('useSidebarPanel in compact mode (E27-04)', () => {
     run(() => controls.toggleSidebar());
     run(() => controls.toggleSidebar());
     expect(controls.compactPanelOpen).toBe(false);
+  });
+
+  it('opens Files to focus its search when they are closed, and focuses it at once when it is on screen', () => {
+    vi.useFakeTimers();
+    try {
+      run(() => controls.cycleSidebarView('source-control'));
+      run(() => controls.cycleSidebarView('source-control'));
+      run(() => controls.focusExplorerSearch());
+      expect(controls.compactPanelOpen).toBe(true);
+      expect(controls.sidebarView).toBe('explorer');
+      // The explorer mounts with the views; the search is focused on the next frame.
+      explorerRef.current = explorer;
+      vi.runAllTimers();
+      expect(explorer.focusSearch).toHaveBeenCalledTimes(1);
+      run(() => controls.focusExplorerSearch());
+      expect(explorer.focusSearch).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('keeps the views off screen until they open, and starts them closed each time compact mode starts', () => {

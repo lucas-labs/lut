@@ -62,6 +62,7 @@ function readSidebarHidden(): boolean {
 type FocusableExplorer = {
   focus: () => void;
   isFocused: () => boolean;
+  focusSearch: () => void;
 };
 
 const isOpen = (panel: PanelImperativeHandle | null) =>
@@ -218,6 +219,21 @@ export function useSidebarPanel(explorerRef: RefObject<FocusableExplorer | null>
     };
   }, []);
 
+  /**
+   * Focuses the explorer's search, opening the explorer first when it is not on screen (another view, the sidebar
+   * hidden, or in compact mode the views closed, when it is not even mounted): the search is focused once it is.
+   */
+  const focusExplorerSearch = useCallback(() => {
+    const explorer = explorerRef.current;
+    if (explorer && sidebarView === 'explorer' && viewsOpen()) {
+      explorer.focusSearch();
+      return;
+    }
+    openViews();
+    if (sidebarView !== 'explorer') persistSidebarView('explorer');
+    requestAnimationFrame(() => explorerRef.current?.focusSearch());
+  }, [explorerRef, openViews, persistSidebarView, sidebarView, viewsOpen]);
+
   const toggleExplorerFocus = useCallback(() => {
     const explorer = explorerRef.current;
     const collapsed = !viewsOpen();
@@ -266,5 +282,6 @@ export function useSidebarPanel(explorerRef: RefObject<FocusableExplorer | null>
     openSidebarView,
     persistSidebarWidth,
     toggleExplorerFocus,
+    focusExplorerSearch,
   };
 }
