@@ -6910,22 +6910,29 @@ the release updates the channel manifests, as `.docs/development/releasing.md` d
 
 **Acceptance criteria:**
 
-- [ ] The workflow installs `cargo-about` (pinned version) for the third-party notices (E25-03).
-- [ ] `pnpm release <version>` accepts only `X.Y.Z` and `X.Y.Z-beta.N`, writes the version into every file that holds
-      it, commits and creates the signed tag; the workflow fails for a tag of any other form or when the tag and those
-      versions disagree.
-- [ ] Builds NSIS (Windows x64; no MSI), app/dmg (macOS arm64 and x64) and AppImage/deb/rpm (Linux x64 and arm64)
-      with `createUpdaterArtifacts: true` (passed with `--config`; it is not in `tauri.conf.json`, E25-04) and
-      `TAURI_SIGNING_PRIVATE_KEY` from secrets; binary `lut`, sidecar
-      `lut-cli` built per target; on macOS the updater uses `lut.app.tar.gz`, the `.dmg` is for the first install.
+- [ ] lut has its own versions: the repository says `0.0.0` until the first release (Terax's 0.9.0 is dropped);
+      `tauri.conf.json` reads the version from `../package.json`; Windows builds only NSIS, so no MSI version.
+- [ ] `pnpm release <version>` (`scripts/release.mjs`) accepts only `X.Y.Z` and `X.Y.Z-beta.N`, newer than the current
+      version, on an up-to-date, clean `master`; writes it into `package.json` and both `Cargo.toml` tables, refreshes
+      `Cargo.lock`, commits `release: 🔖 vX.Y.Z` and creates the signed tag; it never pushes.
+- [ ] `.github/workflows/release.yml`, on a `v*` tag: `check` fails for a tag of any other form, one that disagrees
+      with the files or one not on `master`; `build` makes NSIS (Windows x64), app/dmg (macOS arm64 and x64) and
+      AppImage/deb/rpm (Linux x64 and arm64 on Ubuntu 22.04) with `createUpdaterArtifacts` through `--config`, the
+      signing key from secrets, `lut-cli` per target, pinned `cargo-about` (E25-03) and the AppImage `libwayland`
+      removal re-signed; on macOS the updater uses `lut.app.tar.gz`, the `.dmg` is for the first install.
 - [ ] The Windows installer ships without Authenticode until E25-11; its updater signature is made last, so the
       SignPath step fits before it.
-- [ ] One job writes `latest.json` after every target; the release stays a draft.
-- [ ] Publishing a release updates `stable.json` and `beta.json` on the `updater` release as the design's table says,
-      each only when the release is newer than the version it holds.
+- [ ] `manifest` writes one `latest.json` after every target (`scripts/build-manifest.mjs`, failing when a platform
+      key is missing) and creates the draft release, a pre-release for a beta; a manual run builds everything and
+      keeps the bundles as workflow artifacts without a release.
+- [ ] `.github/workflows/update-manifests.yml`, on a published release: copies its `latest.json` with the release's
+      notes to the `updater` release (created the first time), replacing `stable.json` (stable releases only) and
+      `beta.json` only when the release is newer than the version each holds.
+- [ ] Tests for the version rules, the file edits and the manifest's platform keys.
 
-**Verification:** a pre-release tag produces all artifacts and a valid manifest, which is also the first macOS build
-and the first bundling of every system (CI builds none, E24-01); publishing it updates `beta.json` only.
+**Verification:** `pnpm test src/app/release.test.ts`; after merge, a manual run of the workflow builds the five
+targets (the first macOS build and the first bundling of every system: CI builds none, E24-01); a pre-release tag
+then produces all artifacts and a valid manifest, and publishing it updates `beta.json` only.
 
 ### E25-03 — Generate third-party notices for Rust and npm dependencies
 

@@ -1,0 +1,64 @@
+# Update manifests (E25-02, .docs/development/releasing.md): publishing a release copies its latest.json, with the
+# release's notes and date, to the permanent `updater` release that installed lut reads. A stable release replaces
+# stable.json and beta.json; a beta only beta.json; each only when the release is newer than the version it holds, so
+# publishing an older draft late never moves a channel back.
+name: Update manifests
+
+on:
+  release:
+    types: [published]
+
+# One publication at a time, so two of them never read and replace the same manifest together.
+concurrency:
+  group: update-manifests
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    name: update
+    if: startsWith(github.event.release.tag_name, 'v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.event.release.tag_name }}
+      NOTES: ${{ github.event.release.body }}
+      PUBLISHED_AT: ${{ github.event.release.published_at }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Replace the channel manifests
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(node scripts/release.mjs --verify "$TAG")
+          gh release download "$TAG" --pattern latest.json --dir release
+          printf '%s' "$NOTES" > notes.md
+          node scripts/build-manifest.mjs publish release/latest.json notes.md "$PUBLISHED_AT"
+
+          if ! gh release view updater >/dev/null 2>&1; then
+            gh release create updater --target master --latest=false --title "Update manifests" \
+              --notes "The update manifests installed lut reads. Replaced when a release is published; see .docs/development/releasing.md."
+          fi
+
+          channels="beta"
+          case "$version" in *-beta.*) ;; *) channels="stable beta" ;; esac
+          for channel in $channels; do
+            current=""
+            rm -rf current
+            if gh release download updater --pattern "$channel.json" --dir current 2>/dev/null; then
+              current=$(node -p "require('./current/$channel.json').version")
+            fi
+            if [ "$(node scripts/release.mjs --newer "$version" "$current")" = true ]; then
+              cp release/latest.json "$channel.json"
+              gh release upload updater "$channel.json" --clobber
+              echo "$channel.json: ${current:-none} -> $version" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "$channel.json: keeps $current ($version is not newer)" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
