@@ -26,6 +26,44 @@ export function canOptOutOfAppClosePrompt(blocker: AppCloseBlocker): boolean {
   return blocker.busyTerminal && blocker.dirtyEditors === 0;
 }
 
+/**
+ * What quitting now would lose: unsaved editors, and a running process unless the user opted out of that prompt.
+ * `null` when nothing. Used when the window closes and before an update restarts lut (E25-06).
+ */
+async function currentAppCloseBlocker(): Promise<AppCloseBlocker | null> {
+  // Opting out skips the per-leaf IPC entirely; it never relaxes the unsaved-changes guard below.
+  const busyTerminal =
+    usePreferencesStore.getState().confirmCloseRunningTerminal &&
+    (await anyTerminalBusy(useNavigationStore.getState().tabs));
+  // Count after the await so edits made during the IPC check are seen.
+  const dirtyEditors = useNavigationStore.getState().tabs.filter(hasUnsavedChanges).length;
+  return dirtyEditors > 0 || busyTerminal ? { dirtyEditors, busyTerminal } : null;
+}
+
+/** The warning for a blocker, for quitting or for restarting to install an update. */
+export function appCloseMessage(
+  blocker: AppCloseBlocker,
+  action: 'Quitting' | 'Restarting' = 'Quitting',
+): string {
+  const dirty =
+    blocker.dirtyEditors === 1
+      ? '1 file has unsaved changes'
+      : `${blocker.dirtyEditors} files have unsaved changes`;
+  if (blocker.dirtyEditors > 0 && blocker.busyTerminal) {
+    return `A process is still running and ${dirty}. ${action} will terminate it and discard the changes.`;
+  }
+  if (blocker.dirtyEditors > 0) {
+    return `${dirty.charAt(0).toUpperCase()}${dirty.slice(1)}. ${action} will discard them.`;
+  }
+  return `A process is still running in a terminal. ${action} will terminate it.`;
+}
+
+/** The warning before an update restarts lut, or `null` when restarting loses nothing. */
+export async function restartBlockerMessage(): Promise<string | null> {
+  const blocker = await currentAppCloseBlocker();
+  return blocker ? appCloseMessage(blocker, 'Restarting') : null;
+}
+
 export function useAppCloseGuard() {
   const [pendingAppClose, setPendingAppClose] = useState<AppCloseBlocker | null>(null);
   const forceClose = useRef(false);
@@ -53,18 +91,9 @@ export function useAppCloseGuard() {
     return onWindowCloseRequested(async (event) => {
       if (forceClose.current) return;
       event.preventDefault();
-      // Opting out skips the per-leaf IPC entirely; it never relaxes the
-      // unsaved-changes guard below.
-      const busyTerminal =
-        usePreferencesStore.getState().confirmCloseRunningTerminal &&
-        (await anyTerminalBusy(useNavigationStore.getState().tabs));
-      // Count after the await so edits made during the IPC check are seen.
-      const dirtyEditors = useNavigationStore.getState().tabs.filter(hasUnsavedChanges).length;
-      if (dirtyEditors > 0 || busyTerminal) {
-        setPendingAppClose({ dirtyEditors, busyTerminal });
-      } else {
-        void finishClose();
-      }
+      const blocker = await currentAppCloseBlocker();
+      if (blocker) setPendingAppClose(blocker);
+      else void finishClose();
     });
   }, [finishClose]);
 

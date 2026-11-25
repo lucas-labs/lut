@@ -3,7 +3,7 @@
 //! the plugin's `check` does, so the plugin's JS `Update` downloads and installs it.
 
 use serde::{Deserialize, Serialize};
-use tauri::{Manager, Runtime, Url, Webview};
+use tauri::{AppHandle, Manager, Runtime, Url, Webview};
 use tauri_plugin_updater::UpdaterExt;
 
 const MANIFESTS: &str = "https://github.com/lucas-labs/lut/releases/download/updater";
@@ -66,6 +66,12 @@ pub async fn updates_check<R: Runtime>(
         raw_json: update.raw_json.clone(),
         rid: webview.resources_table().add(update),
     }))
+}
+
+/// Starts lut again after an update is installed on macOS and Linux; on Windows the installer restarts it itself.
+#[tauri::command]
+pub fn updates_restart<R: Runtime>(app: AppHandle<R>) {
+    app.restart();
 }
 
 #[cfg(test)]

@@ -6,6 +6,8 @@ const fake = vi.hoisted(() => ({
   prefs: { updatesEnabled: true, updateChannel: null as 'stable' | 'beta' | null },
   version: '0.10.0',
   closed: [] as number[],
+  download: vi.fn<(onEvent: (event: unknown) => void) => Promise<void>>(),
+  install: vi.fn<() => Promise<void>>(),
 }));
 
 vi.mock('@tauri-apps/api/core', () => ({ invoke: fake.invoke }));
@@ -17,6 +19,12 @@ vi.mock('@tauri-apps/plugin-updater', () => ({
     constructor(metadata: { rid: number; version: string }) {
       this.rid = metadata.rid;
       this.version = metadata.version;
+    }
+    async download(onEvent: (event: unknown) => void) {
+      await fake.download(onEvent);
+    }
+    async install() {
+      await fake.install();
     }
     async close() {
       fake.closed.push(this.rid);
@@ -41,8 +49,18 @@ beforeEach(() => {
   fake.prefs = { updatesEnabled: true, updateChannel: null };
   fake.version = '0.10.0';
   fake.closed = [];
+  fake.download.mockReset().mockResolvedValue(undefined);
+  fake.install.mockReset().mockResolvedValue(undefined);
   clearLastCheck();
-  useUpdateStore.setState({ status: 'idle', update: null, error: null });
+  useUpdateStore.setState({
+    status: 'idle',
+    update: null,
+    error: null,
+    phase: 'closed',
+    progress: null,
+    blocker: null,
+    installError: null,
+  });
 });
 
 const check = (manual = false) => useUpdateStore.getState().checkForUpdates({ manual });
@@ -97,5 +115,69 @@ describe('checkForUpdates', () => {
     fake.invoke.mockRejectedValueOnce('offline');
     await check();
     expect(useUpdateStore.getState()).toMatchObject({ status: 'error', error: 'offline' });
+  });
+});
+
+describe('the update dialog flow', () => {
+  const offer = async () => {
+    fake.invoke.mockResolvedValueOnce(metadata(3, '0.10.1'));
+    await check(true);
+    fake.invoke.mockReset().mockResolvedValue(undefined);
+  };
+  const noBlocker = async () => null;
+
+  it('opens on a found release; Later closes it until the next check', async () => {
+    await offer();
+    expect(useUpdateStore.getState().phase).toBe('offer');
+    useUpdateStore.getState().dismiss();
+    expect(useUpdateStore.getState().phase).toBe('closed');
+  });
+
+  it('counts the download, then installs and restarts when nothing is lost', async () => {
+    await offer();
+    fake.download.mockImplementation(async (onEvent) => {
+      onEvent({ event: 'Started', data: { contentLength: 100 } });
+      onEvent({ event: 'Progress', data: { chunkLength: 40 } });
+      onEvent({ event: 'Progress', data: { chunkLength: 60 } });
+      onEvent({ event: 'Finished' });
+    });
+    await useUpdateStore.getState().install(noBlocker);
+    expect(useUpdateStore.getState().progress).toEqual({ downloaded: 100, total: 100 });
+    expect(fake.install).toHaveBeenCalledTimes(1);
+    expect(fake.invoke).toHaveBeenCalledWith('updates_restart');
+  });
+
+  it('waits for Restart now when restarting would lose work', async () => {
+    await offer();
+    await useUpdateStore.getState().install(async () => '1 file has unsaved changes.');
+    expect(useUpdateStore.getState()).toMatchObject({
+      phase: 'ready',
+      blocker: '1 file has unsaved changes.',
+    });
+    expect(fake.install).not.toHaveBeenCalled();
+    await useUpdateStore.getState().restartNow();
+    expect(fake.install).toHaveBeenCalledTimes(1);
+    expect(fake.invoke).toHaveBeenCalledWith('updates_restart');
+  });
+
+  it('installs nothing when the download or its signature fails', async () => {
+    await offer();
+    fake.download.mockRejectedValueOnce('signature verification failed');
+    await useUpdateStore.getState().install(noBlocker);
+    expect(useUpdateStore.getState()).toMatchObject({
+      phase: 'failed',
+      installError: 'signature verification failed',
+    });
+    expect(fake.install).not.toHaveBeenCalled();
+    expect(fake.invoke).not.toHaveBeenCalledWith('updates_restart');
+  });
+
+  it('does not check while an update is downloading', async () => {
+    await offer();
+    useUpdateStore.setState({ phase: 'downloading' });
+    await check(true);
+    expect(fake.invoke).not.toHaveBeenCalled();
+    useUpdateStore.getState().dismiss();
+    expect(useUpdateStore.getState().phase).toBe('downloading');
   });
 });

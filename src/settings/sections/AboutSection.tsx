@@ -8,6 +8,7 @@ import { arch, platform } from '@tauri-apps/plugin-os';
 import { type ReactNode, useEffect, useState } from 'react';
 import { SettingRow } from '../components/SettingRow';
 import { SettingsGroup } from '../components/SettingsGroup';
+import { UpdatesGroup } from './UpdatesGroup';
 
 /** The package metadata from `Cargo.toml`, via the `app_about` command. */
 type AppAbout = { authors: string[]; license: string; repository: string };
@@ -90,6 +91,8 @@ export function AboutSection() {
           )}
         </SettingRow>
       </SettingsGroup>
+
+      <UpdatesGroup version={version} />
 
       <div className="mt-5 flex gap-2">
         <Button variant="outline" disabled={!repository} onClick={() => void openUrl(repository)}>

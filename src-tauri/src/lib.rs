@@ -318,6 +318,7 @@ pub fn run() {
         .manage(LaunchFiles(Mutex::new(launch.files)))
         .invoke_handler(tauri::generate_handler![
             modules::updates::updates_check,
+            modules::updates::updates_restart,
             modules::profiles::store::profiles_take_load_error,
             modules::spaces::spaces_store_open,
             modules::spaces::spaces_store_move_aside,

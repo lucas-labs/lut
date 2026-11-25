@@ -1,6 +1,7 @@
 import { usePreferencesStore } from '@/modules/settings/preferences';
 import type { UpdateChannel } from '@/modules/settings/store';
 import { useEffect, useRef } from 'react';
+import { bridgeUpdateEvents } from './updateEvents';
 import { clearLastCheck, useUpdateStore } from './updateStore';
 
 /** The first check waits for the app to settle after start. */
@@ -14,6 +15,9 @@ export function useUpdateChecks(): void {
   const enabled = usePreferencesStore((s) => s.updatesEnabled);
   const channel = usePreferencesStore((s) => s.updateChannel);
   const checkedChannel = useRef<UpdateChannel | null | undefined>(undefined);
+
+  // Check now and the status shown in the settings window (E25-06).
+  useEffect(() => bridgeUpdateEvents(), []);
 
   useEffect(() => {
     if (!settled) return;

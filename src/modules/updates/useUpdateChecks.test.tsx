@@ -13,6 +13,7 @@ vi.mock('@/modules/settings/preferences', () => ({
     updateChannel: null as 'stable' | 'beta' | null,
   })),
 }));
+vi.mock('./updateEvents', () => ({ bridgeUpdateEvents: () => () => {} }));
 vi.mock('./updateStore', () => ({
   clearLastCheck: fake.clear,
   useUpdateStore: { getState: () => ({ checkForUpdates: fake.check }) },

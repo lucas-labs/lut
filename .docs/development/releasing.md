@@ -159,8 +159,9 @@ flowchart TD
   plugin's JS check cannot change its endpoint. Unset, the channel follows the installed version. lut checks 10 s
   after start and then once every 24 h, keeping the time of the last check in `lut.updates.lastCheck`; a dev build
   never checks (E25-05). The plugin, its public key and the `updater:default` capability are E25-04.
-- **The dialog and the settings controls** (channel, enable, Check now) are E25-06, following lut's existing dialog
-  and settings patterns.
+- **The dialog and the settings controls** (channel, enable, Check now, in Settings > About) are E25-06, following
+  lut's existing dialog and settings patterns. Installing restarts lut, so it goes through the same guard as quitting:
+  with unsaved files or a running process the dialog warns and waits for Restart now.
 - **Proof.** E25-07 updates an old build to a test release, and shows that a bundle with no signature or with another
   key's signature is refused, and that the only host contacted is lut's.
 

@@ -7032,9 +7032,19 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] Update dialog and settings controls implement the designs; manual "check now" works.
+- [ ] The main window's update dialog follows lut's dialog pattern: the offered version, the installed one and the
+      release notes; Later closes it until the next check; Install and restart shows the download, then installs and
+      restarts; a failed download or signature installs nothing and says so.
+- [ ] Restarting goes through the app's close guard: with unsaved files or a running process the dialog warns on the
+      offer and, after the download, waits for Restart now. Windows' installer restarts lut; elsewhere
+      `updates_restart` does (no process plugin).
+- [ ] An "Updates" group in Settings > About: automatic updates on/off, channel (the installed version's until one is
+      chosen) and Check now with its status; all disabled in a dev build. Check now and the status travel between
+      the settings and main windows as events.
+- [ ] Tests for the dialog phases, the install flow, the events and the settings group.
 
-**Verification:** `pnpm test`; manual against a test release.
+**Verification:** `pnpm test src/modules/updates src/settings/sections/UpdatesGroup.test.tsx`; the end-to-end run
+against a test release is E25-07.
 
 ### E25-07 — Verify the updater uses only lut infrastructure and rejects bad signatures
 

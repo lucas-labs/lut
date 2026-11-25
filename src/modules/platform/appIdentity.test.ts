@@ -5,6 +5,7 @@ vi.mock('@tauri-apps/api/app', () => ({ getIdentifier }));
 
 /** A fresh module per test: the name is asked once and kept. */
 const load = async () => (await import('./appIdentity')).appName;
+const loadDev = async () => (await import('./appIdentity')).isDevBuild;
 
 beforeEach(() => {
   vi.resetModules();
@@ -23,6 +24,14 @@ describe('appName (E25-10)', () => {
     vi.resetModules();
     getIdentifier.mockRejectedValue(new Error('no tauri'));
     expect(await (await load())()).toBe('lut');
+  });
+
+  it('tells a dev build apart', async () => {
+    getIdentifier.mockResolvedValue('dev.lucode.lut.dev');
+    expect(await (await loadDev())()).toBe(true);
+    vi.resetModules();
+    getIdentifier.mockResolvedValue('dev.lucode.lut');
+    expect(await (await loadDev())()).toBe(false);
   });
 
   it('asks the app once', async () => {
