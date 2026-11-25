@@ -85,8 +85,10 @@ and npm packages lut ships. `pnpm build:notices` (`scripts/notices.mjs`) writes 
 `pnpm build`, so it is embedded with the frontend; it is generated, never committed, and `pnpm tauri dev` does not
 need it.
 
-- **Rust:** `cargo about generate --frozen --fail`, configured by `src-tauri/about.toml` (the targets lut ships, no
-  build or dev dependencies) and rendered with `src-tauri/about.hbs`. It needs `cargo-about` installed.
+- **Rust:** `cargo about generate --locked --fail`, configured by `src-tauri/about.toml` (the targets lut ships, no
+  build or dev dependencies) and rendered with `src-tauri/about.hbs`. It needs `cargo-about` installed. It covers
+  every shipped target, so it downloads the crates only other systems use when they are missing; `--locked` keeps
+  `Cargo.lock` as it is.
 - **npm:** the production packages from `pnpm licenses list --prod --json`, each with its own license file; an MIT
   package without one gets the MIT text with its author. `LICENSE_OVERRIDES` in the script names packages whose
   `package.json` has no license although their license file does.

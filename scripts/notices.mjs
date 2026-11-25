@@ -230,7 +230,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
       [
         'about',
         'generate',
-        '--frozen',
+        '--locked',
         '--fail',
         '--manifest-path',
         join(tauri, 'Cargo.toml'),

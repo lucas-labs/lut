@@ -8,8 +8,9 @@ import { type Tab, TabSwitcher } from '@/modules/tabs';
 import { bindTerminalWindowFocus } from '@/modules/terminal/ghostty/renderScheduling';
 import { subscribeWindowPresentation } from '@/modules/terminal/ghostty/windowPresentation';
 import { LivePageResizeBridge, WindowActivityBridge, WindowVibrancyBridge } from '@/modules/theme';
+import { UpdateDialog } from '@/modules/updates';
 import { lazy, Suspense, useCallback } from 'react';
-import type { useAppCloseGuard } from '../hooks/useAppCloseGuard';
+import { restartBlockerMessage, type useAppCloseGuard } from '../hooks/useAppCloseGuard';
 import type { useCommandPalette } from '../hooks/useCommandPalette';
 import type { useTabCloseGuards } from '../hooks/useTabCloseGuards';
 import type { useTabCommands } from '../hooks/useTabCommands';
@@ -46,7 +47,7 @@ type Props = {
 
 /**
  * What the window shows over the shell (E09-08): the window bridges, notifications and toasts, the Ctrl+Tab
- * switcher, the command palette, the new-file dialog and the close confirmations.
+ * switcher, the command palette, the new-file dialog, the close confirmations and the update dialog (E25-06).
  */
 export function AppOverlays({
   tabs,
@@ -141,6 +142,8 @@ export function AppOverlays({
         onCancelAppClose={appClose.cancelAppClose}
         onConfirmAppClose={appClose.confirmAppClose}
       />
+
+      <UpdateDialog restartBlocker={restartBlockerMessage} />
     </>
   );
 }

@@ -1,5 +1,5 @@
 import type { CloseManyPending } from '@/app/hooks/tabCloseGuards';
-import { type AppCloseBlocker, canOptOutOfAppClosePrompt } from '@/app/hooks/useAppCloseGuard';
+import { type AppCloseBlocker, appCloseMessage, canOptOutOfAppClosePrompt } from '@/app/hooks/useAppCloseGuard';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,18 +37,6 @@ type Props = {
   onCancelAppClose: () => void;
   onConfirmAppClose: () => void;
 };
-
-function appCloseMessage(blocker: AppCloseBlocker): string {
-  const dirty =
-    blocker.dirtyEditors === 1 ? '1 file has unsaved changes' : `${blocker.dirtyEditors} files have unsaved changes`;
-  if (blocker.dirtyEditors > 0 && blocker.busyTerminal) {
-    return `A process is still running and ${dirty}. Quitting will terminate it and discard the changes.`;
-  }
-  if (blocker.dirtyEditors > 0) {
-    return `${dirty.charAt(0).toUpperCase()}${dirty.slice(1)}. Quitting will discard them.`;
-  }
-  return 'A process is still running in a terminal. Quitting will terminate it.';
-}
 
 function OptOutRow({ checked, onCheckedChange }: { checked: boolean; onCheckedChange: (value: boolean) => void }) {
   const id = useId();

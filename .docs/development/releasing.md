@@ -90,7 +90,8 @@ sequenceDiagram
   runner so the glibc requirement stays low. Each job builds `lut-cli` for its own target (`LUT_CLI_TARGET`, read by
   `scripts/build-cli.mjs`), so an x64 macOS bundle never carries an arm64 sidecar.
 - **Signing order.** Authenticode changes the installer's bytes, so the updater signature is made after it, over the
-  signed file. The signing keys are CI secrets; the public updater key is in `tauri.conf.json`.
+  signed file. The signing keys are CI secrets; the public updater key is in `tauri.conf.json`. Only the workflow
+  makes updater bundles (`createUpdaterArtifacts` through `--config`), so a local `pnpm tauri build` needs no key.
 - **Windows signing comes later.** SignPath Foundation reviews a project before signing for it, which can take weeks,
   so the first releases ship the Windows installer without Authenticode (E25-11 adds it). The updater signature is
   there from the first release, so an installed lut updates to the first signed release like to any other.
@@ -154,11 +155,13 @@ flowchart TD
 ```
 
 - **Off means off.** With updates disabled lut makes no update request at all (E25-05).
-- **Channel and throttle.** The channel picks the manifest URL at runtime; the time of the last check is stored under
-  a lut key (E25-05). The plugin and its configuration (endpoint, public key, the `updater:default` capability) are
-  E25-04.
-- **The dialog and the settings controls** (channel, enable, Check now) are E25-06, following lut's existing dialog
-  and settings patterns.
+- **Channel and throttle.** The channel picks the manifest URL at runtime, in Rust (`modules/updates.rs`): the
+  plugin's JS check cannot change its endpoint. Unset, the channel follows the installed version. lut checks 10 s
+  after start and then once every 24 h, keeping the time of the last check in `lut.updates.lastCheck`; a dev build
+  never checks (E25-05). The plugin, its public key and the `updater:default` capability are E25-04.
+- **The dialog and the settings controls** (channel, enable, Check now, in Settings > About) are E25-06, following
+  lut's existing dialog and settings patterns. Installing restarts lut, so it goes through the same guard as quitting:
+  with unsaved files or a running process the dialog warns and waits for Restart now.
 - **Proof.** E25-07 updates an old build to a test release, and shows that a bundle with no signature or with another
   key's signature is refused, and that the only host contacted is lut's.
 

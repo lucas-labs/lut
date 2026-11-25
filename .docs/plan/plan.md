@@ -6915,7 +6915,8 @@ the release updates the channel manifests, as `.docs/development/releasing.md` d
       it, commits and creates the signed tag; the workflow fails for a tag of any other form or when the tag and those
       versions disagree.
 - [ ] Builds NSIS (Windows x64; no MSI), app/dmg (macOS arm64 and x64) and AppImage/deb/rpm (Linux x64 and arm64)
-      with `createUpdaterArtifacts: true` and `TAURI_SIGNING_PRIVATE_KEY` from secrets; binary `lut`, sidecar
+      with `createUpdaterArtifacts: true` (passed with `--config`; it is not in `tauri.conf.json`, E25-04) and
+      `TAURI_SIGNING_PRIVATE_KEY` from secrets; binary `lut`, sidecar
       `lut-cli` built per target; on macOS the updater uses `lut.app.tar.gz`, the `.dmg` is for the first install.
 - [ ] The Windows installer ships without Authenticode until E25-11; its updater signature is made last, so the
       SignPath step fits before it.
@@ -6970,11 +6971,19 @@ size: S
 **Acceptance criteria:**
 
 - [ ] `tauri-plugin-updater` crate and `@tauri-apps/plugin-updater` re-added; `updater:default` capability restored.
-- [ ] `plugins.updater` in `src-tauri/tauri.conf.json` uses lut's endpoint and pubkey only; `rg -i "crynta|terax-ai"` finds no updater URL.
+- [ ] `plugins.updater` in `src-tauri/tauri.conf.json` holds lut's public key only (the channel's endpoint is chosen
+      in Rust, E25-05); `rg -i "crynta|terax-ai"` finds no updater URL.
+- [ ] `createUpdaterArtifacts` stays out of `tauri.conf.json`, so `pnpm tauri build` works without the private key;
+      the release workflow turns it on (E25-02).
+- [ ] One TLS stack: the plugin's default `rustls-tls` (rustls with ring, no aws-lc or native-tls); the new crates'
+      licenses pass the notices allowlist (E25-03).
 
-**Verification:** `pnpm tauri build`; `cargo test --manifest-path src-tauri/Cargo.toml`.
+**Verification:** `cargo test -p lut --lib`; `cargo tree -i rustls`; `cargo about generate --fail`; `pnpm tauri build`
+without the signing key.
 
-**Notes:** Terax's AI proxy built reqwest with `rustls-no-provider` and installed the ring provider by hand (`rustls::crypto::ring::default_provider().install_default()` in the deleted `net/clients.rs`); without it reqwest panics on the first TLS request. E05-16/E05-18 removed both crates, so check which TLS backend the updater plugin pulls in and whether it needs a provider installed.
+**Notes:** Terax's AI proxy built reqwest with `rustls-no-provider` and installed the ring provider by hand; without
+it reqwest panics on the first TLS request. The updater plugin (2.14) does the same itself before its first request
+(`CryptoProvider::get_default().is_none()` → ring's `install_default()`), so lut needs no code for it.
 
 ### E25-05 — Add update channel and disable settings with a check service
 
@@ -6992,11 +7001,20 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] Settings keys for channel and enabled; disabled means no update network request at all.
-- [ ] Channel selects the manifest endpoint; throttle state stored under a `lut` key.
-- [ ] Unit tests for channel selection, disabled mode and throttling.
+- [ ] Settings `updatesEnabled` (default on) and `updateChannel` (`stable`, `beta`, or unset: the installed
+      version's, so a `-beta.N` lut is on beta); off means no update request at all, not even a manual check.
+- [ ] `updates_check(channel)` (Rust, `modules/updates.rs`) reads that channel's manifest on the `updater` release and
+      returns the plugin's `UpdateMetadata`, the `Update` kept in the webview's resource table so the plugin's JS
+      `Update` downloads and installs it; a debug build never checks.
+- [ ] The main window checks 10 s after start, then asks every hour whether 24 h passed since the last check
+      (`localStorage` `lut.updates.lastCheck`); a channel change makes the next check run; a manual check skips the
+      interval. `useUpdateStore` holds the status and the found update for E25-06.
+- [ ] Unit tests for channel selection, disabled mode, throttling and the channel URLs.
 
-**Verification:** `pnpm test`; network log shows no request when disabled.
+**Verification:** `pnpm test src/modules/updates`; `cargo test -p lut --lib updates`.
+
+**Notes:** The plugin's JS `check()` cannot change the endpoint (it takes headers, timeout, proxy and target only),
+which is why the check is a lut command. A dev build (`dev.lucode.lut.dev`) never checks (`releasing.md`).
 
 ### E25-06 — Build the update dialog and settings update controls
 
@@ -7014,9 +7032,19 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] Update dialog and settings controls implement the designs; manual "check now" works.
+- [ ] The main window's update dialog follows lut's dialog pattern: the offered version, the installed one and the
+      release notes; Later closes it until the next check; Install and restart shows the download, then installs and
+      restarts; a failed download or signature installs nothing and says so.
+- [ ] Restarting goes through the app's close guard: with unsaved files or a running process the dialog warns on the
+      offer and, after the download, waits for Restart now. Windows' installer restarts lut; elsewhere
+      `updates_restart` does (no process plugin).
+- [ ] An "Updates" group in Settings > About: automatic updates on/off, channel (the installed version's until one is
+      chosen) and Check now with its status; all disabled in a dev build. Check now and the status travel between
+      the settings and main windows as events.
+- [ ] Tests for the dialog phases, the install flow, the events and the settings group.
 
-**Verification:** `pnpm test`; manual against a test release.
+**Verification:** `pnpm test src/modules/updates src/settings/sections/UpdatesGroup.test.tsx`; the end-to-end run
+against a test release is E25-07.
 
 ### E25-07 — Verify the updater uses only lut infrastructure and rejects bad signatures
 

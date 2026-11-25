@@ -13,6 +13,7 @@ import { SpacesView, useSpaces } from '@/modules/spaces';
 import { type NewTabMenuActions, TabNavigator, useTabs, useWindowTitle, useWorkspaceCwd } from '@/modules/tabs';
 import { canAddPane, findLeafCwd } from '@/modules/terminal';
 import { ThemeProvider, useThemeFileEditing } from '@/modules/theme';
+import { useUpdateChecks } from '@/modules/updates';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppShell } from './AppShell';
 import { AppOverlays } from './components/AppOverlays';
@@ -93,6 +94,7 @@ export default function App() {
   });
   const appClose = useAppCloseGuard();
   useProfilesLoadNotice();
+  useUpdateChecks();
   const commands = useTabCommands({ ...closeGuards, activeId, activeSpaceId, inheritedCwdForNewTab });
   const git = useAppSourceControl({ ...workspace, ...panels, tabs, activeTab, activeCwd, explorerRoot });
   const { searchTarget, onGitHistorySearchHandle } = useSearchTarget({
