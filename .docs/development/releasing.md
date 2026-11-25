@@ -90,7 +90,8 @@ sequenceDiagram
   runner so the glibc requirement stays low. Each job builds `lut-cli` for its own target (`LUT_CLI_TARGET`, read by
   `scripts/build-cli.mjs`), so an x64 macOS bundle never carries an arm64 sidecar.
 - **Signing order.** Authenticode changes the installer's bytes, so the updater signature is made after it, over the
-  signed file. The signing keys are CI secrets; the public updater key is in `tauri.conf.json`.
+  signed file. The signing keys are CI secrets; the public updater key is in `tauri.conf.json`. Only the workflow
+  makes updater bundles (`createUpdaterArtifacts` through `--config`), so a local `pnpm tauri build` needs no key.
 - **Windows signing comes later.** SignPath Foundation reviews a project before signing for it, which can take weeks,
   so the first releases ship the Windows installer without Authenticode (E25-11 adds it). The updater signature is
   there from the first release, so an installed lut updates to the first signed release like to any other.

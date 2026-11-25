@@ -6915,7 +6915,8 @@ the release updates the channel manifests, as `.docs/development/releasing.md` d
       it, commits and creates the signed tag; the workflow fails for a tag of any other form or when the tag and those
       versions disagree.
 - [ ] Builds NSIS (Windows x64; no MSI), app/dmg (macOS arm64 and x64) and AppImage/deb/rpm (Linux x64 and arm64)
-      with `createUpdaterArtifacts: true` and `TAURI_SIGNING_PRIVATE_KEY` from secrets; binary `lut`, sidecar
+      with `createUpdaterArtifacts: true` (passed with `--config`; it is not in `tauri.conf.json`, E25-04) and
+      `TAURI_SIGNING_PRIVATE_KEY` from secrets; binary `lut`, sidecar
       `lut-cli` built per target; on macOS the updater uses `lut.app.tar.gz`, the `.dmg` is for the first install.
 - [ ] The Windows installer ships without Authenticode until E25-11; its updater signature is made last, so the
       SignPath step fits before it.
@@ -6970,11 +6971,19 @@ size: S
 **Acceptance criteria:**
 
 - [ ] `tauri-plugin-updater` crate and `@tauri-apps/plugin-updater` re-added; `updater:default` capability restored.
-- [ ] `plugins.updater` in `src-tauri/tauri.conf.json` uses lut's endpoint and pubkey only; `rg -i "crynta|terax-ai"` finds no updater URL.
+- [ ] `plugins.updater` in `src-tauri/tauri.conf.json` holds lut's public key and the `stable.json` endpoint only;
+      `rg -i "crynta|terax-ai"` finds no updater URL.
+- [ ] `createUpdaterArtifacts` stays out of `tauri.conf.json`, so `pnpm tauri build` works without the private key;
+      the release workflow turns it on (E25-02).
+- [ ] One TLS stack: the plugin's default `rustls-tls` (rustls with ring, no aws-lc or native-tls); the new crates'
+      licenses pass the notices allowlist (E25-03).
 
-**Verification:** `pnpm tauri build`; `cargo test --manifest-path src-tauri/Cargo.toml`.
+**Verification:** `cargo test -p lut --lib`; `cargo tree -i rustls`; `cargo about generate --fail`; `pnpm tauri build`
+without the signing key.
 
-**Notes:** Terax's AI proxy built reqwest with `rustls-no-provider` and installed the ring provider by hand (`rustls::crypto::ring::default_provider().install_default()` in the deleted `net/clients.rs`); without it reqwest panics on the first TLS request. E05-16/E05-18 removed both crates, so check which TLS backend the updater plugin pulls in and whether it needs a provider installed.
+**Notes:** Terax's AI proxy built reqwest with `rustls-no-provider` and installed the ring provider by hand; without
+it reqwest panics on the first TLS request. The updater plugin (2.14) does the same itself before its first request
+(`CryptoProvider::get_default().is_none()` → ring's `install_default()`), so lut needs no code for it.
 
 ### E25-05 — Add update channel and disable settings with a check service
 
@@ -6997,6 +7006,11 @@ size: S
 - [ ] Unit tests for channel selection, disabled mode and throttling.
 
 **Verification:** `pnpm test`; network log shows no request when disabled.
+
+**Notes:** The plugin's JS `check()` cannot change the endpoint (it takes headers, timeout, proxy and target only), so
+the channel's manifest URL is chosen in Rust with `updater_builder().endpoints(...)`; the resulting `Update` goes into
+the webview's resource table as the plugin's own `check` does, so the JS `Update` still downloads and installs it. A
+dev build (`dev.lucode.lut.dev`) never checks (`releasing.md`).
 
 ### E25-06 — Build the update dialog and settings update controls
 

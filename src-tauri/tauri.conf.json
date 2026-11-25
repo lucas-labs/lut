@@ -113,5 +113,13 @@
         ]
       }
     ]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDFENkNFMjRCMjU2RjQwQkMKUldTOFFHOGxTK0pzSFJLckpqbTFKZ096aERGR2ZrQndEY0IwODhITVhMUkhqeVJjR1A2VmJBdWMK",
+      "endpoints": [
+        "https://github.com/lucas-labs/lut/releases/download/updater/stable.json"
+      ]
+    }
   }
 }

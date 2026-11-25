@@ -457,8 +457,8 @@ Emitted with `emit` from `@tauri-apps/api/event` so that the other window (main 
 
 ## Corrections to the area analyses
 
-- The updater and process plugins are gone (#318): `backend-core.md` still lists them, and `app-shell.md` mentions
-  `UpdaterDialog` in `App.tsx`.
+- Terax's updater and process plugins are gone (#318): `app-shell.md` mentions `UpdaterDialog` in `App.tsx`. The
+  updater plugin is back with lut's own endpoint and key (E25-04); the process plugin is not.
 - `App.tsx` was 1484 lines, not 1695, and is about 250 since E09; the `App.tsx:<line>` references in `app-shell.md`
   point to code that now lives in `app/hooks/`, `app/components/` and `modules/platform/`.
 - On `WindowEvent::Destroyed` the backend releases asset grants and PTYs; control sessions are not closed

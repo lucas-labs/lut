@@ -123,6 +123,8 @@ windows-sys = { version = "0.61", features = [
 gtk = "0.18"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+# Default features: rustls with ring, which the plugin installs as the TLS provider itself.
+tauri-plugin-updater = "2"
 tauri-plugin-window-state = "2"
 
 [profile.dev]

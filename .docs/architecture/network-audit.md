@@ -42,7 +42,9 @@ The LSP install dialog (`LspInstallDialog.tsx:38`) only copies an install comman
 - **Terax services:** the updater (E01-02) and the BYOK AI with its `HTTP-Referer: https://terax.ai` / `X-Title: lut`
   headers (E05, #358) are gone. `git grep -n "terax.ai" src src-tauri/src` returns nothing, and the About links point to lut's
   repository (E04-03).
-- **HTTP clients in Rust:** none in lut's code; `reqwest` is in `Cargo.lock` only as a dependency of `tauri` itself.
+- **HTTP clients in Rust:** none in lut's code. `reqwest` comes with `tauri` and with `tauri-plugin-updater`
+  (E25-04), whose only host is lut's `updater` release on `github.com/lucas-labs/lut` (`plugins.updater` in
+  `tauri.conf.json`); nothing calls it until the update check (E25-05).
 - **Telemetry, analytics, crash reporting:** none (the only "sentry" match is a file-icon rule for `.sentryclirc`).
 - **CDN, remote scripts or fonts:** none. The CSP allows `script-src 'self' 'wasm-unsafe-eval'` and
   `font-src 'self' data:`; every font is bundled under `src/assets/fonts/`.
