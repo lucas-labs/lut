@@ -6653,14 +6653,19 @@ scope: none
 size: S
 ```
 
-**Goal:** Every PR builds lut on macOS and Linux in CI, next to Windows (decision 20).
+**Goal:** Every PR checks the backend on Linux in CI, next to Windows (decision 20). macOS is built only by the
+release workflow (E25-02), so pull requests wait for no macOS runner.
 
 **Acceptance criteria:**
 
-- [ ] CI matrix (windows-latest, macos-latest, ubuntu-22.04) runs `pnpm install --frozen-lockfile`, `pnpm check-types`, `pnpm test`, `cargo test --locked --workspace` (in `src-tauri`) and `pnpm tauri build --debug`.
-- [ ] Linux job installs `libwebkit2gtk-4.1-dev`, `libgtk-3-dev` and the other Tauri prerequisites.
+- [ ] A `backend (linux)` job on `ubuntu-22.04` runs the same checks as `backend (windows)` (CLI sidecar, `cargo fmt`,
+      `cargo clippy -D warnings`, `cargo test --locked --workspace`) under the same path filter.
+- [ ] It installs `libwebkit2gtk-4.1-dev`, `libgtk-3-dev` and the other Tauri prerequisites, plus zsh and fish, and runs
+      the bash, zsh and fish integration tests in `src-tauri/src/modules/pty/scripts/`.
+- [ ] `backend (linux)` is a required check on `master`.
+- [ ] The frontend stays on Ubuntu only: its tests mock the platform.
 
-**Verification:** CI green on all three runners for a test PR.
+**Verification:** CI green on Windows and Linux for this PR.
 
 ### E24-02 — Add a launch smoke test to the CI matrix
 
@@ -6915,8 +6920,8 @@ the release updates the channel manifests, as `.docs/development/releasing.md` d
 - [ ] Publishing a release updates `stable.json` and `beta.json` on the `updater` release as the design's table says,
       each only when the release is newer than the version it holds.
 
-**Verification:** a pre-release tag produces all artifacts and a valid manifest; publishing it updates `beta.json`
-only.
+**Verification:** a pre-release tag produces all artifacts and a valid manifest, which is also the first macOS build
+and the first bundling of every system (CI builds none, E24-01); publishing it updates `beta.json` only.
 
 ### E25-03 — Generate third-party notices for Rust and npm dependencies
 

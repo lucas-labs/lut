@@ -1,8 +1,8 @@
 # Quality gate (E01-05): every PR to master and every push to master runs lint, format, type checks, tests and the
 # build. The frontend checks don't depend on the OS and run on Ubuntu (E01-24); the backend runs on Windows, the primary
-# platform. macOS and Linux backend jobs are added by E24-01. On a pull request each job runs only when files it depends
-# on changed (E01-25); a push to master runs every job. Every pull request starts the workflow, even a docs-only one
-# (its jobs are skipped), so the checks master requires always report (E04-09).
+# platform, and on Linux (E24-01); macOS builds only in the release workflow (E25-02). On a pull request each job runs
+# only when files it depends on changed (E01-25); a push to master runs every job. Every pull request starts the
+# workflow, even a docs-only one (its jobs are skipped), so the checks master requires always report (E04-09).
 name: ci
 
 on:
@@ -122,3 +122,36 @@ jobs:
       - run: cargo fmt --manifest-path src-tauri/Cargo.toml --all --check
       - run: cargo clippy --manifest-path src-tauri/Cargo.toml --locked --workspace --all-targets -- -D warnings
       - run: cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace
+
+  # The same checks on Linux (E24-01): the cfg(unix) and cfg(target_os = "linux") code, and the bash, zsh and fish
+  # integration scripts run in real shells. A job of its own, not a matrix leg: a matrix job skipped by its `if` reports
+  # an unexpanded name, which never satisfies a required check. Ubuntu 22.04 is the release's oldest glibc.
+  backend-linux:
+    name: backend (linux)
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      # Tauri's Linux prerequisites, plus the shells the integration tests drive.
+      - run: >-
+          sudo apt-get update && sudo apt-get install -y
+          libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libssl-dev libxdo-dev libayatana-appindicator3-dev
+          zsh fish
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node scripts/build-cli.mjs
+      - run: cargo fmt --manifest-path src-tauri/Cargo.toml --all --check
+      - run: cargo clippy --manifest-path src-tauri/Cargo.toml --locked --workspace --all-targets -- -D warnings
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --locked --workspace
+      - run: bash src-tauri/src/modules/pty/scripts/bashrc.test.bash
+      - run: python3 src-tauri/src/modules/pty/scripts/zshrc.test.py
+      - run: fish --no-config src-tauri/src/modules/pty/scripts/init.test.fish
