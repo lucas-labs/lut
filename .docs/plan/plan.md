@@ -6910,6 +6910,7 @@ the release updates the channel manifests, as `.docs/development/releasing.md` d
 
 **Acceptance criteria:**
 
+- [ ] The workflow installs `cargo-about` (pinned version) for the third-party notices (E25-03).
 - [ ] `pnpm release <version>` accepts only `X.Y.Z` and `X.Y.Z-beta.N`, writes the version into every file that holds
       it, commits and creates the signed tag; the workflow fails for a tag of any other form or when the tag and those
       versions disagree.
@@ -6941,10 +6942,16 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] A script (e.g. `cargo about` plus an npm license collector) writes `public/licenses/third-party.txt`; the release workflow runs it.
+- [ ] `pnpm build:notices` (`cargo about` for the Rust crates, `pnpm licenses list --prod` for the npm packages)
+      writes `dist/licenses/third-party.txt` after `pnpm build`, so every `pnpm tauri build`, the release workflow's
+      included, embeds it; it is generated, never committed.
+- [ ] One license allowlist (`src-tauri/about.toml`) for both halves: a dependency under another license fails the
+      build with its name.
 - [ ] Terax attribution (`public/licenses/terax.txt`) and terminal licenses are still bundled.
+- [ ] Tests for the license expressions, the npm grouping and the reported problems.
 
-**Verification:** `pnpm tauri build`; notices present in the installed app resources.
+**Verification:** `pnpm test src/app/notices.test.ts`; `pnpm build && pnpm build:notices` writes the file; removing
+`MIT` from the allowlist fails it.
 
 ### E25-04 — Re-add tauri-plugin-updater with lut endpoint and public key
 
