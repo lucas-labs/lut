@@ -4,6 +4,7 @@
 // CLI:  pnpm release <version>        on an up-to-date, clean master
 //       node scripts/release.mjs --verify <tag>   the release workflow's check: the tag's form and the files agree
 //       node scripts/release.mjs --newer <a> <b>  prints "true" when version a is newer than b (manifests job)
+//       node scripts/release.mjs --heads <tag...> prints the newest tag of each channel (manifests job)
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -101,6 +102,23 @@ export function releaseProblem(version, current) {
   return null;
 }
 
+/**
+ * The release each channel serves, from the published tags: stable the newest `vX.Y.Z`, beta the newest of all (the
+ * beta channel gets stable releases too). `null` for a channel with no release; other tags are ignored.
+ */
+export function channelHeads(tags) {
+  const newest = (list) =>
+    list.reduce(
+      (best, tag) => (best === null || isNewer(versionOfTag(tag), versionOfTag(best)) ? tag : best),
+      null,
+    );
+  const releases = tags.filter((tag) => versionOfTag(tag) !== null);
+  return {
+    stable: newest(releases.filter((tag) => parseVersion(versionOfTag(tag)).beta === null)),
+    beta: newest(releases),
+  };
+}
+
 function fail(message) {
   process.stderr.write(`release: ${message}\n`);
   process.exit(1);
@@ -120,6 +138,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
 
   if (first === '--newer') {
     process.stdout.write(`${isNewer(second, third || null)}\n`);
+  } else if (first === '--heads') {
+    const heads = channelHeads(process.argv.slice(3));
+    process.stdout.write(`stable=${heads.stable ?? ''}\nbeta=${heads.beta ?? ''}\n`);
   } else if (first === '--verify') {
     const version = versionOfTag(second ?? '');
     if (!version) fail(`tag ${second} is not vX.Y.Z or vX.Y.Z-beta.N`);

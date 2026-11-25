@@ -215,9 +215,10 @@ jobs:
         with:
           name: latest
           path: bundles/latest.json
-      # Never published here: the draft waits for a review.
+      # Only for a pushed tag (a manual run may target a tag too), and never published here: the draft waits for a
+      # review.
       - name: Create the draft release
-        if: github.ref_type == 'tag'
+        if: github.event_name == 'push' && github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
           BETA: ${{ needs.check.outputs.beta }}

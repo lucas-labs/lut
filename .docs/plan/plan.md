@@ -6925,10 +6925,13 @@ the release updates the channel manifests, as `.docs/development/releasing.md` d
 - [ ] `manifest` writes one `latest.json` after every target (`scripts/build-manifest.mjs`, failing when a platform
       key is missing) and creates the draft release, a pre-release for a beta; a manual run builds everything and
       keeps the bundles as workflow artifacts without a release.
-- [ ] `.github/workflows/update-manifests.yml`, on a published release: copies its `latest.json` with the release's
-      notes to the `updater` release (created the first time), replacing `stable.json` (stable releases only) and
-      `beta.json` only when the release is newer than the version each holds.
-- [ ] Tests for the version rules, the file edits and the manifest's platform keys.
+- [ ] `.github/workflows/update-manifests.yml`, on a published release: from every published release, `stable.json`
+      gets the newest stable and `beta.json` the newest of all, copied with the release's notes to the `updater`
+      release (created the first time), each only when newer than the version it holds; a manifest that exists but
+      cannot be downloaded stops the run without uploading.
+- [ ] The Tauri CLI includes `tauri-bundler` 2.10.5 or later, which writes a beta's RPM version in tilde form.
+- [ ] Tests for the version rules, the file edits (on fixtures, so they hold after a release), the channel heads and
+      the manifest's platform keys.
 
 **Verification:** `pnpm test src/app/release.test.ts`; after merge, a manual run of the workflow builds the five
 targets (the first macOS build and the first bundling of every system: CI builds none, E24-01); a pre-release tag

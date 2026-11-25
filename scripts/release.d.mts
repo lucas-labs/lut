@@ -19,3 +19,4 @@ export function fileVersions(
   | { version: string; mismatch?: undefined }
   | { version?: undefined; mismatch: Record<string, string> };
 export function releaseProblem(version: string, current: string): string | null;
+export function channelHeads(tags: string[]): { stable: string | null; beta: string | null };

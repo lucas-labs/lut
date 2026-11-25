@@ -139,9 +139,11 @@ An installed lut reads one fixed URL per channel, both assets of a permanent rel
 - `https://github.com/lucas-labs/lut/releases/download/updater/beta.json`
 
 Each is a copy of a release's `latest.json`, with the release's notes as they were when it was published. Publishing
-a release runs `.github/workflows/update-manifests.yml`, which creates the `updater` release the first time and
-replaces a manifest only when the release is newer than the version that manifest holds, so publishing an older draft
-late never moves a channel back:
+a release runs `.github/workflows/update-manifests.yml` (it can also be run by hand). It creates the `updater` release
+the first time, and each run looks at every published release, not only the one that started it: `stable.json` gets
+the newest stable release and `beta.json` the newest of all, each only when that release is newer than the version the
+manifest holds. A canceled or failed run is made good by the next one, and publishing an older draft late never moves
+a channel back. A manifest that exists but cannot be downloaded stops the run without uploading anything:
 
 | Published release     | `stable.json`     | `beta.json`       |
 | --------------------- | ----------------- | ----------------- |

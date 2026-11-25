@@ -9,6 +9,7 @@ import {
 } from '../../scripts/build-manifest.mjs';
 import {
   cargoVersions,
+  channelHeads,
   compareVersions,
   fileVersions,
   isNewer,
@@ -81,26 +82,73 @@ describe('release versions (E25-02)', () => {
     expect(releaseProblem('0.2.0-rc.1', '0.1.0')).toMatch(/not X\.Y\.Z/);
   });
 
-  it('writes the version into the two Cargo.toml tables and package.json, and nothing else', () => {
-    const cargo = repoFile('src-tauri/Cargo.toml');
-    const updated = setCargoVersion(cargo, '0.1.0-beta.1');
-    expect(cargoVersions(updated)).toEqual(['0.1.0-beta.1', '0.1.0-beta.1']);
-    expect(changedLines(cargo, updated)).toBe(2);
+  const cargoFixture = [
+    '[package]',
+    'name = "lut"',
+    'version = "0.1.0"',
+    'edition = "2021"',
+    '',
+    '[workspace]',
+    'members = ["crates/*"]',
+    '',
+    '[workspace.package]',
+    'version = "0.1.0"',
+    '',
+    '[dependencies.serde]',
+    'version = "1"',
+    '',
+  ].join('\n');
+  const packageFixture =
+    '{\n  "name": "lut",\n  "version": "0.1.0",\n  "engines": { "node": ">=22" }\n}\n';
 
-    const json = repoFile('package.json');
-    const written = setPackageVersion(json, '0.1.0-beta.1');
-    expect(JSON.parse(written).version).toBe('0.1.0-beta.1');
-    expect(changedLines(json, written)).toBe(1);
+  it('writes the version into the two Cargo.toml tables and package.json, and nothing else', () => {
+    const updated = setCargoVersion(cargoFixture, '0.2.0-beta.1');
+    expect(cargoVersions(updated)).toEqual(['0.2.0-beta.1', '0.2.0-beta.1']);
+    expect(changedLines(cargoFixture, updated)).toBe(2);
+    expect(updated).toContain('[dependencies.serde]\nversion = "1"');
+
+    const written = setPackageVersion(packageFixture, '0.2.0-beta.1');
+    expect(JSON.parse(written).version).toBe('0.2.0-beta.1');
+    expect(changedLines(packageFixture, written)).toBe(1);
   });
 
   it('checks that the files agree', () => {
+    expect(fileVersions(packageFixture, cargoFixture)).toEqual({ version: '0.1.0' });
+    expect(
+      fileVersions(setPackageVersion(packageFixture, '0.2.0'), cargoFixture).mismatch,
+    ).toMatchObject({
+      'package.json': '0.2.0',
+      'Cargo.toml [package]': '0.1.0',
+    });
+  });
+
+  it("agrees with lut's own files, whatever version they hold", () => {
     const cargo = repoFile('src-tauri/Cargo.toml');
     const json = repoFile('package.json');
-    expect(fileVersions(json, cargo)).toEqual({ version: '0.0.0' });
-    expect(fileVersions(setPackageVersion(json, '0.1.0'), cargo).mismatch).toMatchObject({
-      'package.json': '0.1.0',
-      'Cargo.toml [package]': '0.0.0',
+    const { version, mismatch } = fileVersions(json, cargo);
+    expect(mismatch).toBeUndefined();
+    expect(parseVersion(version ?? '')).not.toBeNull();
+    expect(changedLines(cargo, setCargoVersion(cargo, '999.0.0'))).toBe(2);
+    expect(changedLines(json, setPackageVersion(json, '999.0.0'))).toBe(1);
+  });
+
+  it('names the release each channel serves', () => {
+    expect(
+      channelHeads([
+        'updater',
+        'v0.1.0-beta.1',
+        'v0.1.0',
+        'v0.2.0-beta.3',
+        'v0.2.0-beta.10',
+        'v0.0.9',
+      ]),
+    ).toEqual({
+      stable: 'v0.1.0',
+      beta: 'v0.2.0-beta.10',
     });
+    expect(channelHeads(['v0.1.0-beta.1'])).toEqual({ stable: null, beta: 'v0.1.0-beta.1' });
+    expect(channelHeads(['v0.2.0', 'v0.2.0-beta.4'])).toEqual({ stable: 'v0.2.0', beta: 'v0.2.0' });
+    expect(channelHeads([])).toEqual({ stable: null, beta: null });
   });
 
   it('has Tauri read the version from package.json', () => {
