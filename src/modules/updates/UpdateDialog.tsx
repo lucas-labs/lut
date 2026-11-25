@@ -76,24 +76,28 @@ export function UpdateDialog({ restartBlocker }: Props) {
             <DownloadIcon size="md" />
             {phase === 'failed'
               ? "Couldn't install the update"
-              : phase === 'downloading'
-                ? `Downloading lut ${version}…`
-                : phase === 'installing'
-                  ? `Installing lut ${version}…`
-                  : phase === 'ready'
-                    ? `lut ${version} is ready`
-                    : `lut ${version} is available`}
+              : phase === 'installed'
+                ? `lut ${version} was installed`
+                : phase === 'downloading'
+                  ? `Downloading lut ${version}…`
+                  : phase === 'installing'
+                    ? `Installing lut ${version}…`
+                    : phase === 'ready'
+                      ? `lut ${version} is ready`
+                      : `lut ${version} is available`}
           </DialogTitle>
           <DialogDescription>
             {phase === 'failed'
               ? 'Nothing was installed.'
-              : phase === 'downloading' && progress
-                ? progressLabel(progress)
-                : phase === 'installing'
-                  ? 'lut restarts when it is done.'
-                  : phase === 'ready'
-                    ? 'Restart lut to finish installing.'
-                    : `You have ${update.currentVersion}.`}
+              : phase === 'installed'
+                ? "lut couldn't restart. Restart it to use the new version."
+                : phase === 'downloading' && progress
+                  ? progressLabel(progress)
+                  : phase === 'installing'
+                    ? 'lut restarts when it is done.'
+                    : phase === 'ready'
+                      ? 'Restart lut to finish installing.'
+                      : `You have ${update.currentVersion}.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -107,7 +111,9 @@ export function UpdateDialog({ restartBlocker }: Props) {
           <Progress value={percent ?? undefined} className={percent === null ? 'animate-pulse' : undefined} />
         ) : null}
 
-        {phase === 'failed' && installError ? <div className="text-xs text-destructive">{installError}</div> : null}
+        {(phase === 'failed' || phase === 'installed') && installError ? (
+          <div className="text-xs text-destructive">{installError}</div>
+        ) : null}
 
         {blocker ? (
           <div className="flex items-start gap-1.5 text-xs text-warning">
@@ -134,7 +140,7 @@ export function UpdateDialog({ restartBlocker }: Props) {
               Restart now
             </Button>
           </DialogFooter>
-        ) : phase === 'failed' ? (
+        ) : phase === 'failed' || phase === 'installed' ? (
           <DialogFooter>
             <Button size="lg" onClick={dismiss}>
               Close

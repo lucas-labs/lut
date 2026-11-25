@@ -11,10 +11,11 @@ export type UpdateStatus = 'idle' | 'checking' | 'upToDate' | 'available' | 'err
 
 /**
  * Where the update dialog is (E25-06): closed, offering the release, downloading it, `ready` when the download is
- * done but restarting would lose work, installing, or `failed` with nothing installed.
+ * done but restarting would lose work, installing, `installed` when only the restart failed, or `failed` with
+ * nothing installed.
  */
 export type UpdateDialogPhase =
-  'closed' | 'offer' | 'downloading' | 'ready' | 'installing' | 'failed';
+  'closed' | 'offer' | 'downloading' | 'ready' | 'installing' | 'installed' | 'failed';
 
 /** Bytes downloaded so far; `total` is `null` when the server sends no size. */
 export type DownloadProgress = { downloaded: number; total: number | null };
@@ -80,7 +81,12 @@ export const useUpdateStore = create<State>((set, get) => {
   const installAndRestart = async (update: Update) => {
     set({ phase: 'installing' });
     await update.install();
-    await invoke('updates_restart');
+    try {
+      await invoke('updates_restart');
+    } catch (error) {
+      // The new version is on disk; only the restart failed.
+      set({ phase: 'installed', installError: String(error) });
+    }
   };
 
   return {
@@ -98,10 +104,23 @@ export const useUpdateStore = create<State>((set, get) => {
       const now = Date.now();
       if (!manual && !isCheckDue(readLastCheck(), now)) return;
       writeLastCheck(now);
+      const before = { status: get().status, error: get().error };
       set({ status: 'checking', error: null });
       try {
         const channel = resolveChannel(updateChannel, await getVersion());
+        // Turned off meanwhile: off means no request at all.
+        if (!usePreferencesStore.getState().updatesEnabled) {
+          set(before);
+          return;
+        }
         const metadata = await invoke<UpdateMetadata | null>('updates_check', { channel });
+        if (usePreferencesStore.getState().updateChannel !== updateChannel) {
+          // The channel changed while this check ran: its answer is the other manifest's. Check the new one.
+          if (metadata) void new Update(metadata).close();
+          set(before);
+          void get().checkForUpdates({ manual: true });
+          return;
+        }
         const previous = get().update;
         set(
           metadata
@@ -126,8 +145,9 @@ export const useUpdateStore = create<State>((set, get) => {
     },
 
     install: async (restartBlocker) => {
-      const { update, phase } = get();
-      if (!update || busy(phase)) return;
+      const { update, phase, status } = get();
+      // A check under way would replace the release being downloaded.
+      if (!update || busy(phase) || status === 'checking') return;
       set({ phase: 'downloading', progress: { downloaded: 0, total: null }, installError: null });
       try {
         await update.download((event) => {

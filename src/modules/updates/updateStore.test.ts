@@ -111,6 +111,31 @@ describe('checkForUpdates', () => {
     expect(fake.closed).toEqual([7]);
   });
 
+  it('makes no request when updates are turned off while the check starts', async () => {
+    const version = fake.version;
+    vi.spyOn(await import('@tauri-apps/api/app'), 'getVersion').mockImplementationOnce(async () => {
+      fake.prefs.updatesEnabled = false;
+      return version;
+    });
+    await check(true);
+    expect(fake.invoke).not.toHaveBeenCalled();
+    expect(useUpdateStore.getState().status).toBe('idle');
+  });
+
+  it('drops the answer of a channel changed meanwhile and checks the new one', async () => {
+    fake.invoke.mockImplementationOnce(async () => {
+      fake.prefs.updateChannel = 'beta';
+      return metadata(5, '0.10.1');
+    });
+    fake.invoke.mockResolvedValueOnce(null);
+    await check(true);
+    await vi.waitFor(() => expect(fake.invoke).toHaveBeenCalledTimes(2));
+    expect(fake.invoke).toHaveBeenLastCalledWith('updates_check', { channel: 'beta' });
+    expect(fake.closed).toContain(5);
+    await vi.waitFor(() => expect(useUpdateStore.getState().status).toBe('upToDate'));
+    expect(useUpdateStore.getState().phase).toBe('closed');
+  });
+
   it('reports a failed check', async () => {
     fake.invoke.mockRejectedValueOnce('offline');
     await check();
@@ -170,6 +195,25 @@ describe('the update dialog flow', () => {
     });
     expect(fake.install).not.toHaveBeenCalled();
     expect(fake.invoke).not.toHaveBeenCalledWith('updates_restart');
+  });
+
+  it('does not install while a check is under way', async () => {
+    await offer();
+    useUpdateStore.setState({ status: 'checking' });
+    await useUpdateStore.getState().install(noBlocker);
+    expect(fake.download).not.toHaveBeenCalled();
+    expect(useUpdateStore.getState().phase).toBe('offer');
+  });
+
+  it('says the update is installed when only the restart fails', async () => {
+    await offer();
+    fake.invoke.mockRejectedValueOnce('restart failed');
+    await useUpdateStore.getState().install(noBlocker);
+    expect(fake.install).toHaveBeenCalledTimes(1);
+    expect(useUpdateStore.getState()).toMatchObject({
+      phase: 'installed',
+      installError: 'restart failed',
+    });
   });
 
   it('does not check while an update is downloading', async () => {

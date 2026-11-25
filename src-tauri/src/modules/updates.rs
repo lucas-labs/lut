@@ -2,11 +2,15 @@
 //! the endpoint, so the channel's manifest is chosen here; the found update goes into the webview's resource table as
 //! the plugin's `check` does, so the plugin's JS `Update` downloads and installs it.
 
+use std::time::Duration;
+
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager, Runtime, Url, Webview};
 use tauri_plugin_updater::UpdaterExt;
 
 const MANIFESTS: &str = "https://github.com/lucas-labs/lut/releases/download/updater";
+/// A server that accepts the connection and then hangs must not keep the check pending; the download is not limited.
+const CHECK_TIMEOUT: Duration = Duration::from_secs(30);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -48,6 +52,7 @@ pub async fn updates_check<R: Runtime>(
     let updater = webview
         .updater_builder()
         .endpoints(vec![manifest_url(channel)])
+        .map(|builder| builder.timeout(CHECK_TIMEOUT))
         .and_then(|builder| builder.build())
         .map_err(|error| error.to_string())?;
     let Some(update) = updater.check().await.map_err(|error| error.to_string())? else {
@@ -71,7 +76,9 @@ pub async fn updates_check<R: Runtime>(
 /// Starts lut again after an update is installed on macOS and Linux; on Windows the installer restarts it itself.
 #[tauri::command]
 pub fn updates_restart<R: Runtime>(app: AppHandle<R>) {
-    app.restart();
+    // `request_restart` goes through `RunEvent::Exit`, which shuts down the LSP servers and the control server; a
+    // command runs on the main thread, where `restart()` would skip that.
+    app.request_restart();
 }
 
 #[cfg(test)]

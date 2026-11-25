@@ -89,6 +89,15 @@ describe('UpdateDialog', () => {
     expect(fake.dismiss).toHaveBeenCalled();
   });
 
+  it('says the update is installed when only the restart failed', async () => {
+    await show({ update, phase: 'installed', installError: 'restart failed' });
+    expect(text()).toContain('lut 0.10.1 was installed');
+    expect(text()).toContain("lut couldn't restart.");
+    expect(text()).not.toContain('Nothing was installed.');
+    act(() => button('Close')?.click());
+    expect(fake.dismiss).toHaveBeenCalled();
+  });
+
   it('reports a failed install', async () => {
     await show({ update, phase: 'failed', installError: 'signature verification failed' });
     expect(text()).toContain("Couldn't install the update");
