@@ -155,9 +155,10 @@ flowchart TD
 ```
 
 - **Off means off.** With updates disabled lut makes no update request at all (E25-05).
-- **Channel and throttle.** The channel picks the manifest URL at runtime; the time of the last check is stored under
-  a lut key (E25-05). The plugin and its configuration (endpoint, public key, the `updater:default` capability) are
-  E25-04.
+- **Channel and throttle.** The channel picks the manifest URL at runtime, in Rust (`modules/updates.rs`): the
+  plugin's JS check cannot change its endpoint. Unset, the channel follows the installed version. lut checks 10 s
+  after start and then once every 24 h, keeping the time of the last check in `lut.updates.lastCheck`; a dev build
+  never checks (E25-05). The plugin, its public key and the `updater:default` capability are E25-04.
 - **The dialog and the settings controls** (channel, enable, Check now) are E25-06, following lut's existing dialog
   and settings patterns.
 - **Proof.** E25-07 updates an old build to a test release, and shows that a bundle with no signature or with another

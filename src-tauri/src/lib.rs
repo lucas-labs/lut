@@ -245,7 +245,7 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_opener::init())
-        // Endpoint and public key: `plugins.updater` in tauri.conf.json (lut's own, E25-04).
+        // Public key: `plugins.updater` in tauri.conf.json; the channel's endpoint: modules/updates.rs.
         .plugin(tauri_plugin_updater::Builder::new().build())
         // One async scheme multiplexes every terminal's output; see pty/hub.rs.
         .register_asynchronous_uri_scheme_protocol("lut-pty", pty::stream_protocol)
@@ -317,6 +317,7 @@ pub fn run() {
         .manage(LaunchDir(Mutex::new(cli_dir)))
         .manage(LaunchFiles(Mutex::new(launch.files)))
         .invoke_handler(tauri::generate_handler![
+            modules::updates::updates_check,
             modules::profiles::store::profiles_take_load_error,
             modules::spaces::spaces_store_open,
             modules::spaces::spaces_store_move_aside,

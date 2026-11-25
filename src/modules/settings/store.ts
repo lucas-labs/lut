@@ -29,6 +29,9 @@ export type SidebarMode = 'full' | 'compact';
 
 export type BackgroundKind = 'none' | 'image';
 
+/** The update channel (E25-05); `null` follows the installed version: a `-beta.N` lut is on beta. */
+export type UpdateChannel = 'stable' | 'beta';
+
 export type TerminalCursorStyle = 'bar' | 'block' | 'underline';
 
 /** How file icons are coloured (E10-18): the theme's colours, the icon set's own, or the muted text colour. */
@@ -141,6 +144,9 @@ export type Preferences = {
   tabOrientation: TabOrientation;
   /** Full sidebar, or the compact rail (E27-01). */
   sidebarMode: SidebarMode;
+  /** Off means no update request at all, not even Check now (E25-05). */
+  updatesEnabled: boolean;
+  updateChannel: UpdateChannel | null;
   editorWordWrap: boolean;
   editorWordWrapColumn: number;
   showHidden: boolean;
@@ -236,6 +242,8 @@ const KEY_RESTORE_WINDOW = 'restoreWindowState';
 const KEY_VIM_MODE = 'vimMode';
 const KEY_TAB_ORIENTATION = 'tabOrientation';
 const KEY_SIDEBAR_MODE = 'sidebarMode';
+const KEY_UPDATES_ENABLED = 'updatesEnabled';
+const KEY_UPDATE_CHANNEL = 'updateChannel';
 const KEY_EDITOR_WORD_WRAP = 'editorWordWrap';
 const KEY_EDITOR_WORD_WRAP_COLUMN = 'editorWordWrapColumn';
 const KEY_SHOW_HIDDEN = 'showHidden';
@@ -321,6 +329,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
   vimMode: false,
   tabOrientation: 'horizontal',
   sidebarMode: 'full',
+  updatesEnabled: true,
+  updateChannel: null,
   editorWordWrap: false,
   editorWordWrapColumn: EDITOR_WORD_WRAP_COLUMN_DEFAULT,
   showHidden: false,
@@ -402,6 +412,8 @@ export async function loadPreferences(): Promise<Preferences> {
     vimMode: get<boolean>(KEY_VIM_MODE) ?? DEFAULT_PREFERENCES.vimMode,
     tabOrientation: get<string>(KEY_TAB_ORIENTATION) === 'vertical' ? 'vertical' : 'horizontal',
     sidebarMode: coerceSidebarMode(get<unknown>(KEY_SIDEBAR_MODE)),
+    updatesEnabled: coerceUpdatesEnabled(get<unknown>(KEY_UPDATES_ENABLED)),
+    updateChannel: coerceUpdateChannel(get<unknown>(KEY_UPDATE_CHANNEL)),
     editorWordWrap: get<boolean>(KEY_EDITOR_WORD_WRAP) ?? DEFAULT_PREFERENCES.editorWordWrap,
     editorWordWrapColumn: clampEditorWordWrapColumn(
       get<number>(KEY_EDITOR_WORD_WRAP_COLUMN) ?? DEFAULT_PREFERENCES.editorWordWrapColumn,
@@ -561,6 +573,22 @@ export function coerceSidebarMode(value: unknown): SidebarMode {
 
 export async function setSidebarMode(value: unknown): Promise<void> {
   await writePref(KEY_SIDEBAR_MODE, coerceSidebarMode(value));
+}
+
+export function coerceUpdatesEnabled(value: unknown): boolean {
+  return typeof value === 'boolean' ? value : DEFAULT_PREFERENCES.updatesEnabled;
+}
+
+export async function setUpdatesEnabled(value: unknown): Promise<void> {
+  await writePref(KEY_UPDATES_ENABLED, coerceUpdatesEnabled(value));
+}
+
+export function coerceUpdateChannel(value: unknown): UpdateChannel | null {
+  return value === 'stable' || value === 'beta' ? value : DEFAULT_PREFERENCES.updateChannel;
+}
+
+export async function setUpdateChannel(value: unknown): Promise<void> {
+  await writePref(KEY_UPDATE_CHANNEL, coerceUpdateChannel(value));
 }
 
 export async function setEditorWordWrap(value: boolean): Promise<void> {
@@ -831,6 +859,8 @@ export async function onPreferencesChange(
     [KEY_VIM_MODE]: 'vimMode',
     [KEY_TAB_ORIENTATION]: 'tabOrientation',
     [KEY_SIDEBAR_MODE]: 'sidebarMode',
+    [KEY_UPDATES_ENABLED]: 'updatesEnabled',
+    [KEY_UPDATE_CHANNEL]: 'updateChannel',
     [KEY_EDITOR_WORD_WRAP]: 'editorWordWrap',
     [KEY_EDITOR_WORD_WRAP_COLUMN]: 'editorWordWrapColumn',
     [KEY_SHOW_HIDDEN]: 'showHidden',

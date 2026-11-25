@@ -17,6 +17,7 @@ pub mod pty;
 pub mod runtime;
 pub mod shell;
 pub mod spaces;
+pub mod updates;
 pub mod vibrancy;
 pub mod window_icon;
 pub mod window_presentation;

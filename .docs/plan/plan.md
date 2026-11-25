@@ -6971,8 +6971,8 @@ size: S
 **Acceptance criteria:**
 
 - [ ] `tauri-plugin-updater` crate and `@tauri-apps/plugin-updater` re-added; `updater:default` capability restored.
-- [ ] `plugins.updater` in `src-tauri/tauri.conf.json` holds lut's public key and the `stable.json` endpoint only;
-      `rg -i "crynta|terax-ai"` finds no updater URL.
+- [ ] `plugins.updater` in `src-tauri/tauri.conf.json` holds lut's public key only (the channel's endpoint is chosen
+      in Rust, E25-05); `rg -i "crynta|terax-ai"` finds no updater URL.
 - [ ] `createUpdaterArtifacts` stays out of `tauri.conf.json`, so `pnpm tauri build` works without the private key;
       the release workflow turns it on (E25-02).
 - [ ] One TLS stack: the plugin's default `rustls-tls` (rustls with ring, no aws-lc or native-tls); the new crates'
@@ -7001,16 +7001,20 @@ size: S
 
 **Acceptance criteria:**
 
-- [ ] Settings keys for channel and enabled; disabled means no update network request at all.
-- [ ] Channel selects the manifest endpoint; throttle state stored under a `lut` key.
-- [ ] Unit tests for channel selection, disabled mode and throttling.
+- [ ] Settings `updatesEnabled` (default on) and `updateChannel` (`stable`, `beta`, or unset: the installed
+      version's, so a `-beta.N` lut is on beta); off means no update request at all, not even a manual check.
+- [ ] `updates_check(channel)` (Rust, `modules/updates.rs`) reads that channel's manifest on the `updater` release and
+      returns the plugin's `UpdateMetadata`, the `Update` kept in the webview's resource table so the plugin's JS
+      `Update` downloads and installs it; a debug build never checks.
+- [ ] The main window checks 10 s after start, then asks every hour whether 24 h passed since the last check
+      (`localStorage` `lut.updates.lastCheck`); a channel change makes the next check run; a manual check skips the
+      interval. `useUpdateStore` holds the status and the found update for E25-06.
+- [ ] Unit tests for channel selection, disabled mode, throttling and the channel URLs.
 
-**Verification:** `pnpm test`; network log shows no request when disabled.
+**Verification:** `pnpm test src/modules/updates`; `cargo test -p lut --lib updates`.
 
-**Notes:** The plugin's JS `check()` cannot change the endpoint (it takes headers, timeout, proxy and target only), so
-the channel's manifest URL is chosen in Rust with `updater_builder().endpoints(...)`; the resulting `Update` goes into
-the webview's resource table as the plugin's own `check` does, so the JS `Update` still downloads and installs it. A
-dev build (`dev.lucode.lut.dev`) never checks (`releasing.md`).
+**Notes:** The plugin's JS `check()` cannot change the endpoint (it takes headers, timeout, proxy and target only),
+which is why the check is a lut command. A dev build (`dev.lucode.lut.dev`) never checks (`releasing.md`).
 
 ### E25-06 — Build the update dialog and settings update controls
 
