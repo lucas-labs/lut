@@ -27,19 +27,19 @@ updates and never shares anything with an installed lut.
 
 ## Versions and tags
 
-lut follows semver. The version lives in:
+lut follows semver, with its own versions: the repository says `0.0.0` until the first release (the version Terax
+left, 0.9.0, was dropped in E25-02). The version lives in:
 
-| File                        | Field                                  |
-| --------------------------- | -------------------------------------- |
-| `package.json`              | `version`                              |
-| `src-tauri/Cargo.toml`      | `package.version`, `workspace.package` |
-| `src-tauri/Cargo.lock`      | the workspace crates' entries          |
-| `src-tauri/tauri.conf.json` | `version` (becomes `../package.json`)  |
+| File                   | Field                                  |
+| ---------------------- | -------------------------------------- |
+| `package.json`         | `version`                              |
+| `src-tauri/Cargo.toml` | `package.version`, `workspace.package` |
+| `src-tauri/Cargo.lock` | the workspace crates' entries          |
 
-`src-tauri/tauri.windows.conf.json` sets `wix.version` only for the MSI, which lut stops building (see
-[Artifacts](#artifacts)); MSI versions cannot carry a pre-release tag, so it goes with it.
+`src-tauri/tauri.conf.json` reads it from `../package.json`. Windows builds only the NSIS installer
+(`tauri.windows.conf.json`), so there is no MSI version to keep: MSI versions cannot carry a pre-release tag.
 
-A release starts with `pnpm release <version>` (E25-02), on an up-to-date, clean `master`:
+A release starts with `pnpm release <version>` (`scripts/release.mjs`, E25-02), on an up-to-date, clean `master`:
 
 1. checks the version is `X.Y.Z` or `X.Y.Z-beta.N` and newer than the current one; any other form (`-rc.1`,
    `-alpha`) is refused;
@@ -49,8 +49,9 @@ A release starts with `pnpm release <version>` (E25-02), on an up-to-date, clean
 Pushing the commit and the tag is left to the person releasing (`git push origin master vX.Y.Z`): nothing leaves the
 machine until they decide. A `vX.Y.Z-beta.N` tag is a beta and a `vX.Y.Z` tag is stable.
 
-The release workflow's first job applies the same rule: it fails the run for a tag of any other form, or when the tag
-and the versions in the files disagree.
+The release workflow's first job applies the same rule (`node scripts/release.mjs --verify <tag>`): it fails the run
+for a tag of any other form, when the tag and the versions in the files disagree, or when the tag is not on
+`master`.
 
 ## How a release runs
 
@@ -103,7 +104,21 @@ sequenceDiagram
 - **AppImage and Wayland.** Terax removed the bundled `libwayland-*` libraries from the AppImage and re-signed it: the
   copies from the build runner were older than the Mesa of recent distributions and broke EGL. lut keeps that step.
 
-The workflow, its matrix and the manifest job are E25-02; the third-party notices it bundles are E25-03.
+The workflow is `.github/workflows/release.yml` (E25-02):
+
+- **check** verifies the tag and says whether it is a beta.
+- **build**, one job per target, runs `pnpm tauri build --target … --bundles …` with `createUpdaterArtifacts` turned
+  on through `--config` (it is not in `tauri.conf.json`, so a local build needs no key) and the signing key from the
+  secrets; it installs `cargo-about` for the third-party notices (E25-03). The jobs keep their bundles and `.sig`
+  files as workflow artifacts; the macOS ones rename `lut.app.tar.gz` after their architecture.
+- **manifest** runs `scripts/build-manifest.mjs`, which writes `latest.json` from the `.sig` files with the platform
+  keys the updater looks for (`windows-x86_64[-nsis]`, `darwin-{aarch64,x86_64}[-app]`,
+  `linux-{x86_64,aarch64}[-appimage|-deb|-rpm]`, the plain Linux key being the AppImage) and fails when one is
+  missing, then creates the draft release (a pre-release for a beta) with every file and generated notes.
+
+A manual run (Actions > Release > Run workflow) does all of it except the release: it builds every target, the
+macOS ones included, and keeps the bundles and `latest.json` as workflow artifacts. Run it before a first tag, or
+after changing the workflow.
 
 ## Artifacts
 
@@ -123,8 +138,12 @@ An installed lut reads one fixed URL per channel, both assets of a permanent rel
 - `https://github.com/lucas-labs/lut/releases/download/updater/stable.json`
 - `https://github.com/lucas-labs/lut/releases/download/updater/beta.json`
 
-Each is a copy of a release's `latest.json`. Publishing a release replaces a manifest only when the release is newer
-than the version that manifest holds, so publishing an older draft late never moves a channel back:
+Each is a copy of a release's `latest.json`, with the release's notes as they were when it was published. Publishing
+a release runs `.github/workflows/update-manifests.yml` (it can also be run by hand). It creates the `updater` release
+the first time, and each run looks at every published release, not only the one that started it: `stable.json` gets
+the newest stable release and `beta.json` the newest of all, each only when that release is newer than the version the
+manifest holds. A canceled or failed run is made good by the next one, and publishing an older draft late never moves
+a channel back. A manifest that exists but cannot be downloaded stops the run without uploading anything:
 
 | Published release     | `stable.json`     | `beta.json`       |
 | --------------------- | ----------------- | ----------------- |
