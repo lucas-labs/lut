@@ -133,7 +133,8 @@ installing. `latest.json` points at those files, never at the `.dmg`.
 
 ## The update manifests
 
-An installed lut reads one fixed URL per channel, both assets of a permanent release tagged `updater`:
+An installed lut reads one fixed URL per channel, both assets of a permanent release tagged `updater`, a pre-release
+so that GitHub never shows it as the repository's latest release:
 
 - `https://github.com/lucas-labs/lut/releases/download/updater/stable.json`
 - `https://github.com/lucas-labs/lut/releases/download/updater/beta.json`
