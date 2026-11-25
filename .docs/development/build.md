@@ -99,6 +99,10 @@ else), so the checks `master` requires always report (E04-09). Its jobs:
   `powershellPrompt.test.ts` with PowerShell, `bashPromptHooks.test.ts` with Git Bash).
 - **backend** (Windows): builds the CLI sidecar, then runs `cargo fmt --check`, `cargo clippy -D warnings` and
   `cargo test`.
+- **backend (linux)** (Ubuntu 22.04): the same checks on Linux, then the bash, zsh and fish integration tests in
+  `src-tauri/src/modules/pty/scripts/` (`*.test.*`), in real shells (E24-01).
+
+macOS is not built in CI: the release workflow builds and bundles all three systems before publishing (E25-02).
 
 The Rust tests in CI are the same command as in the table above. The `lut` lib tests take about a minute
 (`cargo test --manifest-path src-tauri/Cargo.toml -p lut --lib`).
