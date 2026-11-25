@@ -7068,12 +7068,13 @@ on the same machine.
 
 **Acceptance criteria:**
 
-- [ ] Dev builds run under their own identifier (`dev.lucode.lut.dev`) and show it in the window title (for example
-      "lut (dev)"); `pnpm tauri dev` picks it up with no extra flag to remember.
+- [ ] Debug builds run under their own identifier (`dev.lucode.lut.dev`) and their window title says "lut (dev)";
+      `pnpm tauri dev` picks it up with no extra flag to remember.
 - [ ] lut's runtime folder under the user cache follows the identifier, so a dev `lut-cli` talks to the dev lut and an
-      installed `lut-cli` to the installed one.
-- [ ] Release builds keep `dev.lucode.lut` and their current folders.
-- [ ] Rust tests for the runtime folder per identifier.
+      installed `lut-cli` to the installed one; the read policy denies both identities' runtime folders.
+- [ ] Release builds keep the identifier of their configuration (`dev.lucode.lut`, or the bench's own) and their
+      current folders.
+- [ ] Rust tests for the identifier and runtime folder per build profile; a test for the dev window title.
 
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml`; manual: run a dev build next to an installed
 build, change a setting in each and check the other keeps its own, and run `lut` in a pane of each.

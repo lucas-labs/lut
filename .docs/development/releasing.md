@@ -18,9 +18,10 @@ updates and never shares anything with an installed lut.
   setting of the installed app (E25-05), not a second app: switching channel keeps the same install and data.
 - **What the identifier separates.** The app's config folder (settings, profiles, spaces), the WebView2/WebKit data
   (its local storage) and lut's runtime folder under the user cache (the control descriptor that `lut-cli` talks to,
-  the shell integration). Today the dev build uses the product identifier and the runtime folder is a fixed name, so a
-  dev build and an installed lut read the same settings and overwrite each other's control descriptor. The dev
-  identity is added before the first release (E25-10).
+  the shell integration). A debug build is the dev identity: `pnpm tauri dev` builds the app and `lut-cli` in debug,
+  the app takes `dev.lucode.lut.dev` before it starts and both name their runtime folder after it, so a dev build and
+  an installed lut share none of these (E25-10). The rule lives in `lut-control-protocol` (`IDENTIFIER`); a dev
+  window's title says "lut (dev)", and neither lut reads the other's runtime folder.
 - **Agent hooks** are shared on purpose: a hook runs `$LUT_CLI` from the pane that started the agent, so the same
   hook reaches whichever lut owns that pane.
 

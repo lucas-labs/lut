@@ -10,11 +10,11 @@
 //! gives every run its own identifier and `HOME`.
 
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::Value;
 use tauri::{AppHandle, Manager, WebviewWindow};
 
-/// Identifier of the shipped application; a bench build must not run under it.
-const PRODUCT_IDENTIFIER: &str = "dev.lucode.lut";
+// The identifier of the shipped application; a bench build must not run under it.
+use lut_control_protocol::PRODUCT_IDENTIFIER;
 
 /// Called from `setup` and by every bench command. A bench build must not run under the
 /// product identifier (it would share the installed app's profile), and only starts when the
@@ -170,6 +170,7 @@ mod platform {
     use objc2::rc::Retained;
     use objc2::runtime::{AnyClass, AnyObject};
     use objc2_foundation::{NSPoint, NSRange, NSRect, NSString};
+    use serde_json::json;
     use std::time::{Duration, Instant};
 
     /// Sends a message with an optional `sender` argument (`orderOut:` and friends).
@@ -726,6 +727,7 @@ mod platform {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
     #[test]
     fn product_identifier_is_refused() {

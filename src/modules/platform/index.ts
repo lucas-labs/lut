@@ -1,3 +1,4 @@
+export { appName } from './appIdentity';
 export { DevTrafficLights } from './DevTrafficLights';
 export { consumeLaunchFiles, getLaunchArgDir, getLaunchDir, initLaunchDir } from './launchDir';
 export {

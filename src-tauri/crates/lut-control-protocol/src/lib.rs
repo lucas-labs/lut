@@ -3,15 +3,39 @@ use serde_json::Value;
 
 pub mod hook;
 
-/// lut's runtime directory under the user cache dir: the control descriptor, the per-process CLI
-/// launcher and the shell-integration scripts live there. It is the bundle identifier, so it
-/// never collides with the install dir (`%LOCALAPPDATA%\\lut` on Windows, where the cache dir is
-/// `%LOCALAPPDATA%`) nor with Terax's `<cache>/terax`.
-pub const RUNTIME_DIR_NAME: &str = "dev.lucode.lut";
+/// The identifier of a released lut (`tauri.conf.json`).
+pub const PRODUCT_IDENTIFIER: &str = "dev.lucode.lut";
 
-/// `<cache>/dev.lucode.lut`, shared by the app and the CLI so both resolve the same descriptor.
+/// The identifier of a development build, so it never shares data with an installed lut (E25-10).
+pub const DEV_IDENTIFIER: &str = "dev.lucode.lut.dev";
+
+/// The identifier for a build profile: a debug build (`pnpm tauri dev` builds the app and the CLI
+/// in debug) is a dev build; a release build is the product.
+pub const fn identifier_for(debug: bool) -> &'static str {
+    if debug {
+        DEV_IDENTIFIER
+    } else {
+        PRODUCT_IDENTIFIER
+    }
+}
+
+/// This build's identifier. The app and the CLI are built with the same profile, so they agree.
+pub const IDENTIFIER: &str = identifier_for(cfg!(debug_assertions));
+
+/// lut's runtime directory under the user cache dir: the control descriptor, the per-process CLI
+/// launcher and the shell-integration scripts live there. It is the identifier, so it never
+/// collides with the install dir (`%LOCALAPPDATA%\\lut` on Windows, where the cache dir is
+/// `%LOCALAPPDATA%`), with Terax's `<cache>/terax`, nor between a dev build and an installed lut.
+pub const RUNTIME_DIR_NAME: &str = IDENTIFIER;
+
+/// `<cache>/<identifier>`, shared by the app and the CLI so both resolve the same descriptor.
 pub fn runtime_dir(cache: &std::path::Path) -> std::path::PathBuf {
     cache.join(RUNTIME_DIR_NAME)
+}
+
+/// The runtime directories of both identities: a lut never reads the other one's (read policy).
+pub fn runtime_dirs(cache: &std::path::Path) -> [std::path::PathBuf; 2] {
+    [cache.join(PRODUCT_IDENTIFIER), cache.join(DEV_IDENTIFIER)]
 }
 
 /// Terax's runtime directory under the cache dir. lut never writes there; the read policy denies it.
@@ -148,6 +172,16 @@ fn default_focus() -> bool {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn a_debug_build_is_the_dev_identity_and_a_release_build_the_product() {
+        assert_eq!(identifier_for(true), "dev.lucode.lut.dev");
+        assert_eq!(identifier_for(false), "dev.lucode.lut");
+        assert_eq!(RUNTIME_DIR_NAME, IDENTIFIER);
+        let cache = std::path::Path::new("cache");
+        assert_eq!(runtime_dir(cache), cache.join(IDENTIFIER));
+        assert!(runtime_dirs(cache).contains(&runtime_dir(cache)));
+    }
 
     #[test]
     fn request_round_trips_without_caller_context() {
