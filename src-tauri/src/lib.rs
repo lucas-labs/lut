@@ -186,6 +186,17 @@ async fn open_settings_window(app: tauri::AppHandle, tab: Option<String>) -> Res
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
+/// The app context, with the dev identity on a debug build (E25-10): its own identifier, so a dev
+/// build's config, webview data and runtime folder never touch an installed lut's. A release build
+/// keeps the identifier of its configuration (the product's, or the bench's own).
+fn context() -> tauri::Context<tauri::Wry> {
+    let mut context = tauri::generate_context!();
+    if cfg!(debug_assertions) {
+        context.config_mut().identifier = lut_control_protocol::DEV_IDENTIFIER.to_string();
+    }
+    context
+}
+
 pub fn run() {
     #[cfg(windows)]
     {
@@ -409,7 +420,7 @@ pub fn run() {
             #[cfg(feature = "bench")]
             modules::bench::bench_exit,
         ])
-        .build(tauri::generate_context!())
+        .build(context())
         .expect("error while building tauri application")
         .run(|app, event| {
             match event {

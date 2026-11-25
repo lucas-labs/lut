@@ -49,11 +49,13 @@ function title(): string {
 beforeEach(() => {
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   setWindowTitle.mockClear();
+  vi.stubEnv('DEV', false);
   root = createRoot(document.createElement('div'));
 });
 
 afterEach(() => {
   act(() => root.unmount());
+  vi.unstubAllEnvs();
 });
 
 it('names a terminal tab by its folder, then lut', () => {
@@ -89,4 +91,12 @@ it('follows the active tab', () => {
   render(editor);
   expect(title()).toBe('main.rs - lut');
   expect(setWindowTitle).toHaveBeenCalledTimes(2);
+});
+
+it('says lut (dev) in a development build, which runs apart from an installed lut (E25-10)', () => {
+  vi.stubEnv('DEV', true);
+  render(editor);
+  expect(title()).toBe('main.rs - lut (dev)');
+  render(undefined);
+  expect(title()).toBe('lut (dev)');
 });

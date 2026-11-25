@@ -13,8 +13,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tauri::{AppHandle, Manager, WebviewWindow};
 
-/// Identifier of the shipped application; a bench build must not run under it.
-const PRODUCT_IDENTIFIER: &str = "dev.lucode.lut";
+// The identifier of the shipped application; a bench build must not run under it.
+use lut_control_protocol::PRODUCT_IDENTIFIER;
 
 /// Called from `setup` and by every bench command. A bench build must not run under the
 /// product identifier (it would share the installed app's profile), and only starts when the

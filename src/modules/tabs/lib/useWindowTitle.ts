@@ -2,7 +2,8 @@ import { labelFor, type Tab } from '@/modules/navigation';
 import { setWindowTitle } from '@/modules/platform';
 import { useEffect } from 'react';
 
-const APP_NAME = 'lut';
+/** `lut (dev)` in a development build, which runs apart from an installed lut (E25-10), so the two tell apart. */
+const appName = () => (import.meta.env.DEV ? 'lut (dev)' : 'lut');
 
 /**
  * Drives the OS window title (taskbar, Alt+Tab) from the focused tab: `<tab> - lut`, with the tab named as the tab
@@ -15,7 +16,8 @@ export function useWindowTitle(
   const label = activeTab ? labelFor(activeTab, allowsShellTitle) : '';
 
   useEffect(() => {
-    const title = label ? `${label} - ${APP_NAME}` : APP_NAME;
+    const name = appName();
+    const title = label ? `${label} - ${name}` : name;
     document.title = title;
     void setWindowTitle(title).catch(() => {});
   }, [label]);

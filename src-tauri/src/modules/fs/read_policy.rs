@@ -12,8 +12,11 @@ struct PathPolicy {
 
 pub(super) fn readable(path: &Path) -> Result<(), String> {
     if let Some(cache) = dirs::cache_dir() {
-        // lut's own control token and launcher, and Terax's: neither is readable from lut.
-        deny_runtime_directory(path, &lut_control_protocol::runtime_dir(&cache))?;
+        // lut's control token and launcher, of either identity (dev and installed), and Terax's:
+        // none is readable from lut.
+        for directory in lut_control_protocol::runtime_dirs(&cache) {
+            deny_runtime_directory(path, &directory)?;
+        }
         deny_runtime_directory(
             path,
             &cache.join(lut_control_protocol::TERAX_RUNTIME_DIR_NAME),
@@ -100,10 +103,11 @@ mod tests {
         let Some(cache) = dirs::cache_dir() else {
             return;
         };
-        let lut = lut_control_protocol::runtime_dir(&cache);
+        // Both identities (E25-10): a dev build never reads an installed lut's token, nor the reverse.
+        let installed = cache.join("dev.lucode.lut");
+        let dev = cache.join("dev.lucode.lut.dev");
         let terax = cache.join(lut_control_protocol::TERAX_RUNTIME_DIR_NAME);
-        assert_eq!(lut.file_name().unwrap(), "dev.lucode.lut");
-        for dir in [&lut, &terax] {
+        for dir in [&installed, &dev, &terax] {
             assert!(
                 readable(&dir.join("control.json")).is_err(),
                 "{}",
