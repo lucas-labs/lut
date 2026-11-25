@@ -41,8 +41,9 @@ jobs:
           heads=$(node scripts/release.mjs --heads $tags)
           echo "$heads" >> "$GITHUB_STEP_SUMMARY"
 
+          # A pre-release, so GitHub never shows it as the repository's latest release.
           if ! gh release view updater >/dev/null 2>&1; then
-            gh release create updater --target master --latest=false --title "Update manifests" \
+            gh release create updater --target master --prerelease --latest=false --title "Update manifests" \
               --notes "The update manifests installed lut reads. Replaced when a release is published; see .docs/development/releasing.md."
           fi
           # A failure here stops the run: only an asset missing from this list counts as no manifest yet.
