@@ -72,10 +72,12 @@ sequenceDiagram
         W->>W: macOS arm64 and x64: build dmg + app.tar.gz
         W->>W: Linux x64 and arm64: build AppImage, deb, rpm
     end
-    W->>S: Windows installer
-    S-->>M: approval request
-    M-->>S: approve
-    S-->>W: Authenticode-signed installer
+    opt Windows signing, from E25-11
+        W->>S: Windows installer
+        S-->>M: approval request
+        M-->>S: approve
+        S-->>W: Authenticode-signed installer
+    end
     W->>W: sign every updater bundle (minisign)
     W->>W: build latest.json once, from every target's signature
     W->>G: upload installers, signatures, latest.json
@@ -89,6 +91,9 @@ sequenceDiagram
   `scripts/build-cli.mjs`), so an x64 macOS bundle never carries an arm64 sidecar.
 - **Signing order.** Authenticode changes the installer's bytes, so the updater signature is made after it, over the
   signed file. The signing keys are CI secrets; the public updater key is in `tauri.conf.json`.
+- **Windows signing comes later.** SignPath Foundation reviews a project before signing for it, which can take weeks,
+  so the first releases ship the Windows installer without Authenticode (E25-11 adds it). The updater signature is
+  there from the first release, so an installed lut updates to the first signed release like to any other.
 - **One manifest job.** Every target job uploads its bundles and signatures as workflow artifacts; a single job after
   all of them writes `latest.json`. Terax let each job merge itself into the release's `latest.json` and then had to
   patch it in a final job, because parallel uploads overwrote each other.
@@ -101,11 +106,11 @@ The workflow, its matrix and the manifest job are E25-02; the third-party notice
 
 ## Artifacts
 
-| OS      | Download                 | Used by the updater       | Notes                                                                                                                                            |
-| ------- | ------------------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Windows | NSIS installer (`.exe`)  | the same `.exe`           | per-user install; Authenticode-signed through SignPath. No MSI: it needs an administrator and no betas.                                          |
-| macOS   | `.dmg` (arm64, x64)      | `lut.app.tar.gz`          | the `.dmg` is only for the first install. Not signed with an Apple certificate yet: the first launch needs right-click > Open (see `future.md`). |
-| Linux   | AppImage, `.deb`, `.rpm` | the same file, per format | the updater replaces an AppImage in place; a `.deb` or `.rpm` update asks for the password to install.                                           |
+| OS      | Download                 | Used by the updater       | Notes                                                                                                                                                                                           |
+| ------- | ------------------------ | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Windows | NSIS installer (`.exe`)  | the same `.exe`           | per-user install. Authenticode-signed through SignPath from E25-11; until then SmartScreen warns on the first install (More info > Run anyway). No MSI: it needs an administrator and no betas. |
+| macOS   | `.dmg` (arm64, x64)      | `lut.app.tar.gz`          | the `.dmg` is only for the first install. Not signed with an Apple certificate yet: the first launch needs right-click > Open (see `future.md`).                                                |
+| Linux   | AppImage, `.deb`, `.rpm` | the same file, per format | the updater replaces an AppImage in place; a `.deb` or `.rpm` update asks for the password to install.                                                                                          |
 
 Every file the updater uses has a `.sig` next to it: the updater signature that an installed lut checks before
 installing. `latest.json` points at those files, never at the `.dmg`.
@@ -161,11 +166,11 @@ flowchart TD
 
 The workflow reads these repository secrets; their values never appear in the repository or in logs.
 
-| Secret                               | Used for                                     |
-| ------------------------------------ | -------------------------------------------- |
-| `TAURI_SIGNING_PRIVATE_KEY`          | signing the updater bundles                  |
-| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | its password                                 |
-| `SIGNPATH_API_TOKEN`                 | submitting the Windows installer for signing |
+| Secret                               | Used for                                                   |
+| ------------------------------------ | ---------------------------------------------------------- |
+| `TAURI_SIGNING_PRIVATE_KEY`          | signing the updater bundles                                |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | its password                                               |
+| `SIGNPATH_API_TOKEN`                 | submitting the Windows installer for signing (from E25-11) |
 
 ## Issues
 
@@ -173,6 +178,7 @@ The workflow reads these repository secrets; their values never appear in the re
 | -------------------------------------------- | ------ |
 | These decisions and this document            | E25-01 |
 | Dev identity, isolated from an installed lut | E25-10 |
+| Windows installer signed through SignPath    | E25-11 |
 | `pnpm release`, workflow, manifests          | E25-02 |
 | Third-party notices in every bundle          | E25-03 |
 | Updater plugin wired to lut only             | E25-04 |

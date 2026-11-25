@@ -6887,7 +6887,8 @@ and write it down as the design of the rest of E25.
       recovery detail.
 - [ ] Hosting and endpoints chosen (stable and beta): GitHub Releases, with both manifests on a permanent `updater`
       release.
-- [ ] Per-OS code signing decided: Windows through SignPath, macOS postponed (`future.md`).
+- [ ] Per-OS code signing decided: Windows through SignPath (E25-11, once SignPath approves), macOS postponed
+      (`future.md`).
 - [ ] New minisign key generated and stored outside the repo (CI secret).
 
 **Verification:** a test manifest signed with the new key validates against the public key.
@@ -6915,7 +6916,8 @@ the release updates the channel manifests, as `.docs/development/releasing.md` d
 - [ ] Builds NSIS (Windows x64; no MSI), app/dmg (macOS arm64 and x64) and AppImage/deb/rpm (Linux x64 and arm64)
       with `createUpdaterArtifacts: true` and `TAURI_SIGNING_PRIVATE_KEY` from secrets; binary `lut`, sidecar
       `lut-cli` built per target; on macOS the updater uses `lut.app.tar.gz`, the `.dmg` is for the first install.
-- [ ] The Windows installer is Authenticode-signed through SignPath before its updater signature is made.
+- [ ] The Windows installer ships without Authenticode until E25-11; its updater signature is made last, so the
+      SignPath step fits before it.
 - [ ] One job writes `latest.json` after every target; the release stays a draft.
 - [ ] Publishing a release updates `stable.json` and `beta.json` on the `updater` release as the design's table says,
       each only when the release is newer than the version it holds.
@@ -7079,11 +7081,38 @@ on the same machine.
 **Verification:** `cargo test --manifest-path src-tauri/Cargo.toml`; manual: run a dev build next to an installed
 build, change a setting in each and check the other keeps its own, and run `lut` in a pane of each.
 
+### E25-11 — Sign the Windows installer through SignPath
+
+```yaml
+id: E25-11
+depends-on: [E25-02]
+refs: [F7:6, .docs/development/releasing.md]
+covers: [F7:6]
+type: task
+scope: none
+size: S
+```
+
+**Goal:** The Windows installer is Authenticode-signed through SignPath Foundation, so Windows names its publisher
+instead of warning about an unknown one. Waits for SignPath to approve lut; releases ship unsigned on Windows until
+then.
+
+**Acceptance criteria:**
+
+- [ ] The code signing policy SignPath Foundation asks for is published in the repository (what is signed, who
+      approves).
+- [ ] The release workflow submits the NSIS installer to SignPath, waits for the manual approval and takes the signed
+      file back; the updater signature is made after it, over the signed file.
+- [ ] `SIGNPATH_API_TOKEN` is a repository secret; `releasing.md` no longer says the installer ships unsigned.
+
+**Verification:** a pre-release tag produces a signed installer (`Get-AuthenticodeSignature` reports `Valid`) whose
+updater signature verifies; an installed unsigned release updates to it.
+
 ### E25-09 — Close-out: release and updater
 
 ```yaml
 id: E25-09
-depends-on: [E25-01, E25-02, E25-03, E25-04, E25-05, E25-06, E25-07, E25-08, E25-10]
+depends-on: [E25-01, E25-02, E25-03, E25-04, E25-05, E25-06, E25-07, E25-08, E25-10, E25-11]
 refs: []
 covers: []
 type: closeout
