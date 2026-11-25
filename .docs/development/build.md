@@ -9,14 +9,15 @@ same steps once their prerequisites are installed.
 
 ## Toolchain
 
-| Tool      | Version                  | Notes                                                                                     |
-| --------- | ------------------------ | ----------------------------------------------------------------------------------------- |
-| Node.js   | ≥ 22                     | `engines.node` in `package.json`                                                          |
-| pnpm      | 11.9.0                   | pinned by `packageManager`; install with `corepack enable` (do not install pnpm globally) |
-| Rust      | stable, MSVC on Windows  | edition 2021; no `rust-toolchain` file, any current stable works                          |
-| Tauri CLI | 2.12 (`@tauri-apps/cli`) | installed as a dev dependency; run it as `pnpm tauri …`                                   |
-| Zig       | 0.16.0                   | **optional**: only to rebuild the committed Ghostty WASM (see below)                      |
-| Python 3  | any 3.x                  | **optional**: only for the profiling scripts (all macOS-only today)                       |
+| Tool        | Version                  | Notes                                                                                            |
+| ----------- | ------------------------ | ------------------------------------------------------------------------------------------------ |
+| Node.js     | ≥ 22                     | `engines.node` in `package.json`                                                                 |
+| pnpm        | 11.9.0                   | pinned by `packageManager`; install with `corepack enable` (do not install pnpm globally)        |
+| Rust        | stable, MSVC on Windows  | edition 2021; no `rust-toolchain` file, any current stable works                                 |
+| Tauri CLI   | 2.12 (`@tauri-apps/cli`) | installed as a dev dependency; run it as `pnpm tauri …`                                          |
+| cargo-about | 0.9                      | **only for `pnpm tauri build`**: `cargo install --locked cargo-about --features cli` (see below) |
+| Zig         | 0.16.0                   | **optional**: only to rebuild the committed Ghostty WASM (see below)                             |
+| Python 3    | any 3.x                  | **optional**: only for the profiling scripts (all macOS-only today)                              |
 
 `pnpm-workspace.yaml` sets `minimumReleaseAge` (3 days, strict): pnpm refuses package versions published less
 than 3 days ago. Keep that in mind when adding or bumping dependencies.
@@ -50,6 +51,7 @@ Rust workspace. Later runs are incremental.
 | Install dependencies                      | `pnpm install --frozen-lockfile`                                                                       |
 | Run the app (dev)                         | `pnpm tauri dev`                                                                                       |
 | Release build + installers                | `pnpm tauri build`                                                                                     |
+| Third-party notices                       | `pnpm build:notices` (after `pnpm build`; part of `pnpm tauri build`)                                  |
 | Frontend only (browser, no Tauri backend) | `pnpm dev` (Vite on port 1420, strict)                                                                 |
 | Frontend production build                 | `pnpm build` (`tsc && vite build` into `dist/`)                                                        |
 | Type check                                | `pnpm check-types`                                                                                     |
@@ -70,11 +72,26 @@ The app bundles the `lut-cli` binary (crate `lut-cli`) as a Tauri sidecar (`bund
 `tauri.conf.json`). Tauri expects it at `src-tauri/binaries/lut-cli-<target-triple>[.exe]` before it builds the app, so:
 
 - `pnpm tauri dev` runs `pnpm build:cli:dev && pnpm dev` (`beforeDevCommand`);
-- `pnpm tauri build` runs `pnpm build:cli && pnpm build` (`beforeBuildCommand`).
+- `pnpm tauri build` runs `pnpm build:cli && pnpm build && pnpm build:notices` (`beforeBuildCommand`).
 
 `scripts/build-cli.mjs` runs `cargo build --locked -p lut-cli --bin lut-cli` (with `--release` for `build:cli`) for the host
 triple reported by `rustc -vV`, or for `LUT_CLI_TARGET` / `CARGO_BUILD_TARGET` when set, and copies the result
 into `src-tauri/binaries/` (ignored by git). Running the Rust tests or clippy directly does not need it.
+
+### Third-party notices
+
+Every bundle carries `licenses/third-party.txt` (E25-03): the license texts and copyright notices of the Rust crates
+and npm packages lut ships. `pnpm build:notices` (`scripts/notices.mjs`) writes it into `dist/licenses/` after
+`pnpm build`, so it is embedded with the frontend; it is generated, never committed, and `pnpm tauri dev` does not
+need it.
+
+- **Rust:** `cargo about generate --frozen --fail`, configured by `src-tauri/about.toml` (the targets lut ships, no
+  build or dev dependencies) and rendered with `src-tauri/about.hbs`. It needs `cargo-about` installed.
+- **npm:** the production packages from `pnpm licenses list --prod --json`, each with its own license file; an MIT
+  package without one gets the MIT text with its author. `LICENSE_OVERRIDES` in the script names packages whose
+  `package.json` has no license although their license file does.
+- **Allowlist:** `accepted` in `src-tauri/about.toml`, for both halves. A dependency under another license fails the
+  build with its name; review its license, then add it there or replace the dependency.
 
 ### Ghostty WASM
 

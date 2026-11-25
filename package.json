@@ -12,6 +12,7 @@
     "build:cli": "node scripts/build-cli.mjs --release",
     "build:glyph-raster": "node scripts/build-glyph-raster.mjs",
     "build:cli:dev": "node scripts/build-cli.mjs",
+    "build:notices": "node scripts/notices.mjs",
     "icons": "node scripts/icons.mjs",
     "dev": "vite",
     "dev:inspect": "INSPECT=true vite",
