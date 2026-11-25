@@ -6,7 +6,8 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { useWindowTitle } from './useWindowTitle';
 
 const setWindowTitle = vi.hoisted(() => vi.fn((_title: string) => Promise.resolve()));
-vi.mock('@/modules/platform', () => ({ setWindowTitle }));
+const appName = vi.hoisted(() => vi.fn(() => Promise.resolve('lut')));
+vi.mock('@/modules/platform', () => ({ appName, setWindowTitle }));
 
 type Policy = (profileId: string | undefined) => boolean;
 const allowAll: Policy = () => true;
@@ -49,13 +50,12 @@ function title(): string {
 beforeEach(() => {
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
   setWindowTitle.mockClear();
-  vi.stubEnv('DEV', false);
+  appName.mockImplementation(() => Promise.resolve('lut'));
   root = createRoot(document.createElement('div'));
 });
 
 afterEach(() => {
   act(() => root.unmount());
-  vi.unstubAllEnvs();
 });
 
 it('names a terminal tab by its folder, then lut', () => {
@@ -93,9 +93,10 @@ it('follows the active tab', () => {
   expect(setWindowTitle).toHaveBeenCalledTimes(2);
 });
 
-it('says lut (dev) in a development build, which runs apart from an installed lut (E25-10)', () => {
-  vi.stubEnv('DEV', true);
+it('says lut (dev) once the app reports the dev identity, which runs apart from an installed lut (E25-10)', async () => {
+  appName.mockImplementation(() => Promise.resolve('lut (dev)'));
   render(editor);
+  await act(async () => {});
   expect(title()).toBe('main.rs - lut (dev)');
   render(undefined);
   expect(title()).toBe('lut (dev)');
