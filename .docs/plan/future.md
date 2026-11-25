@@ -41,7 +41,7 @@ It is also the base of a real portable mode (data next to the executable). Raise
 ## macOS code signing
 
 Sign and notarize the macOS bundles with an Apple Developer account (paid, yearly), so Gatekeeper opens lut without
-the right-click > Open step. Postponed in E25-01; Windows is signed through SignPath from the first release.
+the right-click > Open step. Postponed in E25-01; Windows is signed through SignPath (E25-11).
 
 ## Multiwindow
 
