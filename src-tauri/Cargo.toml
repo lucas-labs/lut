@@ -1,6 +1,6 @@
 [package]
 name = "lut"
-version = "0.1.0-beta.1"
+version = "0.1.0-beta.2"
 description = "lut — a cross-platform terminal built around projects, profiles and CLI coding agents"
 authors = ["lucode"]
 license = "Apache-2.0"
@@ -14,7 +14,7 @@ default-members = [".", "crates/lut-cli", "crates/lut-control-protocol"]
 resolver = "2"
 
 [workspace.package]
-version = "0.1.0-beta.1"
+version = "0.1.0-beta.2"
 edition = "2021"
 license = "Apache-2.0"
 
