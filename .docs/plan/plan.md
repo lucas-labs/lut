@@ -7171,7 +7171,7 @@ size: XS
 
 ```yaml
 id: E26
-depends-on: [E10, E12, E14, E15]
+depends-on: [E10, E12, E14, E15, E25]
 refs: [.docs/plan/README.md]
 ```
 
@@ -7489,11 +7489,67 @@ size: S
 **Verification:** `pnpm test`; manual: a deep cwd in the title bar, then a click on a segment and on the collapsed
 ones.
 
+### E26-13 — Rethink how lut offers an update
+
+```yaml
+id: E26-13
+depends-on: [E25-06]
+refs: [.docs/development/releasing.md, .docs/testing/results.md]
+covers: [F7:auto-actualizacion-de-lut]
+type: task
+scope: ui
+size: S
+```
+
+**Goal:** The update flow is designed from what the user sees. Today the automatic check opens a dialog on its own,
+and Check now in Settings opens it in the main window, behind the Settings window, which stays on top on Windows and
+Linux: it shows only once Settings is closed (E25-07, `.docs/testing/results.md`). An automatic check tells about an
+update in the title bar's notifications instead of interrupting, and an update found from Settings shows where the
+user is. The implementation adapts to that flow (events, shared state, or the backend owning the update), not the
+flow to where the code keeps its state.
+
+**Acceptance criteria:**
+
+- [ ] A design for the flow, agreed before implementing: the notification, where the offer, the download and the
+      restart warning show, from the main window and from Settings.
+- [ ] An automatic check that finds a newer release adds a notification to the title bar bell; no dialog opens on its
+      own.
+- [ ] Check now in Settings shows the found update, its download and the restart warning without leaving any of it
+      hidden behind another window.
+- [ ] Tests for the notification, and the update store, dialog and settings tests follow the new flow.
+
+**Verification:** `pnpm test`; manual against a test release, as in `.docs/testing/results.md`.
+
+### E26-14 — A fresh install opens the sidebar on Spaces
+
+```yaml
+id: E26-14
+depends-on: []
+refs: [.docs/plan/analysis/app-shell.md]
+covers: [app-shell/sidebar-logic]
+type: task
+scope: ui
+size: XS
+```
+
+**Goal:** With no stored view, `readSidebarView` (`src/modules/sidebar/useSidebarPanel.ts`) falls back to `explorer`,
+so a newly installed lut opens its sidebar on Files. A first run opens it on Spaces; a view the user chose is still
+restored.
+
+**Acceptance criteria:**
+
+- [ ] With no stored `lut.sidebar.view`, the sidebar view is `spaces`.
+- [ ] A stored view is still restored; the compact mode keeps its behaviour.
+- [ ] A test in `useSidebarPanel.test.ts` for the default.
+
+**Verification:** `pnpm test src/modules/sidebar`; manual: a fresh install (or `lut.sidebar.view` removed) opens the
+sidebar on Spaces.
+
 ### E26-03 — Close-out: accessory improvements
 
 ```yaml
 id: E26-03
-depends-on: [E26-01, E26-02, E26-04, E26-05, E26-06, E26-07, E26-08, E26-09, E26-10, E26-11, E26-12]
+depends-on: [E26-01, E26-02, E26-04, E26-05, E26-06, E26-07, E26-08, E26-09, E26-10, E26-11, E26-12, E26-13, E26-14]
 refs: [.docs/plan/README.md]
 covers: []
 type: closeout
